@@ -106,6 +106,7 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.QueryCache;
+import com.hazelcast.map.TypedEntryProcessor;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.ListenerAdapter;
@@ -1266,7 +1267,14 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         return executeOnKeyInternal(keyData, entryProcessor);
     }
 
-    public Object executeOnKeyInternal(Data keyData, EntryProcessor entryProcessor) {
+    @Override
+    public <R> R executeOnKey(K key, TypedEntryProcessor<K, V, R> entryProcessor) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        Data keyData = toData(key);
+        return executeOnKeyInternal(keyData, entryProcessor);
+    }
+
+    public <R> R executeOnKeyInternal(Data keyData, EntryProcessor entryProcessor) {
         ClientMessage request = MapExecuteOnKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
         ClientMessage response = invoke(request, keyData);
         MapExecuteOnKeyCodec.ResponseParameters resultParameters = MapExecuteOnKeyCodec.decodeResponse(response);
@@ -1275,6 +1283,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public void submitToKey(K key, EntryProcessor entryProcessor, final ExecutionCallback callback) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        Data keyData = toData(key);
+        submitToKeyInternal(keyData, entryProcessor, callback);
+    }
+
+    @Override
+    public <R> void submitToKey(K key, TypedEntryProcessor<K, V, R> entryProcessor, final ExecutionCallback<R> callback) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         Data keyData = toData(key);
         submitToKeyInternal(keyData, entryProcessor, callback);
@@ -1300,11 +1315,18 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         return submitToKeyInternal(keyData, entryProcessor);
     }
 
-    public ICompletableFuture submitToKeyInternal(Data keyData, EntryProcessor entryProcessor) {
+    @Override
+    public <R> ICompletableFuture<R> submitToKey(K key, TypedEntryProcessor<K, V, R> entryProcessor) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        Data keyData = toData(key);
+        return submitToKeyInternal(keyData, entryProcessor);
+    }
+
+    public <R> ICompletableFuture<R> submitToKeyInternal(Data keyData, EntryProcessor entryProcessor) {
         ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
         try {
             final ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            return new ClientDelegatingFuture(future, getContext().getSerializationService(), SUBMIT_TO_KEY_RESPONSE_DECODER);
+            return new ClientDelegatingFuture<R>(future, getContext().getSerializationService(), SUBMIT_TO_KEY_RESPONSE_DECODER);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -1318,21 +1340,38 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         return prepareResult(resultParameters.response);
     }
 
-    protected Map<K, Object> prepareResult(Collection<Entry<Data, Data>> entries) {
+    @Override
+    public <R> Map<K, R> executeOnEntries(TypedEntryProcessor<K, V, R> entryProcessor) {
+        ClientMessage request = MapExecuteOnAllKeysCodec.encodeRequest(name, toData(entryProcessor));
+        ClientMessage response = invoke(request);
+        MapExecuteOnAllKeysCodec.ResponseParameters resultParameters = MapExecuteOnAllKeysCodec.decodeResponse(response);
+        return prepareResult(resultParameters.response);
+    }
+
+    protected <R> Map<K, R> prepareResult(Collection<Entry<Data, Data>> entries) {
         if (CollectionUtil.isEmpty(entries)) {
             return emptyMap();
         }
 
-        Map<K, Object> result = MapUtil.createHashMap(entries.size());
+        Map<K, R> result = MapUtil.createHashMap(entries.size());
         for (Entry<Data, Data> entry : entries) {
             K key = toObject(entry.getKey());
-            result.put(key, toObject(entry.getValue()));
+            result.put(key, this.<R>toObject(entry.getValue()));
         }
         return result;
     }
 
     @Override
     public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate) {
+        ClientMessage request = MapExecuteWithPredicateCodec.encodeRequest(name, toData(entryProcessor), toData(predicate));
+        ClientMessage response = invoke(request);
+
+        MapExecuteWithPredicateCodec.ResponseParameters resultParameters = MapExecuteWithPredicateCodec.decodeResponse(response);
+        return prepareResult(resultParameters.response);
+    }
+
+    @Override
+    public <R> Map<K, R> executeOnEntries(TypedEntryProcessor<K, V, R> entryProcessor, Predicate<K, V> predicate) {
         ClientMessage request = MapExecuteWithPredicateCodec.encodeRequest(name, toData(entryProcessor), toData(predicate));
         ClientMessage response = invoke(request);
 
@@ -1478,6 +1517,20 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
+        checkNotNull(keys, NULL_KEY_IS_NOT_ALLOWED);
+        if (keys.isEmpty()) {
+            return emptyMap();
+        }
+        Collection<Data> dataCollection = objectToDataCollection(keys, getSerializationService());
+
+        ClientMessage request = MapExecuteOnKeysCodec.encodeRequest(name, toData(entryProcessor), dataCollection);
+        ClientMessage response = invoke(request);
+        MapExecuteOnKeysCodec.ResponseParameters resultParameters = MapExecuteOnKeysCodec.decodeResponse(response);
+        return prepareResult(resultParameters.response);
+    }
+
+    @Override
+    public <R> Map<K, R> executeOnKeys(Set<K> keys, TypedEntryProcessor<K, V, R> entryProcessor) {
         checkNotNull(keys, NULL_KEY_IS_NOT_ALLOWED);
         if (keys.isEmpty()) {
             return emptyMap();

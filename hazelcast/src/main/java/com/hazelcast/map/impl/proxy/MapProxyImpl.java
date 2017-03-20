@@ -28,6 +28,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
+import com.hazelcast.map.TypedEntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.iterator.MapPartitionIterator;
@@ -702,6 +703,15 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V> {
 
     @Override
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
+        return executeWithTypeOnKey(key, entryProcessor);
+    }
+
+    @Override
+    public <R> R executeOnKey(K key, TypedEntryProcessor<K, V, R> entryProcessor) {
+        return executeWithTypeOnKey(key, entryProcessor);
+    }
+
+    private <R> R executeWithTypeOnKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data result = executeOnKeyInternal(toData(key, partitionStrategy), entryProcessor);
@@ -710,6 +720,15 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V> {
 
     @Override
     public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
+        return executeWithTypeOnKeys(keys, entryProcessor);
+    }
+
+    @Override
+    public <R> Map<K, R> executeOnKeys(Set<K> keys, TypedEntryProcessor<K, V, R> entryProcessor) {
+        return executeWithTypeOnKeys(keys, entryProcessor);
+    }
+
+    private <R> Map<K, R> executeWithTypeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
         if (keys == null || keys.contains(null)) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
@@ -732,7 +751,21 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V> {
     }
 
     @Override
+    public <R> void submitToKey(K key, TypedEntryProcessor<K, V, R> entryProcessor, ExecutionCallback<R> callback) {
+        submitToKey(key, (EntryProcessor<K, V>) entryProcessor, callback);
+    }
+
+    @Override
     public ICompletableFuture submitToKey(K key, EntryProcessor entryProcessor) {
+        return submitWithTypeToKey(key, entryProcessor);
+    }
+
+    @Override
+    public <R> ICompletableFuture<R> submitToKey(K key, TypedEntryProcessor<K, V, R> entryProcessor) {
+        return submitWithTypeToKey(key, entryProcessor);
+    }
+
+    private <R> ICompletableFuture<R> submitWithTypeToKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         MapService service = getService();
@@ -743,11 +776,25 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V> {
 
     @Override
     public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor) {
-        return executeOnEntries(entryProcessor, TruePredicate.INSTANCE);
+        return executeWithTypeOnEntries(entryProcessor, TruePredicate.INSTANCE);
+    }
+
+    @Override
+    public <R> Map<K, R> executeOnEntries(TypedEntryProcessor<K, V, R> entryProcessor) {
+        return executeWithTypeOnEntries(entryProcessor, TruePredicate.INSTANCE);
     }
 
     @Override
     public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate) {
+        return executeWithTypeOnEntries(entryProcessor, predicate);
+    }
+
+    @Override
+    public <R> Map<K, R> executeOnEntries(TypedEntryProcessor<K, V, R> entryProcessor, Predicate<K, V> predicate) {
+        return executeWithTypeOnEntries(entryProcessor, predicate);
+    }
+
+    private <R> Map<K, R> executeWithTypeOnEntries(EntryProcessor entryProcessor, Predicate predicate) {
         List<Data> result = new ArrayList<Data>();
 
         executeOnEntriesInternal(entryProcessor, predicate, result);
@@ -755,12 +802,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V> {
             return emptyMap();
         }
 
-        Map<K, Object> resultingMap = MapUtil.createHashMap(result.size() / 2);
+        Map<K, R> resultingMap = MapUtil.createHashMap(result.size() / 2);
         for (int i = 0; i < result.size(); ) {
             Data key = result.get(i++);
             Data value = result.get(i++);
 
-            resultingMap.put((K) toObject(key), toObject(value));
+            resultingMap.put((K) toObject(key), (R) toObject(value));
 
         }
         return resultingMap;

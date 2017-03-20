@@ -21,6 +21,7 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.QueryResultSizeExceededException;
+import com.hazelcast.map.TypedEntryProcessor;
 import com.hazelcast.map.impl.LegacyAsyncMap;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
@@ -1555,6 +1556,16 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     Object executeOnKey(K key, EntryProcessor entryProcessor);
 
     /**
+     * Applies the user defined TypedEntryProcessor to the entry mapped by the key.
+     * Returns the result of the process() method of TypedEntryProcessor, an object of type R.
+     * <p/>
+     *
+     * @return result of entry process.
+     * @throws NullPointerException if the specified key is null
+     */
+    <R> R executeOnKey(K key, TypedEntryProcessor<K, V, R> entryProcessor);
+
+    /**
      * Applies the user defined EntryProcessor to the entries mapped by the collection of keys.
      * the results mapped by each key in the collection.
      * <p/>
@@ -1566,6 +1577,17 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor);
 
     /**
+     * Applies the user defined TypedEntryProcessor to the entries mapped by the collection of keys.
+     * the results mapped by each key in the collection.
+     * <p/>
+     *
+     * @return result of entry process.
+     * @throws NullPointerException     if the specified key is null.
+     * @throws IllegalArgumentException if the specified keys set is empty
+     */
+    <R> Map<K, R> executeOnKeys(Set<K> keys, TypedEntryProcessor<K, V, R> entryProcessor);
+
+    /**
      * Applies the user defined EntryProcessor to the entry mapped by the key with
      * specified ExecutionCallback to listen event status and returns immediately.
      *
@@ -1574,6 +1596,16 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @param callback       to listen whether operation is finished or not.
      */
     void submitToKey(K key, EntryProcessor entryProcessor, ExecutionCallback callback);
+
+    /**
+     * Applies the user defined TypedEntryProcessor to the entry mapped by the key with
+     * specified ExecutionCallback to listen event status and returns immediately.
+     *
+     * @param key            key to be processed.
+     * @param entryProcessor processor to process the key.
+     * @param callback       to listen whether operation is finished or not.
+     */
+    <R> void submitToKey(K key, TypedEntryProcessor<K, V, R> entryProcessor, ExecutionCallback<R> callback);
 
     /**
      * Applies the user defined EntryProcessor to the entry mapped by the key.
@@ -1590,6 +1622,20 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     ICompletableFuture submitToKey(K key, EntryProcessor entryProcessor);
 
     /**
+     * Applies the user defined TypedEntryProcessor to the entry mapped by the key.
+     * Returns immediately with a ICompletableFuture representing that task.
+     * <p/>
+     * EntryProcessor is not cancellable, so calling ICompletableFuture.cancel() method
+     * won't cancel the operation of EntryProcessor.
+     *
+     * @param key            key to be processed
+     * @param entryProcessor processor to process the key
+     * @return ICompletableFuture from which the result of the operation can be retrieved.
+     * @see ICompletableFuture
+     */
+    <R> ICompletableFuture<R> submitToKey(K key, TypedEntryProcessor<K, V, R> entryProcessor);
+
+    /**
      * Applies the user defined EntryProcessor to the all entries in the map.
      * Returns the results mapped by each key in the map.
      * <p/>
@@ -1597,11 +1643,25 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     Map<K, Object> executeOnEntries(EntryProcessor entryProcessor);
 
     /**
+     * Applies the user defined TypedEntryProcessor to the all entries in the map.
+     * Returns the results mapped by each key in the map.
+     * <p/>
+     */
+    <R> Map<K, R> executeOnEntries(TypedEntryProcessor<K, V, R> entryProcessor);
+
+    /**
      * Applies the user defined EntryProcessor to the entries in the map which satisfies provided predicate.
      * Returns the results mapped by each key in the map.
      * <p/>
      */
     Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate);
+
+    /**
+     * Applies the user defined TypedEntryProcessor to the entries in the map which satisfies provided predicate.
+     * Returns the results mapped by each key in the map.
+     * <p/>
+     */
+    <R> Map<K, R> executeOnEntries(TypedEntryProcessor<K, V, R> entryProcessor, Predicate<K, V> predicate);
 
     /**
      * Applies the aggregation logic on all map entries and returns the result

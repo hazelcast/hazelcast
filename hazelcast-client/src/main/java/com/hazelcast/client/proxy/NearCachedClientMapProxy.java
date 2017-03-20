@@ -368,15 +368,15 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    public Object executeOnKeyInternal(Data keyData, EntryProcessor entryProcessor) {
-        Object response = super.executeOnKeyInternal(keyData, entryProcessor);
+    public <R> R executeOnKeyInternal(Data keyData, EntryProcessor entryProcessor) {
+        R response = super.executeOnKeyInternal(keyData, entryProcessor);
         invalidateNearCache(keyData);
         return response;
     }
 
     @Override
-    public ICompletableFuture submitToKeyInternal(Data keyData, EntryProcessor entryProcessor) {
-        ICompletableFuture future = super.submitToKeyInternal(keyData, entryProcessor);
+    public <R> ICompletableFuture<R> submitToKeyInternal(Data keyData, EntryProcessor entryProcessor) {
+        ICompletableFuture<R> future = super.submitToKeyInternal(keyData, entryProcessor);
         invalidateNearCache(keyData);
         return future;
     }
@@ -388,18 +388,18 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected Map<K, Object> prepareResult(Collection<Entry<Data, Data>> entrySet) {
+    protected <R> Map<K, R> prepareResult(Collection<Entry<Data, Data>> entrySet) {
         if (CollectionUtil.isEmpty(entrySet)) {
             return emptyMap();
         }
 
-        Map<K, Object> result = MapUtil.createHashMap(entrySet.size());
+        Map<K, R> result = MapUtil.createHashMap(entrySet.size());
         for (Entry<Data, Data> entry : entrySet) {
             Data dataKey = entry.getKey();
             invalidateNearCache(dataKey);
 
             K key = toObject(dataKey);
-            Object value = toObject(entry.getValue());
+            R value = toObject(entry.getValue());
             result.put(key, value);
         }
         return result;
