@@ -237,7 +237,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         userContext = new ConcurrentHashMap<String, Object>();
         diagnostics = initDiagnostics(config);
 
-        proxyManager.init(config);
         hazelcastCacheManager = new ClientICacheManager(this);
 
         lockReferenceIdGenerator = new ClientLockReferenceIdGenerator();
@@ -392,7 +391,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         lifecycleService.setStarted();
         invocationService.start();
         connectionManager.start();
-
         diagnostics.start();
         diagnostics.register(
                 new ConfigPropertiesPlugin(loggingService.getLogger(ConfigPropertiesPlugin.class), properties));
@@ -411,6 +409,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             lifecycleService.shutdown();
             throw ExceptionUtil.rethrow(e);
         }
+        proxyManager.init(config);
         listenerService.start();
         loadBalancer.init(getCluster(), config);
         partitionService.start();
