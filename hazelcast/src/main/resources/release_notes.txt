@@ -70,6 +70,7 @@ This section lists the fixed issues for Hazelcast 3.8 and 3.8.x releases.
 
 *3.8.1 Fixes*
 
+- `BackupEntryProcessor` returned from `AbstractEntryProcessor` does not support `HazelcastInstanceAware`. [10083]
 - Updates performed with IMap's putTransient method should trigger EntryUpdatedListener. [10077]
 - Missing documentation for configuring log4j2 as logging framework. [9970]
 - Management Center section in the Reference Manual is misleading when it explains tool's behavior for clusters having more than two members. [9969]
