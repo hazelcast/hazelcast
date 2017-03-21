@@ -61,7 +61,14 @@ public final class ClientProperty {
             = new HazelcastProperty("hazelcast.client.event.queue.capacity", 1000000);
 
     /**
-     * Time to give up on invocation when a member in the member list is not reachable.
+     * When an invocation gets an exception because :
+     * - Member throws an exception.
+     * - Connection between the client and member is closed.
+     * - Client's heartbeat requests are timed out.
+     * Time passed since invocation started is compared with this property.
+     * If the time is already passed, then the exception is delegated to the user. If not, the invocation is retried.
+     * Note that, if invocation gets no exception and it is a long running one, then it will not get any exception,
+     * no matter how small this timeout is set.
      */
     public static final HazelcastProperty INVOCATION_TIMEOUT_SECONDS
             = new HazelcastProperty("hazelcast.client.invocation.timeout.seconds", 120, SECONDS);
