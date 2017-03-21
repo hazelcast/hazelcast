@@ -25,7 +25,6 @@ import org.w3c.dom.Node;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -47,7 +46,17 @@ public final class CloudyUtility {
     private CloudyUtility() {
     }
 
-    public static Map<String, String> unmarshalTheResponse(InputStream stream, AwsConfig awsConfig) throws IOException {
+    /**
+     * Unmarshal the response from {@link com.hazelcast.aws.impl.DescribeInstances} and return the discovered node map.
+     * The map contains mappings from private to public IP and all contained nodes match the filtering rules defined by
+     * the {@code awsConfig}.
+     * If there is an exception while unmarshaling the response, returns an empty map.
+     *
+     * @param stream    the response XML stream
+     * @param awsConfig the AWS configuration for filtering the returned addresses
+     * @return map from private to public IP or empty map in case of exceptions
+     */
+    public static Map<String, String> unmarshalTheResponse(InputStream stream, AwsConfig awsConfig) {
         DocumentBuilder builder;
         try {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -110,6 +119,15 @@ public final class CloudyUtility {
             return result;
         }
 
+        /**
+         * Unmarshal the response from the {@link com.hazelcast.aws.impl.DescribeInstances} service and
+         * return the map from private to public IP. All returned entries must match filters defined by the {@code config}.
+         * This method expects that the DOM containing the XML has been positioned at the node containing the addresses.
+         *
+         * @param awsConfig the AWS configuration for filtering the returned addresses
+         * @return map from private to public IP
+         * @see #getFirstSubNode(String)
+         */
         Map<String, String> getAddresses(AwsConfig awsConfig) {
             Map<String, String> privatePublicPairs = new LinkedHashMap<String, String>();
             if (node == null) {
