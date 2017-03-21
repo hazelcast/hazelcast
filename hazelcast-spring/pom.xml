@@ -35,7 +35,7 @@
 
         <org.springframework.version>4.3.0.RELEASE</org.springframework.version>
         <jsr250.api.version>1.0</jsr250.api.version>
-        <hazelcast.latest.version>3.6</hazelcast.latest.version>
+        <hazelcast.latest.version>3.8</hazelcast.latest.version>
     </properties>
 
     <build>
@@ -136,60 +136,11 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <dependencies>
-                <dependency>
-                    <groupId>com.hazelcast</groupId>
-                    <artifactId>hazelcast</artifactId>
-                    <version>${project.parent.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>com.hazelcast</groupId>
-                    <artifactId>hazelcast-client</artifactId>
-                    <version>${project.parent.version}</version>
-                    <optional>true</optional>
-                </dependency>
-                <dependency>
-                    <groupId>javax.annotation</groupId>
-                    <artifactId>jsr250-api</artifactId>
-                    <version>${jsr250.api.version}</version>
-                    <scope>provided</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>spring-context</artifactId>
-                    <version>${org.springframework.version}</version>
-                    <scope>provided</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>spring-tx</artifactId>
-                    <version>${org.springframework.version}</version>
-                    <scope>provided</scope>
-                </dependency>
-
                 <!--TEST DEPENDENCIES-->
-                <dependency>
-                    <groupId>com.hazelcast</groupId>
-                    <artifactId>hazelcast</artifactId>
-                    <scope>test</scope>
-                    <version>${project.parent.version}</version>
-                    <classifier>tests</classifier>
-                </dependency>
                 <dependency>
                     <groupId>com.hazelcast</groupId>
                     <artifactId>hazelcast-hibernate4</artifactId>
                     <version>${hazelcast.latest.version}</version>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>spring-test</artifactId>
-                    <version>${org.springframework.version}</version>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>spring-context-support</artifactId>
-                    <version>${org.springframework.version}</version>
                     <scope>test</scope>
                 </dependency>
                 <dependency>
@@ -204,66 +155,11 @@
         <profile>
             <id>hibernate-3</id>
             <dependencies>
-                <dependency>
-                    <groupId>com.hazelcast</groupId>
-                    <artifactId>hazelcast</artifactId>
-                    <version>${project.parent.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>com.hazelcast</groupId>
-                    <artifactId>hazelcast-client</artifactId>
-                    <version>${project.parent.version}</version>
-                    <optional>true</optional>
-                </dependency>
-                <dependency>
-                    <groupId>javax.annotation</groupId>
-                    <artifactId>jsr250-api</artifactId>
-                    <version>${jsr250.api.version}</version>
-                    <scope>provided</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>spring-context</artifactId>
-                    <version>${org.springframework.version}</version>
-                    <scope>provided</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>spring-tx</artifactId>
-                    <version>${org.springframework.version}</version>
-                    <scope>provided</scope>
-                </dependency>
-
                 <!--TEST DEPENDENCIES-->
                 <dependency>
                     <groupId>com.hazelcast</groupId>
                     <artifactId>hazelcast-hibernate3</artifactId>
                     <version>${hazelcast.latest.version}</version>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>com.hazelcast</groupId>
-                    <artifactId>hazelcast</artifactId>
-                    <scope>test</scope>
-                    <version>${project.parent.version}</version>
-                    <classifier>tests</classifier>
-                </dependency>
-                <dependency>
-                    <groupId>javax.cache</groupId>
-                    <artifactId>cache-api</artifactId>
-                    <version>${jsr107.api.version}</version>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>spring-test</artifactId>
-                    <version>${org.springframework.version}</version>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>spring-context-support</artifactId>
-                    <version>${org.springframework.version}</version>
                     <scope>test</scope>
                 </dependency>
                 <dependency>
@@ -275,4 +171,57 @@
             </dependencies>
         </profile>
     </profiles>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-client</artifactId>
+            <version>${project.parent.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>jsr250-api</artifactId>
+            <version>${jsr250.api.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>${org.springframework.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+            <version>${org.springframework.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!--TEST DEPENDENCIES-->
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <scope>test</scope>
+            <version>${project.parent.version}</version>
+            <classifier>tests</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <version>${org.springframework.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context-support</artifactId>
+            <version>${org.springframework.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>
