@@ -314,7 +314,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             internalPartition = nodeEngine.getPartitionService().getPartition(partitionId);
         }
 
-        if (retryDuringMigration(op) && internalPartition.isMigrating()) {
+        if (!isAllowedToRetryDuringMigration(op) && internalPartition.isMigrating()) {
             throw new PartitionMigratingException(thisAddress, partitionId,
                     op.getClass().getName(), op.getServiceName());
         }
@@ -326,8 +326,8 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         }
     }
 
-    private boolean retryDuringMigration(Operation op) {
-        return !((op instanceof ReadonlyOperation && staleReadOnMigrationEnabled) || isMigrationOperation(op));
+    private boolean isAllowedToRetryDuringMigration(Operation op) {
+        return (op instanceof ReadonlyOperation && staleReadOnMigrationEnabled) || isMigrationOperation(op);
     }
 
     private void handleOperationError(Operation operation, Throwable e) {
