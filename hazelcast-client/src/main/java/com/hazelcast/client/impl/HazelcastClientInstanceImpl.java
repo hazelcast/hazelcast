@@ -218,6 +218,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
         metricsRegistry = initMetricsRegistry();
         serializationService = clientExtension.createSerializationService((byte) -1);
+        metricsRegistry.collectMetrics(clientExtension);
+
         proxyManager = new ProxyManager(this);
         executionService = initExecutionService();
         loadBalancer = initLoadBalancer(config);
