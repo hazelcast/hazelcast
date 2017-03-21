@@ -20,7 +20,10 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.ReadOnly;
 import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.EntryBackupProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.FalsePredicate;
@@ -142,6 +145,16 @@ public class ClientEntryProcessorTest extends HazelcastTestSupport {
         assertTrue("isIndexed method of IndexAwarePredicate should be called", IndexedTestPredicate.INDEX_CALLED.get());
     }
 
+    @Test(expected = UnsupportedOperationException.class)
+    public void test_executeOnKey_readOnly_setValue() {
+        String member1Key = generateKeyOwnedBy(member1);
+
+        IMap<String, String> clientMap = client.getMap(MAP_NAME);
+        clientMap.put(member1Key, "value");
+
+        clientMap.executeOnKey(member1Key, new ValueUpdaterReadOnly("newValue"));
+    }
+
     public static final class EP extends AbstractEntryProcessor {
         @Override
         public Object process(Map.Entry entry) {
@@ -186,6 +199,26 @@ public class ClientEntryProcessorTest extends HazelcastTestSupport {
         @Override
         public Object process(Map.Entry entry) {
             entry.setValue(newValue);
+            return null;
+        }
+    }
+
+    public static class ValueUpdaterReadOnly implements EntryProcessor, ReadOnly {
+
+        private final String newValue;
+
+        public ValueUpdaterReadOnly(String newValue) {
+            this.newValue = newValue;
+        }
+
+        @Override
+        public Object process(Map.Entry entry) {
+            entry.setValue(newValue);
+            return null;
+        }
+
+        @Override
+        public EntryBackupProcessor getBackupProcessor() {
             return null;
         }
     }
