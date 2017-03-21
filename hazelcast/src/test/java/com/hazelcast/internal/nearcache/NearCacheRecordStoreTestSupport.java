@@ -108,6 +108,8 @@ public abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTes
         NearCacheStats nearCacheStats = nearCacheRecordStore.getNearCacheStats();
         long memoryCostWhenFull = nearCacheStats.getOwnedEntryMemoryCost();
 
+        // Note that System.currentTimeMillis() is not monotonically increasing.
+        // Below assertions can fail anytime but for testing purposes we can use `assertTrueEventually`.
         assertTrue(nearCacheStats.getCreationTime() >= creationStartTime);
         assertTrue(nearCacheStats.getCreationTime() <= creationEndTime);
         assertEquals(expectedHits, nearCacheStats.getHits());

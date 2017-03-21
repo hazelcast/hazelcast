@@ -21,6 +21,7 @@ import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -72,7 +73,12 @@ public class NearCacheRecordStoreTest extends NearCacheRecordStoreTestSupport {
 
     @Test
     public void statsCalculated() {
-        statsCalculated(inMemoryFormat);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                statsCalculated(inMemoryFormat);
+            }
+        });
     }
 
     @Test
