@@ -1,20 +1,5 @@
 You can also see the Release Notes document at http://docs.hazelcast.org/docs/release-notes/.
 
-
-2017.02.XX, Release 3.8.1
-
-- Added mutual authentication capability using SSL between Hazelcast clients and members.
-- Updated documentation to include "log4j2" as one of the supported logging frameworks.
-- Clarified Management Center's usage when the cluster has more than two members.
-- Updated aggregators Javadoc to clarify what happens when the extracted value is null.
-- Fixed handling of trusted interfaces within multicast joining mechanism.
-- Fixed client disconnection issues due to heartbeat problems.
-- Fixed firing "Updated" event when `putTransient` method is used.
-- Fixed retrying of not only the operations, but also their resulting failures when using clients and when `redoOperation` is set to true.
-- Some other fixes.
-
-
-
 2017.02.17, Release 3.8
 
 - Introduced rolling member upgrades for minor releases (Hazelcast IMDG Enterprise).
