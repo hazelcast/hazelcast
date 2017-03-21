@@ -1555,16 +1555,16 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * ExecutorService allowing unblocking the partition-thread, which means that other partition-operations
      * may proceed. The key will be locked for the time-span of the processing in order to not generate a write-conflict.
      * In this case the threading looks as follows:
-     *  1.) partition-thread (fetch & lock)
-     *  2.) execution-thread (process)
-     *  3.) partition-thread (set & unlock, or just unlock if no changes)
+     * 1.) partition-thread (fetch & lock)
+     * 2.) execution-thread (process)
+     * 3.) partition-thread (set & unlock, or just unlock if no changes)
      *
      * If the EntryProcessor implements the Offloadable and ReadOnly interfaces the processing will be offloaded to the
      * given ExecutorService allowing unblocking the partition-thread. Since the EntryProcessor is not supposed to do
      * any changes to the Entry the key will NOT be locked for the time-span of the processing. In this case the threading
      * looks as follows:
-     *  1.) partition-thread (fetch & lock)
-     *  2.) execution-thread (process)
+     * 1.) partition-thread (fetch & lock)
+     * 2.) execution-thread (process)
      * In this case the EntryProcessor.getBackupProcessor() has to return null; otherwise an IllegalArgumentException
      * exception is thrown.
      *
@@ -1574,15 +1574,18 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      *
      * Using offloading is useful if the EntryProcessor encompasses heavy logic that may stall the partition-thread.
      *
+     * If the EntryProcessor implements ReadOnly and modifies the entry it is processing an UnsupportedOperationException
+     * will be thrown.
+     *
      * Offloading will not be applied to backup partitions. It is possible to initialize the EntryBackupProcessor
      * with some input provided by the EntryProcessor in the EntryProcessor.getBackupProcessor() method.
      * The input allows providing context to the EntryBackupProcessor - for example the "delta"
      * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
      *
-     * @see Offloadable
-     * @see ReadOnly
      * @return result of entry process.
      * @throws NullPointerException if the specified key is null
+     * @see Offloadable
+     * @see ReadOnly
      */
     Object executeOnKey(K key, EntryProcessor entryProcessor);
 
@@ -1607,22 +1610,25 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * ExecutorService allowing unblocking the partition-thread, which means that other partition-operations
      * may proceed. The key will be locked for the time-span of the processing in order to not generate a write-conflict.
      * In this case the threading looks as follows:
-     *  1.) partition-thread (fetch & lock)
-     *  2.) execution-thread (process)
-     *  3.) partition-thread (set & unlock, or just unlock if no changes)
+     * 1.) partition-thread (fetch & lock)
+     * 2.) execution-thread (process)
+     * 3.) partition-thread (set & unlock, or just unlock if no changes)
      *
      * If the EntryProcessor implements the Offloadable and ReadOnly interfaces the processing will be offloaded to the
      * given ExecutorService allowing unblocking the partition-thread. Since the EntryProcessor is not supposed to do
      * any changes to the Entry the key will NOT be locked for the time-span of the processing. In this case the threading
      * looks as follows:
-     *  1.) partition-thread (fetch & lock)
-     *  2.) execution-thread (process)
+     * 1.) partition-thread (fetch & lock)
+     * 2.) execution-thread (process)
      * In this case the EntryProcessor.getBackupProcessor() has to return null; otherwise an IllegalArgumentException
      * exception is thrown.
      *
      * If the EntryProcessor implements only ReadOnly without implementing Offloadable the processing unit will not
      * be offloaded, however, the EntryProcessor will not wait for the lock to be acquired, since the EP will not
      * do any modifications.
+     *
+     * If the EntryProcessor implements ReadOnly and modifies the entry it is processing an UnsupportedOperationException
+     * will be thrown.
      *
      * Using offloading is useful if the EntryProcessor encompasses heavy logic that may stall the partition-thread.
      *
@@ -1631,11 +1637,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * The input allows providing context to the EntryBackupProcessor - for example the "delta"
      * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
      *
-     * @see Offloadable
-     * @see ReadOnly
      * @param key            key to be processed.
      * @param entryProcessor processor to process the key.
      * @param callback       to listen whether operation is finished or not.
+     * @see Offloadable
+     * @see ReadOnly
      */
     void submitToKey(K key, EntryProcessor entryProcessor, ExecutionCallback callback);
 
@@ -1652,22 +1658,25 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * ExecutorService allowing unblocking the partition-thread, which means that other partition-operations
      * may proceed. The key will be locked for the time-span of the processing in order to not generate a write-conflict.
      * In this case the threading looks as follows:
-     *  1.) partition-thread (fetch & lock)
-     *  2.) execution-thread (process)
-     *  3.) partition-thread (set & unlock, or just unlock if no changes)
+     * 1.) partition-thread (fetch & lock)
+     * 2.) execution-thread (process)
+     * 3.) partition-thread (set & unlock, or just unlock if no changes)
      *
      * If the EntryProcessor implements the Offloadable and ReadOnly interfaces the processing will be offloaded to the
      * given ExecutorService allowing unblocking the partition-thread. Since the EntryProcessor is not supposed to do
      * any changes to the Entry the key will NOT be locked for the time-span of the processing. In this case the threading
      * looks as follows:
-     *  1.) partition-thread (fetch & lock)
-     *  2.) execution-thread (process)
+     * 1.) partition-thread (fetch & lock)
+     * 2.) execution-thread (process)
      * In this case the EntryProcessor.getBackupProcessor() has to return null; otherwise an IllegalArgumentException
      * exception is thrown.
      *
      * If the EntryProcessor implements only ReadOnly without implementing Offloadable the processing unit will not
      * be offloaded, however, the EntryProcessor will not wait for the lock to be acquired, since the EP will not
      * do any modifications.
+     *
+     * If the EntryProcessor implements ReadOnly and modifies the entry it is processing a UnsupportedOperationException
+     * will be thrown.
      *
      * Using offloading is useful if the EntryProcessor encompasses heavy logic that may stall the partition-thread.
      *
@@ -1676,11 +1685,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * The input allows providing context to the EntryBackupProcessor - for example the "delta"
      * so that the EntryBackupProcessor does not have to calculate the "delta" but it may just apply it.
      *
-     * @see Offloadable
-     * @see ReadOnly
      * @param key            key to be processed
      * @param entryProcessor processor to process the key
      * @return ICompletableFuture from which the result of the operation can be retrieved.
+     * @see Offloadable
+     * @see ReadOnly
      * @see ICompletableFuture
      */
     ICompletableFuture submitToKey(K key, EntryProcessor entryProcessor);

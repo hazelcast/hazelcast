@@ -201,7 +201,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         IMap<Object, Object> map = instances[1].getMap(MAP_NAME);
         map.put(key, givenValue);
 
-        expectedException.expect(HazelcastException.class);
+        expectedException.expect(UnsupportedOperationException.class);
 
         map.executeOnKey(key, new EntryIncOffloadableReadOnly());
     }
