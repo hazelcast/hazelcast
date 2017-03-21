@@ -225,7 +225,7 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
                     final Map.Entry entry = createMapEntry(dataKey, previousValue);
                     final Data result = process(entry);
                     if (!noOp(entry, previousValue)) {
-                        throw new HazelcastException("It is not allowed to modify an entry in a ReadOnly EntryProcessor");
+                        throwModificationInReadOnlyException();
                     }
                     getOperationResponseHandler().sendResponse(EntryOperation.this, result);
                 } catch (Throwable t) {
@@ -235,6 +235,13 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
                 }
             }
         });
+    }
+
+    private void throwModificationInReadOnlyException() {
+        throw new UnsupportedOperationException("Entry Processor " + entryProcessor.getClass().getName()
+                + " marked as ReadOnly tried to modify map " + name + ". This is not supported. Remove "
+                + "the ReadOnly marker from the Entry Processor or do not modify the entry in the process "
+                + "method.");
     }
 
     @SuppressWarnings("unchecked")
@@ -358,7 +365,7 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
 
         // at this stage we see that the entry has been modified which is not allowed for readOnly processors
         if (entryProcessor instanceof ReadOnly) {
-            throw new HazelcastException("ReadOnly processor is not allowed to make any changes to the processed Entry");
+            throwModificationInReadOnlyException();
         }
 
         if (entryRemoved(entry, now)) {
