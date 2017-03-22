@@ -774,12 +774,14 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
     }
 
     private void removeInvalidationListener() {
-        if (nearCache != null && nearCache.isInvalidatedOnChange()) {
-            String registrationId = nearCacheMembershipRegistrationId;
-            if (registrationId != null) {
-                clientContext.getRepairingTask(SERVICE_NAME).deregisterHandler(name);
-                clientContext.getListenerService().deregisterListener(registrationId);
-            }
+        if (!nearCache.isInvalidatedOnChange()) {
+            return;
+        }
+
+        String registrationId = nearCacheMembershipRegistrationId;
+        if (registrationId != null) {
+            clientContext.getRepairingTask(SERVICE_NAME).deregisterHandler(name);
+            clientContext.getListenerService().deregisterListener(registrationId);
         }
     }
 
