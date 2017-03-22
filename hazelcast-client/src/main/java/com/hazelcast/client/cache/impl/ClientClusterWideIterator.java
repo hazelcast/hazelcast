@@ -26,11 +26,12 @@ import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.Cache;
 import java.util.Iterator;
 import java.util.List;
+
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
  * Client side cluster-wide iterator for {@link com.hazelcast.cache.ICache}.
@@ -81,7 +82,7 @@ public class ClientClusterWideIterator<K, V> extends AbstractClusterWideIterator
                 setLastTableIndex(responseParameters.entries, responseParameters.tableIndex);
                 return responseParameters.entries;
             } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
+                throw rethrow(e);
             }
         } else {
             ClientMessage request = CacheIterateCodec
@@ -93,7 +94,7 @@ public class ClientClusterWideIterator<K, V> extends AbstractClusterWideIterator
                 setLastTableIndex(responseParameters.keys, responseParameters.tableIndex);
                 return responseParameters.keys;
             } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
+                throw rethrow(e);
             }
         }
     }

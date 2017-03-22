@@ -26,7 +26,6 @@ import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCacheManager;
-import com.hazelcast.util.ExceptionUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.net.URI;
@@ -36,6 +35,7 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -118,7 +118,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
             return cache;
         } catch (Throwable t) {
             clientCacheProxyFactory.removeCacheConfig(cacheConfig.getNameWithPrefix());
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
     }
 

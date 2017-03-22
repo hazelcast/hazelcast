@@ -45,7 +45,6 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -64,6 +63,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
+import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 
 /**
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
@@ -690,7 +690,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
                         + MAX_COMPLETION_LATCH_WAIT_TIME + " milliseconds!");
             }
         } catch (InterruptedException e) {
-            ExceptionUtil.sneakyThrow(e);
+            sneakyThrow(e);
         }
     }
 

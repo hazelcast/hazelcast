@@ -21,11 +21,12 @@ import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 
 /**
  * A specific {@link ClientDelegatingFuture} implementation which calls given {@link OneShotExecutionCallback} as sync on get.
@@ -55,7 +56,7 @@ class CallbackAwareClientDelegatingFuture<V> extends ClientDelegatingFuture<V> {
             return result;
         } catch (Throwable t) {
             callback.onFailure(t);
-            return ExceptionUtil.sneakyThrow(t);
+            return sneakyThrow(t);
         }
     }
 
@@ -78,7 +79,7 @@ class CallbackAwareClientDelegatingFuture<V> extends ClientDelegatingFuture<V> {
             return result;
         } catch (Throwable t) {
             callback.onFailure(t, finishTime);
-            return ExceptionUtil.sneakyThrow(t);
+            return sneakyThrow(t);
         }
     }
 }

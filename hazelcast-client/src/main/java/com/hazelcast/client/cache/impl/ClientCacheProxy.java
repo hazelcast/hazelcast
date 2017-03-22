@@ -41,7 +41,6 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -63,6 +62,8 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.NULL_KEY_IS_NOT_ALLOWED;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateConfiguredTypes;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
+import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -172,7 +173,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
             }
             return removed;
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 
@@ -186,7 +187,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
             }
             return removed;
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 
@@ -201,7 +202,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
             }
             return removedValue;
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 
@@ -418,7 +419,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
                 final ClientInvocation invocation = new ClientInvocation(client, request, address);
                 invocation.invoke();
             } catch (Exception e) {
-                ExceptionUtil.sneakyThrow(e);
+                sneakyThrow(e);
             }
         }
     }

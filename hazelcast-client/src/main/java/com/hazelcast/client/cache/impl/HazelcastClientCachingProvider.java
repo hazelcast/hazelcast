@@ -21,7 +21,6 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.net.URI;
@@ -32,6 +31,7 @@ import java.util.Properties;
 import static com.hazelcast.cache.HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION;
 import static com.hazelcast.cache.HazelcastCachingProvider.HAZELCAST_INSTANCE_ITSELF;
 import static com.hazelcast.cache.HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.StringUtil.isNullOrEmptyAfterTrim;
 
 /**
@@ -149,7 +149,7 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
             ClientConfig config = getConfig(configURL, classLoader, instanceName);
             return config;
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
