@@ -35,7 +35,7 @@ public final class NodeExtensionFactory {
     public static NodeExtension create(Node node) {
         try {
             ClassLoader classLoader = node.getConfigClassLoader();
-            Iterator<Class<NodeExtension>> iter = ServiceLoader.classIterator(FACTORY_ID, classLoader);
+            Iterator<Class<NodeExtension>> iter = ServiceLoader.classIterator(NodeExtension.class, FACTORY_ID, classLoader);
             while (iter.hasNext()) {
                 Class<NodeExtension> clazz = iter.next();
                 if (!(clazz.equals(DefaultNodeExtension.class))) {

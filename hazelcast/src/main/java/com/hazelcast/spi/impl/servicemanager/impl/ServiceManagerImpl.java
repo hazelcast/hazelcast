@@ -170,7 +170,8 @@ public final class ServiceManagerImpl implements ServiceManager {
         try {
             ClassLoader classLoader = node.getConfigClassLoader();
             Iterator<Class<RemoteServiceDescriptorProvider>> iter =
-                    com.hazelcast.util.ServiceLoader.classIterator(PROVIDER_ID, classLoader);
+                    com.hazelcast.util.ServiceLoader.classIterator(RemoteServiceDescriptorProvider.class, PROVIDER_ID,
+                            classLoader);
 
             while (iter.hasNext()) {
                 Class<RemoteServiceDescriptorProvider> clazz = iter.next();
