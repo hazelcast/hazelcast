@@ -22,6 +22,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.nio.Address;
+import com.hazelcast.test.AssertTask;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -31,6 +32,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public final class TestNodeRegistry {
 
@@ -42,13 +47,20 @@ public final class TestNodeRegistry {
     }
 
     public NodeContext createNodeContext(Address address) {
-        return createNodeContext(address, Collections.EMPTY_SET);
+        return createNodeContext(address, Collections.<Address>emptySet());
     }
 
-    public NodeContext createNodeContext(Address address, Set<Address> initiallyBlockedAddresses) {
-        Node node;
+    public NodeContext createNodeContext(final Address address, Set<Address> initiallyBlockedAddresses) {
+        final Node node;
         if ((node = nodes.get(address)) != null) {
-            verifyInvariant(NodeState.SHUT_DOWN == node.getState(), "This address is already in registry! " + address);
+            assertFalse(address + " is already registered", node.isRunning());
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(address + " should be SHUT_DOWN", NodeState.SHUT_DOWN, node.getState());
+                }
+            });
+
             nodes.remove(address, node);
         }
         return new MockNodeContext(this, address, initiallyBlockedAddresses);
