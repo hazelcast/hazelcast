@@ -235,12 +235,12 @@ public final class ServiceLoader {
      * Definition of the internal service based on classloader that is able to load it
      * and the classname of the found service.
      */
-    private static final class ServiceDefinition {
+    public static final class ServiceDefinition {
 
         private final String className;
         private final ClassLoader classLoader;
 
-        private ServiceDefinition(String className, ClassLoader classLoader) {
+        public ServiceDefinition(String className, ClassLoader classLoader) {
             this.className = isNotNull(className, "className");
             this.classLoader = isNotNull(classLoader, "classLoader");
         }
@@ -339,7 +339,7 @@ public final class ServiceLoader {
         }
     }
 
-    private static class ClassIterator<T> implements Iterator<Class<T>> {
+    public static class ClassIterator<T> implements Iterator<Class<T>> {
 
         private final Iterator<ServiceDefinition> iterator;
         private final Class<T> expectedType;
