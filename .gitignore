@@ -19,3 +19,4 @@ hazelcast-all/dependency-reduced-pom.xml
 hazelcast/dependency-reduced-pom.xml
 diagnostics*.log
 .attach_pid*
+hazelcast/src/main/java/com/hazelcast/instance/BuildProperties.java
