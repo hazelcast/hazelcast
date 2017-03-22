@@ -17,6 +17,7 @@
 package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.AbstractClusterWideIterator;
+import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheIterateCodec;
@@ -43,14 +44,14 @@ import java.util.List;
  */
 public class ClientClusterWideIterator<K, V> extends AbstractClusterWideIterator<K, V> implements Iterator<Cache.Entry<K, V>> {
 
-    private ClientCacheProxy<K, V> cacheProxy;
+    private ICacheInternal<K, V> cacheProxy;
     private ClientContext context;
 
-    public ClientClusterWideIterator(ClientCacheProxy<K, V> cacheProxy, ClientContext context, boolean prefetchValues) {
+    public ClientClusterWideIterator(ICacheInternal<K, V> cacheProxy, ClientContext context, boolean prefetchValues) {
         this(cacheProxy, context, DEFAULT_FETCH_SIZE, prefetchValues);
     }
 
-    public ClientClusterWideIterator(ClientCacheProxy<K, V> cacheProxy, ClientContext context,
+    public ClientClusterWideIterator(ICacheInternal<K, V> cacheProxy, ClientContext context,
                                      int fetchSize, boolean prefetchValues) {
         super(cacheProxy, context.getPartitionService().getPartitionCount(), fetchSize, prefetchValues);
         this.cacheProxy = cacheProxy;
@@ -58,7 +59,7 @@ public class ClientClusterWideIterator<K, V> extends AbstractClusterWideIterator
         advance();
     }
 
-    public ClientClusterWideIterator(ClientCacheProxy<K, V> cacheProxy, ClientContext context, int fetchSize,
+    public ClientClusterWideIterator(ICacheInternal<K, V> cacheProxy, ClientContext context, int fetchSize,
                                      int partitionId, boolean prefetchValues) {
         super(cacheProxy, context.getPartitionService().getPartitionCount(), fetchSize, prefetchValues);
         this.cacheProxy = cacheProxy;

@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.ICache;
 import com.hazelcast.nio.serialization.Data;
 
 import javax.cache.Cache;
@@ -74,12 +73,11 @@ import java.util.NoSuchElementException;
  * @see com.hazelcast.cache.impl.ClusterWideIterator
  * @see CacheKeyIterationResult
  */
-public abstract class AbstractClusterWideIterator<K, V>
-        implements Iterator<Cache.Entry<K, V>> {
+public abstract class AbstractClusterWideIterator<K, V> implements Iterator<Cache.Entry<K, V>> {
 
     protected static final int DEFAULT_FETCH_SIZE = 100;
 
-    protected ICache<K, V> cache;
+    protected ICacheInternal<K, V> cache;
 
     protected List result;
     protected final int partitionCount;
@@ -100,7 +98,7 @@ public abstract class AbstractClusterWideIterator<K, V>
     protected int index;
     protected int currentIndex = -1;
 
-    public AbstractClusterWideIterator(ICache<K, V> cache, int partitionCount, int fetchSize, boolean prefetchValues) {
+    public AbstractClusterWideIterator(ICacheInternal<K, V> cache, int partitionCount, int fetchSize, boolean prefetchValues) {
         this.cache = cache;
         this.partitionCount = partitionCount;
         this.fetchSize = fetchSize;

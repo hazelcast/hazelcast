@@ -19,7 +19,6 @@ package com.hazelcast.client.cache.impl;
 import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheEventType;
-import com.hazelcast.cache.impl.CacheProxyUtil;
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
@@ -40,7 +39,6 @@ import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
-import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
@@ -56,15 +54,17 @@ import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.cache.impl.CacheProxyUtil.NULL_KEY_IS_NOT_ALLOWED;
+import static com.hazelcast.cache.impl.CacheProxyUtil.validateConfiguredTypes;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
-import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
+import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * ICache implementation for client
@@ -83,10 +83,6 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
         super(cacheConfig);
     }
 
-    public NearCache getNearCache() {
-        return nearCache;
-    }
-
     @Override
     public V get(K key) {
         return get(key, null);
@@ -102,12 +98,11 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
         ensureOpen();
         validateNotNull(key);
 
-        final Data keyData = toData(key);
-        Object cached = getCachedValue(keyData, false);
-        if (cached != NOT_CACHED) {
-            return true;
-        }
+        Data keyData = toData(key);
+        return containsKeyInternal(keyData);
+    }
 
+    protected boolean containsKeyInternal(Data keyData) {
         ClientMessage request = CacheContainsKeyCodec.encodeRequest(nameWithPrefix, keyData);
         ClientMessage result = invoke(request, keyData);
         return CacheContainsKeyCodec.decodeResponse(result).response;
@@ -117,16 +112,20 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
     public void loadAll(Set<? extends K> keys, boolean replaceExistingValues, CompletionListener completionListener) {
         ensureOpen();
         validateNotNull(keys);
+
+        List<Data> dataKeys = new ArrayList<Data>(keys.size());
         for (K key : keys) {
-            CacheProxyUtil.validateConfiguredTypes(cacheConfig, key);
+            validateConfiguredTypes(cacheConfig, key);
+            dataKeys.add(toData(key));
         }
-        HashSet<Data> keysData = new HashSet<Data>();
-        for (K key : keys) {
-            keysData.add(toData(key));
-        }
-        ClientMessage request = CacheLoadAllCodec.encodeRequest(nameWithPrefix, keysData, replaceExistingValues);
+
+        loadAllInternal(dataKeys, replaceExistingValues, completionListener);
+    }
+
+    protected void loadAllInternal(List<Data> dataKeys, boolean replaceExistingValues, CompletionListener completionListener) {
+        ClientMessage request = CacheLoadAllCodec.encodeRequest(nameWithPrefix, dataKeys, replaceExistingValues);
         try {
-            submitLoadAllTask(request, completionListener, keysData);
+            submitLoadAllTask(request, completionListener, dataKeys);
         } catch (Exception e) {
             if (completionListener != null) {
                 completionListener.onException(e);
@@ -136,12 +135,9 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
     }
 
     @Override
-    protected void onLoadAll(Set<Data> keys, Object response, long start, long end) {
+    protected void onLoadAll(List<Data> keys, Object response, long startNanos) {
         if (statisticsEnabled) {
-            // we don't know how many of keys are actually loaded, so we assume that all of them are loaded
-            // and calculate statistics based on this assumption
-            statistics.increaseCachePuts(keys.size());
-            statistics.addPutTimeNanos(end - start);
+            statsHandler.onBatchPut(startNanos, keys.size());
         }
     }
 
@@ -167,12 +163,12 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
 
     @Override
     public boolean remove(K key) {
-        final long start = System.nanoTime();
-        final ICompletableFuture<Boolean> f = removeAsyncInternal(key, null, false, true, false);
+        final long start = nowInNanosOrDefault();
+
         try {
-            boolean removed = f.get();
+            boolean removed = (Boolean) removeAsyncInternal(key, null, false, true, false);
             if (statisticsEnabled) {
-                handleStatisticsOnRemove(false, start, removed);
+                statsHandler.onRemove(false, start, removed);
             }
             return removed;
         } catch (Throwable e) {
@@ -182,12 +178,11 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
 
     @Override
     public boolean remove(K key, V oldValue) {
-        final long start = System.nanoTime();
-        final ICompletableFuture<Boolean> f = removeAsyncInternal(key, oldValue, true, true, false);
+        final long start = nowInNanosOrDefault();
         try {
-            boolean removed = f.get();
+            boolean removed = (Boolean) removeAsyncInternal(key, oldValue, true, true, false);
             if (statisticsEnabled) {
-                handleStatisticsOnRemove(false, start, removed);
+                statsHandler.onRemove(false, start, removed);
             }
             return removed;
         } catch (Throwable e) {
@@ -197,12 +192,12 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
 
     @Override
     public V getAndRemove(K key) {
-        final long start = System.nanoTime();
-        final ICompletableFuture<V> f = getAndRemoveAsyncInternal(key, true, false);
+        final long start = nowInNanosOrDefault();
+        final ICompletableFuture<V> f = getAndRemoveSyncInternal(key, true);
         try {
             V removedValue = toObject(f.get());
             if (statisticsEnabled) {
-                handleStatisticsOnRemove(true, start, removedValue);
+                statsHandler.onRemove(true, start, removedValue);
             }
             return removedValue;
         } catch (Throwable e) {
@@ -227,9 +222,16 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
 
     @Override
     public void removeAll(Set<? extends K> keys) {
+        long startNanos = nowInNanosOrDefault();
         ensureOpen();
-        validateNotNull(keys);
-        removeAllKeysInternal(keys);
+        checkNotNull(keys, NULL_KEY_IS_NOT_ALLOWED);
+        if (keys.isEmpty()) {
+            return;
+        }
+
+        List<Data> dataKeys = new ArrayList<Data>(keys.size());
+        objectToDataCollection(keys, dataKeys, serializationService, NULL_KEY_IS_NOT_ALLOWED);
+        removeAllKeysInternal(dataKeys, startNanos);
     }
 
     @Override
@@ -260,8 +262,14 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
         if (entryProcessor == null) {
             throw new NullPointerException("Entry Processor is null");
         }
-        final Data keyData = toData(key);
+
+        Data keyData = toData(key);
         Data epData = toData(entryProcessor);
+
+        return (T) invokeInternal(keyData, epData, arguments);
+    }
+
+    protected Object invokeInternal(Data keyData, Data epData, Object... arguments) {
         List<Data> argumentsData = null;
         if (arguments != null) {
             argumentsData = new ArrayList<Data>(arguments.length);
@@ -294,7 +302,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
         if (entryProcessor == null) {
             throw new NullPointerException("Entry Processor is null");
         }
-        Map<K, EntryProcessorResult<T>> allResult = new HashMap<K, EntryProcessorResult<T>>();
+        Map<K, EntryProcessorResult<T>> allResult = createHashMap(keys.size());
         for (K key : keys) {
             CacheEntryProcessorResult<T> ceResult;
             try {
@@ -427,6 +435,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
         return new ClientClusterWideIterator<K, V>(this, clientContext, fetchSize, false);
     }
 
+    @Override
     public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {
         ensureOpen();
         return new ClientCachePartitionIterator<K, V>(this, clientContext, fetchSize, partitionId, prefetchValues);

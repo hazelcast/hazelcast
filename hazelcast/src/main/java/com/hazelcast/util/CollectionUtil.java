@@ -57,7 +57,7 @@ public final class CollectionUtil {
 
     /**
      * Adds a value to a list of values in the map.
-     *
+     * <p>
      * Creates a new list if no list is found for the key.
      *
      * @param map   the given map of lists
@@ -109,12 +109,26 @@ public final class CollectionUtil {
      */
     public static <C> Collection<Data> objectToDataCollection(Collection<C> collection,
                                                               SerializationService serializationService) {
-        List<Data> dataKeys = new ArrayList<Data>(collection.size());
-        for (C item : collection) {
-            checkNotNull(item);
-            dataKeys.add(serializationService.toData(item));
+        List<Data> dataCollection = new ArrayList<Data>(collection.size());
+        objectToDataCollection(collection, dataCollection, serializationService, null);
+        return dataCollection;
+    }
+
+    /**
+     * Converts a collection of any type to a collection of {@link Data}.
+     *
+     * @param objectCollection     object items
+     * @param dataCollection       data items
+     * @param serializationService will be used for converting object to {@link Data}
+     * @param errorMessage         the errorMessage when an item is null
+     * @throws NullPointerException if collection is {@code null} or contains a {@code null} item
+     */
+    public static <C> void objectToDataCollection(Collection<C> objectCollection, Collection<Data> dataCollection,
+                                                  SerializationService serializationService, String errorMessage) {
+        for (C item : objectCollection) {
+            checkNotNull(item, errorMessage);
+            dataCollection.add(serializationService.toData(item));
         }
-        return dataKeys;
     }
 
     /**
@@ -151,7 +165,7 @@ public final class CollectionUtil {
 
     /**
      * Converts an int array to an Integer {@link List}.
-     *
+     * <p>
      * The returned collection can be modified after it is created; it isn't protected by an immutable wrapper.
      *
      * @param array the array

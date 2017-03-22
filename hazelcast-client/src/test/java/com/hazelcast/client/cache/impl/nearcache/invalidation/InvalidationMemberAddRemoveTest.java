@@ -20,8 +20,8 @@ import com.hazelcast.cache.impl.CacheEventHandler;
 import com.hazelcast.cache.impl.CacheProxy;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
-import com.hazelcast.client.cache.impl.ClientCacheProxy;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
+import com.hazelcast.client.cache.impl.NearCachedClientCacheProxy;
 import com.hazelcast.client.cache.impl.nearcache.ClientNearCacheTestSupport;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
@@ -182,6 +182,10 @@ public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport 
                 for (int i = 0; i < KEY_COUNT; i++) {
                     Integer valueSeenFromMember = memberCache.get(i);
                     Integer valueSeenFromClient = clientCache.get(i);
+                    if(valueSeenFromMember !=null && valueSeenFromClient == null) {
+                        System.err.println("found");
+                        valueSeenFromClient = clientCache.get(i);
+                    }
 
                     String msg = createFailureMessage(i);
                     assertEquals(msg, valueSeenFromMember, valueSeenFromClient);
@@ -212,7 +216,7 @@ public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport 
             }
 
             private AbstractNearCacheRecordStore getAbstractNearCacheRecordStore() {
-                DefaultNearCache defaultNearCache = (DefaultNearCache) ((ClientCacheProxy) clientCache).getNearCache().unwrap(DefaultNearCache.class);
+                DefaultNearCache defaultNearCache = (DefaultNearCache) ((NearCachedClientCacheProxy) clientCache).getNearCache().unwrap(DefaultNearCache.class);
                 return (AbstractNearCacheRecordStore) defaultNearCache.getNearCacheRecordStore();
             }
         });

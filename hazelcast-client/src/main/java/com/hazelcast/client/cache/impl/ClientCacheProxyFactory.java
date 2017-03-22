@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.ClientProxyFactory;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.NearCacheConfig;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,6 +43,11 @@ public class ClientCacheProxyFactory implements ClientProxyFactory {
         if (cacheConfig == null) {
             throw new CacheNotExistsException("Cache " + id + " is already destroyed or not created yet");
         }
+        NearCacheConfig nearCacheConfig = client.getClientConfig().getNearCacheConfig(cacheConfig.getName());
+        if (nearCacheConfig != null) {
+            return new NearCachedClientCacheProxy(cacheConfig);
+        }
+
         return new ClientCacheProxy(cacheConfig);
     }
 
