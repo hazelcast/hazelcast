@@ -16,13 +16,12 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
-import java.util.Enumeration;
+import java.lang.reflect.Field;
 import java.util.Properties;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
@@ -59,14 +58,16 @@ public final class BuildInfoProvider {
      * @return the parsed BuildInfo
      */
     public static BuildInfo getBuildInfo() {
-        Properties properties = loadPropertiesFromResource("hazelcast-runtime.properties");
-        Properties enterpriseProperties = loadPropertiesFromResource("hazelcast-enterprise-runtime.properties");
-        Properties jetProperties = loadPropertiesFromResource("jet-runtime.properties");
-
-        BuildInfo buildInfo = readBuildInfoProperties(properties, null);
-        if (!enterpriseProperties.isEmpty()) {
-            buildInfo = readBuildInfoProperties(enterpriseProperties, buildInfo);
+        BuildInfo buildInfo = readBuildPropertiesClass(BuildProperties.class, null);
+        try {
+            Class<?> enterpriseClass = BuildInfoProvider.class.getClassLoader()
+                    .loadClass("com.hazelcast.instance.EnterpriseBuildProperties");
+            buildInfo = readBuildPropertiesClass(enterpriseClass, buildInfo);
+        } catch (ClassNotFoundException e) {
+            ignore(e);
         }
+
+        Properties jetProperties = loadPropertiesFromResource("jet-runtime.properties");
         setJetProperties(jetProperties, buildInfo);
         return buildInfo;
     }
@@ -84,69 +85,61 @@ public final class BuildInfoProvider {
     }
 
     private static Properties loadPropertiesFromResource(String resourceName) {
-        ClassLoader classLoader = BuildInfoProvider.class.getClassLoader();
-        URL lastUrl = findLastResourceURL(resourceName, classLoader);
+        InputStream properties = BuildInfoProvider.class.getClassLoader().getResourceAsStream(resourceName);
         Properties runtimeProperties = new Properties();
-        if (lastUrl == null) {
-            //apparently there is no resource matching this name
-            return runtimeProperties;
-        }
-        InputStream propertyStream = null;
         try {
-            propertyStream = lastUrl.openStream();
-            if (propertyStream != null) {
-                runtimeProperties.load(propertyStream);
+            if (properties != null) {
+                runtimeProperties.load(properties);
             }
         } catch (Exception ignored) {
             ignore(ignored);
         } finally {
-            closeResource(propertyStream);
+            closeResource(properties);
         }
         return runtimeProperties;
     }
 
-    private static URL findLastResourceURL(String resourceName, ClassLoader classLoader) {
-        // it could be a parent classloader has a different version of Hazelcast with different build info property file
-        // so it's important to return the last URL - as that's the one closest to our Hazelcast deployment
-        URL lastUrl = null;
-        try {
-            Enumeration<URL> resources = classLoader.getResources(resourceName);
-            while (resources.hasMoreElements()) {
-                lastUrl = resources.nextElement();
-            }
-        } catch (IOException e) {
-            ignore(e);
-        }
-        return lastUrl;
-    }
+    private static BuildInfo readBuildPropertiesClass(Class<?> clazz, BuildInfo upstreamBuildInfo) {
+        String version = readStaticStringField(clazz, "VERSION");
+        String build = readStaticStringField(clazz, "BUILD");
+        String revision = readStaticStringField(clazz, "REVISION");
+        String distribution = readStaticStringField(clazz, "DISTRIBUTION");
 
-    private static BuildInfo readBuildInfoProperties(Properties runtimeProperties, BuildInfo upstreamBuildInfo) {
-        String version = runtimeProperties.getProperty("hazelcast.version");
-        String distribution = runtimeProperties.getProperty("hazelcast.distribution");
-        String revision = runtimeProperties.getProperty("hazelcast.git.revision", "");
         if (!revision.isEmpty() && revision.equals("${git.commit.id.abbrev}")) {
             revision = "";
         }
+        int buildNumber = Integer.parseInt(build);
         boolean enterprise = !"Hazelcast".equals(distribution);
 
-        // override BUILD_NUMBER with a system property
-        String build;
+        byte serialVersion = Byte.parseByte(BuildProperties.SERIALIZATION_VERSION);
+        return overrideBuildInfo(version, build, revision, buildNumber, enterprise, serialVersion, upstreamBuildInfo);
+    }
+
+    private static BuildInfo overrideBuildInfo(String version, String build, String revision, int buildNumber,
+                                               boolean enterprise, byte serialVersion, BuildInfo upstreamBuildInfo) {
         Integer hazelcastBuild = Integer.getInteger("hazelcast.build", -1);
-        if (hazelcastBuild == -1) {
-            build = runtimeProperties.getProperty("hazelcast.build");
-        } else {
+        if (hazelcastBuild != -1) {
             build = String.valueOf(hazelcastBuild);
+            buildNumber = hazelcastBuild;
         }
-        int buildNumber = Integer.parseInt(build);
-        // override version with a system property
         String overridingVersion = System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
         if (overridingVersion != null) {
             LOGGER.info("Overriding hazelcast version with system property value " + overridingVersion);
             version = overridingVersion;
         }
-
-        String sv = runtimeProperties.getProperty("hazelcast.serialization.version");
-        byte serialVersion = Byte.parseByte(sv);
         return new BuildInfo(version, build, revision, buildNumber, enterprise, serialVersion, upstreamBuildInfo);
     }
+
+    //todo: move elsewhere
+    private static String readStaticStringField(Class<?> clazz, String fieldName) {
+        try {
+            Field field = clazz.getField(fieldName);
+            return (String) field.get(null);
+        } catch (NoSuchFieldException e) {
+            throw new HazelcastException(e);
+        } catch (IllegalAccessException e) {
+            throw new HazelcastException(e);
+        }
+    }
+
 }
