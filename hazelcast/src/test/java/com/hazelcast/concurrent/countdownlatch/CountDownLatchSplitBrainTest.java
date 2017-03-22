@@ -16,16 +16,12 @@
 
 package com.hazelcast.concurrent.countdownlatch;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICountDownLatch;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -33,58 +29,49 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class CountDownLatchSplitBrainTest extends HazelcastTestSupport {
+public class CountDownLatchSplitBrainTest extends SplitBrainTestSupport {
 
-    @Test
-    public void testCountDownLatchSplitBrain() throws InterruptedException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        Config config = newConfig();
+    private String name;
+    private int count = 5;
 
-        HazelcastInstance h1 = factory.newHazelcastInstance(config);
-        HazelcastInstance h2 = factory.newHazelcastInstance(config);
-        HazelcastInstance h3 = factory.newHazelcastInstance(config);
-        warmUpPartitions(h1, h2, h3);
-
-        String name = generateKeyOwnedBy(h3);
-        ICountDownLatch countDownLatch1 = h1.getCountDownLatch(name);
-        ICountDownLatch countDownLatch3 = h3.getCountDownLatch(name);
-        countDownLatch3.trySetCount(5);
-
-        waitAllForSafeState(h1, h2, h3);
-
-        // create split: [h1, h2] & [h3]
-        closeConnectionBetween(h1, h3);
-        closeConnectionBetween(h2, h3);
-
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
-        assertClusterSizeEventually(1, h3);
-
-        // modify both latches after split with different counts
-
-        // count of h1 & h2 = 4
-        countDownLatch1.countDown();
-
-        // count of h3 = 0
-        while (countDownLatch3.getCount() > 0) {
-            countDownLatch3.countDown();
-        }
-
-        // merge back
-        getNode(h3).getClusterService().merge(getAddress(h1));
-
-        assertClusterSizeEventually(3, h1);
-        assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
-
-        // latch count should be equal to the count of larger cluster
-        assertEquals(4, countDownLatch3.getCount());
+    @Override
+    protected int[] brains() {
+        // 2nd merges to the 1st
+        return new int[] {2, 1};
     }
 
-    private Config newConfig() {
-        Config config = new Config();
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "600");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "600");
-        return config;
+    @Override
+    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) throws Exception {
+        warmUpPartitions(instances);
+        name = generateKeyOwnedBy(instances[instances.length - 1]);
+
+        ICountDownLatch latch = instances[0].getCountDownLatch(name);
+        latch.trySetCount(count);
+
+        waitAllForSafeState(instances);
+    }
+
+    @Override
+    protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain)
+            throws Exception {
+
+        ICountDownLatch latch1 = firstBrain[0].getCountDownLatch(name);
+        // count = 4
+        latch1.countDown();
+        count = latch1.getCount();
+
+        ICountDownLatch latch2 = secondBrain[0].getCountDownLatch(name);
+        // count = 0
+        while (latch2.getCount() > 0) {
+            latch2.countDown();
+        }
+    }
+
+    @Override
+    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) throws Exception {
+        for (HazelcastInstance instance : instances) {
+            ICountDownLatch latch = instance.getCountDownLatch(name);
+            assertEquals(count, latch.getCount());
+        }
     }
 }
