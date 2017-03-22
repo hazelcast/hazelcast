@@ -18,6 +18,7 @@ package com.hazelcast.jet.stream.impl;
 
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.util.UuidUtil;
 
@@ -57,7 +58,8 @@ public final class StreamUtil {
     }
 
     public static void executeJob(StreamContext context, DAG dag) {
-        Job job = context.getJetInstance().newJob(dag);
+        JobConfig jobConfig = context.getJobConfig() != null ? context.getJobConfig() : new JobConfig();
+        Job job = context.getJetInstance().newJob(dag, jobConfig);
         try {
             job.execute().get();
         } catch (InterruptedException | ExecutionException e) {

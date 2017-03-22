@@ -18,6 +18,7 @@ package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.stream.DistributedCollectors;
 import com.hazelcast.jet.stream.DistributedDoubleStream;
 import com.hazelcast.jet.stream.DistributedIntStream;
@@ -295,6 +296,11 @@ class LongPipeline implements DistributedLongStream {
     @Override
     public boolean isParallel() {
         return inner.isParallel();
+    }
+
+    @Override
+    public DistributedLongStream configure(JobConfig jobConfig) {
+        return wrap(inner.configure(jobConfig));
     }
 
     private DistributedLongStream wrap(Stream<Long> pipeline) {

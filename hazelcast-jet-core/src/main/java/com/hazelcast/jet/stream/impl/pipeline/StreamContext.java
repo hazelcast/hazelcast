@@ -17,6 +17,7 @@
 package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.config.JobConfig;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,12 +28,22 @@ public class StreamContext {
     private final JetInstance instance;
     private final List<Runnable> streamListeners = new ArrayList<>();
 
+    private JobConfig jobConfig;
+
     public StreamContext(JetInstance instance) {
         this.instance = instance;
     }
 
     public JetInstance getJetInstance() {
         return instance;
+    }
+
+    public JobConfig getJobConfig() {
+        return jobConfig;
+    }
+
+    public void setJobConfig(JobConfig jobConfig) {
+        this.jobConfig = jobConfig;
     }
 
     public List<Runnable> getStreamListeners() {

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.config.JobConfig;
 
 import java.util.OptionalDouble;
 import java.util.function.BiConsumer;
@@ -505,4 +506,10 @@ public interface DistributedDoubleStream extends DoubleStream {
 
     @Override
     boolean noneMatch(DoublePredicate predicate);
+
+    /**
+     * @param jobConfig Job configuration which will be used while executing underlying DAG
+     * @return the new stream
+     */
+    DistributedDoubleStream configure(JobConfig jobConfig);
 }

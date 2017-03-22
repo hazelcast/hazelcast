@@ -19,15 +19,23 @@ package deployment;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.util.FilteringClassLoader;
 import org.junit.Test;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
 import static com.hazelcast.jet.TestUtil.executeAndPeel;
+import static com.hazelcast.jet.stream.DistributedCollectors.toList;
+import static java.util.stream.IntStream.range;
+import static org.junit.Assert.assertEquals;
 
 public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
@@ -50,6 +58,23 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
         jobConfig.addClass(AbstractDeploymentTest.class);
 
         executeAndPeel(jetInstance.newJob(dag, jobConfig));
+    }
+
+    @Test
+    public void testStream() throws Throwable {
+        createCluster();
+
+        IStreamMap<Integer, Integer> map = getJetInstance().getMap(randomString());
+        range(0, 10).parallel().forEach(i -> map.put(i, i));
+
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.addClass(MyMapper.class);
+        List<Integer> list = map
+                .stream()
+                .configure(jobConfig)
+                .map(new MyMapper())
+                .collect(toList());
+        assertEquals(10, list.size());
     }
 
     @Test
@@ -83,5 +108,13 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
         Class<?> jetClazz = cl.loadClass("com.hazelcast.jet.Jet");
         Method newJetInstance = jetClazz.getDeclaredMethod("newJetInstance", jetConfigClazz);
         return newJetInstance.invoke(jetClazz, config);
+    }
+
+    static class MyMapper implements Function<Map.Entry<Integer, Integer>, Integer>, Serializable {
+
+        @Override
+        public Integer apply(Map.Entry<Integer, Integer> entry) {
+            return entry.getKey();
+        }
     }
 }

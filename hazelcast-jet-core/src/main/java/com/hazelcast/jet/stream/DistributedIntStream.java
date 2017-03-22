@@ -17,6 +17,7 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.config.JobConfig;
 
 import java.util.OptionalInt;
 import java.util.function.BiConsumer;
@@ -491,4 +492,10 @@ public interface DistributedIntStream extends IntStream {
 
     @Override
     boolean noneMatch(IntPredicate predicate);
+
+    /**
+     * @param jobConfig Job configuration which will be used while executing underlying DAG
+     * @return the new stream
+     */
+    DistributedIntStream configure(JobConfig jobConfig);
 }

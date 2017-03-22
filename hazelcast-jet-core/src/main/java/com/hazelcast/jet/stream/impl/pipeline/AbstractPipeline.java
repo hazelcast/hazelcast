@@ -17,6 +17,7 @@
 package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.core.IList;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.stream.DistributedCollector;
 import com.hazelcast.jet.stream.DistributedCollector.Reducer;
 import com.hazelcast.jet.stream.DistributedDoubleStream;
@@ -340,4 +341,9 @@ abstract class AbstractPipeline<E_OUT> implements Pipeline<E_OUT> {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public DistributedStream<E_OUT> configure(JobConfig jobConfig) {
+        context.setJobConfig(jobConfig);
+        return this;
+    }
 }

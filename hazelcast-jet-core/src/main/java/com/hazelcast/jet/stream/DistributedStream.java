@@ -17,6 +17,7 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.stream.DistributedCollector.Reducer;
 import com.hazelcast.jet.stream.impl.reducers.CollectorReducer;
 
@@ -596,4 +597,9 @@ public interface DistributedStream<T> extends Stream<T> {
     @Override
     boolean noneMatch(Predicate<? super T> predicate);
 
+    /**
+     * @param jobConfig Job configuration which will be used while executing underlying DAG
+     * @return the new stream
+     */
+    DistributedStream<T> configure(JobConfig jobConfig);
 }
