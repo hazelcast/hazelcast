@@ -26,6 +26,8 @@ import static com.hazelcast.query.impl.getters.AbstractMultiValueGetter.validate
 
 public final class GetterFactory {
 
+    private static final String ANY_POSTFIX = "[any]";
+
     private GetterFactory() {
     }
 
@@ -47,6 +49,9 @@ public final class GetterFactory {
                 returnType = getCollectionType(collection);
             }
             if (returnType == null) {
+                if (modifierSuffix.equals(ANY_POSTFIX)) {
+                    return NullMultiValueGetter.NULL_MULTIVALUE_GETTER;
+                }
                 return NullGetter.NULL_GETTER;
             }
         } else if (isExtractingFromArray(fieldType, modifierSuffix)) {
@@ -92,6 +97,9 @@ public final class GetterFactory {
                 returnType = getCollectionType(collection);
             }
             if (returnType == null) {
+                if (modifierSuffix.equals(ANY_POSTFIX)) {
+                    return NullMultiValueGetter.NULL_MULTIVALUE_GETTER;
+                }
                 return NullGetter.NULL_GETTER;
             }
         } else if (isExtractingFromArray(methodReturnType, modifierSuffix)) {

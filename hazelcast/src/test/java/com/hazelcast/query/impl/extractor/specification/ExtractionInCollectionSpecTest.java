@@ -45,6 +45,9 @@ import static com.hazelcast.query.impl.extractor.specification.ComplexTestDataSt
 import static com.hazelcast.query.impl.extractor.specification.ComplexTestDataStructure.person;
 import static com.hazelcast.query.impl.extractor.specification.ComplexTestDataStructure.tattoos;
 import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.not;
+import static org.junit.Assume.assumeThat;
 
 /**
  * Specification test that verifies the behavior of corner-cases extraction in arrays and collections.
@@ -74,7 +77,23 @@ public class ExtractionInCollectionSpecTest extends AbstractExtractionTest {
             limb("left", null, new Finger[]{})
     );
 
+    private static final Person HUNT_NULL_TATTOO_IN_ARRAY = person("Hunt",
+            limb("left", tattoos(null, "cross"), new Finger[]{})
+    );
+
     private static final Person HUNT_NULL_LIMB = person("Hunt");
+
+    private static final Person HUNT_NULL_FIRST = person("Hunt",
+            null, limb("left", tattoos(null, "cross"), null, finger("thumbie"))
+    );
+
+    private static final Person HUNT_PRIMITIVE_NULL_FIRST = person("Hunt",
+            limb("left", tattoos(null, "cross"), finger("thumbie"))
+    );
+
+    private static final Person HUNT_NO_NULL_FIRST = person("Hunt",
+            limb("left", tattoos("cross"), finger("thumbie"))
+    );
 
     public ExtractionInCollectionSpecTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {
         super(inMemoryFormat, index, multivalue);
@@ -330,6 +349,87 @@ public class ExtractionInCollectionSpecTest extends AbstractExtractionTest {
         execute(Input.of(carlos),
                 Query.of(equal("limbs_[any].name", 'l'), mv),
                 Expected.of(carlos));
+    }
+
+    @Test
+    public void comparable_nullVsNoNullFirst_case1() {
+        ignoreForPortable("Portables can't handle nulls in collection");
+        execute(Input.of(HUNT_NO_NULL_FIRST, HUNT_NULL_FIRST),
+                Query.of(equal("limbs_[any].tattoos_[any]", "cross"), mv),
+                Expected.of(HUNT_NO_NULL_FIRST, HUNT_NULL_FIRST));
+    }
+
+    @Test
+    public void comparable_nullVsNoNullFirst_case2() {
+        ignoreForPortable("Portables can't handle nulls in collection");
+        execute(Input.of(HUNT_NO_NULL_FIRST, HUNT_NULL_FIRST),
+                Query.of(equal("limbs_[any].tattoos_[any]", null), mv),
+                Expected.of(HUNT_NULL_FIRST));
+    }
+
+    @Test
+    public void comparable_nullVsNoNullFirst_case3() {
+        ignoreForPortable("Portables can't handle nulls in collection");
+        execute(Input.of(HUNT_NO_NULL_FIRST, HUNT_NULL_FIRST),
+                Query.of(equal("limbs_[any].fingers_[any]", null), mv),
+                Expected.of(HUNT_NULL_FIRST));
+    }
+
+    @Test
+    public void comparable_nullVsNoNullFirst_case4() {
+        ignoreForPortable("Portables can't handle nulls in collection");
+        execute(Input.of(HUNT_NO_NULL_FIRST, HUNT_NULL_FIRST),
+                Query.of(equal("limbs_[any].fingers_[any]", finger("thumbie")), mv),
+                Expected.of(HUNT_NO_NULL_FIRST, HUNT_NULL_FIRST));
+    }
+
+    @Test
+    public void comparable_nullVsNoNullFirst_case5() {
+        ignoreForPortable("Portables can't handle nulls in collection");
+        execute(Input.of(HUNT_NO_NULL_FIRST, HUNT_NULL_FIRST),
+                Query.of(equal("limbs_[any].fingers_[any].name", "thumbie"), mv),
+                Expected.of(HUNT_NO_NULL_FIRST, HUNT_NULL_FIRST));
+    }
+
+    @Test
+    public void comparable_nullVsNoNullFirst_case6() {
+        ignoreForPortable("Portables can't handle nulls in collection");
+        execute(Input.of(HUNT_NO_NULL_FIRST, HUNT_NULL_FIRST),
+                Query.of(equal("limbs_[any].fingers_[any]", null), mv),
+                Expected.of(HUNT_NULL_FIRST));
+    }
+
+    @Test
+    public void comparable_nullVsNoNullFirst_case7() {
+        ignoreForPortable("Portables can't handle nulls in collection");
+        execute(Input.of(HUNT_NO_NULL_FIRST, HUNT_NULL_FIRST),
+                Query.of(equal("limbs_[any].fingers_[any]", finger("thumbie")), mv),
+                Expected.of(HUNT_NO_NULL_FIRST, HUNT_NULL_FIRST));
+    }
+
+    @Test
+    public void comparable_nullVsNoNullFirst_case8() {
+        execute(Input.of(HUNT_NO_NULL_FIRST, HUNT_PRIMITIVE_NULL_FIRST),
+                Query.of(equal("limbs_[any].fingers_[any]", finger("thumbie")), mv),
+                Expected.of(HUNT_NO_NULL_FIRST, HUNT_PRIMITIVE_NULL_FIRST));
+    }
+
+    @Test
+    public void comparable_primitive_notReduced_null_inside() {
+        execute(Input.of(HUNT_NULL_TATTOO_IN_ARRAY),
+                Query.of(equal("limbs_[0].tattoos_[1]", "cross"), mv),
+                Expected.of(HUNT_NULL_TATTOO_IN_ARRAY));
+    }
+
+    @Test
+    public void comparable_primitive_reduced_null_inside() {
+        execute(Input.of(HUNT_NULL_TATTOO_IN_ARRAY, HUNT_NO_NULL_FIRST),
+                Query.of(equal("limbs_[any].tattoos_[any]", "cross"), mv),
+                Expected.of(HUNT_NULL_TATTOO_IN_ARRAY, HUNT_NO_NULL_FIRST));
+    }
+
+    private void ignoreForPortable(String reason) {
+        assumeThat(mv, not(equalTo(PORTABLE)));
     }
 
     @Parameterized.Parameters(name = "{index}: {0}, {1}, {2}")

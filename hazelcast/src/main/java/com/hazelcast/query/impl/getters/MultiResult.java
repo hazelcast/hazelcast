@@ -17,7 +17,9 @@
 package com.hazelcast.query.impl.getters;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Represents multiple results from a single attribute extraction.
@@ -70,6 +72,18 @@ public class MultiResult<T> {
 
     private List<T> results;
 
+    /**
+     * Indicates that the result of a multi-result evaluation using [any] operator
+     * didn't reach any data since the field where the [any] operator is used was null or empty.
+     *
+     * Allows differentiating whether a null in the MultiResult is a null value because the value of the field was null
+     * or whether the null means that the targetObject was null.
+     *
+     * For query evaluation the difference is not important - and we need to return null in both cases there.
+     * For aggregations it makes a difference and we need this context knowledge there.
+     */
+    private Set<Integer> nullOrEmptyTargets;
+
     public MultiResult() {
         this.results = new ArrayList<T>();
     }
@@ -85,6 +99,15 @@ public class MultiResult<T> {
         results.add(result);
     }
 
+
+    public void addNullEmptyTarget() {
+        if (nullOrEmptyTargets == null) {
+            nullOrEmptyTargets = new HashSet<Integer>();
+        }
+        nullOrEmptyTargets.add(results.size());
+        results.add(null);
+    }
+
     /**
      * @return a mutable underlying list of collected results
      */
@@ -97,6 +120,10 @@ public class MultiResult<T> {
      */
     public boolean isEmpty() {
         return results.isEmpty();
+    }
+
+    public boolean isTargetNullOrEmpty(int index) {
+        return nullOrEmptyTargets != null && nullOrEmptyTargets.contains(index);
     }
 
 }

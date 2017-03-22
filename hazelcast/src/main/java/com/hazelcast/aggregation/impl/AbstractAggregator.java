@@ -58,9 +58,12 @@ public abstract class AbstractAggregator<I, E, R> extends Aggregator<I, R> {
         E extractedValue = extract(entry);
         if (extractedValue instanceof MultiResult) {
             @SuppressWarnings("unchecked")
-            List<E> results = ((MultiResult<E>) extractedValue).getResults();
-            for (E o : results) {
-                accumulateExtracted(o);
+            MultiResult<E> multiResult = (MultiResult<E>) extractedValue;
+            List<E> results = multiResult.getResults();
+            for (int i = 0; i < results.size(); i++) {
+                if (!multiResult.isTargetNullOrEmpty(i)) {
+                    accumulateExtracted(results.get(i));
+                }
             }
         } else {
             accumulateExtracted(extractedValue);

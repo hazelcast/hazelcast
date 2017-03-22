@@ -166,10 +166,20 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         // assert the condition
         Object result = Invoker.invoke(reader(inputObject), readMethodNameToInvoke, pathToRead);
         if (result instanceof MultiResult) {
-            // in case of multi result while invoking generic "read" method deal with the multi results
-            result = ((MultiResult) result).getResults().toArray();
+            MultiResult multiResult = (MultiResult) result;
+            if(multiResult.getResults().size() == 1
+                    && multiResult.getResults().get(0) == null && multiResult.isTargetNullOrEmpty(0)) {
+                // explode null in case of a single multi-result target result
+                result = null;
+            } else {
+                // in case of multi result while invoking generic "read" method deal with the multi results
+                result = ((MultiResult) result).getResults().toArray();
+            }
+            assertThat(result, equalTo(resultToMatch));
+        } else {
+            assertThat(result, equalTo(resultToMatch));
         }
-        assertThat(result, equalTo(resultToMatch));
+
     }
 
     private void printlnScenarioDescription(Object resultToMatch) {
@@ -1230,14 +1240,6 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
 
     private static Object[] scenario(Portable input, Object result, Method method, String path, String parent) {
         return new Object[]{input, result, method, path, parent};
-    }
-
-    private static Collection<Object[]> test(Object[]... scenarios) {
-        List<Object[]> result = new ArrayList<Object[]>();
-        for (Object[] scenario : scenarios) {
-            result.add(scenario);
-        }
-        return result;
     }
 
     /**
