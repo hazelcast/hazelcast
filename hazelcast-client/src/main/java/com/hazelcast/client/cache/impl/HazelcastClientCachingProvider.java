@@ -146,8 +146,7 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
             throw new URISyntaxException(uri.toString(), "Unsupported protocol in configuration location URL");
         }
         try {
-            ClientConfig config = getConfig(configURL, classLoader, instanceName);
-            return config;
+            return getConfig(configURL, classLoader, instanceName);
         } catch (Exception e) {
             throw rethrow(e);
         }

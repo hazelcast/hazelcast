@@ -104,10 +104,10 @@ final class CacheStatsHandler {
         }
     }
 
-    OneShotExecutionCallback newOnPutCallback(final boolean isGet, final long startNanos) {
-        return new OneShotExecutionCallback() {
+    <T> OneShotExecutionCallback<T> newOnPutCallback(final boolean isGet, final long startNanos) {
+        return new OneShotExecutionCallback<T>() {
             @Override
-            protected void onResponseInternal(Object responseData) {
+            protected void onResponseInternal(T responseData) {
                 onPut(isGet, startNanos, responseData != null);
             }
 
@@ -135,9 +135,9 @@ final class CacheStatsHandler {
         }
     }
 
-    ExecutionCallback newOnRemoveCallback(final boolean isGet, final long startNanos) {
-        return new ExecutionCallback() {
-            public void onResponse(Object response) {
+    <T> ExecutionCallback<T> newOnRemoveCallback(final boolean isGet, final long startNanos) {
+        return new ExecutionCallback<T>() {
+            public void onResponse(T response) {
                 onRemove(isGet, startNanos, response);
             }
 
@@ -158,7 +158,7 @@ final class CacheStatsHandler {
     <T> ExecutionCallback<T> newOnGetCallback(final long startNanos) {
         return new ExecutionCallback<T>() {
             @Override
-            public void onResponse(Object response) {
+            public void onResponse(T response) {
                 onGet(startNanos, response != null);
             }
 
