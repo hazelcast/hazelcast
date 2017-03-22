@@ -33,6 +33,7 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
@@ -64,14 +65,16 @@ public final class ServiceLoader {
         return null;
     }
 
-    public static <T> Iterator<T> iterator(Class<T> clazz, String factoryId, ClassLoader classLoader) throws Exception {
+    public static <T> Iterator<T> iterator(Class<T> expectedType, String factoryId, ClassLoader classLoader) throws Exception {
         Set<ServiceDefinition> serviceDefinitions = getServiceDefinitions(factoryId, classLoader);
-        return new NewInstanceIterator<T>(serviceDefinitions, clazz);
+        ClassIterator<T> classIterator = new ClassIterator<T>(serviceDefinitions, expectedType);
+        return new NewInstanceIterator<T>(classIterator);
     }
 
-    public static <T> Iterator<Class<T>> classIterator(String factoryId, ClassLoader classLoader) throws Exception {
+    public static <T> Iterator<Class<T>> classIterator(Class<T> expectedType, String factoryId, ClassLoader classLoader)
+            throws Exception {
         Set<ServiceDefinition> serviceDefinitions = getServiceDefinitions(factoryId, classLoader);
-        return new LoadClassIterator<T>(serviceDefinitions);
+        return new ClassIterator<T>(serviceDefinitions, expectedType);
     }
 
     private static Set<ServiceDefinition> getServiceDefinitions(String factoryId, ClassLoader classLoader) {
@@ -307,27 +310,25 @@ public final class ServiceLoader {
 
     private static class NewInstanceIterator<T> implements Iterator<T> {
 
-        private final Iterator<ServiceDefinition> iterator;
-        private final Class<T> clazz;
+        private final Iterator<Class<T>> classIterator;
 
-        NewInstanceIterator(Set<ServiceDefinition> serviceDefinitions, Class<T> clazz) {
-            this.iterator = serviceDefinitions.iterator();
-            this.clazz = clazz;
+        NewInstanceIterator(Iterator<Class<T>> classIterator) {
+            this.classIterator = classIterator;
         }
 
         @Override
         public boolean hasNext() {
-            return iterator.hasNext();
+            return classIterator.hasNext();
         }
 
         @Override
         public T next() {
-            ServiceDefinition definition = iterator.next();
+            Class<T> clazz = classIterator.next();
             try {
-                String className = definition.className;
-                ClassLoader classLoader = definition.classLoader;
-                return clazz.cast(ClassLoaderUtil.newInstance(classLoader, className));
-            } catch (Exception e) {
+                return clazz.newInstance();
+            } catch (InstantiationException e) {
+                throw new HazelcastException(e);
+            } catch (IllegalAccessException e) {
                 throw new HazelcastException(e);
             }
         }
@@ -338,30 +339,75 @@ public final class ServiceLoader {
         }
     }
 
-    private static class LoadClassIterator<T> implements Iterator<Class<T>> {
+    private static class ClassIterator<T> implements Iterator<Class<T>> {
 
         private final Iterator<ServiceDefinition> iterator;
+        private final Class<T> expectedType;
+        private Class<T> nextClass;
 
-        LoadClassIterator(Set<ServiceDefinition> serviceDefinitions) {
+        ClassIterator(Set<ServiceDefinition> serviceDefinitions, Class<T> expectedType) {
             iterator = serviceDefinitions.iterator();
+            this.expectedType = expectedType;
         }
 
         @Override
         public boolean hasNext() {
-            return iterator.hasNext();
+            if (nextClass != null) {
+                return true;
+            }
+            return advance();
+        }
+
+        private boolean advance() {
+            for (;;) {
+                if (!iterator.hasNext()) {
+                    return false;
+                }
+                ServiceDefinition definition = iterator.next();
+                String className = definition.className;
+                ClassLoader classLoader = definition.classLoader;
+
+                Class candidate;
+                try {
+                    candidate = ClassLoaderUtil.loadClass(classLoader, className);
+                } catch (ClassNotFoundException e) {
+                    throw new HazelcastException(e);
+                }
+
+                if (expectedType.isAssignableFrom(candidate)) {
+                    nextClass = candidate;
+                    return true;
+                } else {
+                    if (expectedType.isInterface()) {
+                        if (ClassLoaderUtil.implementsIntefaceWithSameName(candidate, expectedType)) {
+                            // this can happen in application containers - different Hazelcast JARs are loaded
+                            // by different classloaders.
+                            LOGGER.fine("There appears to be a classloading conflict. "
+                                    + "Class " + className + " loaded by " + candidate.getClassLoader() + " does not "
+                                    + "implement " + expectedType.getClass().getName() + " loaded by "
+                                    + expectedType.getClass().getClassLoader());
+                        } else {
+                            // ok, the class does not implement interface with the expected name. it's probably
+                            // an error in hook implementation -> let's fail fast
+                            throw new ClassCastException("Class " + className + " does not implement " + expectedType.getName());
+                        }
+                    }
+                }
+            }
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public Class<T> next() {
-            ServiceDefinition definition = iterator.next();
-            try {
-                String className = definition.className;
-                ClassLoader classLoader = definition.classLoader;
-                return (Class<T>) ClassLoaderUtil.loadClass(classLoader, className);
-            } catch (Exception e) {
-                throw new HazelcastException(e);
+            if (nextClass == null) {
+                advance();
             }
+            if (nextClass == null) {
+                throw new NoSuchElementException();
+            }
+            Class<T> classToReturn = nextClass;
+            nextClass = null;
+            return classToReturn;
         }
 
         @Override

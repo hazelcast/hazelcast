@@ -192,6 +192,27 @@ public final class ClassLoaderUtil {
         }
     }
 
+    /**
+     * Check whether given class implements an interface with the same name.
+     * It returns true even when the implemented interface is loaded by a different
+     * classloader and hence the class is not assignable into it.
+     *
+     * This is useful for logging purposes.
+     *
+     * @param clazz
+     * @param iface
+     * @return
+     */
+    public static boolean implementsIntefaceWithSameName(Class<?> clazz, Class<?> iface) {
+        Class<?>[] interfaces = clazz.getInterfaces();
+        for (Class implementedInterface : interfaces) {
+            if (implementedInterface.getName().equals(iface.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static final class ClassLoaderWeakCache<V> {
 
         private final ConcurrentMap<ClassLoader, ConcurrentMap<String, WeakReference<V>>> cache;

@@ -212,7 +212,7 @@ public final class ProxyManager {
         try {
             ClassLoader classLoader = client.getClientConfig().getClassLoader();
             Iterator<Class<ClientProxyDescriptorProvider>> iter =
-                    com.hazelcast.util.ServiceLoader.classIterator(PROVIDER_ID, classLoader);
+                    com.hazelcast.util.ServiceLoader.classIterator(ClientProxyDescriptorProvider.class, PROVIDER_ID, classLoader);
 
             while (iter.hasNext()) {
                 Class<ClientProxyDescriptorProvider> clazz = iter.next();

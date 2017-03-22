@@ -19,7 +19,10 @@ package com.hazelcast.instance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.util.Enumeration;
 import java.util.Properties;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
@@ -81,18 +84,40 @@ public final class BuildInfoProvider {
     }
 
     private static Properties loadPropertiesFromResource(String resourceName) {
-        InputStream properties = BuildInfoProvider.class.getClassLoader().getResourceAsStream(resourceName);
+        ClassLoader classLoader = BuildInfoProvider.class.getClassLoader();
+        URL lastUrl = findLastResourceURL(resourceName, classLoader);
         Properties runtimeProperties = new Properties();
+        if (lastUrl == null) {
+            //apparently there is no resource matching this name
+            return runtimeProperties;
+        }
+        InputStream propertyStream = null;
         try {
-            if (properties != null) {
-                runtimeProperties.load(properties);
+            propertyStream = lastUrl.openStream();
+            if (propertyStream != null) {
+                runtimeProperties.load(propertyStream);
             }
         } catch (Exception ignored) {
             ignore(ignored);
         } finally {
-            closeResource(properties);
+            closeResource(propertyStream);
         }
         return runtimeProperties;
+    }
+
+    private static URL findLastResourceURL(String resourceName, ClassLoader classLoader) {
+        // it could be a parent classloader has a different version of Hazelcast with different build info property file
+        // so it's important to return the last URL - as that's the one closest to our Hazelcast deployment
+        URL lastUrl = null;
+        try {
+            Enumeration<URL> resources = classLoader.getResources(resourceName);
+            while (resources.hasMoreElements()) {
+                lastUrl = resources.nextElement();
+            }
+        } catch (IOException e) {
+            ignore(e);
+        }
+        return lastUrl;
     }
 
     private static BuildInfo readBuildInfoProperties(Properties runtimeProperties, BuildInfo upstreamBuildInfo) {
