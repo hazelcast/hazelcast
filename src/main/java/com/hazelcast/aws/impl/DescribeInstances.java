@@ -182,7 +182,8 @@ public class DescribeInstances {
         }
     }
 
-    /** This helper method is responsible for just parsing the content of the HTTP response and
+    /**
+     * This helper method is responsible for just parsing the content of the HTTP response and
      * storing the access keys and token it finds there.
      *
      * @param json The JSON representation of the IAM (Task) Role.
@@ -195,11 +196,11 @@ public class DescribeInstances {
     }
 
     /**
-     * @deprecated Since we moved JSON parsing from manual pattern matching to using
-     * `com.hazelcast.com.eclipsesource.json.JsonObject`, this method should be deprecated.
      * @param reader The reader that gives access to the JSON-formatted content that includes all the role information.
      * @return A map with all the parsed keys and values from the JSON content.
      * @throws IOException In case the input from reader cannot be correctly parsed.
+     * @deprecated Since we moved JSON parsing from manual pattern matching to using
+     * `com.hazelcast.com.eclipsesource.json.JsonObject`, this method should be deprecated.
      */
     @Deprecated
     public Map<String, String> parseIamRole(BufferedReader reader) throws IOException {
@@ -227,6 +228,14 @@ public class DescribeInstances {
         return df.format(new Date());
     }
 
+    /**
+     * Invoke the service to describe the instances, unmarshal the response and return the discovered node map.
+     * The map contains mappings from private to public IP and all contained nodes match the filtering rules defined by
+     * the {@link #awsConfig}.
+     *
+     * @return map from private to public IP or empty map in case of failed response unmarshalling
+     * @throws Exception if there is an exception invoking the service
+     */
     public Map<String, String> execute() throws Exception {
         String signature = rs.sign("ec2", attributes);
         Map<String, String> response;
