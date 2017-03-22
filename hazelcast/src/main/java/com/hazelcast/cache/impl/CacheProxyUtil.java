@@ -36,7 +36,7 @@ public final class CacheProxyUtil {
 
     public static final int AWAIT_COMPLETION_TIMEOUT_SECONDS = 60;
 
-    private static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
+    public static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     private static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
 
     private CacheProxyUtil() {

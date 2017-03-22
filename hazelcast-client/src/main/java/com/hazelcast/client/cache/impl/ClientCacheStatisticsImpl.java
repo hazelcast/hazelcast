@@ -30,11 +30,6 @@ public class ClientCacheStatisticsImpl extends CacheStatisticsImpl {
         super(creationTime);
     }
 
-    public ClientCacheStatisticsImpl(long creationTime, NearCacheStats nearCacheStats) {
-        super(creationTime);
-        this.nearCacheStats = nearCacheStats;
-    }
-
     @Override
     public long getOwnedEntryCount() {
         throw new UnsupportedOperationException("This statistic is not supported for client.");
@@ -74,5 +69,9 @@ public class ClientCacheStatisticsImpl extends CacheStatisticsImpl {
                 + ", removeTimeTakenNanos=" + removeTimeTakenNanos
                 + (nearCacheStats != null ? ", nearCacheStats=" + nearCacheStats : "")
                 + '}';
+    }
+
+    public void setNearCacheStats(NearCacheStats nearCacheStats) {
+        this.nearCacheStats = nearCacheStats;
     }
 }

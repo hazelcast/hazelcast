@@ -16,9 +16,11 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.ICache;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
+import java.util.Iterator;
 
 /**
  * Internal API for {@link com.hazelcast.cache.ICache} implementations.
@@ -28,8 +30,7 @@ import javax.cache.configuration.CacheEntryListenerConfiguration;
  * @see com.hazelcast.cache.ICache
  * @since 3.5
  */
-public interface ICacheInternal<K, V>
-        extends ICache<K, V> {
+public interface ICacheInternal<K, V> extends ICache<K, V> {
 
     /**
      * Opens cache if available (not destroyed).
@@ -41,9 +42,27 @@ public interface ICacheInternal<K, V>
 
     /**
      * Registers the provided listener configuration.
+     *
      * @param cacheEntryListenerConfiguration The cache configuration to be used for registering the entry listener
-     * @param addToConfig If true, the configuration is added to the existing listeners in the cache config.
+     * @param addToConfig                     If true, the configuration is added to the existing listeners in the cache config.
      */
     void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration, boolean addToConfig)
             throws IllegalArgumentException;
+
+    /**
+     * Cluster-wide iterator for {@link ICache}
+     *
+     * @param fetchSize      batch fetching size
+     * @param partitionId    partition id of the entries to iterate on
+     * @param prefetchValues prefetch values
+     * @return iterator for the entries of the partition
+     */
+    Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues);
+
+    /**
+     * Sets relevant {@link HazelcastCacheManager} to client/server.
+     *
+     * @param cacheManager client or server {@link HazelcastCacheManager}
+     */
+    void setCacheManager(HazelcastCacheManager cacheManager);
 }

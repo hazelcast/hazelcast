@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.cache.impl.event.InternalCachePartitionLostListenerAdapter;
@@ -106,8 +107,11 @@ abstract class AbstractInternalCacheProxy<K, V>
         return cacheManager;
     }
 
-    void setCacheManager(HazelcastServerCacheManager cacheManager) {
-        this.cacheManager = cacheManager;
+    @Override
+    public void setCacheManager(HazelcastCacheManager cacheManager) {
+        assert cacheManager instanceof HazelcastServerCacheManager;
+
+        this.cacheManager = (HazelcastServerCacheManager) cacheManager;
     }
 
     @Override

@@ -20,6 +20,7 @@ import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.impl.AbstractHazelcastCacheManager;
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.client.impl.ClientICacheManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.config.CacheConfig;
@@ -39,7 +40,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@link javax.cache.CacheManager} implementation for client side.
- *
+ * <p>
  * Provides client side CacheManager functionality.
  */
 public final class HazelcastClientCacheManager extends AbstractHazelcastCacheManager {
@@ -110,11 +111,11 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     protected <K, V> ICacheInternal<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig) {
         clientCacheProxyFactory.addCacheConfig(cacheConfig.getNameWithPrefix(), cacheConfig);
         try {
-            ClientCacheProxy<K, V> clientCacheProxy =
-                    (ClientCacheProxy<K, V>) client.getCacheManager()
-                            .getCacheByFullName(cacheConfig.getNameWithPrefix());
-            clientCacheProxy.setCacheManager(this);
-            return clientCacheProxy;
+            ClientICacheManager cacheManager = client.getCacheManager();
+            String nameWithPrefix = cacheConfig.getNameWithPrefix();
+            ICacheInternal cache = cacheManager.getCacheByFullName(nameWithPrefix);
+            cache.setCacheManager(this);
+            return cache;
         } catch (Throwable t) {
             clientCacheProxyFactory.removeCacheConfig(cacheConfig.getNameWithPrefix());
             throw ExceptionUtil.rethrow(t);

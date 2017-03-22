@@ -17,8 +17,8 @@
 package com.hazelcast.client.cache.impl.nearcache;
 
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
-import com.hazelcast.client.cache.impl.ClientCacheProxy;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
+import com.hazelcast.client.cache.impl.NearCachedClientCacheProxy;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -191,7 +191,7 @@ public class ClientCacheRecordStateStressTest extends HazelcastTestSupport {
     }
 
     private void assertFinalRecordStateIsReadPermitted(Cache clientCache, HazelcastInstance member) {
-        ClientCacheProxy proxy = ((ClientCacheProxy) clientCache);
+        NearCachedClientCacheProxy proxy = ((NearCachedClientCacheProxy) clientCache);
         NearCache nearCache = proxy.getNearCache();
 
         DefaultNearCache unwrap = (DefaultNearCache) nearCache.unwrap(DefaultNearCache.class);

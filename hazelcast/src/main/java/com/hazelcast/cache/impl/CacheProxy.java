@@ -335,6 +335,7 @@ public class CacheProxy<K, V>
         return new ClusterWideIterator<K, V>(this, fetchSize, false);
     }
 
+    @Override
     public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {
         ensureOpen();
         return new CachePartitionIterator<K, V>(this, fetchSize, partitionId, prefetchValues);

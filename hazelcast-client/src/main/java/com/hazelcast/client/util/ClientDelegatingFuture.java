@@ -41,6 +41,7 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
     private final ClientInvocationFuture future;
     private final SerializationService serializationService;
     private final ClientMessageDecoder clientMessageDecoder;
+    private final boolean deserializeResponse;
     private final V defaultValue;
     private final Object mutex = new Object();
     private final Executor userExecutor;
@@ -54,25 +55,44 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
 
     public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
                                   SerializationService serializationService,
-                                  ClientMessageDecoder clientMessageDecoder, V defaultValue) {
+                                  ClientMessageDecoder clientMessageDecoder, V defaultValue, boolean deserializeResponse) {
         this.future = clientInvocationFuture;
         this.serializationService = serializationService;
         this.clientMessageDecoder = clientMessageDecoder;
         this.defaultValue = defaultValue;
         this.userExecutor = clientInvocationFuture.getInvocation().getUserExecutor();
+        this.deserializeResponse = deserializeResponse;
+    }
+
+    public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
+                                  SerializationService serializationService,
+                                  ClientMessageDecoder clientMessageDecoder, V defaultValue) {
+        this(clientInvocationFuture, serializationService, clientMessageDecoder, defaultValue, true);
     }
 
     public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
                                   SerializationService serializationService,
                                   ClientMessageDecoder clientMessageDecoder) {
-        this.future = clientInvocationFuture;
-        this.serializationService = serializationService;
-        this.clientMessageDecoder = clientMessageDecoder;
-        this.userExecutor = clientInvocationFuture.getInvocation().getUserExecutor();
-        this.defaultValue = null;
+        this(clientInvocationFuture, serializationService, clientMessageDecoder, null, true);
     }
 
-    public <T> void  andThenInternal(final ExecutionCallback<T> callback, boolean shouldDeserializeData) {
+    public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
+                                  SerializationService serializationService,
+                                  ClientMessageDecoder clientMessageDecoder, boolean deserializeResponse) {
+        this(clientInvocationFuture, serializationService, clientMessageDecoder, null, deserializeResponse);
+    }
+
+    /**
+     * Uses internal executor to execute callbacks instead of {@link #userExecutor}.
+     * This method is intended to use by hazelcast internals.
+     *
+     * @param callback              callback to execute
+     * @param shouldDeserializeData when {@code true} execution result is converted to object format
+     *                              before passing to {@link ExecutionCallback#onResponse},
+     *                              otherwise execution result will be in {@link com.hazelcast.nio.serialization.Data} format
+     * @param <T>                   type of the execution result which is passed to {@link ExecutionCallback#onResponse}
+     */
+    public <T> void andThenInternal(final ExecutionCallback<T> callback, boolean shouldDeserializeData) {
         future.andThen(new DelegatingExecutionCallback<T>(callback, shouldDeserializeData));
     }
 
@@ -129,7 +149,7 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
                 if (!done || !isResponseSet()) {
                     try {
                         response = resolveMessageToValue(future.get(timeout, unit));
-                        if (deserializedValue == null) {
+                        if (deserializeResponse && deserializedValue == null) {
                             deserializedValue = serializationService.toObject(response);
                         }
                     } catch (InterruptedException e) {
@@ -157,7 +177,7 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
             // should not happen!
             throw new ExecutionException(error);
         }
-        return getResult();
+        return (V) getResult();
     }
 
     @Override
@@ -169,7 +189,7 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
         }
     }
 
-    private V getResult() {
+    private Object getResult() {
         if (defaultValue != null) {
             return defaultValue;
         }
@@ -178,11 +198,15 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
         if (deserializedValue != null) {
             return deserializedValue;
         }
-        // Otherwise, it is possible that received data may not be deserialized
-        // if "shouldDeserializeData" flag is not true in any of registered "DelegatingExecutionCallback".
-        // So, be sure that value is deserialized before returning to caller.
-        deserializedValue = serializationService.toObject(response);
-        return deserializedValue;
+        if (deserializeResponse) {
+            // Otherwise, it is possible that received data may not be deserialized
+            // if "shouldDeserializeData" flag is not true in any of registered "DelegatingExecutionCallback".
+            // So, be sure that value is deserialized before returning to caller.
+            deserializedValue = serializationService.toObject(response);
+            return deserializedValue;
+        }
+
+        return response;
     }
 
     private Object resolveMessageToValue(ClientMessage message) {

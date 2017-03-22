@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.cache.impl.nearcache;
 
-import com.hazelcast.client.cache.impl.ClientCacheProxy;
 import com.hazelcast.client.cache.impl.HazelcastClientCacheManager;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
+import com.hazelcast.client.cache.impl.NearCachedClientCacheProxy;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
@@ -181,7 +181,7 @@ public class ClientCacheNearCacheStaleReadTest extends HazelcastTestSupport {
      * Warning: this uses Hazelcast internals which might change from one version to the other.
      */
     private void flushClientNearCache(Cache cache) {
-        ((ClientCacheProxy) cache).getNearCache().clear();
+        ((NearCachedClientCacheProxy) cache).getNearCache().clear();
     }
 
     private void runTestInternal() throws Exception {

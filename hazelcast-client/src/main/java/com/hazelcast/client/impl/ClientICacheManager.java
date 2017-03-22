@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.cache.HazelcastCacheManager;
-import com.hazelcast.cache.ICache;
+import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.spi.impl.ClientServiceNotFoundException;
 import com.hazelcast.core.HazelcastException;
@@ -42,12 +42,12 @@ public class ClientICacheManager implements ICacheManager {
     }
 
     @Override
-    public <K, V> ICache<K, V> getCache(String name) {
+    public <K, V> ICacheInternal<K, V> getCache(String name) {
         checkNotNull(name, "Retrieving a cache instance with a null name is not allowed!");
         return getCacheByFullName(HazelcastCacheManager.CACHE_MANAGER_PREFIX + name);
     }
 
-    public <K, V> ICache<K, V> getCacheByFullName(String fullName) {
+    public <K, V> ICacheInternal<K, V> getCacheByFullName(String fullName) {
         checkNotNull(fullName, "Retrieving a cache instance with a null name is not allowed!");
         try {
             return instance.getDistributedObject(ICacheService.SERVICE_NAME, fullName);
