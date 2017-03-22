@@ -192,11 +192,11 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         try {
             HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
             ClientInvocation clientInvocation = new ClientInvocation(client, req, partitionId);
-            ClientInvocationFuture f = clientInvocation.invoke();
+            ClientInvocationFuture future = clientInvocation.invoke();
             if (completionOperation) {
-                waitCompletionLatch(completionId, f);
+                waitCompletionLatch(completionId, future);
             }
-            return f;
+            return future;
         } catch (Throwable e) {
             if (e instanceof IllegalStateException) {
                 close();

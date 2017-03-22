@@ -144,10 +144,10 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
         Iterator<Map.Entry<Future, CompletionListener>> iterator = loadAllCalls.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<Future, CompletionListener> entry = iterator.next();
-            Future f = entry.getKey();
+            Future future = entry.getKey();
             CompletionListener completionListener = entry.getValue();
             try {
-                f.get(TIMEOUT, TimeUnit.SECONDS);
+                future.get(TIMEOUT, TimeUnit.SECONDS);
             } catch (Throwable t) {
                 logger.finest("Error occurred at loadAll operation execution while waiting it to finish on cache close!", t);
                 handleFailureOnCompletionListener(completionListener, t);
@@ -237,7 +237,7 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
     }
 
     protected void submitLoadAllTask(ClientMessage request, CompletionListener completionListener, final List<Data> binaryKeys) {
-        final CompletionListener compListener = completionListener != null ? completionListener : NULL_COMPLETION_LISTENER;
+        final CompletionListener listener = completionListener != null ? completionListener : NULL_COMPLETION_LISTENER;
         ClientDelegatingFuture<V> delegatingFuture = null;
         try {
             injectDependencies(completionListener);
@@ -247,26 +247,26 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
             ClientInvocationFuture future = new ClientInvocation(hazelcastInstance, request).invoke();
             delegatingFuture = newDelegatingFuture(future, LOAD_ALL_DECODER);
             final Future delFuture = delegatingFuture;
-            loadAllCalls.put(delegatingFuture, compListener);
+            loadAllCalls.put(delegatingFuture, listener);
             delegatingFuture.andThen(new ExecutionCallback<V>() {
                 @Override
                 public void onResponse(V response) {
                     loadAllCalls.remove(delFuture);
                     onLoadAll(binaryKeys, response, startNanos);
-                    compListener.onCompletion();
+                    listener.onCompletion();
                 }
 
                 @Override
                 public void onFailure(Throwable t) {
                     loadAllCalls.remove(delFuture);
-                    handleFailureOnCompletionListener(compListener, t);
+                    handleFailureOnCompletionListener(listener, t);
                 }
             });
         } catch (Throwable t) {
             if (delegatingFuture != null) {
                 loadAllCalls.remove(delegatingFuture);
             }
-            handleFailureOnCompletionListener(compListener, t);
+            handleFailureOnCompletionListener(listener, t);
         }
     }
 

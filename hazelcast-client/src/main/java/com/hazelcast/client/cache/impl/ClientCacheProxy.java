@@ -193,9 +193,9 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
     @Override
     public V getAndRemove(K key) {
         final long start = nowInNanosOrDefault();
-        final ICompletableFuture<V> f = getAndRemoveSyncInternal(key, true);
+        final ICompletableFuture<V> future = getAndRemoveSyncInternal(key, true);
         try {
-            V removedValue = toObject(f.get());
+            V removedValue = toObject(future.get());
             if (statisticsEnabled) {
                 statsHandler.onRemove(true, start, removedValue);
             }
@@ -281,8 +281,8 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
         ClientMessage request =
                 CacheEntryProcessorCodec.encodeRequest(nameWithPrefix, keyData, epData, argumentsData, completionId);
         try {
-            final ICompletableFuture<ClientMessage> f = invoke(request, keyData, completionId);
-            final ClientMessage response = getSafely(f);
+            final ICompletableFuture<ClientMessage> future = invoke(request, keyData, completionId);
+            final ClientMessage response = getSafely(future);
             final Data data = CacheEntryProcessorCodec.decodeResponse(response).response;
             // At client side, we don't know what entry processor does so we ignore it from statistics perspective
             return toObject(data);

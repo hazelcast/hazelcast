@@ -332,8 +332,8 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
                 int completionId = nextCompletionId();
                 // TODO If there is a single entry, we could make use of a put operation since that is a bit cheaper
                 ClientMessage request = CachePutAllCodec.encodeRequest(nameWithPrefix, entries, expiryPolicyData, completionId);
-                Future f = invoke(request, partitionId, completionId);
-                futureEntriesTuples.add(new FutureEntriesTuple(f, entries));
+                Future future = invoke(request, partitionId, completionId);
+                futureEntriesTuples.add(new FutureEntriesTuple(future, entries));
             }
         }
 
@@ -392,9 +392,9 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
     @Override
     public boolean replace(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
         final long startNanos = nowInNanosOrDefault();
-        final Future<Boolean> f = replaceInternal(key, oldValue, newValue, expiryPolicy, true, true, false);
+        final Future<Boolean> future = replaceInternal(key, oldValue, newValue, expiryPolicy, true, true, false);
         try {
-            boolean replaced = f.get();
+            boolean replaced = future.get();
             if (statisticsEnabled) {
                 statsHandler.onReplace(false, startNanos, replaced);
             }
@@ -407,9 +407,9 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
     @Override
     public boolean replace(K key, V value, ExpiryPolicy expiryPolicy) {
         final long startNanos = nowInNanosOrDefault();
-        final Future<Boolean> f = replaceInternal(key, null, value, expiryPolicy, false, true, false);
+        final Future<Boolean> future = replaceInternal(key, null, value, expiryPolicy, false, true, false);
         try {
-            boolean replaced = f.get();
+            boolean replaced = future.get();
             if (statisticsEnabled) {
                 statsHandler.onReplace(false, startNanos, replaced);
             }
@@ -422,9 +422,9 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
     @Override
     public V getAndReplace(K key, V value, ExpiryPolicy expiryPolicy) {
         final long startNanos = nowInNanosOrDefault();
-        final Future<V> f = replaceAndGetAsyncInternal(key, null, value, expiryPolicy, false, true, false);
+        final Future<V> future = replaceAndGetAsyncInternal(key, null, value, expiryPolicy, false, true, false);
         try {
-            V oldValue = f.get();
+            V oldValue = future.get();
             if (statisticsEnabled) {
                 statsHandler.onReplace(true, startNanos, oldValue);
             }

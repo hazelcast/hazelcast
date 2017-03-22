@@ -75,9 +75,9 @@ public class ClientClusterWideIterator<K, V> extends AbstractClusterWideIterator
                     .encodeRequest(cacheProxy.getPrefixedName(), partitionIndex, lastTableIndex, fetchSize);
             try {
                 ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionIndex);
-                ClientInvocationFuture f = clientInvocation.invoke();
+                ClientInvocationFuture future = clientInvocation.invoke();
                 CacheIterateEntriesCodec.ResponseParameters responseParameters = CacheIterateEntriesCodec.
-                        decodeResponse(f.get());
+                        decodeResponse(future.get());
                 setLastTableIndex(responseParameters.entries, responseParameters.tableIndex);
                 return responseParameters.entries;
             } catch (Exception e) {
@@ -88,8 +88,8 @@ public class ClientClusterWideIterator<K, V> extends AbstractClusterWideIterator
                     .encodeRequest(cacheProxy.getPrefixedName(), partitionIndex, lastTableIndex, fetchSize);
             try {
                 ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionIndex);
-                ClientInvocationFuture f = clientInvocation.invoke();
-                CacheIterateCodec.ResponseParameters responseParameters = CacheIterateCodec.decodeResponse(f.get());
+                ClientInvocationFuture future = clientInvocation.invoke();
+                CacheIterateCodec.ResponseParameters responseParameters = CacheIterateCodec.decodeResponse(future.get());
                 setLastTableIndex(responseParameters.keys, responseParameters.tableIndex);
                 return responseParameters.keys;
             } catch (Exception e) {
