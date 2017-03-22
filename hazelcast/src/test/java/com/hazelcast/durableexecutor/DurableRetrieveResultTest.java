@@ -24,7 +24,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -117,13 +116,15 @@ public class DurableRetrieveResultTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    @Ignore
     public void testSingleExecution_WhenMigratedAfterCompletion_WhenOwnerMemberKilled() throws Exception {
         String name = randomString();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
         factory.newHazelcastInstance();
+
+        waitAllForSafeState(factory.getAllHazelcastInstances());
+
         String key = generateKeyOwnedBy(instance1);
 
         String runCounterName = "runCount";
