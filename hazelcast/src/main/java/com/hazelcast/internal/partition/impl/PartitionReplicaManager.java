@@ -215,7 +215,7 @@ public class PartitionReplicaManager {
      * partition and schedule a new sync request that is to be run in the case of timeout
      */
     private boolean fireSyncReplicaRequest(ReplicaSyncInfo syncInfo, Address target) {
-        if (node.clusterService.isMemberRemovedWhileClusterIsNotActive(target)) {
+        if (node.clusterService.isMemberRemovedInNotJoinableState(target)) {
             return false;
         }
 

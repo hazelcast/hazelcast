@@ -87,7 +87,7 @@ public class MembershipManager {
 
     private final AtomicReference<MemberMap> memberMapRef = new AtomicReference<MemberMap>(MemberMap.empty());
 
-    private final AtomicReference<MemberMap> membersRemovedInNotActiveStateRef
+    private final AtomicReference<MemberMap> membersRemovedInNotJoinableStateRef
             = new AtomicReference<MemberMap>(MemberMap.empty());
 
     private final Set<Address> suspectedMembers = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
@@ -293,8 +293,8 @@ public class MembershipManager {
 
         sendMembershipEvents(currentMemberMap.getMembers(), addedMembers);
 
-        MemberMap membersRemovedInNotActiveState = membersRemovedInNotActiveStateRef.get();
-        membersRemovedInNotActiveStateRef.set(MemberMap.cloneExcluding(membersRemovedInNotActiveState, members));
+        MemberMap membersRemovedInNotJoinableState = membersRemovedInNotJoinableStateRef.get();
+        membersRemovedInNotJoinableStateRef.set(MemberMap.cloneExcluding(membersRemovedInNotJoinableState, members));
 
         clusterHeartbeatManager.heartbeat();
         clusterService.printMemberList();
@@ -551,16 +551,16 @@ public class MembershipManager {
 
     void handleMemberRemove(MemberMap newMembers, MemberImpl removedMember) {
         ClusterState clusterState = clusterService.getClusterState();
-        if (clusterState != ClusterState.ACTIVE) {
+        if (!clusterState.isJoinAllowed()) {
             if (logger.isFineEnabled()) {
                 logger.fine(removedMember + " is removed, added to members left while cluster is " + clusterState + " state");
             }
 
             final InternalHotRestartService hotRestartService = node.getNodeExtension().getInternalHotRestartService();
             if (!hotRestartService.isMemberExcluded(removedMember.getAddress(), removedMember.getUuid())) {
-                MemberMap membersRemovedInNotActiveState = membersRemovedInNotActiveStateRef.get();
-                membersRemovedInNotActiveStateRef
-                        .set(MemberMap.cloneAdding(membersRemovedInNotActiveState, removedMember));
+                MemberMap membersRemovedInNotJoinableState = membersRemovedInNotJoinableStateRef.get();
+                membersRemovedInNotJoinableStateRef
+                        .set(MemberMap.cloneAdding(membersRemovedInNotJoinableState, removedMember));
             }
 
             InternalPartitionServiceImpl partitionService = node.partitionService;
@@ -767,30 +767,30 @@ public class MembershipManager {
                 .setCallTimeout(TimeUnit.SECONDS.toMillis(mastershipClaimTimeoutSeconds)).invoke();
     }
 
-    boolean isMemberRemovedWhileClusterIsNotActive(Address target) {
-        MemberMap membersRemovedInNotActiveState = membersRemovedInNotActiveStateRef.get();
-        return membersRemovedInNotActiveState.contains(target);
+    boolean isMemberRemovedInNotJoinableState(Address target) {
+        MemberMap membersRemovedInNotJoinableState = membersRemovedInNotJoinableStateRef.get();
+        return membersRemovedInNotJoinableState.contains(target);
     }
 
-    boolean isMemberRemovedWhileClusterIsNotActive(String uuid) {
-        MemberMap membersRemovedInNotActiveState = membersRemovedInNotActiveStateRef.get();
-        return membersRemovedInNotActiveState.contains(uuid);
+    boolean isMemberRemovedInNotJoinableState(String uuid) {
+        MemberMap membersRemovedInNotJoinableState = membersRemovedInNotJoinableStateRef.get();
+        return membersRemovedInNotJoinableState.contains(uuid);
     }
 
-    MemberImpl getMemberRemovedWhileClusterIsNotActive(String uuid) {
-        MemberMap membersRemovedInNotActiveState = membersRemovedInNotActiveStateRef.get();
-        return membersRemovedInNotActiveState.getMember(uuid);
+    MemberImpl getMemberRemovedInNotJoinableState(String uuid) {
+        MemberMap membersRemovedInNotJoinableState = membersRemovedInNotJoinableStateRef.get();
+        return membersRemovedInNotJoinableState.getMember(uuid);
     }
 
-    Collection<Member> getCurrentMembersAndMembersRemovedWhileClusterIsNotActive() {
+    Collection<Member> getCurrentMembersAndMembersRemovedInNotJoinableState() {
         clusterServiceLock.lock();
         try {
-            MemberMap membersRemovedInNotActiveState = membersRemovedInNotActiveStateRef.get();
-            if (membersRemovedInNotActiveState.size() == 0) {
+            MemberMap membersRemovedInNotJoinableState = membersRemovedInNotJoinableStateRef.get();
+            if (membersRemovedInNotJoinableState.size() == 0) {
                 return getMemberSet();
             }
 
-            Collection<MemberImpl> removedMembers = membersRemovedInNotActiveState.getMembers();
+            Collection<MemberImpl> removedMembers = membersRemovedInNotJoinableState.getMembers();
             Collection<MemberImpl> members = memberMapRef.get().getMembers();
 
             Collection<Member> allMembers = new ArrayList<Member>(members.size() + removedMembers.size());
@@ -803,45 +803,44 @@ public class MembershipManager {
         }
     }
 
-
-    void addMembersRemovedInNotActiveState(Collection<MemberImpl> members) {
+    void addMembersRemovedInNotJoinableState(Collection<MemberImpl> members) {
         clusterServiceLock.lock();
         try {
             members.remove(clusterService.getLocalMember());
-            MemberMap membersRemovedInNotActiveState = membersRemovedInNotActiveStateRef.get();
-            membersRemovedInNotActiveStateRef.set(MemberMap.cloneAdding(membersRemovedInNotActiveState,
+            MemberMap membersRemovedInNotJoinableState = membersRemovedInNotJoinableStateRef.get();
+            membersRemovedInNotJoinableStateRef.set(MemberMap.cloneAdding(membersRemovedInNotJoinableState,
                     members.toArray(new MemberImpl[0])));
         } finally {
             clusterServiceLock.unlock();
         }
     }
 
-    void shrinkMembersRemovedWhileClusterIsNotActiveState(Collection<String> memberUuidsToRemove) {
+    void shrinkMembersRemovedInNotJoinableState(Collection<String> memberUuidsToRemove) {
         clusterServiceLock.lock();
         try {
-            Set<MemberImpl> membersRemovedInNotActiveState
-                    = new LinkedHashSet<MemberImpl>(membersRemovedInNotActiveStateRef.get().getMembers());
+            Set<MemberImpl> membersRemoved
+                    = new LinkedHashSet<MemberImpl>(membersRemovedInNotJoinableStateRef.get().getMembers());
 
-            Iterator<MemberImpl> it = membersRemovedInNotActiveState.iterator();
+            Iterator<MemberImpl> it = membersRemoved.iterator();
             while (it.hasNext()) {
                 MemberImpl member = it.next();
                 if (memberUuidsToRemove.contains(member.getUuid())) {
-                    logger.fine("Removing " + member + " from members removed while in cluster not active state");
+                    logger.fine("Removing " + member + " from members removed in not joinable state.");
                     it.remove();
                 }
             }
-            membersRemovedInNotActiveStateRef.set(MemberMap.createNew(membersRemovedInNotActiveState.toArray(new MemberImpl[0])));
+            membersRemovedInNotJoinableStateRef.set(MemberMap.createNew(membersRemoved.toArray(new MemberImpl[0])));
         } finally {
             clusterServiceLock.unlock();
         }
     }
 
-    void removeMembersDeadWhileClusterIsNotActive() {
+    void removeMembersDeadInNotJoinableState() {
         clusterServiceLock.lock();
         try {
-            MemberMap membersRemovedInNotActiveState = membersRemovedInNotActiveStateRef.get();
-            Collection<MemberImpl> members = membersRemovedInNotActiveState.getMembers();
-            membersRemovedInNotActiveStateRef.set(MemberMap.empty());
+            MemberMap membersRemovedInNotJoinableState = membersRemovedInNotJoinableStateRef.get();
+            Collection<MemberImpl> members = membersRemovedInNotJoinableState.getMembers();
+            membersRemovedInNotJoinableStateRef.set(MemberMap.empty());
             for (MemberImpl member : members) {
                 onMemberRemove(member);
             }
@@ -896,9 +895,8 @@ public class MembershipManager {
         if (clusterService.getClusterJoinManager().isMastershipClaimInProgress()) {
             throw new IllegalStateException("Mastership claim is in progress!");
         }
-        // when migrations are not allowed by cluster state
         ClusterState state = clusterService.getClusterState();
-        if (state != ClusterState.ACTIVE) {
+        if (!state.isMigrationAllowed()) {
             throw new IllegalStateException("Lite member promotion is not allowed when cluster state is " + state);
         }
     }
@@ -907,7 +905,7 @@ public class MembershipManager {
         clusterServiceLock.lock();
         try {
             memberMapRef.set(MemberMap.singleton(clusterService.getLocalMember()));
-            membersRemovedInNotActiveStateRef.set(MemberMap.empty());
+            membersRemovedInNotJoinableStateRef.set(MemberMap.empty());
             suspectedMembers.clear();
         } finally {
             clusterServiceLock.unlock();

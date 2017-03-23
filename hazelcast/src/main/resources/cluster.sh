@@ -87,7 +87,7 @@ if [ "$OPERATION" = "get-state" ]; then
  	response=$(curl --data "${GROUPNAME}&${PASSWORD}" --silent "${request}");
     STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
  	if [ "$STATUS" = "fail" ];then
-        echo "An error occured while listing !";
+        echo "An error occurred while listing !";
     	exit 0
     fi
 	if [ "$STATUS" = "forbidden" ];then
@@ -106,12 +106,12 @@ fi
 if [ "$OPERATION" = "change-state" ]; then
 
     if [ -z "$STATE" ]; then
-        echo "No new state is defined, Please define new state with --state 'active', 'frozen', 'passive' "
+        echo "No new state is defined, Please define new state with --state 'active', 'no_migration, ''frozen', 'passive' "
         exit 0
     fi
 
-    if [ "$STATE" != "frozen" ] && [ "$STATE" != "active" ] && [ "$STATE" != "passive" ]; then
-        echo "Not a valid cluster state, valid states  are 'active' || 'frozen' || 'passive'"
+    if [ "$STATE" != "frozen" ] && [ "$STATE" != "active" ] && [ "$STATE" != "no_migration" ] && [ "$STATE" != "passive" ]; then
+        echo "Not a valid cluster state, valid states  are 'active' || 'frozen' || 'passive' || 'no_migration'"
         exit 0
     fi
 

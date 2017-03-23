@@ -444,23 +444,23 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void partitionAssignment_shouldFail_whenTriggered_inNoMigrationState() {
+        partitionAssignment_shouldFail_whenMigrationNotAllowed(ClusterState.NO_MIGRATION);
+    }
+
+    @Test
     public void partitionAssignment_shouldFail_whenTriggered_inFrozenState() {
-        Config config = new Config();
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        HazelcastInstance[] instances = factory.newInstances(config);
-        HazelcastInstance hz1 = instances[0];
-        HazelcastInstance hz2 = instances[1];
-        HazelcastInstance hz3 = instances[2];
-
-        hz2.getCluster().changeClusterState(ClusterState.FROZEN);
-
-        InternalPartitionService partitionService = getPartitionService(hz1);
-        exception.expect(IllegalStateException.class);
-        partitionService.getPartitionOwnerOrWait(1);
+        partitionAssignment_shouldFail_whenMigrationNotAllowed(ClusterState.FROZEN);
     }
 
     @Test
     public void partitionAssignment_shouldFail_whenTriggered_inPassiveState() {
+        partitionAssignment_shouldFail_whenMigrationNotAllowed(ClusterState.PASSIVE);
+    }
+
+    private void partitionAssignment_shouldFail_whenMigrationNotAllowed(ClusterState state) {
+        assertFalse(state.isMigrationAllowed());
+
         Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance[] instances = factory.newInstances(config);
@@ -468,7 +468,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = instances[1];
         HazelcastInstance hz3 = instances[2];
 
-        hz2.getCluster().changeClusterState(ClusterState.PASSIVE);
+        hz2.getCluster().changeClusterState(state);
 
         InternalPartitionService partitionService = getPartitionService(hz1);
         exception.expect(IllegalStateException.class);
@@ -476,32 +476,23 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void partitionInvocation_shouldFail_whenPartitionsNotAssigned_inNoMigrationState() throws InterruptedException {
+        partitionInvocation_shouldFail_whenPartitionsNotAssigned_whenMigrationNotAllowed(ClusterState.NO_MIGRATION);
+    }
+
+    @Test
     public void partitionInvocation_shouldFail_whenPartitionsNotAssigned_inFrozenState() throws InterruptedException {
-        Config config = new Config();
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        HazelcastInstance[] instances = factory.newInstances(config);
-        HazelcastInstance hz1 = instances[0];
-        HazelcastInstance hz2 = instances[1];
-        HazelcastInstance hz3 = instances[2];
-
-        hz2.getCluster().changeClusterState(ClusterState.FROZEN);
-
-        InternalOperationService operationService = getNode(hz3).getNodeEngine().getOperationService();
-        Operation op = new AddAndGetOperation(randomName(), 1);
-        Future<Long> future = operationService
-                .invokeOnPartition(AtomicLongService.SERVICE_NAME, op, 1);
-
-        exception.expect(IllegalStateException.class);
-        try {
-            future.get();
-        } catch (ExecutionException e) {
-            // IllegalStateException should be cause of ExecutionException.
-            throw ExceptionUtil.rethrow(e);
-        }
+        partitionInvocation_shouldFail_whenPartitionsNotAssigned_whenMigrationNotAllowed(ClusterState.FROZEN);
     }
 
     @Test
     public void partitionInvocation_shouldFail_whenPartitionsNotAssigned_inPassiveState() throws InterruptedException {
+        partitionInvocation_shouldFail_whenPartitionsNotAssigned_whenMigrationNotAllowed(ClusterState.PASSIVE);
+    }
+
+    private void partitionInvocation_shouldFail_whenPartitionsNotAssigned_whenMigrationNotAllowed(ClusterState state)
+            throws InterruptedException {
+
         Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance[] instances = factory.newInstances(config);
@@ -509,7 +500,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = instances[1];
         HazelcastInstance hz3 = instances[2];
 
-        hz2.getCluster().changeClusterState(ClusterState.PASSIVE);
+        hz2.getCluster().changeClusterState(state);
 
         InternalOperationService operationService = getNode(hz3).getNodeEngine().getOperationService();
         Operation op = new AddAndGetOperation(randomName(), 1);
@@ -596,33 +587,27 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
     @Test
     public void nodesCanShutDown_whenClusterState_frozen() {
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        final HazelcastInstance[] instances = factory.newInstances(new Config());
-
-        HazelcastInstance hz = instances[instances.length - 1];
-        hz.getMap(randomMapName()).put(1, 1); // for updating partition version
-
-        changeClusterStateEventually(hz, ClusterState.FROZEN);
-
-        List<HazelcastInstance> instanceList = new ArrayList<HazelcastInstance>(Arrays.asList(instances));
-        while (!instanceList.isEmpty()) {
-            HazelcastInstance instanceToShutdown = instanceList.remove(0);
-            instanceToShutdown.shutdown();
-            for (HazelcastInstance instance : instanceList) {
-                assertClusterSizeEventually(instanceList.size(), instance);
-            }
-        }
+        nodesCanShutDown_whenClusterState_changesTo(ClusterState.FROZEN);
     }
 
     @Test
     public void nodesCanShutDown_whenClusterState_passive() {
+        nodesCanShutDown_whenClusterState_changesTo(ClusterState.PASSIVE);
+    }
+
+    @Test
+    public void nodesCanShutDown_whenClusterState_noMigration() {
+        nodesCanShutDown_whenClusterState_changesTo(ClusterState.NO_MIGRATION);
+    }
+
+    private void nodesCanShutDown_whenClusterState_changesTo(ClusterState state) {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance[] instances = factory.newInstances();
 
         HazelcastInstance hz = instances[instances.length - 1];
         hz.getMap(randomMapName()).put(1, 1); // for updating partition version
 
-        changeClusterStateEventually(hz, ClusterState.PASSIVE);
+        changeClusterStateEventually(hz, state);
 
         List<HazelcastInstance> instanceList = new ArrayList<HazelcastInstance>(Arrays.asList(instances));
         while (!instanceList.isEmpty()) {

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition.impl;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartition;
@@ -65,6 +66,7 @@ public class PartitionReplicaStateChecker_triggerAndWaitForReplicaSyncTest exten
     public void setUp() {
         ILogger logger = getLogger(PartitionReplicaStateChecker_triggerAndWaitForReplicaSyncTest.class);
         ClusterServiceImpl clusterService = mock(ClusterServiceImpl.class);
+        when(clusterService.getClusterState()).thenReturn(ClusterState.ACTIVE);
 
         node = mock(Node.class);
         when(node.getLogger(any(Class.class))).thenReturn(logger);

@@ -39,8 +39,8 @@ public enum NodeState {
 
     /**
      * Initial state of the Node. An {@code ACTIVE} node is allowed to execute/process
-     * all kinds of operations. A node is in {@code ACTIVE} state while cluster state is
-     * {@link ClusterState#ACTIVE} or {@link ClusterState#FROZEN}.
+     * all kinds of operations. A node is in {@code ACTIVE} state while cluster state is one of
+     * {@link ClusterState#ACTIVE}, {@link ClusterState#NO_MIGRATION} or {@link ClusterState#FROZEN}.
      */
     ACTIVE,
 

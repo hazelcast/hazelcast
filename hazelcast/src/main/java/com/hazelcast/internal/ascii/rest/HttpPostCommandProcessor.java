@@ -41,7 +41,9 @@ import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.util.StringUtil.bytesToString;
+import static com.hazelcast.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostCommand> {
     private static final byte[] QUEUE_SIMPLE_VALUE_CONTENT_TYPE = stringToBytes("text/plain");
@@ -116,16 +118,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass))) {
                 res = response(ResponseType.FORBIDDEN);
             } else {
-                ClusterState state = clusterService.getClusterState();
-                if (stateParam.equals("frozen")) {
-                    state = ClusterState.FROZEN;
-                }
-                if (stateParam.equals("active")) {
-                    state = ClusterState.ACTIVE;
-                }
-                if (stateParam.equals("passive")) {
-                    state = ClusterState.PASSIVE;
-                }
+                ClusterState state = ClusterState.valueOf(upperCaseInternal(stateParam));
                 if (!state.equals(clusterService.getClusterState())) {
                     clusterService.changeClusterState(state);
                     res = response(ResponseType.SUCCESS, "state", state.toString().toLowerCase());
@@ -148,7 +141,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             if (!checkCredentials(command)) {
                 res = response(ResponseType.FORBIDDEN);
             } else {
-                res = response(ResponseType.SUCCESS, "state", clusterService.getClusterState().toString().toLowerCase());
+                ClusterState clusterState = clusterService.getClusterState();
+                res = response(ResponseType.SUCCESS, "state", lowerCaseInternal(clusterState.toString()));
             }
         } catch (Throwable throwable) {
             logger.warning("Error occurred while getting cluster state", throwable);

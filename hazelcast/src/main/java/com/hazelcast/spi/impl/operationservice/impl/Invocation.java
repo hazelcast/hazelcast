@@ -58,8 +58,6 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Level;
 
-import static com.hazelcast.cluster.ClusterState.FROZEN;
-import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.spi.OperationAccessor.hasActiveInvocation;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
@@ -580,11 +578,13 @@ public abstract class Invocation implements OperationResponseHandler {
 
     private void notifyWithExceptionWhenTargetIsNull() {
         ClusterState clusterState = context.clusterService.getClusterState();
-        if (clusterState == FROZEN || clusterState == PASSIVE) {
-            notifyError(new IllegalStateException("Partitions can't be assigned since cluster-state: " + clusterState));
+        if (!clusterState.isMigrationAllowed()) {
+            notifyError(new IllegalStateException("Target of invocation cannot be found! Partition owner is null "
+                    + "but partitions can't be assigned in cluster-state: " + clusterState));
         } else if (context.clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
             notifyError(new NoDataMemberInClusterException(
-                    "Partitions can't be assigned since all nodes in the cluster are lite members"));
+                    "Target of invocation cannot be found! Partition owner is null "
+                            + "but partitions can't be assigned since all nodes in the cluster are lite members."));
         } else {
             notifyError(new WrongTargetException(context.thisAddress, null, op.getPartitionId(),
                     op.getReplicaIndex(), op.getClass().getName(), op.getServiceName()));

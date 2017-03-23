@@ -23,6 +23,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOp;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -97,7 +98,8 @@ import static java.lang.Math.min;
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class InternalPartitionServiceImpl implements InternalPartitionService, ManagedService,
-        EventPublishingService<PartitionEvent, PartitionEventListener<PartitionEvent>>, PartitionAwareService {
+        EventPublishingService<PartitionEvent, PartitionEventListener<PartitionEvent>>,
+        PartitionAwareService, ClusterStateListener {
 
     private static final int PARTITION_OWNERSHIP_WAIT_MILLIS = 10;
     private static final String EXCEPTION_MSG_PARTITION_STATE_SYNC_TIMEOUT = "Partition state sync invocation timed out";
@@ -201,7 +203,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
 
             ClusterState clusterState = node.getClusterService().getClusterState();
-            if (clusterState != ClusterState.ACTIVE) {
+            if (!clusterState.isMigrationAllowed()) {
                 throw new IllegalStateException("Partitions can't be assigned since cluster-state: " + clusterState);
             }
             if (isClusterFormedByOnlyLiteMembers()) {
@@ -256,7 +258,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
 
         ClusterState clusterState = clusterService.getClusterState();
-        if (clusterState != ClusterState.ACTIVE) {
+        if (!clusterState.isMigrationAllowed()) {
             logger.warning("Partitions can't be assigned since cluster-state= " + clusterState);
             return;
         }
@@ -318,7 +320,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         lock.lock();
         try {
             ClusterState clusterState = node.getClusterService().getClusterState();
-            if (clusterState == ClusterState.FROZEN || clusterState == ClusterState.PASSIVE) {
+            if (!clusterState.isMigrationAllowed() && clusterState != ClusterState.IN_TRANSITION) {
                 logger.fine(address + " can join since cluster state is " + clusterState);
                 return true;
             }
@@ -355,7 +357,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             if (node.isMaster()) {
                 if (partitionStateManager.isInitialized()) {
                     final ClusterState clusterState = nodeEngine.getClusterService().getClusterState();
-                    if (clusterState == ClusterState.ACTIVE) {
+                    if (clusterState.isMigrationAllowed()) {
                         migrationManager.triggerControlTask();
                     }
                 }
@@ -393,6 +395,28 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
 
             migrationManager.resumeMigration();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public void onClusterStateChange(ClusterState newState) {
+        if (!newState.isMigrationAllowed()) {
+            return;
+        }
+        if (!partitionStateManager.isInitialized()) {
+             return;
+        }
+        if (!node.isMaster()) {
+             return;
+        }
+
+        lock.lock();
+        try {
+            if (partitionStateManager.isInitialized()) {
+                migrationManager.triggerControlTask();
+            }
         } finally {
             lock.unlock();
         }
@@ -598,7 +622,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         final ClusterServiceImpl clusterService = node.clusterService;
         List<Future<Boolean>> calls = new ArrayList<Future<Boolean>>(members.size());
         for (MemberImpl member : members) {
-            if (!(member.localMember() || clusterService.isMemberRemovedWhileClusterIsNotActive(member.getAddress()))) {
+            if (!(member.localMember() || clusterService.isMemberRemovedInNotJoinableState(member.getAddress()))) {
                 try {
                     Address address = member.getAddress();
                     PartitionStateOperation operation = new PartitionStateOperation(partitionState, true);
@@ -778,7 +802,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         for (int index = 0; index < InternalPartition.MAX_REPLICA_COUNT; index++) {
             Address address = addresses[index];
             if (address != null && node.clusterService.getMember(address) == null) {
-                if (clusterState == ClusterState.ACTIVE || !clusterService.isMemberRemovedWhileClusterIsNotActive(address)) {
+                if (clusterState.isJoinAllowed() || !clusterService.isMemberRemovedInNotJoinableState(address)) {
                     if (logger.isFinestEnabled()) {
                         logger.finest(
                                 "Unknown " + address + " found in partition table sent from master "

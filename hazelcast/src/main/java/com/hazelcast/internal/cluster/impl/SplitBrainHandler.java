@@ -66,8 +66,7 @@ final class SplitBrainHandler implements Runnable {
         }
 
         final ClusterState clusterState = clusterService.getClusterState();
-        return clusterState == ClusterState.ACTIVE;
-
+        return clusterState.isJoinAllowed();
     }
 
     private void searchForOtherClusters() {

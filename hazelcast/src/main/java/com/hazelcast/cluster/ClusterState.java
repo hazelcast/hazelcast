@@ -25,11 +25,16 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
  * which each state can allow and/or deny specific actions
  * and/or change behaviours of specific actions.
  * <p/>
- * There are 4 states:
+ * There are 5 states:
  * <ol>
  * <li>
  * {@link #ACTIVE}:
  * Cluster will continue to operate without any restriction.
+ * </li>
+ * <li>
+ * {@link #NO_MIGRATION}:
+ * Migrations (partition rebalancing) and backup replications
+ * are not allowed. Cluster will continue to operate without any restriction.
  * </li>
  * <li>
  * {@link #FROZEN}:
@@ -66,7 +71,26 @@ public enum ClusterState {
      * In {@code ACTIVE} state, cluster will continue to operate without any restriction.
      * All operations are allowed. This is default state of a cluster.
      */
-    ACTIVE,
+    ACTIVE(true, true),
+
+    /**
+     * In {@code NO_MIGRATION} state of the cluster, migrations (partition rebalancing) and backup replications
+     * are not allowed.
+     * <ul>
+     * <li>
+     * When a new member joins, it will not be assigned any partitions until cluster state changes to {@link ClusterState#ACTIVE}.
+     * </li>
+     * <li>
+     * When a member leaves, backups of primary replicas owned by that member will be promoted to primary.
+     * But missing backup replicas will not be created/replicated until cluster state changes to {@link ClusterState#ACTIVE}.
+     * </li>
+     * </ul>
+     *
+     * Cluster will continue to operate without any restriction. All operations are allowed.
+     *
+     * @since 3.9
+     */
+    NO_MIGRATION(true, false),
 
     /**
      * In {@code FROZEN} state of the cluster:
@@ -95,7 +119,7 @@ public enum ClusterState {
      * </li>
      * </ul>
      */
-    FROZEN,
+    FROZEN(false, false),
 
     /**
      * In {@code PASSIVE} state of the cluster:
@@ -120,7 +144,7 @@ public enum ClusterState {
      * </li>
      * </ul>
      */
-    PASSIVE,
+    PASSIVE(false, false),
 
     /**
      * Shows that ClusterState is in transition. When a state change transaction is started,
@@ -141,6 +165,29 @@ public enum ClusterState {
      * </li>
      * </ul>
      */
-    IN_TRANSITION
+    IN_TRANSITION(false, false);
 
+    private final boolean joinAllowed;
+    private final boolean migrationAllowed;
+
+    ClusterState(boolean joinAllowed, boolean migrationAllowed) {
+        this.joinAllowed = joinAllowed;
+        this.migrationAllowed = migrationAllowed;
+    }
+
+    /**
+     * Shows whether new member join is allowed.
+     * @return true when join is allowed, false otherwise
+     */
+    public boolean isJoinAllowed() {
+        return joinAllowed;
+    }
+
+    /**
+     * Shows whether migrations and replications are allowed.
+     * @return true when migrations and replications are allowed, false otherwise
+     */
+    public boolean isMigrationAllowed() {
+        return migrationAllowed;
+    }
 }

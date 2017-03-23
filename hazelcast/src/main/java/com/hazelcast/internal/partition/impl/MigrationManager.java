@@ -490,7 +490,7 @@ public class MigrationManager {
         }
 
         ClusterState clusterState = node.getClusterService().getClusterState();
-        if (clusterState == ClusterState.FROZEN || clusterState == ClusterState.PASSIVE) {
+        if (!clusterState.isMigrationAllowed() && clusterState != ClusterState.IN_TRANSITION) {
             sendShutdownOperation(address);
             return;
         }
@@ -642,7 +642,7 @@ public class MigrationManager {
          * @return the new partition table or {@code null} if the cluster is not stable or the repartitioning failed
          */
         private Address[][] repartition() {
-            if (!isAllowed()) {
+            if (!isRepartitioningAllowed()) {
                 return null;
             }
 
@@ -652,7 +652,7 @@ public class MigrationManager {
                 return null;
             }
 
-            if (!isAllowed()) {
+            if (!isRepartitioningAllowed()) {
                 return null;
             }
 
@@ -725,10 +725,16 @@ public class MigrationManager {
 
         /**
          * Returns {@code true} if there are no migrations in the migration queue, no new node is joining, there is no
-         * ongoing repartitioning and the cluster is {@link ClusterState#ACTIVE}, otherwise triggers the control task.
+         * ongoing repartitioning and the cluster state allows migrations, {@link ClusterState#isMigrationAllowed()},
+         * otherwise triggers the control task.
          */
-        private boolean isAllowed() {
-            boolean migrationAllowed = isClusterActiveAndMigrationAllowed();
+        private boolean isRepartitioningAllowed() {
+            if (!doesClusterStateAllowsMigration()) {
+                logger.finest("Cluster state doesn't allow repartitioning. RepartitioningTask will stop.");
+                return false;
+            }
+
+            boolean migrationAllowed = isMigrationAllowed();
             boolean hasMigrationTasks = migrationQueue.migrationTaskCount() > 1;
             if (migrationAllowed && !hasMigrationTasks) {
                 return true;
@@ -737,13 +743,9 @@ public class MigrationManager {
             return false;
         }
 
-        private boolean isClusterActiveAndMigrationAllowed() {
-            if (isMigrationAllowed()) {
-                ClusterState clusterState = node.getClusterService().getClusterState();
-                return clusterState == ClusterState.ACTIVE;
-            }
-
-            return false;
+        private boolean doesClusterStateAllowsMigration() {
+            ClusterState clusterState = node.getClusterService().getClusterState();
+            return clusterState.isMigrationAllowed();
         }
 
         private class MigrationCollector implements MigrationDecisionCallback {
