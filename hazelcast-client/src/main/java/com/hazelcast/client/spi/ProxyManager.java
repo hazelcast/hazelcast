@@ -103,6 +103,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
+import static com.hazelcast.util.ServiceLoader.classIterator;
 
 /**
  * The ProxyManager handles client proxy instantiation and retrieval at start and runtime by registering
@@ -114,11 +115,9 @@ public final class ProxyManager {
     private static final String PROVIDER_ID = "com.hazelcast.client.spi.ClientProxyDescriptorProvider";
     private static final Class[] CONSTRUCTOR_ARGUMENT_TYPES = new Class[]{String.class, String.class};
 
-    private final HazelcastClientInstanceImpl client;
     private final ConcurrentMap<String, ClientProxyFactory> proxyFactories = new ConcurrentHashMap<String, ClientProxyFactory>();
     private final ConcurrentMap<ObjectNamespace, ClientProxyFuture> proxies
             = new ConcurrentHashMap<ObjectNamespace, ClientProxyFuture>();
-    private ClientContext context;
 
     private final ListenerMessageCodec distributedObjectListenerCodec = new ListenerMessageCodec() {
         @Override
@@ -142,9 +141,14 @@ public final class ProxyManager {
         }
     };
 
+    private final HazelcastClientInstanceImpl client;
+
+    private ClientContext context;
+
     public ProxyManager(HazelcastClientInstanceImpl client) {
         this.client = client;
-        final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
+
+        List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
             for (ListenerConfig listenerConfig : listenerConfigs) {
                 if (listenerConfig.getImplementation() instanceof DistributedObjectListener) {
@@ -211,8 +215,7 @@ public final class ProxyManager {
     private void readProxyDescriptors() {
         try {
             ClassLoader classLoader = client.getClientConfig().getClassLoader();
-            Iterator<Class<ClientProxyDescriptorProvider>> iter =
-                    com.hazelcast.util.ServiceLoader.classIterator(PROVIDER_ID, classLoader);
+            Iterator<Class<ClientProxyDescriptorProvider>> iter = classIterator(PROVIDER_ID, classLoader);
 
             while (iter.hasNext()) {
                 Class<ClientProxyDescriptorProvider> clazz = iter.next();
@@ -439,12 +442,10 @@ public final class ProxyManager {
 
         @Override
         public void beforeListenerRegister() {
-
         }
 
         @Override
         public void onListenerRegister() {
-
         }
     }
 
@@ -487,7 +488,6 @@ public final class ProxyManager {
                 notifyAll();
             }
         }
-
     }
 
     private <T> T instantiateClientProxy(Class<T> proxyType, String serviceName, String id) {
