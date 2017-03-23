@@ -367,45 +367,50 @@ public final class ServiceLoader {
         }
 
         private boolean advance() {
-            for (;;) {
-                if (!iterator.hasNext()) {
-                    return false;
-                }
+            while (iterator.hasNext()) {
                 ServiceDefinition definition = iterator.next();
                 String className = definition.className;
                 ClassLoader classLoader = definition.classLoader;
 
-                Class candidate;
                 try {
-                    candidate = ClassLoaderUtil.loadClass(classLoader, className);
+                    Class candidate = ClassLoaderUtil.loadClass(classLoader, className);
                     if (expectedType.isAssignableFrom(candidate)) {
                         nextClass = candidate;
                         return true;
                     } else {
-                        if (expectedType.isInterface()) {
-                            if (ClassLoaderUtil.implementsIntefaceWithSameName(candidate, expectedType)) {
-                                // this can happen in application containers - different Hazelcast JARs are loaded
-                                // by different classloaders.
-                                LOGGER.fine("There appears to be a classloading conflict. "
-                                        + "Class " + className + " loaded by " + candidate.getClassLoader() + " does not "
-                                        + "implement " + expectedType.getClass().getName() + " loaded by "
-                                        + expectedType.getClass().getClassLoader());
-                            } else {
-                                // ok, the class does not implement interface with the expected name. it's probably
-                                // an error in hook implementation -> let's fail fast
-                                throw new ClassCastException("Class " + className + " does not implement "
-                                        + expectedType.getName());
-                            }
-                        }
+                        onNonAssignableClass(className, candidate);
                     }
                 } catch (ClassNotFoundException e) {
-                    if (className.startsWith("com.hazelcast")) {
-                        LOGGER.fine("Failed to load " + className + " by " + classLoader
-                                + ". This indicates a classloading issue. It can happen in a runtime with "
-                                + "a complicated classloading model. (OSGi, Java EE, etc);");
-                    } else {
-                        throw new HazelcastException(e);
-                    }
+                    onClassNotFoundException(className, classLoader, e);
+                }
+            }
+            return false;
+        }
+
+        private void onClassNotFoundException(String className, ClassLoader classLoader, ClassNotFoundException e) {
+            if (className.startsWith("com.hazelcast")) {
+                LOGGER.fine("Failed to load " + className + " by " + classLoader
+                        + ". This indicates a classloading issue. It can happen in a runtime with "
+                        + "a complicated classloading model. (OSGi, Java EE, etc);");
+            } else {
+                throw new HazelcastException(e);
+            }
+        }
+
+        private void onNonAssignableClass(String className, Class candidate) {
+            if (expectedType.isInterface()) {
+                if (ClassLoaderUtil.implementsIntefaceWithSameName(candidate, expectedType)) {
+                    // this can happen in application containers - different Hazelcast JARs are loaded
+                    // by different classloaders.
+                    LOGGER.fine("There appears to be a classloading conflict. "
+                            + "Class " + className + " loaded by " + candidate.getClassLoader() + " does not "
+                            + "implement " + expectedType.getClass().getName() + " loaded by "
+                            + expectedType.getClass().getClassLoader());
+                } else {
+                    // ok, the class does not implement interface with the expected name. it's probably
+                    // an error in hook implementation -> let's fail fast
+                    throw new ClassCastException("Class " + className + " does not implement "
+                            + expectedType.getName());
                 }
             }
         }
