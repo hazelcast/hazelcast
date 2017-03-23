@@ -399,7 +399,7 @@ public final class ServiceLoader {
 
         private void onNonAssignableClass(String className, Class candidate) {
             if (expectedType.isInterface()) {
-                if (ClassLoaderUtil.implementsIntefaceWithSameName(candidate, expectedType)) {
+                if (ClassLoaderUtil.implementsInterfaceWithSameName(candidate, expectedType)) {
                     // this can happen in application containers - different Hazelcast JARs are loaded
                     // by different classloaders.
                     LOGGER.fine("There appears to be a classloading conflict. "
