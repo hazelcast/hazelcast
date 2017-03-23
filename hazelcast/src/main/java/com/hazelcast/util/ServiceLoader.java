@@ -39,6 +39,7 @@ import java.util.Set;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.Preconditions.isNotNull;
+import static java.lang.Boolean.getBoolean;
 
 /**
  * Support class for loading Hazelcast services and hooks based on the Java {@link ServiceLoader} specification,
@@ -46,6 +47,8 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * environments like application or OSGi servers.
  */
 public final class ServiceLoader {
+    //compatibility flag to re-introduce behaviour from 3.8.0 with classloading fallbacks
+    private static final boolean USE_CLASSLOADING_FALLBACK = getBoolean("hazelcast.compat.classloading.hooks.fallback");
 
     private static final ILogger LOGGER = Logger.getLogger(ServiceLoader.class);
     private static final String FILTERING_CLASS_LOADER = FilteringClassLoader.class.getCanonicalName();
@@ -373,9 +376,9 @@ public final class ServiceLoader {
                 ClassLoader classLoader = definition.classLoader;
 
                 try {
-                    Class candidate = ClassLoaderUtil.loadClass(classLoader, className);
+                    Class<?> candidate = loadClass(className, classLoader);
                     if (expectedType.isAssignableFrom(candidate)) {
-                        nextClass = candidate;
+                        nextClass = (Class<T>) candidate;
                         return true;
                     } else {
                         onNonAssignableClass(className, candidate);
@@ -385,6 +388,16 @@ public final class ServiceLoader {
                 }
             }
             return false;
+        }
+
+        private Class<?> loadClass(String className, ClassLoader classLoader) throws ClassNotFoundException {
+            Class<?> candidate;
+            if (USE_CLASSLOADING_FALLBACK) {
+                candidate = ClassLoaderUtil.loadClass(classLoader, className);
+            } else {
+                candidate = classLoader.loadClass(className);
+            }
+            return candidate;
         }
 
         private void onClassNotFoundException(String className, ClassLoader classLoader, ClassNotFoundException e) {
