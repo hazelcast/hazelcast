@@ -120,4 +120,8 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
      * the actual value was not equal to the expected value.
      */
     boolean casRecordState(long expect, long update);
+
+    void setPartition(int partition);
+
+    int getPartition();
 }

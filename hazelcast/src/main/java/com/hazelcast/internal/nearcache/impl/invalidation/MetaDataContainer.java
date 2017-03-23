@@ -59,7 +59,14 @@ public final class MetaDataContainer {
      */
     private volatile UUID uuid;
 
-    public MetaDataContainer() {
+    private final int partition;
+
+    public MetaDataContainer(int partition) {
+        this.partition = partition;
+    }
+
+    public int getPartition() {
+        return partition;
     }
 
     public UUID getUuid() {

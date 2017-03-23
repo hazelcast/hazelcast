@@ -44,6 +44,7 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
     protected long creationTime = TIME_NOT_SET;
     protected long sequence;
     protected UUID uuid;
+    protected int partition;
 
     protected volatile V value;
     protected volatile long expirationTime = TIME_NOT_SET;
@@ -166,6 +167,18 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
     @Override
     public boolean casRecordState(long expect, long update) {
         return RECORD_STATE.compareAndSet(this, expect, update);
+    }
+
+    @Override
+    public void setPartition(int partition) {
+        assert partition >= 0;
+
+        this.partition = partition;
+    }
+
+    @Override
+    public int getPartition() {
+        return partition;
     }
 
     @Override
