@@ -16,28 +16,26 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.Distributed.Function;
-
 import java.util.Map;
 
 /**
- * Factory methods for several common key extractor functions, to be used
- * in {@link Edge#partitioned(Function) Edge.partitioned(...)} calls.
+ * Factory methods for several common projection functions that extract
+ * a part of a data item.
  */
-public final class KeyExtractors {
+public final class Projections {
 
-    private KeyExtractors() {
+    private Projections() {
     }
 
     /**
-     * Transparent key extractor: returns its argument.
+     * Transparent projection: returns its argument.
      */
     public static <T> Distributed.Function<T, T> wholeItem() {
         return Distributed.Function.identity();
     }
 
     /**
-     * Extractor that returns the key of a {@link Map.Entry}.
+     * Extracts the key of a {@link Map.Entry}.
      *
      * @param <K> type of entry's key
      */
