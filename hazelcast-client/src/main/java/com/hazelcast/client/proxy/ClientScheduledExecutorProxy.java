@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetAllScheduled
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorShutdownCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToAddressCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToPartitionCodec;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
@@ -77,8 +78,8 @@ public class ClientScheduledExecutorProxy
         }
     };
 
-    public ClientScheduledExecutorProxy(String serviceName, String objectId) {
-        super(serviceName, objectId);
+    public ClientScheduledExecutorProxy(String serviceName, String objectId, ClientContext context) {
+        super(serviceName, objectId, context);
     }
 
     @Override

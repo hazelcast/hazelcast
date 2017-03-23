@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAddCodec;
 import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorEstimateCodec;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 
@@ -46,8 +47,8 @@ public class ClientCardinalityEstimatorProxy
         }
     };
 
-    public ClientCardinalityEstimatorProxy(String serviceName, String objectId) {
-        super(serviceName, objectId);
+    public ClientCardinalityEstimatorProxy(String serviceName, String objectId, ClientContext context) {
+        super(serviceName, objectId, context);
     }
 
     @Override

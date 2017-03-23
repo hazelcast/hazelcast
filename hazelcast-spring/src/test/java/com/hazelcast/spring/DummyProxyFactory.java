@@ -17,8 +17,9 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.client.spi.ClientProxy;
+import com.hazelcast.client.spi.ClientProxyFactory;
 
-public class DummyProxyFactory implements com.hazelcast.client.spi.ClientProxyFactory {
+public class DummyProxyFactory implements ClientProxyFactory {
 
     @Override
     public ClientProxy create(String id) {

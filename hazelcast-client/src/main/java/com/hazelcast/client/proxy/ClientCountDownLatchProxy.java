@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.CountDownLatchAwaitCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchCountDownCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetCountCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchTrySetCountCodec;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.core.ICountDownLatch;
 
 import java.util.concurrent.TimeUnit;
@@ -30,8 +31,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class ClientCountDownLatchProxy extends PartitionSpecificClientProxy implements ICountDownLatch {
 
-    public ClientCountDownLatchProxy(String serviceName, String objectId) {
-        super(serviceName, objectId);
+    public ClientCountDownLatchProxy(String serviceName, String objectId, ClientContext context) {
+        super(serviceName, objectId, context);
     }
 
     @Override

@@ -39,6 +39,7 @@ import com.hazelcast.client.impl.protocol.codec.QueueRemoveListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueTakeCodec;
 import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
@@ -69,8 +70,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy implements IQueue<E> {
 
-    public ClientQueueProxy(String serviceName, String name) {
-        super(serviceName, name);
+    public ClientQueueProxy(String serviceName, String name, ClientContext context) {
+        super(serviceName, name, context);
     }
 
     @Override

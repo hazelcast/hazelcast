@@ -56,8 +56,8 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
             = new ConcurrentHashMap<Xid, List<TransactionContext>>();
     private final AtomicInteger timeoutInSeconds = new AtomicInteger(DEFAULT_TIMEOUT_SECONDS);
 
-    public XAResourceProxy(String serviceName, String objectName) {
-        super(serviceName, objectName);
+    public XAResourceProxy(String serviceName, String objectName, ClientContext context) {
+        super(serviceName, objectName, context);
     }
 
     @Override

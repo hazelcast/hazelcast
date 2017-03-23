@@ -67,14 +67,13 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
 
     private int partitionCount;
 
-    public ClientDurableExecutorServiceProxy(String serviceName, String name) {
-        super(serviceName, name);
+    public ClientDurableExecutorServiceProxy(String serviceName, String name, ClientContext context) {
+        super(serviceName, name, context);
     }
 
     @Override
     protected void onInitialize() {
-        ClientContext context = getContext();
-        ClientPartitionService partitionService = context.getPartitionService();
+        ClientPartitionService partitionService = getContext().getPartitionService();
         partitionCount = partitionService.getPartitionCount();
     }
 

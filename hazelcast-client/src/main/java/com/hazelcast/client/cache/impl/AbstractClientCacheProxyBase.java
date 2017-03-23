@@ -95,8 +95,8 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
 
     private final AtomicInteger completionIdCounter = new AtomicInteger();
 
-    protected AbstractClientCacheProxyBase(CacheConfig<K, V> cacheConfig) {
-        super(ICacheService.SERVICE_NAME, cacheConfig.getName());
+    protected AbstractClientCacheProxyBase(CacheConfig<K, V> cacheConfig, ClientContext context) {
+        super(ICacheService.SERVICE_NAME, cacheConfig.getName(), context);
         this.name = cacheConfig.getName();
         this.nameWithPrefix = cacheConfig.getNameWithPrefix();
         this.cacheConfig = cacheConfig;

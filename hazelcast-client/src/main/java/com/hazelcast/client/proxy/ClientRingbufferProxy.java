@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.protocol.codec.RingbufferReadOneCodec;
 import com.hazelcast.client.impl.protocol.codec.RingbufferRemainingCapacityCodec;
 import com.hazelcast.client.impl.protocol.codec.RingbufferSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.RingbufferTailSequenceCodec;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
@@ -81,8 +82,8 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
     private int partitionId;
     private volatile long capacity = -1;
 
-    public ClientRingbufferProxy(String serviceName, String objectName) {
-        super(serviceName, objectName);
+    public ClientRingbufferProxy(String serviceName, String objectName, ClientContext context) {
+        super(serviceName, objectName, context);
     }
 
     @Override

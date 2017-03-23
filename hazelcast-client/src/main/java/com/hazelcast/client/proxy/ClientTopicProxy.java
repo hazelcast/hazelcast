@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicRemoveMessageListenerCodec;
 import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.ITopic;
@@ -39,8 +40,8 @@ import com.hazelcast.topic.impl.DataAwareMessage;
  */
 public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements ITopic<E> {
 
-    public ClientTopicProxy(String serviceName, String objectId) {
-        super(serviceName, objectId);
+    public ClientTopicProxy(String serviceName, String objectId, ClientContext context) {
+        super(serviceName, objectId, context);
     }
 
     @Override

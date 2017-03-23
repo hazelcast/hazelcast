@@ -80,8 +80,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
 
-    ClientCacheProxy(CacheConfig<K, V> cacheConfig) {
-        super(cacheConfig);
+    ClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext context) {
+        super(cacheConfig, context);
     }
 
     @Override

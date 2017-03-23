@@ -50,6 +50,7 @@ import com.hazelcast.client.proxy.ClientSetProxy;
 import com.hazelcast.client.proxy.ClientTopicProxy;
 import com.hazelcast.client.proxy.txn.xa.XAResourceProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientProxyFactoryWithContext;
 import com.hazelcast.client.spi.impl.ClientServiceNotFoundException;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.spi.impl.listener.LazyDistributedObjectEvent;
@@ -110,8 +111,9 @@ import static com.hazelcast.util.ServiceLoader.classIterator;
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
 public final class ProxyManager {
 
-    private static final String PROVIDER_ID = "com.hazelcast.client.spi.ClientProxyDescriptorProvider";
-    private static final Class[] CONSTRUCTOR_ARGUMENT_TYPES = new Class[]{String.class, String.class};
+    private static final String PROVIDER_ID = ClientProxyDescriptorProvider.class.getCanonicalName();
+    private static final Class[] LEGACY_CONSTRUCTOR_ARGUMENT_TYPES = new Class[]{String.class, String.class};
+    private static final Class[] CONSTRUCTOR_ARGUMENT_TYPES = new Class[]{String.class, String.class, ClientContext.class};
 
     private final ConcurrentMap<String, ClientProxyFactory> proxyFactories = new ConcurrentHashMap<String, ClientProxyFactory>();
     private final ConcurrentMap<ObjectNamespace, ClientProxyFuture> proxies
@@ -179,23 +181,25 @@ public final class ProxyManager {
         register(ReplicatedMapService.SERVICE_NAME, ClientReplicatedMapProxy.class);
         register(XAService.SERVICE_NAME, XAResourceProxy.class);
         register(RingbufferService.SERVICE_NAME, ClientRingbufferProxy.class);
-        register(ReliableTopicService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(String id) {
-                return new ClientReliableTopicProxy(id, client);
+        register(ReliableTopicService.SERVICE_NAME, new ClientProxyFactoryWithContext() {
+            @Override
+            public ClientProxy create(String id, ClientContext context) {
+                return new ClientReliableTopicProxy(id, context, client);
             }
         });
-        register(IdGeneratorService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(String id) {
+        register(IdGeneratorService.SERVICE_NAME, new ClientProxyFactoryWithContext() {
+            @Override
+            public ClientProxy create(String id, ClientContext context) {
                 IAtomicLong atomicLong = client.getAtomicLong(IdGeneratorService.ATOMIC_LONG_NAME + id);
-                return new ClientIdGeneratorProxy(IdGeneratorService.SERVICE_NAME, id, atomicLong);
+                return new ClientIdGeneratorProxy(IdGeneratorService.SERVICE_NAME, id, context, atomicLong);
             }
         });
         register(CardinalityEstimatorService.SERVICE_NAME, ClientCardinalityEstimatorProxy.class);
         register(DistributedScheduledExecutorService.SERVICE_NAME, ClientScheduledExecutorProxy.class);
 
+        ClassLoader classLoader = config.getClassLoader();
         for (ProxyFactoryConfig proxyFactoryConfig : config.getProxyFactoryConfigs()) {
             try {
-                ClassLoader classLoader = config.getClassLoader();
                 ClientProxyFactory clientProxyFactory = proxyFactoryConfig.getFactoryImpl();
                 if (clientProxyFactory == null) {
                     String className = proxyFactoryConfig.getClassName();
@@ -243,31 +247,34 @@ public final class ProxyManager {
         return clientExtension.createServiceProxyFactory(service);
     }
 
-    public HazelcastInstance getHazelcastInstance() {
-        return client;
+    public ClientContext getContext() {
+        return context;
     }
 
-    public void register(String serviceName, ClientProxyFactory factory) {
-        if (proxyFactories.putIfAbsent(serviceName, factory) != null) {
-            throw new IllegalArgumentException("Factory for service: " + serviceName + " is already registered!");
-        }
+    public HazelcastInstance getHazelcastInstance() {
+        return client;
     }
 
     public ClientProxyFactory getClientProxyFactory(String serviceName) {
         return proxyFactories.get(serviceName);
     }
 
+    public void register(String serviceName, ClientProxyFactory factory) {
+        if (proxyFactories.putIfAbsent(serviceName, factory) != null) {
+            throw new IllegalArgumentException("Factory for service " + serviceName + " is already registered!");
+        }
+    }
+
     public void register(final String serviceName, final Class<? extends ClientProxy> proxyType) {
         try {
-            register(serviceName, new ClientProxyFactory() {
+            register(serviceName, new ClientProxyFactoryWithContext() {
                 @Override
-                public ClientProxy create(String id) {
-                    return instantiateClientProxy(proxyType, serviceName, id);
+                public ClientProxy create(String id, ClientContext context) {
+                    return instantiateClientProxy(proxyType, serviceName, context, id);
                 }
             });
-
         } catch (Exception e) {
-            throw new HazelcastException("Could not initialize Proxy", e);
+            throw new HazelcastException("Factory for service " + serviceName + " could not be created for " + proxyType, e);
         }
     }
 
@@ -281,7 +288,7 @@ public final class ProxyManager {
         if (factory == null) {
             throw new ClientServiceNotFoundException("No factory registered for service: " + service);
         }
-        final ClientProxy clientProxy = factory.create(id);
+        final ClientProxy clientProxy = createClientProxy(id, factory);
         proxyFuture = new ClientProxyFuture();
         final ClientProxyFuture current = proxies.putIfAbsent(ns, proxyFuture);
         if (current != null) {
@@ -296,6 +303,14 @@ public final class ProxyManager {
         }
         proxyFuture.set(clientProxy);
         return clientProxy;
+    }
+
+    private ClientProxy createClientProxy(String id, ClientProxyFactory factory) {
+        if (factory instanceof ClientProxyFactoryWithContext) {
+            return ((ClientProxyFactoryWithContext) factory).create(id, context);
+        }
+        return factory.create(id)
+                .setContext(context);
     }
 
     public void removeProxy(String service, String id) {
@@ -352,7 +367,6 @@ public final class ProxyManager {
         ClientMessage clientMessage = ClientCreateProxyCodec.encodeRequest(clientProxy.getDistributedObjectName(),
                 clientProxy.getServiceName(), initializationTarget);
         new ClientInvocation(client, clientMessage, initializationTarget).invoke().get();
-        clientProxy.setContext(context);
         clientProxy.onInitialize();
     }
 
@@ -469,11 +483,15 @@ public final class ProxyManager {
         }
     }
 
-    private <T> T instantiateClientProxy(Class<T> proxyType, String serviceName, String id) {
+    private <T> T instantiateClientProxy(Class<T> proxyType, String serviceName, ClientContext context, String id) {
         try {
-            final Constructor<T> constructor = proxyType.getConstructor(CONSTRUCTOR_ARGUMENT_TYPES);
-            return constructor.newInstance(serviceName, id);
-
+            try {
+                Constructor<T> constructor = proxyType.getConstructor(CONSTRUCTOR_ARGUMENT_TYPES);
+                return constructor.newInstance(serviceName, id, context);
+            } catch (NoSuchMethodException e) {
+                Constructor<T> constructor = proxyType.getConstructor(LEGACY_CONSTRUCTOR_ARGUMENT_TYPES);
+                return constructor.newInstance(serviceName, id);
+            }
         } catch (Exception e) {
             throw rethrow(e);
         }

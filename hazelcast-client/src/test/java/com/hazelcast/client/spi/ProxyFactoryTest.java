@@ -18,6 +18,8 @@ package com.hazelcast.client.spi;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.spi.impl.ClientProxyFactoryWithContext;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
@@ -28,100 +30,185 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.fail;
+import static com.hazelcast.client.impl.ClientTestUtil.getHazelcastClientInstanceImpl;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ProxyFactoryTest {
 
-    private static final String SERVICE_NAME = "CustomService";
+    private static final String SERVICE_NAME_WITH_CONTEXT = CustomServiceWithContext.class.getSimpleName();
+    private static final String SERVICE_NAME = CustomService.class.getSimpleName();
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
+    private ClientContext context;
+
+    @Before
+    public void setup() {
+        ServiceConfig serviceConfigWithContext = new ServiceConfig()
+                .setEnabled(true)
+                .setName(SERVICE_NAME_WITH_CONTEXT)
+                .setImplementation(new CustomServiceWithContext());
+
+        ServiceConfig serviceConfig = new ServiceConfig()
+                .setEnabled(true)
+                .setName(SERVICE_NAME)
+                .setImplementation(new CustomService());
+
+        Config config = new Config();
+        config.getServicesConfig()
+                .addServiceConfig(serviceConfigWithContext)
+                .addServiceConfig(serviceConfig);
+
+        hazelcastFactory.newHazelcastInstance(config);
+    }
 
     @After
     public void tearDown() {
         hazelcastFactory.terminateAll();
     }
 
-    @Before
-    public void setup() {
-        Config config = new Config();
-        ServiceConfig serviceConfig = new ServiceConfig();
-        serviceConfig.setEnabled(true).setName(SERVICE_NAME)
-                .setImplementation(new CustomService());
-        config.getServicesConfig().addServiceConfig(serviceConfig);
-        hazelcastFactory.newHazelcastInstance(config);
+    @Test
+    public void testCustomProxyWithContext_usingFactoryClassName() {
+        ProxyFactoryConfig proxyFactoryConfig = new ProxyFactoryConfig()
+                .setService(SERVICE_NAME_WITH_CONTEXT)
+                .setClassName(CustomProxyFactoryWithContext.class.getName());
+
+        ClientConfig clientConfig = new ClientConfig()
+                .addProxyFactoryConfig(proxyFactoryConfig);
+
+        testProxyCreation(SERVICE_NAME_WITH_CONTEXT, clientConfig);
     }
 
     @Test
     public void testCustomProxy_usingFactoryClassName() {
-        ClientConfig clientConfig = new ClientConfig();
-        ProxyFactoryConfig proxyFactoryConfig = new ProxyFactoryConfig();
-        proxyFactoryConfig.setService(SERVICE_NAME);
-        proxyFactoryConfig.setClassName(CustomProxyFactory.class.getName());
-        clientConfig.addProxyFactoryConfig(proxyFactoryConfig);
+        ProxyFactoryConfig proxyFactoryConfig = new ProxyFactoryConfig()
+                .setService(SERVICE_NAME)
+                .setClassName(CustomProxyFactory.class.getName());
 
-        testCustomProxy(clientConfig);
+        ClientConfig clientConfig = new ClientConfig()
+                .addProxyFactoryConfig(proxyFactoryConfig);
+
+        testProxyCreation(SERVICE_NAME, clientConfig);
+    }
+
+    @Test
+    public void testCustomProxyWithContext_usingFactoryImplementation() {
+        ProxyFactoryConfig proxyFactoryConfig = new ProxyFactoryConfig()
+                .setService(SERVICE_NAME_WITH_CONTEXT)
+                .setFactoryImpl(new CustomProxyFactoryWithContext());
+
+        ClientConfig clientConfig = new ClientConfig()
+                .addProxyFactoryConfig(proxyFactoryConfig);
+
+        testProxyCreation(SERVICE_NAME_WITH_CONTEXT, clientConfig);
     }
 
     @Test
     public void testCustomProxy_usingFactoryImplementation() {
-        ClientConfig clientConfig = new ClientConfig();
-        ProxyFactoryConfig proxyFactoryConfig = new ProxyFactoryConfig();
-        proxyFactoryConfig.setService(SERVICE_NAME);
-        proxyFactoryConfig.setFactoryImpl(new CustomProxyFactory());
-        clientConfig.addProxyFactoryConfig(proxyFactoryConfig);
+        ProxyFactoryConfig proxyFactoryConfig = new ProxyFactoryConfig()
+                .setService(SERVICE_NAME)
+                .setFactoryImpl(new CustomProxyFactory());
 
-        testCustomProxy(clientConfig);
+        ClientConfig clientConfig = new ClientConfig()
+                .addProxyFactoryConfig(proxyFactoryConfig);
+
+        testProxyCreation(SERVICE_NAME, clientConfig);
     }
 
-    private void testCustomProxy(ClientConfig clientConfig) {
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-        String objectName = "custom-object";
-        CustomClientProxy proxy = client.getDistributedObject(SERVICE_NAME, objectName);
-        Assert.assertEquals(SERVICE_NAME, proxy.getServiceName());
-        Assert.assertEquals(objectName, proxy.getName());
-    }
-
-    @Test
-    public void testProxy_whenInitThrowsError() {
-        ClientConfig clientConfig = new ClientConfig();
-        ProxyFactoryConfig proxyFactoryConfig = new ProxyFactoryConfig();
-        proxyFactoryConfig.setService(SERVICE_NAME);
-        proxyFactoryConfig.setFactoryImpl(new ClientProxyFactory() {
-            @Override
-            public ClientProxy create(String id) {
-                return new ClientProxy(SERVICE_NAME, id) {
+    @Test(expected = ExpectedError.class)
+    public void testClientProxyFactoryWithContext_whenInitThrowsError() {
+        ProxyFactoryConfig proxyFactoryConfig = new ProxyFactoryConfig()
+                .setService(SERVICE_NAME_WITH_CONTEXT)
+                .setFactoryImpl(new ClientProxyFactoryWithContext() {
                     @Override
-                    protected void onInitialize() {
-                        super.onInitialize();
-                        throw new ExpectedError();
+                    public ClientProxy create(String id, ClientContext context) {
+                        return new ClientProxy(SERVICE_NAME_WITH_CONTEXT, id, context) {
+                            @Override
+                            protected void onInitialize() {
+                                super.onInitialize();
+                                throw new ExpectedError();
+                            }
+                        };
                     }
-                };
-            }
-        });
+                });
 
-        clientConfig.addProxyFactoryConfig(proxyFactoryConfig);
+        ClientConfig clientConfig = new ClientConfig()
+                .addProxyFactoryConfig(proxyFactoryConfig);
 
+        testProxyCreation(SERVICE_NAME_WITH_CONTEXT, clientConfig);
+    }
+
+    @Test(expected = ExpectedError.class)
+    @SuppressWarnings("deprecation")
+    public void testClientProxyFactory_whenInitThrowsError() {
+        ProxyFactoryConfig proxyFactoryConfig = new ProxyFactoryConfig()
+                .setService(SERVICE_NAME)
+                .setFactoryImpl(new ClientProxyFactory() {
+                    @Override
+                    public ClientProxy create(String id) {
+                        return new ClientProxy(SERVICE_NAME, id) {
+                            @Override
+                            protected void onInitialize() {
+                                super.onInitialize();
+                                throw new ExpectedError();
+                            }
+                        };
+                    }
+                });
+
+        ClientConfig clientConfig = new ClientConfig()
+                .addProxyFactoryConfig(proxyFactoryConfig);
+
+        testProxyCreation(SERVICE_NAME, clientConfig);
+    }
+
+    private void testProxyCreation(String serviceName, ClientConfig clientConfig) {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-        String objectName = "custom-object";
-        try {
-            client.getDistributedObject(SERVICE_NAME, objectName);
-            fail("Client proxy initialization should fail!");
-        } catch (ExpectedError expected) {
+        HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
+        context = clientInstanceImpl.getProxyManager().getContext();
+
+        ClientProxy proxy = client.getDistributedObject(serviceName, "CustomClientProxy");
+
+        assertEquals(serviceName, proxy.getServiceName());
+        assertEquals("CustomClientProxy", proxy.getName());
+    }
+
+    private class CustomServiceWithContext implements RemoteService {
+
+        @Override
+        public DistributedObject createDistributedObject(String objectName) {
+            return new CustomClientProxyWithContext(SERVICE_NAME_WITH_CONTEXT, objectName, context);
+        }
+
+        @Override
+        public void destroyDistributedObject(String objectName) {
         }
     }
 
-    private static class ExpectedError extends Error {
+    private static class CustomProxyFactoryWithContext extends ClientProxyFactoryWithContext {
+
+        @Override
+        public ClientProxy create(String id, ClientContext context) {
+            return new CustomClientProxyWithContext(SERVICE_NAME_WITH_CONTEXT, id, context);
+        }
+    }
+
+    private static class CustomClientProxyWithContext extends ClientProxy {
+
+        protected CustomClientProxyWithContext(String serviceName, String objectName, ClientContext context) {
+            super(serviceName, objectName, context);
+        }
     }
 
     private static class CustomService implements RemoteService {
+
         @Override
         public DistributedObject createDistributedObject(String objectName) {
             return new CustomClientProxy(SERVICE_NAME, objectName);
@@ -140,10 +227,14 @@ public class ProxyFactoryTest {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static class CustomClientProxy extends ClientProxy {
 
         protected CustomClientProxy(String serviceName, String objectName) {
             super(serviceName, objectName);
         }
+    }
+
+    private static class ExpectedError extends Error {
     }
 }
