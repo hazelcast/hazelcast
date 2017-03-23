@@ -28,51 +28,48 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.FilteringClassLoader;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import usercodedeployment.IncrementingEntryProcessor;
 import usercodedeployment.blacklisted.BlacklistedEP;
 import usercodedeployment.whitelisted.WhitelistedEP;
 
-import java.util.Arrays;
 import java.util.Collection;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class UserCodeDeploymentSmokeTest extends HazelcastTestSupport {
 
-    private TestHazelcastInstanceFactory factory;
+    private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
-    @Parameterized.Parameter
+    @Parameter
     public UserCodeDeploymentConfig.ClassCacheMode classCacheMode;
 
-    @Parameterized.Parameters(name = "ClassCacheMode:{0}")
+    @Parameters(name = "ClassCacheMode:{0}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {UserCodeDeploymentConfig.ClassCacheMode.ETERNAL},
                 {UserCodeDeploymentConfig.ClassCacheMode.OFF},
         });
     }
 
-    @Before
-    public void setUp() {
-        factory = createHazelcastInstanceFactory(2);
-    }
-
     @Test(expected = HazelcastSerializationException.class)
     public void testUserCodeDeploymentIsDisabledByDefault() {
-        //this test also validate the EP is filtered locally and has to be loaded from the other member
+        // this test also validate the EP is filtered locally and has to be loaded from the other member
         Config i1Config = new Config();
 
         Config i2Config = new Config();
-        FilteringClassLoader filteringCL = new FilteringClassLoader(asList("usercodedeployment"), null);
+        FilteringClassLoader filteringCL = new FilteringClassLoader(singletonList("usercodedeployment"), null);
         i2Config.setClassLoader(filteringCL);
 
         IncrementingEntryProcessor incrementingEntryProcessor = new IncrementingEntryProcessor();
@@ -87,7 +84,7 @@ public class UserCodeDeploymentSmokeTest extends HazelcastTestSupport {
                 .setClassCacheMode(classCacheMode);
 
         Config i2Config = new Config();
-        FilteringClassLoader filteringCL = new FilteringClassLoader(asList("usercodedeployment"), null);
+        FilteringClassLoader filteringCL = new FilteringClassLoader(singletonList("usercodedeployment"), null);
         i2Config.setClassLoader(filteringCL);
         i2Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
@@ -106,7 +103,7 @@ public class UserCodeDeploymentSmokeTest extends HazelcastTestSupport {
 
 
         Config i2Config = new Config();
-        FilteringClassLoader filteringCL = new FilteringClassLoader(asList("usercodedeployment"), null);
+        FilteringClassLoader filteringCL = new FilteringClassLoader(singletonList("usercodedeployment"), null);
         i2Config.setClassLoader(filteringCL);
         i2Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
@@ -124,9 +121,8 @@ public class UserCodeDeploymentSmokeTest extends HazelcastTestSupport {
                 .setEnabled(true)
                 .setClassCacheMode(classCacheMode);
 
-
         Config i2Config = new Config();
-        FilteringClassLoader filteringCL = new FilteringClassLoader(asList("usercodedeployment"), null);
+        FilteringClassLoader filteringCL = new FilteringClassLoader(singletonList("usercodedeployment"), null);
         i2Config.setClassLoader(filteringCL);
         i2Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
@@ -145,7 +141,7 @@ public class UserCodeDeploymentSmokeTest extends HazelcastTestSupport {
                 .setClassCacheMode(classCacheMode);
 
         Config i2Config = new Config();
-        FilteringClassLoader filteringCL = new FilteringClassLoader(asList("usercodedeployment"), null);
+        FilteringClassLoader filteringCL = new FilteringClassLoader(singletonList("usercodedeployment"), null);
         i2Config.setClassLoader(filteringCL);
         i2Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
@@ -164,7 +160,7 @@ public class UserCodeDeploymentSmokeTest extends HazelcastTestSupport {
                 .setClassCacheMode(classCacheMode);
 
         Config i2Config = new Config();
-        FilteringClassLoader filteringCL = new FilteringClassLoader(asList("usercodedeployment"), null);
+        FilteringClassLoader filteringCL = new FilteringClassLoader(singletonList("usercodedeployment"), null);
         i2Config.setClassLoader(filteringCL);
         i2Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
@@ -184,7 +180,7 @@ public class UserCodeDeploymentSmokeTest extends HazelcastTestSupport {
                 .setClassCacheMode(classCacheMode);
 
         Config i2Config = new Config();
-        FilteringClassLoader filteringCL = new FilteringClassLoader(asList("usercodedeployment"), null);
+        FilteringClassLoader filteringCL = new FilteringClassLoader(singletonList("usercodedeployment"), null);
         i2Config.setClassLoader(filteringCL);
         i2Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
