@@ -16,6 +16,7 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.serialization.PortableHook;
 import com.hazelcast.spi.impl.SpiPortableHook;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -73,6 +74,23 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         ServiceLoader.ClassIterator<PortableHook> iterator = new ServiceLoader.ClassIterator<PortableHook>(definitions, PortableHook.class);
 
         iterator.hasNext();
+    }
+
+    @Test
+    public void testSkipUnknownClassesStartingFromHazelcastPackage() {
+        ServiceLoader.ServiceDefinition definition = new ServiceLoader.ServiceDefinition("com.hazelcast.DoesNotExist", getClass().getClassLoader());
+        Set<ServiceLoader.ServiceDefinition> definitions = Collections.singleton(definition);
+        ServiceLoader.ClassIterator<PortableHook> iterator = new ServiceLoader.ClassIterator<PortableHook>(definitions, PortableHook.class);
+
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testFailFastOnUnknownClassesFromNonHazelcastPackage() {
+        ServiceLoader.ServiceDefinition definition = new ServiceLoader.ServiceDefinition("non.a.hazelcast.DoesNotExist", getClass().getClassLoader());
+        Set<ServiceLoader.ServiceDefinition> definitions = Collections.singleton(definition);
+        ServiceLoader.ClassIterator<PortableHook> iterator = new ServiceLoader.ClassIterator<PortableHook>(definitions, PortableHook.class);
+        assertFalse(iterator.hasNext());
     }
 
     @Test
