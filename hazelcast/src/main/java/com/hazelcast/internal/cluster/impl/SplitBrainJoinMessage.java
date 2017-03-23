@@ -26,7 +26,7 @@ import com.hazelcast.version.Version;
 import java.io.IOException;
 import java.util.Collection;
 
-import static com.hazelcast.internal.cluster.impl.Versions.V3_9;
+import static com.hazelcast.internal.cluster.Versions.V3_9;
 
 /**
  * A {@code JoinMessage} issued by the master node of a subcluster to the master of another subcluster
