@@ -22,7 +22,10 @@ import com.hazelcast.util.ConcurrentReferenceHashMap;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -189,6 +192,58 @@ public final class ClassLoaderUtil {
             return true;
         } catch (ClassNotFoundException e) {
             return false;
+        }
+    }
+
+    /**
+     * Check whether given class implements an interface with the same name.
+     * It returns true even when the implemented interface is loaded by a different
+     * classloader and hence the class is not assignable into it.
+     *
+     * An interface is considered as implemented even when either:
+     * <ul>
+     *     <li>The class directly implements the interface</li>
+     *     <li>The class implements an interface which extends the original interface<li></li>
+     *     <li>One of superclasses directly implements the interface</li>
+     *     <li>One of superclasses implements an interface which extends the original interface</li>
+     * </ul>
+     *
+     * This is useful for logging purposes.
+     *
+     * @param clazz class to check whether implements the interface
+     * @param iface interface to be implemented
+     * @return <code>true</code> when the class implements the inteface with the same name
+     */
+    public static boolean implementsInterfaceWithSameName(Class<?> clazz, Class<?> iface) {
+        Class<?>[] interfaces = getAllInterfaces(clazz);
+        for (Class implementedInterface : interfaces) {
+            if (implementedInterface.getName().equals(iface.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static Class<?>[] getAllInterfaces(Class<?> clazz) {
+        Collection<Class<?>> interfaces = new HashSet<Class<?>>();
+        addOwnInterfaces(clazz, interfaces);
+        addInterfacesOfSuperclasses(clazz, interfaces);
+        return interfaces.toArray(new Class<?>[0]);
+    }
+
+    private static void addOwnInterfaces(Class<?> clazz, Collection<Class<?>> allInterfaces) {
+        Class<?>[] interfaces = clazz.getInterfaces();
+        Collections.addAll(allInterfaces, interfaces);
+        for (Class cl : interfaces) {
+            addOwnInterfaces(cl, allInterfaces);
+        }
+    }
+
+    private static void addInterfacesOfSuperclasses(Class<?> clazz, Collection<Class<?>> interfaces) {
+        Class<?> superClass = clazz.getSuperclass();
+        while (superClass != null) {
+            addOwnInterfaces(superClass, interfaces);
+            superClass = superClass.getSuperclass();
         }
     }
 

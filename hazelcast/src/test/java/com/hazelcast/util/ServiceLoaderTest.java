@@ -16,26 +16,120 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.serialization.PortableHook;
+import com.hazelcast.spi.impl.SpiPortableHook;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.dynamic.DynamicType;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import static com.hazelcast.test.TestCollectionUtils.setOf;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ServiceLoaderTest extends HazelcastTestSupport {
+
+    @Test
+    public void testSkipHooksWithImplementingTheExpectedInterfaceButLoadedByDifferentClassloader() {
+        Class<?> otherInterface = newInterface(PortableHook.class.getName());
+        ClassLoader otherClassloader = otherInterface.getClassLoader();
+
+        Class<?> otherHook = newClassImplementingInterface("com.hazelcast.internal.serialization.DifferentHook",
+                otherInterface, otherClassloader);
+
+        ServiceLoader.ServiceDefinition definition = new ServiceLoader.ServiceDefinition(otherHook.getName(), otherClassloader);
+        Set<ServiceLoader.ServiceDefinition> definitions = Collections.singleton(definition);
+        ServiceLoader.ClassIterator<PortableHook> iterator = new ServiceLoader.ClassIterator<PortableHook>(definitions, PortableHook.class);
+
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test(expected = ClassCastException.class)
+    public void testFailFastWhenHookDoesNotImplementExpectedInteface() {
+        Class<?> otherInterface = newInterface("com.hazelcast.internal.serialization.DifferentInterface");
+        ClassLoader otherClassloader = otherInterface.getClassLoader();
+
+        Class<?> otherHook = newClassImplementingInterface("com.hazelcast.internal.serialization.DifferentHook",
+                otherInterface, otherClassloader);
+
+        ServiceLoader.ServiceDefinition definition = new ServiceLoader.ServiceDefinition(otherHook.getName(), otherClassloader);
+        Set<ServiceLoader.ServiceDefinition> definitions = Collections.singleton(definition);
+        ServiceLoader.ClassIterator<PortableHook> iterator = new ServiceLoader.ClassIterator<PortableHook>(definitions, PortableHook.class);
+
+        iterator.hasNext();
+    }
+
+    @Test
+    public void testSkipUnknownClassesStartingFromHazelcastPackage() {
+        ServiceLoader.ServiceDefinition definition = new ServiceLoader.ServiceDefinition("com.hazelcast.DoesNotExist", getClass().getClassLoader());
+        Set<ServiceLoader.ServiceDefinition> definitions = Collections.singleton(definition);
+        ServiceLoader.ClassIterator<PortableHook> iterator = new ServiceLoader.ClassIterator<PortableHook>(definitions, PortableHook.class);
+
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testFailFastOnUnknownClassesFromNonHazelcastPackage() {
+        ServiceLoader.ServiceDefinition definition = new ServiceLoader.ServiceDefinition("non.a.hazelcast.DoesNotExist", getClass().getClassLoader());
+        Set<ServiceLoader.ServiceDefinition> definitions = Collections.singleton(definition);
+        ServiceLoader.ClassIterator<PortableHook> iterator = new ServiceLoader.ClassIterator<PortableHook>(definitions, PortableHook.class);
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testSkipHookLoadedByDifferentClassloader() {
+        Class<?> otherInterface = newInterface(PortableHook.class.getName());
+        ClassLoader otherClassloader = otherInterface.getClassLoader();
+
+        Class<?> otherHook = newClassImplementingInterface("com.hazelcast.internal.serialization.DifferentHook",
+                otherInterface, otherClassloader);
+
+        //otherHook is loaded by other classloader -> it should be skipped
+        ServiceLoader.ServiceDefinition definition1 = new ServiceLoader.ServiceDefinition(otherHook.getName(), otherClassloader);
+        //this hook should be loaded
+        ServiceLoader.ServiceDefinition definition2 = new ServiceLoader.ServiceDefinition(SpiPortableHook.class.getName(), SpiPortableHook.class.getClassLoader());
+
+        Set<ServiceLoader.ServiceDefinition> definitions = setOf(definition1, definition2);
+        ServiceLoader.ClassIterator<PortableHook> iterator = new ServiceLoader.ClassIterator<PortableHook>(definitions, PortableHook.class);
+
+        assertTrue(iterator.hasNext());
+        Class<PortableHook> hook = iterator.next();
+        assertEquals(SpiPortableHook.class, hook);
+        assertFalse(iterator.hasNext());
+    }
+
+    private Class<?> newClassImplementingInterface(String classname, Class<?> iface, ClassLoader classLoader) {
+        DynamicType.Unloaded<?> otherHookTypeDefinition = new ByteBuddy()
+                .subclass(iface)
+                .name(classname)
+                .make();
+        return otherHookTypeDefinition.load(classLoader).getLoaded();
+    }
+
+    private Class<?> newInterface(String name) {
+        DynamicType.Unloaded<?> otherInterfaceTypeDefinition = new ByteBuddy()
+                .makeInterface()
+                .name(name)
+                .make();
+        return otherInterfaceTypeDefinition.load(null).getLoaded();
+    }
 
     @Test
     public void testConstructor() {
