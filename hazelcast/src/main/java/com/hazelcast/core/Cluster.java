@@ -84,6 +84,18 @@ public interface Cluster {
     Member getLocalMember();
 
     /**
+     * Promotes local lite member to data member.
+     * When this method returns both {@link #getLocalMember()} and {@link #getMembers()}
+     * reflects the promotion.
+     *
+     * @throws IllegalStateException if member is not a lite member
+     * @throws IllegalStateException if mastership claim in progress
+     * @throws IllegalArgumentException if local member cannot be identified as a member of the cluster
+     * @since 3.9
+     */
+    void promoteLocalLiteMember();
+
+    /**
      * Returns the cluster-wide time in milliseconds.
      * <p/>
      * Cluster tries to keep a cluster-wide time which might be different than the member's own system time.

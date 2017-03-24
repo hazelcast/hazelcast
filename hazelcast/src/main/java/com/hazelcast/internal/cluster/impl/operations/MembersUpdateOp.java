@@ -96,10 +96,8 @@ public class MembersUpdateOp extends VersionedClusterOperation {
 
     final void checkLocalMemberUuid() {
         ClusterServiceImpl clusterService = getService();
-        NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
-        Node node = nodeEngine.getNode();
-        if (!node.getThisUuid().equals(targetUuid)) {
-            String msg = "targetUuid: " + targetUuid + " is different than this node's uuid: " + node.getThisUuid();
+        if (!clusterService.getThisUuid().equals(targetUuid)) {
+            String msg = "targetUuid: " + targetUuid + " is different than this node's uuid: " + clusterService.getThisUuid();
             throw new IllegalStateException(msg);
         }
     }

@@ -167,12 +167,12 @@ public class ClusterHeartbeatManager {
             MembershipManager membershipManager = clusterService.getMembershipManager();
             MemberImpl member = membershipManager.getMember(senderAddress, senderMembersViewMetadata.getMemberUuid());
             if (member != null) {
-                if (node.getThisUuid().equals(receiverUuid)) {
+                if (clusterService.getThisUuid().equals(receiverUuid)) {
                     onHeartbeat(member, timestamp);
                     return;
                 }
 
-                logger.warning("Local uuid mismatch on received heartbeat. local uuid: " + node.getThisUuid()
+                logger.warning("Local uuid mismatch on received heartbeat. local uuid: " + clusterService.getThisUuid()
                         + " received uuid: " + receiverUuid + " with " + senderMembersViewMetadata);
             }
 
@@ -601,7 +601,7 @@ public class ClusterHeartbeatManager {
         try {
             MembersViewMetadata membersViewMetadata = clusterService.getMembershipManager().createLocalMembersViewMetadata();
             Operation op = new HeartbeatOp(membersViewMetadata, target.getUuid(), clusterClock.getClusterTime());
-            op.setCallerUuid(node.getThisUuid());
+            op.setCallerUuid(clusterService.getThisUuid());
             node.nodeEngine.getOperationService().send(op, target.getAddress());
         } catch (Exception e) {
             if (logger.isFineEnabled()) {

@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -113,6 +114,10 @@ class ClusterMergeTask implements Runnable {
         // reset all services to their initial state
         Collection<ManagedService> managedServices = node.nodeEngine.getServices(ManagedService.class);
         for (ManagedService service : managedServices) {
+            if (service instanceof ClusterService) {
+                // ClusterService is already reset in resetState()
+                continue;
+            }
             service.reset();
         }
     }

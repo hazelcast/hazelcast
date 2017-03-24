@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -185,8 +184,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     private Diagnostics newDiagnostics() {
-        Member localMember = node.getLocalMember();
-        Address address = localMember.getAddress();
+        Address address = node.getThisAddress();
         String addressString = address.getHost().replace(":", "_") + "_" + address.getPort();
         String name = "diagnostics-" + addressString + "-" + currentTimeMillis();
 

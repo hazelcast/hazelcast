@@ -149,7 +149,7 @@ public class MulticastJoiner extends AbstractJoiner {
     }
 
     void onReceivedJoinRequest(JoinRequest joinRequest) {
-        if (joinRequest.getUuid().compareTo(node.getThisUuid()) < 0) {
+        if (joinRequest.getUuid().compareTo(clusterService.getThisUuid()) < 0) {
             maxTryCount.incrementAndGet();
         }
     }

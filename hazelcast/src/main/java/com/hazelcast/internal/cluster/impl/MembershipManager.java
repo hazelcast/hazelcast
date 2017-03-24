@@ -122,7 +122,7 @@ public class MembershipManager {
     }
 
     private void registerThisMember() {
-        MemberImpl thisMember = node.getLocalMember();
+        MemberImpl thisMember = clusterService.getLocalMember();
         memberMapRef.set(MemberMap.singleton(thisMember));
     }
 
@@ -189,7 +189,7 @@ public class MembershipManager {
 
             MembersUpdateOp op = new MembersUpdateOp(member.getUuid(), memberMap.toMembersView(),
                     clusterService.getClusterTime(), null, false);
-            op.setCallerUuid(node.getThisUuid());
+            op.setCallerUuid(clusterService.getThisUuid());
             nodeEngine.getOperationService().send(op, target);
         } finally {
             clusterServiceLock.unlock();
@@ -225,7 +225,7 @@ public class MembershipManager {
 
             MembersUpdateOp op = new MembersUpdateOp(member.getUuid(), membersView,
                     clusterService.getClusterTime(), null, false);
-            op.setCallerUuid(node.getThisUuid());
+            op.setCallerUuid(clusterService.getThisUuid());
             nodeEngine.getOperationService().send(op, member.getAddress());
         }
     }
@@ -245,11 +245,19 @@ public class MembershipManager {
             MemberImpl member = currentMemberMap.getMember(address);
 
             if (member != null && member.getUuid().equals(memberInfo.getUuid())) {
+                if (member.isLiteMember() && !memberInfo.isLiteMember()) {
+                    // lite member promoted
+                    logger.info(member + " is promoted to normal member.");
+                    member = createMember(memberInfo);
+                }
                 members[memberIndex++] = member;
                 continue;
             }
 
             if (member != null) {
+                assert !(member.localMember() && member.equals(clusterService.getLocalMember()))
+                        : "Local " + member + " cannot be replaced with " + memberInfo;
+
                 // uuid changed: means member has gone and come back with a new uuid
                 removedMembers.add(member);
             }
@@ -390,7 +398,7 @@ public class MembershipManager {
     }
 
     MembersViewMetadata createLocalMembersViewMetadata() {
-        return new MembersViewMetadata(node.getThisAddress(), node.getThisUuid(),
+        return new MembersViewMetadata(node.getThisAddress(), clusterService.getThisUuid(),
                 clusterService.getMasterAddress(), getMemberListVersion());
     }
 
@@ -634,7 +642,7 @@ public class MembershipManager {
             return false;
         }
 
-        for (MemberImpl m : memberMap.headMemberSet(node.getLocalMember(), false)) {
+        for (MemberImpl m : memberMap.headMemberSet(clusterService.getLocalMember(), false)) {
             if (!isMemberSuspected(m.getAddress())) {
                 return false;
             }
@@ -758,7 +766,7 @@ public class MembershipManager {
     }
 
     private Future<MembersView> invokeFetchMembersViewOp(Address target, String targetUuid) {
-        Operation op = new FetchMembersViewOp(targetUuid).setCallerUuid(node.getThisUuid());
+        Operation op = new FetchMembersViewOp(targetUuid).setCallerUuid(clusterService.getThisUuid());
 
         return nodeEngine.getOperationService()
                 .createInvocationBuilder(SERVICE_NAME, op, target)
@@ -806,7 +814,7 @@ public class MembershipManager {
     void addMembersRemovedInNotActiveState(Collection<MemberImpl> members) {
         clusterServiceLock.lock();
         try {
-            members.remove(node.getLocalMember());
+            members.remove(clusterService.getLocalMember());
             MemberMap membersRemovedInNotActiveState = membersRemovedInNotActiveStateRef.get();
             membersRemovedInNotActiveStateRef.set(MemberMap.cloneAdding(membersRemovedInNotActiveState,
                     members.toArray(new MemberImpl[0])));
@@ -850,10 +858,53 @@ public class MembershipManager {
         }
     }
 
+    public MembersView promoteToNormalMember(Address address, String uuid) {
+        clusterServiceLock.lock();
+        try {
+            if (!clusterService.isMaster()) {
+                throw new IllegalStateException("This node is not master!");
+            }
+            if (clusterService.getClusterJoinManager().isMastershipClaimInProgress()) {
+                throw new IllegalStateException("Mastership claim is in progress!");
+            }
+
+            MemberMap memberMap = memberMapRef.get();
+            MemberImpl member = memberMap.getMember(address, uuid);
+            if (member == null) {
+                throw new IllegalArgumentException(uuid + "/" + address + " is not a member!");
+            }
+
+            if (!member.isLiteMember()) {
+                logger.fine(member + " is not lite member, no promotion is required.");
+                return memberMap.toMembersView();
+            }
+
+            logger.info("Promoting " + member + " to normal member.");
+            MemberImpl[] members = memberMap.getMembers().toArray(new MemberImpl[0]);
+            for (int i = 0; i < members.length; i++) {
+                if (member.equals(members[i])) {
+                    member = new MemberImpl(member.getAddress(), member.getVersion(), member.localMember(),
+                            member.getUuid(), member.getAttributes(), false, node.hazelcastInstance);
+                    members[i] = member;
+                    break;
+                }
+            }
+
+            MemberMap newMemberMap = MemberMap.createNew(memberMap.getVersion() + 1, members);
+            setMembers(newMemberMap);
+            sendMemberListToOthers();
+            node.partitionService.memberAdded(member);
+            clusterService.printMemberList();
+            return newMemberMap.toMembersView();
+        } finally {
+            clusterServiceLock.unlock();
+        }
+    }
+
     void reset() {
         clusterServiceLock.lock();
         try {
-            memberMapRef.set(MemberMap.singleton(node.getLocalMember()));
+            memberMapRef.set(MemberMap.singleton(clusterService.getLocalMember()));
             membersRemovedInNotActiveStateRef.set(MemberMap.empty());
             suspectedMembers.clear();
         } finally {
