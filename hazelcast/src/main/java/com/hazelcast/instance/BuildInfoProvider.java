@@ -58,11 +58,17 @@ public final class BuildInfoProvider {
      * @return the parsed BuildInfo
      */
     public static BuildInfo getBuildInfo() {
-        BuildInfo buildInfo = readBuildPropertiesClass(BuildProperties.class, null);
+        // If you have a compilation error at GeneratedBuildProperties then run 'mvn clean install'
+        // the GeneratedBuildProperties class is generated at a compile-time
+        BuildInfo buildInfo = readBuildPropertiesClass(GeneratedBuildProperties.class, null);
         try {
             Class<?> enterpriseClass = BuildInfoProvider.class.getClassLoader()
-                    .loadClass("com.hazelcast.instance.EnterpriseBuildProperties");
-            buildInfo = readBuildPropertiesClass(enterpriseClass, buildInfo);
+                    .loadClass("com.hazelcast.instance.GeneratedEnterpriseBuildProperties");
+            if (enterpriseClass.getClassLoader() == BuildInfoProvider.class.getClassLoader()) {
+                //only read the enterprise properties if there were loaded by the same classloader
+                //as BuildInfoProvider and not e.g. a parent classloader.
+                buildInfo = readBuildPropertiesClass(enterpriseClass, buildInfo);
+            }
         } catch (ClassNotFoundException e) {
             ignore(e);
         }
@@ -111,7 +117,8 @@ public final class BuildInfoProvider {
         int buildNumber = Integer.parseInt(build);
         boolean enterprise = !"Hazelcast".equals(distribution);
 
-        byte serialVersion = Byte.parseByte(BuildProperties.SERIALIZATION_VERSION);
+        String serialVersionString = readStaticStringField(clazz, "SERIALIZATION_VERSION");
+        byte serialVersion = Byte.parseByte(serialVersionString);
         return overrideBuildInfo(version, build, revision, buildNumber, enterprise, serialVersion, upstreamBuildInfo);
     }
 
