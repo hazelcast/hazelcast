@@ -215,7 +215,8 @@ public final class ProxyManager {
     private void readProxyDescriptors() {
         try {
             ClassLoader classLoader = client.getClientConfig().getClassLoader();
-            Iterator<Class<ClientProxyDescriptorProvider>> iter = classIterator(PROVIDER_ID, classLoader);
+            Iterator<Class<ClientProxyDescriptorProvider>> iter = classIterator(ClientProxyDescriptorProvider.class,
+                    PROVIDER_ID, classLoader);
 
             while (iter.hasNext()) {
                 Class<ClientProxyDescriptorProvider> clazz = iter.next();

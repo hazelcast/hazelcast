@@ -24,6 +24,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClassLoaderUtilTest extends HazelcastTestSupport {
@@ -32,4 +35,57 @@ public class ClassLoaderUtilTest extends HazelcastTestSupport {
     public void testConstructor() {
         assertUtilityConstructor(ClassLoaderUtil.class);
     }
+
+    @Test
+    public void testImplementsIntefaceWithSameName_whenInterfaceIsDirectlyImplemented() {
+        assertTrue(ClassLoaderUtil.implementsInterfaceWithSameName(DirectlyImplementingInterface.class, MyInterface.class));
+    }
+
+    @Test
+    public void testDoNotImplementInterface() {
+        assertFalse(ClassLoaderUtil.implementsInterfaceWithSameName(Object.class, MyInterface.class));
+    }
+
+    @Test
+    public void testImplementsIntefaceWithSameName_whenInterfaceIsImplementedBySuperClass() {
+        assertTrue(ClassLoaderUtil.implementsInterfaceWithSameName(ExtendingClassImplementingInterface.class, MyInterface.class));
+    }
+
+    @Test
+    public void testImplementsIntefaceWithSameName_whenDirectlyImplementingSubInterface() {
+        assertTrue(ClassLoaderUtil.implementsInterfaceWithSameName(DirectlyImplementingSubInterfaceInterface.class, MyInterface.class));
+    }
+
+    @Test
+    public void testImplementsIntefaceWithSameName_whenExtendingClassImplementingSubinterface() {
+        assertTrue(ClassLoaderUtil.implementsInterfaceWithSameName(ExtendingClassImplementingSubInterface.class, MyInterface.class));
+    }
+
+
+
+
+    private static class ExtendingClassImplementingSubInterface extends DirectlyImplementingSubInterfaceInterface {
+
+    }
+
+    private static class ExtendingClassImplementingInterface extends DirectlyImplementingInterface {
+
+    }
+
+    private static class DirectlyImplementingInterface implements MyInterface {
+
+    }
+
+    private static class DirectlyImplementingSubInterfaceInterface implements SubInterface {
+
+    }
+
+    private interface SubInterface extends MyInterface {
+
+    }
+
+    private interface MyInterface {
+
+    }
+
 }

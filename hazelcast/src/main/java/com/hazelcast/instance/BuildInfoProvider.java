@@ -16,10 +16,12 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.util.Properties;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
@@ -56,14 +58,22 @@ public final class BuildInfoProvider {
      * @return the parsed BuildInfo
      */
     public static BuildInfo getBuildInfo() {
-        Properties properties = loadPropertiesFromResource("hazelcast-runtime.properties");
-        Properties enterpriseProperties = loadPropertiesFromResource("hazelcast-enterprise-runtime.properties");
-        Properties jetProperties = loadPropertiesFromResource("jet-runtime.properties");
-
-        BuildInfo buildInfo = readBuildInfoProperties(properties, null);
-        if (!enterpriseProperties.isEmpty()) {
-            buildInfo = readBuildInfoProperties(enterpriseProperties, buildInfo);
+        // If you have a compilation error at GeneratedBuildProperties then run 'mvn clean install'
+        // the GeneratedBuildProperties class is generated at a compile-time
+        BuildInfo buildInfo = readBuildPropertiesClass(GeneratedBuildProperties.class, null);
+        try {
+            Class<?> enterpriseClass = BuildInfoProvider.class.getClassLoader()
+                    .loadClass("com.hazelcast.instance.GeneratedEnterpriseBuildProperties");
+            if (enterpriseClass.getClassLoader() == BuildInfoProvider.class.getClassLoader()) {
+                //only read the enterprise properties if there were loaded by the same classloader
+                //as BuildInfoProvider and not e.g. a parent classloader.
+                buildInfo = readBuildPropertiesClass(enterpriseClass, buildInfo);
+            }
+        } catch (ClassNotFoundException e) {
+            ignore(e);
         }
+
+        Properties jetProperties = loadPropertiesFromResource("jet-runtime.properties");
         setJetProperties(jetProperties, buildInfo);
         return buildInfo;
     }
@@ -95,33 +105,48 @@ public final class BuildInfoProvider {
         return runtimeProperties;
     }
 
-    private static BuildInfo readBuildInfoProperties(Properties runtimeProperties, BuildInfo upstreamBuildInfo) {
-        String version = runtimeProperties.getProperty("hazelcast.version");
-        String distribution = runtimeProperties.getProperty("hazelcast.distribution");
-        String revision = runtimeProperties.getProperty("hazelcast.git.revision", "");
+    private static BuildInfo readBuildPropertiesClass(Class<?> clazz, BuildInfo upstreamBuildInfo) {
+        String version = readStaticStringField(clazz, "VERSION");
+        String build = readStaticStringField(clazz, "BUILD");
+        String revision = readStaticStringField(clazz, "REVISION");
+        String distribution = readStaticStringField(clazz, "DISTRIBUTION");
+
         if (!revision.isEmpty() && revision.equals("${git.commit.id.abbrev}")) {
             revision = "";
         }
+        int buildNumber = Integer.parseInt(build);
         boolean enterprise = !"Hazelcast".equals(distribution);
 
-        // override BUILD_NUMBER with a system property
-        String build;
+        String serialVersionString = readStaticStringField(clazz, "SERIALIZATION_VERSION");
+        byte serialVersion = Byte.parseByte(serialVersionString);
+        return overrideBuildInfo(version, build, revision, buildNumber, enterprise, serialVersion, upstreamBuildInfo);
+    }
+
+    private static BuildInfo overrideBuildInfo(String version, String build, String revision, int buildNumber,
+                                               boolean enterprise, byte serialVersion, BuildInfo upstreamBuildInfo) {
         Integer hazelcastBuild = Integer.getInteger("hazelcast.build", -1);
-        if (hazelcastBuild == -1) {
-            build = runtimeProperties.getProperty("hazelcast.build");
-        } else {
+        if (hazelcastBuild != -1) {
             build = String.valueOf(hazelcastBuild);
+            buildNumber = hazelcastBuild;
         }
-        int buildNumber = Integer.parseInt(build);
-        // override version with a system property
         String overridingVersion = System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
         if (overridingVersion != null) {
             LOGGER.info("Overriding hazelcast version with system property value " + overridingVersion);
             version = overridingVersion;
         }
-
-        String sv = runtimeProperties.getProperty("hazelcast.serialization.version");
-        byte serialVersion = Byte.parseByte(sv);
         return new BuildInfo(version, build, revision, buildNumber, enterprise, serialVersion, upstreamBuildInfo);
     }
+
+    //todo: move elsewhere
+    private static String readStaticStringField(Class<?> clazz, String fieldName) {
+        try {
+            Field field = clazz.getField(fieldName);
+            return (String) field.get(null);
+        } catch (NoSuchFieldException e) {
+            throw new HazelcastException(e);
+        } catch (IllegalAccessException e) {
+            throw new HazelcastException(e);
+        }
+    }
+
 }
