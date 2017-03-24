@@ -18,10 +18,10 @@ package com.hazelcast.jet;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.Traversers.ResettableSingletonTraverser;
+import com.hazelcast.jet.impl.connector.HazelcastWriteConnectors;
 import com.hazelcast.jet.impl.connector.ReadIListP;
-import com.hazelcast.jet.impl.connector.WriteIListP;
-import com.hazelcast.jet.impl.connector.ReadIMapP;
-import com.hazelcast.jet.impl.connector.WriteIMapP;
+import com.hazelcast.jet.impl.connector.ReadWithPartitionIteratorP;
+import com.hazelcast.jet.impl.connector.WriteBufferedP;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -47,10 +47,11 @@ public final class Processors {
 
     /**
      * Returns a meta-supplier of processors that will fetch entries from the
-     * Hazelcast {@code IMap} with the specified name. The processors will only
-     * access data local to the member and, if {@code localParallelism} for the
-     * vertex is above one, processors will divide the labor within the member
-     * so that each one gets a subset of all local partitions to read.
+     * Hazelcast {@code IMap} with the specified name and will emit them as {@code Map.Entry}.
+     * The processors will only access data local to the member and,
+     * if {@code localParallelism} for the vertex is above one,
+     * processors will divide the labor within the member so that
+     * each one gets a subset of all local partitions to read.
      * <p>
      * The number of Hazelcast partitions should be configured to at least
      * {@code localParallelism * clusterSize}, otherwise some processors will have
@@ -61,36 +62,91 @@ public final class Processors {
      */
     @Nonnull
     public static ProcessorMetaSupplier readMap(@Nonnull String mapName) {
-        return ReadIMapP.supplier(mapName);
+        return ReadWithPartitionIteratorP.readMap(mapName);
     }
 
     /**
      * Returns a meta-supplier of processors that will fetch entries from a
      * Hazelcast {@code IMap} in a remote cluster.
+     * Processors will emit the entries as {@code Map.Entry}.
      * <p>
      * If the underlying map is concurrently being modified, there are no guarantees
      * given with respect to missing or duplicate items.
      */
     @Nonnull
     public static ProcessorMetaSupplier readMap(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
-        return ReadIMapP.supplier(mapName, clientConfig);
+        return ReadWithPartitionIteratorP.readMap(mapName, clientConfig);
     }
 
     /**
      * Returns a meta-supplier of processors that will put data into a Hazelcast {@code IMap}.
+     * Processors expect items of type {@code Map.Entry}.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeMap(@Nonnull String mapName) {
-        return WriteIMapP.supplier(mapName);
+        return HazelcastWriteConnectors.writeMap(mapName);
     }
 
     /**
      * Returns a meta-supplier of processors that will put data into a Hazelcast {@code IMap} in
      * a remote cluster.
+     * Processors expect items of type {@code Map.Entry}.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeMap(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
-        return WriteIMapP.supplier(mapName, clientConfig);
+        return HazelcastWriteConnectors.writeMap(mapName, clientConfig);
+    }
+
+    /**
+     * Returns a meta-supplier of processors that will fetch entries from the
+     * Hazelcast {@code ICache} with the specified name and will emit them as {@code Cache.Entry}.
+     * The processors will only access data local to the member and,
+     * if {@code localParallelism} for the vertex is above one,
+     * processors will divide the labor within the member so that
+     * each one gets a subset of all local partitions to read.
+     * <p>
+     * The number of Hazelcast partitions should be configured to at least
+     * {@code localParallelism * clusterSize}, otherwise some processors will have
+     * no partitions assigned to them.
+     * <p>
+     * If the underlying cache is concurrently being modified, there are no guarantees
+     * given with respect to missing or duplicate items.
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier readCache(@Nonnull String cacheName) {
+        return ReadWithPartitionIteratorP.readCache(cacheName);
+    }
+
+    /**
+     * Returns a meta-supplier of processors that will fetch entries from a
+     * Hazelcast {@code ICache} in a remote cluster.
+     * Processors will emit the entries as {@code Cache.Entry}.
+     * <p>
+     * If the underlying cache is concurrently being modified, there are no guarantees
+     * given with respect to missing or duplicate items.
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier readCache(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
+        return ReadWithPartitionIteratorP.readCache(cacheName, clientConfig);
+    }
+
+    /**
+     * Returns a meta-supplier of processors that will put data into a Hazelcast {@code ICache}.
+     * Processors expect items of type {@code Map.Entry}
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier writeCache(@Nonnull String cacheName) {
+        return HazelcastWriteConnectors.writeCache(cacheName);
+    }
+
+    /**
+     * Returns a meta-supplier of processors that will put data into a Hazelcast {@code ICache} in
+     * a remote cluster.
+     * Processors expect items of type {@code Map.Entry}.
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier writeCache(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
+        return HazelcastWriteConnectors.writeCache(cacheName, clientConfig);
     }
 
     /**
@@ -115,7 +171,7 @@ public final class Processors {
      */
     @Nonnull
     public static ProcessorSupplier writeList(@Nonnull String listName) {
-        return WriteIListP.supplier(listName);
+        return HazelcastWriteConnectors.writeList(listName);
     }
 
     /**
@@ -124,7 +180,45 @@ public final class Processors {
      */
     @Nonnull
     public static ProcessorSupplier writeList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
-        return WriteIListP.supplier(listName, clientConfig);
+        return HazelcastWriteConnectors.writeList(listName, clientConfig);
+    }
+
+
+    /**
+     * Returns a supplier of processor which, drains items of type {@code T}
+     * to the supplied buffer of type {@code B}, and consumes the buffer via {@code bufferConsumer}
+     *
+     *
+     * @param bufferSupplier supplier which supplies the buffer
+     * @param drainer bi-consumer which consumes item to buffer
+     * @param bufferConsumer consumer which consumes the buffer
+     * @param <B> type of buffer
+     * @param <T> type of received item
+     */
+    public static <B, T> ProcessorSupplier writeBuffered(@Nonnull Distributed.Supplier<B> bufferSupplier,
+                                                         @Nonnull Distributed.BiConsumer<B, T> drainer,
+                                                         @Nonnull Distributed.Consumer<B> bufferConsumer) {
+        return WriteBufferedP.writeBuffered(bufferSupplier, drainer, bufferConsumer, emptyConsumer());
+    }
+
+    /**
+     * Returns a supplier of processor which, drains items of type {@code T}
+     * to the supplied buffer of type {@code B}, and consumes the buffer via {@code bufferConsumer}.
+     *
+     * processor will be closed via {@code bufferCloser}
+     *
+     *
+     * @param bufferSupplier supplier which supplies the buffer
+     * @param drainer bi-consumer which consumes item to buffer
+     * @param bufferConsumer consumer which consumes the buffer
+     * @param <B> type of buffer
+     * @param <T> type of received item
+     */
+    public static <B, T> ProcessorSupplier writeBuffered(@Nonnull Distributed.Supplier<B> bufferSupplier,
+                                                         @Nonnull Distributed.BiConsumer<B, T> drainer,
+                                                         @Nonnull Distributed.Consumer<B> bufferConsumer,
+                                                         @Nonnull Distributed.Consumer<B> bufferCloser) {
+        return WriteBufferedP.writeBuffered(bufferSupplier, drainer, bufferConsumer, bufferCloser);
     }
 
     /**
@@ -624,5 +718,9 @@ public final class Processors {
             emit((long) seenItems.size());
             return true;
         }
+    }
+
+    private static <T> Distributed.Consumer<T> emptyConsumer() {
+        return b -> { };
     }
 }

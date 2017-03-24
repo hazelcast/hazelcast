@@ -23,6 +23,7 @@ import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.JetTestSupport;
+import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -111,7 +112,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", readMap("source", clientConfig)).localParallelism(4);
-        Vertex sink = dag.newVertex("sink", WriteIListP.supplier("sink")).localParallelism(1);
+        Vertex sink = dag.newVertex("sink", Processors.writeList("sink")).localParallelism(1);
         dag.edge(between(source, sink));
 
         executeAndWait(dag);

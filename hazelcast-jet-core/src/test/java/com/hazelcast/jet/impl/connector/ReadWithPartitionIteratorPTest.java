@@ -36,19 +36,19 @@ import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
-public class ReadIMapPTest {
+public class ReadWithPartitionIteratorPTest {
 
     @Test
     @SuppressWarnings("unchecked")
     public void when_readFromTwoPartitions_then_emitRoundRobin() {
         final List<Integer> partitions = asList(0, 1);
-        final Iterator<Entry>[] content = new Iterator[] {
+        final Iterator<Entry<Integer, Integer>>[] content = new Iterator[] {
                 iterate(51, 52, 53),
                 iterate(71, 72, 73),
         };
-        final ReadIMapP r = new ReadIMapP(p -> content[p], partitions);
-        final ArrayDequeOutbox outbox = new ArrayDequeOutbox(1, new int[]{3});
-        final Queue<Object> bucket = outbox.queueWithOrdinal(0);
+        ReadWithPartitionIteratorP<Entry<Integer, Integer>> r = new ReadWithPartitionIteratorP<>(p -> content[p], partitions);
+        ArrayDequeOutbox outbox = new ArrayDequeOutbox(1, new int[]{3});
+        Queue<Object> bucket = outbox.queueWithOrdinal(0);
         r.init(outbox, mock(Processor.Context.class));
 
         // When
@@ -69,7 +69,7 @@ public class ReadIMapPTest {
     }
 
     private static Iterator<Entry<Integer, Integer>> iterate(Integer... content) {
-        return Stream.of(content).map(ReadIMapPTest::entry).iterator();
+        return Stream.of(content).map(ReadWithPartitionIteratorPTest::entry).iterator();
     }
 
     private static Entry<Integer, Integer> entry(Integer content) {

@@ -1,3 +1,4 @@
 com.hazelcast.jet.impl.execution.init.JetSerializerHook$MapEntry
 com.hazelcast.jet.impl.execution.init.JetSerializerHook$ObjectArray
 com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject$Hook
+com.hazelcast.jet.impl.execution.init.JetSerializerHook$CacheEntry

@@ -23,29 +23,36 @@ import org.junit.experimental.categories.Category;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
-public class WriteIListPTest {
+public class WriteBufferedPTest {
+
+    private static final int ENTRY_COUNT = 5;
 
     @Test
-    public void when_processItems_then_addedToList() {
-        final List<Object> sink = new ArrayList<>();
-        final WriteIListP w = new WriteIListP(sink);
-        final MockInbox inbox = new MockInbox();
-        final List<Integer> input = asList(1, 2, 3, 4);
-        inbox.addAll(input);
+    public void test() {
+        WriteBufferedP<List<Integer>, Integer> p = new WriteBufferedP<>(
+                ArrayList::new,
+                List::add,
+                list -> assertEquals(ENTRY_COUNT, list.size()),
+                map -> {}
+        );
 
-        // When
-        w.process(0, inbox);
-
-        // Then
-        assertEquals(input, sink);
+        MockInbox inbox = new MockInbox();
+        Map<Integer, Integer> map = new HashMap<>();
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            map.put(i, i);
+        }
+        inbox.addAll(map.keySet());
+        p.process(0, inbox);
     }
 
     private static class MockInbox extends ArrayDeque<Object> implements Inbox {
     }
+
 }
