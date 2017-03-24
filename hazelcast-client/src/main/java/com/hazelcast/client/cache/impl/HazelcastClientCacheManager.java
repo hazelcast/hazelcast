@@ -113,7 +113,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
         try {
             ClientICacheManager cacheManager = client.getCacheManager();
             String nameWithPrefix = cacheConfig.getNameWithPrefix();
-            ICacheInternal cache = cacheManager.getCacheByFullName(nameWithPrefix);
+            ICacheInternal<K, V> cache = (ICacheInternal<K, V>) cacheManager.getCacheByFullName(nameWithPrefix);
             cache.setCacheManager(this);
             return cache;
         } catch (Throwable t) {
