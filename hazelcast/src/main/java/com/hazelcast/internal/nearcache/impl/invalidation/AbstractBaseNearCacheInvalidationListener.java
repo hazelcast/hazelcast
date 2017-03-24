@@ -58,11 +58,13 @@ public abstract class AbstractBaseNearCacheInvalidationListener {
             return;
         }
 
-        if (invalidation instanceof SingleNearCacheInvalidation && canSendInvalidation(invalidation)) {
-            ClientMessage message = encodeSingleInvalidation(invalidation.getName(), invalidation.getKey(),
-                    invalidation.getSourceUuid(), invalidation.getPartitionUuid(), invalidation.getSequence());
+        if (invalidation instanceof SingleNearCacheInvalidation) {
+            if (canSendInvalidation(invalidation)) {
+                ClientMessage message = encodeSingleInvalidation(invalidation.getName(), invalidation.getKey(),
+                        invalidation.getSourceUuid(), invalidation.getPartitionUuid(), invalidation.getSequence());
 
-            sendMessageWithOrderKey(message, invalidation.getKey());
+                sendMessageWithOrderKey(message, invalidation.getKey());
+            }
             return;
         }
 
