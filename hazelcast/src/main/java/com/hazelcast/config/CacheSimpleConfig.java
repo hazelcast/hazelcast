@@ -738,7 +738,7 @@ public class CacheSimpleConfig {
             public enum ExpiryPolicyType {
 
                 /**
-                 * Expiry policy type for the "javax.cache.expiry.AccessedExpiryPolicy"
+                 * Expiry policy type for the "javax.cache.expiry.CreatedExpiryPolicy"
                  */
                 CREATED,
                 /**
