@@ -28,37 +28,38 @@ import javax.annotation.Nonnull;
 public final class WriteBufferedP<B, T> implements Processor {
 
     private final B buffer;
-    private final Consumer<B> bufferConsumer;
-    private final BiConsumer<B, T> drainer;
-    private final Consumer<B> bufferCloser;
+    private final Consumer<B> flushBuffer;
+    private final BiConsumer<B, T> addToBuffer;
+    private final Consumer<B> disposeBuffer;
 
-    WriteBufferedP(Supplier<B> bufferSupplier,
-                   BiConsumer<B, T> drainer,
-                   Consumer<B> bufferConsumer,
-                   Consumer<B> bufferCloser) {
-        this.buffer = bufferSupplier.get();
-        this.drainer = drainer;
-        this.bufferConsumer = bufferConsumer;
-        this.bufferCloser = bufferCloser;
+    WriteBufferedP(Supplier<B> newBuffer,
+                   BiConsumer<B, T> addToBuffer,
+                   Consumer<B> flushBuffer,
+                   Consumer<B> disposeBuffer) {
+        this.buffer = newBuffer.get();
+        this.addToBuffer = addToBuffer;
+        this.flushBuffer = flushBuffer;
+        this.disposeBuffer = disposeBuffer;
     }
 
-    public static <B, T> ProcessorSupplier writeBuffered(Supplier<B> bufferSupplier,
-                                                         BiConsumer<B, T> drainer,
-                                                         Consumer<B> bufferConsumer,
-                                                         Consumer<B> bufferCloser) {
-        return ProcessorSupplier.of(() -> new WriteBufferedP<>(bufferSupplier, drainer, bufferConsumer, bufferCloser));
+    @Nonnull
+    public static <B, T> ProcessorSupplier writeBuffered(Supplier<B> newBuffer,
+                                                         BiConsumer<B, T> addToBuffer,
+                                                         Consumer<B> consumeBuffer,
+                                                         Consumer<B> closeBuffer) {
+        return ProcessorSupplier.of(() -> new WriteBufferedP<>(newBuffer, addToBuffer, consumeBuffer, closeBuffer));
     }
 
     @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
-        inbox.drain((T t) -> drainer.accept(buffer, t));
-        bufferConsumer.accept(buffer);
+        inbox.drain((T t) -> addToBuffer.accept(buffer, t));
+        flushBuffer.accept(buffer);
     }
 
     @Override
     public boolean complete() {
-        bufferConsumer.accept(buffer);
-        bufferCloser.accept(buffer);
+        flushBuffer.accept(buffer);
+        disposeBuffer.accept(buffer);
         return true;
     }
 

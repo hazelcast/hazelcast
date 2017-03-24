@@ -43,7 +43,7 @@ public class IMapReducer<T, K, V> extends AbstractSinkReducer<T, IStreamMap<K, V
 
     @Override
     protected ProcessorMetaSupplier getSupplier() {
-        return Processors.writeMap(mapName);
+        return ProcessorMetaSupplier.of(Processors.writeMap(mapName));
     }
 
     @Override

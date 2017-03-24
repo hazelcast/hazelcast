@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.Distributed;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
@@ -46,6 +47,11 @@ public final class Util {
     public static final int BUFFER_SIZE = 1 << 15;
 
     private Util() {
+    }
+
+    public static <T> Distributed.Consumer<T> noopConsumer() {
+        return t -> {
+        };
     }
 
     public static <T> T uncheckedGet(@Nonnull Future<T> f) {

@@ -18,7 +18,7 @@ package com.hazelcast.jet;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.Traversers.ResettableSingletonTraverser;
-import com.hazelcast.jet.impl.connector.HazelcastWriteConnectors;
+import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.ReadIListP;
 import com.hazelcast.jet.impl.connector.ReadWithPartitionIteratorP;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
@@ -36,6 +36,7 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.jet.Traversers.lazy;
 import static com.hazelcast.jet.Traversers.traverseStream;
+import static com.hazelcast.jet.impl.util.Util.noopConsumer;
 
 /**
  * Static utility class with factory methods for predefined processors.
@@ -79,22 +80,22 @@ public final class Processors {
     }
 
     /**
-     * Returns a meta-supplier of processors that will put data into a Hazelcast {@code IMap}.
+     * Returns a processor supplier that will put data into a Hazelcast {@code IMap}.
      * Processors expect items of type {@code Map.Entry}.
      */
     @Nonnull
-    public static ProcessorMetaSupplier writeMap(@Nonnull String mapName) {
-        return HazelcastWriteConnectors.writeMap(mapName);
+    public static ProcessorSupplier writeMap(@Nonnull String mapName) {
+        return HazelcastWriters.writeMap(mapName);
     }
 
     /**
-     * Returns a meta-supplier of processors that will put data into a Hazelcast {@code IMap} in
+     * Returns a processor supplier that will put data into a Hazelcast {@code IMap} in
      * a remote cluster.
      * Processors expect items of type {@code Map.Entry}.
      */
     @Nonnull
-    public static ProcessorMetaSupplier writeMap(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
-        return HazelcastWriteConnectors.writeMap(mapName, clientConfig);
+    public static ProcessorSupplier writeMap(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
+        return HazelcastWriters.writeMap(mapName, clientConfig);
     }
 
     /**
@@ -135,18 +136,18 @@ public final class Processors {
      * Processors expect items of type {@code Map.Entry}
      */
     @Nonnull
-    public static ProcessorMetaSupplier writeCache(@Nonnull String cacheName) {
-        return HazelcastWriteConnectors.writeCache(cacheName);
+    public static ProcessorSupplier writeCache(@Nonnull String cacheName) {
+        return HazelcastWriters.writeCache(cacheName);
     }
 
     /**
-     * Returns a meta-supplier of processors that will put data into a Hazelcast {@code ICache} in
+     * Returns a processor supplier that will put data into a Hazelcast {@code ICache} in
      * a remote cluster.
      * Processors expect items of type {@code Map.Entry}.
      */
     @Nonnull
-    public static ProcessorMetaSupplier writeCache(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
-        return HazelcastWriteConnectors.writeCache(cacheName, clientConfig);
+    public static ProcessorSupplier writeCache(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
+        return HazelcastWriters.writeCache(cacheName, clientConfig);
     }
 
     /**
@@ -171,7 +172,7 @@ public final class Processors {
      */
     @Nonnull
     public static ProcessorSupplier writeList(@Nonnull String listName) {
-        return HazelcastWriteConnectors.writeList(listName);
+        return HazelcastWriters.writeList(listName);
     }
 
     /**
@@ -180,45 +181,52 @@ public final class Processors {
      */
     @Nonnull
     public static ProcessorSupplier writeList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
-        return HazelcastWriteConnectors.writeList(listName, clientConfig);
+        return HazelcastWriters.writeList(listName, clientConfig);
     }
 
 
     /**
-     * Returns a supplier of processor which, drains items of type {@code T}
-     * to the supplied buffer of type {@code B}, and consumes the buffer via {@code bufferConsumer}
+     * Returns a supplier of processor which drains all items from
+     * an inbox to a intermediate buffer and then flushes that buffer.
      *
+     * Useful for implementing sinks where the data should only be flushed
+     * after the inbox has been drained.
      *
-     * @param bufferSupplier supplier which supplies the buffer
-     * @param drainer bi-consumer which consumes item to buffer
-     * @param bufferConsumer consumer which consumes the buffer
+     * @param newBuffer supplies the buffer
+     * @param addToBuffer adds item to buffer
+     * @param flushBuffer flushes the buffer
      * @param <B> type of buffer
      * @param <T> type of received item
      */
-    public static <B, T> ProcessorSupplier writeBuffered(@Nonnull Distributed.Supplier<B> bufferSupplier,
-                                                         @Nonnull Distributed.BiConsumer<B, T> drainer,
-                                                         @Nonnull Distributed.Consumer<B> bufferConsumer) {
-        return WriteBufferedP.writeBuffered(bufferSupplier, drainer, bufferConsumer, emptyConsumer());
+    @Nonnull
+    public static <B, T> ProcessorSupplier writeBuffered(@Nonnull Distributed.Supplier<B> newBuffer,
+                                                         @Nonnull Distributed.BiConsumer<B, T> addToBuffer,
+                                                         @Nonnull Distributed.Consumer<B> flushBuffer) {
+        return WriteBufferedP.writeBuffered(newBuffer, addToBuffer, flushBuffer, noopConsumer());
     }
 
     /**
-     * Returns a supplier of processor which, drains items of type {@code T}
-     * to the supplied buffer of type {@code B}, and consumes the buffer via {@code bufferConsumer}.
+     * Returns a supplier of processor which drains all items from
+     * an inbox to a intermediate buffer and then flushes that buffer.
      *
-     * processor will be closed via {@code bufferCloser}
+     * The buffer will be disposed via {@code disposeBuffer} once the processor
+     * is completed
+     * Useful for implementing sinks where the data should only be flushed
+     * after the inbox has been drained.
      *
-     *
-     * @param bufferSupplier supplier which supplies the buffer
-     * @param drainer bi-consumer which consumes item to buffer
-     * @param bufferConsumer consumer which consumes the buffer
+     * @param newBuffer supplies the buffer
+     * @param addToBuffer adds item to buffer
+     * @param flushBuffer flushes the buffer
+     * @param disposeBuffer disposes of the buffer
      * @param <B> type of buffer
      * @param <T> type of received item
      */
-    public static <B, T> ProcessorSupplier writeBuffered(@Nonnull Distributed.Supplier<B> bufferSupplier,
-                                                         @Nonnull Distributed.BiConsumer<B, T> drainer,
-                                                         @Nonnull Distributed.Consumer<B> bufferConsumer,
-                                                         @Nonnull Distributed.Consumer<B> bufferCloser) {
-        return WriteBufferedP.writeBuffered(bufferSupplier, drainer, bufferConsumer, bufferCloser);
+    @Nonnull
+    public static <B, T> ProcessorSupplier writeBuffered(@Nonnull Distributed.Supplier<B> newBuffer,
+                                                         @Nonnull Distributed.BiConsumer<B, T> addToBuffer,
+                                                         @Nonnull Distributed.Consumer<B> flushBuffer,
+                                                         @Nonnull Distributed.Consumer<B> disposeBuffer) {
+        return WriteBufferedP.writeBuffered(newBuffer, addToBuffer, flushBuffer, disposeBuffer);
     }
 
     /**
@@ -718,9 +726,5 @@ public final class Processors {
             emit((long) seenItems.size());
             return true;
         }
-    }
-
-    private static <T> Distributed.Consumer<T> emptyConsumer() {
-        return b -> { };
     }
 }
