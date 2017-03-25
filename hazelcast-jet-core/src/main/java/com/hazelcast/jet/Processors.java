@@ -24,6 +24,9 @@ import com.hazelcast.jet.impl.connector.ReadWithPartitionIteratorP;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 
 import javax.annotation.Nonnull;
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
+import java.net.Socket;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,6 +40,8 @@ import java.util.function.Supplier;
 import static com.hazelcast.jet.Traversers.lazy;
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.impl.util.Util.noopConsumer;
+import static com.hazelcast.jet.impl.util.Util.uncheckCall;
+import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 /**
  * Static utility class with factory methods for predefined processors.
@@ -227,6 +232,22 @@ public final class Processors {
                                                          @Nonnull Distributed.Consumer<B> flushBuffer,
                                                          @Nonnull Distributed.Consumer<B> disposeBuffer) {
         return WriteBufferedP.writeBuffered(newBuffer, addToBuffer, flushBuffer, disposeBuffer);
+    }
+
+    /**
+     * Returns a supplier of processors that connect to specified socket and write the items as text
+     */
+    public static ProcessorSupplier writeSocket(@Nonnull String host, int port) {
+        return writeBuffered(
+                () -> createBufferedWriter(host, port),
+                (bufferedWriter, item) -> uncheckRun(() -> bufferedWriter.write(item.toString())),
+                bufferedWriter -> uncheckRun(bufferedWriter::flush),
+                bufferedWriter -> uncheckRun(bufferedWriter::close)
+        );
+    }
+
+    private static BufferedWriter createBufferedWriter(@Nonnull String host, int port) {
+        return uncheckCall(() -> new BufferedWriter(new OutputStreamWriter(new Socket(host, port).getOutputStream(), "UTF-8")));
     }
 
     /**
