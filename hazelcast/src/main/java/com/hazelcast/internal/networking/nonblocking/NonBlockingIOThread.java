@@ -24,6 +24,7 @@ import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.concurrent.IdleStrategy;
 
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
@@ -81,8 +82,13 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
 
     private final SelectorMode selectMode;
 
+    private final IdleStrategy idleStrategy;
+
     // last time select unblocked with some keys selected
     private volatile long lastSelectTimeMs;
+
+    private volatile boolean stop;
+
     // set to true while testing
     private boolean selectorWorkaroundTest;
 
@@ -90,15 +96,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
                                String threadName,
                                ILogger logger,
                                IOOutOfMemoryHandler oomeHandler) {
-        this(threadGroup, threadName, logger, oomeHandler, SelectorMode.SELECT);
-    }
-
-    public NonBlockingIOThread(ThreadGroup threadGroup,
-                               String threadName,
-                               ILogger logger,
-                               IOOutOfMemoryHandler oomeHandler,
-                               SelectorMode selectMode) {
-        this(threadGroup, threadName, logger, oomeHandler, selectMode, newSelector(logger));
+        this(threadGroup, threadName, logger, oomeHandler, SelectorMode.SELECT, null);
     }
 
     public NonBlockingIOThread(ThreadGroup threadGroup,
@@ -106,13 +104,24 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
                                ILogger logger,
                                IOOutOfMemoryHandler oomeHandler,
                                SelectorMode selectMode,
-                               Selector selector) {
+                               IdleStrategy idleStrategy) {
+        this(threadGroup, threadName, logger, oomeHandler, selectMode, newSelector(logger), idleStrategy);
+    }
+
+    public NonBlockingIOThread(ThreadGroup threadGroup,
+                               String threadName,
+                               ILogger logger,
+                               IOOutOfMemoryHandler oomeHandler,
+                               SelectorMode selectMode,
+                               Selector selector,
+                               IdleStrategy idleStrategy) {
         super(threadGroup, threadName);
         this.logger = logger;
         this.selectMode = selectMode;
         this.oomeHandler = oomeHandler;
         this.selector = selector;
         this.selectorWorkaroundTest = false;
+        this.idleStrategy = idleStrategy;
     }
 
     private static Selector newSelector(ILogger logger) {
@@ -245,7 +254,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     }
 
     private void selectLoop() throws IOException {
-        while (!isInterrupted()) {
+        while (!stop) {
             processTaskQueue();
 
             int selectedKeys = selector.select(SELECT_WAIT_TIME_MILLIS);
@@ -257,7 +266,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
 
     private void selectLoopWithFix() throws IOException {
         int idleCount = 0;
-        while (!isInterrupted()) {
+        while (!stop) {
             processTaskQueue();
 
             long before = currentTimeMillis();
@@ -286,24 +295,35 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     }
 
     private void selectNowLoop() throws IOException {
-        while (!isInterrupted()) {
-            processTaskQueue();
+        long idleRound = 0;
+        while (!stop) {
+            boolean tasksProcessed = processTaskQueue();
 
             int selectedKeys = selector.selectNow();
+
             if (selectedKeys > 0) {
                 handleSelectionKeys();
+                idleRound = 0;
+            } else if (tasksProcessed) {
+                idleRound = 0;
+            } else if (idleStrategy != null) {
+                idleRound++;
+                idleStrategy.idle(idleRound);
             }
         }
     }
 
-    private void processTaskQueue() {
-        while (!isInterrupted()) {
+    private boolean processTaskQueue() {
+        boolean tasksProcessed = false;
+        while (!stop) {
             Runnable task = taskQueue.poll();
             if (task == null) {
-                return;
+                break;
             }
             executeTask(task);
+            tasksProcessed = true;
         }
+        return tasksProcessed;
     }
 
     private void executeTask(Runnable task) {
@@ -366,6 +386,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     }
 
     public final void shutdown() {
+        stop = true;
         taskQueue.clear();
         interrupt();
     }

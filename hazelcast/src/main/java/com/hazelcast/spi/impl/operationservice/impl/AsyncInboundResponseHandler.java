@@ -39,6 +39,7 @@ import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.util.concurrent.BackoffIdleStrategy.createBackoffIdleStrategy;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
@@ -105,10 +106,12 @@ public class AsyncInboundResponseHandler implements PacketHandler, MetricsProvid
         String idleStrategyString = properties.getString(property);
         if ("block".equals(idleStrategyString)) {
             return null;
-        } else if ("backoff".equals(idleStrategyString)) {
-            return new BackoffIdleStrategy(IDLE_MAX_SPINS, IDLE_MAX_YIELDS, IDLE_MIN_PARK_NS, IDLE_MAX_PARK_NS);
         } else if ("busyspin".equals(idleStrategyString)) {
             return new BusySpinIdleStrategy();
+        } else if ("backoff".equals(idleStrategyString)) {
+            return new BackoffIdleStrategy(IDLE_MAX_SPINS, IDLE_MAX_YIELDS, IDLE_MIN_PARK_NS, IDLE_MAX_PARK_NS);
+        } else if (idleStrategyString.startsWith("backoff,")) {
+            return createBackoffIdleStrategy(idleStrategyString);
         } else {
             throw new IllegalStateException("Unrecognized " + property.getName() + " value=" + idleStrategyString);
         }

@@ -21,7 +21,9 @@ import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static java.lang.Long.numberOfLeadingZeros;
+import static java.lang.Long.parseLong;
 import static java.lang.Math.min;
+import static java.lang.String.format;
 
 /**
  * Idling strategy for threads when they have no work to do.
@@ -31,10 +33,17 @@ import static java.lang.Math.min;
  * {@link LockSupport#parkNanos(long)} on an exponential backoff to maxParkPeriodNs
  */
 public class BackoffIdleStrategy implements IdleStrategy {
-    private final long yieldThreshold;
-    private final long parkThreshold;
-    private final long minParkPeriodNs;
-    private final long maxParkPeriodNs;
+
+    private static final int ARG_COUNT = 5;
+    private static final int ARG_MAX_SPINS = 1;
+    private static final int ARG_MAX_YIELDS = 2;
+    private static final int ARG_MIN_PARK_PERIOD = 3;
+    private static final int ARG_MAX_PARK_PERIOD = 4;
+
+    final long yieldThreshold;
+    final long parkThreshold;
+    final long minParkPeriodNs;
+    final long maxParkPeriodNs;
     private final int maxShift;
 
     /**
@@ -61,7 +70,8 @@ public class BackoffIdleStrategy implements IdleStrategy {
     /**
      * {@inheritDoc}
      */
-    @Override public boolean idle(long n) {
+    @Override
+    public boolean idle(long n) {
         if (n < yieldThreshold) {
             return false;
         }
@@ -80,6 +90,22 @@ public class BackoffIdleStrategy implements IdleStrategy {
         return proposedShift > maxShift ? maxParkPeriodNs
                 : proposedShift < maxShift ? minParkPeriodNs << allowedShift
                 : min(minParkPeriodNs << allowedShift, maxParkPeriodNs);
+    }
+
+    /**
+     * Creates a new BackoffIdleStrategy.
+     */
+    public static BackoffIdleStrategy createBackoffIdleStrategy(String config) {
+        String[] args = config.split(",");
+        if (args.length != ARG_COUNT) {
+            throw new IllegalArgumentException(
+                    format("Invalid backoff configuration '%s', 4 arguments expected", config));
+        }
+        long maxSpins = parseLong(args[ARG_MAX_SPINS]);
+        long maxYields = parseLong(args[ARG_MAX_YIELDS]);
+        long minParkPeriodNs = parseLong(args[ARG_MIN_PARK_PERIOD]);
+        long maxParkNanos = parseLong(args[ARG_MAX_PARK_PERIOD]);
+        return new BackoffIdleStrategy(maxSpins, maxYields, minParkPeriodNs, maxParkNanos);
     }
 }
 
