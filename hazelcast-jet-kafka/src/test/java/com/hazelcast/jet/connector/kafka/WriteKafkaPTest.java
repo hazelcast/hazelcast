@@ -52,6 +52,7 @@ public class WriteKafkaPTest extends KafkaTestSupport {
         String brokerConnectionString = createKafkaCluster();
 
         final String topic = randomName();
+        createTopic(topic, 1, 1);
         JetInstance instance = createJetMember();
 
         int messageCount = 20;

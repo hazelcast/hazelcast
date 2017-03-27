@@ -51,6 +51,9 @@ public class ReadKafkaPTest extends KafkaTestSupport {
 
         final String topic1 = randomString();
         final String topic2 = randomString();
+        createTopic(topic1, 1, 1);
+        createTopic(topic2, 1, 1);
+
         int messageCount = 20;
         JetInstance instance = createJetMember();
         DAG dag = new DAG();
