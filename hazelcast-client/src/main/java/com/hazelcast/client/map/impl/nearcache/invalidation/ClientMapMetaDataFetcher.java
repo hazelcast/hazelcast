@@ -30,7 +30,6 @@ import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,13 +51,11 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 public class ClientMapMetaDataFetcher extends MetaDataFetcher {
 
     private final ClientClusterService clusterService;
-    private final SerializationService serializationService;
     private final HazelcastClientInstanceImpl clientImpl;
 
     public ClientMapMetaDataFetcher(ClientContext clientContext) {
         super(Logger.getLogger(ClientMapMetaDataFetcher.class));
         this.clusterService = clientContext.getClusterService();
-        this.serializationService = clientContext.getSerializationService();
         this.clientImpl = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
     }
 
@@ -66,7 +63,6 @@ public class ClientMapMetaDataFetcher extends MetaDataFetcher {
     protected List<InternalCompletableFuture> scanMembers(List<String> names) {
         Collection<Member> members = clusterService.getMembers(DATA_MEMBER_SELECTOR);
         List<InternalCompletableFuture> futures = new ArrayList<InternalCompletableFuture>(members.size());
-
 
         for (Member member : members) {
             Address address = member.getAddress();
@@ -80,7 +76,6 @@ public class ClientMapMetaDataFetcher extends MetaDataFetcher {
                 }
             }
         }
-
 
         return futures;
     }

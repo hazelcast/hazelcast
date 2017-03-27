@@ -31,7 +31,6 @@ import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,13 +52,11 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 public class ClientCacheMetaDataFetcher extends MetaDataFetcher {
 
     private final ClientClusterService clusterService;
-    private final SerializationService serializationService;
     private final HazelcastClientInstanceImpl clientImpl;
 
     public ClientCacheMetaDataFetcher(ClientContext clientContext) {
         super(Logger.getLogger(ClientCacheMetaDataFetcher.class));
         this.clusterService = clientContext.getClusterService();
-        this.serializationService = clientContext.getSerializationService();
         this.clientImpl = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
     }
 
