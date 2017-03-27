@@ -229,7 +229,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
 
         Data keyData = toData(key);
         ClientDelegatingFuture<T> delegatingFuture = getAndRemoveInternal(keyData, withCompletionEvent);
-        ExecutionCallback<T> callback = !statisticsEnabled ? null : statsHandler.newOnRemoveCallback(true, startNanos);
+        ExecutionCallback callback = !statisticsEnabled ? null : statsHandler.newOnRemoveCallback(true, startNanos);
         onGetAndRemoveAsyncInternal(delegatingFuture, callback, keyData);
         return delegatingFuture;
     }
@@ -298,8 +298,22 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         addCallback(future, callback);
     }
 
-    protected <T> ICompletableFuture<T> replaceInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
-                                                        boolean hasOldValue, boolean withCompletionEvent, boolean async) {
+    protected boolean replaceSyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy, boolean hasOldValue) {
+        long startNanos = nowInNanosOrDefault();
+        Future<Boolean> future = replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, hasOldValue, true, false);
+        try {
+            boolean replaced = future.get();
+            if (statisticsEnabled) {
+                statsHandler.onReplace(false, startNanos, replaced);
+            }
+            return replaced;
+        } catch (Throwable e) {
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
+        }
+    }
+
+    protected <T> ICompletableFuture<T> replaceAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
+                                                             boolean hasOldValue, boolean withCompletionEvent, boolean async) {
         final long startNanos = nowInNanosOrDefault();
         ensureOpen();
         if (hasOldValue) {
@@ -319,10 +333,8 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
                 expiryPolicyData, completionId);
         ClientInvocationFuture future = invoke(request, keyData, completionId);
         ClientDelegatingFuture<T> delegatingFuture = newDelegatingFuture(future, REPLACE_RESPONSE_DECODER);
-        if (async) {
-            ExecutionCallback callback = statisticsEnabled ? new OnReplaceCallback(startNanos, false) : null;
-            onReplaceInternalAsync(keyData, newValueData, newValue, delegatingFuture, callback);
-        }
+        ExecutionCallback<T> callback = async && statisticsEnabled ? statsHandler.<T>newOnReplaceCallback(startNanos) : null;
+        onReplaceInternalAsync(keyData, newValueData, newValue, delegatingFuture, callback);
         return delegatingFuture;
     }
 
@@ -331,8 +343,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         addCallback(delegatingFuture, callback);
     }
 
-    protected <T> ICompletableFuture<T> replaceAndGetAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy
-            expiryPolicy,
+    protected <T> ICompletableFuture<T> replaceAndGetAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
                                                                    boolean hasOldValue, boolean withCompletionEvent,
                                                                    boolean async) {
         final long startNanos = nowInNanosOrDefault();
@@ -354,10 +365,8 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
                 completionId);
         ClientInvocationFuture future = invoke(request, keyData, completionId);
         ClientDelegatingFuture<T> delegatingFuture = newDelegatingFuture(future, GET_AND_REPLACE_RESPONSE_DECODER);
-        if (async) {
-            ExecutionCallback callback = statisticsEnabled ? new OnReplaceCallback(startNanos, true) : null;
-            onReplaceAndGetAsync(keyData, newValueData, newValue, delegatingFuture, callback);
-        }
+        ExecutionCallback<T> callback = async && statisticsEnabled ? statsHandler.<T>newOnReplaceCallback(startNanos) : null;
+        onReplaceAndGetAsync(keyData, newValueData, newValue, delegatingFuture, callback);
         return delegatingFuture;
     }
 
@@ -372,26 +381,6 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         }
 
         delegatingFuture.andThenInternal(callback, true);
-    }
-
-    private final class OnReplaceCallback implements ExecutionCallback<V> {
-
-        private final long startNanos;
-        private final boolean isGet;
-
-        private OnReplaceCallback(long startNanos, boolean isGet) {
-            this.startNanos = startNanos;
-            this.isGet = isGet;
-        }
-
-        @Override
-        public void onResponse(V response) {
-            statsHandler.onReplace(isGet, startNanos, toObject(response));
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-        }
     }
 
     private ClientInvocationFuture putInternal(Data keyData, Data valueData, Data expiryPolicyData,

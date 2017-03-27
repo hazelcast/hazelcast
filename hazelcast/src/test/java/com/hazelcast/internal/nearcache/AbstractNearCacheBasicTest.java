@@ -249,6 +249,79 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         );
     }
 
+    /**
+     * Checks that the Near Cache values are eventually invalidated when {@link DataStructureAdapter#replace(Object, Object)}
+     * is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
+     */
+    @Test
+    public void whenReplaceIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+        whenReplaceIsUsed_thenNearCacheShouldBeInvalidated(true, false);
+    }
+
+    /**
+     * Checks that the Near Cache values are eventually invalidated when {@link DataStructureAdapter#replace(Object, Object)}
+     * is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
+     */
+    @Test
+    public void whenReplaceIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+        nearCacheConfig.setInvalidateOnChange(true);
+        whenReplaceIsUsed_thenNearCacheShouldBeInvalidated(false, false);
+    }
+
+    /**
+     * Checks that the Near Cache values are eventually invalidated when
+     * {@link DataStructureAdapter#replace(Object, Object, Object)} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
+     */
+    @Test
+    public void whenReplaceWithOldValueIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+        whenReplaceIsUsed_thenNearCacheShouldBeInvalidated(true, true);
+    }
+
+    /**
+     * Checks that the Near Cache values are eventually invalidated when
+     * {@link DataStructureAdapter#replace(Object, Object, Object)} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
+     */
+    @Test
+    public void whenReplaceWithOldValueIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+        nearCacheConfig.setInvalidateOnChange(true);
+        whenReplaceIsUsed_thenNearCacheShouldBeInvalidated(false, true);
+    }
+
+    private void whenReplaceIsUsed_thenNearCacheShouldBeInvalidated(boolean useNearCacheAdapter, boolean useOldValue) {
+        final NearCacheTestContext<Integer, String, NK, NV> context = createContext();
+
+        populateMap(context);
+        populateNearCache(context);
+
+        // this should invalidate the Near Cache
+        DataStructureAdapter<Integer, String> adapter = useNearCacheAdapter ? context.nearCacheAdapter : context.dataAdapter;
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            if (useOldValue) {
+                assertTrue(adapter.replace(i, "value-" + i, "newValue-" + i));
+            } else {
+                assertEquals("value-" + i, adapter.replace(i, "newValue-" + i));
+            }
+        }
+
+        final int expectedNearCacheSize = useNearCacheAdapter && isCacheOnUpdate(nearCacheConfig) ? DEFAULT_RECORD_COUNT : 0;
+        assertTrueEventually(
+                new AssertTask() {
+                    @Override
+                    public void run() {
+                        assertEquals("Invalidation is not working on replace()",
+                                expectedNearCacheSize, context.nearCache.size());
+                    }
+                });
+    }
+
     @Test
     public void testGetAsyncPopulatesNearCache() throws Exception {
         NearCacheTestContext<Integer, String, NK, NV> context = createContext();
@@ -439,4 +512,5 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
         assertNearCacheStats(context, expectedOwnedEntryCount, expectedHits, expectedMisses, expectedEvictions, 0);
     }
+
 }

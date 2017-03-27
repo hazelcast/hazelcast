@@ -345,50 +345,6 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void testAfterReplaceIfSameNearCacheIsInvalidated() {
-        int mapSize = 1000;
-        String mapName = randomMapName();
-        hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
-
-        final IMap<Integer, Integer> clientMap = client.getMap(mapName);
-        populateMap(clientMap, mapSize);
-        populateNearCache(clientMap, mapSize);
-
-        for (int i = 0; i < mapSize; i++) {
-            clientMap.replace(i, i, i + mapSize);
-        }
-
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, 0);
-            }
-        });
-    }
-
-    @Test
-    public void testAfterReplaceNearCacheIsInvalidated() {
-        int mapSize = 1000;
-        String mapName = randomMapName();
-        hazelcastFactory.newHazelcastInstance(newConfig());
-        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationOnChangeEnabledNearCacheConfig(mapName));
-
-        final IMap<Integer, Integer> clientMap = client.getMap(mapName);
-        populateMap(clientMap, mapSize);
-        populateNearCache(clientMap, mapSize);
-
-        for (int i = 0; i < mapSize; i++) {
-            clientMap.replace(i, i + mapSize);
-        }
-
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertThatOwnedEntryCountEquals(clientMap, 0);
-            }
-        });
-    }
-
-    @Test
     public void testAfterSetNearCacheIsInvalidated() {
         int mapSize = 1000;
         String mapName = randomMapName();

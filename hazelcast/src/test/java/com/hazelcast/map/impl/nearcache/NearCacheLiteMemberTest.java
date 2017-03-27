@@ -117,11 +117,6 @@ public class NearCacheLiteMemberTest {
     }
 
     @Test
-    public void testReplace() {
-        testReplace(instance, lite, mapName);
-    }
-
-    @Test
     public void testEvict() {
         testEvict(instance, lite, mapName);
     }
@@ -288,18 +283,6 @@ public class NearCacheLiteMemberTest {
         Map<Object, Object> localMap = new HashMap<Object, Object>();
         localMap.put(1, 2);
         map.putAll(localMap);
-
-        assertNullNearCacheEntryEventually(lite, mapName, 1);
-    }
-
-    public static void testReplace(HazelcastInstance instance, HazelcastInstance lite, String mapName) {
-        IMap<Object, Object> map = instance.getMap(mapName);
-        map.put(1, 1);
-
-        IMap<Object, Object> liteMap = lite.getMap(mapName);
-        liteMap.get(1);
-
-        map.replace(1, 2);
 
         assertNullNearCacheEntryEventually(lite, mapName, 1);
     }

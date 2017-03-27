@@ -57,6 +57,19 @@ final class CacheStatsHandler {
         }
     }
 
+    <T> ExecutionCallback<T> newOnReplaceCallback(final long startNanos) {
+        return new ExecutionCallback<T>() {
+            @Override
+            public void onResponse(T response) {
+                onReplace(true, startNanos, toObject(response));
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+            }
+        };
+    }
+
     void onPutIfAbsent(long startNanos, boolean saved) {
         if (saved) {
             statistics.increaseCachePuts();

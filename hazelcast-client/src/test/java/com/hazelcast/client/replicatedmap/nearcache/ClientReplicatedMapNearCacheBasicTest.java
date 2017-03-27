@@ -119,4 +119,28 @@ public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasi
     @Ignore(value = "The ClientReplicatedMapProxy is missing `invalidateNearCache(keyData)` calls")
     public void whenPutAllIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
     }
+
+    @Test(expected = UnsupportedOperationException.class)
+    @Override
+    public void whenReplaceIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+        super.whenReplaceIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    @Override
+    public void whenReplaceIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+        super.whenReplaceIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    @Override
+    public void whenReplaceWithOldValueIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+        super.whenReplaceWithOldValueIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    @Override
+    public void whenReplaceWithOldValueIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+        super.whenReplaceWithOldValueIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter();
+    }
 }

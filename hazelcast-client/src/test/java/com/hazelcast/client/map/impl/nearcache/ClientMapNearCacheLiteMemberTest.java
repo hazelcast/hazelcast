@@ -94,11 +94,6 @@ public class ClientMapNearCacheLiteMemberTest {
     }
 
     @Test
-    public void testReplace() {
-        NearCacheLiteMemberTest.testReplace(client, lite, mapName);
-    }
-
-    @Test
     public void testEvict() {
         NearCacheLiteMemberTest.testEvict(client, lite, mapName);
     }

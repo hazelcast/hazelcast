@@ -176,22 +176,22 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
 
     @Override
     public ICompletableFuture<Boolean> replaceAsync(K key, V value) {
-        return replaceInternal(key, null, value, null, false, false, true);
+        return replaceAsyncInternal(key, null, value, null, false, false, true);
     }
 
     @Override
     public ICompletableFuture<Boolean> replaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return replaceInternal(key, null, value, expiryPolicy, false, false, true);
+        return replaceAsyncInternal(key, null, value, expiryPolicy, false, false, true);
     }
 
     @Override
     public ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue) {
-        return replaceInternal(key, oldValue, newValue, null, true, false, true);
+        return replaceAsyncInternal(key, oldValue, newValue, null, true, false, true);
     }
 
     @Override
     public ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
-        return replaceInternal(key, oldValue, newValue, expiryPolicy, true, false, true);
+        return replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, false, true);
     }
 
     @Override
@@ -390,32 +390,12 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
 
     @Override
     public boolean replace(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
-        final long startNanos = nowInNanosOrDefault();
-        final Future<Boolean> future = replaceInternal(key, oldValue, newValue, expiryPolicy, true, true, false);
-        try {
-            boolean replaced = future.get();
-            if (statisticsEnabled) {
-                statsHandler.onReplace(false, startNanos, replaced);
-            }
-            return replaced;
-        } catch (Throwable e) {
-            throw rethrowAllowedTypeFirst(e, CacheException.class);
-        }
+        return replaceSyncInternal(key, oldValue, newValue, expiryPolicy, true);
     }
 
     @Override
     public boolean replace(K key, V value, ExpiryPolicy expiryPolicy) {
-        final long startNanos = nowInNanosOrDefault();
-        final Future<Boolean> future = replaceInternal(key, null, value, expiryPolicy, false, true, false);
-        try {
-            boolean replaced = future.get();
-            if (statisticsEnabled) {
-                statsHandler.onReplace(false, startNanos, replaced);
-            }
-            return replaced;
-        } catch (Throwable e) {
-            throw rethrowAllowedTypeFirst(e, CacheException.class);
-        }
+        return replaceSyncInternal(key, null, value, expiryPolicy, false);
     }
 
     @Override
