@@ -108,15 +108,6 @@ public final class Util {
     }
 
     @Nonnull
-    public static byte[] read(@Nonnull InputStream in, int count) throws IOException {
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            byte[] b = new byte[count];
-            out.write(b, 0, in.read(b));
-            return out.toByteArray();
-        }
-    }
-
-    @Nonnull
     public static byte[] read(@Nonnull InputStream in) throws IOException {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] b = new byte[BUFFER_SIZE];

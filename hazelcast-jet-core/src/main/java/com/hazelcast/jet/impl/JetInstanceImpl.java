@@ -100,9 +100,11 @@ public class JetInstanceImpl extends AbstractJetInstance {
             if (logger.isFineEnabled() && resources.size() > 0) {
                 logger.fine("Deploying the following resources for " + executionId + ':' + resources);
             }
-            new ResourceIterator(resources, config.getResourcePartSize()).forEachRemaining(
-                    part -> invokeOnCluster(() -> new ResourceUpdateOperation(executionId, part))
-            );
+            try (ResourceIterator it = new ResourceIterator(resources, config.getResourcePartSize())) {
+                it.forEachRemaining(
+                        part -> invokeOnCluster(() -> new ResourceUpdateOperation(executionId, part))
+                );
+            }
             resources.forEach(r -> invokeOnCluster(() -> new ResourceCompleteOperation(executionId, r.getDescriptor())));
             logger.fine("Resource deployment for job " + executionId + " completed.");
         }

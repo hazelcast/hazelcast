@@ -20,29 +20,31 @@ import com.hazelcast.jet.config.ResourceConfig;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import static com.hazelcast.jet.impl.util.Util.read;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
-public final class ResourceIterator implements Iterator<ResourcePart> {
-    private final int partSize;
+public final class ResourceIterator implements Iterator<ResourcePart>, AutoCloseable {
+
     private final Iterator<ResourceConfig> configIterator;
     private InputStream inputStream;
     private ResourceConfig resourceConfig;
     private int offset;
+    private byte[] buffer;
+    private ResourcePart nextPart;
 
     public ResourceIterator(Set<ResourceConfig> resourceConfigs, int partSize) {
         this.configIterator = resourceConfigs.iterator();
-        this.partSize = partSize;
+
+        buffer = new byte[partSize];
+        readNext();
     }
 
     private void switchFile() throws IOException {
-        if (!configIterator.hasNext()) {
-            throw new NoSuchElementException();
-        }
         resourceConfig = configIterator.next();
         inputStream = resourceConfig.getUrl().openStream();
         offset = 0;
@@ -50,11 +52,7 @@ public final class ResourceIterator implements Iterator<ResourcePart> {
 
     @Override
     public boolean hasNext() {
-        try {
-            return configIterator.hasNext() || (inputStream != null && inputStream.available() > 0);
-        } catch (IOException e) {
-            throw rethrow(e);
-        }
+        return nextPart != null;
     }
 
     @Override
@@ -64,33 +62,48 @@ public final class ResourceIterator implements Iterator<ResourcePart> {
 
     @Override
     public ResourcePart next() {
+        if (nextPart  == null) {
+            throw new NoSuchElementException();
+        }
         try {
-            if (inputStream == null) {
-                switchFile();
-            }
+            return nextPart;
+        } finally {
+            readNext();
+        }
+    }
 
-            byte[] bytes = read(inputStream, partSize);
+    private void readNext() {
+        try {
+            nextPart = null;
+            while (nextPart == null && (configIterator.hasNext() || inputStream != null)) {
+                if (inputStream == null) {
+                    switchFile();
+                }
 
-            if (inputStream.available() <= 0) {
-                close(inputStream);
-                inputStream = null;
-            }
-            if (bytes.length > 0) {
-                ResourcePart part = new ResourcePart(resourceConfig.getDescriptor(), bytes, offset);
-                offset += bytes.length;
-                return part;
-            } else {
-                throw new NoSuchElementException();
+                int bytesRead = inputStream.read(buffer);
+
+                if (bytesRead < 0) {
+                    bytesRead = 0;
+                    inputStream.close();
+                    inputStream = null;
+                    // only output zero-length parts for empty files
+                    if (offset > 0) {
+                        continue;
+                    }
+                }
+
+                nextPart = new ResourcePart(resourceConfig.getDescriptor(), Arrays.copyOf(buffer, bytesRead), offset);
+                offset += bytesRead;
             }
         } catch (IOException e) {
             throw rethrow(e);
         }
     }
 
-    private static void close(InputStream inputStream) throws IOException {
+    @Override
+    public void close() {
         if (inputStream != null) {
-            inputStream.close();
+            uncheckRun(() -> inputStream.close());
         }
     }
-
 }

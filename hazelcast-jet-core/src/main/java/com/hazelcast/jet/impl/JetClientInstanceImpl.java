@@ -106,10 +106,12 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
             if (logger.isFineEnabled() && resources.size() > 0) {
                 logger.fine("Deploying the following resources for " + executionId + ":" + resources);
             }
-            new ResourceIterator(resources, config.getResourcePartSize()).forEachRemaining(part -> {
-                Data partData = client.getSerializationService().toData(part);
-                invokeOnCluster(() -> JetUpdateResourceCodec.encodeRequest(executionId, partData));
-            });
+            try (ResourceIterator it = new ResourceIterator(resources, config.getResourcePartSize())) {
+                it.forEachRemaining(part -> {
+                    Data partData = client.getSerializationService().toData(part);
+                    invokeOnCluster(() -> JetUpdateResourceCodec.encodeRequest(executionId, partData));
+                });
+            }
             resources.forEach(r -> {
                 Data descriptorData = client.getSerializationService().toData(r.getDescriptor());
                 invokeOnCluster(() -> JetCompleteResourceCodec.encodeRequest(executionId, descriptorData));
