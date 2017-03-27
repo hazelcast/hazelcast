@@ -64,7 +64,7 @@ public class ClientLoggerConfigurationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSystemPropertyConfiguration() throws IOException{
+    public void testSystemPropertyConfiguration() throws IOException {
         testLoggingWithConfiguration(false);
     }
 
@@ -75,15 +75,15 @@ public class ClientLoggerConfigurationTest extends HazelcastTestSupport {
     protected void testLoggingWithConfiguration(boolean programmaticConfiguration) throws IOException {
         hazelcastFactory = new TestHazelcastFactory();
         Config cg = new Config();
-        cg.setProperty( "hazelcast.logging.type", "jdk" );
+        cg.setProperty("hazelcast.logging.type", "jdk");
         hazelcastFactory.newHazelcastInstance(cg);
 
 
-        ClientConfig config = new ClientConfig() ;
+        ClientConfig config = new ClientConfig();
         if (programmaticConfiguration) {
-            config.setProperty( "hazelcast.logging.type", "log4j2");
+            config.setProperty("hazelcast.logging.type", "log4j2");
         } else {
-            System.setProperty( "hazelcast.logging.type", "log4j2");
+            System.setProperty("hazelcast.logging.type", "log4j2");
         }
         client = hazelcastFactory.newHazelcastClient(config);
 

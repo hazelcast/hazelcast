@@ -257,7 +257,7 @@ public class SumAggregationMultiMapTest
         MultiMap<String, T> map = client.getMultiMap(mapName);
 
         for (int i = 0; i < values.length; i++) {
-            map.put("key-" + (i/2), values[i]);
+            map.put("key-" + (i / 2), values[i]);
         }
 
         Supplier<String, T, T> supplier = Supplier.all();
@@ -271,7 +271,7 @@ public class SumAggregationMultiMapTest
         MultiMap<String, Value<T>> map = client.getMultiMap(mapName);
 
         for (int i = 0; i < values.length; i++) {
-            map.put("key-" + (i/2), values[i]);
+            map.put("key-" + (i / 2), values[i]);
         }
 
         Supplier<String, Value<T>, T> supplier = Supplier.all(new ValuePropertyExtractor<T>());

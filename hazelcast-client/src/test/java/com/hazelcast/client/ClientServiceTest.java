@@ -428,8 +428,9 @@ public class ClientServiceTest extends ClientTestSupport {
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
-                if (event.getState() == LifecycleEvent.LifecycleState.SHUTDOWN)
+                if (event.getState() == LifecycleEvent.LifecycleState.SHUTDOWN) {
                     countDownLatch.countDown();
+                }
             }
         });
 

@@ -56,7 +56,7 @@ public class BaseAggregationMultiMapTest
         }, Integer.class);
 
         for (int i = 0; i < values.length; i++) {
-            map.put("key-" + (i/2), values[i]);
+            map.put("key-" + (i / 2), values[i]);
         }
 
         Supplier<String, Integer, Object> supplier = Supplier.all();
@@ -84,7 +84,7 @@ public class BaseAggregationMultiMapTest
         }, String.class);
 
         for (int i = 0; i < values.length; i++) {
-            map.put("key-" + (i/2), values[i]);
+            map.put("key-" + (i / 2), values[i]);
         }
 
         Supplier<String, String, String> supplier = Supplier.all();

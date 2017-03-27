@@ -555,7 +555,7 @@ public class ClientTxnMapTest {
     }
 
     @Test
-    public void testPutDoesNotDeserializeOnServerSide(){
+    public void testPutDoesNotDeserializeOnServerSide() {
         String name = randomString();
         client.getMap(name).put(5, new DeserializeOnceObject(5));
         TransactionContext context = client.newTransactionContext();
@@ -593,8 +593,12 @@ public class ClientTxnMapTest {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof DeserializeOnceObject)) return false;
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof DeserializeOnceObject)) {
+                return false;
+            }
 
             DeserializeOnceObject that = (DeserializeOnceObject) o;
 

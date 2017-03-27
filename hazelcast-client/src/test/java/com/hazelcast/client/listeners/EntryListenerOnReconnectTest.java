@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class EntryListenerOnReconnectTest extends AbstractListenersOnReconnectTest{
+public class EntryListenerOnReconnectTest extends AbstractListenersOnReconnectTest {
 
     private IMap<String, String> iMap;
 

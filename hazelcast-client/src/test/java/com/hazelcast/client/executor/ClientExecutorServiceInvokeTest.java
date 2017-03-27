@@ -65,7 +65,7 @@ public class ClientExecutorServiceInvokeTest {
         collection.add(new AppendCallable(msg));
         collection.add(new AppendCallable(msg));
 
-        List<Future<String>> results =  service.invokeAll(collection);
+        List<Future<String>> results = service.invokeAll(collection);
         for (Future<String> result : results) {
             assertEquals(msg + AppendCallable.APPENDAGE, result.get());
         }

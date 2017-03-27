@@ -28,7 +28,8 @@ public class AMapStore implements MapStore<Object, Object> {
 
     public final Map store = new ConcurrentHashMap();
 
-    public AMapStore(){}
+    public AMapStore() {
+    }
 
     @Override
     public void store(Object key, Object value) {

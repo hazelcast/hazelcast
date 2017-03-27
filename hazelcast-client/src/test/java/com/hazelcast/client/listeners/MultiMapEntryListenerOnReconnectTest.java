@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class MultiMapEntryListenerOnReconnectTest extends AbstractListenersOnReconnectTest{
+public class MultiMapEntryListenerOnReconnectTest extends AbstractListenersOnReconnectTest {
 
     private MultiMap<String, String> multiMap;
 

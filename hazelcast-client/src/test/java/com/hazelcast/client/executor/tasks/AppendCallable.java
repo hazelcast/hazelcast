@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-public class AppendCallable implements Callable<String>, DataSerializable{
+public class AppendCallable implements Callable<String>, DataSerializable {
 
     public static final String APPENDAGE = ":CallableResult";
 

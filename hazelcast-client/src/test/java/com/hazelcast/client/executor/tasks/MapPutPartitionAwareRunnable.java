@@ -52,7 +52,7 @@ public class MapPutPartitionAwareRunnable<P> implements Runnable, DataSerializab
         Member member = instance.getCluster().getLocalMember();
 
         IMap<String, String> map = instance.getMap(mapName);
-        map.put(member.getUuid(), member.getUuid()+"value");
+        map.put(member.getUuid(), member.getUuid() + "value");
     }
 
     @Override

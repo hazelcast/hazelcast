@@ -182,7 +182,7 @@ public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport 
                 for (int i = 0; i < KEY_COUNT; i++) {
                     Integer valueSeenFromMember = memberCache.get(i);
                     Integer valueSeenFromClient = clientCache.get(i);
-                    if(valueSeenFromMember !=null && valueSeenFromClient == null) {
+                    if (valueSeenFromMember != null && valueSeenFromClient == null) {
                         System.err.println("found");
                         valueSeenFromClient = clientCache.get(i);
                     }

@@ -637,38 +637,39 @@ public class ClientMapLockTest {
     public void testExecuteOnKeyWhenLock() throws InterruptedException {
         final IMap map = getMapForLock();
         final String key = randomString();
-        
+
         map.lock(key);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-            	String payload = randomString();
+                String payload = randomString();
                 Object ret = map.executeOnKey(key, new LockEntryProcessor(payload));
                 assertEquals(payload, ret);
             }
         }, 30);
         map.unlock(key);
     }
-    
-    private static class LockEntryProcessor implements EntryProcessor<Object,Object>, Serializable {
 
-    	public final String payload;
-    	public LockEntryProcessor(String payload) {
-    		this.payload = payload;
-    	}
-    	
-		@Override
-		public Object process(Entry entry) {
-			return payload;
-		}
+    private static class LockEntryProcessor implements EntryProcessor<Object, Object>, Serializable {
 
-		@Override
-		public EntryBackupProcessor getBackupProcessor() {
-			return null;
-		}
-    	
+        public final String payload;
+
+        public LockEntryProcessor(String payload) {
+            this.payload = payload;
+        }
+
+        @Override
+        public Object process(Entry entry) {
+            return payload;
+        }
+
+        @Override
+        public EntryBackupProcessor getBackupProcessor() {
+            return null;
+        }
+
     }
-    
+
     private IMap getMapForLock() {
         return client.getMap(randomString());
     }

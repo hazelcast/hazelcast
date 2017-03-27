@@ -35,7 +35,7 @@ public class DurationTest
     }
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         JsrClientTestUtil.cleanup();
     }
 }

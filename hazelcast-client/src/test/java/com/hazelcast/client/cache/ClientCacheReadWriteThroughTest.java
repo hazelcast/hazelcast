@@ -100,7 +100,7 @@ public class ClientCacheReadWriteThroughTest extends CacheReadWriteThroughTest {
 
         Map<Integer, String> loaded = cache.getAll(keys);
         assertEquals(keys.size(), loaded.size());
-        for (Map.Entry<Integer, String> entry  : loaded.entrySet()) {
+        for (Map.Entry<Integer, String> entry : loaded.entrySet()) {
             assertEquals(ServerSideCacheLoader.valueOf(entry.getKey()), entry.getValue());
         }
     }

@@ -318,7 +318,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         networkConfig.setDiscoveryConfig(null);
     }
 
-    @Test      
+    @Test
     public void test_enabled_whenDiscoveryConfigIsEmpty() {
         ClientConfig config = new ClientConfig();
         config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
@@ -326,7 +326,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         ClientNetworkConfig networkConfig = config.getNetworkConfig();
         networkConfig.setConnectionAttemptLimit(1);
         networkConfig.setConnectionAttemptPeriod(1);
-        
+
         try {
             HazelcastClient.newHazelcastClient(config);
         } catch (IllegalStateException expected) {

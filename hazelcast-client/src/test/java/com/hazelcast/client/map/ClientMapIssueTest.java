@@ -276,8 +276,8 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
         // Make sure that the anchor is the last entry of the first page. i.e. it is (9, 9)
         Map.Entry anchor = predicate.getAnchor();
-        assertEquals((2 * pageSize) -1, anchor.getKey());
-        assertEquals((2 * pageSize) -1, anchor.getValue());
+        assertEquals((2 * pageSize) - 1, anchor.getKey());
+        assertEquals((2 * pageSize) - 1, anchor.getValue());
 
         // jump to page 4
         predicate.setPage(4);
@@ -306,8 +306,8 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
         // make sure that the anchor is now (10 * 5) -1 = (49, 49)
         anchor = predicate.getAnchor();
-        assertEquals((10 * pageSize) -1, anchor.getKey());
-        assertEquals((10 * pageSize) -1, anchor.getValue());
+        assertEquals((10 * pageSize) - 1, anchor.getKey());
+        assertEquals((10 * pageSize) - 1, anchor.getValue());
     }
 
     @Test
