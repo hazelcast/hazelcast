@@ -37,7 +37,9 @@ public class CollectionDataStructure {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof Person)) return false;
+            if (!(o instanceof Person)) {
+                return false;
+            }
             final Person other = (Person) o;
             return ObjectTestUtils.equals(this.limbs_list, other.limbs_list);
         }
@@ -54,7 +56,9 @@ public class CollectionDataStructure {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof Limb)) return false;
+            if (!(o instanceof Limb)) {
+                return false;
+            }
             final Limb other = (Limb) o;
             return ObjectTestUtils.equals(this.name, other.name) && ObjectTestUtils.equals(this.power, other.power);
         }

@@ -78,10 +78,16 @@ public class PortableDataStructure {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             CarPortable that = (CarPortable) o;
-            if (name != null ? !name.equals(that.name) : that.name != null) return false;
+            if (name != null ? !name.equals(that.name) : that.name != null) {
+                return false;
+            }
             return engine != null ? engine.equals(that.engine) : that.engine == null;
 
         }
@@ -129,8 +135,12 @@ public class PortableDataStructure {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             EnginePortable that = (EnginePortable) o;
             return power.equals(that.power);
 
@@ -178,8 +188,12 @@ public class PortableDataStructure {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             ChipPortable that = (ChipPortable) o;
             return power.equals(that.power);
 
@@ -242,8 +256,12 @@ public class PortableDataStructure {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             WheelPortable that = (WheelPortable) o;
             return name != null ? name.equals(that.name) : that.name == null;
         }
@@ -346,20 +364,21 @@ public class PortableDataStructure {
 
         @Override
         public Portable create(int classId) {
-            if (CarPortable.ID == classId)
+            if (CarPortable.ID == classId) {
                 return new CarPortable();
-            else if (EnginePortable.ID == classId)
+            } else if (EnginePortable.ID == classId) {
                 return new EnginePortable();
-            else if (WheelPortable.ID == classId)
+            } else if (WheelPortable.ID == classId) {
                 return new WheelPortable();
-            else if (ChipPortable.ID == classId)
+            } else if (ChipPortable.ID == classId) {
                 return new ChipPortable();
-            else if (XPortable.ID == classId)
+            } else if (XPortable.ID == classId) {
                 return new XPortable();
-            else if (YPortable.ID == classId)
+            } else if (YPortable.ID == classId) {
                 return new YPortable();
-            else
+            } else {
                 return null;
+            }
         }
     }
 

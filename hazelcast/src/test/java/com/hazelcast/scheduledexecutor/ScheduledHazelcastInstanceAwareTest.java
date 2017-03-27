@@ -47,7 +47,7 @@ public class ScheduledHazelcastInstanceAwareTest extends ScheduledExecutorServic
     public void test_hazelcastInstanceIsInjected_whenSchedulingOnSameMember()
             throws ExecutionException, InterruptedException {
         IScheduledFuture<Boolean> injected = scheduledExecutorService.schedule(
-                new HazelcastInstanceAwareRunnable(randomNameOwnedBy(members[0])),200, MILLISECONDS);
+                new HazelcastInstanceAwareRunnable(randomNameOwnedBy(members[0])), 200, MILLISECONDS);
         assertTrue("HazelcastInstance should have been injected", injected.get());
     }
 
@@ -55,7 +55,7 @@ public class ScheduledHazelcastInstanceAwareTest extends ScheduledExecutorServic
     public void test_hazelcastInstanceIsInjected_whenSchedulingOnOtherMember()
             throws ExecutionException, InterruptedException {
         IScheduledFuture<Boolean> injected = scheduledExecutorService.schedule(
-                new HazelcastInstanceAwareRunnable(randomNameOwnedBy(members[1])),200, MILLISECONDS);
+                new HazelcastInstanceAwareRunnable(randomNameOwnedBy(members[1])), 200, MILLISECONDS);
         assertTrue("HazelcastInstance should have been injected", injected.get());
     }
 }

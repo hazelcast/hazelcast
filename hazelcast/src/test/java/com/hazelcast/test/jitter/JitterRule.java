@@ -48,7 +48,7 @@ public class JitterRule implements TestRule {
      *
      * It has to be a power of two.
      */
-    public static final  int CAPACITY = nextPowerOfTwo(720);
+    public static final int CAPACITY = nextPowerOfTwo(720);
 
     /**
      * Resolution of the measurement. Smaller number can detect shorter pauses,
@@ -60,7 +60,6 @@ public class JitterRule implements TestRule {
     /**
      * Hiccups over this threshold will be counted separately. This is useful for counting
      * serious hiccups.
-     *
      */
     public static final long LONG_HICCUP_THRESHOLD = SECONDS.toNanos(1);
 

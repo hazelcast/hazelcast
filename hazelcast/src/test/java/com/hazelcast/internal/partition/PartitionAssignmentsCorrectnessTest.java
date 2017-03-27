@@ -34,7 +34,7 @@ public class PartitionAssignmentsCorrectnessTest extends AbstractPartitionAssign
 
     @Parameterized.Parameters(name = "backups:{0},nodes:{1}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][] {
+        return Arrays.asList(new Object[][]{
                 {1, 2},
                 {2, 3},
                 {3, 4},

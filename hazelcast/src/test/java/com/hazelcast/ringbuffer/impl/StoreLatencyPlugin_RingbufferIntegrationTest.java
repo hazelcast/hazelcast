@@ -53,7 +53,7 @@ public class StoreLatencyPlugin_RingbufferIntegrationTest extends HazelcastTestS
     }
 
     @After
-    public void after(){
+    public void after() {
         File file = getNodeEngineImpl(hz).getDiagnostics().currentFile();
         deleteQuietly(file);
     }

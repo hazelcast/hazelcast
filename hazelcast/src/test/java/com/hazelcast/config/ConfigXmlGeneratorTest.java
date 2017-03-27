@@ -35,10 +35,10 @@ import static org.junit.Assert.assertTrue;
 public class ConfigXmlGeneratorTest {
 
     @Test
-    public void testIfSensitiveDataIsMasked(){
+    public void testIfSensitiveDataIsMasked() {
         Config cfg = new Config();
         SSLConfig sslConfig = new SSLConfig();
-        sslConfig.setProperty("keyStorePassword","Hazelcast");
+        sslConfig.setProperty("keyStorePassword", "Hazelcast");
         cfg.getNetworkConfig().setSSLConfig(sslConfig);
 
         SymmetricEncryptionConfig symmetricEncryptionConfig = new SymmetricEncryptionConfig();
@@ -51,14 +51,14 @@ public class ConfigXmlGeneratorTest {
         Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
         SSLConfig generatedSSLConfig = newConfigViaXMLGenerator.getNetworkConfig().getSSLConfig();
 
-        assertEquals(generatedSSLConfig.getProperty("keyStorePassword"),ConfigXmlGenerator.MASK_FOR_SESITIVE_DATA);
+        assertEquals(generatedSSLConfig.getProperty("keyStorePassword"), ConfigXmlGenerator.MASK_FOR_SESITIVE_DATA);
 
         String secPassword = newConfigViaXMLGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getPassword();
         String theSalt = newConfigViaXMLGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getSalt();
         assertEquals(secPassword, ConfigXmlGenerator.MASK_FOR_SESITIVE_DATA);
         assertEquals(theSalt, ConfigXmlGenerator.MASK_FOR_SESITIVE_DATA);
-        assertEquals(newConfigViaXMLGenerator.getLicenseKey(),ConfigXmlGenerator.MASK_FOR_SESITIVE_DATA);
-        assertEquals(newConfigViaXMLGenerator.getGroupConfig().getPassword(),ConfigXmlGenerator.MASK_FOR_SESITIVE_DATA);
+        assertEquals(newConfigViaXMLGenerator.getLicenseKey(), ConfigXmlGenerator.MASK_FOR_SESITIVE_DATA);
+        assertEquals(newConfigViaXMLGenerator.getGroupConfig().getPassword(), ConfigXmlGenerator.MASK_FOR_SESITIVE_DATA);
     }
 
     @Test
@@ -130,7 +130,7 @@ public class ConfigXmlGeneratorTest {
         NativeMemoryConfig xmlNativeMemoryConfig = xmlConfig.getNativeMemoryConfig();
         assertEquals(true, xmlNativeMemoryConfig.isEnabled());
         assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, nativeMemoryConfig.getAllocatorType());
-        assertEquals(12.5, nativeMemoryConfig.getMetadataSpacePercentage(),0.0001);
+        assertEquals(12.5, nativeMemoryConfig.getMetadataSpacePercentage(), 0.0001);
         assertEquals(50, nativeMemoryConfig.getMinBlockSize());
         assertEquals(100, nativeMemoryConfig.getPageSize());
         assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getUnit(), nativeMemoryConfig.getSize().getUnit());

@@ -234,6 +234,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
         TreeSet bSorted = new TreeSet(b);
         assertEquals(aSorted, bSorted);
     }
+
     public static void populateMapWithPersons(IMap<Integer, Person> map, String postfix) {
         for (int i = 1; i < 1000; i++) {
             map.put(i, postfix.equals("[any]") ? new PersonAny(i) : new Person(i));

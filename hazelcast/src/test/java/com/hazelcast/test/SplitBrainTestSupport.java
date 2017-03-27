@@ -46,7 +46,6 @@ import java.util.List;
  * class to support mode advanced split-brain scenarios.
  *
  * See {@link SplitBrainTestSupportTest} for an example test.
- *
  */
 public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
 
@@ -152,7 +151,6 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
 
     /**
      * Called just after a split brain situation was created
-     *
      */
     protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) throws Exception {
 
@@ -174,7 +172,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
      * When overriding this method, it may be desirable to add some wait time to allow the split brain handler to execute.
      *
      * @return {@code true} if the test should fail when not all original members rejoin after split brain is
-     *         healed, otherwise {@code false}.
+     * healed, otherwise {@code false}.
      */
     protected boolean shouldAssertAllNodesRejoined() {
         return true;
@@ -213,9 +211,9 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
      *
      * @param brain index of brain to start a new instance in (0 to start instance in first brain or 1 to start instance in
      *              second brain)
-     * @return      a HazelcastInstance whose {@code MockJoiner} has blacklisted the other brain's members and its connection
-     *              manager blocks connections to other brain's members
-     * @see         TestHazelcastInstanceFactory#newHazelcastInstance(Address, Config, Address[])
+     * @return a HazelcastInstance whose {@code MockJoiner} has blacklisted the other brain's members and its connection
+     * manager blocks connections to other brain's members
+     * @see TestHazelcastInstanceFactory#newHazelcastInstance(Address, Config, Address[])
      */
     protected HazelcastInstance createHazelcastInstanceInBrain(int brain) {
         Address newMemberAddress = factory.nextAddress();
@@ -223,7 +221,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         HazelcastInstance[] instancesToBlock = brain == 1 ? brains.firstHalf : brains.secondHalf;
 
         List<Address> addressesToBlock = new ArrayList<Address>(instancesToBlock.length);
-        for (int i=0; i < instancesToBlock.length; i++) {
+        for (int i = 0; i < instancesToBlock.length; i++) {
             if (isInstanceActive(instancesToBlock[i])) {
                 addressesToBlock.add(getAddress(instancesToBlock[i]));
                 // block communication from these instances to the new address
@@ -340,8 +338,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
             try {
                 ((HazelcastInstanceProxy) instance).getOriginal();
                 return true;
-            }
-            catch (HazelcastInstanceNotActiveException exception) {
+            } catch (HazelcastInstanceNotActiveException exception) {
                 return false;
             }
         } else if (instance instanceof HazelcastInstanceImpl) {

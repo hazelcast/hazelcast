@@ -100,27 +100,27 @@ public class CacheReadWriteQuorumTest extends HazelcastTestSupport {
     }
 
     @AfterClass
-    public static void killAllHazelcastInstances()  {
+    public static void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
     }
 
     @Test
-    public void testGetOperationSuccessfulWhenQuorumSizeMet()  {
+    public void testGetOperationSuccessfulWhenQuorumSizeMet() {
         cache1.get(1);
     }
 
     @Test(expected = QuorumException.class)
-    public void testGetOperationThrowsExceptionWhenQuorumSizeNotMet()  {
+    public void testGetOperationThrowsExceptionWhenQuorumSizeNotMet() {
         cache4.get(1);
     }
 
     @Test
-    public void testPutOperationSuccessfulWhenQuorumSizeMet()  {
+    public void testPutOperationSuccessfulWhenQuorumSizeMet() {
         cache1.put(1, "");
     }
 
     @Test(expected = QuorumException.class)
-    public void testPutOperationThrowsExceptionWhenQuorumSizeNotMet()  {
+    public void testPutOperationThrowsExceptionWhenQuorumSizeNotMet() {
         cache4.put(1, "");
     }
 

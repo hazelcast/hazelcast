@@ -65,7 +65,7 @@ public class BackupTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        for (int i = 0; i < nodeCount ; i++) {
+        for (int i = 0; i < nodeCount; i++) {
             HazelcastInstance slave = factory.newHazelcastInstance(config);
             map = slave.getMap(mapName);
             master.shutdown();

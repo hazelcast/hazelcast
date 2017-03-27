@@ -82,7 +82,7 @@ public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
 
         final CountDownLatch latch = new CountDownLatch(COUNT);
 
-        for (int i = 0; i < COUNT; i++)
+        for (int i = 0; i < COUNT; i++) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -100,6 +100,7 @@ public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
                     }
                 }
             }).start();
+        }
 
         latch.await(20, TimeUnit.SECONDS);
 

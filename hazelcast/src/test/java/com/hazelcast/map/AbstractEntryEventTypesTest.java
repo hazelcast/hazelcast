@@ -45,7 +45,7 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
 
     @Parameters(name = "includeValues: {0}")
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
+        return Arrays.asList(new Object[][]{
                 {true}, {false}
         });
     }
@@ -126,7 +126,7 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
     @Test
     public void entryAddedEvent_whenNoPredicateConfigured() {
         map.addEntryListener(new CountEntryAddedListener(eventCounter), includeValue);
-        map.put(1,  new Person("a", 40));
+        map.put(1, new Person("a", 40));
         assertEqualsEventually(new Callable<Integer>() {
             @Override
             public Integer call()
@@ -139,7 +139,7 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
     @Test
     public void entryAddedEvent_whenValueMatchesPredicate() {
         map.addEntryListener(new CountEntryAddedListener(eventCounter), predicate, includeValue);
-        map.put(1,  new Person("a", 75));
+        map.put(1, new Person("a", 75));
         assertEqualsEventually(new Callable<Integer>() {
             @Override
             public Integer call()
@@ -152,7 +152,7 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
     @Test
     public void entryAddedEvent_whenValueOutsidePredicate() {
         map.addEntryListener(new CountEntryAddedListener(eventCounter), predicate, includeValue);
-        map.put(1,  new Person("a", 35));
+        map.put(1, new Person("a", 35));
         assertEqualsEventually(new Callable<Integer>() {
             @Override
             public Integer call()

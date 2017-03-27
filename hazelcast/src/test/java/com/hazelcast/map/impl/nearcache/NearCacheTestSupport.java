@@ -241,9 +241,9 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
     protected Config createNearCachedMapConfig(String mapName) {
         Config config = getConfig();
 
-        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(),"5");
-        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(),"10000");
-        config.setProperty(PARTITION_COUNT.getName(),"1");
+        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "5");
+        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), "10000");
+        config.setProperty(PARTITION_COUNT.getName(), "1");
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         nearCacheConfig.setCacheLocalEntries(true);
 

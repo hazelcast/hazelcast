@@ -108,7 +108,9 @@ public class EventServiceTest extends HazelcastTestSupport {
                 es3.publishEvent(TopicService.SERVICE_NAME, registration, event, 0);
             }
             counter++;
-            if (counter == 3) counter = 0;
+            if (counter == 3) {
+                counter = 0;
+            }
         }
 
         l1.await(30, TimeUnit.SECONDS);

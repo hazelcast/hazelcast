@@ -141,7 +141,7 @@ public class Invocation_NotifyCallTimeoutTest extends HazelcastTestSupport {
 
         @Override
         public boolean shouldWait() {
-             return true;
+            return true;
         }
 
         @Override

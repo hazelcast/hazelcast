@@ -126,7 +126,7 @@ public abstract class ReplicatedMapAbstractTest extends HazelcastTestSupport {
         }
 
         Set<Integer> partitionIds = new HashSet<Integer>();
-        for(String key : keys) {
+        for (String key : keys) {
             assertTrue(partitionIds.add(getPartitionId(instance, key)));
         }
 

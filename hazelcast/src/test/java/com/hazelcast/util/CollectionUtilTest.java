@@ -238,19 +238,19 @@ public class CollectionUtilTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testToIntegerList_whenNull(){
+    public void testToIntegerList_whenNull() {
         toIntegerList(null);
     }
 
     @Test
-    public void testToIntegerList_whenEmpty(){
+    public void testToIntegerList_whenEmpty() {
         List<Integer> result = toIntegerList(new int[0]);
         assertEquals(0, result.size());
     }
 
     @Test
-    public void testToIntegerList_whenNotEmpty(){
-        List<Integer> result = toIntegerList(new int[]{1,2,3,4});
-        assertEquals(asList(1,2,3,4), result);
+    public void testToIntegerList_whenNotEmpty() {
+        List<Integer> result = toIntegerList(new int[]{1, 2, 3, 4});
+        assertEquals(asList(1, 2, 3, 4), result);
     }
 }

@@ -96,7 +96,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         Collection<Member> initialMembers = new ArrayList<Member>(clusterService.getMembers());
         initialMembers.remove(clusterService.getLocalMember());
 
-        changeClusterState(hz, ClusterState.PASSIVE, initialMembers );
+        changeClusterState(hz, ClusterState.PASSIVE, initialMembers);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -114,7 +114,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         MemberImpl fakeMember = new MemberImpl((MemberImpl) clusterService.getLocalMember());
         initialMembers.add(fakeMember);
 
-        changeClusterState(hz, ClusterState.PASSIVE, initialMembers );
+        changeClusterState(hz, ClusterState.PASSIVE, initialMembers);
     }
 
     @Test(expected = TransactionException.class)

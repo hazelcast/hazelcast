@@ -31,7 +31,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.RootCauseMatcher;
@@ -42,7 +41,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -80,19 +81,19 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         HazelcastInstance[] instances = createClusterWithCount(1, config);
         IScheduledFuture future = instances[0].getScheduledExecutorService(schedulerName)
-                                              .schedule(new PlainCallableTask(), 0, SECONDS);
+                .schedule(new PlainCallableTask(), 0, SECONDS);
 
         NodeEngineImpl nodeEngine = getNodeEngineImpl(instances[0]);
         ManagedExecutorService mes = (ManagedExecutorService) nodeEngine.getExecutionService()
-                                                                        .getScheduledDurable(sec.getName());
+                .getScheduledDurable(sec.getName());
         DistributedScheduledExecutorService dses = nodeEngine.getService(DistributedScheduledExecutorService.SERVICE_NAME);
 
         assertNotNull(mes);
         assertEquals(24, mes.getMaximumPoolSize());
         assertEquals(5, dses.getPartition(future.getHandler().getPartitionId())
-                            .getOrCreateContainer(schedulerName).getDurability());
+                .getOrCreateContainer(schedulerName).getDurability());
         assertEquals(1, dses.getPartition(future.getHandler().getPartitionId())
-                            .getOrCreateContainer("other").getDurability());
+                .getOrCreateContainer("other").getDurability());
     }
 
     @Test
@@ -164,7 +165,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         }
 
         try {
-            service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner,0, TimeUnit.SECONDS);
+            service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
             assertTrue("Got wrong RejectedExecutionException",
@@ -195,7 +196,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         }
 
         try {
-            service.scheduleOnMember(new PlainCallableTask(), member,0, TimeUnit.SECONDS);
+            service.scheduleOnMember(new PlainCallableTask(), member, 0, TimeUnit.SECONDS);
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
             assertTrue("Got wrong RejectedExecutionException",
@@ -257,7 +258,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         Object key = generateKeyOwnedBy(instances[1]);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         IScheduledFuture<Double> future = executorService.scheduleOnKeyOwner(
-                 new PlainCallableTask(), key, (int) delay, SECONDS);
+                new PlainCallableTask(), key, (int) delay, SECONDS);
 
         future.get();
         ScheduledTaskStatistics stats = future.getStats();
@@ -579,7 +580,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         IScheduledFuture future = executorService.scheduleOnKeyOwnerAtFixedRate(
-                new ICountdownLatchRunnableTask("latch"), key,0, 1, SECONDS);
+                new ICountdownLatchRunnableTask("latch"), key, 0, 1, SECONDS);
 
 
         latch.await(10, SECONDS);
@@ -655,6 +656,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         executorService.schedule(new PlainCallableTask(), delay, SECONDS);
     }
+
     @Test()
     public void schedule_whenPartitionLost()
             throws ExecutionException, InterruptedException {
@@ -821,7 +823,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         String key = generateKeyOwnedBy(instances[1]);
 
         IScheduledFuture<Double> future = executorService.scheduleOnKeyOwner(
-                new PlainCallableTask(), key,2, SECONDS);
+                new PlainCallableTask(), key, 2, SECONDS);
 
         assertEquals(25.0, future.get(), 0.0);
     }
@@ -879,8 +881,8 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         ScheduledTaskHandler handler = first.getHandler();
         int expectedPartition = instances[0].getPartitionService()
-                                            .getPartition(key)
-                                            .getPartitionId();
+                .getPartition(key)
+                .getPartitionId();
         assertEquals(expectedPartition, handler.getPartitionId());
         assertEquals(25, first.get(), 0);
     }
@@ -902,8 +904,8 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         ScheduledTaskHandler handler = future.getHandler();
         int expectedPartition = instances[0].getPartitionService()
-                                            .getPartition(key)
-                                            .getPartitionId();
+                .getPartition(key)
+                .getPartitionId();
 
         assertEquals(expectedPartition, handler.getPartitionId());
 
@@ -955,7 +957,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         int expectedTotal = 11;
         IScheduledFuture[] futures = new IScheduledFuture[expectedTotal];
-        for (int i=0; i < expectedTotal; i++) {
+        for (int i = 0; i < expectedTotal; i++) {
             futures[i] = s.schedule(new PlainCallableTask(i), 0, SECONDS);
         }
 
@@ -968,7 +970,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         assertEquals(expectedTotal - 1, countScheduledTasksOn(s), 0);
 
         // Verify all tasks
-        for (int i=1; i < expectedTotal; i++) {
+        for (int i = 1; i < expectedTotal; i++) {
             assertEquals(25.0 + i, futures[i].get());
         }
     }

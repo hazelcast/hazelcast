@@ -28,13 +28,13 @@ public class AbstractDiagnosticsPluginTest extends HazelcastTestSupport {
     private CharArrayWriter out;
 
     @Before
-    public void setupLogWriter(){
+    public void setupLogWriter() {
         logWriter = new MultiLineDiagnosticsLogWriter();
         out = new CharArrayWriter();
         logWriter.init(new PrintWriter(out));
     }
 
-    protected void reset(){
+    protected void reset() {
         out.reset();
     }
 

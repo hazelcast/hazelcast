@@ -34,7 +34,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class AbstractInvocationFuture_GetSafely extends AbstractInvocationFuture_AbstractTest{
+public class AbstractInvocationFuture_GetSafely extends AbstractInvocationFuture_AbstractTest {
 
     @Test
     public void whenNormalResponse() throws ExecutionException, InterruptedException {

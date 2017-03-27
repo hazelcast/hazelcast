@@ -88,7 +88,8 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void writeData(ObjectDataOutput out) throws IOException { }
+        public void writeData(ObjectDataOutput out) throws IOException {
+        }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {

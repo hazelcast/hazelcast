@@ -109,12 +109,18 @@ public class AtomicReferenceMigrationTest extends HazelcastTestSupport {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             SimpleObject that = (SimpleObject) o;
 
-            if (field != that.field) return false;
+            if (field != that.field) {
+                return false;
+            }
 
             return true;
         }

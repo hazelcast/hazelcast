@@ -62,8 +62,6 @@ public class ClassLoaderUtilTest extends HazelcastTestSupport {
     }
 
 
-
-
     private static class ExtendingClassImplementingSubInterface extends DirectlyImplementingSubInterfaceInterface {
 
     }

@@ -135,7 +135,7 @@ public class RenderTest {
 
         registerLongMetric("foo", 10);
 
-        List<ProbeInstance> instances2  = metricsRegistry.getSortedProbeInstances();
+        List<ProbeInstance> instances2 = metricsRegistry.getSortedProbeInstances();
 
         Assert.assertNotSame(instances1, instances2);
     }

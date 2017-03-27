@@ -126,7 +126,7 @@ public class LatencyTrackingQueueStoreTest extends HazelcastTestSupport {
 
         queueStore.store(key, value);
 
-        verify(delegate).store(key,value);
+        verify(delegate).store(key, value);
         assertProbeCalledOnce("store");
     }
 

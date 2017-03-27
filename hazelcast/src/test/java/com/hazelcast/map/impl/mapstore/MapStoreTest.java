@@ -1173,9 +1173,8 @@ public class MapStoreTest extends AbstractMapStoreTest {
         }
 
         /**
-         * @return  monotonically increasing timestamp of last store() or storeAll() method calls.
-         *          Timestamp is obtained via {@link System#nanoTime()}
-         *
+         * @return monotonically increasing timestamp of last store() or storeAll() method calls.
+         * Timestamp is obtained via {@link System#nanoTime()}
          */
         public long getLastStoreNanos() {
             return lastStoreTimestamp.get();

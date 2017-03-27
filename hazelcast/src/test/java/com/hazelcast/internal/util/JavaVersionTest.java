@@ -8,7 +8,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-
 import static com.hazelcast.internal.util.JavaVersion.JAVA_1_6;
 import static com.hazelcast.internal.util.JavaVersion.JAVA_1_7;
 import static com.hazelcast.internal.util.JavaVersion.JAVA_1_8;

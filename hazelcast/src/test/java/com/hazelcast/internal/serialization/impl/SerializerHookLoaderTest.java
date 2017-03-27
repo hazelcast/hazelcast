@@ -97,8 +97,9 @@ public class SerializerHookLoaderTest extends HazelcastTestSupport {
         } finally {
             if (origProperty != null) {
                 System.setProperty(propName, origProperty);
-            } else
+            } else {
                 System.clearProperty(propName);
+            }
         }
     }
 

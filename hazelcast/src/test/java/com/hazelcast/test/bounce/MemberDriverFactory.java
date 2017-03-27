@@ -33,7 +33,7 @@ public class MemberDriverFactory implements DriverFactory {
         BounceTestConfiguration testConfiguration = rule.getBounceTestConfig();
         switch (testConfiguration.getDriverType()) {
             case ALWAYS_UP_MEMBER:
-                return new HazelcastInstance[] {rule.getSteadyMember()};
+                return new HazelcastInstance[]{rule.getSteadyMember()};
             case MEMBER:
                 HazelcastInstance[] drivers = new HazelcastInstance[testConfiguration.getDriverCount()];
                 for (int i = 0; i < drivers.length; i++) {
@@ -49,6 +49,7 @@ public class MemberDriverFactory implements DriverFactory {
 
     /**
      * Override this method to provide custom configuration for test drivers
+     *
      * @return
      */
     protected Config getConfig() {

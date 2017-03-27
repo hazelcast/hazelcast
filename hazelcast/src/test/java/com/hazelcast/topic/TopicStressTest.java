@@ -68,10 +68,10 @@ public class TopicStressTest extends HazelcastTestSupport {
     private CountDownLatch startLatch;
     private PublishThread[] publishThreads;
     private Map<String, List<MessageListenerImpl>> listenerMap;
-    
+
     @Parameterized.Parameter
     public boolean multiThreadingEnabled;
-    
+
 
     @Before
     public void setUp() {

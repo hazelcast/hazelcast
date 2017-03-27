@@ -28,9 +28,9 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class DefaultPartitionSequencerTest {
-    
+
     private DefaultPartitionSequencer sequencer = new DefaultPartitionSequencer();
-    
+
     @Test
     public void testNextSequence() {
         assertEquals(1, sequencer.nextSequence());

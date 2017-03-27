@@ -91,6 +91,7 @@ public class Invocation_TaskDoneTest extends HazelcastTestSupport {
 
     static class DoneCallback implements Runnable {
         volatile boolean done;
+
         @Override
         public void run() {
             done = true;
@@ -115,6 +116,7 @@ public class Invocation_TaskDoneTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void onResponse(Object response) { }
+        public void onResponse(Object response) {
+        }
     }
 }

@@ -39,8 +39,7 @@ public class TestClusterUpgradeUtils {
         try {
             System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, version.toString());
             return factory.newHazelcastInstance(config);
-        }
-        finally {
+        } finally {
             System.clearProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
         }
     }
@@ -73,22 +72,21 @@ public class TestClusterUpgradeUtils {
                     }, 30);
                 }
             }
-        }
-        finally {
+        } finally {
             System.clearProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
         }
     }
 
     // assert all members' clusterService reports the given version
     public static void assertClusterVersion(HazelcastInstance[] instances, Version version) {
-        for (int i=0; i < instances.length; i++) {
+        for (int i = 0; i < instances.length; i++) {
             assertEquals(version, instances[i].getCluster().getClusterVersion());
         }
     }
 
     // assert all nodes in the cluster have the given codebase version
     public static void assertNodesVersion(HazelcastInstance[] instances, MemberVersion version) {
-        for (int i=0; i < instances.length; i++) {
+        for (int i = 0; i < instances.length; i++) {
             assertEquals(version, getNode(instances[i]).getVersion());
         }
     }

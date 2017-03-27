@@ -28,7 +28,7 @@ public class Slot {
 
     private volatile long accumulatedHiccupsNanos;
     private volatile long maxPauseNanos;
-    private volatile  int pausesOverThreshold;
+    private volatile int pausesOverThreshold;
 
     public Slot(long startInterval) {
         this.startInterval = startInterval;

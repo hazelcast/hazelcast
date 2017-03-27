@@ -270,11 +270,13 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
 
     private static void assertTestExceptionThrown(AtomicReference<?>... refs) {
-        for (AtomicReference<?> ref : refs)
+        for (AtomicReference<?> ref : refs) {
             assertThat("ExecutionException expected", ref.get(), instanceOf(ExecutionException.class));
-        for (AtomicReference<?> ref : refs)
+        }
+        for (AtomicReference<?> ref : refs) {
             assertThat("TEST_EXCEPTION expected as cause", ((Throwable) ref.get()).getCause(),
                     Matchers.<Throwable>sameInstance(THROW_TEST_EXCEPTION));
+        }
     }
 
     private ICompletableFuture<String> submitAwaitingTaskNoCallbacks(final Exception exception) {

@@ -144,8 +144,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
             Index ix = queryContext.getIndex("age");
             if (ix != null) {
                 return ix.getSubRecords(ComparisonType.GREATER, 50);
-            }
-            else {
+            } else {
                 return null;
             }
         }
@@ -156,8 +155,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
             if (ix != null) {
                 isIndexedInvocationCounter.incrementAndGet();
                 return true;
-            }
-            else {
+            } else {
                 return false;
             }
         }
@@ -165,9 +163,8 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         @Override
         public boolean apply(Map.Entry mapEntry) {
             if (mapEntry.getValue() instanceof Person) {
-                return ((Person)mapEntry.getValue()).getAge() > 50;
-            }
-            else {
+                return ((Person) mapEntry.getValue()).getAge() > 50;
+            } else {
                 return false;
             }
         }
@@ -257,12 +254,12 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         // then: index & interceptor exist on internal MapContainer on node that joined the cluster
         MapService mapService = getNodeEngineImpl(hz2).getService(MapService.SERVICE_NAME);
         MapContainer mapContainerOnNode2 = mapService.getMapServiceContext().getMapContainer("map");
-        assertEquals(1,  mapContainerOnNode2.getIndexes().getIndexes().length);
-        assertEquals(1,  mapContainerOnNode2.getInterceptorRegistry().getInterceptors().size());
+        assertEquals(1, mapContainerOnNode2.getIndexes().getIndexes().length);
+        assertEquals(1, mapContainerOnNode2.getInterceptorRegistry().getInterceptors().size());
         assertEquals(Person.class,
                 mapContainerOnNode2.getInterceptorRegistry().getInterceptors().get(0).interceptGet("anything").getClass());
         assertEquals(RETURNED_FROM_INTERCEPTOR.getAge(),
-                ((Person)mapContainerOnNode2.getInterceptorRegistry().getInterceptors().get(0).interceptGet("anything")).getAge());
+                ((Person) mapContainerOnNode2.getInterceptorRegistry().getInterceptors().get(0).interceptGet("anything")).getAge());
 
         // also verify via user API
         IMap<String, Person> mapOnNode2 = hz2.getMap("map");

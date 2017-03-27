@@ -265,8 +265,9 @@ public class InterceptorTest extends HazelcastTestSupport {
 
         @Override
         public Object interceptGet(Object value) {
-            if (value == null)
+            if (value == null) {
                 return null;
+            }
             return value + ":";
         }
 
@@ -285,8 +286,9 @@ public class InterceptorTest extends HazelcastTestSupport {
 
         @Override
         public Object interceptRemove(Object removedValue) {
-            if (removedValue.equals("ISTANBUL"))
+            if (removedValue.equals("ISTANBUL")) {
                 throw new RuntimeException("you can not remove this");
+            }
             return removedValue;
         }
 

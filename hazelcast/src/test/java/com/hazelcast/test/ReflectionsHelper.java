@@ -37,7 +37,7 @@ public class ReflectionsHelper {
         // obtain all classpath URLs with com.hazelcast package classes
         Collection<URL> comHazelcastPackageURLs = ClasspathHelper.forPackage("com.hazelcast");
         // exclude hazelcast test artifacts from package URLs
-        for (Iterator<URL> iterator = comHazelcastPackageURLs.iterator(); iterator.hasNext();) {
+        for (Iterator<URL> iterator = comHazelcastPackageURLs.iterator(); iterator.hasNext(); ) {
             URL url = iterator.next();
             // detect hazelcast-VERSION-tests.jar & $SOMEPATH/hazelcast/target/test-classes/ and exclude it from classpath
             if (url.toString().contains("-tests.jar") || url.toString().contains("target/test-classes")) {

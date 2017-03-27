@@ -143,7 +143,7 @@ public class HashSlotArray12byteKeyImplTest {
             insert(i, factor * i);
         }
 
-        for (int i = mod; i <= k ; i += mod) {
+        for (int i = mod; i <= k; i += mod) {
             assertTrue(hsa.remove(i, factor * i));
         }
 

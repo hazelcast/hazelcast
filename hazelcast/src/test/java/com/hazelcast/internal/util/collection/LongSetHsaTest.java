@@ -49,7 +49,7 @@ public class LongSetHsaTest {
     }
 
     @After
-    public void tearDown()  {
+    public void tearDown() {
         set.dispose();
         memMgr.dispose();
     }

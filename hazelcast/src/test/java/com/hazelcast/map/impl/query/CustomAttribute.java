@@ -36,13 +36,21 @@ public class CustomAttribute implements Serializable, Comparable<CustomAttribute
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         CustomAttribute that = (CustomAttribute) o;
 
-        if (age != that.age) return false;
-        if (height != that.height) return false;
+        if (age != that.age) {
+            return false;
+        }
+        if (height != that.height) {
+            return false;
+        }
 
         return true;
     }

@@ -38,12 +38,10 @@ public class SelectorModeTest {
         System.setProperty("hazelcast.io.selectorMode", "selectwithfix");
         try {
             assertEquals(SelectorMode.SELECT_WITH_FIX, SelectorMode.getConfiguredValue());
-        }
-        finally {
+        } finally {
             if (originalValue == null) {
                 System.clearProperty("hazelcast.io.selectorMode");
-            }
-            else {
+            } else {
                 System.setProperty("hazelcast.io.selectorMode", originalValue);
             }
         }

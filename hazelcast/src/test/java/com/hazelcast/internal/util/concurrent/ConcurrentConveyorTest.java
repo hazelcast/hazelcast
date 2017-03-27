@@ -280,16 +280,18 @@ public class ConcurrentConveyorTest {
         final AtomicBoolean flag = new AtomicBoolean();
         final CountDownLatch latch = new CountDownLatch(1);
 
-        new Thread() { public void run() {
-            // when
-            conveyor.backpressureOn();
-            latch.countDown();
-            parkNanos(MILLISECONDS.toNanos(10));
+        new Thread() {
+            public void run() {
+                // when
+                conveyor.backpressureOn();
+                latch.countDown();
+                parkNanos(MILLISECONDS.toNanos(10));
 
-            // then
-            assertFalse(flag.get());
-            conveyor.backpressureOff();
-        }}.start();
+                // then
+                assertFalse(flag.get());
+                conveyor.backpressureOff();
+            }
+        }.start();
 
         latch.await();
         conveyor.submit(defaultQ, item1);
@@ -302,16 +304,18 @@ public class ConcurrentConveyorTest {
         final AtomicBoolean flag = new AtomicBoolean();
         final CountDownLatch latch = new CountDownLatch(1);
 
-        new Thread() { public void run() {
-            // when
-            conveyor.drainerArrived();
-            latch.countDown();
-            parkNanos(MILLISECONDS.toNanos(10));
+        new Thread() {
+            public void run() {
+                // when
+                conveyor.drainerArrived();
+                latch.countDown();
+                parkNanos(MILLISECONDS.toNanos(10));
 
-            // then
-            assertFalse(flag.get());
-            conveyor.drainerDone();
-        }}.start();
+                // then
+                assertFalse(flag.get());
+                conveyor.drainerDone();
+            }
+        }.start();
 
         latch.await();
         conveyor.awaitDrainerGone();

@@ -48,7 +48,6 @@ import static org.junit.Assert.assertTrue;
 public class CachePartitionLostListenerStressTest extends AbstractPartitionLostListenerTest {
 
 
-
     @Parameterized.Parameters(name = "numberOfNodesToCrash:{0},withData:{1},nodeLeaveType:{2},shouldExpectPartitionLostEvents:{3}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{

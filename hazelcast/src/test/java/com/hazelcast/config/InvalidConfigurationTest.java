@@ -455,7 +455,7 @@ public class InvalidConfigurationTest {
                 "</network>\n" +
 
                 "<queue name=\"default\">\n" +
-                "<quorum-ref>quorumRuleWithThreeMembers</quorum-ref>"+
+                "<quorum-ref>quorumRuleWithThreeMembers</quorum-ref>" +
                 "<max-size>0</max-size>\n" +
                 "<backup-count>${queue-backup-count}</backup-count>\n" +
                 "<async-backup-count>${queue-async-backup-count}</async-backup-count>\n" +

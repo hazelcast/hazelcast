@@ -30,7 +30,6 @@ import java.util.logging.Level;
  * The real filtering is happening in the log4js once again.
  * Thus it covers branches guarded by is-level-enabled checks
  * yet the real logging is configurable via log4j2.xml
- *
  */
 public class TestLoggerFactory implements LoggerFactory {
 

@@ -48,12 +48,18 @@ public class AJavaExternalizable implements Externalizable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         AJavaExternalizable that = (AJavaExternalizable) o;
 
-        if (i != that.i) return false;
+        if (i != that.i) {
+            return false;
+        }
         return Float.compare(that.f, f) == 0;
 
     }

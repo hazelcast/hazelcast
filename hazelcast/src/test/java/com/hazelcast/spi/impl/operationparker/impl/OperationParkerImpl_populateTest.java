@@ -81,7 +81,7 @@ public class OperationParkerImpl_populateTest extends HazelcastTestSupport {
         operationParker.populate(callsPerMember);
 
         assertEquals(singleton(thatAddress), callsPerMember.addresses());
-        assertArrayEquals(new long[]{100},  callsPerMember.toOpControl(thatAddress).runningOperations());
+        assertArrayEquals(new long[]{100}, callsPerMember.toOpControl(thatAddress).runningOperations());
     }
 
     private static class WaitNotifyKeyImpl implements WaitNotifyKey {

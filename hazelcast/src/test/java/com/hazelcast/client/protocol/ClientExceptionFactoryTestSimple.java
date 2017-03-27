@@ -39,18 +39,19 @@ public class ClientExceptionFactoryTestSimple {
 
     private ClientExceptionFactory exceptionFactory = new ClientExceptionFactory(false);
 
-    private static class MyException extends Exception {}
+    private static class MyException extends Exception {
+    }
 
     @Test
     public void testDuplicateErrorCode() {
         thrown.expect(HazelcastException.class);
         exceptionFactory.register(ClientProtocolErrorCodes.ARRAY_INDEX_OUT_OF_BOUNDS,
-                    MyException.class, new ExceptionFactory() {
-                        @Override
-                        public Throwable createException(String message, Throwable cause) {
-                            return new MyException();
-                        }
-                    });
+                MyException.class, new ExceptionFactory() {
+                    @Override
+                    public Throwable createException(String message, Throwable cause) {
+                        return new MyException();
+                    }
+                });
     }
 
     @Test

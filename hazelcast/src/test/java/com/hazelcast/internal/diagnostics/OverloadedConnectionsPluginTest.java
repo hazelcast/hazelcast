@@ -27,7 +27,6 @@ import com.hazelcast.spi.impl.operationservice.impl.DummyOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;

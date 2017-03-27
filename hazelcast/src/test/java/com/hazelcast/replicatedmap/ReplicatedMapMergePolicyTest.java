@@ -65,7 +65,7 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object> parameters() {
-        return Arrays.asList(new Object[] {
+        return Arrays.asList(new Object[]{
                 new LatestUpdateMergePolicyTestCase(),
                 new HighestHitsMergePolicyTestCase(),
                 new PutIfAbsentMapMergePolicyTestCase(),

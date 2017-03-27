@@ -38,7 +38,7 @@ public class SemaphoreSplitBrainTest extends SplitBrainTestSupport {
     @Override
     protected int[] brains() {
         // 2nd merges to the 1st
-        return new int[] {2, 1};
+        return new int[]{2, 1};
     }
 
     @Override
@@ -50,7 +50,7 @@ public class SemaphoreSplitBrainTest extends SplitBrainTestSupport {
 
         HazelcastInstance firstInstance = instances[0];
         firstInstance.getSemaphore(name).init(permits);
-        
+
         lastInstance.getSemaphore(name).acquire(permits - 2);
 
         waitAllForSafeState(instances);

@@ -130,7 +130,7 @@ public class SplitMergeTest extends HazelcastTestSupport {
     public void test_lifecycleEvents_whenMergeFailed() throws Exception {
         final HazelcastInstance h1 = factory.newHazelcastInstance(newConfig());
         final HazelcastInstance h2 = factory.newHazelcastInstance(newConfig()
-            .setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5"));
+                .setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5"));
 
         MergeLifecycleListener lifecycleListener = new MergeLifecycleListener();
         h2.getLifecycleService().addLifecycleListener(lifecycleListener);

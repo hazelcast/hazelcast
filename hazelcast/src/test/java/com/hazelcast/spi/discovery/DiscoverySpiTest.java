@@ -310,7 +310,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     public void test_enabled_whenDiscoveryConfigIsNull() {
         Config config = new Config();
         config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
-        
+
         config.getNetworkConfig().getJoin().setDiscoveryConfig(null);
     }
 

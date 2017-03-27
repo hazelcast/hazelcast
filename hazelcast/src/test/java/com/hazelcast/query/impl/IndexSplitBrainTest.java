@@ -56,7 +56,7 @@ public class IndexSplitBrainTest extends SplitBrainTestSupport {
 
     @Override
     protected int[] brains() {
-        return new int[] {1,1};
+        return new int[]{1, 1};
     }
 
     @Override
@@ -89,11 +89,11 @@ public class IndexSplitBrainTest extends SplitBrainTestSupport {
         final IMap<String, ValueObject> map2 = instances[1].getMap(mapName);
 
         assertTrueEventually(new AssertTask() {
-             @Override
-             public void run()
-                     throws Exception {
-                 assertNotNull("Entry should exist in map1 after merge", map1.get(key));
-             }
+            @Override
+            public void run()
+                    throws Exception {
+                assertNotNull("Entry should exist in map1 after merge", map1.get(key));
+            }
         }, 15);
         map1.remove(key);
         assertTrueAllTheTime(new AssertTask() {

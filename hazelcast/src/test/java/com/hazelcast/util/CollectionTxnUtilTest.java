@@ -202,8 +202,12 @@ public class CollectionTxnUtilTest extends HazelcastTestSupport {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof TestOperation)) return false;
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof TestOperation)) {
+                return false;
+            }
 
             TestOperation that = (TestOperation) o;
 

@@ -239,54 +239,130 @@ public class AnIdentifiedDataSerializable implements IdentifiedDataSerializable 
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         AnIdentifiedDataSerializable that = (AnIdentifiedDataSerializable) o;
 
-        if (bool != that.bool) return false;
-        if (b != that.b) return false;
-        if (c != that.c) return false;
-        if (Double.compare(that.d, d) != 0) return false;
-        if (s != that.s) return false;
-        if (Float.compare(that.f, f) != 0) return false;
-        if (i != that.i) return false;
-        if (l != that.l) return false;
-        if (byteSize != that.byteSize) return false;
-        if (unsignedByte != that.unsignedByte) return false;
-        if (unsignedShort != that.unsignedShort) return false;
-        if (str != null ? !str.equals(that.str) : that.str != null) return false;
-        if (!Arrays.equals(booleans, that.booleans)) return false;
-        if (!Arrays.equals(bytes, that.bytes)) return false;
-        if (!Arrays.equals(chars, that.chars)) return false;
-        if (!Arrays.equals(doubles, that.doubles)) return false;
-        if (!Arrays.equals(shorts, that.shorts)) return false;
-        if (!Arrays.equals(floats, that.floats)) return false;
-        if (!Arrays.equals(ints, that.ints)) return false;
-        if (!Arrays.equals(longs, that.longs)) return false;
-        if (!Arrays.equals(strings, that.strings)) return false;
-        if (!Arrays.equals(booleansNull, that.booleansNull)) return false;
-        if (!Arrays.equals(bytesNull, that.bytesNull)) return false;
-        if (!Arrays.equals(charsNull, that.charsNull)) return false;
-        if (!Arrays.equals(doublesNull, that.doublesNull)) return false;
-        if (!Arrays.equals(shortsNull, that.shortsNull)) return false;
-        if (!Arrays.equals(floatsNull, that.floatsNull)) return false;
-        if (!Arrays.equals(intsNull, that.intsNull)) return false;
-        if (!Arrays.equals(longsNull, that.longsNull)) return false;
-        if (!Arrays.equals(stringsNull, that.stringsNull)) return false;
-        if (!Arrays.equals(bytesFully, that.bytesFully)) return false;
-        if (!Arrays.equals(bytesOffset, that.bytesOffset)) return false;
-        if (!Arrays.equals(strChars, that.strChars)) return false;
-        if (!Arrays.equals(strBytes, that.strBytes)) return false;
-        if (portableObject != null ? !portableObject.equals(that.portableObject) : that.portableObject != null)
+        if (bool != that.bool) {
             return false;
-        if (identifiedDataSerializableObject != null ? !identifiedDataSerializableObject.equals(that.identifiedDataSerializableObject) : that.identifiedDataSerializableObject != null)
+        }
+        if (b != that.b) {
             return false;
-        if (customStreamSerializableObject != null ? !customStreamSerializableObject.equals(that.customStreamSerializableObject) : that.customStreamSerializableObject != null)
+        }
+        if (c != that.c) {
             return false;
-        if (customByteArraySerializableObject != null ? !customByteArraySerializableObject.equals(that.customByteArraySerializableObject) : that.customByteArraySerializableObject != null)
+        }
+        if (Double.compare(that.d, d) != 0) {
             return false;
-        return  !(data != null ? !data.equals(that.data) : that.data != null);
+        }
+        if (s != that.s) {
+            return false;
+        }
+        if (Float.compare(that.f, f) != 0) {
+            return false;
+        }
+        if (i != that.i) {
+            return false;
+        }
+        if (l != that.l) {
+            return false;
+        }
+        if (byteSize != that.byteSize) {
+            return false;
+        }
+        if (unsignedByte != that.unsignedByte) {
+            return false;
+        }
+        if (unsignedShort != that.unsignedShort) {
+            return false;
+        }
+        if (str != null ? !str.equals(that.str) : that.str != null) {
+            return false;
+        }
+        if (!Arrays.equals(booleans, that.booleans)) {
+            return false;
+        }
+        if (!Arrays.equals(bytes, that.bytes)) {
+            return false;
+        }
+        if (!Arrays.equals(chars, that.chars)) {
+            return false;
+        }
+        if (!Arrays.equals(doubles, that.doubles)) {
+            return false;
+        }
+        if (!Arrays.equals(shorts, that.shorts)) {
+            return false;
+        }
+        if (!Arrays.equals(floats, that.floats)) {
+            return false;
+        }
+        if (!Arrays.equals(ints, that.ints)) {
+            return false;
+        }
+        if (!Arrays.equals(longs, that.longs)) {
+            return false;
+        }
+        if (!Arrays.equals(strings, that.strings)) {
+            return false;
+        }
+        if (!Arrays.equals(booleansNull, that.booleansNull)) {
+            return false;
+        }
+        if (!Arrays.equals(bytesNull, that.bytesNull)) {
+            return false;
+        }
+        if (!Arrays.equals(charsNull, that.charsNull)) {
+            return false;
+        }
+        if (!Arrays.equals(doublesNull, that.doublesNull)) {
+            return false;
+        }
+        if (!Arrays.equals(shortsNull, that.shortsNull)) {
+            return false;
+        }
+        if (!Arrays.equals(floatsNull, that.floatsNull)) {
+            return false;
+        }
+        if (!Arrays.equals(intsNull, that.intsNull)) {
+            return false;
+        }
+        if (!Arrays.equals(longsNull, that.longsNull)) {
+            return false;
+        }
+        if (!Arrays.equals(stringsNull, that.stringsNull)) {
+            return false;
+        }
+        if (!Arrays.equals(bytesFully, that.bytesFully)) {
+            return false;
+        }
+        if (!Arrays.equals(bytesOffset, that.bytesOffset)) {
+            return false;
+        }
+        if (!Arrays.equals(strChars, that.strChars)) {
+            return false;
+        }
+        if (!Arrays.equals(strBytes, that.strBytes)) {
+            return false;
+        }
+        if (portableObject != null ? !portableObject.equals(that.portableObject) : that.portableObject != null) {
+            return false;
+        }
+        if (identifiedDataSerializableObject != null ? !identifiedDataSerializableObject.equals(that.identifiedDataSerializableObject) : that.identifiedDataSerializableObject != null) {
+            return false;
+        }
+        if (customStreamSerializableObject != null ? !customStreamSerializableObject.equals(that.customStreamSerializableObject) : that.customStreamSerializableObject != null) {
+            return false;
+        }
+        if (customByteArraySerializableObject != null ? !customByteArraySerializableObject.equals(that.customByteArraySerializableObject) : that.customByteArraySerializableObject != null) {
+            return false;
+        }
+        return !(data != null ? !data.equals(that.data) : that.data != null);
     }
 
     @Override

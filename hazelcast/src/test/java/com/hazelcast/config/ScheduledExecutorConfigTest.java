@@ -54,7 +54,7 @@ public class ScheduledExecutorConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDurability()  {
+    public void testDurability() {
         config.setDurability(42);
 
         assertEquals(42, config.getDurability());

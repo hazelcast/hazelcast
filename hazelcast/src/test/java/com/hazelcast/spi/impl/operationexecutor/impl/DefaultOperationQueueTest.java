@@ -105,7 +105,7 @@ public class DefaultOperationQueueTest extends HazelcastTestSupport {
 
     /**
      * It could be that in the low priority query there are a bunch of useless trigger tasks preceding a regular tasks.
-      */
+     */
     @Test
     public void take_whenLowPriority_andManyPrecedingTriggerTasks() throws InterruptedException {
         Object task1 = "task1";

@@ -275,7 +275,8 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
 
         private transient HazelcastInstance instance;
 
-        ErroneousCallableTask() {}
+        ErroneousCallableTask() {
+        }
 
         ErroneousCallableTask(String completionLatchName) {
             this.completionLatchName = completionLatchName;

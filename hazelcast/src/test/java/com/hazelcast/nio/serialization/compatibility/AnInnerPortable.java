@@ -59,11 +59,17 @@ public class AnInnerPortable implements Portable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         AnInnerPortable that = (AnInnerPortable) o;
-        if (anInt != that.anInt) return false;
+        if (anInt != that.anInt) {
+            return false;
+        }
         return Float.compare(that.aFloat, aFloat) == 0;
     }
 

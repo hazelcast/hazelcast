@@ -63,8 +63,9 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         Member member = null;
         for (Member m : h2.getCluster().getMembers()) {
-            if (m == h2.getCluster().getLocalMember())
+            if (m == h2.getCluster().getLocalMember()) {
                 continue;
+            }
             member = m;
         }
 
@@ -74,8 +75,9 @@ public class MemberAttributeTest extends HazelcastTestSupport {
         assertEquals(123, (int) member.getIntAttribute("Test"));
 
         for (Member m : h1.getCluster().getMembers()) {
-            if (m == h1.getCluster().getLocalMember())
+            if (m == h1.getCluster().getLocalMember()) {
                 continue;
+            }
             member = m;
         }
 
@@ -101,8 +103,9 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         Member member = null;
         for (Member m : h2.getCluster().getMembers()) {
-            if (m == h2.getCluster().getLocalMember())
+            if (m == h2.getCluster().getLocalMember()) {
                 continue;
+            }
             member = m;
         }
 
@@ -128,8 +131,9 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         Member member = null;
         for (Member m : h2.getCluster().getMembers()) {
-            if (m == h2.getCluster().getLocalMember())
+            if (m == h2.getCluster().getLocalMember()) {
                 continue;
+            }
             member = m;
         }
 
@@ -168,8 +172,9 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         Member member = null;
         for (Member m : h2.getCluster().getMembers()) {
-            if (m == h2.getCluster().getLocalMember())
+            if (m == h2.getCluster().getLocalMember()) {
                 continue;
+            }
             member = m;
         }
 
@@ -208,8 +213,9 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         Member member = null;
         for (Member m : h2.getCluster().getMembers()) {
-            if (m == h2.getCluster().getLocalMember())
+            if (m == h2.getCluster().getLocalMember()) {
                 continue;
+            }
             member = m;
         }
 

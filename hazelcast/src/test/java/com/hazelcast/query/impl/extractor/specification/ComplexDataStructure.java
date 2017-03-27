@@ -56,7 +56,9 @@ public class ComplexDataStructure {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof Person)) return false;
+            if (!(o instanceof Person)) {
+                return false;
+            }
             final Person other = (Person) o;
             return ObjectTestUtils.equals(this.name, other.name) && ObjectTestUtils.equals(this.limbs_list, other.limbs_list);
         }
@@ -83,7 +85,9 @@ public class ComplexDataStructure {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof PersonPortable)) return false;
+            if (!(o instanceof PersonPortable)) {
+                return false;
+            }
             final PersonPortable other = (PersonPortable) o;
             return ObjectTestUtils.equals(this.name, other.name);
         }
@@ -135,7 +139,9 @@ public class ComplexDataStructure {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof Limb)) return false;
+            if (!(o instanceof Limb)) {
+                return false;
+            }
             final Limb other = (Limb) o;
             return ObjectTestUtils.equals(this.name, other.name) && ObjectTestUtils.equals(this.fingers_list, other.fingers_list)
                     && ObjectTestUtils.equals(this.tattoos_list, other.tattoos_list);
@@ -166,7 +172,9 @@ public class ComplexDataStructure {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof LimbPortable)) return false;
+            if (!(o instanceof LimbPortable)) {
+                return false;
+            }
             final LimbPortable other = (LimbPortable) o;
             return ObjectTestUtils.equals(this.name, other.name);
         }
@@ -212,7 +220,9 @@ public class ComplexDataStructure {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof Finger)) return false;
+            if (!(o instanceof Finger)) {
+                return false;
+            }
             final Finger other = (Finger) o;
             return ObjectTestUtils.equals(this.name, other.name);
         }
@@ -243,7 +253,9 @@ public class ComplexDataStructure {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof FingerPortable)) return false;
+            if (!(o instanceof FingerPortable)) {
+                return false;
+            }
             final FingerPortable other = (FingerPortable) o;
             return ObjectTestUtils.equals(this.name, other.name);
         }
@@ -375,14 +387,15 @@ public class ComplexDataStructure {
 
         @Override
         public Portable create(int classId) {
-            if (PersonPortable.ID == classId)
+            if (PersonPortable.ID == classId) {
                 return new PersonPortable();
-            else if (LimbPortable.ID == classId)
+            } else if (LimbPortable.ID == classId) {
                 return new LimbPortable();
-            else if (FingerPortable.ID == classId)
+            } else if (FingerPortable.ID == classId) {
                 return new FingerPortable();
-            else
+            } else {
                 return null;
+            }
         }
     }
 

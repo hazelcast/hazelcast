@@ -80,7 +80,7 @@ public class SqlPredicateTest {
     TruePredicate leftOfAnd = new TruePredicate();
     TruePredicate rightOfAnd = new TruePredicate();
 
-    static final String[] TEST_MATCHING_SQL_PREDICATES = new String[] {
+    static final String[] TEST_MATCHING_SQL_PREDICATES = new String[]{
             "name = 'Joe' and age = 25 and (city = 'austin' or city = 'AUSTIN')",
             "name = 'Joe' or city = 'Athens'",
             "(name = 'Jane' or name = 'Joe' or city = 'AUSTIN') and age = 25",
@@ -88,9 +88,9 @@ public class SqlPredicateTest {
             "(name = 'Jane' or name = 'Joe') and age = 25 and salary = 0 or age = 24",
             "name = 'Jane' or age = 25 and name = 'Joe'", // correct precedence is "name = 'Jane' or (age = 25 and name = 'Joe')
             "age = 35 or age = 24 or age = 31 or (name = 'Joe' and age = 25)",
-            };
+    };
 
-    static final String[] TEST_NOT_MATCHING_SQL_PREDICATES = new String[] {
+    static final String[] TEST_NOT_MATCHING_SQL_PREDICATES = new String[]{
             "name = 'Joe' and age = 21 and (city = 'austin' or city = 'ATHENS')",
             "name = 'Jane' or city = 'Athens'",
             "(name = 'Jane' or name = 'Catie' or city = 'San Jose') and age = 25",
@@ -100,7 +100,7 @@ public class SqlPredicateTest {
             "(name = 'Jane' or name = 'Joe') and age = 25 and salary = 13 or age = 24",
             "name = 'Jane' or age = 25 and name = 'Catie'",
             "age = 35 or age = 24 or age = 31 or (name = 'Joe' and age = 27)",
-            };
+    };
 
     @Test
     public void testSqlPredicates() {

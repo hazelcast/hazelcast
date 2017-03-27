@@ -63,7 +63,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         sleepAtLeastMillis(1);
         Map<String, String> parameters = phoneHome.phoneHome(node1, "test_version", false);
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
-        OperatingSystemMXBean osMxBean 	= 	ManagementFactory.getOperatingSystemMXBean();
+        OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
 
         assertEquals(parameters.get("version"), "test_version");
         assertEquals(parameters.get("m"), node1.getLocalMember().getUuid());

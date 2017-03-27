@@ -54,7 +54,8 @@ public class InternalSetMultiMapTest {
     @Test
     public void givenKeyHasValueAlreadyAssociated_whenTheSameValueIsAssociatedAgain_thenDuplicateIsEliminated() {
         multiMap.put(1, "value");
-        multiMap.put(1, "value");multiMap.put(1, "value");
+        multiMap.put(1, "value");
+        multiMap.put(1, "value");
 
         Collection<String> results = multiMap.get(1);
 
