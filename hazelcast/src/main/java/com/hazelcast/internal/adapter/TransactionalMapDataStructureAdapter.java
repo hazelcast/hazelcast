@@ -64,6 +64,22 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
+    public V replace(K key, V newValue) {
+        begin();
+        V oldValue = transactionalMap.replace(key, newValue);
+        commit();
+        return oldValue;
+    }
+
+    @Override
+    public boolean replace(K key, V oldValue, V newValue) {
+        begin();
+        boolean result = transactionalMap.replace(key, oldValue, newValue);
+        commit();
+        return result;
+    }
+
+    @Override
     public V get(K key) {
         begin();
         V value = transactionalMap.get(key);

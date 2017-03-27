@@ -88,6 +88,26 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testReplace() {
+        cache.put(42, "oldValue");
+
+        String oldValue = adapter.replace(42, "newValue");
+
+        assertEquals("oldValue", oldValue);
+        assertEquals("newValue", cache.get(42));
+    }
+
+    @Test
+    public void testReplaceWithOldValue() {
+        cache.put(42, "oldValue");
+
+        assertFalse(adapter.replace(42, "foobar", "newValue"));
+        assertTrue(adapter.replace(42, "oldValue", "newValue"));
+
+        assertEquals("newValue", cache.get(42));
+    }
+
+    @Test
     public void testGet() {
         cache.put(42, "foobar");
 

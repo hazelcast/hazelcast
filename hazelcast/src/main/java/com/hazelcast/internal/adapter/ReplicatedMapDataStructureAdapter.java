@@ -48,6 +48,16 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     }
 
     @Override
+    public V replace(K key, V newValue) {
+        throw new UnsupportedOperationException("ReplicatedMap doesn't have replace() methods");
+    }
+
+    @Override
+    public boolean replace(K key, V oldValue, V newValue) {
+        throw new UnsupportedOperationException("ReplicatedMap doesn't have replace() methods");
+    }
+
+    @Override
     public V get(K key) {
         return map.get(key);
     }

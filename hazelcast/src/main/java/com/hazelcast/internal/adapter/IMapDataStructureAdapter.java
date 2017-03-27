@@ -47,6 +47,16 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
+    public V replace(K key, V newValue) {
+        return map.replace(key, newValue);
+    }
+
+    @Override
+    public boolean replace(K key, V oldValue, V newValue) {
+        return map.replace(key, oldValue, newValue);
+    }
+
+    @Override
     public V get(K key) {
         return map.get(key);
     }

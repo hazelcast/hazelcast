@@ -79,6 +79,20 @@ public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport 
         assertEquals("newValue", map.get(42));
     }
 
+    @Test(expected = UnsupportedOperationException.class)
+    public void testReplace() {
+        map.put(42, "oldValue");
+
+        adapter.replace(42, "newValue");
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testReplaceWithOldValue() {
+        map.put(42, "oldValue");
+
+        adapter.replace(42, "oldValue", "newValue");
+    }
+
     @Test
     public void testGet() {
         map.put(42, "foobar");

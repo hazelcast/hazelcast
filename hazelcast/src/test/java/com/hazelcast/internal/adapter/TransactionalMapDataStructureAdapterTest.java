@@ -82,6 +82,26 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
     }
 
     @Test
+    public void testReplace() {
+        map.put(42, "oldValue");
+
+        String oldValue = adapter.replace(42, "newValue");
+
+        assertEquals("oldValue", oldValue);
+        assertEquals("newValue", map.get(42));
+    }
+
+    @Test
+    public void testReplaceWithOldValue() {
+        map.put(42, "oldValue");
+
+        assertFalse(adapter.replace(42, "foobar", "newValue"));
+        assertTrue(adapter.replace(42, "oldValue", "newValue"));
+
+        assertEquals("newValue", map.get(42));
+    }
+
+    @Test
     public void testGet() {
         map.put(42, "foobar");
 
