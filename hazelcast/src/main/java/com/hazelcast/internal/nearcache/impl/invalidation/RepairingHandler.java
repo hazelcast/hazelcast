@@ -64,7 +64,7 @@ public final class RepairingHandler {
     private static MetaDataContainer[] createMetadataContainers(int partitionCount) {
         MetaDataContainer[] metaData = new MetaDataContainer[partitionCount];
         for (int partition = 0; partition < partitionCount; partition++) {
-            metaData[partition] = new MetaDataContainer(partition);
+            metaData[partition] = new MetaDataContainer();
         }
         return metaData;
     }

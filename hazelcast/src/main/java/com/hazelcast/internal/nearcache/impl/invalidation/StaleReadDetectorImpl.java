@@ -34,13 +34,7 @@ public class StaleReadDetectorImpl implements StaleReadDetector {
 
     @Override
     public boolean isStaleRead(NearCacheRecord record) {
-        MetaDataContainer latestMetaData = repairingHandler.getMetaDataContainer(record.getPartition());
-
-        if (!record.hasSameUuid(latestMetaData.getUuid())) {
-            return true;
-        }
-
-        return record.getInvalidationSequence() < latestMetaData.getStaleSequence();
+        return record.isStaleRead();
     }
 
     @Override
