@@ -152,7 +152,7 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
 
     @Test
     @Override
-    @Ignore(value = "The AbstractClientCacheProxy is missing `invalidateNearCache(keyData)` calls")
+    @Ignore(value = "The NearCachedClientCacheProxy is missing `invalidateNearCache(keyData)` calls")
     public void whenPutAllIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
     }
 }
