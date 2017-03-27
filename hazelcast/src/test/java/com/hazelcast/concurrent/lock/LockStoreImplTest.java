@@ -78,7 +78,7 @@ public class LockStoreImplTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
     public void testLock_whenMaximumLeaseTimeExceeded_thenThrowException() {
-        when(mockLockServiceImpl.getMaxLeaseTimeInMillis()).thenReturn(1l);
+        when(mockLockServiceImpl.getMaxLeaseTimeInMillis()).thenReturn(1L);
         lockAndIncreaseReferenceId();
     }
 
@@ -119,7 +119,7 @@ public class LockStoreImplTest extends HazelcastTestSupport {
 
         long remainingLeaseTime = lockStore.getRemainingLeaseTime(key);
         assertThat(remainingLeaseTime, lessThanOrEqualTo(leaseTime));
-        assertThat(remainingLeaseTime, greaterThan(0l));
+        assertThat(remainingLeaseTime, greaterThan(0L));
     }
 
     @Test

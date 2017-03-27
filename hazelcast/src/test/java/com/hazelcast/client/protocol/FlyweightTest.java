@@ -59,7 +59,7 @@ public class FlyweightTest {
 
     @Test
     public void shouldEncodeLong() {
-        flyweight.set(0x12345678l);
+        flyweight.set(0x12345678L);
         assertEquals(8, flyweight.index());
         assertThat(byteBuffer.get(0), is((byte) 0x78));
         assertThat(byteBuffer.get(1), is((byte) 0x56));
@@ -123,9 +123,9 @@ public class FlyweightTest {
 
     @Test
     public void shouldDecodeLong() {
-        flyweight.set(0x12345678l);
+        flyweight.set(0x12345678L);
         flyweight.index(0);
-        assertEquals(0x12345678l, flyweight.getLong());
+        assertEquals(0x12345678L, flyweight.getLong());
     }
 
     @Test
@@ -175,7 +175,7 @@ public class FlyweightTest {
 
     @Test
     public void shouldEncodeDecodeMultipleData() {
-        flyweight.set(0x12345678l);
+        flyweight.set(0x12345678L);
         flyweight.set(0x1234);
         flyweight.set((short) 0x12);
         flyweight.set(true);

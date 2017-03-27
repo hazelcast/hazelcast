@@ -72,7 +72,7 @@ public class DiagnosticsTest extends HazelcastTestSupport {
 
         diagnostics.start();
         DiagnosticsPlugin plugin = mock(DiagnosticsPlugin.class);
-        when(plugin.getPeriodMillis()).thenReturn(1l);
+        when(plugin.getPeriodMillis()).thenReturn(1L);
 
         diagnostics.register(plugin);
 
@@ -86,7 +86,7 @@ public class DiagnosticsTest extends HazelcastTestSupport {
 
         diagnostics.start();
         DiagnosticsPlugin plugin = mock(DiagnosticsPlugin.class);
-        when(plugin.getPeriodMillis()).thenReturn(-2l);
+        when(plugin.getPeriodMillis()).thenReturn(-2L);
 
         diagnostics.register(plugin);
     }
@@ -98,7 +98,7 @@ public class DiagnosticsTest extends HazelcastTestSupport {
 
         diagnostics.start();
         DiagnosticsPlugin plugin = mock(DiagnosticsPlugin.class);
-        when(plugin.getPeriodMillis()).thenReturn(0l);
+        when(plugin.getPeriodMillis()).thenReturn(0L);
 
         diagnostics.register(plugin);
 
