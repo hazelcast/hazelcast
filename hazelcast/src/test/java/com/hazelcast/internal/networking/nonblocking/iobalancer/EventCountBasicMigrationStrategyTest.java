@@ -100,14 +100,14 @@ public class EventCountBasicMigrationStrategyTest extends HazelcastTestSupport {
 
         imbalance.minimumEvents = 100;
         MigratableHandler handler1 = mock(MigratableHandler.class);
-        handlerEventsCounter.set(handler1, 100l);
+        handlerEventsCounter.set(handler1, 100L);
         selectorToHandlers.put(destinationSelector, singleton(handler1));
 
         imbalance.maximumEvents = 300;
         MigratableHandler handler2 = mock(MigratableHandler.class);
         MigratableHandler handler3 = mock(MigratableHandler.class);
-        handlerEventsCounter.set(handler2, 200l);
-        handlerEventsCounter.set(handler3, 100l);
+        handlerEventsCounter.set(handler2, 200L);
+        handlerEventsCounter.set(handler3, 100L);
         selectorToHandlers.put(sourceSelector, setOf(handler2, handler3));
 
         MigratableHandler handlerToMigrate = strategy.findHandlerToMigrate(imbalance);

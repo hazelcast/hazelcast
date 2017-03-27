@@ -69,7 +69,7 @@ public class ClientMessageTest {
         ClientMessage cmEncode = TestClientMessage.createForEncode(safeBuffer, 0);
 
         cmEncode.setMessageType(0x1122).setVersion((short) 0xEF).addFlag(ClientMessage.BEGIN_AND_END_FLAGS)
-                .setCorrelationId(0x1234567812345678l)
+                .setCorrelationId(0x1234567812345678L)
                 .setPartitionId(0x11223344);
 
         // little endian

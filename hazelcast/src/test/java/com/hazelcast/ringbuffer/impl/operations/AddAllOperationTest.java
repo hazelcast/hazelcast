@@ -72,7 +72,7 @@ public class AddAllOperationTest extends HazelcastTestSupport {
 
         assertFalse(addOperation.shouldNotify());
         assertFalse(addOperation.shouldBackup());
-        assertEquals(-1l, addOperation.getResponse());
+        assertEquals(-1L, addOperation.getResponse());
     }
 
     @Test
