@@ -31,6 +31,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LRU;
+import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -75,6 +76,17 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
                 .setEvictionPolicy(evictionPolicy)
                 .setMaximumSizePolicy(maxSizePolicy)
                 .setSize(maxSize);
+    }
+
+    /**
+     * Checks if the {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy} of a {@link NearCacheConfig}
+     * is {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE}.
+     *
+     * @param nearCacheConfig the {@link NearCacheConfig} to check
+     * @return {@code true} if the {@code LocalUpdatePolicy} is {@code CACHE_ON_UPDATE}, {@code false} otherwise
+     */
+    static boolean isCacheOnUpdate(NearCacheConfig nearCacheConfig) {
+        return nearCacheConfig.getLocalUpdatePolicy() == CACHE_ON_UPDATE;
     }
 
     /**

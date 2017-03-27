@@ -33,8 +33,8 @@ import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.EvictionPolicy.NONE;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
-import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheStats;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.setEvictionConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.waitForNearCacheEvictions;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.waitForNearCacheSize;
@@ -186,7 +186,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     private long getExpectedMissesWithLocalUpdatePolicy(NearCacheTestContext<Integer, String, NK, NV> context) {
-        if (nearCacheConfig.getLocalUpdatePolicy() == CACHE_ON_UPDATE) {
+        if (isCacheOnUpdate(nearCacheConfig)) {
             // we expect the first and second get() to be hits, since the value should be already be cached
             return context.stats.getMisses();
         }
@@ -195,7 +195,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     private long getExpectedHitsWithLocalUpdatePolicy(NearCacheTestContext<Integer, String, NK, NV> context) {
-        if (nearCacheConfig.getLocalUpdatePolicy() == CACHE_ON_UPDATE) {
+        if (isCacheOnUpdate(nearCacheConfig)) {
             // we expect the first and second get() to be hits, since the value should be already be cached
             return context.stats.getHits() + 2;
         }
