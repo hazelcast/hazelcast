@@ -100,7 +100,7 @@ public class ClientQueryCacheRecoveryUponEventLossTest extends HazelcastTestSupp
 
     private void setTestSequencer(IMap map, int eventCount) {
         ClientMapProxy proxy = (ClientMapProxy) map;
-        QueryCacheContext queryCacheContext = proxy.getQueryContext();
+        QueryCacheContext queryCacheContext = proxy.getQueryCacheContext();
         queryCacheContext.setSubscriberContext(new TestClientSubscriberContext(queryCacheContext, eventCount, true));
     }
 }
