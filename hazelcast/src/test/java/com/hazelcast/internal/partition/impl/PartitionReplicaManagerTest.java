@@ -31,14 +31,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertFalse;
+import static com.hazelcast.internal.partition.DefaultReplicaFragmentNamespace.INSTANCE;
+import static java.util.Collections.singleton;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class PartitionReplicaManagerTest extends HazelcastTestSupport {
 
     private static final int PARTITION_ID = 23;
-    private static final int DELAY_MILLIS = 250;
 
     private TestHazelcastInstanceFactory factory;
     private HazelcastInstance hazelcastInstance;
@@ -64,23 +65,23 @@ public class PartitionReplicaManagerTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
     public void testTriggerPartitionReplicaSync_whenReplicaIndexNegative_thenThrowException() {
-        manager.triggerPartitionReplicaSync(PARTITION_ID, -1, DELAY_MILLIS);
+        manager.triggerPartitionReplicaSync(PARTITION_ID, singleton(INSTANCE), -1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testTriggerPartitionReplicaSync_whenReplicaIndexTooLarge_thenThrowException() {
-        manager.triggerPartitionReplicaSync(PARTITION_ID, InternalPartition.MAX_REPLICA_COUNT + 1, DELAY_MILLIS);
+        manager.triggerPartitionReplicaSync(PARTITION_ID, singleton(INSTANCE), InternalPartition.MAX_REPLICA_COUNT + 1);
     }
 
     @Test
     public void testCheckSyncPartitionTarget_whenPartitionOwnerIsNull_thenReturnFalse() {
-        assertFalse(manager.checkSyncPartitionTarget(PARTITION_ID, 0));
+        assertNull(manager.checkAndGetPrimaryReplicaOwner(PARTITION_ID, 0));
     }
 
     @Test
     public void testCheckSyncPartitionTarget_whenNodeIsPartitionOwner_thenReturnFalse() {
         warmUpPartitions(hazelcastInstance);
 
-        assertFalse(manager.checkSyncPartitionTarget(PARTITION_ID, 0));
+        assertNull(manager.checkAndGetPrimaryReplicaOwner(PARTITION_ID, 0));
     }
 }

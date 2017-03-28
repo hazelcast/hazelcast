@@ -24,6 +24,7 @@ import com.hazelcast.core.MigrationListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterStateListener;
+import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOp;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -33,6 +34,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.MigrationInfo.MigrationStatus;
 import com.hazelcast.internal.partition.PartitionListener;
+import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.PartitionServiceProxy;
 import com.hazelcast.internal.partition.PartitionTableView;
@@ -65,6 +67,7 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.util.HashUtil;
 import com.hazelcast.util.scheduler.ScheduledEntry;
+import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -99,7 +102,7 @@ import static java.lang.Math.min;
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class InternalPartitionServiceImpl implements InternalPartitionService, ManagedService,
         EventPublishingService<PartitionEvent, PartitionEventListener<PartitionEvent>>,
-        PartitionAwareService, ClusterStateListener {
+        PartitionAwareService, ClusterStateListener, ClusterVersionListener {
 
     private static final int PARTITION_OWNERSHIP_WAIT_MILLIS = 10;
     private static final String EXCEPTION_MSG_PARTITION_STATE_SYNC_TIMEOUT = "Partition state sync invocation timed out";
@@ -177,6 +180,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 partitionTableSendInterval, partitionTableSendInterval, TimeUnit.SECONDS);
 
         migrationManager.start();
+        replicaManager.setClusterVersion(node.getClusterService().getClusterVersion());
         replicaManager.scheduleReplicaVersionSync(executionService);
     }
 
@@ -406,10 +410,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return;
         }
         if (!partitionStateManager.isInitialized()) {
-             return;
+            return;
         }
         if (!node.isMaster()) {
-             return;
+            return;
         }
 
         lock.lock();
@@ -420,6 +424,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         } finally {
             lock.unlock();
         }
+    }
+
+    public void onClusterVersionChange(Version newVersion) {
+        // required for 3.8 -> 3.9 upgrade
+        replicaManager.setClusterVersion(newVersion);
     }
 
     public void cancelReplicaSyncRequestsTo(Address deadAddress) {
@@ -944,22 +953,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return partitionMigrationTimeout;
     }
 
-    // called in operation threads
-    // Caution: Returning version array without copying for performance reasons. Callers must not modify this array!
     @Override
-    public long[] incrementPartitionReplicaVersions(int partitionId, int backupCount) {
-        return replicaManager.incrementPartitionReplicaVersions(partitionId, backupCount);
-    }
-
-    // called in operation threads
-    @Override
-    public void updatePartitionReplicaVersions(int partitionId, long[] versions, int replicaIndex) {
-        replicaManager.updatePartitionReplicaVersions(partitionId, versions, replicaIndex);
-    }
-
-    @Override
-    public boolean isPartitionReplicaVersionStale(int partitionId, long[] versions, int replicaIndex) {
-        return replicaManager.isPartitionReplicaVersionStale(partitionId, versions, replicaIndex);
+    public PartitionReplicaVersionManager getPartitionReplicaVersionManager() {
+        return replicaManager;
     }
 
     // called in operation threads
@@ -1123,14 +1119,14 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     /**
      * @return copy of ongoing replica-sync operations
      */
-    public List<ReplicaSyncInfo> getOngoingReplicaSyncRequests() {
+    public List<ReplicaFragmentSyncInfo> getOngoingReplicaSyncRequests() {
         return replicaManager.getOngoingReplicaSyncRequests();
     }
 
     /**
      * @return copy of scheduled replica-sync requests
      */
-    public List<ScheduledEntry<Integer, ReplicaSyncInfo>> getScheduledReplicaSyncRequests() {
+    public List<ScheduledEntry<ReplicaFragmentSyncInfo, Void>> getScheduledReplicaSyncRequests() {
         return replicaManager.getScheduledReplicaSyncRequests();
     }
 
@@ -1344,5 +1340,4 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return "InternalPartitionService {"
                 + "version: " + getPartitionStateVersion() + ", migrationQ: " + getMigrationQueueSize() + "}";
     }
-
 }

@@ -23,7 +23,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
-import com.hazelcast.internal.partition.impl.ReplicaSyncInfo;
+import com.hazelcast.internal.partition.impl.ReplicaFragmentSyncInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.partition.IPartition;
@@ -103,20 +103,20 @@ public class TestPartitionUtils {
         return runnable.getReplicaVersions();
     }
 
-    public static List<ReplicaSyncInfo> getOngoingReplicaSyncRequests(HazelcastInstance instance) {
+    public static List<ReplicaFragmentSyncInfo> getOngoingReplicaSyncRequests(HazelcastInstance instance) {
         return getOngoingReplicaSyncRequests(getNode(instance));
     }
 
-    public static List<ReplicaSyncInfo> getOngoingReplicaSyncRequests(Node node) {
+    public static List<ReplicaFragmentSyncInfo> getOngoingReplicaSyncRequests(Node node) {
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) node.getPartitionService();
         return partitionService.getOngoingReplicaSyncRequests();
     }
 
-    public static List<ScheduledEntry<Integer, ReplicaSyncInfo>> getScheduledReplicaSyncRequests(HazelcastInstance instance) {
+    public static List<ScheduledEntry<ReplicaFragmentSyncInfo, Void>> getScheduledReplicaSyncRequests(HazelcastInstance instance) {
         return getScheduledReplicaSyncRequests(getNode(instance));
     }
 
-    public static List<ScheduledEntry<Integer, ReplicaSyncInfo>> getScheduledReplicaSyncRequests(Node node) {
+    public static List<ScheduledEntry<ReplicaFragmentSyncInfo, Void>> getScheduledReplicaSyncRequests(Node node) {
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) node.getPartitionService();
         return partitionService.getScheduledReplicaSyncRequests();
     }

@@ -16,30 +16,41 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.internal.cluster.impl.Versions;
+import com.hazelcast.internal.partition.DefaultReplicaFragmentNamespace;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
-import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
-import com.hazelcast.internal.partition.impl.PartitionStateManager;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ReplicaFragmentAwareService.ReplicaFragmentNamespace;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * The response to a {@link ReplicaSyncRequest} that the replica should retry. This will reset the current ongoing
  * synchronization request state and retry the request if this node is still a replica of this partition.
  */
 public class ReplicaSyncRetryResponse extends AbstractPartitionOperation
-        implements PartitionAwareOperation, BackupOperation, MigrationCycleOperation {
+        implements PartitionAwareOperation, BackupOperation, MigrationCycleOperation, Versioned {
+
+    private Collection<ReplicaFragmentNamespace> namespaces;
 
     public ReplicaSyncRetryResponse() {
+        namespaces = Collections.emptySet();
+    }
+
+    public ReplicaSyncRetryResponse(Collection<ReplicaFragmentNamespace> namespaces) {
+        this.namespaces = namespaces;
     }
 
     @Override
@@ -48,25 +59,14 @@ public class ReplicaSyncRetryResponse extends AbstractPartitionOperation
         final int partitionId = getPartitionId();
         final int replicaIndex = getReplicaIndex();
 
-        partitionService.getReplicaManager().clearReplicaSyncRequest(partitionId, replicaIndex);
-
-        PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
-        InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(partitionId);
-        Address thisAddress = getNodeEngine().getThisAddress();
-        ILogger logger = getLogger();
-
-        int currentReplicaIndex = partition.getReplicaIndex(thisAddress);
-        if (currentReplicaIndex > 0) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Retrying replica sync request for partitionId=" + partitionId
-                    + ", initial-replicaIndex=" + replicaIndex + ", current-replicaIndex=" + currentReplicaIndex);
+        PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
+        if (namespaces.isEmpty()) {
+            // version 3.8
+            replicaManager.clearReplicaSyncRequest(partitionId, DefaultReplicaFragmentNamespace.INSTANCE, replicaIndex);
+        } else {
+            for (ReplicaFragmentNamespace namespace : namespaces) {
+                replicaManager.clearReplicaSyncRequest(partitionId, namespace, replicaIndex);
             }
-            partitionService.getReplicaManager().triggerPartitionReplicaSync(partitionId, currentReplicaIndex,
-                    InternalPartitionService.REPLICA_SYNC_RETRY_DELAY);
-
-        } else if (logger.isFinestEnabled()) {
-            logger.finest("No need to retry replica sync request for partitionId=" + partitionId
-                    + ", initial-replicaIndex=" + replicaIndex + ", current-replicaIndex=" + currentReplicaIndex);
         }
     }
 
@@ -92,10 +92,24 @@ public class ReplicaSyncRetryResponse extends AbstractPartitionOperation
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
+            out.writeInt(namespaces.size());
+            for (ReplicaFragmentNamespace namespace : namespaces) {
+                out.writeObject(namespace);
+            }
+        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
+            int len = in.readInt();
+            namespaces = new ArrayList<ReplicaFragmentNamespace>(len);
+            for (int i = 0; i < len; i++) {
+                ReplicaFragmentNamespace ns = in.readObject();
+                namespaces.add(ns);
+            }
+        }
     }
 
     @Override

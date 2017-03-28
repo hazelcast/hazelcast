@@ -16,9 +16,12 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.internal.cluster.impl.Versions;
+import com.hazelcast.internal.partition.DefaultReplicaFragmentNamespace;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
+import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -28,20 +31,25 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.ReplicaFragmentAwareService;
+import com.hazelcast.spi.ReplicaFragmentAwareService.ReplicaFragmentNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 
 /**
  * The request sent from a replica to the partition owner to synchronize the replica data. The partition owner can send a
@@ -54,12 +62,16 @@ import java.util.List;
  * An empty response can be sent if the current replica version is 0.
  */
 public final class ReplicaSyncRequest extends AbstractPartitionOperation
-        implements PartitionAwareOperation, MigrationCycleOperation {
+        implements PartitionAwareOperation, MigrationCycleOperation, Versioned {
+
+    private Collection<ReplicaFragmentNamespace> allNamespaces;
 
     public ReplicaSyncRequest() {
+        allNamespaces = Collections.emptySet();
     }
 
-    public ReplicaSyncRequest(int partitionId, int replicaIndex) {
+    public ReplicaSyncRequest(int partitionId, Collection<ReplicaFragmentNamespace> namespaces, int replicaIndex) {
+        this.allNamespaces = namespaces;
         setPartitionId(partitionId);
         setReplicaIndex(replicaIndex);
     }
@@ -94,15 +106,40 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
         }
 
         try {
-            List<Operation> tasks = createReplicationOperations();
-            if (tasks.isEmpty()) {
-                logNoReplicaDataFound(partitionId, replicaIndex);
-                sendEmptyResponse();
+            Collection<Operation> operations = new ArrayList<Operation>();
+            if (allNamespaces.isEmpty()) {
+                // version 3.8
+                createDefaultReplicationOperations(operations);
+                sendOperations(operations, Collections.singleton(DefaultReplicaFragmentNamespace.INSTANCE));
             } else {
-                sendResponse(tasks);
+                Map<String, Collection<ReplicaFragmentNamespace>> namespacesByService = groupNamespacesByService();
+                if (namespacesByService.remove(DefaultReplicaFragmentNamespace.INSTANCE.getServiceName()) != null) {
+                    createNonFragmentedReplicationOperations(operations);
+                    sendOperations(operations, Collections.singleton(DefaultReplicaFragmentNamespace.INSTANCE));
+                }
+
+                for (Map.Entry<String, Collection<ReplicaFragmentNamespace>> entry : namespacesByService.entrySet()) {
+                    String serviceName = entry.getKey();
+                    for (ReplicaFragmentNamespace namespace : entry.getValue()) {
+                        operations.clear();
+                        Collection<ReplicaFragmentNamespace> ns = Collections.singleton(namespace);
+                        createFragmentReplicationOperations(operations, serviceName, ns);
+                        sendOperations(operations, ns);
+                    }
+                }
             }
         } finally {
             partitionService.getReplicaManager().releaseReplicaSyncPermit();
+        }
+    }
+
+    private void sendOperations(Collection<Operation> operations, Collection<ReplicaFragmentNamespace> ns)
+            throws Exception {
+        if (operations.isEmpty()) {
+            logNoReplicaDataFound(getPartitionId(), ns, getReplicaIndex());
+            sendEmptyResponse(ns);
+        } else {
+            sendResponse(operations, ns);
         }
     }
 
@@ -112,8 +149,6 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
         InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(partitionId);
         Address owner = partition.getOwnerOrNull();
-        long[] replicaVersions = partitionService.getPartitionReplicaVersions(partitionId);
-        long currentVersion = replicaVersions[replicaIndex - 1];
 
         ILogger logger = getLogger();
         if (!nodeEngine.getThisAddress().equals(owner)) {
@@ -124,15 +159,17 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
             return false;
         }
 
-        if (currentVersion == 0) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Current replicaVersion=0, sending empty response for partitionId="
-                        + getPartitionId() + ", replicaIndex=" + getReplicaIndex() + ", replicaVersions="
-                        + Arrays.toString(replicaVersions));
-            }
-            sendEmptyResponse();
-            return false;
-        }
+//        long[] replicaVersions = partitionService.getPartitionReplicaVersions(partitionId);
+//        long currentVersion = replicaVersions[replicaIndex - 1];
+//        if (currentVersion == 0) {
+//            if (logger.isFinestEnabled()) {
+//                logger.finest("Current replicaVersion=0, sending empty response for partitionId="
+//                        + getPartitionId() + ", replicaIndex=" + getReplicaIndex() + ", replicaVersions="
+//                        + Arrays.toString(replicaVersions));
+//            }
+//            sendEmptyResponse();
+//            return false;
+//        }
 
         if (!partitionService.getReplicaManager().tryToAcquireReplicaSyncPermit()) {
             if (logger.isFinestEnabled()) {
@@ -145,72 +182,123 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
         return true;
     }
 
+    private Map<String, Collection<ReplicaFragmentNamespace>> groupNamespacesByService() {
+        Map<String, Collection<ReplicaFragmentNamespace>> map = new HashMap<String, Collection<ReplicaFragmentNamespace>>();
+        for (ReplicaFragmentNamespace namespace : allNamespaces) {
+            Collection<ReplicaFragmentNamespace> namespaces = map.get(namespace.getServiceName());
+            if (namespaces == null) {
+                namespaces = new HashSet<ReplicaFragmentNamespace>();
+                map.put(namespace.getServiceName(), namespaces);
+            }
+            namespaces.add(namespace);
+        }
+        return map;
+    }
+
     /** Send a response to the replica to retry the replica sync */
     private void sendRetryResponse() {
         NodeEngine nodeEngine = getNodeEngine();
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
 
-        ReplicaSyncRetryResponse response = new ReplicaSyncRetryResponse();
+        ReplicaSyncRetryResponse response = new ReplicaSyncRetryResponse(allNamespaces);
         response.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         Address target = getCallerAddress();
         OperationService operationService = nodeEngine.getOperationService();
         operationService.send(response, target);
     }
 
-    private List<Operation> createReplicationOperations() {
+    private void createDefaultReplicationOperations(Collection<Operation> operations) {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         Collection<ServiceInfo> services = nodeEngine.getServiceInfos(MigrationAwareService.class);
         PartitionReplicationEvent event = new PartitionReplicationEvent(getPartitionId(), getReplicaIndex());
-        List<Operation> tasks = new LinkedList<Operation>();
         for (ServiceInfo serviceInfo : services) {
             MigrationAwareService service = (MigrationAwareService) serviceInfo.getService();
             Operation op = service.prepareReplicationOperation(event);
             if (op != null) {
                 op.setServiceName(serviceInfo.getName());
-                tasks.add(op);
+                operations.add(op);
             }
         }
-        return tasks;
     }
 
-    /** Send a noop synchronization response to the caller replica */
-    private void sendEmptyResponse() throws IOException {
-        sendResponse(null);
+    private void createNonFragmentedReplicationOperations(Collection<Operation> operations) {
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        Collection<ServiceInfo> services = nodeEngine.getServiceInfos(MigrationAwareService.class);
+        PartitionReplicationEvent event = new PartitionReplicationEvent(getPartitionId(), getReplicaIndex());
+
+        for (ServiceInfo serviceInfo : services) {
+            MigrationAwareService service = (MigrationAwareService) serviceInfo.getService();
+            if (service instanceof ReplicaFragmentAwareService) {
+                continue;
+            }
+
+            Operation op = service.prepareReplicationOperation(event);
+            if (op != null) {
+                op.setServiceName(serviceInfo.getName());
+                operations.add(op);
+            }
+        }
+    }
+
+    private void createFragmentReplicationOperations(Collection<Operation> operations, String serviceName,
+            Collection<ReplicaFragmentNamespace> ns) {
+
+        PartitionReplicationEvent event = new PartitionReplicationEvent(getPartitionId(), getReplicaIndex());
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        ReplicaFragmentAwareService service = nodeEngine.getService(serviceName);
+        Operation op = service.prepareReplicationOperation(event, ns);
+        if (op != null) {
+            op.setServiceName(serviceName);
+            operations.add(op);
+        }
+    }
+
+    /** Send a noop synchronization response to the caller replica
+     */
+    private void sendEmptyResponse(Collection<ReplicaFragmentNamespace> ns) throws IOException {
+        sendResponse(null, ns);
     }
 
     /** Send a synchronization response to the caller replica containing the replication operations to be executed */
-    private void sendResponse(List<Operation> data) throws IOException {
+    private void sendResponse(Collection<Operation> operations, Collection<ReplicaFragmentNamespace> ns) throws IOException {
         NodeEngine nodeEngine = getNodeEngine();
 
-        ReplicaSyncResponse syncResponse = createResponse(data);
+        ReplicaSyncResponse syncResponse = createResponse(operations, ns);
         Address target = getCallerAddress();
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
             logger.finest("Sending sync response to -> " + target + " for partitionId="
-                    + getPartitionId() + ", replicaIndex=" + getReplicaIndex());
+                    + getPartitionId() + ", replicaIndex=" + getReplicaIndex() + ", namespaces=" + ns);
         }
         OperationService operationService = nodeEngine.getOperationService();
         operationService.send(syncResponse, target);
     }
 
-    private ReplicaSyncResponse createResponse(List<Operation> data) throws IOException {
-        int partitionId = getPartitionId();
-        NodeEngine nodeEngine = getNodeEngine();
-        InternalPartitionService partitionService = (InternalPartitionService) nodeEngine.getPartitionService();
-        long[] replicaVersions = partitionService.getPartitionReplicaVersions(partitionId);
+    private ReplicaSyncResponse createResponse(Collection<Operation> operations,
+            Collection<ReplicaFragmentNamespace> namespaces) throws IOException {
 
-        ReplicaSyncResponse syncResponse = new ReplicaSyncResponse(data, replicaVersions);
-        syncResponse.setPartitionId(partitionId).setReplicaIndex(getReplicaIndex());
+        int partitionId = getPartitionId();
+        int replicaIndex = getReplicaIndex();
+        InternalPartitionService partitionService = getService();
+        PartitionReplicaVersionManager versionManager = partitionService.getPartitionReplicaVersionManager();
+
+        Map<ReplicaFragmentNamespace, long[]> versionMap = new HashMap<ReplicaFragmentNamespace, long[]>(namespaces.size());
+        for (ReplicaFragmentNamespace ns : namespaces) {
+            long[] versions = versionManager.getPartitionReplicaVersions(partitionId, ns);
+            versionMap.put(ns, versions);
+        }
+
+        ReplicaSyncResponse syncResponse = new ReplicaSyncResponse(operations, versionMap);
+        syncResponse.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         return syncResponse;
     }
 
-    private void logNoReplicaDataFound(int partitionId, int replicaIndex) {
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        ILogger logger = nodeEngine.getLogger(getClass());
-
+    private void logNoReplicaDataFound(int partitionId, Collection<ReplicaFragmentNamespace> namespaces, int replicaIndex) {
+        ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
-            logger.finest("No replica data is found for partitionId=" + partitionId + ", replicaIndex=" + replicaIndex);
+            logger.finest("No replica data is found for partitionId=" + partitionId + ", replicaIndex=" + replicaIndex
+                + ", namespaces= " + namespaces);
         }
     }
 
@@ -235,11 +323,30 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
     }
 
     @Override
+    public String getServiceName() {
+        return InternalPartitionService.SERVICE_NAME;
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
+            out.writeInt(allNamespaces.size());
+            for (ReplicaFragmentNamespace namespace : allNamespaces) {
+                out.writeObject(namespace);
+            }
+        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
+            int len = in.readInt();
+            allNamespaces = new ArrayList<ReplicaFragmentNamespace>(len);
+            for (int i = 0; i < len; i++) {
+                ReplicaFragmentNamespace ns = in.readObject();
+                allNamespaces.add(ns);
+            }
+        }
     }
 
     @Override

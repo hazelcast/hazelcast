@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.internal.cluster.impl.Versions;
+import com.hazelcast.internal.partition.DefaultReplicaFragmentNamespace;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -24,24 +26,29 @@ import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ReplicaFragmentAwareService.ReplicaFragmentNamespace;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 // should not be an urgent operation. required to be in order with backup operations on target node
 public final class CheckReplicaVersion extends AbstractPartitionOperation
-        implements PartitionAwareOperation, AllowedDuringPassiveState {
+        implements PartitionAwareOperation, AllowedDuringPassiveState, Versioned {
 
-    private long version;
+    private Map<ReplicaFragmentNamespace, Long> versions;
     private boolean returnResponse;
-    private boolean response;
+    private boolean response = true;
 
     public CheckReplicaVersion() {
     }
 
-    public CheckReplicaVersion(long version, boolean returnResponse) {
-        this.version = version;
+    public CheckReplicaVersion(Map<ReplicaFragmentNamespace, Long> versions, boolean returnResponse) {
+        this.versions = versions;
         this.returnResponse = returnResponse;
     }
 
@@ -51,24 +58,37 @@ public final class CheckReplicaVersion extends AbstractPartitionOperation
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
         PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
-        long[] currentVersions = replicaManager.getPartitionReplicaVersions(partitionId);
-        long currentVersion = currentVersions[replicaIndex - 1];
 
-        if (replicaManager.isPartitionReplicaVersionDirty(partitionId) || currentVersion != version) {
-            logBackupVersionMismatch(currentVersion);
-            replicaManager.triggerPartitionReplicaSync(partitionId, replicaIndex, 0L);
+        replicaManager.retainNamespaces(partitionId, versions.keySet());
+
+        Iterator<Map.Entry<ReplicaFragmentNamespace, Long>> iter = versions.entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry<ReplicaFragmentNamespace, Long> entry = iter.next();
+            ReplicaFragmentNamespace ns = entry.getKey();
+            long primaryVersion = entry.getValue();
+
+            long[] currentVersions = replicaManager.getPartitionReplicaVersions(partitionId, ns);
+            long currentVersion = currentVersions[replicaIndex - 1];
+
+            if (replicaManager.isPartitionReplicaVersionDirty(partitionId, ns) || currentVersion != primaryVersion) {
+                logBackupVersionMismatch(ns, currentVersion, primaryVersion);
+                continue;
+            }
+            iter.remove();
+        }
+
+        if (!versions.isEmpty()) {
+            replicaManager.triggerPartitionReplicaSync(partitionId, versions.keySet(), replicaIndex);
             response = false;
-        } else {
-            response = true;
         }
     }
 
-    private void logBackupVersionMismatch(long currentVersion) {
+    private void logBackupVersionMismatch(ReplicaFragmentNamespace ns, long currentVersion, long primaryVersion) {
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
             logger.finest("partitionId=" + getPartitionId() + ", replicaIndex=" + getReplicaIndex()
-                    + " version is not matching to version of the owner! "
-                    + " expected-version=" + version + ", current-version=" + currentVersion);
+                    + ", ns=" + ns + " version is not matching to version of the owner or replica is marked as dirty! "
+                    + " Expected-version=" + primaryVersion + ", Current-version=" + currentVersion);
         }
     }
 
@@ -99,21 +119,41 @@ public final class CheckReplicaVersion extends AbstractPartitionOperation
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeLong(version);
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
+            out.writeInt(versions.size());
+            for (Map.Entry<ReplicaFragmentNamespace, Long> entry : versions.entrySet()) {
+                out.writeObject(entry.getKey());
+                out.writeLong(entry.getValue());
+            }
+        } else {
+            assert versions.size() == 1 : "Only single namespace is allowed before V3.9: " + versions.keySet();
+            out.writeLong(versions.get(DefaultReplicaFragmentNamespace.INSTANCE));
+        }
         out.writeBoolean(returnResponse);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        version = in.readLong();
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
+            int len = in.readInt();
+            versions = new HashMap<ReplicaFragmentNamespace, Long>(len);
+            for (int i = 0; i < len; i++) {
+                ReplicaFragmentNamespace ns = in.readObject();
+                long v = in.readLong();
+                versions.put(ns, v);
+            }
+        } else {
+            versions = new HashMap<ReplicaFragmentNamespace, Long>(1);
+            long v = in.readLong();
+            versions.put(DefaultReplicaFragmentNamespace.INSTANCE, v);
+        }
         returnResponse = in.readBoolean();
     }
 
     @Override
     protected void toString(StringBuilder sb) {
         super.toString(sb);
-
-        sb.append(", version=").append(version);
+        sb.append(", versions=").append(versions);
     }
 
     @Override

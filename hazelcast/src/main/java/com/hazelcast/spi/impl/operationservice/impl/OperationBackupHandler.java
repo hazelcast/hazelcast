@@ -19,10 +19,13 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ReplicaFragmentAwareService.ReplicaFragmentAware;
+import com.hazelcast.spi.ReplicaFragmentAwareService.ReplicaFragmentNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 
@@ -79,8 +82,9 @@ final class OperationBackupHandler {
         }
 
         Operation op = (Operation) backupAwareOp;
-        InternalPartitionService partitionService = node.getPartitionService();
-        long[] replicaVersions = partitionService.incrementPartitionReplicaVersions(op.getPartitionId(),
+        PartitionReplicaVersionManager versionManager = node.getPartitionService().getPartitionReplicaVersionManager();
+        ReplicaFragmentNamespace namespace = versionManager.getReplicaFragmentNamespace(op);
+        long[] replicaVersions = versionManager.incrementPartitionReplicaVersions(op.getPartitionId(), namespace,
                 requestedTotalBackups);
 
         boolean syncForced = backpressureRegulator.isSyncForced(backupAwareOp);
@@ -248,6 +252,12 @@ final class OperationBackupHandler {
         Operation backupOp = backupAwareOp.getBackupOperation();
         if (backupOp == null) {
             throw new IllegalArgumentException("Backup operation should not be null! " + backupAwareOp);
+        }
+        if (backupAwareOp instanceof ReplicaFragmentAware) {
+            if (!(backupOp instanceof ReplicaFragmentAware)) {
+                throw new IllegalArgumentException("Original operation is ReplicaFragmentAware, "
+                        + "backup operation must be ReplicaFragmentAware too. " + backupAwareOp);
+            }
         }
         Operation op = (Operation) backupAwareOp;
         // set service name of backup operation.

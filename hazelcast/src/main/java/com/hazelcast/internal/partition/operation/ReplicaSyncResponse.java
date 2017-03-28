@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.internal.cluster.impl.Versions;
+import com.hazelcast.internal.partition.DefaultReplicaFragmentNamespace;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
@@ -32,6 +34,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ReplicaFragmentAwareService.ReplicaFragmentNamespace;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
@@ -39,8 +42,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
@@ -59,15 +63,15 @@ import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createError
 public class ReplicaSyncResponse extends AbstractPartitionOperation
         implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation, AllowedDuringPassiveState {
 
-    private List<Operation> tasks;
-    private long[] replicaVersions;
+    private Collection<Operation> operations;
+    private Map<ReplicaFragmentNamespace, long[]> versions;
 
     public ReplicaSyncResponse() {
     }
 
-    public ReplicaSyncResponse(List<Operation> data, long[] replicaVersions) {
-        this.tasks = data;
-        this.replicaVersions = replicaVersions;
+    public ReplicaSyncResponse(Collection<Operation> operations, Map<ReplicaFragmentNamespace, long[]> versionMap) {
+        this.operations = operations;
+        this.versions = versionMap;
     }
 
     @Override
@@ -83,12 +87,12 @@ public class ReplicaSyncResponse extends AbstractPartitionOperation
         int currentReplicaIndex = partition.getReplicaIndex(thisAddress);
         try {
             if (replicaIndex == currentReplicaIndex) {
-                executeTasks();
+                executeOperations();
             } else {
                 nodeNotOwnsBackup(partition);
             }
-            if (tasks != null) {
-                tasks.clear();
+            if (operations != null) {
+                operations.clear();
             }
         } finally {
             postProcessReplicaSync(partitionService, currentReplicaIndex);
@@ -101,13 +105,13 @@ public class ReplicaSyncResponse extends AbstractPartitionOperation
 
         PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
         if (replicaIndex == currentReplicaIndex) {
-            replicaManager.finalizeReplicaSync(partitionId, replicaIndex, replicaVersions);
+            replicaManager.finalizeReplicaSync(partitionId, replicaIndex, versions);
         } else {
-            replicaManager.clearReplicaSyncRequest(partitionId, replicaIndex);
-            if (currentReplicaIndex < 0) {
-                replicaManager.clearPartitionReplicaVersions(partitionId);
-            } else if (currentReplicaIndex > 0) {
-                replicaManager.triggerPartitionReplicaSync(partitionId, currentReplicaIndex, 0);
+            for (ReplicaFragmentNamespace namespace : versions.keySet()) {
+                replicaManager.clearReplicaSyncRequest(partitionId, namespace, replicaIndex);
+                if (currentReplicaIndex < 0) {
+                    replicaManager.clearPartitionReplicaVersions(partitionId, namespace);
+                }
             }
         }
     }
@@ -126,22 +130,22 @@ public class ReplicaSyncResponse extends AbstractPartitionOperation
                             + " anymore. current replicaIndex=" + currentReplicaIndex);
         }
 
-        if (tasks != null) {
+        if (operations != null) {
             Throwable throwable = new WrongTargetException(thisAddress, partition.getReplicaAddress(replicaIndex),
                     partitionId, replicaIndex, getClass().getName());
-            for (Operation op : tasks) {
+            for (Operation op : operations) {
                 prepareOperation(op);
                 onOperationFailure(op, throwable);
             }
         }
     }
 
-    private void executeTasks() {
+    private void executeOperations() {
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
-        if (tasks != null && !tasks.isEmpty()) {
+        if (operations != null && !operations.isEmpty()) {
             logApplyReplicaSync(partitionId, replicaIndex);
-            for (Operation op : tasks) {
+            for (Operation op : operations) {
                 prepareOperation(op);
                 try {
                     op.beforeRun();
@@ -172,7 +176,8 @@ public class ReplicaSyncResponse extends AbstractPartitionOperation
     private void logEmptyTaskList(int partitionId, int replicaIndex) {
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
-            logger.finest("No data available for replica sync, partitionId=" + partitionId + ", replicaIndex=" + replicaIndex);
+            logger.finest("No data available for replica sync, partitionId=" + partitionId
+                    + ", replicaIndex=" + replicaIndex + ", namespaces=" + versions.keySet());
         }
     }
 
@@ -188,7 +193,8 @@ public class ReplicaSyncResponse extends AbstractPartitionOperation
     private void logApplyReplicaSync(int partitionId, int replicaIndex) {
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
-            logger.finest("Applying replica sync for partitionId=" + partitionId + ", replicaIndex=" + replicaIndex);
+            logger.finest("Applying replica sync for partitionId=" + partitionId
+                    + ", replicaIndex=" + replicaIndex + ", namespaces=" + versions.keySet());
         }
     }
 
@@ -210,8 +216,8 @@ public class ReplicaSyncResponse extends AbstractPartitionOperation
 
     @Override
     public void onExecutionFailure(Throwable e) {
-        if (tasks != null) {
-            for (Operation op : tasks) {
+        if (operations != null) {
+            for (Operation op : operations) {
                 prepareOperation(op);
                 onOperationFailure(op, e);
             }
@@ -233,11 +239,21 @@ public class ReplicaSyncResponse extends AbstractPartitionOperation
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeLongArray(replicaVersions);
-        int size = tasks != null ? tasks.size() : 0;
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
+            out.writeInt(versions.size());
+            for (Map.Entry<ReplicaFragmentNamespace, long[]> entry : versions.entrySet()) {
+                out.writeObject(entry.getKey());
+                out.writeLongArray(entry.getValue());
+            }
+        } else {
+            assert versions.size() == 1 : "Only single namespace is allowed before V3.9: " + versions.keySet();
+            out.writeLongArray(versions.get(DefaultReplicaFragmentNamespace.INSTANCE));
+        }
+
+        int size = operations != null ? operations.size() : 0;
         out.writeInt(size);
         if (size > 0) {
-            for (Operation task : tasks) {
+            for (Operation task : operations) {
                 out.writeObject(task);
             }
         }
@@ -245,13 +261,26 @@ public class ReplicaSyncResponse extends AbstractPartitionOperation
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        replicaVersions = in.readLongArray();
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
+            int len = in.readInt();
+            versions = new HashMap<ReplicaFragmentNamespace, long[]>(len);
+            for (int i = 0; i < len; i++) {
+                ReplicaFragmentNamespace ns = in.readObject();
+                long[] v = in.readLongArray();
+                versions.put(ns, v);
+            }
+        } else {
+            versions = new HashMap<ReplicaFragmentNamespace, long[]>(1);
+            long[] v = in.readLongArray();
+            versions.put(DefaultReplicaFragmentNamespace.INSTANCE, v);
+        }
+
         int size = in.readInt();
         if (size > 0) {
-            tasks = new ArrayList<Operation>(size);
+            operations = new ArrayList<Operation>(size);
             for (int i = 0; i < size; i++) {
                 Operation op = in.readObject();
-                tasks.add(op);
+                operations.add(op);
             }
         }
     }
@@ -260,7 +289,7 @@ public class ReplicaSyncResponse extends AbstractPartitionOperation
     protected void toString(StringBuilder sb) {
         super.toString(sb);
 
-        sb.append(", replicaVersions=").append(Arrays.toString(replicaVersions));
+        sb.append(", versions=").append(versions);
     }
 
     @Override
