@@ -24,19 +24,7 @@ import com.hazelcast.core.HazelcastException;
  */
 public class EntryOffloadableLockMismatchException extends HazelcastException {
 
-    public EntryOffloadableLockMismatchException() {
-    }
-
-    public EntryOffloadableLockMismatchException(final String message) {
+    public EntryOffloadableLockMismatchException(String message) {
         super(message);
     }
-
-    public EntryOffloadableLockMismatchException(final String message, final Throwable cause) {
-        super(message, cause);
-    }
-
-    public EntryOffloadableLockMismatchException(final Throwable cause) {
-        super(cause);
-    }
-
 }
