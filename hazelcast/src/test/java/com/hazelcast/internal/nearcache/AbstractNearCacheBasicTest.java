@@ -42,6 +42,7 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCach
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getFuture;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.setEvictionConfig;
+import static java.lang.String.format;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -321,6 +322,68 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
         int expectedNearCacheSize = useNearCacheAdapter && isCacheOnUpdate(nearCacheConfig) ? DEFAULT_RECORD_COUNT : 0;
         assertNearCacheSizeEventually(context, expectedNearCacheSize, "Invalidation is not working on replace()");
+    }
+
+    /**
+     * Checks that the Near Cache values are eventually invalidated when {@link DataStructureAdapter#remove(Object)} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
+     */
+    @Test
+    public void whenRemoveIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+        whenRemoveIsUsed_thenNearCacheShouldBeInvalidated(true, false);
+    }
+
+    /**
+     * Checks that the Near Cache values are eventually invalidated when {@link DataStructureAdapter#remove(Object)} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
+     */
+    @Test
+    public void whenRemoveIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+        nearCacheConfig.setInvalidateOnChange(true);
+        whenRemoveIsUsed_thenNearCacheShouldBeInvalidated(false, false);
+    }
+
+    /**
+     * Checks that the Near Cache values are eventually invalidated when {@link DataStructureAdapter#removeAsync(Object)} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
+     */
+    @Test
+    public void whenRemoveAsyncIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+        whenRemoveIsUsed_thenNearCacheShouldBeInvalidated(true, true);
+    }
+
+    /**
+     * Checks that the Near Cache values are eventually invalidated when {@link DataStructureAdapter#removeAsync(Object)} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
+     */
+    @Test
+    public void whenRemoveAsyncIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+        nearCacheConfig.setInvalidateOnChange(true);
+        whenRemoveIsUsed_thenNearCacheShouldBeInvalidated(false, true);
+    }
+
+    private void whenRemoveIsUsed_thenNearCacheShouldBeInvalidated(boolean useNearCacheAdapter, boolean useAsync) {
+        NearCacheTestContext<Integer, String, NK, NV> context = createContext();
+
+        populateMap(context);
+        populateNearCache(context);
+
+        // this should invalidate the Near Cache
+        DataStructureAdapter<Integer, String> adapter = useNearCacheAdapter ? context.nearCacheAdapter : context.dataAdapter;
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            if (useAsync) {
+                getFuture(adapter.removeAsync(i), "Could not remove entry via removeAsync()");
+            } else {
+                adapter.remove(i);
+            }
+        }
+
+        String message = format("Invalidation is not working on %s", useAsync ? "removeAsync()" : "remove()");
+        assertNearCacheSizeEventually(context, 0, message);
     }
 
     /**
