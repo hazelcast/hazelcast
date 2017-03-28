@@ -119,29 +119,6 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
         registerInvalidationListener();
     }
 
-    @SuppressWarnings("deprecation")
-    static boolean isCacheOnUpdate(NearCacheConfig nearCacheConfig, String cacheName, ILogger logger) {
-        NearCacheConfig.LocalUpdatePolicy localUpdatePolicy = nearCacheConfig.getLocalUpdatePolicy();
-        if (localUpdatePolicy == CACHE) {
-            logger.warning(format("Deprecated local update policy is found for cache `%s`."
-                            + " The policy `%s` is subject to remove in further releases. Instead you can use `%s`",
-                    cacheName, CACHE, CACHE_ON_UPDATE));
-            return true;
-        }
-
-        return localUpdatePolicy == CACHE_ON_UPDATE;
-    }
-
-    private static NearCacheConfig checkNearCacheConfig(NearCacheConfig nearCacheConfig, NativeMemoryConfig nativeMemoryConfig) {
-        InMemoryFormat inMemoryFormat = nearCacheConfig.getInMemoryFormat();
-        if (inMemoryFormat != NATIVE) {
-            return nearCacheConfig;
-        }
-
-        checkTrue(nativeMemoryConfig.isEnabled(), "Enable native memory config to use NATIVE in-memory-format for Near Cache");
-        return nearCacheConfig;
-    }
-
     @Override
     protected Object getSyncInternal(Data keyData, ExpiryPolicy expiryPolicy) {
         Object value = getCachedValue(keyData, true);
@@ -174,41 +151,6 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
         } catch (Throwable t) {
             invalidateNearCache(dataKey);
             throw rethrow(t);
-        }
-    }
-
-    private final class GetAsyncCallback implements ExecutionCallback<V> {
-
-        private final Data keyData;
-        private final long reservationId;
-        private final ExecutionCallback<V> callback;
-
-        GetAsyncCallback(Data keyData, long reservationId, ExecutionCallback<V> callback) {
-            this.keyData = keyData;
-            this.reservationId = reservationId;
-            this.callback = callback;
-        }
-
-        @Override
-        public void onResponse(V valueData) {
-            try {
-                if (callback != null) {
-                    callback.onResponse(valueData);
-                }
-            } finally {
-                tryPublishReserved(keyData, valueData, reservationId, false);
-            }
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            try {
-                if (callback != null) {
-                    callback.onFailure(t);
-                }
-            } finally {
-                invalidateNearCache(keyData);
-            }
         }
     }
 
@@ -245,51 +187,6 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
         return super.wrapPutAsyncFuture(keyData, valueData, value, invocationFuture, nearCachePopulator);
     }
 
-    private final class PutAsyncOneShotCallback extends OneShotExecutionCallback<V> {
-        private final Data keyData;
-        private final Data newValueData;
-        private final Object newValue;
-        private final OneShotExecutionCallback statsCallback;
-
-        private PutAsyncOneShotCallback(Data keyData, Data newValueData, Object newValue, OneShotExecutionCallback callback) {
-            this.keyData = keyData;
-            this.newValueData = newValueData;
-            this.newValue = newValue;
-            this.statsCallback = callback;
-        }
-
-        @Override
-        protected void onResponseInternal(V response) {
-            try {
-                if (statsCallback != null) {
-                    statsCallback.onResponseInternal(response);
-                }
-            } finally {
-                cacheOrInvalidate(keyData, newValueData, newValue);
-            }
-        }
-
-        @Override
-        protected void onFailureInternal(Throwable t) {
-            try {
-                if (statsCallback != null) {
-                    statsCallback.onFailureInternal(t);
-                }
-            } finally {
-                invalidateNearCache(keyData);
-            }
-        }
-    }
-
-    @Override
-    protected void onRemoveAsyncInternal(Data keyData, ClientDelegatingFuture future, ExecutionCallback callback) {
-        try {
-            super.onRemoveAsyncInternal(keyData, future, callback);
-        } finally {
-            invalidateNearCache(keyData);
-        }
-    }
-
     @Override
     protected void onGetAndRemoveAsyncInternal(ClientDelegatingFuture future, ExecutionCallback callback, Data keyData) {
         try {
@@ -311,42 +208,6 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
                                         ClientDelegatingFuture delegatingFuture, ExecutionCallback callback) {
         CacheOrInvalidateCallback wrapped = new CacheOrInvalidateCallback(keyData, valueData, value, callback);
         super.onReplaceAndGetAsync(keyData, valueData, value, delegatingFuture, wrapped);
-    }
-
-    private final class CacheOrInvalidateCallback implements ExecutionCallback<V> {
-        private final Data keyData;
-        private final Data valueData;
-        private final Object value;
-        private final ExecutionCallback<V> callback;
-
-        public CacheOrInvalidateCallback(Data keyData, Data valueData, Object value, ExecutionCallback<V> callback) {
-            this.callback = callback;
-            this.keyData = keyData;
-            this.valueData = valueData;
-            this.value = value;
-        }
-
-        @Override
-        public void onResponse(V response) {
-            try {
-                if (callback != null) {
-                    callback.onResponse(response);
-                }
-            } finally {
-                cacheOrInvalidate(keyData, valueData, value);
-            }
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            try {
-                if (callback != null) {
-                    callback.onFailure(t);
-                }
-            } finally {
-                invalidateNearCache(keyData);
-            }
-        }
     }
 
     @Override
@@ -450,6 +311,15 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
     }
 
     @Override
+    protected void onRemoveAsyncInternal(Data keyData, ClientDelegatingFuture future, ExecutionCallback callback) {
+        try {
+            super.onRemoveAsyncInternal(keyData, future, callback);
+        } finally {
+            invalidateNearCache(keyData);
+        }
+    }
+
+    @Override
     public void removeAll() {
         try {
             super.removeAll();
@@ -490,6 +360,10 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
         nearCacheManager.destroyNearCache(nearCache.getName());
 
         super.onDestroy();
+    }
+
+    long nowInNanosOrDefault() {
+        return statisticsEnabled ? System.nanoTime() : -1;
     }
 
     private void populateResultFromNearCache(Collection<Data> keys, Map<K, V> result) {
@@ -564,6 +438,220 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
     private void releaseRemainingReservedKeys(Map<Data, Long> reservedKeys) {
         for (Data key : reservedKeys.keySet()) {
             nearCache.remove(key);
+        }
+    }
+
+    private void registerInvalidationListener() {
+        if (!nearCache.isInvalidatedOnChange()) {
+            return;
+        }
+
+        ListenerMessageCodec listenerCodec = createInvalidationListenerCodec();
+        ClientListenerService listenerService = clientContext.getListenerService();
+
+        EventHandler eventHandler = createInvalidationEventHandler();
+        nearCacheMembershipRegistrationId = listenerService.registerListener(listenerCodec, eventHandler);
+    }
+
+    private EventHandler createInvalidationEventHandler() {
+        return new ConnectedServerVersionAwareNearCacheEventHandler();
+    }
+
+    private ListenerMessageCodec createInvalidationListenerCodec() {
+        return new ListenerMessageCodec() {
+            @Override
+            public ClientMessage encodeAddRequest(boolean localOnly) {
+                if (supportsRepairableNearCache()) {
+                    // this is for servers >= 3.8
+                    return CacheAddNearCacheInvalidationListenerCodec.encodeRequest(nameWithPrefix, localOnly);
+                }
+                // this is for servers < 3.8
+                return CacheAddInvalidationListenerCodec.encodeRequest(nameWithPrefix, localOnly);
+            }
+
+            @Override
+            public String decodeAddResponse(ClientMessage clientMessage) {
+                if (supportsRepairableNearCache()) {
+                    // this is for servers >= 3.8
+                    return CacheAddNearCacheInvalidationListenerCodec.decodeResponse(clientMessage).response;
+                }
+                // this is for servers < 3.8
+                return CacheAddInvalidationListenerCodec.decodeResponse(clientMessage).response;
+            }
+
+            @Override
+            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+                return CacheRemoveEntryListenerCodec.encodeRequest(nameWithPrefix, realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
+                return CacheRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+            }
+        };
+    }
+
+    private int getConnectedServerVersion() {
+        ClientClusterService clusterService = clientContext.getClusterService();
+        Address ownerConnectionAddress = clusterService.getOwnerConnectionAddress();
+
+        HazelcastClientInstanceImpl client = getClient();
+        ClientConnectionManager connectionManager = client.getConnectionManager();
+        Connection connection = connectionManager.getConnection(ownerConnectionAddress);
+        if (connection == null) {
+            logger.warning(format("No owner connection is available, "
+                    + "near cached cache %s will be started in legacy mode", name));
+            return UNKNOWN_HAZELCAST_VERSION;
+        }
+
+        return ((ClientConnection) connection).getConnectedServerVersion();
+    }
+
+    private boolean supportsRepairableNearCache() {
+        return getConnectedServerVersion() >= minConsistentNearCacheSupportingServerVersion;
+    }
+
+    private void removeInvalidationListener() {
+        if (!nearCache.isInvalidatedOnChange()) {
+            return;
+        }
+
+        String registrationId = nearCacheMembershipRegistrationId;
+        if (registrationId != null) {
+            clientContext.getRepairingTask(SERVICE_NAME).deregisterHandler(name);
+            clientContext.getListenerService().deregisterListener(registrationId);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    static boolean isCacheOnUpdate(NearCacheConfig nearCacheConfig, String cacheName, ILogger logger) {
+        NearCacheConfig.LocalUpdatePolicy localUpdatePolicy = nearCacheConfig.getLocalUpdatePolicy();
+        if (localUpdatePolicy == CACHE) {
+            logger.warning(format("Deprecated local update policy is found for cache `%s`."
+                            + " The policy `%s` is subject to remove in further releases. Instead you can use `%s`",
+                    cacheName, CACHE, CACHE_ON_UPDATE));
+            return true;
+        }
+
+        return localUpdatePolicy == CACHE_ON_UPDATE;
+    }
+
+    private static NearCacheConfig checkNearCacheConfig(NearCacheConfig nearCacheConfig, NativeMemoryConfig nativeMemoryConfig) {
+        InMemoryFormat inMemoryFormat = nearCacheConfig.getInMemoryFormat();
+        if (inMemoryFormat != NATIVE) {
+            return nearCacheConfig;
+        }
+
+        checkTrue(nativeMemoryConfig.isEnabled(), "Enable native memory config to use NATIVE in-memory-format for Near Cache");
+        return nearCacheConfig;
+    }
+
+    private final class GetAsyncCallback implements ExecutionCallback<V> {
+
+        private final Data keyData;
+        private final long reservationId;
+        private final ExecutionCallback<V> callback;
+
+        GetAsyncCallback(Data keyData, long reservationId, ExecutionCallback<V> callback) {
+            this.keyData = keyData;
+            this.reservationId = reservationId;
+            this.callback = callback;
+        }
+
+        @Override
+        public void onResponse(V valueData) {
+            try {
+                if (callback != null) {
+                    callback.onResponse(valueData);
+                }
+            } finally {
+                tryPublishReserved(keyData, valueData, reservationId, false);
+            }
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            try {
+                if (callback != null) {
+                    callback.onFailure(t);
+                }
+            } finally {
+                invalidateNearCache(keyData);
+            }
+        }
+    }
+
+    private final class PutAsyncOneShotCallback extends OneShotExecutionCallback<V> {
+
+        private final Data keyData;
+        private final Data newValueData;
+        private final Object newValue;
+        private final OneShotExecutionCallback statsCallback;
+
+        PutAsyncOneShotCallback(Data keyData, Data newValueData, Object newValue, OneShotExecutionCallback callback) {
+            this.keyData = keyData;
+            this.newValueData = newValueData;
+            this.newValue = newValue;
+            this.statsCallback = callback;
+        }
+
+        @Override
+        protected void onResponseInternal(V response) {
+            try {
+                if (statsCallback != null) {
+                    statsCallback.onResponseInternal(response);
+                }
+            } finally {
+                cacheOrInvalidate(keyData, newValueData, newValue);
+            }
+        }
+
+        @Override
+        protected void onFailureInternal(Throwable t) {
+            try {
+                if (statsCallback != null) {
+                    statsCallback.onFailureInternal(t);
+                }
+            } finally {
+                invalidateNearCache(keyData);
+            }
+        }
+    }
+
+    private final class CacheOrInvalidateCallback implements ExecutionCallback<V> {
+
+        private final Data keyData;
+        private final Data valueData;
+        private final Object value;
+        private final ExecutionCallback<V> callback;
+
+        CacheOrInvalidateCallback(Data keyData, Data valueData, Object value, ExecutionCallback<V> callback) {
+            this.callback = callback;
+            this.keyData = keyData;
+            this.valueData = valueData;
+            this.value = value;
+        }
+
+        @Override
+        public void onResponse(V response) {
+            try {
+                if (callback != null) {
+                    callback.onResponse(response);
+                }
+            } finally {
+                cacheOrInvalidate(keyData, valueData, value);
+            }
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            try {
+                if (callback != null) {
+                    callback.onFailure(t);
+                }
+            } finally {
+                invalidateNearCache(keyData);
+            }
         }
     }
 
@@ -698,92 +786,5 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
         public void onListenerRegister() {
             nearCache.clear();
         }
-    }
-
-
-    private void registerInvalidationListener() {
-        if (!nearCache.isInvalidatedOnChange()) {
-            return;
-        }
-
-        ListenerMessageCodec listenerCodec = createInvalidationListenerCodec();
-        ClientListenerService listenerService = clientContext.getListenerService();
-
-        EventHandler eventHandler = createInvalidationEventHandler();
-        nearCacheMembershipRegistrationId = listenerService.registerListener(listenerCodec, eventHandler);
-    }
-
-    private EventHandler createInvalidationEventHandler() {
-        return new ConnectedServerVersionAwareNearCacheEventHandler();
-    }
-
-    private ListenerMessageCodec createInvalidationListenerCodec() {
-        return new ListenerMessageCodec() {
-            @Override
-            public ClientMessage encodeAddRequest(boolean localOnly) {
-                if (supportsRepairableNearCache()) {
-                    // this is for servers >= 3.8
-                    return CacheAddNearCacheInvalidationListenerCodec.encodeRequest(nameWithPrefix, localOnly);
-                }
-                // this is for servers < 3.8
-                return CacheAddInvalidationListenerCodec.encodeRequest(nameWithPrefix, localOnly);
-            }
-
-            @Override
-            public String decodeAddResponse(ClientMessage clientMessage) {
-                if (supportsRepairableNearCache()) {
-                    // this is for servers >= 3.8
-                    return CacheAddNearCacheInvalidationListenerCodec.decodeResponse(clientMessage).response;
-                }
-                // this is for servers < 3.8
-                return CacheAddInvalidationListenerCodec.decodeResponse(clientMessage).response;
-            }
-
-            @Override
-            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
-                return CacheRemoveEntryListenerCodec.encodeRequest(nameWithPrefix, realRegistrationId);
-            }
-
-            @Override
-            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
-                return CacheRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
-            }
-        };
-    }
-
-    private int getConnectedServerVersion() {
-        ClientClusterService clusterService = clientContext.getClusterService();
-        Address ownerConnectionAddress = clusterService.getOwnerConnectionAddress();
-
-        HazelcastClientInstanceImpl client = getClient();
-        ClientConnectionManager connectionManager = client.getConnectionManager();
-        Connection connection = connectionManager.getConnection(ownerConnectionAddress);
-        if (connection == null) {
-            logger.warning(format("No owner connection is available, "
-                    + "near cached cache %s will be started in legacy mode", name));
-            return UNKNOWN_HAZELCAST_VERSION;
-        }
-
-        return ((ClientConnection) connection).getConnectedServerVersion();
-    }
-
-    private boolean supportsRepairableNearCache() {
-        return getConnectedServerVersion() >= minConsistentNearCacheSupportingServerVersion;
-    }
-
-    private void removeInvalidationListener() {
-        if (!nearCache.isInvalidatedOnChange()) {
-            return;
-        }
-
-        String registrationId = nearCacheMembershipRegistrationId;
-        if (registrationId != null) {
-            clientContext.getRepairingTask(SERVICE_NAME).deregisterHandler(name);
-            clientContext.getListenerService().deregisterListener(registrationId);
-        }
-    }
-
-    long nowInNanosOrDefault() {
-        return statisticsEnabled ? System.nanoTime() : -1;
     }
 }
