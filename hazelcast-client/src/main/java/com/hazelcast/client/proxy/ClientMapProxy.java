@@ -79,7 +79,6 @@ import com.hazelcast.client.impl.protocol.codec.MapUnlockCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPagingPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
-import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.client.impl.querycache.subscriber.ClientQueryCacheEndToEndConstructor;
 import com.hazelcast.client.map.impl.ClientMapPartitionIterator;
 import com.hazelcast.client.spi.ClientPartitionService;
@@ -154,8 +153,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -163,7 +160,6 @@ import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequests.newQueryCacheRequest;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -223,21 +219,6 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         @Override
         public <T> T decodeClientMessage(ClientMessage clientMessage) {
             return (T) MapSubmitToKeyCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    /**
-     * Holds {@link QueryCacheContext} for this proxy.
-     * There should be only one {@link QueryCacheContext} instance.
-     */
-    private ConcurrentMap<String, QueryCacheContext> queryCacheContextHolder
-            = new ConcurrentHashMap<String, QueryCacheContext>(1);
-
-    private final ConstructorFunction<String, QueryCacheContext> queryCacheContextConstructorFunction
-            = new ConstructorFunction<String, QueryCacheContext>() {
-        @Override
-        public QueryCacheContext createNew(String arg) {
-            return new ClientQueryCacheContext(getContext());
         }
     };
 
@@ -1486,7 +1467,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     }
 
     public QueryCacheContext getQueryContext() {
-        return getOrPutIfAbsent(queryCacheContextHolder, "QueryCacheContext", queryCacheContextConstructorFunction);
+        return getClient().getQueryContext();
     }
 
     @Override

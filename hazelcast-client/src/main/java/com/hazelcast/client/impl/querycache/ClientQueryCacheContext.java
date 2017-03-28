@@ -16,12 +16,12 @@
 
 package com.hazelcast.client.impl.querycache;
 
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.querycache.subscriber.ClientInvokerWrapper;
 import com.hazelcast.client.impl.querycache.subscriber.ClientQueryCacheConfigurator;
 import com.hazelcast.client.impl.querycache.subscriber.ClientQueryCacheEventService;
 import com.hazelcast.client.impl.querycache.subscriber.ClientQueryCacheScheduler;
 import com.hazelcast.client.impl.querycache.subscriber.ClientSubscriberContext;
-import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.querycache.InvokerWrapper;
@@ -43,7 +43,7 @@ import java.util.Collection;
  */
 public class ClientQueryCacheContext implements QueryCacheContext {
 
-    private final ClientContext clientContext;
+    private final HazelcastClientInstanceImpl clientInstance;
     private final QueryCacheEventService queryCacheEventService;
     private final QueryCacheConfigurator queryCacheConfigurator;
     private final QueryCacheScheduler queryCacheScheduler;
@@ -52,12 +52,12 @@ public class ClientQueryCacheContext implements QueryCacheContext {
     // not final for testing purposes
     private SubscriberContext subscriberContext;
 
-    public ClientQueryCacheContext(ClientContext clientContext) {
-        this.clientContext = clientContext;
-        this.queryCacheEventService = new ClientQueryCacheEventService(clientContext);
-        this.queryCacheConfigurator = new ClientQueryCacheConfigurator(clientContext.getClientConfig(), queryCacheEventService);
-        this.queryCacheScheduler = new ClientQueryCacheScheduler(clientContext.getExecutionService());
-        this.invokerWrapper = new ClientInvokerWrapper(this, clientContext);
+    public ClientQueryCacheContext(HazelcastClientInstanceImpl clientInstance) {
+        this.clientInstance = clientInstance;
+        this.queryCacheEventService = new ClientQueryCacheEventService(clientInstance);
+        this.queryCacheConfigurator = new ClientQueryCacheConfigurator(clientInstance.getClientConfig(), queryCacheEventService);
+        this.queryCacheScheduler = new ClientQueryCacheScheduler(clientInstance.getExecutionService());
+        this.invokerWrapper = new ClientInvokerWrapper(this, clientInstance);
         this.subscriberContext = new ClientSubscriberContext(this);
     }
 
@@ -68,7 +68,7 @@ public class ClientQueryCacheContext implements QueryCacheContext {
 
     @Override
     public Object toObject(Object obj) {
-        SerializationService serializationService = clientContext.getSerializationService();
+        SerializationService serializationService = clientInstance.getSerializationService();
         return serializationService.toObject(obj);
     }
 
@@ -79,17 +79,17 @@ public class ClientQueryCacheContext implements QueryCacheContext {
 
     @Override
     public InternalSerializationService getSerializationService() {
-        return (InternalSerializationService) clientContext.getSerializationService();
+        return (InternalSerializationService) clientInstance.getSerializationService();
     }
 
     @Override
     public Collection<Member> getMemberList() {
-        return clientContext.getClusterService().getMemberList();
+        return clientInstance.getClientClusterService().getMemberList();
     }
 
     @Override
     public int getPartitionId(Object object) {
-        return clientContext.getPartitionService().getPartitionId(object);
+        return clientInstance.getClientPartitionService().getPartitionId(object);
     }
 
     @Override
