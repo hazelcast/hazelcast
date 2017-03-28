@@ -39,6 +39,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Provides utility methods for unified Near Cache tests.
  */
+@SuppressWarnings("WeakerAccess")
 public final class NearCacheTestUtils extends HazelcastTestSupport {
 
     private NearCacheTestUtils() {
@@ -86,7 +87,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      * @return {@code true} if the {@code LocalUpdatePolicy} is {@code CACHE_ON_UPDATE}, {@code false} otherwise
      */
     static boolean isCacheOnUpdate(NearCacheConfig nearCacheConfig) {
-        return nearCacheConfig.getLocalUpdatePolicy() == CACHE_ON_UPDATE;
+        return nearCacheConfig != null && nearCacheConfig.getLocalUpdatePolicy() == CACHE_ON_UPDATE;
     }
 
     /**
@@ -103,37 +104,66 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     }
 
     /**
-     * Waits until a Near Cache has a given owned entry count.
+     * Asserts the number of evicted entries of a {@link NearCache}.
      *
-     * @param context       the {@link NearCacheTestContext} to retrieve the owned entry count from
-     * @param nearCacheSize the expected owned entry count
+     * @param context       the {@link NearCacheTestContext} to retrieve the eviction count from
+     * @param evictionCount the expected eviction count to wait for
      */
-    public static void waitForNearCacheSize(final NearCacheTestContext<?, ?, ?, ?> context,
-                                            final int nearCacheSize) {
+    public static void assertNearCacheEvictions(NearCacheTestContext<?, ?, ?, ?> context, int evictionCount) {
+        long evictions = context.stats.getEvictions();
+        assertTrue(format("Near Cache eviction count didn't reach the desired value (%d vs. %d) (%s)",
+                evictions, evictionCount, context.stats),
+                evictions >= evictionCount);
+    }
+
+    /**
+     * Asserts the number of evicted entries of a {@link NearCache}.
+     *
+     * @param context       the {@link NearCacheTestContext} to retrieve the eviction count from
+     * @param evictionCount the expected eviction count to wait for
+     */
+    public static void assertNearCacheEvictionsEventually(final NearCacheTestContext<?, ?, ?, ?> context,
+                                                          final int evictionCount) {
         assertTrueEventually(new AssertTask() {
+            @Override
             public void run() {
-                long ownedEntryCount = context.stats.getOwnedEntryCount();
-                assertTrue(format("Near Cache owned entry count didn't reach the desired value (%d vs. %d) (%s)",
-                        ownedEntryCount, nearCacheSize, context.stats),
-                        ownedEntryCount == nearCacheSize);
+                assertNearCacheEvictions(context, evictionCount);
             }
         });
     }
 
     /**
-     * Waits until a given number of entries are evicted from a Near Cache.
+     * Asserts the size of a {@link NearCache}.
      *
-     * @param context       the {@link NearCacheTestContext} to retrieve the eviction count from
-     * @param evictionCount the expected eviction count to wait for
+     * @param context      the {@link NearCacheTestContext} to retrieve the stats from
+     * @param expectedSize the expected size of the Near Cache
+     * @param messages     an optional assert message
      */
-    public static void waitForNearCacheEvictions(final NearCacheTestContext<?, ?, ?, ?> context,
-                                                 final int evictionCount) {
+    public static void assertNearCacheSize(NearCacheTestContext<?, ?, ?, ?> context, long expectedSize, String... messages) {
+        String message = messages.length > 0 ? messages[0] + " " : "";
+
+        long nearCacheSize = context.nearCache.size();
+        assertEquals(format("%sNear Cache size didn't reach the desired value (%d vs. %d) (%s)",
+                message, expectedSize, nearCacheSize, context.stats), expectedSize, nearCacheSize);
+
+        long ownedEntryCount = context.stats.getOwnedEntryCount();
+        assertEquals(format("%sNear Cache owned entry count didn't reach the desired value (%d vs. %d) (%s)",
+                message, expectedSize, ownedEntryCount, context.stats), expectedSize, ownedEntryCount);
+    }
+
+    /**
+     * Asserts the size of a {@link NearCache}.
+     *
+     * @param context       the {@link NearCacheTestContext} to retrieve the owned entry count from
+     * @param expectedSize the expected size of the of the Near Cache
+     * @param messages      an optional assert message
+     */
+    public static void assertNearCacheSizeEventually(final NearCacheTestContext<?, ?, ?, ?> context, final int expectedSize,
+                                                     final String... messages) {
         assertTrueEventually(new AssertTask() {
+            @Override
             public void run() {
-                long evictions = context.stats.getEvictions();
-                assertTrue(format("Near Cache eviction count didn't reach the desired value (%d vs. %d) (%s)",
-                        evictions, evictionCount, context.stats),
-                        evictions >= evictionCount);
+                assertNearCacheSize(context, expectedSize, messages);
             }
         });
     }

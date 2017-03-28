@@ -34,6 +34,7 @@ import org.junit.rules.ExpectedException;
 
 import java.io.File;
 
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
 import static com.hazelcast.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.nio.IOUtil.getFileFromResources;
@@ -354,20 +355,6 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
             @Override
             public void run() {
                 assertTrue(clientContext.nearCache.isPreloadDone());
-            }
-        });
-    }
-
-    private static void assertNearCacheSizeEventually(final NearCacheTestContext context, final int expectedSize) {
-        // assert the Near Cache size
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                NearCacheStats nearCacheStats = context.nearCache.getNearCacheStats();
-                assertEquals("Expected to have " + expectedSize + " entries in the Near Cache " + nearCacheStats,
-                        expectedSize, context.nearCache.size());
-                assertEquals("Expected to have " + expectedSize + " entries in the Near Cache " + nearCacheStats,
-                        expectedSize, nearCacheStats.getOwnedEntryCount());
             }
         });
     }

@@ -17,7 +17,6 @@
 package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.nio.serialization.ClassDefinition;
@@ -39,7 +38,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.waitForNearCacheSize;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 
@@ -112,8 +112,8 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
         SerializationCountingData value = new SerializationCountingData();
 
         context.nearCacheAdapter.put(key, value);
-        if (nearCacheConfig != null && nearCacheConfig.getLocalUpdatePolicy() == LocalUpdatePolicy.CACHE_ON_UPDATE) {
-            waitForNearCacheSize(context, 1);
+        if (isCacheOnUpdate(nearCacheConfig)) {
+            assertNearCacheSizeEventually(context, 1);
         }
         assertAndReset("put()", getExpectedSerializationCounts()[0], getExpectedDeserializationCounts()[0]);
 
