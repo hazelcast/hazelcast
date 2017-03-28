@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import javax.cache.Cache;
+import java.util.Map;
 
 /**
  * Simple  {@link javax.cache.Cache.Entry} implementation for wrapping a "key,value" pair.
@@ -30,7 +31,7 @@ import javax.cache.Cache;
  * @see javax.cache.Cache#iterator()
  */
 public class CacheEntry<K, V>
-        implements Cache.Entry<K, V> {
+        implements Cache.Entry<K, V>, Map.Entry<K, V> {
     private final K key;
     private V value;
 
@@ -57,4 +58,8 @@ public class CacheEntry<K, V>
         throw new IllegalArgumentException("Unwrapping to " + clazz + " is not supported by this implementation");
     }
 
+    @Override
+    public V setValue(V value) {
+        throw new UnsupportedOperationException();
+    }
 }
