@@ -112,7 +112,6 @@ import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.SimpleEntryView;
-import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.subscriber.InternalQueryCache;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
@@ -154,8 +153,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -163,7 +160,6 @@ import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequests.newQueryCacheRequest;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -226,22 +222,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         }
     };
 
-    /**
-     * Holds {@link QueryCacheContext} for this proxy.
-     * There should be only one {@link QueryCacheContext} instance.
-     */
-    private ConcurrentMap<String, QueryCacheContext> queryCacheContextHolder
-            = new ConcurrentHashMap<String, QueryCacheContext>(1);
-
-    private final ConstructorFunction<String, QueryCacheContext> queryCacheContextConstructorFunction
-            = new ConstructorFunction<String, QueryCacheContext>() {
-        @Override
-        public QueryCacheContext createNew(String arg) {
-            return new ClientQueryCacheContext(getContext());
-        }
-    };
-
     private ClientLockReferenceIdGenerator lockReferenceIdGenerator;
+    private ClientQueryCacheContext queryCacheContext;
 
     public ClientMapProxy(String serviceName, String name) {
         super(serviceName, name);
@@ -252,6 +234,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         super.onInitialize();
 
         lockReferenceIdGenerator = getClient().getLockReferenceIdGenerator();
+        queryCacheContext = getContext().getQueryCacheContext();
     }
 
     @Override
@@ -1462,7 +1445,6 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     private QueryCache getQueryCacheInternal(String name, MapListener listener, Predicate predicate,
                                              Boolean includeValue, IMap map) {
-        QueryCacheContext context = getQueryContext();
         QueryCacheRequest request = newQueryCacheRequest()
                 .withUserGivenCacheName(name)
                 .withCacheName(UuidUtil.newUnsecureUuidString())
@@ -1470,7 +1452,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
                 .withPredicate(predicate)
                 .withIncludeValue(includeValue)
                 .forMap(map)
-                .withContext(context);
+                .withContext(queryCacheContext);
 
         return createQueryCache(request);
     }
@@ -1479,14 +1461,10 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     private QueryCache createQueryCache(QueryCacheRequest request) {
         ConstructorFunction<String, InternalQueryCache> constructorFunction
                 = new ClientQueryCacheEndToEndConstructor(request);
-        SubscriberContext subscriberContext = getQueryContext().getSubscriberContext();
+        SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
         QueryCacheEndToEndProvider queryCacheEndToEndProvider = subscriberContext.getEndToEndQueryCacheProvider();
         return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(),
                 request.getUserGivenCacheName(), constructorFunction);
-    }
-
-    public QueryCacheContext getQueryContext() {
-        return getOrPutIfAbsent(queryCacheContextHolder, "QueryCacheContext", queryCacheContextConstructorFunction);
     }
 
     @Override
@@ -1676,5 +1654,10 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             final Member member = getContext().getClusterService().getMember(uuid);
             listener.partitionLost(new MapPartitionLostEvent(name, member, -1, partitionId));
         }
+    }
+
+    // used for testing
+    public ClientQueryCacheContext getQueryCacheContext() {
+        return queryCacheContext;
     }
 }
