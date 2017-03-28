@@ -33,11 +33,12 @@ import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.EvictionPolicy.NONE;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSize;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheStats;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.setEvictionConfig;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.waitForNearCacheEvictions;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.waitForNearCacheSize;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheEvictionsEventually;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
 import static java.lang.String.format;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.junit.Assert.assertEquals;
@@ -135,7 +136,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         populateMap(context);
         populateNearCache(context);
 
-        assertEquals(size, context.nearCache.size());
+        assertNearCacheSize(context, size);
         assertEquals("value-1", context.nearCacheAdapter.get(1));
 
         context.nearCacheAdapter.put(1, "newValue");
@@ -165,7 +166,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         populateMap(context);
         populateNearCache(context);
 
-        assertEquals(size, context.nearCache.size());
+        assertNearCacheSize(context, size);
         assertEquals("value-1", context.nearCacheAdapter.get(1));
 
         context.dataAdapter.put(1, "newValue");
@@ -225,7 +226,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     private void whenPutAllIsUsed_thenNearCacheShouldBeInvalidated(boolean useNearCacheAdapter) {
-        final NearCacheTestContext<Integer, String, NK, NV> context = createContext();
+        NearCacheTestContext<Integer, String, NK, NV> context = createContext();
 
         populateMap(context);
         populateNearCache(context);
@@ -239,14 +240,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         DataStructureAdapter<Integer, String> adapter = useNearCacheAdapter ? context.nearCacheAdapter : context.dataAdapter;
         adapter.putAll(invalidationMap);
 
-        assertTrueEventually(
-                new AssertTask() {
-                    @Override
-                    public void run() {
-                        assertEquals("Invalidation is not working on putAll()", 0, context.nearCache.size());
-                    }
-                }
-        );
+        assertNearCacheSizeEventually(context, 0, "Invalidation is not working on putAll()");
     }
 
     /**
@@ -296,7 +290,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     private void whenReplaceIsUsed_thenNearCacheShouldBeInvalidated(boolean useNearCacheAdapter, boolean useOldValue) {
-        final NearCacheTestContext<Integer, String, NK, NV> context = createContext();
+        NearCacheTestContext<Integer, String, NK, NV> context = createContext();
 
         populateMap(context);
         populateNearCache(context);
@@ -311,15 +305,8 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
             }
         }
 
-        final int expectedNearCacheSize = useNearCacheAdapter && isCacheOnUpdate(nearCacheConfig) ? DEFAULT_RECORD_COUNT : 0;
-        assertTrueEventually(
-                new AssertTask() {
-                    @Override
-                    public void run() {
-                        assertEquals("Invalidation is not working on replace()",
-                                expectedNearCacheSize, context.nearCache.size());
-                    }
-                });
+        int expectedNearCacheSize = useNearCacheAdapter && isCacheOnUpdate(nearCacheConfig) ? DEFAULT_RECORD_COUNT : 0;
+        assertNearCacheSizeEventually(context, expectedNearCacheSize, "Invalidation is not working on replace()");
     }
 
     @Test
@@ -470,7 +457,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             context.nearCacheAdapter.remove(i);
         }
-        waitForNearCacheSize(context, 0);
+        assertNearCacheSizeEventually(context, 0);
 
         // the Near Cache is empty, we shouldn't see memory costs anymore
         assertEquals("The Near Cache is empty, there should be no owned entry memory costs",
@@ -508,9 +495,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         // trigger eviction via fetching the extra entry
         context.nearCacheAdapter.get(DEFAULT_RECORD_COUNT);
 
-        waitForNearCacheEvictions(context, expectedEvictions);
-
+        assertNearCacheEvictionsEventually(context, expectedEvictions);
         assertNearCacheStats(context, expectedOwnedEntryCount, expectedHits, expectedMisses, expectedEvictions, 0);
     }
-
 }
