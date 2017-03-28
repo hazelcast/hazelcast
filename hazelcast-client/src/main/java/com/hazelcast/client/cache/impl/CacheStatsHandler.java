@@ -157,7 +157,7 @@ final class CacheStatsHandler {
     }
 
     <T> ExecutionCallback<T> newOnGetCallback(final long startNanos) {
-        return new ExecutionCallback() {
+        return new ExecutionCallback<T>() {
             @Override
             public void onResponse(Object response) {
                 onGet(startNanos, response != null);
@@ -165,7 +165,6 @@ final class CacheStatsHandler {
 
             @Override
             public void onFailure(Throwable t) {
-
             }
         };
     }

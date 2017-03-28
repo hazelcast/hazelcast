@@ -16,18 +16,18 @@
 
 package com.hazelcast.internal.adapter;
 
+import com.hazelcast.cache.ICache;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.monitor.LocalMapStats;
 
-import javax.cache.Cache;
 import java.util.Map;
 import java.util.Set;
 
 public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K, V> {
 
-    private final Cache<K, V> cache;
+    private final ICache<K, V> cache;
 
-    public ICacheDataStructureAdapter(Cache<K, V> cache) {
+    public ICacheDataStructureAdapter(ICache<K, V> cache) {
         this.cache = cache;
     }
 
@@ -63,7 +63,7 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
 
     @Override
     public ICompletableFuture<V> getAsync(K key) {
-        return new SimpleCompletedFuture<V>(cache.get(key));
+        return cache.getAsync(key);
     }
 
     @Override

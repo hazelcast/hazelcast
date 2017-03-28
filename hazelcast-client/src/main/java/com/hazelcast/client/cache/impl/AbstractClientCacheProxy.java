@@ -93,7 +93,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         }
     }
 
-    private ClientDelegatingFuture getInternal(Data keyData, ExpiryPolicy expiryPolicy, boolean deserializeResponse) {
+    private ClientDelegatingFuture<V> getInternal(Data keyData, ExpiryPolicy expiryPolicy, boolean deserializeResponse) {
         Data expiryPolicyData = toData(expiryPolicy);
 
         HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
@@ -117,12 +117,12 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         validateNotNull(key);
 
         Data dataKey = toData(key);
-        ExecutionCallback callback = !statisticsEnabled ? null : statsHandler.newOnGetCallback(startNanos);
+        ExecutionCallback<V> callback = !statisticsEnabled ? null : statsHandler.<V>newOnGetCallback(startNanos);
         return getAsyncInternal(dataKey, expiryPolicy, callback);
     }
 
-    protected ClientDelegatingFuture getAsyncInternal(Data dataKey, ExpiryPolicy expiryPolicy, ExecutionCallback callback) {
-        ClientDelegatingFuture future = getInternal(dataKey, expiryPolicy, true);
+    protected ClientDelegatingFuture<V> getAsyncInternal(Data dataKey, ExpiryPolicy expiryPolicy, ExecutionCallback<V> callback) {
+        ClientDelegatingFuture<V> future = getInternal(dataKey, expiryPolicy, true);
         addCallback(future, callback);
         return future;
     }

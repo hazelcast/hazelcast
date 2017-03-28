@@ -165,34 +165,32 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
     }
 
     @Override
-    public ClientDelegatingFuture getAsyncInternal(final Data keyData, ExpiryPolicy expiryPolicy, ExecutionCallback callback) {
-        long reservationId;
-        ClientDelegatingFuture future;
+    protected ClientDelegatingFuture getAsyncInternal(Data dataKey, ExpiryPolicy expiryPolicy, ExecutionCallback callback) {
         try {
-            reservationId = nearCache.tryReserveForUpdate(keyData);
-            future = super.getAsyncInternal(keyData, expiryPolicy, callback);
+            long reservationId = nearCache.tryReserveForUpdate(dataKey);
+            ClientDelegatingFuture future = super.getAsyncInternal(dataKey, expiryPolicy, callback);
+            future.andThenInternal(new GetAsyncCallback(dataKey, reservationId, callback), true);
+            return future;
         } catch (Throwable t) {
-            invalidateNearCache(keyData);
+            invalidateNearCache(dataKey);
             throw rethrow(t);
         }
-
-        future.andThenInternal(new GetAsyncCallback(keyData, reservationId, callback), true);
-        return future;
     }
 
-    private final class GetAsyncCallback implements ExecutionCallback<Data> {
+    private final class GetAsyncCallback implements ExecutionCallback<V> {
+
         private final Data keyData;
         private final long reservationId;
-        private final ExecutionCallback callback;
+        private final ExecutionCallback<V> callback;
 
-        public GetAsyncCallback(Data keyData, long reservationId, ExecutionCallback callback) {
+        GetAsyncCallback(Data keyData, long reservationId, ExecutionCallback<V> callback) {
             this.keyData = keyData;
             this.reservationId = reservationId;
             this.callback = callback;
         }
 
         @Override
-        public void onResponse(Data valueData) {
+        public void onResponse(V valueData) {
             try {
                 if (callback != null) {
                     callback.onResponse(valueData);

@@ -22,9 +22,12 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -45,6 +48,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Contains the logic code for unified Near Cache tests.
@@ -88,7 +92,25 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
     protected final void populateNearCache(NearCacheTestContext<Integer, String, NK, NV> context) {
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            context.nearCacheAdapter.get(i);
+            String value = context.nearCacheAdapter.get(i);
+            assertEquals("value-" + i, value);
+        }
+    }
+
+    protected final void populateNearCacheAsync(NearCacheTestContext<Integer, String, NK, NV> context) {
+        try {
+            List<Future<String>> futures = new ArrayList<Future<String>>(DEFAULT_RECORD_COUNT);
+            for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+                futures.add(context.nearCacheAdapter.getAsync(i));
+            }
+            for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+                String value = futures.get(i).get();
+                assertEquals("value-" + i, value);
+            }
+        } catch (InterruptedException e) {
+            fail("Could not get value via getAsync() " + e.getMessage());
+        } catch (ExecutionException e) {
+            fail("Could not get value via getAsync() " + e.getMessage());
         }
     }
 
@@ -309,23 +331,20 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         assertNearCacheSizeEventually(context, expectedNearCacheSize, "Invalidation is not working on replace()");
     }
 
+    /**
+     * Checks that the Near Cache is populated when {@link DataStructureAdapter#getAsync(Object)} is used.
+     */
     @Test
     public void testGetAsyncPopulatesNearCache() throws Exception {
         NearCacheTestContext<Integer, String, NK, NV> context = createContext();
 
         populateMap(context);
-
-        // populate Near Cache with getAsync()
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            Future future = context.nearCacheAdapter.getAsync(i);
-            future.get();
-        }
+        populateNearCacheAsync(context);
 
         // generate Near Cache hits
-        populateNearCache(context);
+        populateNearCacheAsync(context);
 
-        long ownedEntryCount = context.stats.getOwnedEntryCount();
-        assertTrue(format("Near Cache should be populated but current size is %d", ownedEntryCount), ownedEntryCount > 0);
+        assertNearCacheSize(context, DEFAULT_RECORD_COUNT);
     }
 
     /**
