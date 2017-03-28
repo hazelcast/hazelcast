@@ -82,6 +82,11 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     }
 
     @Override
+    public ICompletableFuture<V> removeAsync(K key) {
+        return cache.getAndRemoveAsync(key);
+    }
+
+    @Override
     public LocalMapStats getLocalMapStats() {
         return null;
     }

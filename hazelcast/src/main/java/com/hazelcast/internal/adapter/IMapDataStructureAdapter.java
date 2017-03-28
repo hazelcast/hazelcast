@@ -82,6 +82,11 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
+    public ICompletableFuture<V> removeAsync(K key) {
+        return map.removeAsync(key);
+    }
+
+    @Override
     public LocalMapStats getLocalMapStats() {
         return map.getLocalMapStats();
     }

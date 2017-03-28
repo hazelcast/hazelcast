@@ -123,6 +123,14 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
+    public ICompletableFuture<V> removeAsync(K key) {
+        begin();
+        V value = transactionalMap.remove(key);
+        commit();
+        return new SimpleCompletedFuture<V>(value);
+    }
+
+    @Override
     public LocalMapStats getLocalMapStats() {
         return null;
     }

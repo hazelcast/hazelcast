@@ -87,6 +87,11 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     }
 
     @Override
+    public ICompletableFuture<V> removeAsync(K key) {
+        return new SimpleCompletedFuture<V>(map.remove(key));
+    }
+
+    @Override
     public LocalMapStats getLocalMapStats() {
         return null;
     }

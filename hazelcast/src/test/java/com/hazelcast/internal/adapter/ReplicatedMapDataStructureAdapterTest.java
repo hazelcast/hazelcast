@@ -147,6 +147,17 @@ public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport 
     }
 
     @Test
+    public void testRemoveAsync() throws Exception {
+        map.put(23, "value-23");
+        assertTrue(map.containsKey(23));
+
+        String value = adapter.removeAsync(23).get();
+        assertEquals("value-23", value);
+
+        assertFalse(map.containsKey(23));
+    }
+
+    @Test
     public void testGetLocalMapStats() {
         assertNull(adapter.getLocalMapStats());
     }

@@ -47,6 +47,8 @@ public interface DataStructureAdapter<K, V> {
 
     void remove(K key);
 
+    ICompletableFuture<V> removeAsync(K key);
+
     LocalMapStats getLocalMapStats();
 
     boolean containsKey(K key);

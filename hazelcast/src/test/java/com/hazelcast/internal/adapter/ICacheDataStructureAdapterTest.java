@@ -161,6 +161,17 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testRemoveAsync() throws Exception {
+        cache.put(23, "value-23");
+        assertTrue(cache.containsKey(23));
+
+        String value = adapter.removeAsync(23).get();
+        assertEquals("value-23", value);
+
+        assertFalse(cache.containsKey(23));
+    }
+
+    @Test
     public void testGetLocalMapStats() {
         assertNull(adapter.getLocalMapStats());
     }
