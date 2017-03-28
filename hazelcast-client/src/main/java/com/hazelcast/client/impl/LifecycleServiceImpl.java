@@ -25,7 +25,6 @@ import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 
@@ -74,7 +73,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
                     try {
                         implementation = ClassLoaderUtil.newInstance(classLoader, listenerConfig.getClassName());
                     } catch (Exception e) {
-                        throw ExceptionUtil.rethrow(e);
+                        getLogger().severe(e);
                     }
                 }
 
