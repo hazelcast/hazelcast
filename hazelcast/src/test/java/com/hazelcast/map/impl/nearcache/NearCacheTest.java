@@ -600,25 +600,6 @@ public class NearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void testAfterReplaceNearCacheIsInvalidated() {
-        int mapSize = 1000;
-        String mapName = randomMapName();
-
-        Config config = createNearCachedMapConfig(mapName);
-        HazelcastInstance instance = createHazelcastInstance(config);
-
-        IMap<Integer, Integer> map = instance.getMap(mapName);
-        populateMap(map, mapSize);
-        populateNearCache(map, mapSize);
-
-        for (int i = 0; i < mapSize; i++) {
-            map.replace(i, i, mapSize - 1 - i);
-        }
-
-        assertEquals(0, getNearCacheStats(map).getOwnedEntryCount());
-    }
-
-    @Test
     public void testAfterSubmitToKeyWithCallbackNearCacheIsInvalidated() throws Exception {
         int mapSize = 1000;
         String mapName = randomMapName();
