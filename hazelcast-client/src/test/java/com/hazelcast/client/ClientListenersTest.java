@@ -18,6 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryView;
@@ -29,6 +30,8 @@ import com.hazelcast.core.ISet;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.instance.Node;
@@ -57,6 +60,8 @@ import org.mockito.Mockito;
 
 import java.util.concurrent.CountDownLatch;
 
+import static org.junit.Assert.assertTrue;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientListenersTest extends HazelcastTestSupport {
@@ -83,6 +88,8 @@ public class ClientListenersTest extends HazelcastTestSupport {
                 return null;
             }
         });
+
+        config.addListenerConfig(new ListenerConfig("com.hazelcast.client.ClientListenersTest$StaticListener"));
 
         server = hazelcastFactory.newHazelcastInstance();
         client = hazelcastFactory.newHazelcastClient(config);
@@ -208,5 +215,20 @@ public class ClientListenersTest extends HazelcastTestSupport {
         topic.publish(new ClientRegressionWithMockNetworkTest.SamplePortable(1));
         assertOpenEventually(latch);
     }
+
+    @Test
+    public void testLifecycleListener_registeredViaClassName() {
+        assertTrue(StaticListener.calledAtLeastOnce);
+    }
+
+    public static class StaticListener implements LifecycleListener {
+        private static volatile boolean calledAtLeastOnce;
+
+        @Override
+        public void stateChanged(LifecycleEvent event) {
+            calledAtLeastOnce = true;
+        }
+    }
+
 
 }

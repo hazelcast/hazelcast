@@ -24,9 +24,11 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 
+import java.util.EventListener;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -58,15 +60,25 @@ public final class LifecycleServiceImpl implements LifecycleService {
     public LifecycleServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
 
+        ClassLoader classLoader = client.getClientConfig().getClassLoader();
         executor = Executors.newSingleThreadExecutor(
                 new PoolExecutorThreadFactory(client.getThreadGroup(), client.getName() + ".lifecycle-",
-                        client.getClientConfig().getClassLoader()));
+                        classLoader));
 
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
             for (ListenerConfig listenerConfig : listenerConfigs) {
-                if (listenerConfig.getImplementation() instanceof LifecycleListener) {
-                    addLifecycleListener((LifecycleListener) listenerConfig.getImplementation());
+                EventListener implementation = listenerConfig.getImplementation();
+                if (implementation == null) {
+                    try {
+                        implementation = ClassLoaderUtil.newInstance(classLoader, listenerConfig.getClassName());
+                    } catch (Exception e) {
+                        getLogger().severe(e);
+                    }
+                }
+
+                if (implementation instanceof LifecycleListener) {
+                    addLifecycleListener((LifecycleListener) implementation);
                 }
             }
         }
