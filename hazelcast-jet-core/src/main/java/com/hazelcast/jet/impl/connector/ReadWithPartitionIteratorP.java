@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.cache.impl.CacheEntry;
 import com.hazelcast.cache.impl.CacheProxy;
 import com.hazelcast.client.cache.impl.ClientCacheProxy;
 import com.hazelcast.client.config.ClientConfig;
@@ -35,6 +36,7 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Address;
 
 import javax.annotation.Nonnull;
+import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -102,8 +104,8 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
 
     public static <T> ProcessorMetaSupplier readCache(String cacheName, int fetchSize) {
         return new LocalClusterMetaSupplier<T>(
-                instance -> partition -> ((CacheProxy) instance.getCacheManager().getCache(cacheName))
-                        .iterator(fetchSize, partition, PREFETCH_VALUES));
+                instance -> partition -> wrap(((CacheProxy) instance.getCacheManager().getCache(cacheName))
+                        .iterator(fetchSize, partition, PREFETCH_VALUES)));
     }
 
     public static ProcessorMetaSupplier readCache(String cacheName, ClientConfig clientConfig) {
@@ -112,8 +114,8 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
 
     public static <T> ProcessorMetaSupplier readCache(String cacheName, int fetchSize, ClientConfig clientConfig) {
         return new RemoteClusterMetaSupplier<T>(clientConfig,
-                instance -> partition -> ((ClientCacheProxy) instance.getCacheManager().getCache(cacheName))
-                        .iterator(fetchSize, partition, PREFETCH_VALUES));
+                instance -> partition -> wrap(((ClientCacheProxy) instance.getCacheManager().getCache(cacheName))
+                        .iterator(fetchSize, partition, PREFETCH_VALUES)));
     }
 
     @Override
@@ -269,5 +271,29 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
             return getProcessors(count, ownedPartitions, partitionToIterator);
         }
 
+    }
+
+    private static Iterator wrap(Iterator iterator) {
+        return new IteratorWrapper(iterator);
+    }
+
+    private static class IteratorWrapper implements Iterator<Map.Entry> {
+
+        private final Iterator iterator;
+
+        IteratorWrapper(Iterator iterator) {
+            this.iterator = iterator;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return iterator.hasNext();
+        }
+
+        @Override
+        public Map.Entry next() {
+            CacheEntry next = (CacheEntry) iterator.next();
+            return new AbstractMap.SimpleImmutableEntry(next.getKey(), next.getValue());
+        }
     }
 }

@@ -30,18 +30,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import javax.cache.Cache;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.Processors.map;
 import static com.hazelcast.jet.Processors.readCache;
 import static com.hazelcast.jet.Processors.readList;
 import static com.hazelcast.jet.Processors.readMap;
 import static com.hazelcast.jet.Processors.writeCache;
 import static com.hazelcast.jet.Processors.writeList;
 import static com.hazelcast.jet.Processors.writeMap;
-import static com.hazelcast.jet.Util.entry;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
@@ -90,11 +87,9 @@ public class HazelcastConnectorIntegrationTest extends JetTestSupport {
 
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", readCache(sourceName));
-        Vertex mapper = dag.newVertex("mapper", map((Cache.Entry e) -> entry(e.getKey(), e.getValue())));
         Vertex sink = dag.newVertex("sink", writeCache(sinkName));
 
-        dag.edge(between(source, mapper));
-        dag.edge(between(mapper, sink));
+        dag.edge(between(source, sink));
 
         jetInstance.newJob(dag).execute().get();
 

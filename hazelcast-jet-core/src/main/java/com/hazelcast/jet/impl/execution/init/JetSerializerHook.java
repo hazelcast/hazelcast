@@ -23,7 +23,6 @@ import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
-import javax.cache.Cache;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -131,45 +130,6 @@ public final class JetSerializerHook {
                 @Override
                 public Entry read(ObjectDataInput in) throws IOException {
                     return entry(in.readObject(), in.readObject());
-                }
-            };
-        }
-
-        @Override
-        public boolean isOverwritable() {
-            return true;
-        }
-    }
-
-    public static final class CacheEntry implements SerializerHook<Cache.Entry> {
-
-        @Override
-        public Class<Cache.Entry> getSerializationType() {
-            return Cache.Entry.class;
-        }
-
-        @Override
-        public Serializer createSerializer() {
-            return new StreamSerializer<Cache.Entry>() {
-                @Override
-                public int getTypeId() {
-                    return CACHE_ENTRY;
-                }
-
-                @Override
-                public void destroy() {
-
-                }
-
-                @Override
-                public void write(ObjectDataOutput out, Cache.Entry object) throws IOException {
-                    out.writeObject(object.getKey());
-                    out.writeObject(object.getValue());
-                }
-
-                @Override
-                public Cache.Entry read(ObjectDataInput in) throws IOException {
-                    return new com.hazelcast.cache.impl.CacheEntry<>(in.readObject(), in.readObject());
                 }
             };
         }
