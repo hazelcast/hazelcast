@@ -32,6 +32,7 @@ import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
+import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
 import com.hazelcast.client.spi.ClientClusterService;
@@ -114,6 +115,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -189,7 +191,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final Diagnostics diagnostics;
     private final SerializationService serializationService;
     private final ClientICacheManager hazelcastCacheManager;
-
+    private final ClientQueryCacheContext clientQueryCacheContext;
     private final ClientLockReferenceIdGenerator lockReferenceIdGenerator;
     private final ClientExceptionFactory clientExceptionFactory;
     private final CallIdSequence callIdSequence;
@@ -239,6 +241,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         diagnostics = initDiagnostics(config);
 
         hazelcastCacheManager = new ClientICacheManager(this);
+        clientQueryCacheContext = new ClientQueryCacheContext(this);
 
         lockReferenceIdGenerator = new ClientLockReferenceIdGenerator();
         nearCacheManager = clientExtension.createNearCacheManager();
@@ -758,5 +761,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public ClientExceptionFactory getClientExceptionFactory() {
         return clientExceptionFactory;
+    }
+
+    public QueryCacheContext getQueryContext() {
+        return clientQueryCacheContext;
     }
 }

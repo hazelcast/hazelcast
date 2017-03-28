@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.querycache.subscriber;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.map.impl.querycache.InvokerWrapper;
@@ -40,11 +39,11 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public class ClientInvokerWrapper implements InvokerWrapper {
 
     private final QueryCacheContext context;
-    private final ClientContext clientContext;
+    private final HazelcastClientInstanceImpl clientInstance;
 
-    public ClientInvokerWrapper(QueryCacheContext context, ClientContext clientContext) {
+    public ClientInvokerWrapper(QueryCacheContext context, HazelcastClientInstanceImpl clientInstance) {
         this.context = context;
-        this.clientContext = clientContext;
+        this.clientInstance = clientInstance;
     }
 
     @Override
@@ -53,7 +52,7 @@ public class ClientInvokerWrapper implements InvokerWrapper {
         checkNotNegative(partitionId, "partitionId");
 
         ClientMessage clientRequest = (ClientMessage) request;
-        ClientInvocation clientInvocation = new ClientInvocation(getClient(), clientRequest, partitionId);
+        ClientInvocation clientInvocation = new ClientInvocation(clientInstance, clientRequest, partitionId);
         return clientInvocation.invoke();
     }
 
@@ -61,7 +60,7 @@ public class ClientInvokerWrapper implements InvokerWrapper {
     public Object invokeOnAllPartitions(Object request) {
         try {
             ClientMessage clientRequest = (ClientMessage) request;
-            final Future future = new ClientInvocation(getClient(), clientRequest).invoke();
+            final Future future = new ClientInvocation(clientInstance, clientRequest).invoke();
             Object result = future.get();
             return context.toObject(result);
         } catch (Exception e) {
@@ -75,7 +74,7 @@ public class ClientInvokerWrapper implements InvokerWrapper {
         checkNotNull(address, "address cannot be null");
 
         ClientMessage clientRequest = (ClientMessage) request;
-        ClientInvocation invocation = new ClientInvocation(getClient(), clientRequest, address);
+        ClientInvocation invocation = new ClientInvocation(clientInstance, clientRequest, address);
         return invocation.invoke();
     }
 
@@ -83,7 +82,7 @@ public class ClientInvokerWrapper implements InvokerWrapper {
     public Object invoke(Object request) {
         checkNotNull(request, "request cannot be null");
 
-        ClientInvocation invocation = new ClientInvocation(getClient(), (ClientMessage) request);
+        ClientInvocation invocation = new ClientInvocation(clientInstance, (ClientMessage) request);
         ClientInvocationFuture future = invocation.invoke();
         try {
             Object result = future.get();
@@ -98,7 +97,4 @@ public class ClientInvokerWrapper implements InvokerWrapper {
         throw new UnsupportedOperationException();
     }
 
-    protected final HazelcastClientInstanceImpl getClient() {
-        return (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
-    }
 }
