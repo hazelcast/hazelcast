@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.cache.impl.nearcache.invalidation.ClientCacheMetaDataFetcher;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.client.map.impl.nearcache.invalidation.ClientMapMetaDataFetcher;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCacheManager;
@@ -59,6 +60,7 @@ public final class ClientContext {
     private final HazelcastProperties properties;
     private final NearCacheManager nearCacheManager;
     private final MinimalPartitionService minimalPartitionService;
+    private final ClientQueryCacheContext queryCacheContext;
     private final ConcurrentMap<String, RepairingTask> repairingTasks = new ConcurrentHashMap<String, RepairingTask>();
     private final ConstructorFunction<String, RepairingTask> repairingTaskConstructor
             = new ConstructorFunction<String, RepairingTask>() {
@@ -83,6 +85,11 @@ public final class ClientContext {
         this.properties = client.getProperties();
         this.localUuid = client.getLocalEndpoint().getUuid();
         this.minimalPartitionService = new ClientMinimalPartitionService();
+        this.queryCacheContext = new ClientQueryCacheContext(this);
+    }
+
+    public ClientQueryCacheContext getQueryCacheContext() {
+        return queryCacheContext;
     }
 
     public RepairingTask getRepairingTask(String serviceName) {

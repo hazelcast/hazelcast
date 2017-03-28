@@ -67,7 +67,7 @@ public class ClientQueryCacheContextTest extends HazelcastTestSupport {
 
         HazelcastInstance hz = factory.newHazelcastClient();
         ClientMapProxy proxy = (ClientMapProxy) hz.getMap("test");
-        context = proxy.getQueryContext();
+        context = proxy.getQueryCacheContext();
     }
 
     @After
