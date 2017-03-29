@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -40,6 +39,7 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCach
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSize;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheStats;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getFuture;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.setEvictionConfig;
 import static java.util.concurrent.Executors.newFixedThreadPool;
@@ -47,7 +47,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Contains the logic code for unified Near Cache tests.
@@ -97,19 +96,13 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     protected final void populateNearCacheAsync(NearCacheTestContext<Integer, String, NK, NV> context) {
-        try {
-            List<Future<String>> futures = new ArrayList<Future<String>>(DEFAULT_RECORD_COUNT);
-            for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-                futures.add(context.nearCacheAdapter.getAsync(i));
-            }
-            for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-                String value = futures.get(i).get();
-                assertEquals("value-" + i, value);
-            }
-        } catch (InterruptedException e) {
-            fail("Could not get value via getAsync() " + e.getMessage());
-        } catch (ExecutionException e) {
-            fail("Could not get value via getAsync() " + e.getMessage());
+        List<Future<String>> futures = new ArrayList<Future<String>>(DEFAULT_RECORD_COUNT);
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            futures.add(context.nearCacheAdapter.getAsync(i));
+        }
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            String value = getFuture(futures.get(i), "Could not get value via getAsync()");
+            assertEquals("value-" + i, value);
         }
     }
 

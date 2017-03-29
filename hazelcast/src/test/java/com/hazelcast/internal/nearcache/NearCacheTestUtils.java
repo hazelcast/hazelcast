@@ -29,6 +29,9 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
@@ -43,6 +46,24 @@ import static org.junit.Assert.assertTrue;
 public final class NearCacheTestUtils extends HazelcastTestSupport {
 
     private NearCacheTestUtils() {
+    }
+
+    /**
+     * Retrieves the value of a {@link Future} and throws {@link AssertionError} on failures.
+     *
+     * @param future  the {@link Future} to get the value from
+     * @param message a failure message
+     * @param <T>     the return type of the {@link Future}
+     * @return the value of the {@link Future}
+     */
+    public static <T> T getFuture(Future<T> future, String message) {
+        try {
+            return future.get();
+        } catch (InterruptedException e) {
+            throw new AssertionError(message + " " + e.getMessage());
+        } catch (ExecutionException e) {
+            throw new AssertionError(message + " " + e.getMessage());
+        }
     }
 
     /**
@@ -154,9 +175,9 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     /**
      * Asserts the size of a {@link NearCache}.
      *
-     * @param context       the {@link NearCacheTestContext} to retrieve the owned entry count from
+     * @param context      the {@link NearCacheTestContext} to retrieve the owned entry count from
      * @param expectedSize the expected size of the of the Near Cache
-     * @param messages      an optional assert message
+     * @param messages     an optional assert message
      */
     public static void assertNearCacheSizeEventually(final NearCacheTestContext<?, ?, ?, ?> context, final int expectedSize,
                                                      final String... messages) {
