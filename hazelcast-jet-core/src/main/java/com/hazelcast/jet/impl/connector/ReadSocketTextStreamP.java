@@ -30,15 +30,15 @@ import java.util.List;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
-import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.IntStream.range;
 
 /**
  * A reader that connects to a specified socket and reads and emits text line by line.
- * This processor is mainly aimed for testing purposes as it will only support input
- * from a single socket, and expects a server-side socket to be available for connecting
- * to.
+ * This processor expects a server-side socket to be available for connecting to
  * <p>
- * It will terminate when the socket is closed by the server.
+ * Each processor instance will create a socket connection to the configured [host:port]
+ * which will terminate when the socket is closed by the server.
  */
 public class ReadSocketTextStreamP extends AbstractProcessor implements Closeable {
 
@@ -49,6 +49,16 @@ public class ReadSocketTextStreamP extends AbstractProcessor implements Closeabl
     ReadSocketTextStreamP(String host, int port) {
         this.host = host;
         this.port = port;
+    }
+
+    /**
+     * Creates a supplier for {@link ReadSocketTextStreamP}
+     *
+     * @param host The host name to connect to
+     * @param port The port number to connect to
+     */
+    public static ProcessorSupplier supplier(String host, int port) {
+        return new Supplier(host, port);
     }
 
     @Override
@@ -86,24 +96,8 @@ public class ReadSocketTextStreamP extends AbstractProcessor implements Closeabl
         return false;
     }
 
-    /**
-     * Creates a supplier for {@link ReadSocketTextStreamP}
-     *
-     * @param host The host name to connect to
-     * @param port The port number to connect to
-     */
-    public static ProcessorSupplier supplier(String host, int port) {
-        return new Supplier(host, port);
-    }
-
     private String hostAndPort() {
         return host + ':' + port;
-    }
-
-    private static void assertCountIsOne(int count) {
-        if (count != 1) {
-            throw new IllegalArgumentException("count != 1");
-        }
     }
 
     private static class Supplier implements ProcessorSupplier {
@@ -112,8 +106,7 @@ public class ReadSocketTextStreamP extends AbstractProcessor implements Closeabl
 
         private final String host;
         private final int port;
-
-        private transient ReadSocketTextStreamP reader;
+        private transient List<Processor> processors;
 
         Supplier(String host, int port) {
             this.host = host;
@@ -122,14 +115,15 @@ public class ReadSocketTextStreamP extends AbstractProcessor implements Closeabl
 
         @Override @Nonnull
         public List<Processor> get(int count) {
-            assertCountIsOne(count);
-            this.reader = new ReadSocketTextStreamP(host, port);
-            return singletonList(reader);
+            processors = range(0, count)
+                    .mapToObj(i -> new ReadSocketTextStreamP(host, port))
+                    .collect(toList());
+            return processors;
         }
 
         @Override
         public void complete(Throwable error) {
-            uncheckRun(reader::close);
+            processors.forEach(p -> uncheckRun(((ReadSocketTextStreamP) p)::close));
         }
     }
 

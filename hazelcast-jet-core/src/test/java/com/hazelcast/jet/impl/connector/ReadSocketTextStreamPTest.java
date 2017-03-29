@@ -38,6 +38,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.Processors.readSocket;
 import static com.hazelcast.jet.Processors.writeList;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static org.junit.Assert.assertEquals;
@@ -47,11 +48,10 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 public class ReadSocketTextStreamPTest extends JetTestSupport {
 
-    private JetTestInstanceFactory factory;
-    private JetInstance instance;
-
     private final static String HOST = "localhost";
     private final static int PORT = 8888;
+    private JetTestInstanceFactory factory;
+    private JetInstance instance;
 
     @Before
     public void setupEngine() {
@@ -70,20 +70,30 @@ public class ReadSocketTextStreamPTest extends JetTestSupport {
         // Given
         ServerSocket socket = new ServerSocket(PORT);
         new Thread(() -> uncheckRun(() -> {
-            Socket accept = socket.accept();
-            PrintWriter writer = new PrintWriter(accept.getOutputStream());
-            writer.write("hello \n");
-            writer.flush();
+            Socket accept1 = socket.accept();
+            Socket accept2 = socket.accept();
+            PrintWriter writer1 = new PrintWriter(accept1.getOutputStream());
+            writer1.write("hello1 \n");
+            writer1.flush();
+            PrintWriter writer2 = new PrintWriter(accept2.getOutputStream());
+            writer2.write("hello2 \n");
+            writer2.flush();
+
             assertOpenEventually(latch);
-            writer.write("world \n");
-            writer.write("jet \n");
-            writer.flush();
-            accept.close();
+            writer1.write("world1 \n");
+            writer1.write("jet1 \n");
+            writer1.flush();
+            writer2.write("world2 \n");
+            writer2.write("jet2 \n");
+            writer2.flush();
+
+            accept1.close();
+            accept2.close();
             socket.close();
         })).start();
 
         DAG dag = new DAG();
-        Vertex producer = dag.newVertex("producer", ReadSocketTextStreamP.supplier(HOST, PORT)).localParallelism(1);
+        Vertex producer = dag.newVertex("producer", readSocket(HOST, PORT)).localParallelism(2);
         Vertex consumer = dag.newVertex("consumer", writeList("consumer")).localParallelism(1);
         dag.edge(between(producer, consumer));
 
@@ -91,10 +101,10 @@ public class ReadSocketTextStreamPTest extends JetTestSupport {
         Future<Void> job = instance.newJob(dag).execute();
         IList<Object> list = instance.getList("consumer");
 
-        assertTrueEventually(() -> assertEquals(1, list.size()));
+        assertTrueEventually(() -> assertEquals(2, list.size()));
         latch.countDown();
         job.get();
-        assertEquals(3, list.size());
+        assertEquals(6, list.size());
     }
 
     @Test

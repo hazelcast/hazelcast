@@ -22,6 +22,7 @@ import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.ReadIListP;
 import com.hazelcast.jet.impl.connector.ReadWithPartitionIteratorP;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
+import com.hazelcast.jet.impl.connector.ReadSocketTextStreamP;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedWriter;
@@ -248,6 +249,14 @@ public final class Processors {
 
     private static BufferedWriter createBufferedWriter(@Nonnull String host, int port) {
         return uncheckCall(() -> new BufferedWriter(new OutputStreamWriter(new Socket(host, port).getOutputStream(), "UTF-8")));
+    }
+
+    /**
+     * Returns a supplier of processors that connect to the specified socket and read and emit text line by line.
+     */
+    @Nonnull
+    public static ProcessorSupplier readSocket(@Nonnull String host, int port) {
+        return ReadSocketTextStreamP.supplier(host, port);
     }
 
     /**
