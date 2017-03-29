@@ -121,24 +121,23 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     public void testNearCacheStats() {
         // we cannot use the common test, since the Near Cache support in TransactionalMap is very limited
         NearCacheTestContext<Integer, String, Data, String> context = createContext();
-
         IMap<Integer, String> map = context.nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
 
         // populate map
         populateMap(context);
         assertNearCacheStats(context, 0, 0, 0);
 
-        // uses txMap.get() which reads from the Near Cache, but doesn't populate it (so we just create misses)
+        // use TransactionalMap.get() which reads from the Near Cache, but doesn't populate it (so we just create misses)
         populateNearCache(context);
         assertNearCacheStats(context, 0, 0, DEFAULT_RECORD_COUNT);
 
-        // use map.get() which populates the Near Cache (but also increases the misses first)
+        // use IMap.get() which populates the Near Cache (but also increases the misses first)
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             map.get(i);
         }
         assertNearCacheStats(context, DEFAULT_RECORD_COUNT, 0, DEFAULT_RECORD_COUNT * 2);
 
-        // make some hits
+        // use TransactionalMap.get() to make some hits
         populateNearCache(context);
         assertNearCacheStats(context, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT * 2);
     }
