@@ -145,8 +145,8 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
     protected ClientDelegatingFuture getAsyncInternal(Data dataKey, ExpiryPolicy expiryPolicy, ExecutionCallback callback) {
         try {
             long reservationId = nearCache.tryReserveForUpdate(dataKey);
-            ClientDelegatingFuture future = super.getAsyncInternal(dataKey, expiryPolicy, callback);
-            future.andThenInternal(new GetAsyncCallback(dataKey, reservationId, callback), true);
+            GetAsyncCallback getAsyncCallback = new GetAsyncCallback(dataKey, reservationId, callback);
+            ClientDelegatingFuture future = super.getAsyncInternal(dataKey, expiryPolicy, getAsyncCallback);
             return future;
         } catch (Throwable t) {
             invalidateNearCache(dataKey);

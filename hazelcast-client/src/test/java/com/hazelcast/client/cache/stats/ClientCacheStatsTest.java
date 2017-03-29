@@ -26,23 +26,45 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import javax.cache.spi.CachingProvider;
+import java.util.Arrays;
+import java.util.Collection;
 
 import static org.junit.Assert.assertNotNull;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientCacheStatsTest extends CacheStatsTest {
 
+    @Parameter
+    public boolean nearCacheEnabled;
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
     private final TestHazelcastFactory instanceFactory = new TestHazelcastFactory();
     private HazelcastInstance client;
+
+    @Parameters(name = "nearCached:{0}")
+    public static Collection<Object> parameters() {
+        return Arrays.asList(new Object[]{
+                Boolean.TRUE, Boolean.FALSE
+        });
+    }
 
     @Override
     protected void onSetup() {
@@ -69,41 +91,68 @@ public class ClientCacheStatsTest extends CacheStatsTest {
     }
 
     protected ClientConfig createClientConfig() {
-        return new ClientConfig();
+        ClientConfig clientConfig = new ClientConfig();
+        if (nearCacheEnabled) {
+            clientConfig.addNearCacheConfig(new NearCacheConfig("*"));
+        }
+        return clientConfig;
     }
 
     @Override
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testOwnedEntryCountWhenThereIsNoBackup() {
+        expectedException.expect(UnsupportedOperationException.class);
         super.testOwnedEntryCountWhenThereIsNoBackup();
     }
 
     @Override
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testOwnedEntryCountWhenThereAreBackupsOnStaticCluster() {
+        expectedException.expect(UnsupportedOperationException.class);
         super.testOwnedEntryCountWhenThereAreBackupsOnStaticCluster();
     }
 
     @Override
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testOwnedEntryCountWhenThereAreBackupsOnDynamicCluster() {
+        expectedException.expect(UnsupportedOperationException.class);
         super.testOwnedEntryCountWhenThereAreBackupsOnDynamicCluster();
     }
 
     @Override
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testExpirations() {
+        expectedException.expect(UnsupportedOperationException.class);
         super.testExpirations();
     }
 
     @Override
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testEvictions() {
+        expectedException.expect(UnsupportedOperationException.class);
         super.testEvictions();
     }
 
+    @Override
     @Test
-    public void testNearCacheStatsWhenNearCacheEnabled() {
+    public void testNearCacheStats_availableWhenEnabled() {
+        if (nearCacheEnabled) {
+            testNearCacheStats_whenNearCacheEnabled();
+        } else {
+            expectedException.expect(UnsupportedOperationException.class);
+            testNearCacheStats_whenNearCacheDisabled();
+        }
+    }
+
+    // throws UnsupportedOperationException
+    private void testNearCacheStats_whenNearCacheDisabled() {
+        ICache<Integer, String> cache = createCache();
+        CacheStatistics stats = cache.getLocalCacheStatistics();
+
+        stats.getNearCacheStatistics();
+    }
+
+    private void testNearCacheStats_whenNearCacheEnabled() {
         String cacheName = randomName();
         CacheConfig cacheConfig = createCacheConfig();
         cacheConfig.setName(cacheName);
@@ -114,5 +163,4 @@ public class ClientCacheStatsTest extends CacheStatsTest {
 
         assertNotNull(stats.getNearCacheStatistics());
     }
-
 }
