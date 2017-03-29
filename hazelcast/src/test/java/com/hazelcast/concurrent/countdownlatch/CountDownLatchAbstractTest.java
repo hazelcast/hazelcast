@@ -164,7 +164,7 @@ public abstract class CountDownLatchAbstractTest extends HazelcastTestSupport {
     public static void assertOpenEventually(ICountDownLatch latch) {
         try {
             boolean completed = latch.await(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
-            assertTrue(format("CountDownLatch failed to complete within %d seconds , count left: %d", ASSERT_TRUE_EVENTUALLY_TIMEOUT,
+            assertTrue(format("CountDownLatch failed to complete within %d seconds, count left: %d", ASSERT_TRUE_EVENTUALLY_TIMEOUT,
                     latch.getCount()), completed);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

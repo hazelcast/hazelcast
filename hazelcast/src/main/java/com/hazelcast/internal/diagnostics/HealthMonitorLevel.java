@@ -36,7 +36,7 @@ public enum HealthMonitorLevel {
     SILENT,
 
     /**
-     * Does not check threshold , always prints.
+     * Does not check threshold, always prints.
      */
     NOISY
 }

@@ -171,7 +171,7 @@ public final class SimpleFunctionalMapTest {
                 sb.append("\n");
                 total += value.get();
             }
-            sb.append("Operations per Second : " + total / STATS_SECONDS + " \n");
+            sb.append("Operations per Second: " + total / STATS_SECONDS + " \n");
             return sb.toString();
         }
 

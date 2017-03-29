@@ -533,7 +533,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     private SerializerAdapter lookupGlobalSerializer(Class type) {
         SerializerAdapter serializer = global.get();
         if (serializer != null) {
-            logger.fine("Registering global serializer for : " + type.getName());
+            logger.fine("Registering global serializer for: " + type.getName());
             safeRegister(type, serializer);
         }
         return serializer;
@@ -542,16 +542,16 @@ public abstract class AbstractSerializationService implements InternalSerializat
     private SerializerAdapter lookupJavaSerializer(Class type) {
         if (Externalizable.class.isAssignableFrom(type)) {
             if (safeRegister(type, javaExternalizableAdapter) && !Throwable.class.isAssignableFrom(type)) {
-                logger.info("Performance Hint: Serialization service will use java.io.Externalizable for : " + type.getName()
-                        + " . Please consider using a faster serialization option such as DataSerializable. ");
+                logger.info("Performance Hint: Serialization service will use java.io.Externalizable for: " + type.getName()
+                        + ". Please consider using a faster serialization option such as DataSerializable.");
             }
             return javaExternalizableAdapter;
         }
 
         if (Serializable.class.isAssignableFrom(type)) {
             if (safeRegister(type, javaSerializerAdapter) && !Throwable.class.isAssignableFrom(type)) {
-                logger.info("Performance Hint: Serialization service will use java.io.Serializable for : " + type.getName()
-                        + " . Please consider using a faster serialization option such as DataSerializable. ");
+                logger.info("Performance Hint: Serialization service will use java.io.Serializable for: " + type.getName()
+                        + ". Please consider using a faster serialization option such as DataSerializable.");
             }
             return javaSerializerAdapter;
         }

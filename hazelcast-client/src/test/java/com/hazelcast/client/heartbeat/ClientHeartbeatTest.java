@@ -319,7 +319,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
             @Override
             public void stateChanged(LifecycleEvent event) {
                 stateChangeCount.incrementAndGet();
-                Logger.getLogger(this.getClass()).info("state event : " + event);
+                Logger.getLogger(this.getClass()).info("state event: " + event);
                 if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED == event.getState()) {
                     connectedLatch.countDown();
                 }

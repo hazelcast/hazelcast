@@ -22,7 +22,7 @@ import java.io.IOException;
 
 /**
  * Provides a mean of writing portable fields to a binary in form of java primitives
- * arrays of java primitives , nested portable fields and array of portable fields.
+ * arrays of java primitives, nested portable fields and array of portable fields.
  */
 public interface PortableWriter {
 

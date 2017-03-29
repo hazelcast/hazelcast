@@ -538,8 +538,8 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
 
     private String getAssertMessage(MigrationInfo migration, TestMigrationAwareService service) {
         return migration + " -> BeforeEvents: " + service.getBeforeEvents()
-                + " , CommitEvents: " + service.getCommitEvents()
-                + " , RollbackEvents: " + service.getRollbackEvents();
+                + ", CommitEvents: " + service.getCommitEvents()
+                + ", RollbackEvents: " + service.getRollbackEvents();
     }
 
     private void assertSourcePartitionMigrationEvent(String msg, PartitionMigrationEvent event, MigrationInfo migration) {

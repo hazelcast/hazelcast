@@ -849,7 +849,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         while (it.hasNext()) {
             count++;
             Entry entry = (Entry) it.next();
-            println(entry.getKey() + " : " + entry.getValue());
+            println(entry.getKey() + ": " + entry.getValue());
         }
         println("Total " + count);
     }
@@ -897,7 +897,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         while (it.hasNext()) {
             count++;
             Entry entry = (Entry) it.next();
-            println(entry.getKey() + " : " + entry.getValue());
+            println(entry.getKey() + ": " + entry.getValue());
         }
         println("Total " + count);
     }
@@ -1124,7 +1124,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         } else if (iteratorStr.startsWith("l.")) {
             result = getList().contains(data);
         }
-        println("Contains : " + result);
+        println("Contains: " + result);
     }
 
     protected void handleSize(String[] args) {

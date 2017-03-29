@@ -52,7 +52,7 @@ public class LikePredicate extends AbstractPredicate {
         } else {
             if (pattern == null) {
                 // we quote the input string then escape then replace % and _
-                // at the end we have a regex pattern look like : \QSOME_STRING\E.*\QSOME_OTHER_STRING\E
+                // at the end we have a regex pattern look like: \QSOME_STRING\E.*\QSOME_OTHER_STRING\E
                 final String quotedExpression = Pattern.quote(expression);
                 String regex = quotedExpression
                         //escaped %

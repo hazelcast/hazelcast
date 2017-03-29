@@ -75,7 +75,7 @@ public final class JavaDefaultSerializers {
                 ds.readExternal(objectInputStream);
                 return ds;
             } catch (final Exception e) {
-                throw new HazelcastSerializationException("Problem while reading Externalizable class : "
+                throw new HazelcastSerializationException("Problem while reading Externalizable class: "
                         + className + ", exception: " + e);
             }
         }

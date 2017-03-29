@@ -134,7 +134,7 @@ import static com.hazelcast.spi.ExecutionService.OFFLOADABLE_EXECUTOR;
  * The reason behind is that the off-loadable backup-processing does not use locking there cannot be any transfer of
  * off-loadable locks from the primary replica to backup replicas.
  *
- * GOTCHA : This operation LOADS missing keys from map-store, in contrast with PartitionWideEntryOperation.
+ * GOTCHA: This operation LOADS missing keys from map-store, in contrast with PartitionWideEntryOperation.
  */
 @SuppressWarnings("checkstyle:methodcount")
 public class EntryOperation extends MutatingKeyBasedMapOperation implements BackupAwareOperation, BlockingOperation {

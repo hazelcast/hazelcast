@@ -105,7 +105,7 @@ public class DefaultNodeExtension implements NodeExtension {
         systemLogger.info("Hazelcast " + buildInfo.getVersion()
                 + " (" + build + ") starting at " + node.getThisAddress());
         systemLogger.info("Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.");
-        systemLogger.info("Configured Hazelcast Serialization version : " + buildInfo.getSerializationVersion());
+        systemLogger.info("Configured Hazelcast Serialization version: " + buildInfo.getSerializationVersion());
     }
 
     @Override

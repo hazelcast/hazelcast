@@ -194,7 +194,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
         Object o = txMap.put(itemId, item);
         if (o != null) {
             logger.severe("Transaction reservation item already exists on the backup member."
-                    + " Reservation item id : " + itemId);
+                    + " Reservation item id: " + itemId);
         }
     }
 

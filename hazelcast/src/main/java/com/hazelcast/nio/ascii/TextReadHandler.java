@@ -240,7 +240,7 @@ public class TextReadHandler implements ReadHandler {
             }
         } catch (Throwable t) {
             logger.finest(t);
-            command = new ErrorCommand(ERROR_CLIENT, "Invalid command : " + cmd);
+            command = new ErrorCommand(ERROR_CLIENT, "Invalid command: " + cmd);
         }
     }
 

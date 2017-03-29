@@ -116,7 +116,7 @@ public class SimpleMapTestFromClient {
                                 + client.getCluster().getMembers().size());
                         Stats currentStats = stats.getAndReset();
                         System.out.println(currentStats);
-                        System.out.println("Operations per Second : " + currentStats.total()
+                        System.out.println("Operations per Second: " + currentStats.total()
                                 / STATS_SECONDS);
                     } catch (Exception e) {
                         e.printStackTrace();

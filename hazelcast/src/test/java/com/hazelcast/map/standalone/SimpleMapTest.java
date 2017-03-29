@@ -222,7 +222,7 @@ public final class SimpleMapTest {
 
             logger.info("total= " + total + ", gets:" + getsNow
                     + ", puts:" + putsNow + ", removes:" + removesNow);
-            logger.info("Operations per Second : " + total / STATS_SECONDS);
+            logger.info("Operations per Second: " + total / STATS_SECONDS);
         }
     }
 

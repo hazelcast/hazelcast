@@ -41,7 +41,7 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
     public void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException {
         final Address owner = partitionService.getPartitionOwner(partitionId);
         if (owner == null) {
-            throw new IOException("Partition does not have owner. partitionId : " + partitionId);
+            throw new IOException("Partition does not have an owner. partitionId: " + partitionId);
         }
         invocation.getClientMessage().setPartitionId(partitionId);
         Connection connection = getOrTriggerConnect(owner);
@@ -52,7 +52,7 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
     public void invokeOnRandomTarget(ClientInvocation invocation) throws IOException {
         final Address randomAddress = getRandomAddress();
         if (randomAddress == null) {
-            throw new IOException("Not address found to invoke ");
+            throw new IOException("No address found to invoke");
         }
         final Connection connection = getOrTriggerConnect(randomAddress);
         send(invocation, (ClientConnection) connection);
@@ -63,7 +63,7 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
             throws IOException {
         final Address owner = partitionService.getPartitionOwner(partitionId);
         if (owner == null) {
-            throw new IOException("Partition does not have owner. partitionId : " + partitionId);
+            throw new IOException("Partition does not have an owner. partitionId: " + partitionId);
         }
         return (ClientConnection) getOrConnect(owner);
     }
@@ -75,7 +75,7 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
             throw new NullPointerException("Target can not be null");
         }
         if (!isMember(target)) {
-            throw new TargetNotMemberException("Target :  " + target + " is not member. ");
+            throw new TargetNotMemberException("Target \"" + target + "\" is not a member.");
         }
         final Connection connection = getOrTriggerConnect(target);
         invokeOnConnection(invocation, (ClientConnection) connection);

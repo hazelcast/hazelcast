@@ -234,7 +234,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
             failedRegsToConnection.add(registrationKey);
         } catch (Exception e) {
             logger.warning("Listener " + registrationKey + " can not be added to a new connection: "
-                    + connection + ", reason : " + e.getMessage());
+                    + connection + ", reason: " + e.getMessage());
         }
     }
 

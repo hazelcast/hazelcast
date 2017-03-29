@@ -410,7 +410,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         if (endpoint == null) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Destroying " + connection + " , but it has end-point set to null "
+                logger.finest("Destroying " + connection + ", but it has end-point set to null "
                         + "-> not removing it from a connection map");
             }
             return;
@@ -457,7 +457,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
                 if (now - connection.lastReadTimeMillis() > heartbeatTimeout) {
                     if (connection.isHeartBeating()) {
-                        logger.warning("Heartbeat failed to connection : " + connection);
+                        logger.warning("Heartbeat failed to connection: " + connection);
                         connection.onHeartbeatFailed();
                         fireHeartbeatStopped(connection);
                     }
@@ -484,7 +484,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     });
                 } else {
                     if (!connection.isHeartBeating()) {
-                        logger.warning("Heartbeat is back to healthy for connection : " + connection);
+                        logger.warning("Heartbeat is back to healthy for connection: " + connection);
                         connection.onHeartbeatResumed();
                         fireHeartbeatResumed(connection);
                     }
@@ -547,7 +547,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                             if (!(correlationIddOfLastAuthentication.get() == response.getCorrelationId())) {
                                 //if not same, client already gave up on this and send another authentication.
                                 onFailure(new AuthenticationException("Owner authentication response from address "
-                                        + target + " is late. Dropping the response. Principal : " + principal));
+                                        + target + " is late. Dropping the response. Principal: " + principal));
                                 return;
                             }
                             connection.setIsAuthenticatedAsOwner();

@@ -115,7 +115,7 @@ public class DefaultClientExtension implements ClientExtension {
             return createClientMapProxyFactory();
         }
 
-        throw new IllegalArgumentException("Proxy factory cannot be created. Unknown service : " + service);
+        throw new IllegalArgumentException("Proxy factory cannot be created. Unknown service: " + service);
     }
 
     private ClientProxyFactory createClientMapProxyFactory() {
