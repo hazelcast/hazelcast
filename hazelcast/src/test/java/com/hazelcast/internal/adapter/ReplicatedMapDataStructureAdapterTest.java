@@ -80,6 +80,17 @@ public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport 
     }
 
     @Test(expected = UnsupportedOperationException.class)
+    public void testPutIfAbsent() {
+        adapter.putIfAbsent(23, "value");
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testPutIfAbsentAsync() throws Exception {
+        adapter.putIfAbsentAsync(23, "value");
+    }
+
+
+    @Test(expected = UnsupportedOperationException.class)
     public void testReplace() {
         map.put(42, "oldValue");
 

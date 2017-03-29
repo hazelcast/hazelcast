@@ -47,6 +47,16 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
+    public boolean putIfAbsent(K key, V value) {
+        return map.putIfAbsent(key, value) == null;
+    }
+
+    @Override
+    public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
+        return new SimpleCompletedFuture<Boolean>(map.putIfAbsent(key, value) == null);
+    }
+
+    @Override
     public V replace(K key, V newValue) {
         return map.replace(key, newValue);
     }

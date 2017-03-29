@@ -64,6 +64,22 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
+    public boolean putIfAbsent(K key, V value) {
+        begin();
+        V oldValue = transactionalMap.putIfAbsent(key, value);
+        commit();
+        return oldValue == null;
+    }
+
+    @Override
+    public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
+        begin();
+        V oldValue = transactionalMap.putIfAbsent(key, value);
+        commit();
+        return new SimpleCompletedFuture<Boolean>(oldValue == null);
+    }
+
+    @Override
     public V replace(K key, V newValue) {
         begin();
         V oldValue = transactionalMap.replace(key, newValue);

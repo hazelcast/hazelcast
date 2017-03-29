@@ -88,6 +88,28 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testPutIfAbsent() {
+        cache.put(42, "oldValue");
+
+        assertTrue(adapter.putIfAbsent(23, "newValue"));
+        assertFalse(adapter.putIfAbsent(42, "newValue"));
+
+        assertEquals("newValue", cache.get(23));
+        assertEquals("oldValue", cache.get(42));
+    }
+
+    @Test
+    public void testPutIfAbsentAsync() throws Exception {
+        cache.put(42, "oldValue");
+
+        assertTrue(adapter.putIfAbsentAsync(23, "newValue").get());
+        assertFalse(adapter.putIfAbsentAsync(42, "newValue").get());
+
+        assertEquals("newValue", cache.get(23));
+        assertEquals("oldValue", cache.get(42));
+    }
+
+    @Test
     public void testReplace() {
         cache.put(42, "oldValue");
 

@@ -47,6 +47,16 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     }
 
     @Override
+    public boolean putIfAbsent(K key, V value) {
+        return cache.putIfAbsent(key, value);
+    }
+
+    @Override
+    public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
+        return cache.putIfAbsentAsync(key, value);
+    }
+
+    @Override
     public V replace(K key, V newValue) {
         return cache.getAndReplace(key, newValue);
     }

@@ -33,6 +33,10 @@ public interface DataStructureAdapter<K, V> {
 
     V put(K key, V value);
 
+    boolean putIfAbsent(K key, V value);
+
+    ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value);
+
     V replace(K key, V newValue);
 
     boolean replace(K key, V oldValue, V newValue);

@@ -48,6 +48,16 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     }
 
     @Override
+    public boolean putIfAbsent(K key, V value) {
+        throw new UnsupportedOperationException("ReplicatedMap doesn't have putIfAbsent() methods");
+    }
+
+    @Override
+    public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
+        throw new UnsupportedOperationException("ReplicatedMap doesn't have putIfAbsent() methods");
+    }
+
+    @Override
     public V replace(K key, V newValue) {
         throw new UnsupportedOperationException("ReplicatedMap doesn't have replace() methods");
     }

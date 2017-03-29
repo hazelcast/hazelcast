@@ -82,6 +82,28 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
     }
 
     @Test
+    public void testPutIfAbsent() {
+        map.put(42, "oldValue");
+
+        assertTrue(adapter.putIfAbsent(23, "newValue"));
+        assertFalse(adapter.putIfAbsent(42, "newValue"));
+
+        assertEquals("newValue", map.get(23));
+        assertEquals("oldValue", map.get(42));
+    }
+
+    @Test
+    public void testPutIfAbsentAsync() throws Exception {
+        map.put(42, "oldValue");
+
+        assertTrue(adapter.putIfAbsentAsync(23, "newValue").get());
+        assertFalse(adapter.putIfAbsentAsync(42, "newValue").get());
+
+        assertEquals("newValue", map.get(23));
+        assertEquals("oldValue", map.get(42));
+    }
+
+    @Test
     public void testReplace() {
         map.put(42, "oldValue");
 
