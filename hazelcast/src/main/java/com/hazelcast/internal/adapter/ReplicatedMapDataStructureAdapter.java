@@ -48,23 +48,27 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     }
 
     @Override
+    @MethodNotAvailable
     public boolean putIfAbsent(K key, V value) {
-        throw new UnsupportedOperationException("ReplicatedMap doesn't have putIfAbsent() methods");
+        throw new MethodNotAvailableException();
     }
 
     @Override
+    @MethodNotAvailable
     public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
-        throw new UnsupportedOperationException("ReplicatedMap doesn't have putIfAbsent() methods");
+        throw new MethodNotAvailableException();
     }
 
     @Override
+    @MethodNotAvailable
     public V replace(K key, V newValue) {
-        throw new UnsupportedOperationException("ReplicatedMap doesn't have replace() methods");
+        throw new MethodNotAvailableException();
     }
 
     @Override
+    @MethodNotAvailable
     public boolean replace(K key, V oldValue, V newValue) {
-        throw new UnsupportedOperationException("ReplicatedMap doesn't have replace() methods");
+        throw new MethodNotAvailableException();
     }
 
     @Override
@@ -73,8 +77,9 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     }
 
     @Override
+    @MethodNotAvailable
     public ICompletableFuture<V> getAsync(K key) {
-        return new SimpleCompletedFuture<V>(map.get(key));
+        throw new MethodNotAvailableException();
     }
 
     @Override
@@ -91,14 +96,14 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
         return result;
     }
 
-    @Override
     public void remove(K key) {
         map.remove(key);
     }
 
     @Override
+    @MethodNotAvailable
     public ICompletableFuture<V> removeAsync(K key) {
-        return new SimpleCompletedFuture<V>(map.remove(key));
+        throw new MethodNotAvailableException();
     }
 
     @Override

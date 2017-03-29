@@ -30,7 +30,6 @@ import org.junit.runner.RunWith;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -79,29 +78,24 @@ public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport 
         assertEquals("newValue", map.get(42));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test(expected = MethodNotAvailableException.class)
     public void testPutIfAbsent() {
         adapter.putIfAbsent(23, "value");
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void testPutIfAbsentAsync() throws Exception {
+    @Test(expected = MethodNotAvailableException.class)
+    public void testPutIfAbsentAsync() {
         adapter.putIfAbsentAsync(23, "value");
     }
 
-
-    @Test(expected = UnsupportedOperationException.class)
+    @Test(expected = MethodNotAvailableException.class)
     public void testReplace() {
-        map.put(42, "oldValue");
-
-        adapter.replace(42, "newValue");
+        adapter.replace(23, "value");
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test(expected = MethodNotAvailableException.class)
     public void testReplaceWithOldValue() {
-        map.put(42, "oldValue");
-
-        adapter.replace(42, "oldValue", "newValue");
+        adapter.replace(23, "oldValue", "newValue");
     }
 
     @Test
@@ -112,13 +106,9 @@ public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport 
         assertEquals("foobar", result);
     }
 
-    @Test
-    public void testGetAsync() throws Exception {
-        map.put(42, "foobar");
-
-        Future<String> future = adapter.getAsync(42);
-        String result = future.get();
-        assertEquals("foobar", result);
+    @Test(expected = MethodNotAvailableException.class)
+    public void testGetAsync() {
+        adapter.getAsync(42);
     }
 
     @Test
@@ -157,15 +147,9 @@ public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport 
         assertFalse(map.containsKey(23));
     }
 
-    @Test
-    public void testRemoveAsync() throws Exception {
-        map.put(23, "value-23");
-        assertTrue(map.containsKey(23));
-
-        String value = adapter.removeAsync(23).get();
-        assertEquals("value-23", value);
-
-        assertFalse(map.containsKey(23));
+    @Test(expected = MethodNotAvailableException.class)
+    public void testRemoveAsync() {
+        adapter.removeAsync(23);
     }
 
     @Test

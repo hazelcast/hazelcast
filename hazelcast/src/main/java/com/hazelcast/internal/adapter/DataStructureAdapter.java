@@ -56,4 +56,54 @@ public interface DataStructureAdapter<K, V> {
     LocalMapStats getLocalMapStats();
 
     boolean containsKey(K key);
+
+    /**
+     * Contains all methods of {@link DataStructureAdapter}.
+     */
+    enum DataStructureMethods implements DataStructureAdapterMethod {
+        CLEAR("clear"),
+        SET("set", Object.class, Object.class),
+        PUT("put", Object.class, Object.class),
+        PUT_IF_ABSENT("putIfAbsent", Object.class, Object.class),
+        PUT_IF_ABSENT_ASYNC("putIfAbsentAsync", Object.class, Object.class),
+        REPLACE("replace", Object.class, Object.class),
+        REPLACE_WITH_OLD_VALUE("replace", Object.class, Object.class, Object.class),
+        GET("get", Object.class),
+        GET_ASYNC("getAsync", Object.class),
+        PUT_ALL("putAll", Map.class),
+        GET_ALL("getAll", Set.class),
+        REMOVE("remove", Object.class),
+        REMOVE_ASYNC("removeAsync", Object.class),
+        GET_LOCAL_MAP_STATS("getLocalMapStats"),
+        CONTAINS_KEY("containsKey", Object.class);
+
+        private final String methodName;
+        private final Class<?>[] parameterTypes;
+
+        DataStructureMethods(String methodName, Class<?>... parameterTypes) {
+            this.methodName = methodName;
+            this.parameterTypes = parameterTypes;
+        }
+
+        @Override
+        public String getMethodName() {
+            return methodName;
+        }
+
+        @Override
+        public Class<?>[] getParameterTypes() {
+            return parameterTypes;
+        }
+
+        @Override
+        public String getParameterTypeString() {
+            StringBuilder sb = new StringBuilder();
+            String delimiter = "";
+            for (Class<?> parameterType : parameterTypes) {
+                sb.append(delimiter).append(parameterType.getSimpleName());
+                delimiter = ", ";
+            }
+            return sb.toString();
+        }
+    }
 }

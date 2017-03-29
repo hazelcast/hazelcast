@@ -90,15 +90,9 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
         assertEquals("oldValue", map.get(42));
     }
 
-    @Test
-    public void testPutIfAbsentAsync() throws Exception {
-        map.put(42, "oldValue");
-
-        assertTrue(adapter.putIfAbsentAsync(23, "newValue").get());
-        assertFalse(adapter.putIfAbsentAsync(42, "newValue").get());
-
-        assertEquals("newValue", map.get(23));
-        assertEquals("oldValue", map.get(42));
+    @Test(expected = MethodNotAvailableException.class)
+    public void testPutIfAbsentAsync() {
+        adapter.putIfAbsentAsync(23, "value");
     }
 
     @Test

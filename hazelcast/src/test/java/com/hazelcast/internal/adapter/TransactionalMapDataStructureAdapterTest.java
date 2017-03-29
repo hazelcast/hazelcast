@@ -30,7 +30,6 @@ import org.junit.runner.RunWith;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -92,15 +91,9 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
         assertEquals("oldValue", map.get(42));
     }
 
-    @Test
-    public void testPutIfAbsentAsync() throws Exception {
-        map.put(42, "oldValue");
-
-        assertTrue(adapter.putIfAbsentAsync(23, "newValue").get());
-        assertFalse(adapter.putIfAbsentAsync(42, "newValue").get());
-
-        assertEquals("newValue", map.get(23));
-        assertEquals("oldValue", map.get(42));
+    @Test(expected = MethodNotAvailableException.class)
+    public void testPutIfAbsentAsync()  {
+        adapter.putIfAbsentAsync(23, "newValue");
     }
 
     @Test
@@ -131,13 +124,9 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
         assertEquals("foobar", result);
     }
 
-    @Test
-    public void testGetAsync() throws Exception {
-        map.put(42, "foobar");
-
-        Future<String> future = adapter.getAsync(42);
-        String result = future.get();
-        assertEquals("foobar", result);
+    @Test(expected = MethodNotAvailableException.class)
+    public void testGetAsync() {
+        adapter.getAsync(42);
     }
 
     @Test
@@ -176,15 +165,9 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
         assertFalse(map.containsKey(23));
     }
 
-    @Test
-    public void testRemoveAsync() throws Exception {
-        map.put(23, "value-23");
-        assertTrue(map.containsKey(23));
-
-        String value = adapter.removeAsync(23).get();
-        assertEquals("value-23", value);
-
-        assertFalse(map.containsKey(23));
+    @Test(expected = MethodNotAvailableException.class)
+    public void testRemoveAsync() {
+        adapter.removeAsync(23);
     }
 
     @Test
