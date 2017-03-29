@@ -22,6 +22,10 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.adapter.DataStructureAdapter;
+import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
+import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
+import com.hazelcast.internal.adapter.MethodAvailableMatcher;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.monitor.NearCacheStats;
@@ -38,6 +42,7 @@ import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UP
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeThat;
 
 /**
  * Provides utility methods for unified Near Cache tests.
@@ -122,6 +127,16 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
 
         return service.getMapServiceContext().getMapNearCacheManager();
+    }
+
+    /**
+     * Assumes that the given {@link DataStructureAdapter} implements a specified {@link DataStructureMethods}.
+     *
+     * @param adapter the {@link DataStructureAdapter} to test
+     * @param method  {@link DataStructureAdapterMethod} to search for
+     */
+    public static void assumeThatMethodIsAvailable(DataStructureAdapter adapter, DataStructureAdapterMethod method) {
+        assumeThat(adapter, new MethodAvailableMatcher(method));
     }
 
     /**
