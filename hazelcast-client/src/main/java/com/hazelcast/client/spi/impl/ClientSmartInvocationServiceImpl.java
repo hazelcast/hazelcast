@@ -75,7 +75,7 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
             throw new NullPointerException("Target can not be null");
         }
         if (!isMember(target)) {
-            throw new TargetNotMemberException("Target \"" + target + "\" is not a member.");
+            throw new TargetNotMemberException("Target '" + target + "' is not a member.");
         }
         final Connection connection = getOrTriggerConnect(target);
         invokeOnConnection(invocation, (ClientConnection) connection);
