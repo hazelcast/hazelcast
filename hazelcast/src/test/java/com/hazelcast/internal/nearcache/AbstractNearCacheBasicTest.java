@@ -328,15 +328,20 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      */
     @Test
     public void testGetAsyncPopulatesNearCache() throws Exception {
-        NearCacheTestContext<Integer, String, NK, NV> context = createContext();
+        final NearCacheTestContext<Integer, String, NK, NV> context = createContext();
 
         populateMap(context);
         populateNearCacheAsync(context);
 
+        // Near Cache is populated lazily by a callback. For this reason, when getAsync's future.get is returned,
+        // it is not guaranteed that Near Cache is also populated. Population can be deferred at a later time.
+        // So Near Cache size can see expected value eventually.
+        assertNearCacheSizeEventually(context, DEFAULT_RECORD_COUNT);
+
         // generate Near Cache hits
         populateNearCacheAsync(context);
 
-        assertNearCacheSize(context, DEFAULT_RECORD_COUNT);
+        assertNearCacheStats(context, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT);
     }
 
     /**

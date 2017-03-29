@@ -32,6 +32,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.InternalCompletableFuture;
 
 import javax.cache.CacheException;
 import javax.cache.expiry.ExpiryPolicy;
@@ -121,7 +122,8 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         return getAsyncInternal(dataKey, expiryPolicy, callback);
     }
 
-    protected ClientDelegatingFuture<V> getAsyncInternal(Data dataKey, ExpiryPolicy expiryPolicy, ExecutionCallback<V> callback) {
+    protected InternalCompletableFuture<V> getAsyncInternal(Data dataKey, ExpiryPolicy expiryPolicy,
+                                                            ExecutionCallback<V> callback) {
         ClientDelegatingFuture<V> future = getInternal(dataKey, expiryPolicy, true);
         addCallback(future, callback);
         return future;

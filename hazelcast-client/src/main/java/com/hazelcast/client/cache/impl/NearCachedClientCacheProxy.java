@@ -48,6 +48,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.util.executor.CompletedFuture;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CompletionListener;
@@ -142,12 +144,17 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
     }
 
     @Override
-    protected ClientDelegatingFuture getAsyncInternal(Data dataKey, ExpiryPolicy expiryPolicy, ExecutionCallback callback) {
+    protected InternalCompletableFuture getAsyncInternal(Data dataKey, ExpiryPolicy expiryPolicy, ExecutionCallback callback) {
+        Object value = getCachedValue(dataKey, false);
+        if (value != NOT_CACHED) {
+            return new CompletedFuture(clientContext.getSerializationService(), value,
+                    clientContext.getExecutionService().getUserExecutor());
+        }
+
         try {
             long reservationId = nearCache.tryReserveForUpdate(dataKey);
             GetAsyncCallback getAsyncCallback = new GetAsyncCallback(dataKey, reservationId, callback);
-            ClientDelegatingFuture future = super.getAsyncInternal(dataKey, expiryPolicy, getAsyncCallback);
-            return future;
+            return super.getAsyncInternal(dataKey, expiryPolicy, getAsyncCallback);
         } catch (Throwable t) {
             invalidateNearCache(dataKey);
             throw rethrow(t);
