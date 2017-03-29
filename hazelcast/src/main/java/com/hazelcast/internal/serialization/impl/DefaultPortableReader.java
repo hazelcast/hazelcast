@@ -46,7 +46,7 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
 
     static {
         MultiResult<Object> result = new MultiResult<Object>();
-        result.addNullEmptyTarget();
+        result.addNullOrEmptyTarget();
         NULL_EMPTY_TARGET_MULTIRESULT = new ImmutableMultiResult<Object>(result);
     }
 
@@ -634,7 +634,7 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
                 T read = readSinglePosition(position);
                 result.add(read);
             } else {
-                result.addNullEmptyTarget();
+                result.addNullOrEmptyTarget();
             }
         }
         return result;

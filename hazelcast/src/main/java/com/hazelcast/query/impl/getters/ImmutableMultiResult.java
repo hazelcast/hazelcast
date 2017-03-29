@@ -23,7 +23,7 @@ import java.util.List;
  *
  * @param <T> type of the underlying result store in the MultiResult
  */
-public class ImmutableMultiResult<T> extends MultiResult<T> {
+public final class ImmutableMultiResult<T> extends MultiResult<T> {
 
     private final MultiResult<T> multiResult;
 
@@ -39,7 +39,7 @@ public class ImmutableMultiResult<T> extends MultiResult<T> {
     }
 
 
-    public void addNullEmptyTarget() {
+    public void addNullOrEmptyTarget() {
         throw new UnsupportedOperationException("Can't modify an immutable MultiResult");
     }
 
@@ -57,8 +57,12 @@ public class ImmutableMultiResult<T> extends MultiResult<T> {
         return multiResult.isEmpty();
     }
 
-    public boolean isTargetNullOrEmpty(int index) {
-        return multiResult.isTargetNullOrEmpty(index);
+    public boolean isNullEmptyTarget() {
+        return multiResult.isNullEmptyTarget();
+    }
+
+    public void setNullOrEmptyTarget(boolean nullOrEmptyTarget) {
+        throw new UnsupportedOperationException("Can't modify an immutable MultiResult");
     }
 
 }

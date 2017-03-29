@@ -17,9 +17,7 @@
 package com.hazelcast.query.impl.getters;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Represents multiple results from a single attribute extraction.
@@ -76,13 +74,13 @@ public class MultiResult<T> {
      * Indicates that the result of a multi-result evaluation using [any] operator
      * didn't reach any data since the field where the [any] operator is used was null or empty.
      *
-     * Allows differentiating whether a null in the MultiResult is a null value because the value of the field was null
-     * or whether the null means that the targetObject was null.
+     * Allows differentiating whether there is a null value in the MultiResult
+     * that is a result of a null or empty target in the expression.
      *
      * For query evaluation the difference is not important - and we need to return null in both cases there.
      * For aggregations it makes a difference and we need this context knowledge there.
      */
-    private Set<Integer> nullOrEmptyTargets;
+    private boolean nullOrEmptyTarget;
 
     public MultiResult() {
         this.results = new ArrayList<T>();
@@ -99,13 +97,13 @@ public class MultiResult<T> {
         results.add(result);
     }
 
-
-    public void addNullEmptyTarget() {
-        if (nullOrEmptyTargets == null) {
-            nullOrEmptyTargets = new HashSet<Integer>();
+    public void addNullOrEmptyTarget() {
+        if (!nullOrEmptyTarget) {
+            // we don't want to store more than one null if we reach a null/empty target
+            // it's enough to have one for the query evaluation (it's for null matching)
+            nullOrEmptyTarget = true;
+            results.add(null);
         }
-        nullOrEmptyTargets.add(results.size());
-        results.add(null);
     }
 
     /**
@@ -122,8 +120,12 @@ public class MultiResult<T> {
         return results.isEmpty();
     }
 
-    public boolean isTargetNullOrEmpty(int index) {
-        return nullOrEmptyTargets != null && nullOrEmptyTargets.contains(index);
+    public boolean isNullEmptyTarget() {
+        return nullOrEmptyTarget;
+    }
+
+    public void setNullOrEmptyTarget(boolean nullOrEmptyTarget) {
+        this.nullOrEmptyTarget = nullOrEmptyTarget;
     }
 
 }

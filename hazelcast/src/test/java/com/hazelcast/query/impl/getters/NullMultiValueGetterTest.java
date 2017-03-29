@@ -51,7 +51,7 @@ public class NullMultiValueGetterTest {
         Object value = NullMultiValueGetter.NULL_MULTIVALUE_GETTER.getValue("anything");
 
         assertInstanceOf(MultiResult.class, value);
-        assertTrue(((MultiResult) value).isTargetNullOrEmpty(0));
+        assertTrue(((MultiResult) value).isNullEmptyTarget());
     }
 
 }

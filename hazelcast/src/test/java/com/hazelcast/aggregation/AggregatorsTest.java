@@ -65,7 +65,8 @@ public class AggregatorsTest extends HazelcastTestSupport {
         List<Long> accumulatedCollection = map.aggregate(new TestAggregator("wheelsC[any].tiresC[any]"));
 
         // THEN
-        assertEquals(accumulatedArray, accumulatedCollection);
+        assertThat(accumulatedCollection, containsInAnyOrder(accumulatedArray.toArray()));
+        assertThat(accumulatedArray, containsInAnyOrder(accumulatedCollection.toArray()));
         assertThat(accumulatedArray, containsInAnyOrder(1L, null));
         assertThat(accumulatedArray, hasSize(2));
     }
@@ -82,7 +83,8 @@ public class AggregatorsTest extends HazelcastTestSupport {
         List<Long> accumulatedCollection = map.aggregate(new TestAggregator("wheelsC[any].tiresC[any]"));
 
         // THEN
-        assertEquals(accumulatedArray, accumulatedCollection);
+        assertThat(accumulatedCollection, containsInAnyOrder(accumulatedArray.toArray()));
+        assertThat(accumulatedArray, containsInAnyOrder(accumulatedCollection.toArray()));
         assertThat(accumulatedArray, containsInAnyOrder(1L, 2L));
         assertThat(accumulatedArray, hasSize(2));
     }
@@ -99,7 +101,8 @@ public class AggregatorsTest extends HazelcastTestSupport {
         List<Long> accumulatedCollection = map.aggregate(new TestAggregator("wheelsC[any].tiresC[any]"));
 
         // THEN
-        assertEquals(accumulatedArray, accumulatedCollection);
+        assertThat(accumulatedCollection, containsInAnyOrder(accumulatedArray.toArray()));
+        assertThat(accumulatedArray, containsInAnyOrder(accumulatedCollection.toArray()));
         assertThat(accumulatedArray, containsInAnyOrder(1L, 2L, null, null));
         assertThat(accumulatedArray, hasSize(4));
     }
@@ -116,7 +119,8 @@ public class AggregatorsTest extends HazelcastTestSupport {
         List<Long> accumulatedCollection = map.aggregate(new TestAggregator("wheelsC[any].tiresC[any]"));
 
         // THEN
-        assertEquals(accumulatedArray, accumulatedCollection);
+        assertThat(accumulatedCollection, containsInAnyOrder(accumulatedArray.toArray()));
+        assertThat(accumulatedArray, containsInAnyOrder(accumulatedCollection.toArray()));
         assertThat(accumulatedCollection, hasSize(0));
     }
 

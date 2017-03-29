@@ -23,6 +23,8 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 
 import static com.hazelcast.query.impl.getters.AbstractMultiValueGetter.validateModifier;
+import static com.hazelcast.query.impl.getters.NullGetter.NULL_GETTER;
+import static com.hazelcast.query.impl.getters.NullMultiValueGetter.NULL_MULTIVALUE_GETTER;
 
 public final class GetterFactory {
 
@@ -39,7 +41,7 @@ public final class GetterFactory {
             validateModifier(modifierSuffix);
             Object currentObject = getCurrentObject(object, parentGetter);
             if (currentObject == null) {
-                return NullGetter.NULL_GETTER;
+                return NULL_GETTER;
             }
             if (currentObject instanceof MultiResult) {
                 MultiResult multiResult = (MultiResult) currentObject;
@@ -50,15 +52,15 @@ public final class GetterFactory {
             }
             if (returnType == null) {
                 if (modifierSuffix.equals(ANY_POSTFIX)) {
-                    return NullMultiValueGetter.NULL_MULTIVALUE_GETTER;
+                    return NULL_MULTIVALUE_GETTER;
                 }
-                return NullGetter.NULL_GETTER;
+                return NULL_GETTER;
             }
         } else if (isExtractingFromArray(fieldType, modifierSuffix)) {
             validateModifier(modifierSuffix);
             Object currentObject = getCurrentObject(object, parentGetter);
             if (currentObject == null) {
-                return NullGetter.NULL_GETTER;
+                return NULL_GETTER;
             }
         }
         return new FieldGetter(parentGetter, field, modifierSuffix, returnType);
@@ -87,7 +89,7 @@ public final class GetterFactory {
             validateModifier(modifierSuffix);
             Object currentObject = getCurrentObject(object, parentGetter);
             if (currentObject == null) {
-                return NullGetter.NULL_GETTER;
+                return NULL_GETTER;
             }
             if (currentObject instanceof MultiResult) {
                 MultiResult multiResult = (MultiResult) currentObject;
@@ -98,15 +100,15 @@ public final class GetterFactory {
             }
             if (returnType == null) {
                 if (modifierSuffix.equals(ANY_POSTFIX)) {
-                    return NullMultiValueGetter.NULL_MULTIVALUE_GETTER;
+                    return NULL_MULTIVALUE_GETTER;
                 }
-                return NullGetter.NULL_GETTER;
+                return NULL_GETTER;
             }
         } else if (isExtractingFromArray(methodReturnType, modifierSuffix)) {
             validateModifier(modifierSuffix);
             Object currentObject = getCurrentObject(object, parentGetter);
             if (currentObject == null) {
-                return NullGetter.NULL_GETTER;
+                return NULL_GETTER;
             }
         }
         return new MethodGetter(parentGetter, method, modifierSuffix, returnType);

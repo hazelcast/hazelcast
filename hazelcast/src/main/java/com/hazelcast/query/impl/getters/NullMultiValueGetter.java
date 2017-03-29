@@ -31,7 +31,7 @@ public final class NullMultiValueGetter extends Getter {
 
     static {
         MultiResult<Object> result = new MultiResult<Object>();
-        result.addNullEmptyTarget();
+        result.addNullOrEmptyTarget();
         NULL_MULTIVALUE_RESULT = new ImmutableMultiResult<Object>(result);
     }
 

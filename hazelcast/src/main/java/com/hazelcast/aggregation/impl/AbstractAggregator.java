@@ -55,15 +55,23 @@ public abstract class AbstractAggregator<I, E, R> extends Aggregator<I, R> {
 
     @Override
     public final void accumulate(I entry) {
+
         E extractedValue = extract(entry);
         if (extractedValue instanceof MultiResult) {
+            boolean nullEmptyTargetSkipped = false;
             @SuppressWarnings("unchecked")
             MultiResult<E> multiResult = (MultiResult<E>) extractedValue;
             List<E> results = multiResult.getResults();
             for (int i = 0; i < results.size(); i++) {
-                if (!multiResult.isTargetNullOrEmpty(i)) {
-                    accumulateExtracted(results.get(i));
+                E result = results.get(i);
+                if (result == null && multiResult.isNullEmptyTarget() && !nullEmptyTargetSkipped) {
+                    // if a null or empty target is reached there will be a single null added to the multi-result.
+                    // in aggregators we do not care about this null so we have to skip it.
+                    // if there are more nulls in the multi-result, they have been added as values.
+                    nullEmptyTargetSkipped = true;
+                    continue;
                 }
+                accumulateExtracted(results.get(i));
             }
         } else {
             accumulateExtracted(extractedValue);
