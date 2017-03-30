@@ -169,7 +169,6 @@
                     <include>**/*.xsd</include>
                     <include>**/*.handlers</include>
                     <include>**/*.schemas</include>
-                    <include>**/*.txt</include>
                 </includes>
             </resource>
             <resource>
