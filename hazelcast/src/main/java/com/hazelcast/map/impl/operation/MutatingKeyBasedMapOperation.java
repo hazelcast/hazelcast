@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -80,12 +79,6 @@ public abstract class MutatingKeyBasedMapOperation extends MapOperation
     protected boolean noOp(Map.Entry entry, Object oldValue) {
         final LazyMapEntry mapEntrySimple = (LazyMapEntry) entry;
         return !mapEntrySimple.isModified() || (oldValue == null && entry.getValue() == null);
-    }
-
-    protected Map.Entry createMapEntry(Data key, Object value) {
-        InternalSerializationService serializationService
-                = ((InternalSerializationService) getNodeEngine().getSerializationService());
-        return new LazyMapEntry(key, value, serializationService, mapContainer.getExtractors());
     }
 
     protected long getNow() {

@@ -285,8 +285,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int REMOVE_FROM_LOAD_ALL = 134;
     public static final int ENTRY_REMOVING_PROCESSOR = 135;
     public static final int ENTRY_OFFLOADABLE_SET_UNLOCK = 136;
+    public static final int LOCK_AWARE_LAZY_MAP_ENTRY = 137;
 
-    private static final int LEN = ENTRY_OFFLOADABLE_SET_UNLOCK + 1;
+    private static final int LEN = LOCK_AWARE_LAZY_MAP_ENTRY + 1;
 
     @Override
     public int getFactoryId() {
@@ -960,6 +961,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[ENTRY_OFFLOADABLE_SET_UNLOCK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new EntryOffloadableSetUnlockOperation();
+            }
+        };
+        constructors[LOCK_AWARE_LAZY_MAP_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new LockAwareLazyMapEntry();
             }
         };
 
