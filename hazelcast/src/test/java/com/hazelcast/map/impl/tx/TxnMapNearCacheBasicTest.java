@@ -118,6 +118,18 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
 
     @Test
     @Override
+    @Ignore(value = "This test doesn't work with the TransactionalMap due to its limited implementation")
+    public void whenPutIfAbsentIsUsed_thenNearCacheShouldBePopulated_withUpdateOnNearCacheAdapter() {
+    }
+
+    @Test
+    @Override
+    @Ignore(value = "This test doesn't work with the TransactionalMap due to its limited implementation")
+    public void whenPutIfAbsentIsUsed_thenNearCacheShouldBePopulated_withUpdateOnDataAdapter() {
+    }
+
+    @Test
+    @Override
     public void testNearCacheStats() {
         // we cannot use the common test, since the Near Cache support in TransactionalMap is very limited
         NearCacheTestContext<Integer, String, Data, String> context = createContext();
@@ -146,12 +158,6 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     @Override
     @Ignore(value = "This test doesn't work with the TransactionalMap due to its limited implementation")
     public void testNearCacheMemoryCostCalculation_withConcurrentCacheMisses() {
-    }
-
-    @Test
-    @Override
-    @Ignore(value = "This test doesn't work with the TransactionalMap due to its limited implementation")
-    public void testGetAsyncPopulatesNearCache() throws Exception {
     }
 
     @Test

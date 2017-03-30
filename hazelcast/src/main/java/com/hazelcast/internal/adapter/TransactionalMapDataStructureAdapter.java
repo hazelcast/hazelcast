@@ -72,11 +72,9 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
+    @MethodNotAvailable
     public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
-        begin();
-        V oldValue = transactionalMap.putIfAbsent(key, value);
-        commit();
-        return new SimpleCompletedFuture<Boolean>(oldValue == null);
+        throw new MethodNotAvailableException();
     }
 
     @Override
@@ -104,11 +102,9 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
+    @MethodNotAvailable
     public ICompletableFuture<V> getAsync(K key) {
-        begin();
-        V value = transactionalMap.get(key);
-        commit();
-        return new SimpleCompletedFuture<V>(value);
+        throw new MethodNotAvailableException();
     }
 
     @Override
@@ -139,11 +135,9 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
+    @MethodNotAvailable
     public ICompletableFuture<V> removeAsync(K key) {
-        begin();
-        V value = transactionalMap.remove(key);
-        commit();
-        return new SimpleCompletedFuture<V>(value);
+        throw new MethodNotAvailableException();
     }
 
     @Override
