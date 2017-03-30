@@ -31,7 +31,7 @@ import static com.hazelcast.jet.impl.SerializationConstants.VERTEX;
  * A Java Service Provider hook for Hazelcast's Identified Data Serializable
  * mechanism.
  */
-final class JetDataSerializerHook implements DataSerializerHook {
+public final class JetDataSerializerHook implements DataSerializerHook {
 
     @Override
     public int getFactoryId() {
