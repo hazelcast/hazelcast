@@ -82,7 +82,6 @@ public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSe
         return NOT_AVAILABLE;
     }
 
-
     @Override
     public long getHits() {
         return hits;
@@ -105,7 +104,6 @@ public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSe
     public long getLastStoredTime() {
         return NOT_AVAILABLE;
     }
-
 
     @Override
     public long getLastUpdateTime() {
@@ -161,7 +159,6 @@ public class ReplicatedMapEntryView<K, V> implements EntryView, IdentifiedDataSe
     public int getId() {
         return ReplicatedMapDataSerializerHook.ENTRY_VIEW;
     }
-
 
     @Override
     public String toString() {

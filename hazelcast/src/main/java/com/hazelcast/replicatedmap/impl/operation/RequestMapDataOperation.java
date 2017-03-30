@@ -77,8 +77,8 @@ public class RequestMapDataOperation extends AbstractSerializableOperation {
         op.setValidateTarget(false);
         OperationService operationService = getNodeEngine().getOperationService();
         operationService.createInvocationBuilder(SERVICE_NAME, op, callerAddress)
-                        .setTryCount(INVOCATION_TRY_COUNT)
-                        .invoke();
+                .setTryCount(INVOCATION_TRY_COUNT)
+                .invoke();
     }
 
     private Set<RecordMigrationInfo> getRecordSet(ReplicatedRecordStore store) {

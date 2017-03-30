@@ -48,6 +48,7 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME
  * Contains split-brain handling logic for {@link com.hazelcast.core.ReplicatedMap}
  */
 public class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerService {
+
     private final ReplicatedMapService service;
     private final MergePolicyProvider mergePolicyProvider;
     private final NodeEngine nodeEngine;
@@ -84,10 +85,8 @@ public class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerS
                 store.reset();
             }
         }
-
         return new Merger(recordMap);
     }
-
 
     private class Merger implements Runnable {
 
@@ -144,7 +143,6 @@ public class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerS
                 Thread.currentThread().interrupt();
                 logger.warning("Interrupted while waiting replicated map merge operation...");
             }
-
         }
 
         private ReplicatedMapEntryView createEntryView(ReplicatedRecord record) {

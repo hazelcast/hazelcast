@@ -42,6 +42,4 @@ public class DataReplicatedRecordStore extends AbstractReplicatedRecordStore<Dat
     public Object marshall(Object object) {
         return nodeEngine.toData(object);
     }
-
-
 }

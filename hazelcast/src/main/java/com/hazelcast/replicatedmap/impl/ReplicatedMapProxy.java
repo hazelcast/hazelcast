@@ -415,7 +415,6 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         return getClass().getSimpleName() + " -> " + name;
     }
 
-
     public LocalReplicatedMapStats getReplicatedMapStats() {
         return service.createReplicatedMapStats(name);
     }

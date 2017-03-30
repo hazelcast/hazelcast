@@ -22,8 +22,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-class ValuesIteratorFactory<K, V>
-        implements IteratorFactory<K, V, V> {
+class ValuesIteratorFactory<K, V> implements IteratorFactory<K, V, V> {
 
     private final ReplicatedRecordStore recordStore;
 
@@ -36,8 +35,7 @@ class ValuesIteratorFactory<K, V>
         return new ValuesIterator(iterator);
     }
 
-    private final class ValuesIterator
-            implements Iterator<V> {
+    private final class ValuesIterator implements Iterator<V> {
 
         private final Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator;
 
@@ -107,5 +105,4 @@ class ValuesIteratorFactory<K, V>
             return entry;
         }
     }
-
 }

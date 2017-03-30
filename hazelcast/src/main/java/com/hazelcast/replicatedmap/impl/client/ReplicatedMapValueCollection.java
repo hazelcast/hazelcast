@@ -73,5 +73,4 @@ public class ReplicatedMapValueCollection implements Portable {
     public int getClassId() {
         return ReplicatedMapPortableHook.VALUES_COLLECTION;
     }
-
 }

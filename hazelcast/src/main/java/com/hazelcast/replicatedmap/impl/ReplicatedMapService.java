@@ -216,7 +216,6 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         return stats;
     }
 
-
     @Override
     public DistributedObject createDistributedObject(String objectName) {
         if (config.isLiteMember()) {
@@ -377,5 +376,4 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         }
         return mapStats;
     }
-
 }

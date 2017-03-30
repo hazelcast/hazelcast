@@ -42,5 +42,4 @@ public interface ReplicatedMapMergePolicy extends Serializable {
      * @return final value of the entry. If returns null, then the entry will be removed.
      */
     Object merge(String mapName, ReplicatedMapEntryView mergingEntry, ReplicatedMapEntryView existingEntry);
-
 }

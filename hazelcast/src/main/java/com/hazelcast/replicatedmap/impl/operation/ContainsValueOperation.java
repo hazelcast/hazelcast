@@ -31,7 +31,6 @@ public class ContainsValueOperation extends AbstractSerializableOperation {
     private Data value;
     private transient boolean response;
 
-
     public ContainsValueOperation() {
     }
 

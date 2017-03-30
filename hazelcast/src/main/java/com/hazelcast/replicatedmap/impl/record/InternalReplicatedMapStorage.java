@@ -111,5 +111,4 @@ public class InternalReplicatedMapStorage<K, V> {
     public boolean isStale(long version) {
         return stale || version > this.version;
     }
-
 }

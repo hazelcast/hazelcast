@@ -28,7 +28,6 @@ import java.util.Collection;
 
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.INVOCATION_TRY_COUNT;
 
-
 public abstract class AbstractReplicatedMapOperation extends AbstractSerializableOperation {
 
     protected String name;
@@ -36,7 +35,6 @@ public abstract class AbstractReplicatedMapOperation extends AbstractSerializabl
     protected Data value;
     protected long ttl;
     protected transient VersionResponsePair response;
-
 
     protected void sendReplicationOperation(final boolean isRemove) {
         final OperationService operationService = getNodeEngine().getOperationService();

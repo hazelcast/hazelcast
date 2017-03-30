@@ -82,5 +82,4 @@ public class ResultSet<K, V> extends AbstractSet<Map.Entry<K, V>> {
             throw new UnsupportedOperationException();
         }
     }
-
 }

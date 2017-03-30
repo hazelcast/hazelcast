@@ -164,5 +164,4 @@ public class ReplicationOperation extends AbstractSerializableOperation {
     public int getId() {
         return ReplicatedMapDataSerializerHook.REPLICATION;
     }
-
 }

@@ -40,5 +40,4 @@ public class ObjectReplicatedRecordStorage<K, V> extends AbstractReplicatedRecor
     public Object marshall(Object key) {
         return nodeEngine.toObject(key);
     }
-
 }

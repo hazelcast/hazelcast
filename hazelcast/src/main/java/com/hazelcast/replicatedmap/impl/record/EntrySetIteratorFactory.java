@@ -109,5 +109,4 @@ class EntrySetIteratorFactory<K, V> implements IteratorFactory<K, V, Map.Entry<K
             return entry;
         }
     }
-
 }

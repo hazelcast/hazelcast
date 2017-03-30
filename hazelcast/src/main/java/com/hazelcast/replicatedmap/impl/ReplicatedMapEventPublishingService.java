@@ -56,6 +56,7 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME
  * Dispatches published events on replicated map to corresponding listeners.
  */
 public class ReplicatedMapEventPublishingService implements EventPublishingService {
+
     private final ReplicatedMapService replicatedMapService;
     private final NodeEngine nodeEngine;
     private final Config config;
@@ -207,6 +208,4 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
         }
         return filter == null || filter.eval(queryEntry != null ? queryEntry : key);
     }
-
-
 }

@@ -39,5 +39,4 @@ public class ReplicatedQueryEventFilter extends ReplicatedEntryEventFilter {
         final Data keyData = entry.getKeyData();
         return (key == null || key.equals(keyData)) && predicate.apply((Map.Entry) arg);
     }
-
 }

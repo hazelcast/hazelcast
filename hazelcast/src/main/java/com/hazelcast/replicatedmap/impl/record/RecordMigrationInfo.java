@@ -37,7 +37,6 @@ public class RecordMigrationInfo implements IdentifiedDataSerializable {
     public RecordMigrationInfo() {
     }
 
-
     public RecordMigrationInfo(Data key, Data value, long ttl) {
         this.key = key;
         this.value = value;

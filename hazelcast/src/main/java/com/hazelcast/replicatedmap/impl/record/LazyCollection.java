@@ -25,8 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
-class LazyCollection<K, V>
-        implements Collection<V> {
+class LazyCollection<K, V> implements Collection<V> {
 
     private final InternalReplicatedMapStorage<K, V> storage;
     private final IteratorFactory<K, V, V> iteratorFactory;

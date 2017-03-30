@@ -74,5 +74,4 @@ public class ReplicatedMapKeys implements Portable {
     public int getClassId() {
         return ReplicatedMapPortableHook.MAP_KEY_SET;
     }
-
 }

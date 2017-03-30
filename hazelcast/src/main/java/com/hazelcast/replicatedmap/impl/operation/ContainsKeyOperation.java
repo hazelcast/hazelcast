@@ -30,7 +30,6 @@ public class ContainsKeyOperation extends AbstractSerializableOperation {
     private Data key;
     private transient boolean response;
 
-
     public ContainsKeyOperation() {
     }
 

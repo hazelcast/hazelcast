@@ -106,5 +106,4 @@ public class ReplicatedMapPortableEntryEvent implements Portable {
     public int getClassId() {
         return ReplicatedMapPortableHook.MAP_ENTRY_EVENT;
     }
-
 }

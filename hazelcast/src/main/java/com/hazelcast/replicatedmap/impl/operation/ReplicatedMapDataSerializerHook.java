@@ -264,5 +264,4 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
 
         return new ArrayDataSerializableFactory(constructors);
     }
-
 }

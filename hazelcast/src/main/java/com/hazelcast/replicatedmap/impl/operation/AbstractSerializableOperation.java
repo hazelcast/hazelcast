@@ -24,5 +24,4 @@ public abstract class AbstractSerializableOperation extends Operation implements
     public int getFactoryId() {
         return ReplicatedMapDataSerializerHook.F_ID;
     }
-
 }

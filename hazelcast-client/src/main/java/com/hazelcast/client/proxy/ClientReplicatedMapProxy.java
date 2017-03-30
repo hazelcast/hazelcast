@@ -535,7 +535,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
                     listener.mapCleared(mapEvent);
                     break;
                 default:
-                    throw new IllegalArgumentException("Not a known event type " + eventType);
+                    throw new IllegalArgumentException("Not a known event type: " + eventType);
             }
         }
 

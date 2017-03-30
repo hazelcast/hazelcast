@@ -32,5 +32,4 @@ public class ReplicatedMapCantBeCreatedOnLiteMemberException
     public ReplicatedMapCantBeCreatedOnLiteMemberException(String message) {
         super(message);
     }
-
 }

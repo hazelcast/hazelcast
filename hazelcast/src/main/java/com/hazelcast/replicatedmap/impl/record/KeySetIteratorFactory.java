@@ -105,5 +105,4 @@ class KeySetIteratorFactory<K, V> implements IteratorFactory<K, V, K> {
             return entry;
         }
     }
-
 }

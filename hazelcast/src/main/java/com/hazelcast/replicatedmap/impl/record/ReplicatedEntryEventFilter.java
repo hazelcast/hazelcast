@@ -33,5 +33,4 @@ public class ReplicatedEntryEventFilter implements EventFilter {
     public boolean eval(Object arg) {
         return key == null || key.equals(arg);
     }
-
 }
