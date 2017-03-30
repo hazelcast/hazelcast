@@ -60,7 +60,14 @@
     </repositories>
 
     <properties>
-        <argLine></argLine> <!-- to be filled by JaCoCo -->
+        <argLine> <!-- surefire parameters -->
+            -Xmx2G
+            -Dhazelcast.phone.home.enabled=false
+            -Dhazelcast.mancenter.enabled=false
+            -Dhazelcast.logging.type=log4j
+            -Dhazelcast.test.use.network=false
+            -Djava.net.preferIPv4Stack=true
+        </argLine>
         <main.basedir>${project.basedir}</main.basedir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
@@ -285,13 +292,7 @@
                     <forkCount>0.5C</forkCount>
                     <failIfNoTests>false</failIfNoTests>
                     <argLine>
-                        @{argLine}
-                        -Xmx2G
-                        -Dhazelcast.phone.home.enabled=false
-                        -Dhazelcast.mancenter.enabled=false
-                        -Dhazelcast.logging.type=log4j
-                        -Dhazelcast.test.use.network=false
-                        -Djava.net.preferIPv4Stack=true
+                        ${argLine}
                     </argLine>
                     <excludedGroups>
                         com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest
@@ -421,6 +422,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <testFailureIgnore>true</testFailureIgnore>
+                            <argLine>@{argLine}</argLine>
                         </configuration>
                     </plugin>
                 </plugins>
