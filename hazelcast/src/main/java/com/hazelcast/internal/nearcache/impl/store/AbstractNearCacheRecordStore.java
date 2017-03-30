@@ -459,6 +459,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         R reservedRecord = getOrCreateToReserve(key);
         long reservationId = nextReservationId();
         if (reservedRecord.casRecordState(RESERVED, reservationId)) {
+            nearCacheStats.incrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, reservedRecord));
+            nearCacheStats.incrementOwnedEntryCount();
             return reservationId;
         } else {
             return NOT_RESERVED;
@@ -475,11 +477,12 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
             return reservedRecord;
         }
 
+        nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, reservedRecord));
+
         updateRecordValue(reservedRecord, value);
         reservedRecord.casRecordState(UPDATE_STARTED, READ_PERMITTED);
 
         nearCacheStats.incrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, reservedRecord));
-        nearCacheStats.incrementOwnedEntryCount();
         return reservedRecord;
     }
 
