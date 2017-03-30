@@ -27,6 +27,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.FileNotFoundException;
+import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -118,6 +119,41 @@ public class NearCacheStatsImplTest extends HazelcastTestSupport {
         assertEquals(100d, nearCacheStats.getRatio(), 0.0001);
     }
 
+    @Test
+    public void testConcurrentModification() {
+        int incThreads = 40;
+        int decThreads = 10;
+        int countPerThread = 500;
+
+        CountDownLatch startLatch = new CountDownLatch(1);
+        NearCacheStatsImpl nearCacheStats = new NearCacheStatsImpl();
+
+        Thread[] threads = new Thread[incThreads + decThreads];
+        for (int i = 0; i < incThreads; i++) {
+            threads[i] = new StatsModifierThread(startLatch, nearCacheStats, true, countPerThread);
+            threads[i].start();
+        }
+        for (int i = incThreads; i < incThreads + decThreads; i++) {
+            threads[i] = new StatsModifierThread(startLatch, nearCacheStats, false, countPerThread);
+            threads[i].start();
+        }
+
+        startLatch.countDown();
+        assertJoinable(threads);
+
+        System.out.println(nearCacheStats);
+
+        int incCount = incThreads * countPerThread;
+        int decCount = decThreads * countPerThread;
+        int totalCount = incCount - decCount;
+        assertEquals(totalCount, nearCacheStats.getOwnedEntryCount());
+        assertEquals(totalCount * 23, nearCacheStats.getOwnedEntryMemoryCost());
+        assertEquals(incCount, nearCacheStats.getHits());
+        assertEquals(decCount, nearCacheStats.getMisses());
+        assertEquals(incCount, nearCacheStats.getEvictions());
+        assertEquals(incCount, nearCacheStats.getExpirations());
+    }
+
     private static NearCacheStatsImpl serializeAndDeserializeNearCacheStats(NearCacheStatsImpl original) {
         JsonObject serialized = original.toJson();
 
@@ -146,5 +182,38 @@ public class NearCacheStatsImplTest extends HazelcastTestSupport {
             assertTrue(stats.getLastPersistenceFailure().isEmpty());
         }
         assertNotNull(stats.toString());
+    }
+
+    private static class StatsModifierThread extends Thread {
+
+        private final CountDownLatch startLatch;
+        private final NearCacheStatsImpl nearCacheStats;
+        private final boolean increment;
+        private final int count;
+
+        private StatsModifierThread(CountDownLatch startLatch, NearCacheStatsImpl nearCacheStats, boolean increment, int count) {
+            this.startLatch = startLatch;
+            this.nearCacheStats = nearCacheStats;
+            this.increment = increment;
+            this.count = count;
+        }
+
+        @Override
+        public void run() {
+            assertOpenEventually(startLatch);
+            for (int i = 0; i < count; i++) {
+                if (increment) {
+                    nearCacheStats.incrementOwnedEntryCount();
+                    nearCacheStats.incrementOwnedEntryMemoryCost(23);
+                    nearCacheStats.incrementHits();
+                    nearCacheStats.incrementEvictions();
+                    nearCacheStats.incrementExpirations();
+                } else {
+                    nearCacheStats.decrementOwnedEntryCount();
+                    nearCacheStats.decrementOwnedEntryMemoryCost(23);
+                    nearCacheStats.incrementMisses();
+                }
+            }
+        }
     }
 }
