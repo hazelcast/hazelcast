@@ -113,20 +113,23 @@ public class QueryBounceTest {
         }
     }
 
-    // Thread-safe querying runnable
     public static class QueryRunnable implements Runnable {
 
-        private final IMap map;
+        private final HazelcastInstance hazelcastInstance;
         // query age min-max range, min is randomized, max = min+1000
         private final Random random = new Random();
         private final int numberOfResults = 1000;
+        private IMap map;
 
-        public QueryRunnable(HazelcastInstance hz) {
-            this.map = hz.getMap(TEST_MAP_NAME);
+        public QueryRunnable(HazelcastInstance hazelcastInstance) {
+            this.hazelcastInstance = hazelcastInstance;
         }
 
         @Override
         public void run() {
+            if (map == null) {
+                map = hazelcastInstance.getMap(TEST_MAP_NAME);
+            }
             int min, max;
             min = random.nextInt(COUNT_ENTRIES - numberOfResults);
             max = min + numberOfResults;

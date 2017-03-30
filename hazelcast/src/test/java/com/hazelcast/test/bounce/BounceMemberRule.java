@@ -511,9 +511,9 @@ public class BounceMemberRule implements TestRule {
             try {
                 while (testRunning.get()) {
                     if (bounceTestConfig.isUseTerminate()) {
-                        instances[i].getLifecycleService().terminate();
+                        members.get(i).getLifecycleService().terminate();
                     } else {
-                        instances[i].shutdown();
+                        members.get(i).shutdown();
                     }
                     nextInstance = i % divisor + 1;
                     sleepSeconds(2);
