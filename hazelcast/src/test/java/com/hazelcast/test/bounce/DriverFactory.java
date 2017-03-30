@@ -25,7 +25,8 @@ import com.hazelcast.core.HazelcastInstance;
 public interface DriverFactory {
 
     /**
-     * @return HazelcastInstances to be used in bouncing members test tasks to be executed by given {@code BounceMemberRule}
+     * @return HazelcastInstances to be used in bouncing members test tasks to be executed by given {@code BounceMemberRule}.
+     *          The returned array must have {@link BounceTestConfiguration#driverCount} elements.
      */
     HazelcastInstance[] createTestDrivers(BounceMemberRule rule);
 }

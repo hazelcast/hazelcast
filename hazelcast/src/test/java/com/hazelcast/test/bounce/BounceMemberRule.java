@@ -18,6 +18,8 @@ package com.hazelcast.test.bounce;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.bounce.BounceTestConfiguration.DriverType;
@@ -33,16 +35,20 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static com.hazelcast.nio.ClassLoaderUtil.isClassAvailable;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
-import static com.hazelcast.test.HazelcastTestSupport.spawn;
 import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.ALWAYS_UP_MEMBER;
 import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.CLIENT;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.System.currentTimeMillis;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * JUnit rule for testing behavior of cluster while members bounce (shutdown & startup). Key concepts:
@@ -115,30 +121,36 @@ import static java.lang.System.currentTimeMillis;
  */
 public class BounceMemberRule implements TestRule {
 
+    private static final ILogger LOGGER = Logger.getLogger(BounceMemberRule.class);
+
     private static final int DEFAULT_CLUSTER_SIZE = 6;
     private static final int DEFAULT_DRIVERS_COUNT = 5;
+    // amount of time wait for test task futures to complete after test duration has passed
+    private static final int TEST_TASK_TIMEOUT_SECONDS = 30;
 
     private final BounceTestConfiguration bounceTestConfig;
+    private final AtomicBoolean testRunning = new AtomicBoolean();
+    private final AtomicBoolean testFailed = new AtomicBoolean();
+    private final AtomicReferenceArray<HazelcastInstance> members;
+    private final AtomicReferenceArray<HazelcastInstance> testDrivers;
 
-    private TestHazelcastInstanceFactory factory;
-    private HazelcastInstance[] members;
-    private AtomicBoolean testRunning = new AtomicBoolean();
-    private AtomicBoolean testFailed = new AtomicBoolean();
-    private Future bouncingMembersTask;
+    private volatile TestHazelcastInstanceFactory factory;
 
+    private FutureTask<Runnable> bouncingMembersTask;
     private AtomicInteger driverCounter = new AtomicInteger();
-    private HazelcastInstance[] testDrivers;
     private ExecutorService taskExecutor;
 
     private BounceMemberRule(BounceTestConfiguration bounceTestConfig) {
         this.bounceTestConfig = bounceTestConfig;
+        this.members = new AtomicReferenceArray<HazelcastInstance>(bounceTestConfig.getClusterSize());
+        this.testDrivers = new AtomicReferenceArray<HazelcastInstance>(bounceTestConfig.getDriverCount());
     }
 
     /**
      * @return cluster member that stays up for the duration of the test
      */
     public final HazelcastInstance getSteadyMember() {
-        return members[0];
+        return members.get(0);
     }
 
     /**
@@ -146,7 +158,7 @@ public class BounceMemberRule implements TestRule {
      * rotate and return the next one.
      */
     public HazelcastInstance getNextTestDriver() {
-        return testDrivers[driverCounter.getAndIncrement() % testDrivers.length];
+        return testDrivers.get(driverCounter.getAndIncrement() % testDrivers.length());
     }
 
     /**
@@ -228,16 +240,21 @@ public class BounceMemberRule implements TestRule {
 
         // let the test run for test duration or until failed or finished, whichever comes first
         if (durationSeconds > 0) {
-            long deadline = currentTimeMillis() + durationSeconds * 1000;
+            long deadline = currentTimeMillis() + SECONDS.toMillis(durationSeconds);
+            LOGGER.info("Executing test tasks with deadline " + timeToString(deadline));
             while (currentTimeMillis() < deadline) {
                 if (testFailed.get()) {
                     break;
                 }
                 sleepSeconds(1);
             }
+            if (currentTimeMillis() >= deadline) {
+                LOGGER.info("Test deadline reached, tearing down");
+            }
             testRunning.set(false);
             waitForFutures(futures);
         } else {
+            LOGGER.info("Executing test tasks");
             waitForFutures(futures);
             testRunning.set(false);
         }
@@ -284,25 +301,30 @@ public class BounceMemberRule implements TestRule {
             factory = new TestHazelcastInstanceFactory();
         }
         Config memberConfig = bounceTestConfig.getMemberConfig();
-        members = new HazelcastInstance[bounceTestConfig.getClusterSize()];
         for (int i = 0; i < bounceTestConfig.getClusterSize(); i++) {
-            members[i] = factory.newHazelcastInstance(memberConfig);
+            members.set(i, factory.newHazelcastInstance(memberConfig));
         }
 
         // setup drivers
-        testDrivers = bounceTestConfig.getDriverFactory().createTestDrivers(this);
-
+        HazelcastInstance[] drivers = bounceTestConfig.getDriverFactory().createTestDrivers(this);
+        assert drivers.length == bounceTestConfig.getDriverCount()
+                : "Driver factory should return " + bounceTestConfig.getDriverCount() + " test drivers.";
+        for (int i = 0; i < drivers.length; i++) {
+            testDrivers.set(i, drivers[i]);
+        }
         testRunning.set(true);
     }
 
     private void tearDown() {
         try {
+            LOGGER.info("Tearing down BounceMemberRule");
             if (taskExecutor != null) {
-                taskExecutor.shutdown();
+                taskExecutor.shutdownNow();
             }
             // shutdown test drivers first
             if (testDrivers != null) {
-                for (HazelcastInstance hz : testDrivers) {
+                for (int i = 0; i < testDrivers.length(); i++) {
+                    HazelcastInstance hz = testDrivers.get(i);
                     hz.shutdown();
                 }
             }
@@ -310,7 +332,8 @@ public class BounceMemberRule implements TestRule {
                 factory.shutdownAll();
             }
         } catch (Throwable t) {
-            // any exceptions thrown in tearDown are not interesting and may hide the actual failure, so are ignored
+            // any exceptions thrown in tearDown are not interesting and may hide the actual failure, so are not rethrown
+            LOGGER.warning("Error occurred while tearing down BounceMemberRule.", t);
         }
     }
 
@@ -332,7 +355,11 @@ public class BounceMemberRule implements TestRule {
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {
-                bouncingMembersTask = spawn(new MemberUpDownMonkey(members));
+                LOGGER.info("Spawning member bouncing thread");
+                bouncingMembersTask = new FutureTask<Runnable>(new MemberUpDownMonkey(), null);
+                Thread bounceMembersThread = new Thread(bouncingMembersTask);
+                bounceMembersThread.setDaemon(true);
+                bounceMembersThread.start();
                 next.evaluate();
             }
         };
@@ -352,9 +379,12 @@ public class BounceMemberRule implements TestRule {
                 } finally {
                     testRunning.set(false);
                     try {
+                        LOGGER.info("Waiting for member bouncing thread to stop...");
                         bouncingMembersTask.get();
+                        LOGGER.info("Member bouncing thread stopped.");
                     } catch (Exception e) {
-                        // ignore
+                        // do not rethrow
+                        LOGGER.warning("Member bouncing thread failed to stop.", e);
                     }
                 }
             }
@@ -363,8 +393,11 @@ public class BounceMemberRule implements TestRule {
 
     // wait until all test tasks complete or one of them throws an exception
     private void waitForFutures(Future[] futures) {
+        // do not wait more than 30 seconds
+        long deadline = currentTimeMillis() + SECONDS.toMillis(TEST_TASK_TIMEOUT_SECONDS);
+        LOGGER.info("Waiting until " + timeToString(deadline) + " for test tasks to complete gracefully.");
         List<Future> futuresToWaitFor = new ArrayList<Future>(Arrays.asList(futures));
-        while (!futuresToWaitFor.isEmpty()) {
+        while (!futuresToWaitFor.isEmpty() && currentTimeMillis() < deadline) {
             Iterator<Future> iterator = futuresToWaitFor.iterator();
             while (iterator.hasNext()) {
                 boolean hasTestFailed = testFailed.get();
@@ -372,15 +405,20 @@ public class BounceMemberRule implements TestRule {
                 try {
                     // if the test failed, try to locate immediately the future that is done and will throw an exception
                     if ((hasTestFailed && future.isDone()) || !hasTestFailed) {
-                        future.get();
+                        future.get(1, SECONDS);
                         iterator.remove();
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
                     rethrow(e.getCause());
+                } catch (TimeoutException e) {
                 }
             }
+        }
+        if (!futuresToWaitFor.isEmpty()) {
+            LOGGER.warning("Test tasks did not complete within " + TEST_TASK_TIMEOUT_SECONDS + " seconds, there are still "
+                    + futuresToWaitFor.size() + " unfinished test tasks.");
         }
     }
 
@@ -464,17 +502,11 @@ public class BounceMemberRule implements TestRule {
      * Shuts down and restarts members of the cluster
      */
     protected class MemberUpDownMonkey implements Runnable {
-        private final HazelcastInstance[] instances;
-
-        MemberUpDownMonkey(HazelcastInstance[] allInstances) {
-            this.instances = new HazelcastInstance[allInstances.length - 1];
-            // exclude 0-index instance
-            System.arraycopy(allInstances, 1, instances, 0, allInstances.length - 1);
-        }
-
         @Override
         public void run() {
-            int i = 0;
+            // rotate members 1..members.length(), member.get(0) is the steady member
+            int divisor = members.length() - 1;
+            int i = 1;
             int nextInstance;
             try {
                 while (testRunning.get()) {
@@ -483,17 +515,18 @@ public class BounceMemberRule implements TestRule {
                     } else {
                         instances[i].shutdown();
                     }
-                    nextInstance = (i + 1) % instances.length;
+                    nextInstance = i % divisor + 1;
                     sleepSeconds(2);
 
-                    instances[i] = factory.newHazelcastInstance();
+                    members.set(i, factory.newHazelcastInstance(bounceTestConfig.getMemberConfig()));
                     sleepSeconds(2);
                     // move to next member
                     i = nextInstance;
                 }
             } catch (Throwable t) {
-                t.printStackTrace();
+                LOGGER.warning("Error while bouncing members", t);
             }
+            LOGGER.info("Member bouncing thread exiting");
         }
     }
 

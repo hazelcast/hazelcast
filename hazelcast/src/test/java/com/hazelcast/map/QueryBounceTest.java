@@ -52,7 +52,9 @@ public class QueryBounceTest {
     private IMap<String, SampleObjects.Employee> map;
 
     @Rule
-    public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getConfig()).build();
+    public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getConfig())
+                                                               .clusterSize(4)
+                                                               .driverCount(4).build();
 
     @Rule
     public JitterRule jitterRule = new JitterRule();
