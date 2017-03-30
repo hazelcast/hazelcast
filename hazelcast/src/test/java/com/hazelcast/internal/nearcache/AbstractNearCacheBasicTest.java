@@ -25,8 +25,10 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -407,6 +409,22 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         populateNearCacheAsync(context);
 
         assertNearCacheStats(context, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT);
+    }
+
+    @Test
+    public void whenGetAllIsUsed_thenNearCacheShouldBePopulated() {
+        NearCacheTestContext<Integer, String, NK, NV> context = createContext();
+        assumeThatMethodIsAvailable(context.nearCacheAdapter, DataStructureMethods.GET_ALL);
+
+        populateMap(context);
+
+        Set<Integer> getAllSet = new HashSet<Integer>(DEFAULT_RECORD_COUNT);
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            getAllSet.add(i);
+        }
+        context.nearCacheAdapter.getAll(getAllSet);
+
+        assertNearCacheSize(context, DEFAULT_RECORD_COUNT);
     }
 
     /**
