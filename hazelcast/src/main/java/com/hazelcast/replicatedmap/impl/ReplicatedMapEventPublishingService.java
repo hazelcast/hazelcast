@@ -172,7 +172,6 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
                 entryEventData.getDataMergingValue(), nodeEngine.getSerializationService());
     }
 
-
     public void fireEntryListenerEvent(Data key, Data oldValue, Data value, String name, Address caller) {
         EntryEventType eventType = value == null ? REMOVED : oldValue == null ? ADDED : UPDATED;
         fireEntryListenerEvent(key, oldValue, value, eventType, name, caller);
