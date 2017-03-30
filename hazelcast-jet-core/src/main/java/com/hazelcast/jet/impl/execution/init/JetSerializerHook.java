@@ -41,7 +41,6 @@ public final class JetSerializerHook {
     public static final int MAP_ENTRY = -300;
     public static final int CUSTOM_CLASS_LOADED_OBJECT = -301;
     public static final int OBJECT_ARRAY = -302;
-    public static final int CACHE_ENTRY = -303;
 
     // reserved for hadoop module -380 to -390
 
