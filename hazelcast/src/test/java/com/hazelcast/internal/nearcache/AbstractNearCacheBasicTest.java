@@ -222,6 +222,56 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     /**
+     * Checks that the Near Cache is populated when {@link DataStructureMethods#PUT_IF_ABSENT} is used.
+     */
+    @Test
+    public void whenPutIfAbsentIsUsed_thenNearCacheShouldBePopulated_withUpdateOnNearCacheAdapter() {
+        whenPutIfAbsentIsUsed_thenNearCacheShouldBePopulated(true, DataStructureMethods.PUT_IF_ABSENT);
+    }
+
+    /**
+     * Checks that the Near Cache is populated when {@link DataStructureMethods#PUT_IF_ABSENT} is used.
+     */
+    @Test
+    public void whenPutIfAbsentIsUsed_thenNearCacheShouldBePopulated_withUpdateOnDataAdapter() {
+        whenPutIfAbsentIsUsed_thenNearCacheShouldBePopulated(false, DataStructureMethods.PUT_IF_ABSENT);
+    }
+
+    /**
+     * Checks that the Near Cache is populated when {@link DataStructureMethods#PUT_IF_ABSENT_ASYNC} is used.
+     */
+    @Test
+    public void whenPutIfAbsentAsyncIsUsed_thenNearCacheShouldBePopulated_withUpdateOnNearCacheAdapter() {
+        whenPutIfAbsentIsUsed_thenNearCacheShouldBePopulated(true, DataStructureMethods.PUT_IF_ABSENT_ASYNC);
+    }
+
+    /**
+     * Checks that the Near Cache is populated when {@link DataStructureMethods#PUT_IF_ABSENT_ASYNC} is used.
+     */
+    @Test
+    public void whenPutIfAbsentAsyncIsUsed_thenNearCacheShouldBePopulated_withUpdateOnDataAdapter() {
+        whenPutIfAbsentIsUsed_thenNearCacheShouldBePopulated(false, DataStructureMethods.PUT_IF_ABSENT_ASYNC);
+    }
+
+    private void whenPutIfAbsentIsUsed_thenNearCacheShouldBePopulated(boolean useNearCacheAdapter, DataStructureMethods method) {
+        NearCacheTestContext<Integer, String, NK, NV> context = createContext();
+        DataStructureAdapter<Integer, String> adapter = useNearCacheAdapter ? context.nearCacheAdapter : context.dataAdapter;
+        assumeThatMethodIsAvailable(adapter, method);
+
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            if (method == DataStructureMethods.PUT_IF_ABSENT_ASYNC) {
+                assertTrue(getFuture(adapter.putIfAbsentAsync(i, "value-" + i), "Could not put value via putIfAbsentAsync()"));
+            } else {
+                assertTrue(adapter.putIfAbsent(i, "value-" + i));
+            }
+        }
+        populateNearCache(context);
+
+        String message = format("Population is not working on %s()", method.getMethodName());
+        assertNearCacheSizeEventually(context, DEFAULT_RECORD_COUNT, message);
+    }
+
+    /**
      * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#PUT_ALL} is used.
      *
      * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
