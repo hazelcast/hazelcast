@@ -261,18 +261,21 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
             // cache or invalidate Near Cache
             for (int partitionId = 0; partitionId < entriesPerPartition.length; partitionId++) {
                 List<Map.Entry<Data, Data>> entries = entriesPerPartition[partitionId];
-                for (Map.Entry<Data, Data> entry : entries) {
-                    cacheOrInvalidate(entry.getKey(), entry.getValue(), null);
+                if (entries != null) {
+                    for (Map.Entry<Data, Data> entry : entries) {
+                        cacheOrInvalidate(entry.getKey(), entry.getValue(), null);
+                    }
                 }
             }
         } catch (Throwable t) {
             for (int partitionId = 0; partitionId < entriesPerPartition.length; partitionId++) {
                 List<Map.Entry<Data, Data>> entries = entriesPerPartition[partitionId];
-                for (Map.Entry<Data, Data> entry : entries) {
-                    invalidateNearCache(entry.getKey());
+                if (entries != null) {
+                    for (Map.Entry<Data, Data> entry : entries) {
+                        invalidateNearCache(entry.getKey());
+                    }
                 }
             }
-
             throw rethrow(t);
         }
     }

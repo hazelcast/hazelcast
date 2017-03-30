@@ -40,6 +40,7 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCach
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSize;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheStats;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assumeThatLocalUpdatePolicyIsCacheOnUpdate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assumeThatMethodIsAvailable;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getFuture;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
@@ -219,6 +220,114 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         }
         // we expect the second get() to be a hit, since it should be served from the Near Cache
         return context.stats.getHits() + 1;
+    }
+
+    /**
+     * Checks that the Near Cache is populated when {@link DataStructureMethods#SET} with
+     * {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE} is used.
+     */
+    @Test
+    public void whenSetIsUsedWithCacheOnUpdate_thenNearCacheShouldBePopulated() {
+        whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods.SET);
+    }
+
+    /**
+     * Checks that the Near Cache is populated when {@link DataStructureMethods#PUT} with
+     * {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE} is used.
+     */
+    @Test
+    public void whenPutIsUsedWithCacheOnUpdate_thenNearCacheShouldBePopulated() {
+        whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods.PUT);
+    }
+
+    /**
+     * Checks that the Near Cache is populated when {@link DataStructureMethods#PUT_IF_ABSENT} with
+     * {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE} is used.
+     */
+    @Test
+    public void whenPutIfAbsentIsUsedWithCacheOnUpdate_thenNearCacheShouldBePopulated() {
+        whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods.PUT_IF_ABSENT);
+    }
+
+    /**
+     * Checks that the Near Cache is populated when {@link DataStructureMethods#PUT_IF_ABSENT_ASYNC} with
+     * {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE} is used.
+     */
+    @Test
+    public void whenPutIfAbsentAsyncIsUsedWithCacheOnUpdate_thenNearCacheShouldBePopulated() {
+        whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods.PUT_IF_ABSENT_ASYNC);
+    }
+
+    /**
+     * Checks that the Near Cache is populated when {@link DataStructureMethods#REPLACE} with
+     * {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE} is used.
+     */
+    @Test
+    public void whenReplaceIsUsedWithCacheOnUpdate_thenNearCacheShouldBePopulated() {
+        whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods.REPLACE);
+    }
+
+    /**
+     * Checks that the Near Cache is populated when {@link DataStructureMethods#REPLACE_WITH_OLD_VALUE} with
+     * {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE} is used.
+     */
+    @Test
+    public void whenReplaceWithOldValueIsUsedWithCacheOnUpdate_thenNearCacheShouldBePopulated() {
+        whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods.REPLACE_WITH_OLD_VALUE);
+    }
+
+    /**
+     * Checks that the Near Cache is populated when {@link DataStructureMethods#PUT_ALL} with
+     * {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE} is used.
+     */
+    @Test
+    public void whenPutAllIsUsedWithCacheOnUpdate_thenNearCacheShouldBePopulated() {
+        whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods.PUT_ALL);
+    }
+
+    private void whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods method) {
+        assumeThatLocalUpdatePolicyIsCacheOnUpdate(nearCacheConfig);
+
+        NearCacheTestContext<Integer, String, NK, NV> context = createContext();
+        DataStructureAdapter<Integer, String> adapter = context.nearCacheAdapter;
+        assumeThatMethodIsAvailable(adapter, method);
+
+        Map<Integer, String> putAllMap = new HashMap<Integer, String>(DEFAULT_RECORD_COUNT);
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            String value = "value-" + i;
+            switch (method) {
+                case SET:
+                    adapter.set(i, value);
+                    break;
+                case PUT:
+                    adapter.put(i, value);
+                    break;
+                case PUT_IF_ABSENT:
+                    assertTrue(adapter.putIfAbsent(i, value));
+                    break;
+                case PUT_IF_ABSENT_ASYNC:
+                    assertTrue(getFuture(adapter.putIfAbsentAsync(i, value), "Could not put value via putIfAbsentAsync()"));
+                    break;
+                case REPLACE:
+                    assertNull(adapter.replace(i, value));
+                    break;
+                case REPLACE_WITH_OLD_VALUE:
+                    context.dataAdapter.put(i, value);
+                    assertTrue(adapter.replace(i, value, "newValue-" + i));
+                    break;
+                case PUT_ALL:
+                    putAllMap.put(i, value);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unexpected method: " + method);
+            }
+        }
+        if (method == DataStructureMethods.PUT_ALL) {
+            adapter.putAll(putAllMap);
+        }
+
+        String message = format("Population is not working on %s()", method.getMethodName());
+        assertNearCacheSizeEventually(context, DEFAULT_RECORD_COUNT, message);
     }
 
     /**
