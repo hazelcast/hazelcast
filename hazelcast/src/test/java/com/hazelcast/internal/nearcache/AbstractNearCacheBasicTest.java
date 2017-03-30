@@ -488,7 +488,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      */
     @Test
     public void whenRemoveIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
-        whenRemoveIsUsed_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.REMOVE);
+        whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.REMOVE);
     }
 
     /**
@@ -499,7 +499,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     @Test
     public void whenRemoveIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
         nearCacheConfig.setInvalidateOnChange(true);
-        whenRemoveIsUsed_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.REMOVE);
+        whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.REMOVE);
     }
 
     /**
@@ -509,7 +509,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      */
     @Test
     public void whenRemoveAsyncIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
-        whenRemoveIsUsed_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.REMOVE_ASYNC);
+        whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.REMOVE_ASYNC);
     }
 
     /**
@@ -520,10 +520,31 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     @Test
     public void whenRemoveAsyncIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
         nearCacheConfig.setInvalidateOnChange(true);
-        whenRemoveIsUsed_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.REMOVE_ASYNC);
+        whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.REMOVE_ASYNC);
     }
 
-    private void whenRemoveIsUsed_thenNearCacheShouldBeInvalidated(boolean useNearCacheAdapter, DataStructureMethods method) {
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#REMOVE_WITH_OLD_VALUE)} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
+     */
+    @Test
+    public void whenRemoveWithOldValueIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+        whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.REMOVE_WITH_OLD_VALUE);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#REMOVE_WITH_OLD_VALUE)} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
+     */
+    @Test
+    public void whenRemoveWithOldValueIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+        nearCacheConfig.setInvalidateOnChange(true);
+        whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.REMOVE_WITH_OLD_VALUE);
+    }
+
+    private void whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(boolean useNearCacheAdapter, DataStructureMethods method) {
         NearCacheTestContext<Integer, String, NK, NV> context = createContext();
         DataStructureAdapter<Integer, String> adapter = useNearCacheAdapter ? context.nearCacheAdapter : context.dataAdapter;
         assumeThatMethodIsAvailable(adapter, method);
@@ -533,10 +554,19 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
         // this should invalidate the Near Cache
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            if (method == DataStructureMethods.REMOVE_ASYNC) {
-                getFuture(adapter.removeAsync(i), "Could not remove entry via removeAsync()");
-            } else {
-                adapter.remove(i);
+            String value = "value-" + i;
+            switch (method) {
+                case REMOVE:
+                    adapter.remove(i);
+                    break;
+                case REMOVE_WITH_OLD_VALUE:
+                    assertTrue(adapter.remove(i, value));
+                    break;
+                case REMOVE_ASYNC:
+                    assertEquals(value, getFuture(adapter.removeAsync(i), "Could not remove entry via removeAsync()"));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unexpected method: " + method);
             }
         }
 

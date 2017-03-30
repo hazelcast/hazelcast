@@ -135,6 +135,14 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
+    public boolean remove(K key, V oldValue) {
+        begin();
+        boolean result = transactionalMap.remove(key, oldValue);
+        commit();
+        return result;
+    }
+
+    @Override
     @MethodNotAvailable
     public ICompletableFuture<V> removeAsync(K key) {
         throw new MethodNotAvailableException();

@@ -102,6 +102,12 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
 
     @Override
     @MethodNotAvailable
+    public boolean remove(K key, V oldValue) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
     public ICompletableFuture<V> removeAsync(K key) {
         throw new MethodNotAvailableException();
     }

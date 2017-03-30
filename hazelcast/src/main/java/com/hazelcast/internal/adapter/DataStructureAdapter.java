@@ -52,6 +52,8 @@ public interface DataStructureAdapter<K, V> {
 
     void remove(K key);
 
+    boolean remove(K key, V oldValue);
+
     ICompletableFuture<V> removeAsync(K key);
 
     LocalMapStats getLocalMapStats();
@@ -74,6 +76,7 @@ public interface DataStructureAdapter<K, V> {
         PUT_ALL("putAll", Map.class),
         GET_ALL("getAll", Set.class),
         REMOVE("remove", Object.class),
+        REMOVE_WITH_OLD_VALUE("remove", Object.class, Object.class),
         REMOVE_ASYNC("removeAsync", Object.class),
         GET_LOCAL_MAP_STATS("getLocalMapStats"),
         CONTAINS_KEY("containsKey", Object.class);
