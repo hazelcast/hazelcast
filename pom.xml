@@ -19,13 +19,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                       http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.hazelcast.jet</groupId>
-    <artifactId>hazelcast-jet-root</artifactId>
     <packaging>pom</packaging>
-    <version>0.3.2-SNAPSHOT</version>
     <name>hazelcast-jet-root</name>
     <description>Hazelcast Jet Data Processor</description>
     <url>http://www.hazelcast.com/</url>
+
+    <groupId>com.hazelcast.jet</groupId>
+    <artifactId>hazelcast-jet-root</artifactId>
+    <version>0.3.2-SNAPSHOT</version>
 
     <modules>
         <module>hazelcast-jet-all</module>

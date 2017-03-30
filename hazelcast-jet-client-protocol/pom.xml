@@ -17,12 +17,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <name>hazelcast-jet-client-protocol</name>
-    <artifactId>hazelcast-jet-client-protocol</artifactId>
     <packaging>jar</packaging>
-    <version>0.3.2-SNAPSHOT</version>
+    <name>hazelcast-jet-client-protocol</name>
     <description>Hazelcast Jet Client Protocol</description>
     <url>http://www.hazelcast.com/</url>
+
+    <artifactId>hazelcast-jet-client-protocol</artifactId>
 
     <parent>
         <groupId>com.hazelcast.jet</groupId>
