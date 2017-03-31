@@ -53,7 +53,6 @@ public class ProcessorTasklet implements Tasklet {
     private final OutboundEdgeStream[] outstreams;
 
     private InboundEdgeStream currInstream;
-    private boolean currInstreamExhausted;
     private boolean processorCompleted;
 
     public ProcessorTasklet(String vertexName, Processor.Context context, Processor processor,
@@ -78,7 +77,6 @@ public class ProcessorTasklet implements Tasklet {
         this.instreamCursor = popInstreamGroup();
     }
 
-
     @Override
     public void init() {
         processor.init(outbox, context);
@@ -97,11 +95,6 @@ public class ProcessorTasklet implements Tasklet {
             completeIfNeeded();
         } else if (!inbox.isEmpty()) {
             tryProcessInbox();
-        } else if (currInstreamExhausted) {
-            progTracker.madeProgress(true);
-            if (processor.completeEdge(currInstream.ordinal())) {
-                currInstream = null;
-            }
         }
         tryFlushOutbox();
         return progTracker.toProgressState();
@@ -113,7 +106,7 @@ public class ProcessorTasklet implements Tasklet {
 
     private void tryFillInbox() {
         // we have more items in inbox, or current inbound stream is exhausted but its processing hasn't completed
-        if (!inbox.isEmpty() || currInstream != null && currInstreamExhausted) {
+        if (!inbox.isEmpty()) {
             progTracker.notDone();
             return;
         }
@@ -127,8 +120,7 @@ public class ProcessorTasklet implements Tasklet {
             currInstream = instreamCursor.value();
             result = currInstream.drainTo(inbox);
             progTracker.madeProgress(result.isMadeProgress());
-            currInstreamExhausted = result.isDone();
-            if (currInstreamExhausted) {
+            if (result.isDone()) {
                 instreamCursor.remove();
             }
             if (!instreamCursor.advance()) {
