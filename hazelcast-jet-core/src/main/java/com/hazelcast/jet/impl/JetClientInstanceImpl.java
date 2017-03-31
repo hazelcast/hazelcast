@@ -33,12 +33,12 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ResourceConfig;
 import com.hazelcast.jet.impl.deployment.ResourceIterator;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.function.Supplier;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -46,6 +46,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.util.stream.Collectors.toList;
 
 public class JetClientInstanceImpl extends AbstractJetInstance {
@@ -104,7 +105,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         private void deployResources(long executionId) {
             final Set<ResourceConfig> resources = config.getResourceConfigs();
             if (logger.isFineEnabled() && resources.size() > 0) {
-                logger.fine("Deploying the following resources for " + executionId + ":" + resources);
+                logger.fine("Deploying the following resources for " + executionId + ':' + resources);
             }
             try (ResourceIterator it = new ResourceIterator(resources, config.getResourcePartSize())) {
                 it.forEachRemaining(part -> {
@@ -124,7 +125,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
                          .map(m -> new ClientInvocation(client, messageSupplier.get(), m.getAddress()).invoke())
                          .collect(toList())
                          .stream()
-                         .map(Util::uncheckedGet)
+                         .map(f -> uncheckCall(f::get))
                          .collect(toList());
         }
 
@@ -181,7 +182,8 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         }
 
         @Override
-        public Void get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        public Void get(long timeout, @Nonnull TimeUnit unit)
+                throws InterruptedException, ExecutionException, TimeoutException {
             future.get(timeout, unit);
             return null;
         }

@@ -29,6 +29,7 @@ import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -50,7 +51,7 @@ import static com.hazelcast.jet.Processors.writeMap;
 import static com.hazelcast.jet.Traversers.lazy;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.impl.util.Util.uncheckedGet;
+import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -110,7 +111,7 @@ public class BackpressureTest extends JetTestSupport {
                 .distributed().partitioned(wholeItem(), (x, y) -> ptionOwnedByMember2))
            .edge(between(hiccuper, sink));
 
-        uncheckedGet(jet1.newJob(dag).execute());
+        uncheckCall(jet1.newJob(dag).execute()::get);
         assertCounts(jet1.getMap("counts"));
     }
 

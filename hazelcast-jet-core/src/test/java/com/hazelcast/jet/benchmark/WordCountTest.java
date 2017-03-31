@@ -28,6 +28,7 @@ import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -60,7 +61,7 @@ import static com.hazelcast.jet.Processors.groupAndAccumulate;
 import static com.hazelcast.jet.Processors.readMap;
 import static com.hazelcast.jet.Processors.writeMap;
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.impl.util.Util.uncheckedGet;
+import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -177,7 +178,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                    .partitioned(entryKey()))
            .edge(between(combine, sink.localParallelism(1)));
 
-        benchmark("jet", () -> uncheckedGet(instance.newJob(dag).execute()));
+        benchmark("jet", () -> uncheckCall(instance.newJob(dag).execute()::get));
         assertCounts(instance.getMap("counts"));
     }
 
@@ -196,7 +197,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
            .edge(between(combineLocal, combineGlobal).distributed().allToOne())
            .edge(between(combineGlobal, sink));
 
-        benchmark("jet", () -> uncheckedGet(instance.newJob(dag).execute()));
+        benchmark("jet", () -> uncheckCall(instance.newJob(dag).execute()::get));
 
         assertCounts((Map<String, Long>) instance.getMap("counts").get("result"));
     }

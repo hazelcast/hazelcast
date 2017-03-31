@@ -54,14 +54,6 @@ public final class Util {
         };
     }
 
-    public static <T> T uncheckedGet(@Nonnull Future<T> f) {
-        try {
-            return f.get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw rethrow(e);
-        }
-    }
-
     public static <T> T uncheckCall(@Nonnull Callable<T> callable) {
         try {
             return callable.call();

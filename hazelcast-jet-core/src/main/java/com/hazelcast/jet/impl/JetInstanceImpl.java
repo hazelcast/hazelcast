@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.util.stream.Collectors.toList;
 
 public class JetInstanceImpl extends AbstractJetInstance {
@@ -118,7 +119,7 @@ public class JetInstanceImpl extends AbstractJetInstance {
                                   .<T>invoke())
                           .collect(toList())
                           .stream()
-                          .map(Util::uncheckedGet)
+                          .map(f -> uncheckCall(f::get))
                           .collect(toList());
         }
 
