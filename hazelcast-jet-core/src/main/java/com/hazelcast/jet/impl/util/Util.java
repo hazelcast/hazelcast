@@ -49,11 +49,6 @@ public final class Util {
     private Util() {
     }
 
-    public static <T> Distributed.Consumer<T> noopConsumer() {
-        return t -> {
-        };
-    }
-
     public static <T> T uncheckCall(@Nonnull Callable<T> callable) {
         try {
             return callable.call();

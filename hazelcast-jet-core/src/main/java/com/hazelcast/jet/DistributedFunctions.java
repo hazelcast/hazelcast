@@ -27,18 +27,27 @@ public final class DistributedFunctions {
     }
 
     /**
-     * Transparent projection: returns its argument.
+     * Synonym for {@link Distributed.Function#identity}, to be used as a
+     * projection function (e.g., key extractor).
      */
     public static <T> Distributed.Function<T, T> wholeItem() {
         return Distributed.Function.identity();
     }
 
     /**
-     * Extracts the key of a {@link Map.Entry}.
+     * Returns a function that extracts the key of a {@link Map.Entry}.
      *
      * @param <K> type of entry's key
      */
     public static <K> Distributed.Function<Map.Entry<K, ?>, K> entryKey() {
         return Map.Entry::getKey;
+    }
+
+    /**
+     * Returns a consumer that does nothing with the argument.
+     */
+    public static <T> Distributed.Consumer<T> noopConsumer() {
+        return t -> {
+        };
     }
 }

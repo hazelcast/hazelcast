@@ -39,7 +39,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
-import static com.hazelcast.jet.impl.util.Util.noopConsumer;
+import static com.hazelcast.jet.DistributedFunctions.noopConsumer;
 import static java.util.stream.Collectors.toList;
 
 public final class HazelcastWriters {

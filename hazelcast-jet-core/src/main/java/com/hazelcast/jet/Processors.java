@@ -40,7 +40,7 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.jet.Traversers.lazy;
 import static com.hazelcast.jet.Traversers.traverseStream;
-import static com.hazelcast.jet.impl.util.Util.noopConsumer;
+import static com.hazelcast.jet.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
