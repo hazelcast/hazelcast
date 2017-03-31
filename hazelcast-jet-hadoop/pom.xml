@@ -23,12 +23,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast</artifactId>
-            <version>${hazelcast.version}</version>
-        </dependency>
-
-        <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-core</artifactId>
             <version>${project.parent.version}</version>
