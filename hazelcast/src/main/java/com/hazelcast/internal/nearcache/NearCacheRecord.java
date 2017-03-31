@@ -18,8 +18,7 @@ package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.Expirable;
-
-import java.util.UUID;
+import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
 
 /**
  * An expirable and evictable data object which represents a Near Cache entry.
@@ -88,27 +87,6 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
     boolean isIdleAt(long maxIdleMilliSeconds, long now);
 
     /**
-     * @return last known invalidation sequence at time of this records' creation
-     */
-    long getInvalidationSequence();
-
-    /**
-     * @param sequence last known invalidation sequence at time of this records' creation
-     */
-    void setInvalidationSequence(long sequence);
-
-    /**
-     * @param uuid last known uuid of invalidation source at time of this records' creation
-     */
-    void setUuid(UUID uuid);
-
-    /**
-     * @return {@code true} if supplied uuid equals existing one, otherwise and when one of supplied
-     * or existing is null returns {@code false}
-     */
-    boolean hasSameUuid(UUID uuid);
-
-    /**
      * @return current state of this record.
      */
     long getRecordState();
@@ -120,4 +98,21 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
      * the actual value was not equal to the expected value.
      */
     boolean casRecordState(long expect, long update);
+
+    /**
+     * Sets the invalidation metadata.
+     *
+     * @param metaDataContainer the invalidation metadata for this container
+     */
+    void setMetaDataContainer(MetaDataContainer metaDataContainer);
+
+    /**
+     * @return {@code true} if reading with the invalidation metadata is stale, {@code false} otherwise
+     */
+    boolean isStaleRead();
+
+    /**
+     * @return last known invalidation sequence at time of this records' creation
+     */
+    long getInvalidationSequence();
 }

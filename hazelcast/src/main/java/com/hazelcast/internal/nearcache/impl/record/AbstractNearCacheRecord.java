@@ -17,6 +17,7 @@
 package com.hazelcast.internal.nearcache.impl.record;
 
 import com.hazelcast.internal.nearcache.NearCacheRecord;
+import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
 
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -42,8 +43,9 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
             AtomicLongFieldUpdater.newUpdater(AbstractNearCacheRecord.class, "recordState");
 
     protected long creationTime = TIME_NOT_SET;
-    protected long sequence;
+    protected MetaDataContainer metaDataContainer;
     protected UUID uuid;
+    protected long sequence;
 
     protected volatile V value;
     protected volatile long expirationTime = TIME_NOT_SET;
@@ -128,24 +130,6 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
     }
 
     @Override
-    public void setInvalidationSequence(long sequence) {
-        this.sequence = sequence;
-    }
-
-    @Override
-    public boolean hasSameUuid(UUID thatUuid) {
-        if (uuid == null || thatUuid == null) {
-            return false;
-        }
-        return uuid.equals(thatUuid);
-    }
-
-    @Override
-    public void setUuid(UUID uuid) {
-        this.uuid = uuid;
-    }
-
-    @Override
     public boolean isIdleAt(long maxIdleMilliSeconds, long now) {
         if (maxIdleMilliSeconds > 0) {
             if (accessTime > TIME_NOT_SET) {
@@ -169,6 +153,18 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
     }
 
     @Override
+    public void setMetaDataContainer(MetaDataContainer metaDataContainer) {
+        this.metaDataContainer = metaDataContainer;
+        this.uuid = metaDataContainer.getUuid();
+        this.sequence = metaDataContainer.getSequence();
+    }
+
+    @Override
+    public boolean isStaleRead() {
+        return !hasSameUuid(metaDataContainer.getUuid()) || sequence < metaDataContainer.getStaleSequence();
+    }
+
+    @Override
     public String toString() {
         return "creationTime=" + creationTime
                 + ", sequence=" + sequence
@@ -178,5 +174,18 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
                 + ", accessHit=" + accessHit
                 + ", recordState=" + recordState
                 + ", value=" + value;
+    }
+
+    /**
+     * Checks if the UUID of the invalidation metadata is still the same.
+     *
+     * @return {@code true} if supplied UUID equals existing one, otherwise or when one of supplied
+     * or existing is {@code null} returns {@code false}
+     */
+    private boolean hasSameUuid(UUID thatUuid) {
+        if (uuid == null || thatUuid == null) {
+            return false;
+        }
+        return uuid.equals(thatUuid);
     }
 }
