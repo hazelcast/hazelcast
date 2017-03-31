@@ -131,8 +131,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
             if (logger.isFinestEnabled()) {
                 logger.finest("Submitting BeforePromotionOperation for promotion: " + promotion);
             }
-            int currentReplicaIndex = promotion.getDestinationCurrentReplicaIndex();
-            BeforePromotionOperation op = new BeforePromotionOperation(currentReplicaIndex, beforePromotionsCallback);
+            BeforePromotionOperation op = new BeforePromotionOperation(promotion, beforePromotionsCallback);
             op.setPartitionId(promotion.getPartitionId()).setNodeEngine(nodeEngine).setService(partitionService);
             operationService.execute(op);
         }
@@ -155,8 +154,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
             if (logger.isFinestEnabled()) {
                 logger.finest("Submitting FinalizePromotionOperation for promotion: " + promotion + ". Result: " + success);
             }
-            int currentReplicaIndex = promotion.getDestinationCurrentReplicaIndex();
-            FinalizePromotionOperation op = new FinalizePromotionOperation(currentReplicaIndex, success);
+            FinalizePromotionOperation op = new FinalizePromotionOperation(promotion, success);
             op.setPartitionId(promotion.getPartitionId()).setNodeEngine(nodeEngine).setService(partitionService);
             operationService.execute(op);
         }

@@ -76,12 +76,9 @@ final class PartitionReplicaFragmentVersions {
         long currentVersion = versions[index];
         long nextVersion = newVersions[index];
 
-        boolean incremental = (currentVersion == nextVersion - 1);
-        boolean newer = currentVersion < nextVersion;
-
-        if (newer) {
+        if (currentVersion < nextVersion) {
             setVersions(newVersions, replicaIndex);
-            dirty = dirty || !incremental;
+            dirty = dirty || (nextVersion - currentVersion > 1);
         }
         return !dirty;
     }

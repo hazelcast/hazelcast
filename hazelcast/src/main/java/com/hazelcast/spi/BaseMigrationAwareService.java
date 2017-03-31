@@ -68,6 +68,7 @@ package com.hazelcast.spi;
  * During commit, destination usually doesn't expected to perform any task. But service implementation may need
  * to execute custom tasks.
  */
+// TODO: might need a better name
 public interface BaseMigrationAwareService {
 
     /**

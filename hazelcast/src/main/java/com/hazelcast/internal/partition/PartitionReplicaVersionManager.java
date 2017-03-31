@@ -30,7 +30,8 @@ public interface PartitionReplicaVersionManager {
 
     Collection<ReplicaFragmentNamespace> getNamespaces(int partitionId);
 
-    boolean isPartitionReplicaVersionStale(int partitionId, ReplicaFragmentNamespace namespace, long[] versions, int replicaIndex);
+    boolean isPartitionReplicaVersionStale(int partitionId, ReplicaFragmentNamespace namespace,
+                                           long[] replicaVersions, int replicaIndex);
 
     // Caution: Returning version array without copying for performance reasons. Callers must not modify this array!
     long[] getPartitionReplicaVersions(int partitionId, ReplicaFragmentNamespace namespace);
@@ -42,7 +43,8 @@ public interface PartitionReplicaVersionManager {
      * @param replicaVersions the received replica versions
      * @param replicaIndex the index of this replica
      */
-    void updatePartitionReplicaVersions(int partitionId, ReplicaFragmentNamespace namespace, long[] replicaVersions, int replicaIndex);
+    void updatePartitionReplicaVersions(int partitionId, ReplicaFragmentNamespace namespace,
+                                        long[] replicaVersions, int replicaIndex);
 
     // Caution: Returning version array without copying for performance reasons. Callers must not modify this array!
     long[] incrementPartitionReplicaVersions(int partitionId, ReplicaFragmentNamespace namespace, int totalBackupCount);

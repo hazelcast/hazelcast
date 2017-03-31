@@ -18,7 +18,7 @@ package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.cluster.impl.Versions;
-import com.hazelcast.internal.partition.DefaultReplicaFragmentNamespace;
+import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.operation.CheckReplicaVersion;
 import com.hazelcast.nio.Address;
@@ -130,7 +130,7 @@ final class CheckReplicaVersionTask implements PartitionSpecificRunnable, Urgent
             Collection<ReplicaFragmentNamespace> serviceNamespaces = service.getAllFragmentNamespaces(event);
             namespaces.addAll(serviceNamespaces);
         }
-        namespaces.add(DefaultReplicaFragmentNamespace.INSTANCE);
+        namespaces.add(InternalReplicaFragmentNamespace.INSTANCE);
 
         PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
         replicaManager.retainNamespaces(partitionId, namespaces);

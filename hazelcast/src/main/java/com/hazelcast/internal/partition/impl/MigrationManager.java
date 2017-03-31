@@ -41,6 +41,7 @@ import com.hazelcast.internal.partition.operation.ShutdownResponseOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
@@ -253,7 +254,7 @@ public class MigrationManager {
                 return null;
             }
 
-            if (activeMigrationInfo != migrationInfo) {
+            if (!activeMigrationInfo.equals(migrationInfo)) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Active migration is not set: " + migrationInfo
                             + ". Existing active migration: " + activeMigrationInfo);
@@ -303,6 +304,8 @@ public class MigrationManager {
     void scheduleActiveMigrationFinalization(final MigrationInfo migrationInfo) {
         partitionServiceLock.lock();
         try {
+
+            // we use activeMigrationInfo because it contains migrated replica fragment namespaces
             final MigrationInfo activeMigrationInfo = this.activeMigrationInfo;
             if (activeMigrationInfo != null && migrationInfo.equals(activeMigrationInfo)) {
                 if (activeMigrationInfo.startProcessing()) {
@@ -314,7 +317,7 @@ public class MigrationManager {
                     nodeEngine.getExecutionService().schedule(new Runnable() {
                         @Override
                         public void run() {
-                            scheduleActiveMigrationFinalization(migrationInfo);
+                            scheduleActiveMigrationFinalization(activeMigrationInfo);
                         }
                     }, 3, TimeUnit.SECONDS);
                 }
@@ -325,7 +328,6 @@ public class MigrationManager {
                     && node.getThisAddress().equals(migrationInfo.getSource())) {
                 // OLD BACKUP
                 finalizeMigration(migrationInfo);
-                return;
             }
         } finally {
             partitionServiceLock.unlock();
@@ -1000,8 +1002,8 @@ public class MigrationManager {
          * migration was successful.
          */
         private Boolean executeMigrateOperation(MemberImpl fromMember) {
-            MigrationRequestOperation migrationRequestOp = new MigrationRequestOperation(migrationInfo,
-                    partitionService.getPartitionStateVersion());
+            int partitionStateVersion = partitionService.getPartitionStateVersion();
+            Operation migrationRequestOp = new MigrationRequestOperation(migrationInfo, partitionStateVersion);
 
             Future future = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, migrationRequestOp,
                     fromMember.getAddress())
@@ -1018,7 +1020,7 @@ public class MigrationManager {
                     level = Level.FINE;
                 }
                 if (logger.isLoggable(level)) {
-                    logger.log(level, "Failed migration from " + fromMember + " for " + migrationRequestOp.getMigrationInfo(), e);
+                    logger.log(level, "Failed migration from " + fromMember + " for " + migrationInfo, e);
                 }
             }
             return Boolean.FALSE;

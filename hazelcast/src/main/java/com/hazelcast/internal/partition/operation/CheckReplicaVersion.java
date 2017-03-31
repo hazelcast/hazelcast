@@ -17,7 +17,7 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.internal.cluster.impl.Versions;
-import com.hazelcast.internal.partition.DefaultReplicaFragmentNamespace;
+import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -127,7 +127,7 @@ public final class CheckReplicaVersion extends AbstractPartitionOperation
             }
         } else {
             assert versions.size() == 1 : "Only single namespace is allowed before V3.9: " + versions.keySet();
-            out.writeLong(versions.get(DefaultReplicaFragmentNamespace.INSTANCE));
+            out.writeLong(versions.get(InternalReplicaFragmentNamespace.INSTANCE));
         }
         out.writeBoolean(returnResponse);
     }
@@ -145,7 +145,7 @@ public final class CheckReplicaVersion extends AbstractPartitionOperation
         } else {
             versions = new HashMap<ReplicaFragmentNamespace, Long>(1);
             long v = in.readLong();
-            versions.put(DefaultReplicaFragmentNamespace.INSTANCE, v);
+            versions.put(InternalReplicaFragmentNamespace.INSTANCE, v);
         }
         returnResponse = in.readBoolean();
     }

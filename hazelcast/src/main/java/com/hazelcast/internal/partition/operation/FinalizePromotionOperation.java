@@ -17,6 +17,8 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.core.MigrationEvent;
+import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionEventManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
@@ -24,6 +26,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
+import com.hazelcast.spi.ReplicaFragmentNamespace;
 
 import java.util.Arrays;
 
@@ -48,12 +51,12 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
      * coding conventions.
      */
     public FinalizePromotionOperation() {
-        super(-1);
+        super(null);
         success = false;
     }
 
-    FinalizePromotionOperation(int currentReplicaIndex, boolean success) {
-        super(currentReplicaIndex);
+    FinalizePromotionOperation(MigrationInfo migrationInfo, boolean success) {
+        super(migrationInfo);
         this.success = success;
     }
 
@@ -90,27 +93,34 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
      * sends a {@link IPartitionLostEvent}.
      */
     private void shiftUpReplicaVersions() {
-        final int partitionId = getPartitionId();
+        int partitionId = getPartitionId();
+        int currentReplicaIndex = migrationInfo.getDestinationCurrentReplicaIndex();
+        int lostReplicaIndex = currentReplicaIndex - 1;
+
         try {
-            final InternalPartitionServiceImpl partitionService = getService();
-            // returns the internal array itself, not the copy
-            final long[] versions = partitionService.getPartitionReplicaVersions(partitionId);
+            InternalPartitionServiceImpl partitionService = getService();
+            PartitionReplicaVersionManager partitionReplicaVersionManager = partitionService.getPartitionReplicaVersionManager();
 
-            final int lostReplicaIndex = currentReplicaIndex - 1;
+            for (ReplicaFragmentNamespace namespace : partitionReplicaVersionManager.getNamespaces(partitionId)) {
+                // returns the internal array itself, not the copy
+                long[] versions = partitionReplicaVersionManager.getPartitionReplicaVersions(partitionId, namespace);
 
-            if (currentReplicaIndex > 1) {
-                final long[] versionsCopy = Arrays.copyOf(versions, versions.length);
-                final long version = versions[lostReplicaIndex];
-                Arrays.fill(versions, 0, lostReplicaIndex, version);
+                if (currentReplicaIndex > 1) {
+                    long[] versionsCopy = Arrays.copyOf(versions, versions.length);
+                    long version = versions[lostReplicaIndex];
+                    Arrays.fill(versions, 0, lostReplicaIndex, version);
 
-                if (logger.isFinestEnabled()) {
-                    logger.finest(
-                            "Partition replica is lost! partitionId=" + partitionId + " lost replicaIndex=" + lostReplicaIndex
-                                    + " replica versions before shift up=" + Arrays.toString(versionsCopy)
-                                    + " replica versions after shift up=" + Arrays.toString(versions));
+                    if (logger.isFinestEnabled()) {
+                        logger.finest(
+                                "Partition replica is lost! partitionId=" + partitionId
+                                        + " namespace: " + namespace + " lost replicaIndex=" + lostReplicaIndex
+                                        + " replica versions before shift up=" + Arrays.toString(versionsCopy)
+                                        + " replica versions after shift up=" + Arrays.toString(versions));
+                    }
+                } else if (logger.isFinestEnabled()) {
+                    logger.finest("PROMOTE partitionId=" + getPartitionId() + " namespace: " + namespace
+                            + " from currentReplicaIndex=" + currentReplicaIndex);
                 }
-            } else if (logger.isFinestEnabled()) {
-                logger.finest("PROMOTE partitionId=" + getPartitionId() + " from currentReplicaIndex=" + currentReplicaIndex);
             }
 
             PartitionEventManager partitionEventManager = partitionService.getPartitionEventManager();

@@ -110,9 +110,6 @@ public interface InternalPartitionService extends IPartitionService {
      */
     PartitionRuntimeState createPartitionState();
 
-    // TODO: remove
-    long[] getPartitionReplicaVersions(int partitionId);
-
     PartitionReplicaVersionManager getPartitionReplicaVersionManager();
 
     PartitionTableView createPartitionTableView();

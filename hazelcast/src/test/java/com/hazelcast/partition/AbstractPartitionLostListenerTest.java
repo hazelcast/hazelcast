@@ -191,7 +191,7 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
 
         for (HazelcastInstance instance : instances) {
             Address address = getNode(instance).getThisAddress();
-            for (Entry<Integer, long[]> entry : getOwnedReplicaVersions(instance).entrySet()) {
+            for (Entry<Integer, long[]> entry : getOwnedReplicaVersions(getNode(instance)).entrySet()) {
                 System.out.println("ReplicaVersions >> " + address + " - partitionId=" + entry.getKey()
                         + " replicaVersions=" + Arrays.toString(entry.getValue()));
             }

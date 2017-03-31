@@ -17,6 +17,7 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.core.MigrationEvent;
+import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
@@ -39,11 +40,11 @@ final class BeforePromotionOperation extends AbstractPromotionOperation {
      * coding conventions.
      */
     public BeforePromotionOperation() {
-        super(-1);
+        super(null);
     }
 
-    BeforePromotionOperation(int currentReplicaIndex, Runnable beforePromotionsCallback) {
-        super(currentReplicaIndex);
+    BeforePromotionOperation(MigrationInfo migrationInfo, Runnable beforePromotionsCallback) {
+        super(migrationInfo);
         this.beforePromotionsCallback = beforePromotionsCallback;
     }
 

@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.test.TestPartitionUtils.getReplicaAddresses;
-import static com.hazelcast.test.TestPartitionUtils.getReplicaVersions;
+import static com.hazelcast.test.TestPartitionUtils.getDefaultReplicaVersions;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.fail;
 
@@ -119,7 +119,7 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
                     int partitionId = partition.getPartitionId();
                     long[] initialReplicaVersions = replicaVersionsByPartitionId.get(partitionId);
                     Integer minSurvivingReplicaIndex = minSurvivingReplicaIndexByPartitionId.get(partitionId);
-                    long[] replicaVersions = getReplicaVersions(instance, partitionId);
+                    long[] replicaVersions = getDefaultReplicaVersions(getNode(instance), partitionId);
                     List<Address> addresses = getReplicaAddresses(instance, partitionId);
 
                     String message = log + " PartitionId: " + partitionId

@@ -31,7 +31,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.internal.partition.DefaultReplicaFragmentNamespace.INSTANCE;
+import static com.hazelcast.internal.partition.InternalReplicaFragmentNamespace.INSTANCE;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertNull;
 
@@ -63,12 +63,12 @@ public class PartitionReplicaManagerTest extends HazelcastTestSupport {
         factory.terminateAll();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = AssertionError.class)
     public void testTriggerPartitionReplicaSync_whenReplicaIndexNegative_thenThrowException() {
         manager.triggerPartitionReplicaSync(PARTITION_ID, singleton(INSTANCE), -1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = AssertionError.class)
     public void testTriggerPartitionReplicaSync_whenReplicaIndexTooLarge_thenThrowException() {
         manager.triggerPartitionReplicaSync(PARTITION_ID, singleton(INSTANCE), InternalPartition.MAX_REPLICA_COUNT + 1);
     }

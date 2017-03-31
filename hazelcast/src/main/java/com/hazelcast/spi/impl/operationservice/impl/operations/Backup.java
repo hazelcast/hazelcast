@@ -105,7 +105,8 @@ public final class Backup extends Operation implements BackupOperation, Identifi
             if (logger.isFinestEnabled()) {
                 logger.finest("Wrong target! " + toString() + " cannot be processed! Target should be: " + owner);
             }
-        } else if (versionManager.isPartitionReplicaVersionStale(getPartitionId(), namespace, replicaVersions, getReplicaIndex())) {
+        } else if (versionManager.isPartitionReplicaVersionStale(getPartitionId(), namespace,
+                replicaVersions, getReplicaIndex())) {
             valid = false;
             if (logger.isFineEnabled()) {
                 long[] currentVersions = versionManager.getPartitionReplicaVersions(partitionId, namespace);

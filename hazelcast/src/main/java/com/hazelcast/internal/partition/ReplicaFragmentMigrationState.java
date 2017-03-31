@@ -1,6 +1,21 @@
+/*
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -17,20 +32,10 @@ import java.util.Map;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 
-// TODO JAVADOC
+/**
+ * Contains fragment namespaces along with their partition versions and migration data operations
+ */
 public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable {
-
-    public static ReplicaFragmentMigrationState newDefaultReplicaFragmentMigrationState(long[] replicaVersions,
-                                                                                        Collection<Operation> operations) {
-        Map<ReplicaFragmentNamespace, long[]> namespaces = singletonMap(DefaultReplicaFragmentNamespace.INSTANCE,
-                replicaVersions);
-        return new ReplicaFragmentMigrationState(namespaces, operations);
-    }
-
-    public static ReplicaFragmentMigrationState newGroupedReplicaFragmentMigrationState(
-            Map<ReplicaFragmentNamespace, long[]> namespaces, Operation operation) {
-        return new ReplicaFragmentMigrationState(namespaces, singletonList(operation));
-    }
 
     private Map<ReplicaFragmentNamespace, long[]> namespaces;
 
@@ -45,6 +50,18 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
         this.migrationOperations = migrationOperations;
     }
 
+    public static ReplicaFragmentMigrationState newDefaultReplicaFragmentMigrationState(long[] replicaVersions,
+                                                                                        Collection<Operation> operations) {
+        Map<ReplicaFragmentNamespace, long[]> namespaces = singletonMap(InternalReplicaFragmentNamespace.INSTANCE,
+                replicaVersions);
+        return new ReplicaFragmentMigrationState(namespaces, operations);
+    }
+
+    public static ReplicaFragmentMigrationState newGroupedReplicaFragmentMigrationState(
+            Map<ReplicaFragmentNamespace, long[]> namespaces, Operation operation) {
+        return new ReplicaFragmentMigrationState(namespaces, singletonList(operation));
+    }
+
     public Map<ReplicaFragmentNamespace, long[]> getNamespaces() {
         return namespaces;
     }
@@ -55,7 +72,7 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
 
     @Override
     public int getFactoryId() {
-        return ClusterDataSerializerHook.F_ID;
+        return PartitionDataSerializerHook.F_ID;
     }
 
     @Override
@@ -72,7 +89,7 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
         }
         out.writeInt(migrationOperations.size());
         for (Operation operation : migrationOperations) {
-            operation.writeData(out);
+            out.writeObject(operation);
         }
     }
 

@@ -32,8 +32,8 @@ import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.BaseMigrationAwareService;
 import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -134,6 +134,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         MigrationInfo currentActiveMigration = migrationManager.setActiveMigration(migrationInfo);
         if (currentActiveMigration != null) {
             if (migrationInfo.equals(currentActiveMigration)) {
+                migrationInfo = currentActiveMigration;
                 return;
             }
 
@@ -166,7 +167,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         PartitionMigrationEvent event = getMigrationEvent();
 
         Throwable t = null;
-        for (MigrationAwareService service : nodeEngine.getServices(MigrationAwareService.class)) {
+        for (BaseMigrationAwareService service : nodeEngine.getServices(BaseMigrationAwareService.class)) {
             // we need to make sure all beforeMigration() methods are executed
             try {
                 service.beforeMigration(event);
@@ -231,14 +232,14 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out); // TODO [basri]
+        super.writeInternal(out);
         migrationInfo.writeData(out);
         out.writeInt(partitionStateVersion);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in); // TODO [basri]
+        super.readInternal(in);
         migrationInfo = new MigrationInfo();
         migrationInfo.readData(in);
         partitionStateVersion = in.readInt();

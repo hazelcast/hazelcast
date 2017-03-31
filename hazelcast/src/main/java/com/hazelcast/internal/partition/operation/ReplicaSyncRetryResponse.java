@@ -17,7 +17,7 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.internal.cluster.impl.Versions;
-import com.hazelcast.internal.partition.DefaultReplicaFragmentNamespace;
+import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
@@ -62,7 +62,7 @@ public class ReplicaSyncRetryResponse extends AbstractPartitionOperation
         PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
         if (namespaces.isEmpty()) {
             // version 3.8
-            replicaManager.clearReplicaSyncRequest(partitionId, DefaultReplicaFragmentNamespace.INSTANCE, replicaIndex);
+            replicaManager.clearReplicaSyncRequest(partitionId, InternalReplicaFragmentNamespace.INSTANCE, replicaIndex);
         } else {
             for (ReplicaFragmentNamespace namespace : namespaces) {
                 replicaManager.clearReplicaSyncRequest(partitionId, namespace, replicaIndex);

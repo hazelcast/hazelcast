@@ -17,7 +17,7 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.internal.cluster.impl.Versions;
-import com.hazelcast.internal.partition.DefaultReplicaFragmentNamespace;
+import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
@@ -110,12 +110,12 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
             if (allNamespaces.isEmpty()) {
                 // version 3.8
                 createDefaultReplicationOperations(operations);
-                sendOperations(operations, Collections.singleton(DefaultReplicaFragmentNamespace.INSTANCE));
+                sendOperations(operations, Collections.singleton(InternalReplicaFragmentNamespace.INSTANCE));
             } else {
                 Map<String, Collection<ReplicaFragmentNamespace>> namespacesByService = groupNamespacesByService();
-                if (namespacesByService.remove(DefaultReplicaFragmentNamespace.INSTANCE.getServiceName()) != null) {
+                if (namespacesByService.remove(InternalReplicaFragmentNamespace.INSTANCE.getServiceName()) != null) {
                     createNonFragmentedReplicationOperations(operations);
-                    sendOperations(operations, Collections.singleton(DefaultReplicaFragmentNamespace.INSTANCE));
+                    sendOperations(operations, Collections.singleton(InternalReplicaFragmentNamespace.INSTANCE));
                 }
 
                 for (Map.Entry<String, Collection<ReplicaFragmentNamespace>> entry : namespacesByService.entrySet()) {

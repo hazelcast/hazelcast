@@ -19,7 +19,7 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.partition.DefaultReplicaFragmentNamespace;
+import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.operation.ReplicaSyncRequest;
@@ -134,11 +134,11 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
      * @throws IllegalArgumentException if the replica index is not between 0 and {@link InternalPartition#MAX_REPLICA_COUNT}
      */
     public void triggerPartitionReplicaSync(int partitionId, Collection<ReplicaFragmentNamespace> namespaces, int replicaIndex) {
-        assert replicaIndex >= 0 && replicaIndex < InternalPartition.MAX_REPLICA_COUNT :
-                "Invalid replica index! partitionId=" + partitionId + ", replicaIndex=" + replicaIndex;
+        assert replicaIndex >= 0 && replicaIndex < InternalPartition.MAX_REPLICA_COUNT
+                : "Invalid replica index! partitionId=" + partitionId + ", replicaIndex=" + replicaIndex;
 
-        Address target;
-        if ((target = checkAndGetPrimaryReplicaOwner(partitionId, replicaIndex)) == null) {
+        Address target = checkAndGetPrimaryReplicaOwner(partitionId, replicaIndex);
+        if (target == null) {
             return;
         }
 
@@ -203,7 +203,6 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
             if (logger.isFinestEnabled()) {
                 logger.finest("Cannot send sync replica request for partitionId=" + partitionId + ", replicaIndex=" + replicaIndex
                         + ", namespaces=" + namespaces + ". No permits available!");
-
             }
             return;
         }
@@ -248,7 +247,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         if (operation instanceof ReplicaFragmentAware && clusterVersion.isGreaterOrEqual(Versions.V3_9)) {
             return ((ReplicaFragmentAware) operation).getReplicaFragmentNamespace();
         }
-        return DefaultReplicaFragmentNamespace.INSTANCE;
+        return InternalReplicaFragmentNamespace.INSTANCE;
     }
 
     @Override
@@ -258,8 +257,8 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     }
 
     @Override
-    public void updatePartitionReplicaVersions(int partitionId, ReplicaFragmentNamespace namespace, long[] versions,
-            int replicaIndex) {
+    public void updatePartitionReplicaVersions(int partitionId, ReplicaFragmentNamespace namespace,
+                                               long[] versions, int replicaIndex) {
         PartitionReplicaVersions partitionVersion = replicaVersions[partitionId];
         if (!partitionVersion.update(namespace, versions, replicaIndex)) {
             // this partition backup is behind the owner or dirty.
@@ -268,25 +267,14 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     }
 
     @Override
-    public boolean isPartitionReplicaVersionStale(int partitionId, ReplicaFragmentNamespace namespace, long[] versions,
-            int replicaIndex) {
+    public boolean isPartitionReplicaVersionStale(int partitionId, ReplicaFragmentNamespace namespace,
+                                                  long[] versions, int replicaIndex) {
         return replicaVersions[partitionId].isStale(namespace, versions, replicaIndex);
-    }
-
-    // called in operation threads
-    public boolean isPartitionReplicaVersionDirty(int partitionId) {
-        return replicaVersions[partitionId].isDirty(DefaultReplicaFragmentNamespace.INSTANCE);
     }
 
     // called in operation threads
     public boolean isPartitionReplicaVersionDirty(int partitionId, ReplicaFragmentNamespace namespace) {
         return replicaVersions[partitionId].isDirty(namespace);
-    }
-
-    // called in operation threads
-    // Caution: Returning version array without copying for performance reasons. Callers must not modify this array!
-    public long[] getPartitionReplicaVersions(int partitionId) {
-        return replicaVersions[partitionId].get(DefaultReplicaFragmentNamespace.INSTANCE);
     }
 
     @Override
@@ -295,18 +283,9 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     }
 
     // called in operation threads
-    public void setPartitionReplicaVersions(int partitionId, long[] versions, int replicaOffset) {
-        replicaVersions[partitionId].set(DefaultReplicaFragmentNamespace.INSTANCE, versions, replicaOffset);
-    }
-
-    // called in operation threads
-    public void setPartitionReplicaVersions(int partitionId, ReplicaFragmentNamespace namespace, long[] versions, int replicaOffset) {
+    public void setPartitionReplicaVersions(int partitionId, ReplicaFragmentNamespace namespace,
+                                            long[] versions, int replicaOffset) {
         replicaVersions[partitionId].set(namespace, versions, replicaOffset);
-    }
-
-    // called in operation threads
-    public void clearPartitionReplicaVersions(int partitionId) {
-        replicaVersions[partitionId].clear(DefaultReplicaFragmentNamespace.INSTANCE);
     }
 
     // called in operation threads

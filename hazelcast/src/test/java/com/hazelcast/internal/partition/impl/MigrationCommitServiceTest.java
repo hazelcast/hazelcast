@@ -19,6 +19,7 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
@@ -51,7 +52,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.internal.partition.impl.MigrationCommitTest.resetInternalMigrationListener;
 import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
 import static com.hazelcast.spi.partition.MigrationEndpoint.SOURCE;
-import static com.hazelcast.test.TestPartitionUtils.getReplicaVersions;
+import static com.hazelcast.test.TestPartitionUtils.getDefaultReplicaVersions;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -352,7 +353,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                long[] replicaVersions = getReplicaVersions(factory.getInstance(oldReplicaOwner), partitionId);
+                long[] replicaVersions = getDefaultReplicaVersions(getNode(factory.getInstance(oldReplicaOwner)), partitionId);
                 assertArrayEquals(new long[InternalPartition.MAX_BACKUP_COUNT], replicaVersions);
             }
         });
@@ -508,7 +509,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
         boolean shouldContainData = replicaIndex != -1 && replicaIndex <= BACKUP_COUNT;
         assertEquals(msg, shouldContainData, service.contains(partitionId));
 
-        long[] replicaVersions = getReplicaVersions(factory.getInstance(address), partitionId);
+        long[] replicaVersions = getDefaultReplicaVersions(getNode(factory.getInstance(address)), partitionId);
 
         msg = msg + " , ReplicaVersions: " + Arrays.toString(replicaVersions);
         if (shouldContainData) {
@@ -639,7 +640,8 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
         public void run() {
             InternalPartitionServiceImpl partitionService = nodeEngine.getService(InternalPartitionService.SERVICE_NAME);
             partitionService.getReplicaManager().cancelReplicaSync(partitionId);
-            partitionService.getReplicaManager().clearPartitionReplicaVersions(partitionId);
+            partitionService.getReplicaManager().clearPartitionReplicaVersions(partitionId,
+                    InternalReplicaFragmentNamespace.INSTANCE);
         }
 
         @Override

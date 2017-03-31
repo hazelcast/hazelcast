@@ -958,13 +958,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return replicaManager;
     }
 
-    // called in operation threads
-    // Caution: Returning version array without copying for performance reasons. Callers must not modify this array!
-    @Override
-    public long[] getPartitionReplicaVersions(int partitionId) {
-        return replicaManager.getPartitionReplicaVersions(partitionId);
-    }
-
     @Override
     public Map<Address, List<Integer>> getMemberPartitionsMap() {
         Collection<Member> dataMembers = node.getClusterService().getMembers(DATA_MEMBER_SELECTOR);

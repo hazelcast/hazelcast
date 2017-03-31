@@ -17,15 +17,20 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ServiceConfig;
+import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.partition.service.TestAbstractMigrationAwareService;
 import com.hazelcast.internal.partition.service.TestIncrementOperation;
 import com.hazelcast.internal.partition.service.TestMigrationAwareService;
+import com.hazelcast.internal.partition.service.fragment.TestFragmentIncrementOperation;
+import com.hazelcast.internal.partition.service.fragment.TestFragmentedMigrationAwareService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.ReplicaFragmentNamespace;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -45,7 +50,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.TestPartitionUtils.getPartitionReplicaVersionsView;
-import static com.hazelcast.test.TestPartitionUtils.getReplicaVersions;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
@@ -59,6 +63,9 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
 
     private static final int PARALLEL_REPLICATIONS = 10;
     private static final int BACKUP_SYNC_INTERVAL = 1;
+
+    private static final String NAMESPACE_1 = "ns1";
+    private static final String NAMESPACE_2 = "ns2";
 
     TestHazelcastInstanceFactory factory;
 
@@ -77,8 +84,11 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
 
     void fillData(HazelcastInstance hz) {
         NodeEngine nodeEngine = getNode(hz).nodeEngine;
+        OperationService operationService = nodeEngine.getOperationService();
         for (int i = 0; i < partitionCount; i++) {
-            nodeEngine.getOperationService().invokeOnPartition(null, new TestIncrementOperation(), i);
+            operationService.invokeOnPartition(null, new TestIncrementOperation(), i);
+            operationService.invokeOnPartition(null, new TestFragmentIncrementOperation(NAMESPACE_1), i);
+            operationService.invokeOnPartition(null, new TestFragmentIncrementOperation(NAMESPACE_2), i);
         }
     }
 
@@ -179,9 +189,15 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         final int expectedSize = partitionCount * (actualBackupCount + 1);
 
         int total = 0;
+        int totalFragmentedNS1 = 0;
+        int totalFragmentedNS2 = 0;
         for (HazelcastInstance hz : instances) {
-            TestMigrationAwareService service = getService(hz);
+            TestMigrationAwareService service = getService(hz, TestMigrationAwareService.SERVICE_NAME);
             total += service.size();
+
+            TestFragmentedMigrationAwareService fragmentedService = getService(hz, TestFragmentedMigrationAwareService.SERVICE_NAME);
+            totalFragmentedNS1 += fragmentedService.size(NAMESPACE_1);
+            totalFragmentedNS2 += fragmentedService.size(NAMESPACE_2);
 
             Node node = getNode(hz);
             InternalPartitionService partitionService = node.getPartitionService();
@@ -189,48 +205,61 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
             Address thisAddress = node.getThisAddress();
 
             // find leaks
-            assertNoLeakingData(service, partitions, thisAddress);
+            assertNoLeakingData(service, partitions, thisAddress, null);
+            assertNoLeakingData(fragmentedService, partitions, thisAddress, NAMESPACE_1);
+            assertNoLeakingData(fragmentedService, partitions, thisAddress, NAMESPACE_2);
 
             // find missing
-            assertNoMissingData(service, partitions, thisAddress);
+            assertNoMissingData(service, partitions, thisAddress, null);
+            assertNoMissingData(fragmentedService, partitions, thisAddress, NAMESPACE_1);
+            assertNoMissingData(fragmentedService, partitions, thisAddress, NAMESPACE_2);
 
             // check values
-            assertPartitionVersionsAndBackupValues(actualBackupCount, service, node, partitions, allowDirty);
+            assertPartitionVersionsAndBackupValues(actualBackupCount, service, node, partitions, null, allowDirty);
+            assertPartitionVersionsAndBackupValues(actualBackupCount, fragmentedService, node, partitions, NAMESPACE_1, allowDirty);
+            assertPartitionVersionsAndBackupValues(actualBackupCount, fragmentedService, node, partitions, NAMESPACE_2, allowDirty);
 
             assertMigrationEvents(service, thisAddress);
+            assertMigrationEvents(fragmentedService, thisAddress);
         }
 
         assertEquals("Missing data!", expectedSize, total);
+        assertEquals("Missing data!", expectedSize, totalFragmentedNS1);
+        assertEquals("Missing data!", expectedSize, totalFragmentedNS2);
     }
 
-    private void assertNoLeakingData(TestMigrationAwareService service, InternalPartition[] partitions, Address thisAddress) {
-        for (Integer p : service.keys()) {
+    private <N> void assertNoLeakingData(TestAbstractMigrationAwareService<N> service, InternalPartition[] partitions,
+            Address thisAddress, N ns) {
+        for (Integer p : service.keys(ns)) {
             int replicaIndex = partitions[p].getReplicaIndex(thisAddress);
             assertThat("Partition: " + p + " is leaking on " + thisAddress,
                     replicaIndex, allOf(greaterThanOrEqualTo(0), lessThanOrEqualTo(backupCount)));
         }
     }
 
-    private void assertNoMissingData(TestMigrationAwareService service, InternalPartition[] partitions,
-                                     Address thisAddress) {
+    private <N> void assertNoMissingData(TestAbstractMigrationAwareService<N> service, InternalPartition[] partitions,
+                                     Address thisAddress, N ns) {
         for (InternalPartition partition : partitions) {
             int replicaIndex = partition.getReplicaIndex(thisAddress);
             if (replicaIndex >= 0 && replicaIndex <= backupCount) {
                 assertTrue("Partition: " + partition.getPartitionId() + ", replica: " + replicaIndex
                                 + " data is missing on " + thisAddress,
-                        service.contains(partition.getPartitionId()));
+                        service.contains(ns, partition.getPartitionId()));
             }
         }
     }
 
-    private void assertPartitionVersionsAndBackupValues(int actualBackupCount, TestMigrationAwareService service,
-                                                        Node node, InternalPartition[] partitions, boolean allowDirty) throws InterruptedException {
+    private <N> void assertPartitionVersionsAndBackupValues(int actualBackupCount,
+            TestAbstractMigrationAwareService<N> service, Node node, InternalPartition[] partitions,
+            N name, boolean allowDirty) throws InterruptedException {
+
         Address thisAddress = node.getThisAddress();
+        ReplicaFragmentNamespace namespace = service.getNamespace(name);
 
         for (InternalPartition partition : partitions) {
             if (partition.isLocal()) {
                 int partitionId = partition.getPartitionId();
-                long[] replicaVersions = getReplicaVersions(node, partitionId);
+                long[] replicaVersions = getPartitionReplicaVersionsView(node, partitionId).getVersions().get(namespace);
 
                 for (int replica = 1; replica <= actualBackupCount; replica++) {
                     Address address = partition.getReplicaAddress(replica);
@@ -243,7 +272,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
                     assertNotNull(backupNode);
 
                     PartitionReplicaVersionsView backupReplicaVersionsView = getPartitionReplicaVersionsView(backupNode, partitionId);
-                    long[] backupReplicaVersions = backupReplicaVersionsView.getVersions();
+                    long[] backupReplicaVersions = backupReplicaVersionsView.getVersions().get(namespace);
                     assertNotNull("Versions null on " + backupNode.address + ", partitionId: " + partitionId, backupReplicaVersions);
 
                     for (int i = replica - 1; i < actualBackupCount; i++) {
@@ -255,19 +284,19 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
 
                     if (!allowDirty) {
                         assertFalse("Backup replica is dirty! Owner: " + thisAddress + ", Backup: " + address
-                                + ", Partition: " + partition, backupReplicaVersionsView.isDirty());
+                                + ", Partition: " + partition, backupReplicaVersionsView.isDirty(namespace));
                     }
 
-                    TestMigrationAwareService backupService = getService(backupInstance);
+                    TestAbstractMigrationAwareService backupService = getService(backupInstance, service.getServiceName());
                     assertEquals("Wrong data! Partition: " + partitionId + ", replica: " + replica + " on "
                                     + address + " has stale value! " + Arrays.toString(backupReplicaVersions),
-                            service.get(partitionId), backupService.get(partitionId));
+                            service.get(name, partitionId), backupService.get(name, partitionId));
                 }
             }
         }
     }
 
-    private void assertMigrationEvents(TestMigrationAwareService service, Address thisAddress) {
+    private void assertMigrationEvents(TestAbstractMigrationAwareService service, Address thisAddress) {
         Collection<PartitionMigrationEvent> beforeEvents = service.getBeforeEvents();
         int beforeEventsCount = beforeEvents.size();
         Collection<PartitionMigrationEvent> commitEvents = service.getCommitEvents();
@@ -291,17 +320,18 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         assertTrue("Remaining rollback events: " + rollbackEvents, rollbackEvents.isEmpty());
     }
 
-    private TestMigrationAwareService getService(HazelcastInstance hz) {
+    private <S extends TestAbstractMigrationAwareService> S getService(HazelcastInstance hz, String serviceName) {
         Node node = getNode(hz);
-        return node.nodeEngine.getService(TestMigrationAwareService.SERVICE_NAME);
+        return node.nodeEngine.getService(serviceName);
     }
 
     Config getConfig(boolean withService, boolean antiEntropyEnabled) {
         Config config = new Config();
 
         if (withService) {
-            ServiceConfig serviceConfig = TestMigrationAwareService.createServiceConfig(backupCount);
-            config.getServicesConfig().addServiceConfig(serviceConfig);
+            ServicesConfig servicesConfig = config.getServicesConfig();
+            servicesConfig.addServiceConfig(TestMigrationAwareService.createServiceConfig(backupCount));
+            servicesConfig.addServiceConfig(TestFragmentedMigrationAwareService.createServiceConfig(backupCount));
         }
 
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));

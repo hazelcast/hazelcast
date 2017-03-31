@@ -29,11 +29,11 @@ import java.io.IOException;
  *
  * @since 3.9
  */
-public class DefaultReplicaFragmentNamespace implements ReplicaFragmentNamespace, IdentifiedDataSerializable {
+public final class InternalReplicaFragmentNamespace implements ReplicaFragmentNamespace, IdentifiedDataSerializable {
 
-    public static final ReplicaFragmentNamespace INSTANCE = new DefaultReplicaFragmentNamespace();
+    public static final ReplicaFragmentNamespace INSTANCE = new InternalReplicaFragmentNamespace();
 
-    public DefaultReplicaFragmentNamespace() {
+    public InternalReplicaFragmentNamespace() {
     }
 
     @Override
@@ -61,7 +61,7 @@ public class DefaultReplicaFragmentNamespace implements ReplicaFragmentNamespace
 
     @Override
     public String toString() {
-        return "DefaultReplicaFragmentNamespace";
+        return "InternalReplicaFragmentNamespace";
     }
 
     @Override
@@ -71,6 +71,6 @@ public class DefaultReplicaFragmentNamespace implements ReplicaFragmentNamespace
 
     @Override
     public int getId() {
-        return PartitionDataSerializerHook.DEFAULT_FRAGMENT_NAMESPACE;
+        return PartitionDataSerializerHook.INTERNAL_FRAGMENT_NAMESPACE;
     }
 }
