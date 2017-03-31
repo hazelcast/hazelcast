@@ -220,7 +220,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
      * A response equal to {@link Boolean#TRUE} indicates successful migration.
      */
     private void handleMigrationResultFromTarget(Object result) {
-        migrationInfo.doneProcessing();
+        migrationInfo.doneProcessing(); // TODO [basri] is this necessary?
         onMigrationComplete(Boolean.TRUE.equals(result));
         sendResponse(result);
     }

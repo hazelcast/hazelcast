@@ -24,8 +24,8 @@ import com.hazelcast.internal.partition.operation.CheckReplicaVersion;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.ReplicaFragmentAwareService;
-import com.hazelcast.spi.ReplicaFragmentAwareService.ReplicaFragmentNamespace;
+import com.hazelcast.spi.FragmentedMigrationAwareService;
+import com.hazelcast.spi.ReplicaFragmentNamespace;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
@@ -123,10 +123,10 @@ final class CheckReplicaVersionTask implements PartitionSpecificRunnable, Urgent
     // works only on primary. backups are retained when CheckReplicaVersion is executed.
     private Collection<ReplicaFragmentNamespace> retainAndGetNamespaces() {
         PartitionReplicationEvent event = new PartitionReplicationEvent(partitionId, 0);
-        Collection<ReplicaFragmentAwareService> services = nodeEngine.getServices(ReplicaFragmentAwareService.class);
+        Collection<FragmentedMigrationAwareService> services = nodeEngine.getServices(FragmentedMigrationAwareService.class);
 
         Set<ReplicaFragmentNamespace> namespaces = new HashSet<ReplicaFragmentNamespace>();
-        for (ReplicaFragmentAwareService service : services) {
+        for (FragmentedMigrationAwareService service : services) {
             Collection<ReplicaFragmentNamespace> serviceNamespaces = service.getAllFragmentNamespaces(event);
             namespaces.addAll(serviceNamespaces);
         }

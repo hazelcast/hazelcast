@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.spi.ReplicaFragmentAwareService.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ReplicaFragmentNamespace;
 
 import java.util.Collection;
 import java.util.HashMap;

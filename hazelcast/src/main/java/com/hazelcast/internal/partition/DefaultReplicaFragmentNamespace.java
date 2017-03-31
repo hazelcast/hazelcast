@@ -16,17 +16,20 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.ReplicaFragmentAwareService.ReplicaFragmentNamespace;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.ReplicaFragmentNamespace;
 
 import java.io.IOException;
 
 /**
  * TODO: Javadoc Pending...
  *
+ * @since 3.9
  */
-public class DefaultReplicaFragmentNamespace implements ReplicaFragmentNamespace {
+public class DefaultReplicaFragmentNamespace implements ReplicaFragmentNamespace, IdentifiedDataSerializable {
 
     public static final ReplicaFragmentNamespace INSTANCE = new DefaultReplicaFragmentNamespace();
 
@@ -59,5 +62,15 @@ public class DefaultReplicaFragmentNamespace implements ReplicaFragmentNamespace
     @Override
     public String toString() {
         return "DefaultReplicaFragmentNamespace";
+    }
+
+    @Override
+    public int getFactoryId() {
+        return PartitionDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return PartitionDataSerializerHook.DEFAULT_FRAGMENT_NAMESPACE;
     }
 }

@@ -128,6 +128,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
         }
     }
 
+    // TODO [basri] move this to BaseMigrationOperator
     private void checkMigrationInitiatorIsMaster() {
         NodeEngine nodeEngine = getNodeEngine();
         Address masterAddress = nodeEngine.getMasterAddress();

@@ -24,8 +24,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReplicaFragmentAwareService.ReplicaFragmentAware;
-import com.hazelcast.spi.ReplicaFragmentAwareService.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ReplicaFragmentAware;
+import com.hazelcast.spi.ReplicaFragmentNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 

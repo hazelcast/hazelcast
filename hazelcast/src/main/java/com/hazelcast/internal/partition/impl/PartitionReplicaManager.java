@@ -28,8 +28,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReplicaFragmentAwareService.ReplicaFragmentAware;
-import com.hazelcast.spi.ReplicaFragmentAwareService.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ReplicaFragmentAware;
+import com.hazelcast.spi.ReplicaFragmentNamespace;
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -245,7 +245,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
 
     @Override
     public ReplicaFragmentNamespace getReplicaFragmentNamespace(Operation operation) {
-        if (clusterVersion.isGreaterOrEqual(Versions.V3_9) && operation instanceof ReplicaFragmentAware) {
+        if (operation instanceof ReplicaFragmentAware && clusterVersion.isGreaterOrEqual(Versions.V3_9)) {
             return ((ReplicaFragmentAware) operation).getReplicaFragmentNamespace();
         }
         return DefaultReplicaFragmentNamespace.INSTANCE;

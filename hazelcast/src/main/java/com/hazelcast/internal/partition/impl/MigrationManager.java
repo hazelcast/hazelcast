@@ -253,10 +253,13 @@ public class MigrationManager {
                 return null;
             }
 
-            if (logger.isFineEnabled()) {
-                logger.fine("Active migration is not set: " + migrationInfo
-                        + ". Existing active migration: " + activeMigrationInfo + "\n");
+            if (activeMigrationInfo != migrationInfo) {
+                if (logger.isFineEnabled()) {
+                    logger.fine("Active migration is not set: " + migrationInfo
+                            + ". Existing active migration: " + activeMigrationInfo);
+                }
             }
+
             return activeMigrationInfo;
         } finally {
             partitionServiceLock.unlock();

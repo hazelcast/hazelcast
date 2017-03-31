@@ -18,28 +18,15 @@ package com.hazelcast.spi;
 
 import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.util.Collection;
-
 /**
  * TODO: Javadoc Pending...
  *
+ * @since 3.9
  */
-public interface ReplicaFragmentAwareService {
-
-    // TODO: remove registered namespaces those don't exist in this set
-    Collection<ReplicaFragmentNamespace> getAllFragmentNamespaces(PartitionReplicationEvent event);
-
-    Operation prepareReplicationOperation(PartitionReplicationEvent event, Collection<ReplicaFragmentNamespace> namespaces);
-
-    interface ReplicaFragmentNamespace extends DataSerializable {
-        /**
-         * Name of the service which fragments belongs to
-         * @return name of the service
-         */
-        String getServiceName();
-    }
-
-    interface ReplicaFragmentAware {
-        ReplicaFragmentNamespace getReplicaFragmentNamespace();
-    }
+public interface ReplicaFragmentNamespace extends DataSerializable {
+    /**
+     * Name of the service which fragments belongs to
+     * @return name of the service
+     */
+    String getServiceName();
 }

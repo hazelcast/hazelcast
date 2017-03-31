@@ -16,10 +16,14 @@
 
 package com.hazelcast.internal.partition.impl;
 
+import com.hazelcast.internal.partition.DefaultReplicaFragmentNamespace;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
+import com.hazelcast.internal.partition.ReplicaFragmentMigrationState;
 import com.hazelcast.internal.partition.operation.AssignPartitions;
 import com.hazelcast.internal.partition.operation.CheckReplicaVersion;
 import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
+import com.hazelcast.internal.partition.operation.FragmentedMigrationOperation;
+import com.hazelcast.internal.partition.operation.FragmentedMigrationRequestOperation;
 import com.hazelcast.internal.partition.operation.HasOngoingMigration;
 import com.hazelcast.internal.partition.operation.MigrationCommitOperation;
 import com.hazelcast.internal.partition.operation.MigrationOperation;
@@ -62,8 +66,12 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
     public static final int SAFE_STATE_CHECK = 14;
     public static final int SHUTDOWN_REQUEST = 15;
     public static final int SHUTDOWN_RESPONSE = 16;
+    public static final int REPLICA_FRAGMENT_MIGRATION_STATE = 17;
+    public static final int FRAGMENTED_MIGRATION = 18;
+    public static final int FRAGMENTED_MIGRATION_REQUEST = 19;
+    public static final int DEFAULT_FRAGMENT_NAMESPACE = 20;
 
-    private static final int LEN = SHUTDOWN_RESPONSE + 1;
+    private static final int LEN = DEFAULT_FRAGMENT_NAMESPACE + 1;
 
     @Override
     public int getFactoryId() {
@@ -154,7 +162,29 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
                 return new ShutdownResponseOperation();
             }
         };
-
+        constructors[REPLICA_FRAGMENT_MIGRATION_STATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ReplicaFragmentMigrationState();
+            }
+        };
+        constructors[FRAGMENTED_MIGRATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new FragmentedMigrationOperation();
+            }
+        };
+        constructors[FRAGMENTED_MIGRATION_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new FragmentedMigrationRequestOperation();
+            }
+        };
+        constructors[DEFAULT_FRAGMENT_NAMESPACE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new DefaultReplicaFragmentNamespace();
+            }
+        };
         return new ArrayDataSerializableFactory(constructors);
     }
 }

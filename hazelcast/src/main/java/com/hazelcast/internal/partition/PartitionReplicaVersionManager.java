@@ -17,13 +17,14 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReplicaFragmentAwareService.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ReplicaFragmentNamespace;
 
 import java.util.Collection;
 
 /**
  * TODO: Javadoc Pending...
  *
+ * @since 3.9
  */
 public interface PartitionReplicaVersionManager {
 

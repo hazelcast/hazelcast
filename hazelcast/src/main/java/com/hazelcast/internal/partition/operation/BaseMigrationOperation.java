@@ -133,6 +133,10 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         MigrationManager migrationManager = partitionService.getMigrationManager();
         MigrationInfo currentActiveMigration = migrationManager.setActiveMigration(migrationInfo);
         if (currentActiveMigration != null) {
+            if (migrationInfo.equals(currentActiveMigration)) {
+                return;
+            }
+
             throw new RetryableHazelcastException("Cannot set active migration to " + migrationInfo
                     + ". Current active migration is " + currentActiveMigration);
         }
@@ -227,12 +231,14 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out); // TODO [basri]
         migrationInfo.writeData(out);
         out.writeInt(partitionStateVersion);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in); // TODO [basri]
         migrationInfo = new MigrationInfo();
         migrationInfo.readData(in);
         partitionStateVersion = in.readInt();

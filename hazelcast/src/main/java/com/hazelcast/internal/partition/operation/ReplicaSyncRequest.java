@@ -38,8 +38,8 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.ReplicaFragmentAwareService;
-import com.hazelcast.spi.ReplicaFragmentAwareService.ReplicaFragmentNamespace;
+import com.hazelcast.spi.FragmentedMigrationAwareService;
+import com.hazelcast.spi.ReplicaFragmentNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 
@@ -229,7 +229,7 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
 
         for (ServiceInfo serviceInfo : services) {
             MigrationAwareService service = (MigrationAwareService) serviceInfo.getService();
-            if (service instanceof ReplicaFragmentAwareService) {
+            if (service instanceof FragmentedMigrationAwareService) {
                 continue;
             }
 
@@ -246,7 +246,7 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
 
         PartitionReplicationEvent event = new PartitionReplicationEvent(getPartitionId(), getReplicaIndex());
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        ReplicaFragmentAwareService service = nodeEngine.getService(serviceName);
+        FragmentedMigrationAwareService service = nodeEngine.getService(serviceName);
         Operation op = service.prepareReplicationOperation(event, ns);
         if (op != null) {
             op.setServiceName(serviceName);
