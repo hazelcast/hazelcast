@@ -80,12 +80,10 @@ public final class HazelcastWriters {
                 serializableConfig(clientConfig),
                 ArrayMap::new,
                 ArrayMap::add,
-                instance -> {
+                instance -> buffer -> {
                     ICache cache = instance.getCacheManager().getCache(name);
-                    return buffer -> {
-                        cache.putAll(buffer);
-                        buffer.clear();
-                    };
+                    cache.putAll(buffer);
+                    buffer.clear();
                 },
                 noopConsumer()
         );
