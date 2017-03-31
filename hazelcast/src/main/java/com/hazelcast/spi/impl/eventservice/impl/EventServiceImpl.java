@@ -414,7 +414,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
 
             if (!nodeEngine.getNode().getConnectionManager().transmit(packet, subscriber)) {
                 if (nodeEngine.isRunning()) {
-                    logFailure("Failed to send event packet to: %s , connection might not alive.", subscriber);
+                    logFailure("Failed to send event packet to: %s, connection might not be alive.", subscriber);
                 }
             }
         }

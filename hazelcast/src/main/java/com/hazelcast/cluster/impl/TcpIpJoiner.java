@@ -339,7 +339,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         if (!node.joined()) {
             Address master = node.getMasterAddress();
             if (master != null) {
-                logger.warning("Couldn't join to the master : " + master);
+                logger.warning("Couldn't join to the master: " + master);
             } else {
                 if (logger.isFineEnabled()) {
                     logger.fine("Couldn't find a master! But there was connections available: " + possibleAddresses);

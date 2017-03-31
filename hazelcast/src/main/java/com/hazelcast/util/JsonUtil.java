@@ -280,7 +280,7 @@ public final class JsonUtil {
      */
     private static void throwExceptionIfNull(JsonValue value, String field) {
         if (value == null) {
-            throw new IllegalArgumentException("No field found named : " + field);
+            throw new IllegalArgumentException("No field found: " + field);
         }
     }
 

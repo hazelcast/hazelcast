@@ -43,7 +43,7 @@ public class MessageFlyweight {
     private static final short SHORT_MASK = 0x00FF;
 
     protected ClientProtocolBuffer buffer;
-    //initialized in wrap method by user , does not change.
+    //initialized in wrap method by user, does not change.
     private int offset;
     //starts from zero, incremented each tome something set to buffer
     private int index;

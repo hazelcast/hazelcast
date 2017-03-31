@@ -431,7 +431,7 @@ class TestClientRegistry {
                 return;
             }
 
-            Logger.getLogger(MockedNodeConnection.class).warning("Server connection closed : " + reason, cause);
+            Logger.getLogger(MockedNodeConnection.class).warning("Server connection closed: " + reason, cause);
             super.close(reason, cause);
             responseConnection.onServerClose(reason);
         }

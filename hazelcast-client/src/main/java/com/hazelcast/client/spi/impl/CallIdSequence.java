@@ -66,7 +66,7 @@ public abstract class CallIdSequence {
         @Override
         public long next() {
             if (!hasSpace()) {
-                throw new HazelcastOverloadException("maxConcurrentInvocations : "
+                throw new HazelcastOverloadException("maxConcurrentInvocations: "
                         + maxConcurrentInvocations + " is reached");
             }
 

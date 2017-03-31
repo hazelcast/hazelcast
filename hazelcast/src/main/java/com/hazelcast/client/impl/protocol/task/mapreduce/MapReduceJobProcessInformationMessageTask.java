@@ -49,7 +49,7 @@ public class MapReduceJobProcessInformationMessageTask
             return MapReduceJobProcessInformationCodec.encodeResponse(jobPartitionStates, current.getProcessedRecords());
         }
         throw new IllegalStateException(
-                "Information not found for map reduce with name : " + parameters.name + ", job id : " + parameters.jobId);
+                "Information not found for map reduce with name: " + parameters.name + ", job id: " + parameters.jobId);
     }
 
     @Override

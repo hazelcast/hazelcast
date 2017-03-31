@@ -84,7 +84,7 @@ public class BinaryCompatibilityTest {
         }
     }
 
-    @Parameterized.Parameters(name = "allowUnsafe:{0} , {index}, isBigEndian:{2}, version:{3}")
+    @Parameterized.Parameters(name = "allowUnsafe:{0}, {index}, isBigEndian:{2}, version:{3}")
     public static Iterable<Object[]> parameters() {
 
 
@@ -145,7 +145,7 @@ public class BinaryCompatibilityTest {
         Object readObject = serializationService.toObject(dataMap.get(key));
         boolean equals = equals(object, readObject);
         if (!equals) {
-            System.out.println(object.getClass().getSimpleName() + " : " + object + " != " + readObject);
+            System.out.println(object.getClass().getSimpleName() + ": " + object + " != " + readObject);
         }
         assertTrue(equals);
 

@@ -103,7 +103,7 @@ public class CacheEventHandler {
                 break;
             default:
                 throw new IllegalArgumentException(
-                        "Event Type not defined to create an eventData during publish : " + eventType.name());
+                        "Event Type not defined to create an eventData during publish: " + eventType.name());
         }
         eventService.publishEvent(SERVICE_NAME, candidates,
                 eventData, cacheEventContext.getOrderKey());

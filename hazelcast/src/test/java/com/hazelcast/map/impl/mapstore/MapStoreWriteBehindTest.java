@@ -418,8 +418,8 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
             @Override
             public void run() throws Exception {
                 int storeOperationCount = mapStore.count.intValue();
-                assertTrue("expected : " + expectedStoreCount
-                        + ", actual : " + storeOperationCount, expectedStoreCount <= storeOperationCount);
+                assertTrue("expected: " + expectedStoreCount
+                        + ", actual: " + storeOperationCount, expectedStoreCount <= storeOperationCount);
             }
         });
     }

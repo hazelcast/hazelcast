@@ -267,7 +267,7 @@ class LoadTracker {
         public void run() {
 
             if (logger.isFinestEnabled()) {
-                logger.finest("Removing handler : " + handler);
+                logger.finest("Removing handler: " + handler);
             }
 
             removeHandler(handler);
@@ -286,7 +286,7 @@ class LoadTracker {
         public void run() {
 
             if (logger.isFinestEnabled()) {
-                logger.finest("Adding handler : " + handler);
+                logger.finest("Adding handler: " + handler);
             }
 
             addHandler(handler);

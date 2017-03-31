@@ -39,7 +39,7 @@ class ConfigCompatibilityChecker {
      * Checks if two {@link Config}'s are compatible. This mostly means that the config values will have the same
      * impact on the behaviour of the system but are not necessarily the same (e.g. null value is sometimes the same
      * as an empty collection or a disabled config).
-     * NOTE : This method checks MOST but NOT ALL configuration. As such it is best used in test scenarios to cover
+     * NOTE: This method checks MOST but NOT ALL configuration. As such it is best used in test scenarios to cover
      * as much config checks as possible automatically.
      *
      * @param c1 the {@link Config} to check

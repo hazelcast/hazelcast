@@ -137,7 +137,7 @@ public class AllTest {
     }
 
     private void topicStats() {
-        log("Topic Messages Sent : " + messagesSend.getAndSet(0) / STATS_SECONDS + "::: Messages Received: " + messagesReceived
+        log("Topic Messages Sent: " + messagesSend.getAndSet(0) / STATS_SECONDS + "::: Messages Received: " + messagesReceived
                 .getAndSet(0) / STATS_SECONDS);
     }
 

@@ -64,7 +64,7 @@ public class AwsAddressProvider implements AddressProvider {
         try {
             privateToPublic = awsClient.getAddresses();
         } catch (Exception e) {
-            logger.warning("Aws addresses are failed to load : " + e.getMessage());
+            logger.warning("Aws addresses failed to load: " + e.getMessage());
         }
     }
 }

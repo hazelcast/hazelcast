@@ -180,7 +180,7 @@ public abstract class Invocation implements OperationResponseHandler {
     public void sendResponse(Operation op, Object response) {
         if (!RESPONSE_RECEIVED.compareAndSet(this, FALSE, TRUE)) {
             throw new ResponseAlreadySentException("NormalResponse already responseReceived for callback: " + this
-                    + ", current-response: : " + response);
+                    + ", current-response: " + response);
         }
 
         if (response instanceof CallTimeoutResponse) {

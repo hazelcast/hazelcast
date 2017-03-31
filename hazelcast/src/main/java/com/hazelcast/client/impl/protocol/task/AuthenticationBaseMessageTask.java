@@ -197,7 +197,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTarg
     private ClientMessage prepareUnauthenticatedClientMessage() {
         Connection connection = endpoint.getConnection();
         ILogger logger = clientEngine.getLogger(getClass());
-        logger.warning("Received auth from " + connection + " with principal " + principal + " , authentication failed");
+        logger.warning("Received auth from " + connection + " with principal " + principal + ", authentication failed");
         byte status = AuthenticationStatus.CREDENTIALS_FAILED.getId();
         return encodeAuth(status, null, null, null, serializationService.getVersion(), null);
     }
@@ -213,8 +213,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTarg
 
         endpoint.authenticated(principal, credentials, isOwnerConnection(), clientVersion, clientMessage.getCorrelationId());
         setConnectionType();
-        logger.info("Received auth from " + connection + ", successfully authenticated" + ", principal : " + principal
-                + ", owner connection : " + isOwnerConnection() + ", client version : " + clientVersion);
+        logger.info("Received auth from " + connection + ", successfully authenticated" + ", principal: " + principal
+                + ", owner connection: " + isOwnerConnection() + ", client version: " + clientVersion);
         if (endpointManager.registerEndpoint(endpoint)) {
             clientEngine.bind(endpoint);
         }

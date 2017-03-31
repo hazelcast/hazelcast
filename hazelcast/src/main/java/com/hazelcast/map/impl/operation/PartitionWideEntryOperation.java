@@ -38,7 +38,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * GOTCHA : This operation does NOT load missing keys from map-store for now.
+ * GOTCHA: This operation does NOT load missing keys from map-store for now.
  */
 public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation implements BackupAwareOperation {
 

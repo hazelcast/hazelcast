@@ -236,7 +236,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         assertEquals(pageSize, values.size());
 
         /**
-         * There may be cases when the server may return a list of entries larger than the requested page size , in this case
+         * There may be cases when the server may return a list of entries larger than the requested page size, in this case
          * the client should not put any anchor into the list that is on a page greater than the requested page. The case occurs
          * when multiple members exist in the cluster. E.g.:
          * pageSize:5

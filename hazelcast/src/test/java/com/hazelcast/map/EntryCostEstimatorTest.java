@@ -111,7 +111,7 @@ public class EntryCostEstimatorTest
 
         // costs should not be zero
         assertTrue("map1 cost should be greater than zero....: " + map1Cost, map1Cost > 0);
-        assertTrue("map2 cost should be greater than zero.... : " + map2Cost, map2Cost > 0);
+        assertTrue("map2 cost should be greater than zero....: " + map2Cost, map2Cost > 0);
 
         // one map is backup, so backup & owner cost must be same
         assertEquals(map1Cost, map2Cost);

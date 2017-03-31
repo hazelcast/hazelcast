@@ -107,7 +107,7 @@ public class ReplicatedMapWriteOrderTest extends ReplicatedMapAbstractTest {
                 private void printValues() throws Exception {
                     for (int j = 0; j < maps.size(); j++) {
                         ReplicatedMap map = maps.get(j);
-                        System.out.println("value[" + j + "] = " + map.get(key) + " , store version : " + getStore(map, key).getVersion());
+                        System.out.println("value[" + j + "] = " + map.get(key) + ", store version: " + getStore(map, key).getVersion());
                     }
                 }
 

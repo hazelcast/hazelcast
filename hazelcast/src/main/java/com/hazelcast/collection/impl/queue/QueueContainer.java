@@ -693,7 +693,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * list). If the retain parameter is false, it will remove items which are in the dataList (retaining all other items which
      * are not in the list).
      *
-     * Note : this method will trigger store load.
+     * Note: this method will trigger store load.
      *
      * @param dataList the list of items which are to be retained in the queue or which are to be removed from the queue
      * @param retain does the method retain the items in the list (true) or remove them from the queue (false)

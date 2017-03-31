@@ -54,7 +54,7 @@ public final class MXBeanUtil {
             } catch (Exception e) {
                 throw new CacheException(
                         "Error registering cache MXBeans for CacheManager " + registeredObjectName
-                                + " . Error was " + e.getMessage(), e);
+                                + ". Error was " + e.getMessage(), e);
             }
         }
     }
@@ -83,7 +83,7 @@ public final class MXBeanUtil {
                     } catch (Exception e) {
                         throw new CacheException(
                                 "Error unregistering object instance " + registeredObjectName
-                                        + " . Error was " + e.getMessage(), e);
+                                        + ". Error was " + e.getMessage(), e);
                     }
                 }
             }

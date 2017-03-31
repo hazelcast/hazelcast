@@ -18,7 +18,7 @@ package com.hazelcast.util;
 
 /**
  * To differentiate users selection on result collection on map-wide operations
- * like values , keySet , query etc.
+ * like values, keySet, query etc.
  */
 public enum IterationType {
 

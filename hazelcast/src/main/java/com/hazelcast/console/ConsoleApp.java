@@ -823,7 +823,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         while (it.hasNext()) {
             count++;
             Map.Entry entry = (Entry) it.next();
-            println(entry.getKey() + " : " + entry.getValue());
+            println(entry.getKey() + ": " + entry.getValue());
         }
         println("Total " + count);
     }
@@ -871,7 +871,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         while (it.hasNext()) {
             count++;
             Map.Entry entry = (Entry) it.next();
-            println(entry.getKey() + " : " + entry.getValue());
+            println(entry.getKey() + ": " + entry.getValue());
         }
         println("Total " + count);
     }

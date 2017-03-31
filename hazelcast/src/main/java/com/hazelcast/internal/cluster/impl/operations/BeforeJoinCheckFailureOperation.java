@@ -59,7 +59,7 @@ public class BeforeJoinCheckFailureOperation extends AbstractClusterOperation {
 
         final ILogger logger = nodeEngine.getLogger("com.hazelcast.security");
         logger.severe("Node could not join cluster. Before join check failed node is going to shutdown now!");
-        logger.severe("Reason of failure for node join : " + failReasonMsg);
+        logger.severe("Reason of failure for node join: " + failReasonMsg);
         node.shutdown(true);
     }
 

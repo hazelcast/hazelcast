@@ -27,7 +27,7 @@ public class UndefinedErrorCodeException extends HazelcastException {
     private final String className;
 
     public UndefinedErrorCodeException(String message, String className) {
-        super("Class name : " + className + " , Message : " + message);
+        super("Class name: " + className + ", Message: " + message);
         this.className = className;
     }
 

@@ -872,7 +872,7 @@ public class MigrationManager {
                 if (migrationInfo.isValid()) {
                     logger.severe("Skipping migration! Partition owner is not set! -> partitionId="
                             + migrationInfo.getPartitionId()
-                            + " , " + partition + " -VS- " + migrationInfo);
+                            + ", " + partition + " -VS- " + migrationInfo);
                 }
                 return null;
             }
