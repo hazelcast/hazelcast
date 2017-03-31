@@ -31,6 +31,8 @@ import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Map;
 
+import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
+
 /**
  * Base implementation of {@link AbstractNearCacheRecordStore} for on-heap Near Caches.
  *
@@ -93,7 +95,7 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     @Override
     protected R removeRecord(K key) {
         R removedRecord = records.remove(key);
-        if (removedRecord != null) {
+        if (removedRecord != null && removedRecord.getRecordState() == READ_PERMITTED) {
             nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, removedRecord));
         }
         return removedRecord;

@@ -377,7 +377,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         boolean removed = false;
         try {
             record = removeRecord(key);
-            if (record != null) {
+            if (record != null && record.getRecordState() == READ_PERMITTED) {
                 removed = true;
                 nearCacheStats.decrementOwnedEntryCount();
             }
