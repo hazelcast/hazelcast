@@ -23,7 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import static com.hazelcast.jet.Projections.wholeItem;
+import static com.hazelcast.jet.DistributedFunctions.wholeItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;

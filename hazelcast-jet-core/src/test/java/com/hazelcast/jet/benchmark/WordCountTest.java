@@ -28,7 +28,6 @@ import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -53,8 +52,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.Projections.entryKey;
-import static com.hazelcast.jet.Projections.wholeItem;
+import static com.hazelcast.jet.DistributedFunctions.entryKey;
+import static com.hazelcast.jet.DistributedFunctions.wholeItem;
 import static com.hazelcast.jet.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.Processors.flatMap;
 import static com.hazelcast.jet.Processors.groupAndAccumulate;

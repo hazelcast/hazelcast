@@ -19,12 +19,11 @@ package com.hazelcast.jet;
 import java.util.Map;
 
 /**
- * Factory methods for several common projection functions that extract
- * a part of a data item.
+ * Factory methods for several common distributed functions.
  */
-public final class Projections {
+public final class DistributedFunctions {
 
-    private Projections() {
+    private DistributedFunctions() {
     }
 
     /**

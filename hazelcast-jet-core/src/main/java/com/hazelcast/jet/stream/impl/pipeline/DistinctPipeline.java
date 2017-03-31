@@ -23,7 +23,7 @@ import com.hazelcast.jet.stream.impl.processor.DistinctP;
 import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.Projections.wholeItem;
+import static com.hazelcast.jet.DistributedFunctions.wholeItem;
 import static com.hazelcast.jet.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
 

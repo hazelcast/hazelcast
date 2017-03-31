@@ -28,7 +28,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.Projections.entryKey;
+import static com.hazelcast.jet.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 

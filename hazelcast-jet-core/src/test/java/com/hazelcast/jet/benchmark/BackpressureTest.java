@@ -29,7 +29,6 @@ import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -46,7 +45,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.Projections.wholeItem;
+import static com.hazelcast.jet.DistributedFunctions.wholeItem;
 import static com.hazelcast.jet.Processors.writeMap;
 import static com.hazelcast.jet.Traversers.lazy;
 import static com.hazelcast.jet.Traversers.traverseIterable;

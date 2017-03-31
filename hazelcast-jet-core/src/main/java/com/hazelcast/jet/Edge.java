@@ -28,7 +28,7 @@ import com.hazelcast.util.UuidUtil;
 import java.io.IOException;
 import java.io.Serializable;
 
-import static com.hazelcast.jet.Projections.wholeItem;
+import static com.hazelcast.jet.DistributedFunctions.wholeItem;
 import static com.hazelcast.jet.Partitioner.defaultPartitioner;
 
 /**

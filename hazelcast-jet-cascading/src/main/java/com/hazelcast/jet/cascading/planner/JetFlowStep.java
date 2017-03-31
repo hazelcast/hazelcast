@@ -69,7 +69,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Edge.from;
-import static com.hazelcast.jet.Projections.wholeItem;
+import static com.hazelcast.jet.DistributedFunctions.wholeItem;
 import static java.util.stream.Collectors.toList;
 
 public class JetFlowStep extends BaseFlowStep<JetConfig> {
