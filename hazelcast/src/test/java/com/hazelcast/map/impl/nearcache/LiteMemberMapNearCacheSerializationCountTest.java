@@ -132,7 +132,9 @@ public class LiteMemberMapNearCacheSerializationCountTest extends AbstractNearCa
         Config config = getConfig()
                 .setLiteMember(liteMember);
         MapConfig mapConfig = config.getMapConfig(DEFAULT_NEAR_CACHE_NAME)
-                .setInMemoryFormat(mapInMemoryFormat);
+                .setInMemoryFormat(mapInMemoryFormat)
+                .setBackupCount(0)
+                .setAsyncBackupCount(0);
         if (nearCacheConfig != null) {
             mapConfig.setNearCacheConfig(nearCacheConfig);
         }

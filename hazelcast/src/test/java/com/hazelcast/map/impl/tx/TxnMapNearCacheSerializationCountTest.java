@@ -75,9 +75,9 @@ public class TxnMapNearCacheSerializationCountTest extends AbstractNearCacheSeri
                 {new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, BINARY,},
                 {new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, OBJECT,},
 
-                {new int[]{1, 1, 1}, new int[]{2, 1, 1}, OBJECT, null,},
-                {new int[]{1, 1, 1}, new int[]{2, 1, 1}, OBJECT, BINARY,},
-                {new int[]{1, 1, 1}, new int[]{2, 1, 1}, OBJECT, OBJECT,},
+                {new int[]{1, 1, 1}, new int[]{1, 1, 1}, OBJECT, null,},
+                {new int[]{1, 1, 1}, new int[]{1, 1, 1}, OBJECT, BINARY,},
+                {new int[]{1, 1, 1}, new int[]{1, 1, 1}, OBJECT, OBJECT,},
         });
     }
 
@@ -110,7 +110,9 @@ public class TxnMapNearCacheSerializationCountTest extends AbstractNearCacheSeri
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
         Config config = getConfig();
         MapConfig mapConfig = config.getMapConfig(DEFAULT_NEAR_CACHE_NAME)
-                .setInMemoryFormat(mapInMemoryFormat);
+                .setInMemoryFormat(mapInMemoryFormat)
+                .setBackupCount(0)
+                .setAsyncBackupCount(0);
         if (nearCacheConfig != null) {
             mapConfig.setNearCacheConfig(nearCacheConfig);
         }

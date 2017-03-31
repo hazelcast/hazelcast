@@ -109,7 +109,9 @@ public class ClientMapNearCacheSerializationCountTest extends AbstractNearCacheS
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
         Config config = getConfig();
         config.getMapConfig(DEFAULT_NEAR_CACHE_NAME)
-                .setInMemoryFormat(mapInMemoryFormat);
+                .setInMemoryFormat(mapInMemoryFormat)
+                .setBackupCount(0)
+                .setAsyncBackupCount(0);
         prepareSerializationConfig(config.getSerializationConfig());
 
         ClientConfig clientConfig = getClientConfig();
