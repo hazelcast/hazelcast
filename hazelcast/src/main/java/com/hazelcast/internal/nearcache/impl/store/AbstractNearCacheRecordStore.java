@@ -430,7 +430,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     @Override
-    public void doEvictionIfRequired() {
+    public void doEvictionIfRequired(K key) {
         checkAvailable();
 
         if (isEvictionEnabled()) {

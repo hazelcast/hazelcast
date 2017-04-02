@@ -96,7 +96,7 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
      * Does eviction as specified configuration {@link com.hazelcast.config.EvictionConfig}
      * in {@link com.hazelcast.config.NearCacheConfig}.
      */
-    void doEvictionIfRequired();
+    void doEvictionIfRequired(K key);
 
     /**
      * Does eviction as specified configuration {@link com.hazelcast.config.EvictionConfig}

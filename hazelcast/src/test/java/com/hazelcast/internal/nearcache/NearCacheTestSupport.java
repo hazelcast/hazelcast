@@ -349,7 +349,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         }
 
         @Override
-        public void doEvictionIfRequired() {
+        public void doEvictionIfRequired(Integer key) {
             if (expectedKeyValueMappings == null) {
                 throw new IllegalStateException("Near-Cache is already destroyed");
             }
