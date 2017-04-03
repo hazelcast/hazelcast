@@ -33,6 +33,7 @@ import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.execution.BlockingProcessorTasklet;
 import com.hazelcast.jet.impl.execution.ConcurrentInboundEdgeStream;
 import com.hazelcast.jet.impl.execution.ConveyorCollector;
 import com.hazelcast.jet.impl.execution.ConveyorCollectorWithPartition;
@@ -41,7 +42,7 @@ import com.hazelcast.jet.impl.execution.InboundEdgeStream;
 import com.hazelcast.jet.impl.execution.InboundEmitter;
 import com.hazelcast.jet.impl.execution.OutboundCollector;
 import com.hazelcast.jet.impl.execution.OutboundEdgeStream;
-import com.hazelcast.jet.impl.execution.ProcessorTasklet;
+import com.hazelcast.jet.impl.execution.CooperativeProcessorTasklet;
 import com.hazelcast.jet.impl.execution.ReceiverTasklet;
 import com.hazelcast.jet.impl.execution.SenderTasklet;
 import com.hazelcast.jet.impl.execution.Tasklet;
@@ -189,7 +190,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 ILogger logger = nodeEngine.getLogger(p.getClass().getName() + '.'
                         + srcVertex.name() + '(' + p.getClass().getSimpleName() + ")#" + processorIdx);
                 ProcCtx context = new ProcCtx(instance, logger, srcVertex.name(), processorIdx);
-                tasklets.add(new ProcessorTasklet(srcVertex.name(), context, p, inboundStreams, outboundStreams));
+                tasklets.add(p.isCooperative()
+                        ? new CooperativeProcessorTasklet(srcVertex.name(), context, p, inboundStreams, outboundStreams)
+                        : new BlockingProcessorTasklet(srcVertex.name(), context, p, inboundStreams, outboundStreams)
+                );
             }
         }
         tasklets.addAll(receiverMap.values().stream().map(Map::values).flatMap(Collection::stream).collect(toList()));

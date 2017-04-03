@@ -21,28 +21,41 @@ import com.hazelcast.logging.ILogger;
 import javax.annotation.Nonnull;
 
 /**
- * Does the computation needed to transform zero or more input data streams into
- * zero or more output streams. Each input/output stream corresponds to one edge
- * on the vertex represented by this processor. The correspondence between a stream
- * and an edge is established via the edge's <em>ordinal</em>.
+ * Does the computation needed to transform zero or more input data streams
+ * into zero or more output streams. Each input/output stream corresponds
+ * to one edge on the vertex represented by this processor. The
+ * correspondence between a stream and an edge is established via the edge's
+ * <em>ordinal</em>.
  * <p>
- * The special case of zero input streams applies to a <em>source</em> vertex, which
- * gets its data from the environment. The special case of zero output streams applies
- * to a <em>sink</em> vertex, which pushes its data to the environment.
+ * The special case of zero input streams applies to a <em>source</em>
+ * vertex, which gets its data from the environment. The special case of
+ * zero output streams applies to a <em>sink</em> vertex, which pushes its
+ * data to the environment.
  * <p>
- * The processor accepts input from instances of {@link Inbox} and pushes its output
- * to an instance of {@link Outbox}.
+ * The processor accepts input from instances of {@link Inbox} and pushes
+ * its output to an instance of {@link Outbox}.
  * <p>
- * The processing methods should limit the amount of data they output per invocation
- * because the outbox will not be emptied until the processor yields control back to
- * its caller. Specifically, {@code Outbox} has a method {@link Outbox#isHighWater isHighWater()}
- * that can be tested to see whether it's time to stop pushing more data into it.  There is
- * also a finer-grained method {@link Outbox#isHighWater(int) isHighWater(ordinal)}, which
- * tells the state of an individual output bucket.
+ * If this processor declares itself as "cooperative" ({@link
+ * #isCooperative()} returns {@code true}, the default), it should limit
+ * the amount of time it spends per call because it will participate in a
+ * cooperative multithreading scheme. The processing methods should also
+ * limit the amount of data they output per invocation because the outbox
+ * will not be emptied until the processor yields control back to its
+ * caller. Specifically, {@code Outbox} has a method {@link
+ * Outbox#isHighWater isHighWater()} that can be tested to see whether it's
+ * time to stop pushing more data into it.  There is also a finer-grained
+ * method {@link Outbox#isHighWater(int) isHighWater(ordinal)}, which tells
+ * the state of an individual output bucket.
  * <p>
- * If this processor declares itself as "cooperative" ({@link #isCooperative()} returns
- * {@code true}, the default), it should also limit the amount of time it spends per call because it
- * will participate in a cooperative multithreading scheme.
+ * On the other hand, if the processor declares itself as "non-cooperative"
+ * ({@link #isCooperative()} returns {@code false}), then each item it
+ * emits to the outbox will be immediately pushed into the outbound edge's
+ * queue, blocking as needed until the queue accepts it. Therefore there is
+ * no limit on the number of items that can be emitted during a single
+ * processor call, and there is no limit on the time taken to complete a
+ * call. For example, a source processor can do all of its work in a
+ * single invocation of {@link Processor#complete() complete()}, even if
+ * the stream it generates is infinite.
  */
 public interface Processor {
 
@@ -50,7 +63,7 @@ public interface Processor {
      * Initializes this processor with the outbox that the processing methods
      * must use to deposit their output items. This method will be called exactly
      * once and strictly before any calls to processing methods
-     * ({@link #process(int, Inbox)}, {@link #completeEdge(int)}, {@link #complete()}).
+     * ({@link #process(int, Inbox)} and {@link #complete()}).
      * <p>
      * The default implementation does nothing.
      */
@@ -122,7 +135,5 @@ public interface Processor {
          */
         @Nonnull
         String vertexName();
-
-
     }
 }

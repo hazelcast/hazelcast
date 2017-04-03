@@ -308,7 +308,7 @@ public class ExecutionServiceTest extends JetTestSupport {
         }
 
         @Override
-        public void init() {
+        public void init(CompletableFuture<?> jobFuture) {
             if (initFails) {
                 throw new RuntimeException("mock init failure");
             }

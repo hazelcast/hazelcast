@@ -19,16 +19,21 @@ package com.hazelcast.jet;
 import javax.annotation.Nonnull;
 
 /**
- * Single-threaded object which acts as a data sink for a {@link Processor}.
- * The outbox consists of individual output buckets, one per outbound edge
- * of the vertex represented by the associated processor. The processor must
- * deliver its output items, separated by destination edge, into the outbox
- * by calling {@link #add(int, Object)} or {@link #add(Object)}.
+ * Data sink for a {@link Processor}. The outbox consists of individual
+ * output buckets, one per outbound edge of the vertex represented by
+ * the associated processor. The processor must deliver its output items,
+ * separated by destination edge, into the outbox by calling
+ * {@link #add(int, Object)} or {@link #add(Object)}.
  * <p>
- * The execution engine will not try to flush the outbox into downstream
+ * In the case of a processor declared as <em>cooperative</em>, the
+ * execution engine will not try to flush the outbox into downstream
  * queues until the processing method returns. Therefore the processor is
  * advised to check {@link #isHighWater()} or {@link #isHighWater(int)}
  * regularly and refrain from outputting more data when it returns true.
+ * <p>
+ * A non-cooperative processor's outbox will have auto-flushing behavior
+ * and each item will be immediatelly flushed to the edge, blocking as
+ * needed until success.
  */
 public interface Outbox {
 

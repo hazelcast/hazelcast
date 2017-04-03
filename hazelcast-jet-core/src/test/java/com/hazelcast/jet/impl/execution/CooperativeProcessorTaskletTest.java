@@ -31,6 +31,7 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.util.DoneItem.DONE_ITEM;
@@ -42,7 +43,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
-public class ProcessorTaskletTest {
+public class CooperativeProcessorTaskletTest {
 
     private static final int MOCK_INPUT_LENGTH = 10;
     private static final int CALL_COUNT_LIMIT = 10;
@@ -157,9 +158,9 @@ public class ProcessorTaskletTest {
     }
 
     private Tasklet createTasklet() {
-        final ProcessorTasklet t = new ProcessorTasklet("mock", context, processor,
-                instreams, outstreams);
-        t.init();
+        final CooperativeProcessorTasklet t = new CooperativeProcessorTasklet(
+                "mock", context, processor, instreams, outstreams);
+        t.init(new CompletableFuture<>());
         return t;
     }
 
