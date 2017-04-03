@@ -280,8 +280,7 @@ public class HazelcastOSGiServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void newInstanceRegisteredAsServiceWhenRegistrationIsNotDisabled()
-            throws BundleException {
+    public void newInstanceRegisteredAsServiceWhenRegistrationIsNotDisabled() throws BundleException {
         HazelcastInternalOSGiService service = getService();
 
         service.newHazelcastInstance();
@@ -290,8 +289,7 @@ public class HazelcastOSGiServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void newInstanceNotRegisteredAsServiceWhenRegistrationIsDisabled()
-            throws BundleException {
+    public void newInstanceNotRegisteredAsServiceWhenRegistrationIsDisabled() throws BundleException {
         String propValue = System.getProperty(HazelcastOSGiService.HAZELCAST_OSGI_REGISTER_DISABLED);
         TestBundle testBundle = null;
         try {

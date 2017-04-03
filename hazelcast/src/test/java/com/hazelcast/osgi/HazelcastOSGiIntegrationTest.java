@@ -81,11 +81,13 @@ public class HazelcastOSGiIntegrationTest {
         }
     }
 
+    /**
+     * Is this test failing in your IDE?
+     * Some versions of Intellij IDEA use a wrong working directory in multi-module Maven projects.
+     * See this for a fix: https://youtrack.jetbrains.com/issue/IDEA-60965
+     */
     @Test
     public void serviceRetrievedSuccessfully() {
-        // Is this test failing in your IDE?
-        // Some versions of Intellij IDEA use a wrong working directory in multi-module
-        // Maven projects. See this for a fix: https://youtrack.jetbrains.com/issue/IDEA-60965
         HazelcastOSGiService service = getService();
         assertNotNull(service);
     }

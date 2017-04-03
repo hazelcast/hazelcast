@@ -42,5 +42,4 @@ class TestServiceRegistration implements ServiceRegistration {
     public void setProperties(Dictionary properties) {
         throw new UnsupportedOperationException();
     }
-
 }

@@ -27,9 +27,10 @@ import org.junit.runner.RunWith;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
-import java.util.Arrays;
 import java.util.List;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -64,12 +65,12 @@ public class HazelcastOSGiScriptEngineFactoryTest extends HazelcastOSGiScripting
 
         assertEquals("Groovy Scripting Engine", scriptEngineFactory.getEngineName());
         assertNotNull(scriptEngineFactory.getEngineVersion());
-        assertArrayEquals(Arrays.asList("groovy").toArray(), scriptEngineFactory.getExtensions().toArray());
+        assertArrayEquals(singletonList("groovy").toArray(), scriptEngineFactory.getExtensions().toArray());
         assertEquals("Groovy", scriptEngineFactory.getLanguageName());
         assertNotNull(scriptEngineFactory.getLanguageVersion());
         assertEquals("\"hazelcast\".charAt(0)", scriptEngineFactory.getMethodCallSyntax("\"hazelcast\"", "charAt", "0"));
-        assertArrayEquals(Arrays.asList("application/x-groovy").toArray(), scriptEngineFactory.getMimeTypes().toArray());
-        assertArrayEquals(Arrays.asList("groovy", "Groovy").toArray(), scriptEngineFactory.getNames().toArray());
+        assertArrayEquals(singletonList("application/x-groovy").toArray(), scriptEngineFactory.getMimeTypes().toArray());
+        assertArrayEquals(asList("groovy", "Groovy").toArray(), scriptEngineFactory.getNames().toArray());
         assertEquals("println(\"hello world\")", scriptEngineFactory.getOutputStatement("hello world"));
         assertEquals("groovy", scriptEngineFactory.getParameter(ScriptEngine.NAME));
         assertEquals("x=1\ny=2\n", scriptEngineFactory.getProgram("x=1", "y=2"));
@@ -117,5 +118,4 @@ public class HazelcastOSGiScriptEngineFactoryTest extends HazelcastOSGiScripting
         ScriptEngineFactory scriptEngineFactory = scriptEngine.getFactory();
         verifyScriptEngineFactory(scriptEngineFactory);
     }
-
 }

@@ -19,11 +19,7 @@ package com.hazelcast.osgi;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceReference;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 class TestServiceReference implements ServiceReference {
-
-    private static AtomicInteger COUNTER = new AtomicInteger();
 
     private final TestBundle testBundle;
     private final Object service;
@@ -71,5 +67,4 @@ class TestServiceReference implements ServiceReference {
         }
         return -1;
     }
-
 }

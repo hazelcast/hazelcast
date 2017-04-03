@@ -43,16 +43,6 @@ import static org.mockito.Mockito.mock;
 @Category(QuickTest.class)
 public class HazelcastOSGiScriptEngineTest extends HazelcastOSGiScriptingTest {
 
-    private void verifyThatBindingsGetAndSetSuccessfully(ScriptEngine scriptEngine) {
-        assertNotNull(scriptEngine.getBindings(ScriptContext.ENGINE_SCOPE));
-
-        Bindings bindings = scriptEngine.createBindings();
-        assertNotEquals(bindings, scriptEngine.getBindings(ScriptContext.ENGINE_SCOPE));
-
-        scriptEngine.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-        assertEquals(bindings, scriptEngine.getBindings(ScriptContext.ENGINE_SCOPE));
-    }
-
     @Test
     public void bindingsGetAndSetSuccessfully() {
         ScriptEngineManager scriptEngineManager = ScriptEngineManagerContext.getScriptEngineManager();
@@ -64,11 +54,14 @@ public class HazelcastOSGiScriptEngineTest extends HazelcastOSGiScriptingTest {
         }
     }
 
-    private void verifyThatBindingsPutAndGetOverBindingsSuccessfully(ScriptEngine scriptEngine) {
+    private void verifyThatBindingsGetAndSetSuccessfully(ScriptEngine scriptEngine) {
+        assertNotNull(scriptEngine.getBindings(ScriptContext.ENGINE_SCOPE));
+
         Bindings bindings = scriptEngine.createBindings();
-        assertNull(bindings.get("my-key"));
-        bindings.put("my-key", "my-value");
-        assertEquals("my-value", bindings.get("my-key"));
+        assertNotEquals(bindings, scriptEngine.getBindings(ScriptContext.ENGINE_SCOPE));
+
+        scriptEngine.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
+        assertEquals(bindings, scriptEngine.getBindings(ScriptContext.ENGINE_SCOPE));
     }
 
     @Test
@@ -82,10 +75,11 @@ public class HazelcastOSGiScriptEngineTest extends HazelcastOSGiScriptingTest {
         }
     }
 
-    private void verifyThatPutAndGetSuccessfully(ScriptEngine scriptEngine) {
-        assertNull(scriptEngine.get("my-key"));
-        scriptEngine.put("my-key", "my-value");
-        assertEquals("my-value", scriptEngine.get("my-key"));
+    private void verifyThatBindingsPutAndGetOverBindingsSuccessfully(ScriptEngine scriptEngine) {
+        Bindings bindings = scriptEngine.createBindings();
+        assertNull(bindings.get("my-key"));
+        bindings.put("my-key", "my-value");
+        assertEquals("my-value", bindings.get("my-key"));
     }
 
     @Test
@@ -99,11 +93,10 @@ public class HazelcastOSGiScriptEngineTest extends HazelcastOSGiScriptingTest {
         }
     }
 
-    private void verifyThatPutAndGetContextSuccessfully(ScriptEngine scriptEngine) {
-        assertNotNull(scriptEngine.getContext());
-        ScriptContext mockScriptContext = mock(ScriptContext.class);
-        scriptEngine.setContext(mockScriptContext);
-        assertEquals(mockScriptContext, scriptEngine.getContext());
+    private void verifyThatPutAndGetSuccessfully(ScriptEngine scriptEngine) {
+        assertNull(scriptEngine.get("my-key"));
+        scriptEngine.put("my-key", "my-value");
+        assertEquals("my-value", scriptEngine.get("my-key"));
     }
 
     @Test
@@ -117,25 +110,11 @@ public class HazelcastOSGiScriptEngineTest extends HazelcastOSGiScriptingTest {
         }
     }
 
-    private void verifyScriptEngineEvaluation(ScriptEngine scriptEngine) throws ScriptException {
-        assertNotNull(scriptEngine.getFactory());
-
-        final String SCRIPT_SOURCE_WITH_VARIABLE = "\"I am \" + name";
-        final String SCRIPT_SOURCE_WITHOUT_VARIABLE = "\"I am human\"";
-
-        Bindings bindings = scriptEngine.createBindings();
-        bindings.put("name", "Serkan");
-
-        ScriptContext scriptContext = scriptEngine.getContext();
-        scriptContext.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-
-        assertEquals("I am Serkan", scriptEngine.eval(SCRIPT_SOURCE_WITH_VARIABLE, bindings));
-        assertEquals("I am Serkan", scriptEngine.eval(SCRIPT_SOURCE_WITH_VARIABLE, scriptContext));
-        assertEquals("I am human", scriptEngine.eval(SCRIPT_SOURCE_WITHOUT_VARIABLE));
-
-        assertEquals("I am Serkan", scriptEngine.eval(new StringReader(SCRIPT_SOURCE_WITH_VARIABLE), bindings));
-        assertEquals("I am Serkan", scriptEngine.eval(new StringReader(SCRIPT_SOURCE_WITH_VARIABLE), scriptContext));
-        assertEquals("I am human", scriptEngine.eval(new StringReader(SCRIPT_SOURCE_WITHOUT_VARIABLE)));
+    private void verifyThatPutAndGetContextSuccessfully(ScriptEngine scriptEngine) {
+        assertNotNull(scriptEngine.getContext());
+        ScriptContext mockScriptContext = mock(ScriptContext.class);
+        scriptEngine.setContext(mockScriptContext);
+        assertEquals(mockScriptContext, scriptEngine.getContext());
     }
 
     @Test
@@ -151,4 +130,24 @@ public class HazelcastOSGiScriptEngineTest extends HazelcastOSGiScriptingTest {
         verifyScriptEngineEvaluation(scriptEngine);
     }
 
+    private void verifyScriptEngineEvaluation(ScriptEngine scriptEngine) throws ScriptException {
+        assertNotNull(scriptEngine.getFactory());
+
+        String SCRIPT_SOURCE_WITH_VARIABLE = "\"I am \" + name";
+        String SCRIPT_SOURCE_WITHOUT_VARIABLE = "\"I am human\"";
+
+        Bindings bindings = scriptEngine.createBindings();
+        bindings.put("name", "Serkan");
+
+        ScriptContext scriptContext = scriptEngine.getContext();
+        scriptContext.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
+
+        assertEquals("I am Serkan", scriptEngine.eval(SCRIPT_SOURCE_WITH_VARIABLE, bindings));
+        assertEquals("I am Serkan", scriptEngine.eval(SCRIPT_SOURCE_WITH_VARIABLE, scriptContext));
+        assertEquals("I am human", scriptEngine.eval(SCRIPT_SOURCE_WITHOUT_VARIABLE));
+
+        assertEquals("I am Serkan", scriptEngine.eval(new StringReader(SCRIPT_SOURCE_WITH_VARIABLE), bindings));
+        assertEquals("I am Serkan", scriptEngine.eval(new StringReader(SCRIPT_SOURCE_WITH_VARIABLE), scriptContext));
+        assertEquals("I am human", scriptEngine.eval(new StringReader(SCRIPT_SOURCE_WITHOUT_VARIABLE)));
+    }
 }

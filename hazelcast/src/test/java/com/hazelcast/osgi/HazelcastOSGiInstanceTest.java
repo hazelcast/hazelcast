@@ -41,7 +41,6 @@ import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.osgi.impl.HazelcastOSGiTestUtil;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -58,6 +57,7 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.osgi.impl.HazelcastOSGiTestUtil.createHazelcastOSGiInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -70,19 +70,19 @@ import static org.mockito.Mockito.when;
 public class HazelcastOSGiInstanceTest {
 
     @Test
+    @SuppressWarnings("EqualsWithItself")
     public void equalsReturnsTrueForSameOSGiInstances() {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         assertTrue(hazelcastOSGiInstance.equals(hazelcastOSGiInstance));
     }
 
     @Test
+    @SuppressWarnings("ObjectEqualsNull")
     public void equalsReturnsFalseForNullObject() {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         assertFalse(hazelcastOSGiInstance.equals(null));
     }
@@ -90,8 +90,7 @@ public class HazelcastOSGiInstanceTest {
     @Test
     public void equalsReturnsFalseForDifferentTypedObject() {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         assertFalse(hazelcastOSGiInstance.equals(new Object()));
     }
@@ -101,10 +100,8 @@ public class HazelcastOSGiInstanceTest {
         HazelcastInstance mockHazelcastInstance1 = mock(HazelcastInstance.class);
         HazelcastInstance mockHazelcastInstance2 = mock(HazelcastInstance.class);
         HazelcastOSGiService mockService = mock(HazelcastOSGiService.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance1 =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance1, mockService);
-        HazelcastOSGiInstance hazelcastOSGiInstance2 =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance2, mockService);
+        HazelcastOSGiInstance hazelcastOSGiInstance1 = createHazelcastOSGiInstance(mockHazelcastInstance1, mockService);
+        HazelcastOSGiInstance hazelcastOSGiInstance2 = createHazelcastOSGiInstance(mockHazelcastInstance2, mockService);
 
         assertFalse(hazelcastOSGiInstance1.equals(hazelcastOSGiInstance2));
     }
@@ -114,10 +111,8 @@ public class HazelcastOSGiInstanceTest {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiService mockService1 = mock(HazelcastOSGiService.class);
         HazelcastOSGiService mockService2 = mock(HazelcastOSGiService.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance1 =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance, mockService1);
-        HazelcastOSGiInstance hazelcastOSGiInstance2 =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance, mockService2);
+        HazelcastOSGiInstance hazelcastOSGiInstance1 = createHazelcastOSGiInstance(mockHazelcastInstance, mockService1);
+        HazelcastOSGiInstance hazelcastOSGiInstance2 = createHazelcastOSGiInstance(mockHazelcastInstance, mockService2);
 
         assertFalse(hazelcastOSGiInstance1.equals(hazelcastOSGiInstance2));
     }
@@ -128,10 +123,8 @@ public class HazelcastOSGiInstanceTest {
         HazelcastInstance mockHazelcastInstance2 = mock(HazelcastInstance.class);
         HazelcastOSGiService mockService1 = mock(HazelcastOSGiService.class);
         HazelcastOSGiService mockService2 = mock(HazelcastOSGiService.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance1 =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance1, mockService1);
-        HazelcastOSGiInstance hazelcastOSGiInstance2 =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance2, mockService1);
+        HazelcastOSGiInstance hazelcastOSGiInstance1 = createHazelcastOSGiInstance(mockHazelcastInstance1, mockService1);
+        HazelcastOSGiInstance hazelcastOSGiInstance2 = createHazelcastOSGiInstance(mockHazelcastInstance2, mockService2);
 
         assertFalse(hazelcastOSGiInstance1.equals(hazelcastOSGiInstance2));
     }
@@ -140,10 +133,8 @@ public class HazelcastOSGiInstanceTest {
     public void equalsReturnsTrueForDifferentOSGiInstancesWithSameDelegatedInstanceAndSameService() {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiService mockService = mock(HazelcastOSGiService.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance1 =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance, mockService);
-        HazelcastOSGiInstance hazelcastOSGiInstance2 =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance, mockService);
+        HazelcastOSGiInstance hazelcastOSGiInstance1 = createHazelcastOSGiInstance(mockHazelcastInstance, mockService);
+        HazelcastOSGiInstance hazelcastOSGiInstance2 = createHazelcastOSGiInstance(mockHazelcastInstance, mockService);
 
         assertTrue(hazelcastOSGiInstance1.equals(hazelcastOSGiInstance2));
     }
@@ -151,8 +142,7 @@ public class HazelcastOSGiInstanceTest {
     @Test
     public void getDelegatedInstanceCalledSuccessfullyOverOSGiInstance() {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         assertEquals(mockHazelcastInstance, hazelcastOSGiInstance.getDelegatedInstance());
     }
@@ -160,8 +150,7 @@ public class HazelcastOSGiInstanceTest {
     @Test
     public void getOwnerServiceCalledSuccessfullyOverOSGiInstance() {
         HazelcastOSGiService mockHazelcastOSGiService = mock(HazelcastOSGiService.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastOSGiService);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastOSGiService);
 
         assertEquals(mockHazelcastOSGiService, hazelcastOSGiInstance.getOwnerService());
     }
@@ -169,8 +158,7 @@ public class HazelcastOSGiInstanceTest {
     @Test
     public void getNameCalledSuccessfullyOverOSGiInstance() {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getName()).thenReturn("my-name");
 
@@ -181,10 +169,9 @@ public class HazelcastOSGiInstanceTest {
 
     @Test
     public void getQueueCalledSuccessfullyOverOSGiInstance() {
-        IQueue mockQueue = mock(IQueue.class);
+        IQueue<Object> mockQueue = mock(IQueue.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getQueue("my-queue")).thenReturn(mockQueue);
 
@@ -195,10 +182,9 @@ public class HazelcastOSGiInstanceTest {
 
     @Test
     public void getTopicCalledSuccessfullyOverOSGiInstance() {
-        ITopic mockTopic = mock(ITopic.class);
+        ITopic<Object> mockTopic = mock(ITopic.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getTopic("my-topic")).thenReturn(mockTopic);
 
@@ -209,10 +195,9 @@ public class HazelcastOSGiInstanceTest {
 
     @Test
     public void getSetCalledSuccessfullyOverOSGiInstance() {
-        ISet mockSet = mock(ISet.class);
+        ISet<Object> mockSet = mock(ISet.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getSet("my-set")).thenReturn(mockSet);
 
@@ -223,10 +208,9 @@ public class HazelcastOSGiInstanceTest {
 
     @Test
     public void getListCalledSuccessfullyOverOSGiInstance() {
-        IList mockList = mock(IList.class);
+        IList<Object> mockList = mock(IList.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getList("my-list")).thenReturn(mockList);
 
@@ -237,10 +221,9 @@ public class HazelcastOSGiInstanceTest {
 
     @Test
     public void getMapCalledSuccessfullyOverOSGiInstance() {
-        IMap mockMap = mock(IMap.class);
+        IMap<Object, Object> mockMap = mock(IMap.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getMap("my-map")).thenReturn(mockMap);
 
@@ -251,10 +234,9 @@ public class HazelcastOSGiInstanceTest {
 
     @Test
     public void getReplicatedMapCalledSuccessfullyOverOSGiInstance() {
-        ReplicatedMap mockReplicatedMap = mock(ReplicatedMap.class);
+        ReplicatedMap<Object, Object> mockReplicatedMap = mock(ReplicatedMap.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getReplicatedMap("my-replicatedmap")).thenReturn(mockReplicatedMap);
 
@@ -267,8 +249,7 @@ public class HazelcastOSGiInstanceTest {
     public void getJobTrackerMapCalledSuccessfullyOverOSGiInstance() {
         JobTracker mockJobTracker = mock(JobTracker.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getJobTracker("my-jobtracker")).thenReturn(mockJobTracker);
 
@@ -279,10 +260,9 @@ public class HazelcastOSGiInstanceTest {
 
     @Test
     public void getMultiMapCalledSuccessfullyOverOSGiInstance() {
-        MultiMap mockMultiMap = mock(MultiMap.class);
+        MultiMap<Object, Object> mockMultiMap = mock(MultiMap.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getMultiMap("my-multimap")).thenReturn(mockMultiMap);
 
@@ -295,8 +275,7 @@ public class HazelcastOSGiInstanceTest {
     public void getLockCalledSuccessfullyOverOSGiInstance() {
         ILock mockLock = mock(ILock.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getLock("my-lock")).thenReturn(mockLock);
 
@@ -307,10 +286,9 @@ public class HazelcastOSGiInstanceTest {
 
     @Test
     public void getRingbufferCalledSuccessfullyOverOSGiInstance() {
-        Ringbuffer mockRingbuffer = mock(Ringbuffer.class);
+        Ringbuffer<Object> mockRingbuffer = mock(Ringbuffer.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getRingbuffer("my-ringbuffer")).thenReturn(mockRingbuffer);
 
@@ -321,10 +299,9 @@ public class HazelcastOSGiInstanceTest {
 
     @Test
     public void getReliableTopicCalledSuccessfullyOverOSGiInstance() {
-        ITopic mockReliableTopic = mock(ITopic.class);
+        ITopic<Object> mockReliableTopic = mock(ITopic.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getReliableTopic("my-reliabletopic")).thenReturn(mockReliableTopic);
 
@@ -337,8 +314,7 @@ public class HazelcastOSGiInstanceTest {
     public void getClusterCalledSuccessfullyOverOSGiInstance() {
         Cluster mockCluster = mock(Cluster.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getCluster()).thenReturn(mockCluster);
 
@@ -351,8 +327,7 @@ public class HazelcastOSGiInstanceTest {
     public void getLocalEndpointCalledSuccessfullyOverOSGiInstance() {
         Endpoint mockEndpoint = mock(Endpoint.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getLocalEndpoint()).thenReturn(mockEndpoint);
 
@@ -365,8 +340,7 @@ public class HazelcastOSGiInstanceTest {
     public void getExecutorServiceCalledSuccessfullyOverOSGiInstance() {
         IExecutorService mockExecutorService = mock(IExecutorService.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getExecutorService("my-executorservice")).thenReturn(mockExecutorService);
 
@@ -380,8 +354,7 @@ public class HazelcastOSGiInstanceTest {
         Object result = new Object();
         TransactionalTask mockTransactionalTask = mock(TransactionalTask.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.executeTransaction(mockTransactionalTask)).thenReturn(result);
 
@@ -396,8 +369,7 @@ public class HazelcastOSGiInstanceTest {
         TransactionOptions transactionOptions = new TransactionOptions();
         TransactionalTask mockTransactionalTask = mock(TransactionalTask.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.executeTransaction(transactionOptions, mockTransactionalTask)).thenReturn(result);
 
@@ -410,8 +382,7 @@ public class HazelcastOSGiInstanceTest {
     public void newTransactionContextCalledSuccessfullyOverOSGiInstance() {
         TransactionContext mockTransactionContext = mock(TransactionContext.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.newTransactionContext()).thenReturn(mockTransactionContext);
 
@@ -425,8 +396,7 @@ public class HazelcastOSGiInstanceTest {
         TransactionOptions transactionOptions = new TransactionOptions();
         TransactionContext mockTransactionContext = mock(TransactionContext.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.newTransactionContext(transactionOptions)).thenReturn(mockTransactionContext);
 
@@ -439,8 +409,7 @@ public class HazelcastOSGiInstanceTest {
     public void getIdGeneratorCalledSuccessfullyOverOSGiInstance() {
         IdGenerator mockIdGenerator = mock(IdGenerator.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getIdGenerator("my-idgenerator")).thenReturn(mockIdGenerator);
 
@@ -453,8 +422,7 @@ public class HazelcastOSGiInstanceTest {
     public void getAtomicLongCalledSuccessfullyOverOSGiInstance() {
         IAtomicLong mockAtomicLong = mock(IAtomicLong.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getAtomicLong("my-atomiclong")).thenReturn(mockAtomicLong);
 
@@ -465,10 +433,9 @@ public class HazelcastOSGiInstanceTest {
 
     @Test
     public void getAtomicReferenceCalledSuccessfullyOverOSGiInstance() {
-        IAtomicReference mockAtomicReference = mock(IAtomicReference.class);
+        IAtomicReference<Object> mockAtomicReference = mock(IAtomicReference.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getAtomicReference("my-atomicreference")).thenReturn(mockAtomicReference);
 
@@ -481,8 +448,7 @@ public class HazelcastOSGiInstanceTest {
     public void getCountDownLatchCalledSuccessfullyOverOSGiInstance() {
         ICountDownLatch mockCountDownLatch = mock(ICountDownLatch.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getCountDownLatch("my-countdownlatch")).thenReturn(mockCountDownLatch);
 
@@ -495,8 +461,7 @@ public class HazelcastOSGiInstanceTest {
     public void getSemaphoreCalledSuccessfullyOverOSGiInstance() {
         ISemaphore mockSemaphore = mock(ISemaphore.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getSemaphore("my-semaphore")).thenReturn(mockSemaphore);
 
@@ -507,10 +472,9 @@ public class HazelcastOSGiInstanceTest {
 
     @Test
     public void getDistributedObjectsCalledSuccessfullyOverOSGiInstance() {
-        Collection mockDistributedObjects = mock(Collection.class);
+        Collection<DistributedObject> mockDistributedObjects = mock(Collection.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getDistributedObjects()).thenReturn(mockDistributedObjects);
 
@@ -524,7 +488,7 @@ public class HazelcastOSGiInstanceTest {
         DistributedObject mockDistributedObject = mock(DistributedObject.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+                createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getDistributedObject("my-service", "my-name")).thenReturn(mockDistributedObject);
 
@@ -538,7 +502,7 @@ public class HazelcastOSGiInstanceTest {
         DistributedObjectListener mockDistributedObjectListener = mock(DistributedObjectListener.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+                createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.addDistributedObjectListener(mockDistributedObjectListener)).thenReturn("my-registration-id");
 
@@ -550,8 +514,7 @@ public class HazelcastOSGiInstanceTest {
     @Test
     public void removeDistributedObjectListenerCalledSuccessfullyOverOSGiInstance() {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.removeDistributedObjectListener("my-registration-id")).thenReturn(true);
 
@@ -564,8 +527,7 @@ public class HazelcastOSGiInstanceTest {
     public void getPartitionServiceCalledSuccessfullyOverOSGiInstance() {
         PartitionService mockPartitionService = mock(PartitionService.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getPartitionService()).thenReturn(mockPartitionService);
 
@@ -578,8 +540,7 @@ public class HazelcastOSGiInstanceTest {
     public void getQuorumServiceCalledSuccessfullyOverOSGiInstance() {
         QuorumService mockQuorumService = mock(QuorumService.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getQuorumService()).thenReturn(mockQuorumService);
 
@@ -592,8 +553,7 @@ public class HazelcastOSGiInstanceTest {
     public void getClientServiceCalledSuccessfullyOverOSGiInstance() {
         ClientService mockClientService = mock(ClientService.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getClientService()).thenReturn(mockClientService);
 
@@ -606,8 +566,7 @@ public class HazelcastOSGiInstanceTest {
     public void getLoggingServiceCalledSuccessfullyOverOSGiInstance() {
         LoggingService mockLoggingService = mock(LoggingService.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getLoggingService()).thenReturn(mockLoggingService);
 
@@ -620,8 +579,7 @@ public class HazelcastOSGiInstanceTest {
     public void getLifecycleServiceCalledSuccessfullyOverOSGiInstance() {
         LifecycleService mockLifecycleService = mock(LifecycleService.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getLifecycleService()).thenReturn(mockLifecycleService);
 
@@ -632,10 +590,9 @@ public class HazelcastOSGiInstanceTest {
 
     @Test
     public void getUserContextCalledSuccessfullyOverOSGiInstance() {
-        ConcurrentMap mockUserContext = mock(ConcurrentMap.class);
+        ConcurrentMap<String, Object> mockUserContext = mock(ConcurrentMap.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getUserContext()).thenReturn(mockUserContext);
 
@@ -648,8 +605,7 @@ public class HazelcastOSGiInstanceTest {
     public void getXAResourceCalledSuccessfullyOverOSGiInstance() {
         HazelcastXAResource mockXAResource = mock(HazelcastXAResource.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getXAResource()).thenReturn(mockXAResource);
 
@@ -662,8 +618,7 @@ public class HazelcastOSGiInstanceTest {
     public void getConfigCalledSuccessfullyOverOSGiInstance() {
         Config mockConfig = mock(Config.class);
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         when(mockHazelcastInstance.getConfig()).thenReturn(mockConfig);
 
@@ -675,12 +630,10 @@ public class HazelcastOSGiInstanceTest {
     @Test
     public void shutdownCalledSuccessfullyOverOSGiInstance() {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
-        HazelcastOSGiInstance hazelcastOSGiInstance =
-                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+        HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
         hazelcastOSGiInstance.shutdown();
 
         verify(mockHazelcastInstance).shutdown();
     }
-
 }

@@ -207,7 +207,5 @@ public class TestBundle implements Bundle {
         void onRegister(String clazz, TestServiceReference serviceReference);
 
         void onDeregister(String clazz, TestServiceReference serviceReference);
-
     }
-
 }
