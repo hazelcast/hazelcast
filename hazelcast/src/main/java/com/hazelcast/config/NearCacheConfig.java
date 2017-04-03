@@ -63,21 +63,21 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
     public static final String DEFAULT_EVICTION_POLICY = EvictionConfig.DEFAULT_EVICTION_POLICY.name();
 
     /**
-     * Used to decide how to reflect local updates to near cache.
+     * Used to decide how to reflect local updates to Near Cache.
      */
     public enum LocalUpdatePolicy {
         /**
-         * Local put and local remove immediately invalidates near cache
+         * Local put and local remove immediately invalidates Near Cache.
          */
         INVALIDATE,
 
         /**
-         * Local put immediately adds new value to near cache. Local remove works as in INVALIDATE mode
+         * Local put immediately adds new value to Near Cache. Local remove works as in INVALIDATE mode.
          */
         CACHE_ON_UPDATE,
 
         /**
-         * Subject to remove in further releases. Instead of this use {@link LocalUpdatePolicy#CACHE_ON_UPDATE}
+         * Subject to remove in further releases. Instead of this use {@link LocalUpdatePolicy#CACHE_ON_UPDATE}.
          */
         @Deprecated
         CACHE

@@ -31,9 +31,8 @@ import java.util.UUID;
 
 import static java.lang.String.format;
 
-
 /**
- * Invalidates near caches. Contains shared functionality.
+ * Contains shared functionality for Near Cache invalidation.
  */
 public abstract class Invalidator {
 
@@ -62,9 +61,9 @@ public abstract class Invalidator {
     protected abstract void invalidateInternal(Invalidation invalidation, int orderKey);
 
     /**
-     * Invalidates supplied key from near-caches of supplied data structure name.
+     * Invalidates supplied key from Near Caches of supplied data structure name.
      *
-     * @param key               key of the entry to be removed from near-cache
+     * @param key               key of the entry to be removed from Near Cache
      * @param dataStructureName name of the data structure to be invalidated
      */
     public final void invalidateKey(Data key, String dataStructureName, String sourceUuid) {
@@ -76,7 +75,7 @@ public abstract class Invalidator {
     }
 
     /**
-     * Invalidates all keys from near-caches of supplied data structure name.
+     * Invalidates all keys from Near Caches of supplied data structure name.
      *
      * @param dataStructureName name of the data structure to be cleared
      */
@@ -164,5 +163,4 @@ public abstract class Invalidator {
     public void shutdown() {
         // nop
     }
-
 }

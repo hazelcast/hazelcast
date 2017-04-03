@@ -53,7 +53,7 @@ public class Pre38CacheAddInvalidationListenerTask
 
     /**
      * This listener is here to be used with server versions < 3.8.
-     * Because new improvements for near cache eventual consistency cannot work with server versions < 3.8.
+     * Because new improvements for Near Cache eventual consistency cannot work with server versions < 3.8.
      */
     private final class Pre38NearCacheInvalidationListener extends AbstractCacheClientNearCacheInvalidationListener {
 

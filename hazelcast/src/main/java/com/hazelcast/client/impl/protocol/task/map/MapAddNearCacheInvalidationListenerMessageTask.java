@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Clients which are AWARE of eventual consistent near cache should call this task.
+ * Clients which are AWARE of eventual consistent Near Cache should call this task.
  *
  * @see Pre38MapAddNearCacheEntryListenerMessageTask
  */

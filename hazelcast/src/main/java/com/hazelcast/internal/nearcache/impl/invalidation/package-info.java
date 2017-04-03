@@ -15,6 +15,6 @@
  */
 
 /**
- * Invalidations for near-cache
+ * Invalidations for Near Cache.
  */
 package com.hazelcast.internal.nearcache.impl.invalidation;

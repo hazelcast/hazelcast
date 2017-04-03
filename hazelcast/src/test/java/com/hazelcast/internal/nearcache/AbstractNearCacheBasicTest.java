@@ -123,7 +123,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
             // populate Near Cache
             assertNull("Expected null from original data structure for key " + i, context.nearCacheAdapter.get(i));
             // fetch value from Near Cache
-            assertNull("Expected null from Near cached data structure for key " + i, context.nearCacheAdapter.get(i));
+            assertNull("Expected null from near cached data structure for key " + i, context.nearCacheAdapter.get(i));
 
             // fetch internal value directly from Near Cache
             NK key = getNearCacheKey(context, i);

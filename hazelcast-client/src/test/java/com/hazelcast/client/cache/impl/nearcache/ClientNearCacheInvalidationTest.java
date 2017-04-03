@@ -68,7 +68,7 @@ import static org.junit.Assert.assertTrue;
  * </ul>
  * and <b>not delivered</b> when a cache is closed (<code>Cache.close()</code>).
  * Respective operations are tested when executed either from member or client-side Cache proxies with the exception of
- * CacheManager.destroyCache, in which case the near-cache is already destroyed on the client-side and the listener
+ * CacheManager.destroyCache, in which case the Near Cache is already destroyed on the client-side and the listener
  * registration is removed <b>before</b> the invocation for destroying the cache is sent to the member, so no event can be
  * received.
  */

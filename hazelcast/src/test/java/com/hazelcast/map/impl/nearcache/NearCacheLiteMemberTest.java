@@ -189,7 +189,7 @@ public class NearCacheLiteMemberTest {
         SerializationService serializationService = ((SerializationServiceSupport) instance).getSerializationService();
         int count = 100;
 
-        // fill the near cache with the same data as below so we can detect when it is emptied
+        // fill the Near Cache with the same data as below so we can detect when it is emptied
         for (int i = 0; i < count; i++) {
             liteNearCache.put(serializationService.toData(i), i);
         }

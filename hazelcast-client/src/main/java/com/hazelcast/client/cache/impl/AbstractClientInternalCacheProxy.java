@@ -287,7 +287,6 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
                 throw rethrow(t);
             }
         }
-
     }
 
     public void onRemoveSyncInternal(Data keyData) {
@@ -419,7 +418,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
     }
 
     protected void onPutSyncInternal(Data keyData, Data valueData, V value) {
-        // NOP.
+        // NOP
     }
 
     protected ClientDelegatingFuture putAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy,
@@ -498,7 +497,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
     }
 
     protected void onPutIfAbsentSyncInternal(Data keyData, Data valueData, V value) {
-        // NOP.
+        // NOP
     }
 
     protected void removeAllKeysInternal(Collection<Data> dataKeys, long startNanos) {
@@ -528,7 +527,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
             waitCompletionLatch(completionId, null);
             if (statisticsEnabled) {
                 statsHandler.getStatistics().setLastUpdateTime(System.currentTimeMillis());
-                // We don't support count stats of removing all entries.
+                // we don't support count stats of removing all entries
             }
         } catch (Throwable t) {
             deregisterCompletionLatch(completionId);
@@ -542,7 +541,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
             invoke(request);
             if (statisticsEnabled) {
                 statsHandler.getStatistics().setLastUpdateTime(System.currentTimeMillis());
-                // We don't support count stats of removing all entries.
+                // we don't support count stats of removing all entries
             }
         } catch (Throwable t) {
             throw rethrowAllowedTypeFirst(t, CacheException.class);
@@ -656,7 +655,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
             // If closed or destroyed then throw IllegalStateException,
             // otherwise continue to wait until `MAX_COMPLETION_LATCH_WAIT_TIME` passes.
             //
-            // Warning: Silently ignoring if latch does not countDown in time.
+            // Warning: Silently ignoring if latch does not countdown in time.
             while (currentTimeoutMs > 0
                     && !countDownLatch.await(COMPLETION_LATCH_WAIT_TIME_STEP, TimeUnit.MILLISECONDS)) {
                 if (future != null && future.isDone()) {
@@ -675,8 +674,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
                 }
             }
             if (countDownLatch.getCount() > 0) {
-                logger.finest("Countdown latch wait timeout after "
-                        + MAX_COMPLETION_LATCH_WAIT_TIME + " milliseconds!");
+                logger.finest("Countdown latch wait timeout after " + MAX_COMPLETION_LATCH_WAIT_TIME + " milliseconds!");
             }
         } catch (InterruptedException e) {
             sneakyThrow(e);

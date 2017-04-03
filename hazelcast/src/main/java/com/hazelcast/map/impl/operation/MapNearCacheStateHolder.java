@@ -39,11 +39,11 @@ import static com.hazelcast.map.impl.MapDataSerializerHook.MAP_NEAR_CACHE_STATE_
 import static java.util.Collections.emptyList;
 
 /**
- * Holder for near-cache metadata
+ * Holder for Near Cache metadata.
  */
-// keep this `protected`, extended in another context.
 public class MapNearCacheStateHolder implements IdentifiedDataSerializable {
 
+    // keep this `protected`, extended in another context
     protected UUID partitionUuid;
     protected List<Object> mapNameSequencePairs = emptyList();
 

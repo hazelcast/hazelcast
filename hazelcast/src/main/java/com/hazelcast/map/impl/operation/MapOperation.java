@@ -111,7 +111,7 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
         }
     }
 
-    // TODO improve here it is possible that client cannot manage to attach listener
+    // TODO: improve here it's possible that client cannot manage to attach listener
     protected final void invalidateNearCache(Data key) {
         if (!mapContainer.hasInvalidationListener() || key == null) {
             return;
@@ -122,8 +122,7 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
     }
 
     /**
-     * This method helps to add clearing near-cache event only from one-partition
-     * which matches partition-id of the map-name.
+     * This method helps to add clearing Near Cache event only from one-partition which matches partitionId of the map name.
      */
     protected final void invalidateAllKeysInNearCaches() {
         if (!mapContainer.hasInvalidationListener()
@@ -163,5 +162,4 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
     public int getFactoryId() {
         return MapDataSerializerHook.F_ID;
     }
-
 }

@@ -54,12 +54,12 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
         super(cachingProvider, hazelcastInstance, uri, classLoader, properties);
 
         /*
-         * TODO
+         * TODO:
          *
          * A new interface, such as `InternalHazelcastInstance` (has `getOriginalInstance()` method),
          * might be introduced. Then underlying actual (original) Hazelcast instance is retrieved through this.
          *
-         * Original Hazelcast instance is used for getting `NearCacheManager` and .
+         * Original Hazelcast instance is used for getting `NearCacheManager` and
          * passing full cache name directly by this cache manager itself.
          */
         if (hazelcastInstance instanceof HazelcastClientProxy) {
@@ -127,10 +127,10 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
                                                        boolean syncCreate) {
         CacheConfig<K, V> config = configs.get(cacheName);
         if (config == null) {
-            // If cache config not found, try to find it from partition
+            // if cache config not found, try to find it from partition
             config = getCacheConfig(cacheName, simpleCacheName);
             if (config != null) {
-                // Cache config possibly is not exist on other nodes, so create also on them if absent
+                // cache config possibly is not exist on other nodes, so create also on them if absent
                 createCacheConfig(cacheName, config, createAlsoOnOthers, syncCreate);
             }
         }

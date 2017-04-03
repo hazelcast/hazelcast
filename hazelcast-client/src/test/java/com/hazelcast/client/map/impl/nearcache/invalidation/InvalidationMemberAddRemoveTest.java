@@ -62,18 +62,18 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
         final String mapName = "default";
         final AtomicBoolean stopTest = new AtomicBoolean();
 
-        // members are created.
+        // members are created
         final Config config = createConfig();
         HazelcastInstance member = factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
 
-        // map is populated form member.
+        // map is populated form member
         final IMap<Integer, Integer> memberMap = member.getMap(mapName);
         for (int i = 0; i < KEY_COUNT; i++) {
             memberMap.put(i, i);
         }
 
-        // a new client comes.
+        // a new client comes
         ClientConfig clientConfig = createClientConfig().addNearCacheConfig(createNearCacheConfig(mapName));
         final HazelcastInstance client = factory.newHazelcastClient(clientConfig);
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
@@ -93,7 +93,7 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
         });
         threads.add(shadowMember);
 
-        // populates client near-cache
+        // populates client Near Cache
         for (int i = 0; i < NEAR_CACHE_POPULATOR_THREAD_COUNT; i++) {
             Thread populateClientNearCache = new Thread(new Runnable() {
                 public void run() {
@@ -108,7 +108,7 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
             threads.add(populateClientNearCache);
         }
 
-        // updates map data from member.
+        // updates map data from member
         Thread putFromMember = new Thread(new Runnable() {
             public void run() {
                 while (!stopTest.get()) {

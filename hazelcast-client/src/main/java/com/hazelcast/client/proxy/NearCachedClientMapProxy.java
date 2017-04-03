@@ -79,7 +79,7 @@ import static java.util.Collections.emptyMap;
 @SuppressWarnings("checkstyle:anoninnerlength")
 public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
-    // Eventually consistent near cache can only be used with server versions >= 3.8.
+    // eventually consistent Near Cache can only be used with server versions >= 3.8
     private final int minConsistentNearCacheSupportingServerVersion = calculateVersion("3.8");
     private boolean invalidateOnChange;
     private NearCache<Object, Object> nearCache;
@@ -532,9 +532,10 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     /**
-     * Needed to deal with client compatibility issues.
-     * Eventual consistency for near cache can be used with server versions >= 3.8.
-     * Other connected server versions must use {@link Pre38NearCacheEventHandler}
+     * Deals with client compatibility.
+     *
+     * Eventual consistency for Near Cache can be used with server versions >= 3.8,
+     * other connected server versions must use {@link Pre38NearCacheEventHandler}
      */
     private final class ConnectedServerVersionAwareNearCacheEventHandler implements EventHandler<ClientMessage> {
 
@@ -570,8 +571,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     /**
-     * This event handler can only be used with server versions >= 3.8 and supports near cache eventual consistency improvements.
-     * For repairing functionality please see {@link RepairingHandler}
+     * This event handler can only be used with server versions >= 3.8 and supports Near Cache eventual consistency improvements.
+     * For repairing functionality please see {@link RepairingHandler}.
      */
     private final class RepairableNearCacheEventHandler extends MapAddNearCacheInvalidationListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
@@ -609,10 +610,10 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     /**
      * This event handler is here to be used with server versions < 3.8.
-     * <p>
+     *
      * If server version is < 3.8 and client version is >= 3.8, this event handler must be used to
-     * listen near cache invalidations. Because new improvements for near cache eventual consistency cannot work
-     * with server versions < 3.8.
+     * listen Near Cache invalidations. Because new improvements for Near Cache eventual consistency
+     * cannot work with server versions < 3.8.
      */
     private final class Pre38NearCacheEventHandler extends MapAddNearCacheEntryListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
@@ -629,8 +630,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
         @Override
         public void handle(Data key, String sourceUuid, UUID partitionUuid, long sequence) {
-            // null key means near cache has to remove all entries in it.
-            // see Pre38MapAddNearCacheEntryListenerMessageTask.
+            // null key means that the Near Cache has to remove all entries in it
+            // (see Pre38MapAddNearCacheEntryListenerMessageTask)
             if (key == null) {
                 nearCache.clear();
             } else {
@@ -647,7 +648,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
     }
 
-    // used in tests.
+    // used in tests
     public ClientContext getClientContext() {
         return getContext();
     }
@@ -661,8 +662,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         ClientConnectionManager connectionManager = client.getConnectionManager();
         Connection connection = connectionManager.getConnection(ownerConnectionAddress);
         if (connection == null) {
-            logger.warning(format("No owner connection is available, "
-                    + "near cached cache %s will be started in legacy mode", name));
+            logger.warning(format("No owner connection is available, near cached cache %s will be started in legacy mode", name));
             return UNKNOWN_HAZELCAST_VERSION;
         }
 

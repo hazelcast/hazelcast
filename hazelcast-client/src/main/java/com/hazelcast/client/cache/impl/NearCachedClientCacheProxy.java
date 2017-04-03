@@ -74,7 +74,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
 import static java.lang.String.format;
 
 /**
- * An {@link ICacheInternal} implementation which handles near cache specific behaviour of methods.
+ * An {@link ICacheInternal} implementation which handles Near Cache specific behaviour of methods.
  *
  * @param <K> the type of key.
  * @param <V> the type of value.
@@ -83,7 +83,7 @@ import static java.lang.String.format;
         "checkstyle:classfanoutcomplexity", "checkstyle:anoninnerlength"})
 public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
 
-    // Eventually consistent near cache can only be used with server versions >= 3.8.
+    // eventually consistent Near Cache can only be used with server versions >= 3.8
     private final int minConsistentNearCacheSupportingServerVersion = calculateVersion("3.8");
 
     private boolean cacheOnUpdate;
@@ -258,7 +258,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
     protected void putAllInternal(Map map, ExpiryPolicy expiryPolicy, List[] entriesPerPartition, long startNanos) {
         try {
             super.putAllInternal(map, expiryPolicy, entriesPerPartition, startNanos);
-            // cache or invalidate near cache
+            // cache or invalidate Near Cache
             for (int partitionId = 0; partitionId < entriesPerPartition.length; partitionId++) {
                 List<Map.Entry<Data, Data>> entries = entriesPerPartition[partitionId];
                 for (Map.Entry<Data, Data> entry : entries) {
@@ -387,7 +387,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
 
     private Object getCachedValue(Data keyData, boolean deserializeValue) {
         Object cached = nearCache.get(keyData);
-        // caching null values is not supported for icache near cache
+        // caching null values is not supported for ICache Near Cache
         assert cached != CACHED_AS_NULL;
 
         if (cached == null) {
@@ -416,9 +416,9 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
     }
 
     /**
-     * Publishes value got from remote or deletes reserved record when remote value is null
+     * Publishes value got from remote or deletes reserved record when remote value is {@code null}.
      *
-     * @param key           key to update in near cache
+     * @param key           key to update in Near Cache
      * @param remoteValue   fetched value from server
      * @param reservationId reservation id for this key
      * @param deserialize   deserialize returned value
@@ -427,7 +427,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
     private Object tryPublishReserved(Data key, Object remoteValue, long reservationId, boolean deserialize) {
         assert remoteValue != NOT_CACHED;
 
-        // caching null value is not supported for icache near cache
+        // caching null value is not supported for ICache Near Cache
         if (remoteValue == null) {
             // needed to delete reserved record
             invalidateNearCache(key);
@@ -506,8 +506,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
         ClientConnectionManager connectionManager = client.getConnectionManager();
         Connection connection = connectionManager.getConnection(ownerConnectionAddress);
         if (connection == null) {
-            logger.warning(format("No owner connection is available, "
-                    + "near cached cache %s will be started in legacy mode", name));
+            logger.warning(format("No owner connection is available, near cached cache %s will be started in legacy mode", name));
             return UNKNOWN_HAZELCAST_VERSION;
         }
 
@@ -663,9 +662,10 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
     }
 
     /**
-     * Needed to deal with client compatibility issues.
-     * Eventual consistency for near cache can be used with server versions >= 3.8.
-     * Other connected server versions must use {@link Pre38NearCacheEventHandler}
+     * Deals with client compatibility.
+     *
+     * Eventual consistency for Near Cache can be used with server versions >= 3.8,
+     * other connected server versions must use {@link Pre38NearCacheEventHandler}.
      */
     private final class ConnectedServerVersionAwareNearCacheEventHandler implements EventHandler<ClientMessage> {
 
@@ -701,7 +701,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
     }
 
     /**
-     * This event handler can only be used with server versions >= 3.8 and supports near cache eventual consistency improvements.
+     * This event handler can only be used with server versions >= 3.8 and supports Near Cache eventual consistency improvements.
      * For repairing functionality please see {@link RepairingHandler}
      */
     private final class RepairableNearCacheEventHandler extends CacheAddNearCacheInvalidationListenerCodec.AbstractEventHandler
@@ -739,10 +739,10 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
 
     /**
      * This event handler is here to be used with server versions < 3.8.
-     * <p>
+     *
      * If server version is < 3.8 and client version is >= 3.8, this event handler must be used to
-     * listen near cache invalidations. Because new improvements for near cache eventual consistency cannot work
-     * with server versions < 3.8.
+     * listen Near Cache invalidations. Because new improvements for Near Cache eventual consistency
+     * cannot work with server versions < 3.8.
      */
     private final class Pre38NearCacheEventHandler extends CacheAddInvalidationListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {

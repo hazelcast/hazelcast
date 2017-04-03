@@ -37,7 +37,7 @@ import java.util.UUID;
 import static java.util.Collections.emptyList;
 
 /**
- * Holder for near-cache metadata
+ * Holder for Near Cache metadata.
  */
 public class CacheNearCacheStateHolder implements IdentifiedDataSerializable {
 

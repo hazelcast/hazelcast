@@ -60,8 +60,8 @@ public final class ConfigValidator {
     /**
      * Checks preconditions to create a map proxy with Near Cache.
      *
-     * @param mapName         name of the map that near cache will be created for
-     * @param nearCacheConfig the {@link NearCacheConfig}
+     * @param mapName         name of the map that Near Cache will be created for
+     * @param nearCacheConfig the {@link NearCacheConfig} to be checked
      * @param isClient        {@code true} if the config is for a Hazelcast client, {@code false} otherwise
      */
     public static void checkNearCacheConfig(String mapName, NearCacheConfig nearCacheConfig, boolean isClient) {
@@ -77,15 +77,15 @@ public final class ConfigValidator {
     }
 
     /**
-     * Checks IMaps' supported near cache local update policy configuration.
+     * Checks IMaps' supported Near Cache local update policy configuration.
      *
-     * @param mapName         name of the map that near cache will be created for
-     * @param nearCacheConfig the nearCacheConfig to be checked
+     * @param mapName         name of the map that Near Cache will be created for
+     * @param nearCacheConfig the {@link NearCacheConfig} to be checked
      */
     public static void checkLocalUpdatePolicy(String mapName, NearCacheConfig nearCacheConfig) {
         NearCacheConfig.LocalUpdatePolicy localUpdatePolicy = nearCacheConfig.getLocalUpdatePolicy();
         if (localUpdatePolicy != INVALIDATE) {
-            throw new IllegalArgumentException(format("Wrong `local-update-policy` option is selected for `%s` map near cache."
+            throw new IllegalArgumentException(format("Wrong `local-update-policy` option is selected for `%s` map Near Cache."
                     + " Only `%s` option is supported but found `%s`", mapName, INVALIDATE, localUpdatePolicy));
         }
     }

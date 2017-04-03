@@ -929,7 +929,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         IMap<Integer, Integer> memberMap = member.getMap("test");
         populateMap(memberMap, 1000);
 
-        // populate client near cache
+        // populate client Near Cache
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         ClientConfig clientConfig = newClientConfig();
         clientConfig.addNearCacheConfig(nearCacheConfig);

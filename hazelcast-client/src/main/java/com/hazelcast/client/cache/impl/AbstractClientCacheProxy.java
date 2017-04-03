@@ -57,9 +57,9 @@ import static java.util.Collections.emptyMap;
 /**
  * Hazelcast provides extension functionality to default spec interface {@link javax.cache.Cache}.
  * {@link com.hazelcast.cache.ICache} is the designated interface.
- * <p>
+ *
  * AbstractCacheProxyExtension provides implementation of various {@link com.hazelcast.cache.ICache} methods.
- * <p>
+ *
  * Note: this partial implementation is used by client.
  *
  * @param <K> the type of key
@@ -278,9 +278,9 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
     protected void putAllInternal(Map<? extends K, ? extends V> map,
                                   ExpiryPolicy expiryPolicy, List<Map.Entry<Data, Data>>[] entriesPerPartition, long startNanos) {
         try {
-            // First we fill entry set per partition
+            // first we fill entry set per partition
             groupDataToPartitions(map, clientContext.getPartitionService(), entriesPerPartition);
-            // Then we invoke the operations and sync on completion of these operations
+            // then we invoke the operations and sync on completion of these operations
             putToAllPartitionsAndWaitForCompletion(entriesPerPartition, expiryPolicy, startNanos);
         } catch (Exception t) {
             throw rethrow(t);
@@ -331,7 +331,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
 
             if (entries != null) {
                 int completionId = nextCompletionId();
-                // TODO If there is a single entry, we could make use of a put operation since that is a bit cheaper
+                // TODO: if there is a single entry, we could make use of a put operation since that is a bit cheaper
                 ClientMessage request = CachePutAllCodec.encodeRequest(nameWithPrefix, entries, expiryPolicyData, completionId);
                 Future future = invoke(request, partitionId, completionId);
                 futureEntriesTuples.add(new FutureEntriesTuple(future, entries));

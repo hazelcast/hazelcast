@@ -27,9 +27,9 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Runs on near-cache side, an instance of this task is responsible for fetching of all near-caches' remote metadata like last
+ * Runs on Near Cache side, an instance of this task is responsible for fetching of all Near Caches' remote metadata like last
  * sequence numbers and partition-uuids. To see usage of this metadata visit: {@link MetaDataGenerator}.
- * <p>
+ *
  * This class is abstract to provide different implementations on client and member sides.
  */
 public abstract class MetaDataFetcher {
@@ -84,7 +84,7 @@ public abstract class MetaDataFetcher {
     }
 
     protected void repairSequences(Collection<Map.Entry<String, List<Map.Entry<Integer, Long>>>> namePartitionSequenceList,
-            ConcurrentMap<String, RepairingHandler> handlers) {
+                                   ConcurrentMap<String, RepairingHandler> handlers) {
         for (Map.Entry<String, List<Map.Entry<Integer, Long>>> entry : namePartitionSequenceList) {
             for (Map.Entry<Integer, Long> subEntry : entry.getValue()) {
                 RepairingHandler repairingHandler = handlers.get(entry.getKey());

@@ -39,11 +39,11 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * This task runs on near-cache-end and only one instance is created per data-structure type like imap and icache.
+ * This task runs on Near Cache side and only one instance is created per data-structure type like IMap and ICache.
  * Repairing responsibilities of this task are:
  * <ul>
  * <li>
- * To scan {@link RepairingHandler}s to see if any near-cache needs to be invalidated
+ * To scan {@link RepairingHandler}s to see if any Near Cache needs to be invalidated
  * according to missed invalidation counts. Controlled via {@link RepairingTask#MAX_TOLERATED_MISS_COUNT}
  * </li>
  * <li>
@@ -190,9 +190,9 @@ public final class RepairingTask implements Runnable {
 
     /**
      * Makes initial population of partition uuids synchronously.
-     * <p>
+     *
      * This operation can be done only one time per service (e.g. MapService, CacheService) on an end (e.g. client, member)
-     * when registering first {@link RepairingHandler} for a service. For example, if there is 100 near-caches on a client,
+     * when registering first {@link RepairingHandler} for a service. For example, if there are 100 Near Caches on a client,
      * this operation will be done only one time.
      */
     private void assignAndGetUuids() {
@@ -256,7 +256,7 @@ public final class RepairingTask implements Runnable {
 
     /**
      * Calculates number of missed invalidations and checks if repair is needed for the supplied handler.
-     * Every handler represents a single near-cache.
+     * Every handler represents a single Near Cache.
      */
     private boolean isAboveMaxToleratedMissCount(RepairingHandler handler) {
         int partition = 0;

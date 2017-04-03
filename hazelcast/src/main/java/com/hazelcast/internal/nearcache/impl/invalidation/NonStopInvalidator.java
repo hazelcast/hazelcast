@@ -22,7 +22,7 @@ import com.hazelcast.spi.NodeEngine;
 
 
 /**
- * Sends invalidations to near-caches immediately.
+ * Sends invalidations to Near Caches immediately.
  */
 public class NonStopInvalidator extends Invalidator {
 

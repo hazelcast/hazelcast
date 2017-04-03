@@ -68,12 +68,12 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * ICache implementation for client
- * <p/>
- * This proxy is the implementation of ICache and javax.cache.Cache which is returned by
- * HazelcastClientCacheManager. Represent a cache on client.
- * <p/>
- * This implementation is a thin proxy implementation using hazelcast client infrastructure
+ * {@link com.hazelcast.cache.ICache} implementation for client.
+ *
+ * This proxy is the implementation of {@link com.hazelcast.cache.ICache} and {@link javax.cache.Cache} which is returned by
+ * {@link HazelcastClientCacheManager}. Represents a cache on client.
+ *
+ * This implementation is a thin proxy implementation using hazelcast client infrastructure.
  *
  * @param <K> key type
  * @param <V> value type
@@ -285,7 +285,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
             final ICompletableFuture<ClientMessage> future = invoke(request, keyData, completionId);
             final ClientMessage response = getSafely(future);
             final Data data = CacheEntryProcessorCodec.decodeResponse(response).response;
-            // At client side, we don't know what entry processor does so we ignore it from statistics perspective
+            // at client side, we don't know what entry processor does so we ignore it from statistics perspective
             return toObject(data);
         } catch (CacheException ce) {
             throw ce;
@@ -316,7 +316,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
                 allResult.put(key, ceResult);
             }
         }
-        // At client side, we don't know what entry processor does so we ignore it from statistics perspective
+        // at client side, we don't know what entry processor does so we ignore it from statistics perspective
         return allResult;
     }
 
@@ -398,7 +398,6 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
 
         ClientListenerService listenerService = clientContext.getListenerService();
         boolean isDeregistered = listenerService.deregisterListener(regId);
-
         if (isDeregistered) {
             removeListenerLocally(cacheEntryListenerConfiguration);
             cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);

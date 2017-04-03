@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Client WITHOUT eventual consistent near cache will call this task.
+ * Client WITHOUT eventual consistent Near Cache will call this task.
  *
  * @see MapAddNearCacheInvalidationListenerMessageTask
  */
@@ -85,7 +85,7 @@ public class Pre38MapAddNearCacheEntryListenerMessageTask
 
     /**
      * This listener is here to be used with server versions < 3.8.
-     * Because new improvements for near cache eventual consistency cannot work with server versions < 3.8.
+     * Because new improvements for Near Cache eventual consistency cannot work with server versions < 3.8.
      */
     private final class Pre38NearCacheInvalidationListener extends AbstractMapClientNearCacheInvalidationListener {
 

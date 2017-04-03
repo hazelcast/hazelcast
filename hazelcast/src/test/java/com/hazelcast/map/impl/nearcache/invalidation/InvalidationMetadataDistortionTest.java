@@ -89,18 +89,18 @@ public class InvalidationMetadataDistortionTest extends NearCacheTestSupport {
         final int mapSize = 100000;
         final AtomicBoolean stopTest = new AtomicBoolean();
 
-        // members are created.
+        // members are created
         final Config config = createConfig().addMapConfig(createMapConfig(mapName));
         final HazelcastInstance member = factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
 
-        // map is populated form member.
+        // map is populated form member
         final IMap<Integer, Integer> memberMap = member.getMap(mapName);
         for (int i = 0; i < mapSize; i++) {
             memberMap.put(i, i);
         }
 
-        // a new member comes with near-cache configured.
+        // a new member comes with Near Cache configured
         final Config config2 = createConfig().addMapConfig(createMapConfig(mapName).setNearCacheConfig(createNearCacheConfig(mapName)));
         final HazelcastInstance nearCachedMember = factory.newHazelcastInstance(config2);
         final IMap<Integer, Integer> nearCachedMap = nearCachedMember.getMap(mapName);
@@ -162,7 +162,6 @@ public class InvalidationMetadataDistortionTest extends NearCacheTestSupport {
         distortSequence.join();
         populateNearCache.join();
         put.join();
-
 
         assertTrueEventually(new AssertTask() {
             @Override

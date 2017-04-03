@@ -94,7 +94,7 @@ public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport 
         CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(serverInstance);
         final CacheManager serverCacheManager = provider.getCacheManager();
 
-        // populated from member.
+        // populated from member
         final Cache<Integer, Integer> memberCache = serverCacheManager.createCache(DEFAULT_CACHE_NAME, createCacheConfig(BINARY));
         for (int i = 0; i < KEY_COUNT; i++) {
             memberCache.put(i, i);
@@ -125,7 +125,7 @@ public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport 
         threads.add(shadowMember);
 
         for (int i = 0; i < NEAR_CACHE_POPULATOR_THREAD_COUNT; i++) {
-            // populates client near-cache
+            // populates client Near Cache
             Thread populateClientNearCache = new Thread(new Runnable() {
                 public void run() {
                     while (!stopTest.get()) {
@@ -138,7 +138,7 @@ public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport 
             threads.add(populateClientNearCache);
         }
 
-        // updates data from member.
+        // updates data from member
         Thread putFromMember = new Thread(new Runnable() {
             public void run() {
                 while (!stopTest.get()) {

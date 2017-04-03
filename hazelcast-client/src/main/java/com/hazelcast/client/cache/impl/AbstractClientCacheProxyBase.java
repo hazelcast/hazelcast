@@ -230,7 +230,6 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
             Future future = new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(),
                     clientMessage, partitionId).invoke();
             return (ClientMessage) future.get();
-
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -302,5 +301,4 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
                                                                 ClientMessageDecoder decoder, boolean deserializeResponse) {
         return new ClientDelegatingFuture<T>(future, serializationService, decoder, deserializeResponse);
     }
-
 }

@@ -19,18 +19,18 @@ package com.hazelcast.internal.nearcache.impl.invalidation;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 
 /**
- * Used to detect staleness of near-cached data.
+ * Used to detect staleness of Near Cache data.
  *
- * During near-cache get, if one or more invalidations are lost for a key, we will make near-cached-data
- * unreachable with the help of {@link StaleReadDetector} and next near-cache-get will return null to force fresh
- * data fetching from underlying imap/icache.
+ * During {@link com.hazelcast.internal.nearcache.NearCache#get(Object)}, if one or more invalidations are lost for a key,
+ * we will make near cached data unreachable with the help of {@link StaleReadDetector} and next {@code get()} from the
+ * Near Cache will return {@code null} to force fresh data fetching from underlying IMap/ICache.
  *
  * @see com.hazelcast.internal.nearcache.impl.store.AbstractNearCacheRecordStore#get
  */
 public interface StaleReadDetector {
 
     /**
-     * This instance will be used when near-cache invalidations are disabled.
+     * This instance will be used when Near Cache invalidations are disabled.
      * It behaves as if there is no stale data and everything is fresh.
      */
     StaleReadDetector ALWAYS_FRESH = new StaleReadDetector() {
@@ -47,7 +47,7 @@ public interface StaleReadDetector {
 
     /**
      * @param key    the key
-     * @param record the near-cache record
+     * @param record the Near Cache record
      * @return {@code true} if reading with the supplied invalidation metadata is stale,
      * otherwise returns {@code false}
      */

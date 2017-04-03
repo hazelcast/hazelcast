@@ -28,14 +28,14 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 import static java.lang.String.format;
 
 /**
- * Handler used on near-cache side. Observes local and remote invalidations and registers relevant
+ * Handler used on Near Cache side. Observes local and remote invalidations and registers relevant
  * data to {@link MetaDataContainer}s
  *
- * Used to repair near-cache in the event of invalidation-event-miss
- * or partition uuid changes. Here repairing is done by making relevant near-cache data unreachable. To make
- * stale data unreachable {@link StaleReadDetectorImpl} is used.
+ * Used to repair Near Cache in the event of invalidation-event-miss or partition uuid changes.
+ * Here repairing is done by making relevant Near Cache data unreachable.
+ * To make stale data unreachable {@link StaleReadDetectorImpl} is used.
  *
- * An instance of this class is created per near-cache and can concurrently be used by many threads.
+ * An instance of this class is created per Near Cache and can concurrently be used by many threads.
  *
  * @see StaleReadDetectorImpl
  */
@@ -83,8 +83,8 @@ public final class RepairingHandler {
      * Handles a single invalidation
      */
     public void handle(Data key, String sourceUuid, UUID partitionUuid, long sequence) {
-        // Apply invalidation if it is not originated by local member/client. Because local near-caches are invalidated
-        // immediately. No need to invalidate them twice.
+        // apply invalidation if it's not originated by local member/client (because local
+        // Near Caches are invalidated immediately there is no need to invalidate them twice)
         if (!localUuid.equals(sourceUuid)) {
             // sourceUuid is allowed to be null.
             if (key == null) {
