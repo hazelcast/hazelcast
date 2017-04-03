@@ -199,7 +199,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         lock.lock();
         try {
             if (!isJoined()) {
-                logger.warning("Ignoring heartbeat of sender: " + membersViewMetadata + " because not joined!");
+                logger.warning("Ignoring master confirmation of sender: " + membersViewMetadata + " because not joined!");
                 return;
             }
 
