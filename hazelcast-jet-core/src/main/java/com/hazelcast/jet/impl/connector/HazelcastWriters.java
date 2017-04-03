@@ -80,13 +80,26 @@ public final class HazelcastWriters {
                 serializableConfig(clientConfig),
                 ArrayMap::new,
                 ArrayMap::add,
-                instance -> buffer -> {
-                    ICache cache = instance.getCacheManager().getCache(name);
-                    cache.putAll(buffer);
-                    buffer.clear();
-                },
+                CacheFlush.flushToCache(name),
                 noopConsumer()
         );
+    }
+
+    /**
+     * This inner static class is necessary to conceal cache-api
+     * while serializing/deserializing other lambdas
+     */
+    private static class CacheFlush {
+
+        static Function<HazelcastInstance, Consumer<ArrayMap>> flushToCache(String name) {
+            return instance -> {
+                ICache cache = instance.getCacheManager().getCache(name);
+                return buffer -> {
+                    cache.putAll(buffer);
+                    buffer.clear();
+                };
+            };
+        }
     }
 
     @Nonnull
