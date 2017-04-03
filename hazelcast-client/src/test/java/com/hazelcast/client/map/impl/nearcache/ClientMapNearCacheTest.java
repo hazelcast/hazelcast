@@ -1261,7 +1261,6 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
                            Collection<UUID> partitionUuids, Collection<Long> sequences) {
         }
 
-
         @Override
         public void beforeListenerRegister() {
         }

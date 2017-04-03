@@ -259,7 +259,6 @@ public class NearCacheTest extends NearCacheTestSupport {
         // make some hits
         populateNearCache(map, mapSize);
 
-        stats = getNearCacheStats(map);
         long hits = stats.getHits();
         misses = stats.getMisses();
         long hitsAndMisses = hits + misses;
