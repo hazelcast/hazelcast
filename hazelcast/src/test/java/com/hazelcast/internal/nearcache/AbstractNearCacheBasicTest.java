@@ -497,6 +497,48 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.REMOVE_WITH_OLD_VALUE);
     }
 
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#REMOVE_ALL)} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
+     */
+    @Test
+    public void whenRemoveAllIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+        whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.REMOVE_ALL);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#REMOVE_ALL)} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
+     */
+    @Test
+    public void whenRemoveAllIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+        nearCacheConfig.setInvalidateOnChange(true);
+        whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.REMOVE_ALL);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#REMOVE_ALL_WITH_KEYS)} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
+     */
+    @Test
+    public void whenRemoveAllWithKeysIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+        whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.REMOVE_ALL_WITH_KEYS);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#REMOVE_ALL_WITH_KEYS)} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
+     */
+    @Test
+    public void whenRemoveAllWithKeysIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+        nearCacheConfig.setInvalidateOnChange(true);
+        whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.REMOVE_ALL_WITH_KEYS);
+    }
+
     private void whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(boolean useNearCacheAdapter, DataStructureMethods method) {
         NearCacheTestContext<Integer, String, NK, NV> context = createContext();
         DataStructureAdapter<Integer, String> adapter = useNearCacheAdapter ? context.nearCacheAdapter : context.dataAdapter;
@@ -506,21 +548,32 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         populateNearCache(context);
 
         // this should invalidate the Near Cache
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            String value = "value-" + i;
-            switch (method) {
-                case REMOVE:
-                    adapter.remove(i);
-                    break;
-                case REMOVE_WITH_OLD_VALUE:
-                    assertTrue(adapter.remove(i, value));
-                    break;
-                case REMOVE_ASYNC:
-                    assertEquals(value, getFuture(adapter.removeAsync(i), "Could not remove entry via removeAsync()"));
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unexpected method: " + method);
+        Set<Integer> removeKeys = new HashSet<Integer>();
+        if (method == DataStructureMethods.REMOVE_ALL) {
+            adapter.removeAll();
+        } else {
+            for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+                String value = "value-" + i;
+                switch (method) {
+                    case REMOVE:
+                        adapter.remove(i);
+                        break;
+                    case REMOVE_WITH_OLD_VALUE:
+                        assertTrue(adapter.remove(i, value));
+                        break;
+                    case REMOVE_ASYNC:
+                        assertEquals(value, getFuture(adapter.removeAsync(i), "Could not remove entry via removeAsync()"));
+                        break;
+                    case REMOVE_ALL_WITH_KEYS:
+                        removeKeys.add(i);
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unexpected method: " + method);
+                }
             }
+        }
+        if (method == DataStructureMethods.REMOVE_ALL_WITH_KEYS) {
+            adapter.removeAll(removeKeys);
         }
 
         String message = format("Invalidation is not working on %s()", method.getMethodName());
