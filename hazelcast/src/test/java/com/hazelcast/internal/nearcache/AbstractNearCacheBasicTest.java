@@ -36,12 +36,12 @@ import java.util.concurrent.Future;
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.EvictionPolicy.NONE;
-import static com.hazelcast.config.InMemoryFormat.BINARY;
-import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheEvictionsEventually;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSize;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheStats;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertThatMemoryCostsAreGreaterThanZero;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertThatMemoryCostsAreZero;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assumeThatLocalUpdatePolicyIsCacheOnUpdate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assumeThatLocalUpdatePolicyIsInvalidate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assumeThatMethodIsAvailable;
@@ -656,29 +656,16 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         assertOpenEventually(countDownLatch);
 
         // the Near Cache is filled, we should see some memory costs now
-        if (context.hasLocalData && nearCacheConfig.getInMemoryFormat() != OBJECT) {
-            // the heap costs are just calculated if there is local data which is not in OBJECT in-memory-format
-            assertTrue("The Near Cache is filled, there should be some owned entry memory costs",
-                    context.stats.getOwnedEntryMemoryCost() > 0);
-            if (context.nearCacheAdapter.getLocalMapStats() != null && nearCacheConfig.getInMemoryFormat() == BINARY) {
-                assertTrue("The Near Cache is filled, there should be some heap costs",
-                        context.nearCacheAdapter.getLocalMapStats().getHeapCost() > 0);
-            }
-        }
+        assertNearCacheSizeEventually(context, DEFAULT_RECORD_COUNT);
+        assertThatMemoryCostsAreGreaterThanZero(context, nearCacheConfig.getInMemoryFormat());
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             context.nearCacheAdapter.remove(i);
         }
-        assertNearCacheSizeEventually(context, 0);
 
         // the Near Cache is empty, we shouldn't see memory costs anymore
-        assertEquals("The Near Cache is empty, there should be no owned entry memory costs",
-                0, context.stats.getOwnedEntryMemoryCost());
-        if (context.nearCacheAdapter.getLocalMapStats() != null) {
-            // this assert will work in all scenarios, since the default value should be 0 if no costs are calculated
-            assertEquals("The Near Cache is empty, there should be no heap costs", 0,
-                    context.nearCacheAdapter.getLocalMapStats().getHeapCost());
-        }
+        assertNearCacheSizeEventually(context, 0);
+        assertThatMemoryCostsAreZero(context);
     }
 
     /**

@@ -102,8 +102,9 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     }
 
     @Override
+    @MethodNotAvailable
     public LocalMapStats getLocalMapStats() {
-        return null;
+        throw new MethodNotAvailableException();
     }
 
     @Override
