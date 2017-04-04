@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.HazelcastServerCachingProvider.createCachingProvider;
+import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -175,6 +176,19 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testGetAll() {
+        cache.put(23, "value-23");
+        cache.put(42, "value-42");
+
+        Map<Integer, String> expectedResult = new HashMap<Integer, String>();
+        expectedResult.put(23, "value-23");
+        expectedResult.put(42, "value-42");
+
+        Map<Integer, String> result = adapter.getAll(expectedResult.keySet());
+        assertEquals(expectedResult, result);
+    }
+
+    @Test
     public void testPutAll() {
         Map<Integer, String> expectedResult = new HashMap<Integer, String>();
         expectedResult.put(23, "value-23");
@@ -189,19 +203,6 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetAll() {
-        cache.put(23, "value-23");
-        cache.put(42, "value-42");
-
-        Map<Integer, String> expectedResult = new HashMap<Integer, String>();
-        expectedResult.put(23, "value-23");
-        expectedResult.put(42, "value-42");
-
-        Map<Integer, String> result = adapter.getAll(expectedResult.keySet());
-        assertEquals(expectedResult, result);
-    }
-
-    @Test
     public void testRemoveAll() {
         cache.put(23, "value-23");
         cache.put(42, "value-42");
@@ -209,6 +210,18 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
         adapter.removeAll();
 
         assertEquals(0, cache.size());
+    }
+
+    @Test
+    public void testRemoveAllWithKeys() {
+        cache.put(23, "value-23");
+        cache.put(42, "value-42");
+
+        adapter.removeAll(singleton(42));
+
+        assertEquals(1, cache.size());
+        assertTrue(cache.containsKey(23));
+        assertFalse(cache.containsKey(42));
     }
 
     @Test

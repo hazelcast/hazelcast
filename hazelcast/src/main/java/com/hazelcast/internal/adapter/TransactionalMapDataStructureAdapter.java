@@ -120,15 +120,6 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
-    public void putAll(Map<K, V> map) {
-        begin();
-        for (Map.Entry<K, V> entry : map.entrySet()) {
-            transactionalMap.put(entry.getKey(), entry.getValue());
-        }
-        commit();
-    }
-
-    @Override
     public Map<K, V> getAll(Set<K> keys) {
         begin();
         Map<K, V> result = new HashMap<K, V>(keys.size());
@@ -140,8 +131,23 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
+    public void putAll(Map<K, V> map) {
+        begin();
+        for (Map.Entry<K, V> entry : map.entrySet()) {
+            transactionalMap.put(entry.getKey(), entry.getValue());
+        }
+        commit();
+    }
+
+    @Override
     @MethodNotAvailable
     public void removeAll() {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public void removeAll(Set<K> keys) {
         throw new MethodNotAvailableException();
     }
 

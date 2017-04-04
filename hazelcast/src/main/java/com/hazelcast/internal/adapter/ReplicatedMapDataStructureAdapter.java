@@ -99,11 +99,6 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     }
 
     @Override
-    public void putAll(Map<K, V> map) {
-        this.map.putAll(map);
-    }
-
-    @Override
     public Map<K, V> getAll(Set<K> keys) {
         Map<K, V> result = new HashMap<K, V>(keys.size());
         for (K key : keys) {
@@ -113,8 +108,19 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     }
 
     @Override
+    public void putAll(Map<K, V> map) {
+        this.map.putAll(map);
+    }
+
+    @Override
     @MethodNotAvailable
     public void removeAll() {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public void removeAll(Set<K> keys) {
         throw new MethodNotAvailableException();
     }
 

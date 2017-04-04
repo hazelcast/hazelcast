@@ -92,18 +92,23 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     }
 
     @Override
-    public void putAll(Map<K, V> map) {
-        cache.putAll(map);
-    }
-
-    @Override
     public Map<K, V> getAll(Set<K> keys) {
         return cache.getAll(keys);
     }
 
     @Override
+    public void putAll(Map<K, V> map) {
+        cache.putAll(map);
+    }
+
+    @Override
     public void removeAll() {
         cache.removeAll();
+    }
+
+    @Override
+    public void removeAll(Set<K> keys) {
+        cache.removeAll(keys);
     }
 
     @Override

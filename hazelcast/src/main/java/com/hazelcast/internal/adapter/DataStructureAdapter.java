@@ -52,11 +52,13 @@ public interface DataStructureAdapter<K, V> {
 
     boolean containsKey(K key);
 
-    void putAll(Map<K, V> map);
-
     Map<K, V> getAll(Set<K> keys);
 
+    void putAll(Map<K, V> map);
+
     void removeAll();
+
+    void removeAll(Set<K> keys);
 
     void clear();
 
@@ -78,9 +80,10 @@ public interface DataStructureAdapter<K, V> {
         REMOVE_WITH_OLD_VALUE("remove", Object.class, Object.class),
         REMOVE_ASYNC("removeAsync", Object.class),
         CONTAINS_KEY("containsKey", Object.class),
+        GET_ALL("getAll", Set.class),
         PUT_ALL("putAll", Map.class),
         REMOVE_ALL("removeAll"),
-        GET_ALL("getAll", Set.class),
+        REMOVE_ALL_WITH_KEYS("removeAll", Set.class),
         CLEAR("clear"),
         GET_LOCAL_MAP_STATS("getLocalMapStats");
 

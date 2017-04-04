@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Future;
 
+import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -162,6 +163,19 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testGetAll() {
+        map.put(23, "value-23");
+        map.put(42, "value-42");
+
+        Map<Integer, String> expectedResult = new HashMap<Integer, String>();
+        expectedResult.put(23, "value-23");
+        expectedResult.put(42, "value-42");
+
+        Map<Integer, String> result = adapter.getAll(expectedResult.keySet());
+        assertEquals(expectedResult, result);
+    }
+
+    @Test
     public void testPutAll() {
         Map<Integer, String> expectedResult = new HashMap<Integer, String>();
         expectedResult.put(23, "value-23");
@@ -176,19 +190,6 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetAll() {
-        map.put(23, "value-23");
-        map.put(42, "value-42");
-
-        Map<Integer, String> expectedResult = new HashMap<Integer, String>();
-        expectedResult.put(23, "value-23");
-        expectedResult.put(42, "value-42");
-
-        Map<Integer, String> result = adapter.getAll(expectedResult.keySet());
-        assertEquals(expectedResult, result);
-    }
-
-    @Test
     public void testRemoveAll() {
         map.put(23, "value-23");
         map.put(42, "value-42");
@@ -196,6 +197,18 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
         adapter.removeAll();
 
         assertEquals(0, map.size());
+    }
+
+    @Test
+    public void testRemoveAllWithKeys() {
+        map.put(23, "value-23");
+        map.put(42, "value-42");
+
+        adapter.removeAll(singleton(42));
+
+        assertEquals(1, map.size());
+        assertTrue(map.containsKey(23));
+        assertFalse(map.containsKey(42));
     }
 
     @Test

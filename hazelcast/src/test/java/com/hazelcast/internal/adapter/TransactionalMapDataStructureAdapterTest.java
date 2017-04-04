@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -152,6 +153,19 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
     }
 
     @Test
+    public void testGetAll() {
+        map.put(23, "value-23");
+        map.put(42, "value-42");
+
+        Map<Integer, String> expectedResult = new HashMap<Integer, String>();
+        expectedResult.put(23, "value-23");
+        expectedResult.put(42, "value-42");
+
+        Map<Integer, String> result = adapter.getAll(expectedResult.keySet());
+        assertEquals(expectedResult, result);
+    }
+
+    @Test
     public void testPutAll() {
         Map<Integer, String> expectedResult = new HashMap<Integer, String>();
         expectedResult.put(23, "value-23");
@@ -165,22 +179,14 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
         }
     }
 
-    @Test
-    public void testGetAll() {
-        map.put(23, "value-23");
-        map.put(42, "value-42");
-
-        Map<Integer, String> expectedResult = new HashMap<Integer, String>();
-        expectedResult.put(23, "value-23");
-        expectedResult.put(42, "value-42");
-
-        Map<Integer, String> result = adapter.getAll(expectedResult.keySet());
-        assertEquals(expectedResult, result);
-    }
-
     @Test(expected = MethodNotAvailableException.class)
     public void testRemoveAll() {
         adapter.removeAll();
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testRemoveAllWithKeys() {
+        adapter.removeAll(singleton(42));
     }
 
     @Test
