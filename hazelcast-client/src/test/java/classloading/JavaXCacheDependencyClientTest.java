@@ -19,16 +19,14 @@ package classloading;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
-@Ignore(value = "possible candidate for a PermGen space leakage")
+@Category(NightlyTest.class)
 public class JavaXCacheDependencyClientTest extends AbstractJavaXCacheDependencyTest {
 
     private static HazelcastInstance hazelcast;
