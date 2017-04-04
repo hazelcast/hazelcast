@@ -18,6 +18,10 @@ package com.hazelcast.util;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.serialization.PortableHook;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.spi.impl.SpiPortableHook;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -31,15 +35,17 @@ import org.junit.runner.RunWith;
 
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.test.TestCollectionUtils.setOf;
+import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -55,7 +61,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
                 otherInterface, otherClassloader);
 
         ServiceLoader.ServiceDefinition definition = new ServiceLoader.ServiceDefinition(otherHook.getName(), otherClassloader);
-        Set<ServiceLoader.ServiceDefinition> definitions = Collections.singleton(definition);
+        Set<ServiceLoader.ServiceDefinition> definitions = singleton(definition);
         ServiceLoader.ClassIterator<PortableHook> iterator = new ServiceLoader.ClassIterator<PortableHook>(definitions, PortableHook.class);
 
         assertFalse(iterator.hasNext());
@@ -70,7 +76,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
                 otherInterface, otherClassloader);
 
         ServiceLoader.ServiceDefinition definition = new ServiceLoader.ServiceDefinition(otherHook.getName(), otherClassloader);
-        Set<ServiceLoader.ServiceDefinition> definitions = Collections.singleton(definition);
+        Set<ServiceLoader.ServiceDefinition> definitions = singleton(definition);
         ServiceLoader.ClassIterator<PortableHook> iterator = new ServiceLoader.ClassIterator<PortableHook>(definitions, PortableHook.class);
 
         iterator.hasNext();
@@ -79,7 +85,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
     @Test
     public void testSkipUnknownClassesStartingFromHazelcastPackage() {
         ServiceLoader.ServiceDefinition definition = new ServiceLoader.ServiceDefinition("com.hazelcast.DoesNotExist", getClass().getClassLoader());
-        Set<ServiceLoader.ServiceDefinition> definitions = Collections.singleton(definition);
+        Set<ServiceLoader.ServiceDefinition> definitions = singleton(definition);
         ServiceLoader.ClassIterator<PortableHook> iterator = new ServiceLoader.ClassIterator<PortableHook>(definitions, PortableHook.class);
 
         assertFalse(iterator.hasNext());
@@ -88,7 +94,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
     @Test(expected = HazelcastException.class)
     public void testFailFastOnUnknownClassesFromNonHazelcastPackage() {
         ServiceLoader.ServiceDefinition definition = new ServiceLoader.ServiceDefinition("non.a.hazelcast.DoesNotExist", getClass().getClassLoader());
-        Set<ServiceLoader.ServiceDefinition> definitions = Collections.singleton(definition);
+        Set<ServiceLoader.ServiceDefinition> definitions = singleton(definition);
         ServiceLoader.ClassIterator<PortableHook> iterator = new ServiceLoader.ClassIterator<PortableHook>(definitions, PortableHook.class);
         assertFalse(iterator.hasNext());
     }
@@ -113,6 +119,34 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         Class<PortableHook> hook = iterator.next();
         assertEquals(SpiPortableHook.class, hook);
         assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testPrivatePortableHook() {
+        String hookName = DummyPrivatePortableHook.class.getName();
+        ClassLoader classLoader = DummyPrivatePortableHook.class.getClassLoader();
+        ServiceLoader.ServiceDefinition definition = new ServiceLoader.ServiceDefinition(hookName, classLoader);
+
+        ServiceLoader.ClassIterator<PortableHook> classIterator = new ServiceLoader.ClassIterator<PortableHook>(singleton(definition), PortableHook.class);
+        ServiceLoader.NewInstanceIterator<PortableHook> instanceIterator = new ServiceLoader.NewInstanceIterator<PortableHook>(classIterator);
+
+        assertTrue(instanceIterator.hasNext());
+        DummyPrivatePortableHook hook = (DummyPrivatePortableHook) instanceIterator.next();
+        assertNotNull(hook);
+    }
+
+    @Test
+    public void testPrivateSerializerHook() {
+        String hookName = DummyPrivateSerializerHook.class.getName();
+        ClassLoader classLoader = DummyPrivateSerializerHook.class.getClassLoader();
+        ServiceLoader.ServiceDefinition definition = new ServiceLoader.ServiceDefinition(hookName, classLoader);
+
+        ServiceLoader.ClassIterator<SerializerHook> classIterator = new ServiceLoader.ClassIterator<SerializerHook>(singleton(definition), SerializerHook.class);
+        ServiceLoader.NewInstanceIterator<SerializerHook> instanceIterator = new ServiceLoader.NewInstanceIterator<SerializerHook>(classIterator);
+
+        assertTrue(instanceIterator.hasNext());
+        DummyPrivateSerializerHook hook = (DummyPrivateSerializerHook) instanceIterator.next();
+        assertNotNull(hook);
     }
 
     private Class<?> newClassImplementingInterface(String classname, Class<?> iface, ClassLoader classLoader) {
@@ -298,5 +332,40 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
     }
 
     public static class ServiceLoaderSpacesTestInterfaceImpl implements ServiceLoaderSpacesTestInterface {
+    }
+
+    private static class DummyPrivatePortableHook implements PortableHook {
+        @Override
+        public int getFactoryId() {
+            return 0;
+        }
+
+        @Override
+        public PortableFactory createFactory() {
+            return null;
+        }
+
+        @Override
+        public Collection<ClassDefinition> getBuiltinDefinitions() {
+            return null;
+        }
+    }
+
+    private static class DummyPrivateSerializerHook implements SerializerHook {
+
+        @Override
+        public Class getSerializationType() {
+            return null;
+        }
+
+        @Override
+        public Serializer createSerializer() {
+            return null;
+        }
+
+        @Override
+        public boolean isOverwritable() {
+            return false;
+        }
     }
 }
