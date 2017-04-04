@@ -297,6 +297,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
         version = 0;
         transactional = false;
         blockReads = false;
+        local = false;
     }
 
     void cancelEviction() {
