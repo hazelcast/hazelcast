@@ -28,7 +28,9 @@ import java.util.Set;
  */
 public interface DataStructureAdapter<K, V> {
 
-    void clear();
+    V get(K key);
+
+    ICompletableFuture<V> getAsync(K key);
 
     void set(K key, V value);
 
@@ -42,44 +44,45 @@ public interface DataStructureAdapter<K, V> {
 
     boolean replace(K key, V oldValue, V newValue);
 
-    V get(K key);
-
-    ICompletableFuture<V> getAsync(K key);
-
-    void putAll(Map<K, V> map);
-
-    Map<K, V> getAll(Set<K> keys);
-
     void remove(K key);
 
     boolean remove(K key, V oldValue);
 
     ICompletableFuture<V> removeAsync(K key);
 
-    LocalMapStats getLocalMapStats();
-
     boolean containsKey(K key);
+
+    void putAll(Map<K, V> map);
+
+    Map<K, V> getAll(Set<K> keys);
+
+    void removeAll();
+
+    void clear();
+
+    LocalMapStats getLocalMapStats();
 
     /**
      * Contains all methods of {@link DataStructureAdapter}.
      */
     enum DataStructureMethods implements DataStructureAdapterMethod {
-        CLEAR("clear"),
+        GET("get", Object.class),
+        GET_ASYNC("getAsync", Object.class),
         SET("set", Object.class, Object.class),
         PUT("put", Object.class, Object.class),
         PUT_IF_ABSENT("putIfAbsent", Object.class, Object.class),
         PUT_IF_ABSENT_ASYNC("putIfAbsentAsync", Object.class, Object.class),
         REPLACE("replace", Object.class, Object.class),
         REPLACE_WITH_OLD_VALUE("replace", Object.class, Object.class, Object.class),
-        GET("get", Object.class),
-        GET_ASYNC("getAsync", Object.class),
-        PUT_ALL("putAll", Map.class),
-        GET_ALL("getAll", Set.class),
         REMOVE("remove", Object.class),
         REMOVE_WITH_OLD_VALUE("remove", Object.class, Object.class),
         REMOVE_ASYNC("removeAsync", Object.class),
-        GET_LOCAL_MAP_STATS("getLocalMapStats"),
-        CONTAINS_KEY("containsKey", Object.class);
+        CONTAINS_KEY("containsKey", Object.class),
+        PUT_ALL("putAll", Map.class),
+        REMOVE_ALL("removeAll"),
+        GET_ALL("getAll", Set.class),
+        CLEAR("clear"),
+        GET_LOCAL_MAP_STATS("getLocalMapStats");
 
         private final String methodName;
         private final Class<?>[] parameterTypes;

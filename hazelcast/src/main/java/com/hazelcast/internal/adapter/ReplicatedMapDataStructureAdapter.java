@@ -33,8 +33,14 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     }
 
     @Override
-    public void clear() {
-        map.clear();
+    public V get(K key) {
+        return map.get(key);
+    }
+
+    @Override
+    @MethodNotAvailable
+    public ICompletableFuture<V> getAsync(K key) {
+        throw new MethodNotAvailableException();
     }
 
     @Override
@@ -71,31 +77,6 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
         throw new MethodNotAvailableException();
     }
 
-    @Override
-    public V get(K key) {
-        return map.get(key);
-    }
-
-    @Override
-    @MethodNotAvailable
-    public ICompletableFuture<V> getAsync(K key) {
-        throw new MethodNotAvailableException();
-    }
-
-    @Override
-    public void putAll(Map<K, V> map) {
-        this.map.putAll(map);
-    }
-
-    @Override
-    public Map<K, V> getAll(Set<K> keys) {
-        Map<K, V> result = new HashMap<K, V>(keys.size());
-        for (K key : keys) {
-            result.put(key, map.get(key));
-        }
-        return result;
-    }
-
     public void remove(K key) {
         map.remove(key);
     }
@@ -113,13 +94,38 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     }
 
     @Override
+    public boolean containsKey(K key) {
+        return map.containsKey(key);
+    }
+
+    @Override
+    public void putAll(Map<K, V> map) {
+        this.map.putAll(map);
+    }
+
+    @Override
+    public Map<K, V> getAll(Set<K> keys) {
+        Map<K, V> result = new HashMap<K, V>(keys.size());
+        for (K key : keys) {
+            result.put(key, map.get(key));
+        }
+        return result;
+    }
+
+    @Override
     @MethodNotAvailable
-    public LocalMapStats getLocalMapStats() {
+    public void removeAll() {
         throw new MethodNotAvailableException();
     }
 
     @Override
-    public boolean containsKey(K key) {
-        return map.containsKey(key);
+    public void clear() {
+        map.clear();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public LocalMapStats getLocalMapStats() {
+        throw new MethodNotAvailableException();
     }
 }

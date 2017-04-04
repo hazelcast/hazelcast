@@ -61,12 +61,20 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testClear() {
-        cache.put(23, "foobar");
+    public void testGet() {
+        cache.put(42, "foobar");
 
-        adapter.clear();
+        String result = adapter.get(42);
+        assertEquals("foobar", result);
+    }
 
-        assertEquals(0, cache.size());
+    @Test
+    public void testGetAsync() throws Exception {
+        cache.put(42, "foobar");
+
+        Future<String> future = adapter.getAsync(42);
+        String result = future.get();
+        assertEquals("foobar", result);
     }
 
     @Test
@@ -129,20 +137,41 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGet() {
-        cache.put(42, "foobar");
+    public void testRemove() {
+        cache.put(23, "value-23");
+        assertTrue(cache.containsKey(23));
 
-        String result = adapter.get(42);
-        assertEquals("foobar", result);
+        adapter.remove(23);
+        assertFalse(cache.containsKey(23));
     }
 
     @Test
-    public void testGetAsync() throws Exception {
-        cache.put(42, "foobar");
+    public void testRemoveWithOldValue() {
+        cache.put(23, "value-23");
+        assertTrue(cache.containsKey(23));
 
-        Future<String> future = adapter.getAsync(42);
-        String result = future.get();
-        assertEquals("foobar", result);
+        assertFalse(adapter.remove(23, "foobar"));
+        assertTrue(adapter.remove(23, "value-23"));
+        assertFalse(cache.containsKey(23));
+    }
+
+    @Test
+    public void testRemoveAsync() throws Exception {
+        cache.put(23, "value-23");
+        assertTrue(cache.containsKey(23));
+
+        String value = adapter.removeAsync(23).get();
+        assertEquals("value-23", value);
+
+        assertFalse(cache.containsKey(23));
+    }
+
+    @Test
+    public void testContainsKey() {
+        cache.put(23, "value-23");
+
+        assertTrue(adapter.containsKey(23));
+        assertFalse(adapter.containsKey(42));
     }
 
     @Test
@@ -173,45 +202,26 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemove() {
+    public void testRemoveAll() {
         cache.put(23, "value-23");
-        assertTrue(cache.containsKey(23));
+        cache.put(42, "value-42");
 
-        adapter.remove(23);
-        assertFalse(cache.containsKey(23));
+        adapter.removeAll();
+
+        assertEquals(0, cache.size());
     }
 
     @Test
-    public void testRemoveWithOldValue() {
-        cache.put(23, "value-23");
-        assertTrue(cache.containsKey(23));
+    public void testClear() {
+        cache.put(23, "foobar");
 
-        assertFalse(adapter.remove(23, "foobar"));
-        assertTrue(adapter.remove(23, "value-23"));
-        assertFalse(cache.containsKey(23));
-    }
+        adapter.clear();
 
-    @Test
-    public void testRemoveAsync() throws Exception {
-        cache.put(23, "value-23");
-        assertTrue(cache.containsKey(23));
-
-        String value = adapter.removeAsync(23).get();
-        assertEquals("value-23", value);
-
-        assertFalse(cache.containsKey(23));
+        assertEquals(0, cache.size());
     }
 
     @Test(expected = MethodNotAvailableException.class)
     public void testGetLocalMapStats() {
         adapter.getLocalMapStats();
-    }
-
-    @Test
-    public void testContainsKey() {
-        cache.put(23, "value-23");
-
-        assertTrue(adapter.containsKey(23));
-        assertFalse(adapter.containsKey(42));
     }
 }

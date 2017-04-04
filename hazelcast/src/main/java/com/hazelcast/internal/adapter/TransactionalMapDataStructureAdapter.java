@@ -40,12 +40,17 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
-    public void clear() {
+    public V get(K key) {
         begin();
-        for (K key : transactionalMap.keySet()) {
-            transactionalMap.remove(key);
-        }
+        V value = transactionalMap.get(key);
         commit();
+        return value;
+    }
+
+    @Override
+    @MethodNotAvailable
+    public ICompletableFuture<V> getAsync(K key) {
+        throw new MethodNotAvailableException();
     }
 
     @Override
@@ -94,16 +99,23 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
-    public V get(K key) {
+    public void remove(K key) {
         begin();
-        V value = transactionalMap.get(key);
+        transactionalMap.remove(key);
         commit();
-        return value;
+    }
+
+    @Override
+    public boolean remove(K key, V oldValue) {
+        begin();
+        boolean result = transactionalMap.remove(key, oldValue);
+        commit();
+        return result;
     }
 
     @Override
     @MethodNotAvailable
-    public ICompletableFuture<V> getAsync(K key) {
+    public ICompletableFuture<V> removeAsync(K key) {
         throw new MethodNotAvailableException();
     }
 
@@ -128,24 +140,18 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
-    public void remove(K key) {
-        begin();
-        transactionalMap.remove(key);
-        commit();
-    }
-
-    @Override
-    public boolean remove(K key, V oldValue) {
-        begin();
-        boolean result = transactionalMap.remove(key, oldValue);
-        commit();
-        return result;
-    }
-
-    @Override
     @MethodNotAvailable
-    public ICompletableFuture<V> removeAsync(K key) {
+    public void removeAll() {
         throw new MethodNotAvailableException();
+    }
+
+    @Override
+    public void clear() {
+        begin();
+        for (K key : transactionalMap.keySet()) {
+            transactionalMap.remove(key);
+        }
+        commit();
     }
 
     @Override

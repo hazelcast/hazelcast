@@ -19,6 +19,7 @@ package com.hazelcast.internal.adapter;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.query.TruePredicate;
 
 import java.util.Map;
 import java.util.Set;
@@ -32,8 +33,13 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
-    public void clear() {
-        map.clear();
+    public V get(K key) {
+        return map.get(key);
+    }
+
+    @Override
+    public ICompletableFuture<V> getAsync(K key) {
+        return map.getAsync(key);
     }
 
     @Override
@@ -68,26 +74,6 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
-    public V get(K key) {
-        return map.get(key);
-    }
-
-    @Override
-    public ICompletableFuture<V> getAsync(K key) {
-        return map.getAsync(key);
-    }
-
-    @Override
-    public void putAll(Map<K, V> map) {
-        this.map.putAll(map);
-    }
-
-    @Override
-    public Map<K, V> getAll(Set<K> keys) {
-        return map.getAll(keys);
-    }
-
-    @Override
     public void remove(K key) {
         map.remove(key);
     }
@@ -103,12 +89,33 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
-    public LocalMapStats getLocalMapStats() {
-        return map.getLocalMapStats();
+    public boolean containsKey(K key) {
+        return map.containsKey(key);
     }
 
     @Override
-    public boolean containsKey(K key) {
-        return map.containsKey(key);
+    public void putAll(Map<K, V> map) {
+        this.map.putAll(map);
+    }
+
+    @Override
+    public Map<K, V> getAll(Set<K> keys) {
+        return map.getAll(keys);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void removeAll() {
+        map.removeAll(TruePredicate.INSTANCE);
+    }
+
+    @Override
+    public void clear() {
+        map.clear();
+    }
+
+    @Override
+    public LocalMapStats getLocalMapStats() {
+        return map.getLocalMapStats();
     }
 }

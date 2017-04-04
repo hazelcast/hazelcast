@@ -52,12 +52,16 @@ public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport 
     }
 
     @Test
-    public void testClear() {
-        map.put(23, "foobar");
+    public void testGet() {
+        map.put(42, "foobar");
 
-        adapter.clear();
+        String result = adapter.get(42);
+        assertEquals("foobar", result);
+    }
 
-        assertEquals(0, map.size());
+    @Test(expected = MethodNotAvailableException.class)
+    public void testGetAsync() {
+        adapter.getAsync(42);
     }
 
     @Test
@@ -98,16 +102,30 @@ public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport 
     }
 
     @Test
-    public void testGet() {
-        map.put(42, "foobar");
+    public void testRemove() {
+        map.put(23, "value-23");
+        assertTrue(map.containsKey(23));
 
-        String result = adapter.get(42);
-        assertEquals("foobar", result);
+        adapter.remove(23);
+        assertFalse(map.containsKey(23));
     }
 
     @Test(expected = MethodNotAvailableException.class)
-    public void testGetAsync() {
-        adapter.getAsync(42);
+    public void testRemoveWithOldValue() {
+        adapter.remove(23, "oldValue");
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testRemoveAsync() {
+        adapter.removeAsync(23);
+    }
+
+    @Test
+    public void testContainsKey() {
+        map.put(23, "value-23");
+
+        assertTrue(adapter.containsKey(23));
+        assertFalse(adapter.containsKey(42));
     }
 
     @Test
@@ -137,35 +155,22 @@ public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport 
         assertEquals(expectedResult, result);
     }
 
+    @Test(expected = MethodNotAvailableException.class)
+    public void testRemoveAll() {
+        adapter.removeAll();
+    }
+
     @Test
-    public void testRemove() {
-        map.put(23, "value-23");
-        assertTrue(map.containsKey(23));
+    public void testClear() {
+        map.put(23, "foobar");
 
-        adapter.remove(23);
-        assertFalse(map.containsKey(23));
-    }
+        adapter.clear();
 
-    @Test(expected = MethodNotAvailableException.class)
-    public void testRemoveWithOldValue() {
-        adapter.remove(23, "oldValue");
-    }
-
-    @Test(expected = MethodNotAvailableException.class)
-    public void testRemoveAsync() {
-        adapter.removeAsync(23);
+        assertEquals(0, map.size());
     }
 
     @Test(expected = MethodNotAvailableException.class)
     public void testGetLocalMapStats() {
         adapter.getLocalMapStats();
-    }
-
-    @Test
-    public void testContainsKey() {
-        map.put(23, "value-23");
-
-        assertTrue(adapter.containsKey(23));
-        assertFalse(adapter.containsKey(42));
     }
 }

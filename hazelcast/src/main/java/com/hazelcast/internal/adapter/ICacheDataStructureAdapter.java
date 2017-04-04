@@ -32,8 +32,13 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     }
 
     @Override
-    public void clear() {
-        cache.clear();
+    public V get(K key) {
+        return cache.get(key);
+    }
+
+    @Override
+    public ICompletableFuture<V> getAsync(K key) {
+        return cache.getAsync(key);
     }
 
     @Override
@@ -67,26 +72,6 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     }
 
     @Override
-    public V get(K key) {
-        return cache.get(key);
-    }
-
-    @Override
-    public ICompletableFuture<V> getAsync(K key) {
-        return cache.getAsync(key);
-    }
-
-    @Override
-    public void putAll(Map<K, V> map) {
-        cache.putAll(map);
-    }
-
-    @Override
-    public Map<K, V> getAll(Set<K> keys) {
-        return cache.getAll(keys);
-    }
-
-    @Override
     public void remove(K key) {
         cache.remove(key);
     }
@@ -102,13 +87,33 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     }
 
     @Override
-    @MethodNotAvailable
-    public LocalMapStats getLocalMapStats() {
-        throw new MethodNotAvailableException();
+    public boolean containsKey(K key) {
+        return cache.containsKey(key);
     }
 
     @Override
-    public boolean containsKey(K key) {
-        return cache.containsKey(key);
+    public void putAll(Map<K, V> map) {
+        cache.putAll(map);
+    }
+
+    @Override
+    public Map<K, V> getAll(Set<K> keys) {
+        return cache.getAll(keys);
+    }
+
+    @Override
+    public void removeAll() {
+        cache.removeAll();
+    }
+
+    @Override
+    public void clear() {
+        cache.clear();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public LocalMapStats getLocalMapStats() {
+        throw new MethodNotAvailableException();
     }
 }

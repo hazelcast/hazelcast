@@ -54,12 +54,20 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testClear() {
-        map.put(23, "foobar");
+    public void testGet() {
+        map.put(42, "foobar");
 
-        adapter.clear();
+        String result = adapter.get(42);
+        assertEquals("foobar", result);
+    }
 
-        assertEquals(0, map.size());
+    @Test
+    public void testGetAsync() throws Exception {
+        map.put(42, "foobar");
+
+        Future<String> future = adapter.getAsync(42);
+        String result = future.get();
+        assertEquals("foobar", result);
     }
 
     @Test
@@ -116,50 +124,6 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGet() {
-        map.put(42, "foobar");
-
-        String result = adapter.get(42);
-        assertEquals("foobar", result);
-    }
-
-    @Test
-    public void testGetAsync() throws Exception {
-        map.put(42, "foobar");
-
-        Future<String> future = adapter.getAsync(42);
-        String result = future.get();
-        assertEquals("foobar", result);
-    }
-
-    @Test
-    public void testPutAll() {
-        Map<Integer, String> expectedResult = new HashMap<Integer, String>();
-        expectedResult.put(23, "value-23");
-        expectedResult.put(42, "value-42");
-
-        adapter.putAll(expectedResult);
-
-        assertEquals(expectedResult.size(), map.size());
-        for (Integer key : expectedResult.keySet()) {
-            assertTrue(map.containsKey(key));
-        }
-    }
-
-    @Test
-    public void testGetAll() {
-        map.put(23, "value-23");
-        map.put(42, "value-42");
-
-        Map<Integer, String> expectedResult = new HashMap<Integer, String>();
-        expectedResult.put(23, "value-23");
-        expectedResult.put(42, "value-42");
-
-        Map<Integer, String> result = adapter.getAll(expectedResult.keySet());
-        assertEquals(expectedResult, result);
-    }
-
-    @Test
     public void testRemove() {
         map.put(23, "value-23");
         assertTrue(map.containsKey(23));
@@ -190,6 +154,60 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testContainsKey() {
+        map.put(23, "value-23");
+
+        assertTrue(adapter.containsKey(23));
+        assertFalse(adapter.containsKey(42));
+    }
+
+    @Test
+    public void testPutAll() {
+        Map<Integer, String> expectedResult = new HashMap<Integer, String>();
+        expectedResult.put(23, "value-23");
+        expectedResult.put(42, "value-42");
+
+        adapter.putAll(expectedResult);
+
+        assertEquals(expectedResult.size(), map.size());
+        for (Integer key : expectedResult.keySet()) {
+            assertTrue(map.containsKey(key));
+        }
+    }
+
+    @Test
+    public void testGetAll() {
+        map.put(23, "value-23");
+        map.put(42, "value-42");
+
+        Map<Integer, String> expectedResult = new HashMap<Integer, String>();
+        expectedResult.put(23, "value-23");
+        expectedResult.put(42, "value-42");
+
+        Map<Integer, String> result = adapter.getAll(expectedResult.keySet());
+        assertEquals(expectedResult, result);
+    }
+
+    @Test
+    public void testRemoveAll() {
+        map.put(23, "value-23");
+        map.put(42, "value-42");
+
+        adapter.removeAll();
+
+        assertEquals(0, map.size());
+    }
+
+    @Test
+    public void testClear() {
+        map.put(23, "foobar");
+
+        adapter.clear();
+
+        assertEquals(0, map.size());
+    }
+
+    @Test
     public void testGetLocalMapStats() {
         assertNotNull(adapter.getLocalMapStats());
 
@@ -197,13 +215,5 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
 
         adapter.put(23, "value-23");
         assertEquals(1, adapter.getLocalMapStats().getOwnedEntryCount());
-    }
-
-    @Test
-    public void testContainsKey() {
-        map.put(23, "value-23");
-
-        assertTrue(adapter.containsKey(23));
-        assertFalse(adapter.containsKey(42));
     }
 }
