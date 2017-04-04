@@ -25,6 +25,7 @@ import org.junit.rules.ExpectedException;
 import java.lang.reflect.Method;
 import java.util.List;
 
+import static classloading.ThreadLocalLeakTestUtils.checkThreadLocalsForLeaks;
 import static java.util.Collections.singletonList;
 
 /**
@@ -54,16 +55,22 @@ public abstract class AbstractJavaXCacheDependencyTest {
     @Test
     public void createHazelcastInstance() throws Exception {
         createHazelcastInstance(false, false);
+
+        checkThreadLocalsForLeaks(CLASS_LOADER);
     }
 
     @Test
     public void createHazelcastInstance_getCacheManager() throws Exception {
         createHazelcastInstance(true, false);
+
+        checkThreadLocalsForLeaks(CLASS_LOADER);
     }
 
     @Test
     public void createHazelcastInstance_getCache() throws Exception {
         createHazelcastInstance(true, true);
+
+        checkThreadLocalsForLeaks(CLASS_LOADER);
     }
 
     protected abstract String getConfigClass();

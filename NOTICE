@@ -14,3 +14,6 @@ contain code originating from the Agrona project
 
 The class com.hazelcast.util.HashUtil contains code originating
 from the Koloboke project (https://github.com/OpenHFT/Koloboke).
+
+The class classloading.ThreadLocalLeakTestUtils contains code originating
+from the Tomcat project (https://github.com/apache/tomcat).
