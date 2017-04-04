@@ -19,6 +19,7 @@ package classloading;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.FilteringClassLoader;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -28,10 +29,10 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.Collections;
 
 import static classloading.ThreadLocalLeakTestUtils.checkThreadLocalsForLeaks;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -50,12 +51,21 @@ public class ThreadLocalLeakTest {
     @Parameter
     public ClassLoaderType classLoaderType;
 
+    private Class<?> applicationClazz;
+
     @Parameters(name = "classLoaderType:{0}")
     public static Iterable<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {ClassLoaderType.FILTERING},
                 {ClassLoaderType.OWN},
         });
+    }
+
+    @After
+    public void tearDown() {
+        if (applicationClazz != null) {
+            cleanupLeakingApplication(applicationClazz);
+        }
     }
 
     /**
@@ -65,7 +75,7 @@ public class ThreadLocalLeakTest {
     public void testLeakingApplication_withThreadLocalCleanup() throws Exception {
         ClassLoader cl = getClassLoader(LeakingApplication.class.getPackage().getName());
 
-        startLeakingApplication(cl, true);
+        applicationClazz = startLeakingApplication(cl, true);
 
         checkThreadLocalsForLeaks(cl);
     }
@@ -77,7 +87,7 @@ public class ThreadLocalLeakTest {
     public void testLeakingApplication_withoutThreadLocalCleanup() throws Exception {
         ClassLoader cl = getClassLoader(LeakingApplication.class.getPackage().getName());
 
-        startLeakingApplication(cl, false);
+        applicationClazz = startLeakingApplication(cl, false);
 
         checkThreadLocalsForLeaks(cl);
     }
@@ -107,7 +117,7 @@ public class ThreadLocalLeakTest {
         }
     }
 
-    private static void startLeakingApplication(ClassLoader cl, boolean doCleanup) {
+    private static Class<?> startLeakingApplication(ClassLoader cl, boolean doCleanup) {
         Thread thread = Thread.currentThread();
         ClassLoader tccl = thread.getContextClassLoader();
         try {
@@ -116,10 +126,21 @@ public class ThreadLocalLeakTest {
             Class<?> applicationClazz = cl.loadClass(LeakingApplication.class.getCanonicalName());
             Method init = applicationClazz.getDeclaredMethod("init", Boolean.class);
             init.invoke(applicationClazz, doCleanup);
+
+            return applicationClazz;
         } catch (Exception e) {
             throw new RuntimeException("Could not start LeakingApplication", e);
         } finally {
             thread.setContextClassLoader(tccl);
+        }
+    }
+
+    private static void cleanupLeakingApplication(Class<?> applicationClazz) {
+        try {
+            Method cleanup = applicationClazz.getDeclaredMethod("cleanup");
+            cleanup.invoke(applicationClazz);
+        } catch (Exception e) {
+            throw new RuntimeException("Could not cleanup LeakingApplication", e);
         }
     }
 

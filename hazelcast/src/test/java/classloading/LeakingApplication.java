@@ -28,8 +28,12 @@ public final class LeakingApplication {
     public static void init(Boolean doCleanup) {
         ThreadLocalRandom.localRandom.get();
         if (doCleanup) {
-            ThreadLocalRandom.localRandom.remove();
+            cleanup();
         }
+    }
+
+    public static void cleanup() {
+        ThreadLocalRandom.localRandom.remove();
     }
 
     private static class ThreadLocalRandom extends Random {
