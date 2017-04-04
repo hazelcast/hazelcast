@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
 import com.hazelcast.internal.adapter.TransactionalMapDataStructureAdapter;
 import com.hazelcast.internal.nearcache.AbstractNearCacheBasicTest;
 import com.hazelcast.internal.nearcache.NearCache;
@@ -39,10 +40,14 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSize;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheStats;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assumeThatMethodIsAvailable;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getMapNearCacheManager;
 import static java.util.Arrays.asList;
@@ -51,7 +56,7 @@ import static java.util.Arrays.asList;
  * Basic Near Cache tests for {@link com.hazelcast.core.TransactionalMap} on Hazelcast members.
  */
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, String> {
 
@@ -104,6 +109,38 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
                 nearCacheManager);
     }
 
+    /**
+     * The {@link com.hazelcast.core.TransactionalMap} doesn't populate the Near Cache, so we override this test.
+     */
+    @Override
+    protected void whenGetIsUsed_thenNearCacheShouldBePopulated(DataStructureMethods method) {
+        NearCacheTestContext<Integer, String, Data, String> context = createContext();
+        assumeThatMethodIsAvailable(context.nearCacheAdapter, method);
+
+        // populate the data structure
+        populateMap(context);
+        assertNearCacheSize(context, 0);
+        assertNearCacheStats(context, 0, 0, 0);
+
+        // use TransactionalMap.get() which reads from the Near Cache, but doesn't populate it (so we just create misses)
+        populateNearCache(context, method);
+        assertNearCacheSize(context, 0);
+        assertNearCacheStats(context, 0, 0, DEFAULT_RECORD_COUNT);
+
+        // use IMap.get() which populates the Near Cache (but also increases the misses again)
+        IMap<Integer, String> map = context.nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            map.get(i);
+        }
+        assertNearCacheSizeEventually(context, DEFAULT_RECORD_COUNT);
+        assertNearCacheStats(context, DEFAULT_RECORD_COUNT, 0, DEFAULT_RECORD_COUNT * 2);
+
+        // use TransactionalMap.get() to make some hits
+        populateNearCache(context, method);
+        assertNearCacheSizeEventually(context, DEFAULT_RECORD_COUNT);
+        assertNearCacheStats(context, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT * 2);
+    }
+
     @Test
     @Override
     @Ignore(value = "This test doesn't work with the TransactionalMap due to its limited implementation")
@@ -114,38 +151,6 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     @Override
     @Ignore(value = "This test doesn't work with the TransactionalMap due to its limited implementation")
     public void whenCacheIsFull_thenPutOnSameKeyShouldUpdateValue_withUpdateOnDataAdapter() {
-    }
-
-    @Test
-    @Override
-    @Ignore(value = "This test doesn't work with the TransactionalMap due to its limited implementation")
-    public void whenGetAllIsUsed_thenNearCacheShouldBePopulated() {
-    }
-
-    @Test
-    @Override
-    public void testNearCacheStats() {
-        // we cannot use the common test, since the Near Cache support in TransactionalMap is very limited
-        NearCacheTestContext<Integer, String, Data, String> context = createContext();
-        IMap<Integer, String> map = context.nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
-
-        // populate map
-        populateMap(context);
-        assertNearCacheStats(context, 0, 0, 0);
-
-        // use TransactionalMap.get() which reads from the Near Cache, but doesn't populate it (so we just create misses)
-        populateNearCache(context);
-        assertNearCacheStats(context, 0, 0, DEFAULT_RECORD_COUNT);
-
-        // use IMap.get() which populates the Near Cache (but also increases the misses first)
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            map.get(i);
-        }
-        assertNearCacheStats(context, DEFAULT_RECORD_COUNT, 0, DEFAULT_RECORD_COUNT * 2);
-
-        // use TransactionalMap.get() to make some hits
-        populateNearCache(context);
-        assertNearCacheStats(context, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT * 2);
     }
 
     @Test
