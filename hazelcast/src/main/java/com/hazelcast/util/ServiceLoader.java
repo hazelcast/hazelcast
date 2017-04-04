@@ -24,6 +24,8 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -311,7 +313,7 @@ public final class ServiceLoader {
         }
     }
 
-    private static class NewInstanceIterator<T> implements Iterator<T> {
+    static class NewInstanceIterator<T> implements Iterator<T> {
 
         private final Iterator<Class<T>> classIterator;
 
@@ -328,10 +330,18 @@ public final class ServiceLoader {
         public T next() {
             Class<T> clazz = classIterator.next();
             try {
-                return clazz.newInstance();
+                Constructor<T> constructor = clazz.getDeclaredConstructor();
+                if (!constructor.isAccessible()) {
+                    constructor.setAccessible(true);
+                }
+                return constructor.newInstance();
             } catch (InstantiationException e) {
                 throw new HazelcastException(e);
             } catch (IllegalAccessException e) {
+                throw new HazelcastException(e);
+            } catch (NoSuchMethodException e) {
+                throw new HazelcastException(e);
+            } catch (InvocationTargetException e) {
                 throw new HazelcastException(e);
             }
         }
