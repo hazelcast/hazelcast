@@ -92,6 +92,11 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     }
 
     @Override
+    public boolean remove(K key, V oldValue) {
+        return cache.remove(key, oldValue);
+    }
+
+    @Override
     public ICompletableFuture<V> removeAsync(K key) {
         return cache.getAndRemoveAsync(key);
     }

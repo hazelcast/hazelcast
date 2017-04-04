@@ -148,6 +148,11 @@ public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport 
     }
 
     @Test(expected = MethodNotAvailableException.class)
+    public void testRemoveWithOldValue() {
+        adapter.remove(23, "oldValue");
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
     public void testRemoveAsync() {
         adapter.removeAsync(23);
     }

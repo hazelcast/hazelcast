@@ -183,6 +183,16 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testRemoveWithOldValue() {
+        cache.put(23, "value-23");
+        assertTrue(cache.containsKey(23));
+
+        assertFalse(adapter.remove(23, "foobar"));
+        assertTrue(adapter.remove(23, "value-23"));
+        assertFalse(cache.containsKey(23));
+    }
+
+    @Test
     public void testRemoveAsync() throws Exception {
         cache.put(23, "value-23");
         assertTrue(cache.containsKey(23));

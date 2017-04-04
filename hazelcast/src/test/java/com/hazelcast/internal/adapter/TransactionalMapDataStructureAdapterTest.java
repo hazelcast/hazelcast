@@ -165,6 +165,16 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
         assertFalse(map.containsKey(23));
     }
 
+    @Test
+    public void testRemoveWithOldValue() {
+        map.put(23, "value-23");
+        assertTrue(map.containsKey(23));
+
+        assertFalse(adapter.remove(23, "foobar"));
+        assertTrue(adapter.remove(23, "value-23"));
+        assertFalse(map.containsKey(23));
+    }
+
     @Test(expected = MethodNotAvailableException.class)
     public void testRemoveAsync() {
         adapter.removeAsync(23);

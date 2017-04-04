@@ -93,6 +93,11 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
+    public boolean remove(K key, V oldValue) {
+        return map.remove(key, oldValue);
+    }
+
+    @Override
     public ICompletableFuture<V> removeAsync(K key) {
         return map.removeAsync(key);
     }
