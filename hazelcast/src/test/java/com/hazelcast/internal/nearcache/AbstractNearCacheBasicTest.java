@@ -61,6 +61,7 @@ import static org.junit.Assert.assertTrue;
  * @param <NK> key type of the tested Near Cache
  * @param <NV> value type of the tested Near Cache
  */
+@SuppressWarnings("WeakerAccess")
 public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSupport {
 
     /**
@@ -121,123 +122,12 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
                     getAllSet.add(i);
                 }
-                context.nearCacheAdapter.getAll(getAllSet);
+                Map<Integer, String> resultMap = context.nearCacheAdapter.getAll(getAllSet);
+                assertEquals(DEFAULT_RECORD_COUNT, resultMap.size());
                 break;
             default:
                 throw new IllegalArgumentException("Unexpected method: " + method);
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private NK getNearCacheKey(NearCacheTestContext<Integer, String, NK, NV> context, int key) {
-        return (NK) context.serializationService.toData(key);
-    }
-
-    /**
-     * Checks that the Near Cache never returns its internal {@link NearCache#CACHED_AS_NULL} to the public API.
-     */
-    @Test
-    public void whenEmptyMap_thenPopulatedNearCacheShouldReturnNull_neverNULLOBJECT() {
-        NearCacheTestContext<Integer, String, NK, NV> context = createContext();
-
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            // populate Near Cache
-            assertNull("Expected null from original data structure for key " + i, context.nearCacheAdapter.get(i));
-            // fetch value from Near Cache
-            assertNull("Expected null from near cached data structure for key " + i, context.nearCacheAdapter.get(i));
-
-            // fetch internal value directly from Near Cache
-            NK key = getNearCacheKey(context, i);
-            NV value = context.nearCache.get(key);
-            if (value != null) {
-                // the internal value should either be `null` or `CACHED_AS_NULL`
-                assertEquals("Expected CACHED_AS_NULL in Near Cache for key " + i,
-                        NearCache.CACHED_AS_NULL, context.nearCache.get(key));
-            }
-        }
-    }
-
-    /**
-     * Checks that the Near Cache updates value for keys which are already in the Near Cache,
-     * even if the Near Cache is full an the eviction is disabled (via {@link com.hazelcast.config.EvictionPolicy#NONE}.
-     *
-     * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
-     */
-    @Test
-    public void whenCacheIsFull_thenPutOnSameKeyShouldUpdateValue_withUpdateOnNearCacheAdapter() {
-        int size = DEFAULT_RECORD_COUNT / 2;
-        setEvictionConfig(nearCacheConfig, NONE, ENTRY_COUNT, size);
-        NearCacheTestContext<Integer, String, NK, NV> context = createContext();
-
-        populateMap(context);
-        populateNearCache(context);
-
-        assertNearCacheSize(context, size);
-        assertEquals("value-1", context.nearCacheAdapter.get(1));
-
-        context.nearCacheAdapter.put(1, "newValue");
-
-        long expectedMisses = getExpectedMissesWithLocalUpdatePolicy(context);
-        long expectedHits = getExpectedHitsWithLocalUpdatePolicy(context);
-
-        assertEquals("newValue", context.nearCacheAdapter.get(1));
-        assertEquals("newValue", context.nearCacheAdapter.get(1));
-
-        assertNearCacheStats(context, size, expectedHits, expectedMisses);
-    }
-
-    /**
-     * Checks that the Near Cache updates value for keys which are already in the Near Cache,
-     * even if the Near Cache is full an the eviction is disabled (via {@link com.hazelcast.config.EvictionPolicy#NONE}.
-     *
-     * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
-     */
-    @Test
-    public void whenCacheIsFull_thenPutOnSameKeyShouldUpdateValue_withUpdateOnDataAdapter() {
-        final int size = DEFAULT_RECORD_COUNT / 2;
-        setEvictionConfig(nearCacheConfig, NONE, ENTRY_COUNT, size);
-        nearCacheConfig.setInvalidateOnChange(true);
-        final NearCacheTestContext<Integer, String, NK, NV> context = createContext();
-
-        populateMap(context);
-        populateNearCache(context);
-
-        assertNearCacheSize(context, size);
-        assertEquals("value-1", context.nearCacheAdapter.get(1));
-
-        context.dataAdapter.put(1, "newValue");
-
-        // we have to use assertTrueEventually since the invalidation is done asynchronously
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                long expectedMisses = getExpectedMissesWithLocalUpdatePolicy(context);
-                long expectedHits = getExpectedHitsWithLocalUpdatePolicy(context);
-
-                assertEquals("newValue", context.nearCacheAdapter.get(1));
-                assertEquals("newValue", context.nearCacheAdapter.get(1));
-
-                assertNearCacheStats(context, size, expectedHits, expectedMisses);
-            }
-        });
-    }
-
-    private long getExpectedMissesWithLocalUpdatePolicy(NearCacheTestContext<Integer, String, NK, NV> context) {
-        if (isCacheOnUpdate(nearCacheConfig)) {
-            // we expect the first and second get() to be hits, since the value should be already be cached
-            return context.stats.getMisses();
-        }
-        // we expect the first get() to be a miss, due to the replaced / invalidated value
-        return context.stats.getMisses() + 1;
-    }
-
-    private long getExpectedHitsWithLocalUpdatePolicy(NearCacheTestContext<Integer, String, NK, NV> context) {
-        if (isCacheOnUpdate(nearCacheConfig)) {
-            // we expect the first and second get() to be hits, since the value should be already be cached
-            return context.stats.getHits() + 2;
-        }
-        // we expect the second get() to be a hit, since it should be served from the Near Cache
-        return context.stats.getHits() + 1;
     }
 
     /**
@@ -365,7 +255,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                     adapter.set(i, value);
                     break;
                 case PUT:
-                    adapter.put(i, value);
+                    assertNull(adapter.put(i, value));
                     break;
                 case PUT_IF_ABSENT:
                     assertTrue(adapter.putIfAbsent(i, value));
@@ -659,11 +549,12 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
     private void testContainsKey(boolean useNearCacheAdapter) {
         final NearCacheTestContext<Integer, String, NK, NV> context = createContext();
+        assumeThatMethodIsAvailable(context.nearCacheAdapter, DataStructureMethods.CONTAINS_KEY);
 
         // populate map
-        context.dataAdapter.put(1, "value1");
-        context.dataAdapter.put(2, "value2");
-        context.dataAdapter.put(3, "value3");
+        context.dataAdapter.put(1, "value-1");
+        context.dataAdapter.put(2, "value-2");
+        context.dataAdapter.put(3, "value-3");
 
         // populate Near Cache
         context.nearCacheAdapter.get(1);
@@ -673,21 +564,54 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         assertTrue(context.nearCacheAdapter.containsKey(1));
         assertTrue(context.nearCacheAdapter.containsKey(2));
         assertTrue(context.nearCacheAdapter.containsKey(3));
+        assertFalse(context.nearCacheAdapter.containsKey(4));
         assertFalse(context.nearCacheAdapter.containsKey(5));
 
         // remove a key which is in the Near Cache
         DataStructureAdapter<Integer, String> adapter = useNearCacheAdapter ? context.nearCacheAdapter : context.dataAdapter;
         adapter.remove(1);
+        adapter.remove(3);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
                 assertFalse(context.nearCacheAdapter.containsKey(1));
                 assertTrue(context.nearCacheAdapter.containsKey(2));
-                assertTrue(context.nearCacheAdapter.containsKey(3));
+                assertFalse(context.nearCacheAdapter.containsKey(3));
+                assertFalse(context.nearCacheAdapter.containsKey(4));
                 assertFalse(context.nearCacheAdapter.containsKey(5));
             }
         });
+    }
+
+    /**
+     * Checks that the Near Cache eviction works as expected if the Near Cache is full.
+     */
+    @Test
+    public void testNearCacheEviction() {
+        setEvictionConfig(nearCacheConfig, LRU, ENTRY_COUNT, DEFAULT_RECORD_COUNT);
+        NearCacheTestContext<Integer, String, NK, NV> context = createContext();
+
+        // all Near Cache implementations use the same eviction algorithm, which evicts a single entry
+        int expectedEvictions = 1;
+
+        // populate map with an extra entry
+        populateMap(context);
+        context.dataAdapter.put(DEFAULT_RECORD_COUNT, "value-" + DEFAULT_RECORD_COUNT);
+
+        // populate Near Caches
+        populateNearCache(context);
+
+        // we expect (size + the extra entry - the expectedEvictions) entries in the Near Cache
+        long expectedOwnedEntryCount = DEFAULT_RECORD_COUNT + 1 - expectedEvictions;
+        long expectedHits = context.stats.getHits();
+        long expectedMisses = context.stats.getMisses() + 1;
+
+        // trigger eviction via fetching the extra entry
+        context.nearCacheAdapter.get(DEFAULT_RECORD_COUNT);
+
+        assertNearCacheEvictionsEventually(context, expectedEvictions);
+        assertNearCacheStats(context, expectedOwnedEntryCount, expectedHits, expectedMisses, expectedEvictions, 0);
     }
 
     /**
@@ -758,32 +682,114 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     /**
-     * Checks that the Near Cache eviction works as expected if the Near Cache is full.
+     * Checks that the Near Cache never returns its internal {@link NearCache#CACHED_AS_NULL} to the public API.
      */
     @Test
-    public void testNearCacheEviction() {
-        setEvictionConfig(nearCacheConfig, LRU, ENTRY_COUNT, DEFAULT_RECORD_COUNT);
+    public void whenEmptyMap_thenPopulatedNearCacheShouldReturnNull_neverCACHED_AS_NULL() {
         NearCacheTestContext<Integer, String, NK, NV> context = createContext();
 
-        // all Near Cache implementations use the same eviction algorithm, which evicts a single entry
-        int expectedEvictions = 1;
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            // populate Near Cache
+            assertNull("Expected null from original data structure for key " + i, context.nearCacheAdapter.get(i));
+            // fetch value from Near Cache
+            assertNull("Expected null from near cached data structure for key " + i, context.nearCacheAdapter.get(i));
 
-        // populate map with an extra entry
+            // fetch internal value directly from Near Cache
+            NK key = getNearCacheKey(context, i);
+            NV value = context.nearCache.get(key);
+            if (value != null) {
+                // the internal value should either be `null` or `CACHED_AS_NULL`
+                assertEquals("Expected CACHED_AS_NULL in Near Cache for key " + i,
+                        NearCache.CACHED_AS_NULL, context.nearCache.get(key));
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private NK getNearCacheKey(NearCacheTestContext<Integer, String, NK, NV> context, int key) {
+        return (NK) context.serializationService.toData(key);
+    }
+
+    /**
+     * Checks that the Near Cache updates value for keys which are already in the Near Cache,
+     * even if the Near Cache is full an the eviction is disabled (via {@link com.hazelcast.config.EvictionPolicy#NONE}.
+     *
+     * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
+     */
+    @Test
+    public void whenCacheIsFull_thenPutOnSameKeyShouldUpdateValue_withUpdateOnNearCacheAdapter() {
+        int size = DEFAULT_RECORD_COUNT / 2;
+        setEvictionConfig(nearCacheConfig, NONE, ENTRY_COUNT, size);
+        NearCacheTestContext<Integer, String, NK, NV> context = createContext();
+
         populateMap(context);
-        context.dataAdapter.put(DEFAULT_RECORD_COUNT, "value-" + DEFAULT_RECORD_COUNT);
-
-        // populate Near Caches
         populateNearCache(context);
 
-        // we expect (size + the extra entry - the expectedEvictions) entries in the Near Cache
-        long expectedOwnedEntryCount = DEFAULT_RECORD_COUNT + 1 - expectedEvictions;
-        long expectedHits = context.stats.getHits();
-        long expectedMisses = context.stats.getMisses() + 1;
+        assertNearCacheSize(context, size);
+        assertEquals("value-1", context.nearCacheAdapter.get(1));
 
-        // trigger eviction via fetching the extra entry
-        context.nearCacheAdapter.get(DEFAULT_RECORD_COUNT);
+        context.nearCacheAdapter.put(1, "newValue");
 
-        assertNearCacheEvictionsEventually(context, expectedEvictions);
-        assertNearCacheStats(context, expectedOwnedEntryCount, expectedHits, expectedMisses, expectedEvictions, 0);
+        long expectedMisses = getExpectedMissesWithLocalUpdatePolicy(context);
+        long expectedHits = getExpectedHitsWithLocalUpdatePolicy(context);
+
+        assertEquals("newValue", context.nearCacheAdapter.get(1));
+        assertEquals("newValue", context.nearCacheAdapter.get(1));
+
+        assertNearCacheStats(context, size, expectedHits, expectedMisses);
+    }
+
+    /**
+     * Checks that the Near Cache updates value for keys which are already in the Near Cache,
+     * even if the Near Cache is full an the eviction is disabled (via {@link com.hazelcast.config.EvictionPolicy#NONE}.
+     *
+     * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
+     */
+    @Test
+    public void whenCacheIsFull_thenPutOnSameKeyShouldUpdateValue_withUpdateOnDataAdapter() {
+        final int size = DEFAULT_RECORD_COUNT / 2;
+        setEvictionConfig(nearCacheConfig, NONE, ENTRY_COUNT, size);
+        nearCacheConfig.setInvalidateOnChange(true);
+        final NearCacheTestContext<Integer, String, NK, NV> context = createContext();
+
+        populateMap(context);
+        populateNearCache(context);
+
+        assertNearCacheSize(context, size);
+        assertEquals("value-1", context.nearCacheAdapter.get(1));
+
+        context.dataAdapter.put(1, "newValue");
+
+        // we have to use assertTrueEventually since the invalidation is done asynchronously
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                long expectedMisses = getExpectedMissesWithLocalUpdatePolicy(context);
+                long expectedHits = getExpectedHitsWithLocalUpdatePolicy(context);
+
+                assertEquals("newValue", context.nearCacheAdapter.get(1));
+                assertEquals("newValue", context.nearCacheAdapter.get(1));
+
+                assertNearCacheStats(context, size, expectedHits, expectedMisses);
+            }
+        });
+    }
+
+    private long getExpectedMissesWithLocalUpdatePolicy(NearCacheTestContext<Integer, String, NK, NV> context) {
+        if (isCacheOnUpdate(nearCacheConfig)) {
+            // we expect the first and second get() to be hits, since the value should be already be cached
+            return context.stats.getMisses();
+        }
+        // we expect the first get() to be a miss, due to the replaced / invalidated value
+        return context.stats.getMisses() + 1;
+    }
+
+    private long getExpectedHitsWithLocalUpdatePolicy(NearCacheTestContext<Integer, String, NK, NV> context) {
+        if (isCacheOnUpdate(nearCacheConfig)) {
+            // we expect the first and second get() to be hits, since the value should be already be cached
+            return context.stats.getHits() + 2;
+        }
+        // we expect the second get() to be a hit, since it should be served from the Near Cache
+        return context.stats.getHits() + 1;
     }
 }
