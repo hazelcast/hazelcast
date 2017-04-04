@@ -25,6 +25,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -176,6 +177,22 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         populateNearCache(context, method);
         assertNearCacheSize(context, DEFAULT_RECORD_COUNT);
         assertNearCacheStats(context, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT);
+    }
+
+    @Test
+    public void whenGetAllWithEmptySetIsUsed_thenNearCacheShouldNotBePopulated() {
+        NearCacheTestContext<Integer, String, NK, NV> context = createContext();
+        assumeThatMethodIsAvailable(context.nearCacheAdapter, DataStructureMethods.GET_ALL);
+
+        // populate the data structure
+        populateMap(context);
+        assertNearCacheSize(context, 0);
+        assertNearCacheStats(context, 0, 0, 0);
+
+        // use getAll() with an empty set, which should not populate the Near Cache
+        context.nearCacheAdapter.getAll(Collections.<Integer>emptySet());
+        assertNearCacheSize(context, 0);
+        assertNearCacheStats(context, 0, 0, 0);
     }
 
     /**
