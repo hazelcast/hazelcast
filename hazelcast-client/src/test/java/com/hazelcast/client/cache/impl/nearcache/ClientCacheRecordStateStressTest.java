@@ -25,7 +25,6 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.internal.nearcache.impl.store.AbstractNearCacheRecordStore;
@@ -40,12 +39,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -58,75 +59,71 @@ import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
 import static com.hazelcast.util.RandomPicker.getInt;
 import static java.lang.Integer.MAX_VALUE;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category(NightlyTest.class)
 public class ClientCacheRecordStateStressTest extends HazelcastTestSupport {
 
-    @Parameterized.Parameter
+    private static final String CACHE_NAME = "test";
+    private static final int KEY_SPACE = 100;
+    private static final int TEST_RUN_SECONDS = 60;
+    private static final int GET_ALL_THREAD_COUNT = 2;
+    private static final int PUT_ALL_THREAD_COUNT = 1;
+    private static final int GET_THREAD_COUNT = 1;
+    private static final int PUT_THREAD_COUNT = 1;
+    private static final int PUT_IF_ABSENT_THREAD_COUNT = 1;
+    private static final int CLEAR_THREAD_COUNT = 1;
+    private static final int REMOVE_THREAD_COUNT = 1;
+
+    @Parameter
     public NearCacheConfig.LocalUpdatePolicy localUpdatePolicy;
 
-    @Parameterized.Parameters(name = "localUpdatePolicy:{0}")
+    @Parameters(name = "localUpdatePolicy:{0}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {CACHE_ON_UPDATE},
                 {INVALIDATE},
         });
     }
 
-    private final int KEY_SPACE = 100;
-    private final int TEST_RUN_SECONDS = 60;
-    private final int GET_ALL_THREAD_COUNT = 2;
-    private final int PUT_ALL_THREAD_COUNT = 1;
-    private final int GET_THREAD_COUNT = 1;
-    private final int PUT_THREAD_COUNT = 1;
-    private final int PUT_IF_ABSENT_THREAD_COUNT = 1;
-    private final int CLEAR_THREAD_COUNT = 1;
-    private final int REMOVE_THREAD_COUNT = 1;
-    private final String cacheName = "test";
-    private final AtomicBoolean stop = new AtomicBoolean();
-
     private TestHazelcastFactory factory;
+    private AtomicBoolean stop;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         factory = new TestHazelcastFactory();
-        stop.set(false);
+        stop = new AtomicBoolean();
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         factory.shutdownAll();
     }
 
     @Test
-    public void all_records_are_readable_state_in_the_end() throws Exception {
+    public void allRecordsAreInReadableStateInTheEnd() throws Exception {
         HazelcastInstance member = factory.newHazelcastInstance();
         CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(member);
-        final CacheManager serverCacheManager = provider.getCacheManager();
+        CacheManager serverCacheManager = provider.getCacheManager();
 
         factory.newHazelcastInstance();
         factory.newHazelcastInstance();
 
-        // populated from member.
-        CacheConfig cacheConfig = new CacheConfig();
+        // populated from member
+        CacheConfig<Integer, Integer> cacheConfig = new CacheConfig<Integer, Integer>();
         cacheConfig.getEvictionConfig()
                 .setMaximumSizePolicy(ENTRY_COUNT)
                 .setSize(MAX_VALUE);
-        final Cache memberCache = serverCacheManager.createCache(cacheName, cacheConfig);
+        Cache<Integer, Integer> memberCache = serverCacheManager.createCache(CACHE_NAME, cacheConfig);
         for (int i = 0; i < KEY_SPACE; i++) {
             memberCache.put(i, i);
         }
 
         ClientConfig clientConfig = new ClientConfig();
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        nearCacheConfig.setInvalidateOnChange(true).setLocalUpdatePolicy(localUpdatePolicy)
-                .getEvictionConfig()
-                .setMaximumSizePolicy(ENTRY_COUNT)
-                .setSize(MAX_VALUE);
-        clientConfig.addNearCacheConfig(nearCacheConfig);
+        clientConfig.addNearCacheConfig(newNearCacheConfig());
 
         List<Thread> threads = new ArrayList<Thread>();
 
@@ -141,7 +138,7 @@ public class ClientCacheRecordStateStressTest extends HazelcastTestSupport {
         CachingProvider clientCachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
 
         CacheManager cacheManager = clientCachingProvider.getCacheManager();
-        final Cache clientCache = cacheManager.createCache(cacheName, cacheConfig);
+        Cache<Integer, Integer> clientCache = cacheManager.createCache(CACHE_NAME, cacheConfig);
 
         for (int i = 0; i < GET_ALL_THREAD_COUNT; i++) {
             GetAll getAll = new GetAll(clientCache);
@@ -187,19 +184,27 @@ public class ClientCacheRecordStateStressTest extends HazelcastTestSupport {
             thread.join();
         }
 
-        assertFinalRecordStateIsReadPermitted(clientCache, member);
+        assertFinalRecordStateIsReadPermitted(clientCache, getSerializationService(member));
     }
 
-    private void assertFinalRecordStateIsReadPermitted(Cache clientCache, HazelcastInstance member) {
-        NearCachedClientCacheProxy proxy = ((NearCachedClientCacheProxy) clientCache);
-        NearCache nearCache = proxy.getNearCache();
+    private NearCacheConfig newNearCacheConfig() {
+        NearCacheConfig nearCacheConfig = new NearCacheConfig()
+                .setName(CACHE_NAME)
+                .setInvalidateOnChange(true)
+                .setLocalUpdatePolicy(localUpdatePolicy);
+        nearCacheConfig.getEvictionConfig()
+                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setSize(MAX_VALUE);
+        return nearCacheConfig;
+    }
 
-        DefaultNearCache unwrap = (DefaultNearCache) nearCache.unwrap(DefaultNearCache.class);
-        InternalSerializationService ss = getSerializationService(member);
+    private void assertFinalRecordStateIsReadPermitted(Cache clientCache, InternalSerializationService serializationService) {
+        NearCachedClientCacheProxy proxy = (NearCachedClientCacheProxy) clientCache;
+        DefaultNearCache nearCache = (DefaultNearCache) proxy.getNearCache().unwrap(DefaultNearCache.class);
+        AbstractNearCacheRecordStore nearCacheRecordStore = (AbstractNearCacheRecordStore) nearCache.getNearCacheRecordStore();
 
         for (int i = 0; i < KEY_SPACE; i++) {
-            Data key = ss.toData(i);
-            AbstractNearCacheRecordStore nearCacheRecordStore = (AbstractNearCacheRecordStore) unwrap.getNearCacheRecordStore();
+            Data key = serializationService.toData(i);
             NearCacheRecord record = nearCacheRecordStore.getRecord(key);
 
             if (record != null) {
@@ -209,9 +214,10 @@ public class ClientCacheRecordStateStressTest extends HazelcastTestSupport {
     }
 
     private class Put extends Thread {
-        private final Cache cache;
 
-        private Put(Cache cache) {
+        private final Cache<Integer, Integer> cache;
+
+        private Put(Cache<Integer, Integer> cache) {
             this.cache = cache;
         }
 
@@ -227,9 +233,10 @@ public class ClientCacheRecordStateStressTest extends HazelcastTestSupport {
     }
 
     private class Remove extends Thread {
-        private final Cache cache;
 
-        private Remove(Cache cache) {
+        private final Cache<Integer, Integer> cache;
+
+        private Remove(Cache<Integer, Integer> cache) {
             this.cache = cache;
         }
 
@@ -245,9 +252,10 @@ public class ClientCacheRecordStateStressTest extends HazelcastTestSupport {
     }
 
     private class PutIfAbsent extends Thread {
-        private final Cache cache;
 
-        private PutIfAbsent(Cache cache) {
+        private final Cache<Integer, Integer> cache;
+
+        private PutIfAbsent(Cache<Integer, Integer> cache) {
             this.cache = cache;
         }
 
@@ -263,9 +271,10 @@ public class ClientCacheRecordStateStressTest extends HazelcastTestSupport {
     }
 
     private class Clear extends Thread {
-        private final Cache cache;
 
-        private Clear(Cache cache) {
+        private final Cache<Integer, Integer> cache;
+
+        private Clear(Cache<Integer, Integer> cache) {
             this.cache = cache;
         }
 
@@ -279,15 +288,16 @@ public class ClientCacheRecordStateStressTest extends HazelcastTestSupport {
     }
 
     private class GetAll extends Thread {
-        private final Cache cache;
 
-        private GetAll(Cache cache) {
+        private final Cache<Integer, Integer> cache;
+
+        private GetAll(Cache<Integer, Integer> cache) {
             this.cache = cache;
         }
 
         @Override
         public void run() {
-            HashSet keys = new HashSet();
+            HashSet<Integer> keys = new HashSet<Integer>();
             for (int i = 0; i < KEY_SPACE; i++) {
                 keys.add(i);
             }
@@ -300,15 +310,16 @@ public class ClientCacheRecordStateStressTest extends HazelcastTestSupport {
     }
 
     private class PutAll extends Thread {
-        private final Cache cache;
 
-        private PutAll(Cache cache) {
+        private final Cache<Integer, Integer> cache;
+
+        private PutAll(Cache<Integer, Integer> cache) {
             this.cache = cache;
         }
 
         @Override
         public void run() {
-            HashMap map = new HashMap();
+            HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
             do {
                 map.clear();
                 for (int i = 0; i < KEY_SPACE; i++) {
@@ -322,9 +333,10 @@ public class ClientCacheRecordStateStressTest extends HazelcastTestSupport {
     }
 
     private class Get extends Thread {
-        private final Cache cache;
 
-        private Get(Cache cache) {
+        private final Cache<Integer, Integer> cache;
+
+        private Get(Cache<Integer, Integer> cache) {
             this.cache = cache;
         }
 

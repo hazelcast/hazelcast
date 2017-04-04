@@ -22,7 +22,6 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.internal.nearcache.impl.store.AbstractNearCacheRecordStore;
@@ -50,31 +49,31 @@ import static org.junit.Assert.assertEquals;
 @Category(NightlyTest.class)
 public class ClientMapRecordStateStressTest extends HazelcastTestSupport {
 
-    private final int KEY_SPACE = 100;
-    private final int TEST_RUN_SECONDS = 60;
-    private final int GET_ALL_THREAD_COUNT = 3;
-    private final int GET_THREAD_COUNT = 2;
-    private final int PUT_THREAD_COUNT = 1;
-    private final int CLEAR_THREAD_COUNT = 1;
-    private final int REMOVE_THREAD_COUNT = 1;
-    private final String mapName = "test";
-    private final AtomicBoolean stop = new AtomicBoolean();
+    private static final String MAP_NAME = "test";
+    private static final int KEY_SPACE = 100;
+    private static final int TEST_RUN_SECONDS = 60;
+    private static final int GET_ALL_THREAD_COUNT = 3;
+    private static final int GET_THREAD_COUNT = 2;
+    private static final int PUT_THREAD_COUNT = 1;
+    private static final int CLEAR_THREAD_COUNT = 1;
+    private static final int REMOVE_THREAD_COUNT = 1;
 
     private TestHazelcastFactory factory;
+    private AtomicBoolean stop;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         factory = new TestHazelcastFactory();
-        stop.set(false);
+        stop = new AtomicBoolean();
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         factory.shutdownAll();
     }
 
     @Test
-    public void all_records_are_readable_state_in_the_end() throws Exception {
+    public void allRecordsAreInReadableStateInTheEnd() throws Exception {
         HazelcastInstance member = factory.newHazelcastInstance();
         factory.newHazelcastInstance();
         factory.newHazelcastInstance();
@@ -83,8 +82,8 @@ public class ClientMapRecordStateStressTest extends HazelcastTestSupport {
         clientConfig.addNearCacheConfig(newNearCacheConfig());
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
 
-        IMap memberMap = member.getMap(mapName);
-        // initial population of imap from member
+        IMap<Integer, Integer> memberMap = member.getMap(MAP_NAME);
+        // initial population of IMap from member
         for (int i = 0; i < KEY_SPACE; i++) {
             memberMap.put(i, i);
         }
@@ -98,7 +97,7 @@ public class ClientMapRecordStateStressTest extends HazelcastTestSupport {
         }
 
         // client
-        IMap clientMap = client.getMap(mapName);
+        IMap<Integer, Integer> clientMap = client.getMap(MAP_NAME);
 
         for (int i = 0; i < GET_ALL_THREAD_COUNT; i++) {
             GetAll getAll = new GetAll(clientMap);
@@ -137,14 +136,19 @@ public class ClientMapRecordStateStressTest extends HazelcastTestSupport {
         assertFinalRecordStateIsReadPermitted(clientMap, getSerializationService(member));
     }
 
-    private void assertFinalRecordStateIsReadPermitted(IMap clientMap, InternalSerializationService ss) {
-        NearCachedClientMapProxy proxy = (NearCachedClientMapProxy) clientMap;
-        NearCache nearCache = proxy.getNearCache();
+    private NearCacheConfig newNearCacheConfig() {
+        return new NearCacheConfig()
+                .setName(MAP_NAME)
+                .setInvalidateOnChange(true);
+    }
 
-        DefaultNearCache unwrap = (DefaultNearCache) nearCache.unwrap(DefaultNearCache.class);
+    private static void assertFinalRecordStateIsReadPermitted(IMap clientMap, InternalSerializationService serializationService) {
+        NearCachedClientMapProxy proxy = (NearCachedClientMapProxy) clientMap;
+        DefaultNearCache nearCache = (DefaultNearCache) proxy.getNearCache().unwrap(DefaultNearCache.class);
+        AbstractNearCacheRecordStore nearCacheRecordStore = (AbstractNearCacheRecordStore) nearCache.getNearCacheRecordStore();
+
         for (int i = 0; i < KEY_SPACE; i++) {
-            Data key = ss.toData(i);
-            AbstractNearCacheRecordStore nearCacheRecordStore = (AbstractNearCacheRecordStore) unwrap.getNearCacheRecordStore();
+            Data key = serializationService.toData(i);
             NearCacheRecord record = nearCacheRecordStore.getRecord(key);
 
             if (record != null) {
@@ -154,9 +158,10 @@ public class ClientMapRecordStateStressTest extends HazelcastTestSupport {
     }
 
     private class Put extends Thread {
-        private final IMap map;
 
-        private Put(IMap map) {
+        private final IMap<Integer, Integer> map;
+
+        private Put(IMap<Integer, Integer> map) {
             this.map = map;
         }
 
@@ -172,9 +177,10 @@ public class ClientMapRecordStateStressTest extends HazelcastTestSupport {
     }
 
     private class Remove extends Thread {
-        private final IMap map;
 
-        private Remove(IMap map) {
+        private final IMap<Integer, Integer> map;
+
+        private Remove(IMap<Integer, Integer> map) {
             this.map = map;
         }
 
@@ -190,9 +196,10 @@ public class ClientMapRecordStateStressTest extends HazelcastTestSupport {
     }
 
     private class Clear extends Thread {
-        private final IMap map;
 
-        private Clear(IMap map) {
+        private final IMap<Integer, Integer> map;
+
+        private Clear(IMap<Integer, Integer> map) {
             this.map = map;
         }
 
@@ -206,15 +213,16 @@ public class ClientMapRecordStateStressTest extends HazelcastTestSupport {
     }
 
     private class GetAll extends Thread {
-        private final IMap map;
 
-        private GetAll(IMap map) {
+        private final IMap<Integer, Integer> map;
+
+        private GetAll(IMap<Integer, Integer> map) {
             this.map = map;
         }
 
         @Override
         public void run() {
-            HashSet keys = new HashSet();
+            HashSet<Integer> keys = new HashSet<Integer>();
             for (int i = 0; i < KEY_SPACE; i++) {
                 keys.add(i);
             }
@@ -227,9 +235,10 @@ public class ClientMapRecordStateStressTest extends HazelcastTestSupport {
     }
 
     private class Get extends Thread {
-        private final IMap map;
 
-        private Get(IMap map) {
+        private final IMap<Integer, Integer> map;
+
+        private Get(IMap<Integer, Integer> map) {
             this.map = map;
         }
 
@@ -241,13 +250,5 @@ public class ClientMapRecordStateStressTest extends HazelcastTestSupport {
                 }
             } while (!stop.get());
         }
-    }
-
-
-    protected NearCacheConfig newNearCacheConfig() {
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        nearCacheConfig.setName(mapName);
-        nearCacheConfig.setInvalidateOnChange(true);
-        return nearCacheConfig;
     }
 }

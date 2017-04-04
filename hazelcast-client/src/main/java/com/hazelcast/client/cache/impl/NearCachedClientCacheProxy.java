@@ -95,6 +95,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
         super(cacheConfig);
     }
 
+    // for testing only
     public NearCache getNearCache() {
         return nearCache;
     }
