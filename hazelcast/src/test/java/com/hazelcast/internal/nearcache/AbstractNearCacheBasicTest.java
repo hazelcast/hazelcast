@@ -19,6 +19,7 @@ package com.hazelcast.internal.nearcache;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
+import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
@@ -717,8 +718,8 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
         context.nearCacheAdapter.put(1, "newValue");
 
-        long expectedMisses = getExpectedMissesWithLocalUpdatePolicy(context);
-        long expectedHits = getExpectedHitsWithLocalUpdatePolicy(context);
+        long expectedMisses = getExpectedMissesWithLocalUpdatePolicy(context.stats);
+        long expectedHits = getExpectedHitsWithLocalUpdatePolicy(context.stats);
 
         assertEquals("newValue", context.nearCacheAdapter.get(1));
         assertEquals("newValue", context.nearCacheAdapter.get(1));
@@ -751,8 +752,8 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                long expectedMisses = getExpectedMissesWithLocalUpdatePolicy(context);
-                long expectedHits = getExpectedHitsWithLocalUpdatePolicy(context);
+                long expectedMisses = getExpectedMissesWithLocalUpdatePolicy(context.stats);
+                long expectedHits = getExpectedHitsWithLocalUpdatePolicy(context.stats);
 
                 assertEquals("newValue", context.nearCacheAdapter.get(1));
                 assertEquals("newValue", context.nearCacheAdapter.get(1));
@@ -762,21 +763,21 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         });
     }
 
-    private long getExpectedMissesWithLocalUpdatePolicy(NearCacheTestContext<Integer, String, NK, NV> context) {
+    private long getExpectedMissesWithLocalUpdatePolicy(NearCacheStats stats) {
         if (isCacheOnUpdate(nearCacheConfig)) {
             // we expect the first and second get() to be hits, since the value should be already be cached
-            return context.stats.getMisses();
+            return stats.getMisses();
         }
         // we expect the first get() to be a miss, due to the replaced / invalidated value
-        return context.stats.getMisses() + 1;
+        return stats.getMisses() + 1;
     }
 
-    private long getExpectedHitsWithLocalUpdatePolicy(NearCacheTestContext<Integer, String, NK, NV> context) {
+    private long getExpectedHitsWithLocalUpdatePolicy(NearCacheStats stats) {
         if (isCacheOnUpdate(nearCacheConfig)) {
             // we expect the first and second get() to be hits, since the value should be already be cached
-            return context.stats.getHits() + 2;
+            return stats.getHits() + 2;
         }
         // we expect the second get() to be a hit, since it should be served from the Near Cache
-        return context.stats.getHits() + 1;
+        return stats.getHits() + 1;
     }
 }
