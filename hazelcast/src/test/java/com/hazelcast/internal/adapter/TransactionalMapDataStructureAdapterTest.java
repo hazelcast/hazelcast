@@ -33,7 +33,6 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -180,9 +179,9 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
         adapter.removeAsync(23);
     }
 
-    @Test
+    @Test(expected = MethodNotAvailableException.class)
     public void testGetLocalMapStats() {
-        assertNull(adapter.getLocalMapStats());
+        adapter.getLocalMapStats();
     }
 
     @Test

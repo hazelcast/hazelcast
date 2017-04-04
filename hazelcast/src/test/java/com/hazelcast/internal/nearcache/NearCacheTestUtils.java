@@ -38,6 +38,8 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LRU;
+import static com.hazelcast.config.InMemoryFormat.BINARY;
+import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
@@ -129,6 +131,16 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
 
         return service.getMapServiceContext().getMapNearCacheManager();
+    }
+
+    /**
+     * Checks if the given {@link DataStructureAdapter} implements a specified {@link DataStructureMethods}.
+     *
+     * @param adapter the {@link DataStructureAdapter} to test
+     * @param method  {@link DataStructureAdapterMethod} to search for
+     */
+    public static boolean isMethodAvailable(DataStructureAdapter adapter, DataStructureAdapterMethod method) {
+        return new MethodAvailableMatcher(method).matchesSafely(adapter);
     }
 
     /**
@@ -264,6 +276,33 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
                 expectedEvictions, stats.getEvictions(), stats);
         assertEqualsFormat("Near Cache expirations should be %d, but were %d (%s)",
                 expectedExpirations, stats.getExpirations(), stats);
+    }
+
+    public static void assertThatMemoryCostsAreGreaterThanZero(NearCacheTestContext<?, ?, ?, ?> context,
+                                                               InMemoryFormat inMemoryFormat) {
+        // the heap costs are just calculated if there is local data which is not in OBJECT in-memory-format
+        if (context.hasLocalData && inMemoryFormat != OBJECT) {
+            long ownedEntryMemoryCost = context.stats.getOwnedEntryMemoryCost();
+            assertTrue(format("Expected owned entry memory costs, but found none (%s)", context.stats), ownedEntryMemoryCost > 0);
+
+            boolean hasLocalMapStats = isMethodAvailable(context.nearCacheAdapter, DataStructureMethods.GET_LOCAL_MAP_STATS);
+            if (hasLocalMapStats && inMemoryFormat == BINARY) {
+                long heapCost = context.nearCacheAdapter.getLocalMapStats().getHeapCost();
+                assertTrue("Expected heap costs in the LocalMapStats, but found none", heapCost > 0);
+            }
+        }
+    }
+
+    public static void assertThatMemoryCostsAreZero(NearCacheTestContext<?, ?, ?, ?> context) {
+        // these asserts will work in all scenarios, since the default value should be 0 if no costs are calculated
+        long ownedEntryMemoryCost = context.stats.getOwnedEntryMemoryCost();
+        assertEqualsFormat("Expected %d owned entry memory costs, but found %d (%s)", 0, ownedEntryMemoryCost, context.stats);
+
+        boolean hasLocalMapStats = isMethodAvailable(context.nearCacheAdapter, DataStructureMethods.GET_LOCAL_MAP_STATS);
+        if (hasLocalMapStats) {
+            long heapCost = context.nearCacheAdapter.getLocalMapStats().getHeapCost();
+            assertEquals(format("Expected no heap costs in the LocalMapStats, but found %d", heapCost), 0, heapCost);
+        }
     }
 
     private static void assertEqualsFormat(String message, long expected, long actual, NearCacheStats stats) {

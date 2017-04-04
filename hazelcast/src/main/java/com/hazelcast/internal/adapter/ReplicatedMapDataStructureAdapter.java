@@ -113,8 +113,9 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     }
 
     @Override
+    @MethodNotAvailable
     public LocalMapStats getLocalMapStats() {
-        return null;
+        throw new MethodNotAvailableException();
     }
 
     @Override

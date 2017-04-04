@@ -149,8 +149,9 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
+    @MethodNotAvailable
     public LocalMapStats getLocalMapStats() {
-        return null;
+        throw new MethodNotAvailableException();
     }
 
     @Override
