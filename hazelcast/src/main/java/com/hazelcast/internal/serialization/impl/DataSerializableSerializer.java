@@ -185,11 +185,18 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
         // If you ever change the way this is serialized think about to change
         // BasicOperationService::extractOperationCallId
         setOutputVersion(out, VERSION);
+
+        //ByteArrayObjectDataOutput b = (ByteArrayObjectDataOutput)out;
+
+        //System.out.println("identified:"+b.position());
+
         final boolean identified = obj instanceof IdentifiedDataSerializable;
         out.writeBoolean(identified);
         if (identified) {
             final IdentifiedDataSerializable ds = (IdentifiedDataSerializable) obj;
+            //System.out.println("factoryId:"+b.position());
             out.writeInt(ds.getFactoryId());
+            //System.out.println("id:"+b.position());
             out.writeInt(ds.getId());
         } else {
             if (obj instanceof TypedDataSerializable) {

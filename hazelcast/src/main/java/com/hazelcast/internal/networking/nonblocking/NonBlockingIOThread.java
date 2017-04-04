@@ -36,7 +36,10 @@ import java.util.Iterator;
 import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.internal.networking.nonblocking.SelectorMode.SELECT;
+import static com.hazelcast.internal.networking.nonblocking.SelectorMode.SELECT_NOW;
 import static com.hazelcast.internal.networking.nonblocking.SelectorOptimizer.optimize;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.lang.Math.max;
@@ -92,6 +95,16 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     // set to true while testing
     private boolean selectorWorkaroundTest;
 
+    @Probe
+    public volatile long bytesTransceived;
+    @Probe
+    public volatile long framesTransceived;
+    @Probe
+    public volatile long priorityFramesTransceived;
+    @Probe
+    public volatile long handleEvents;
+    public volatile long time;
+
     public NonBlockingIOThread(ThreadGroup threadGroup,
                                String threadName,
                                ILogger logger,
@@ -136,6 +149,12 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
             throw new HazelcastException("Failed to open a Selector", e);
         }
     }
+
+    public long eventCount() {
+        return eventCount.get();
+    }
+
+    public long completedTaskCount(){return completedTaskCount.get();}
 
     /**
      * Gets the Selector
@@ -188,7 +207,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
      */
     public void addTaskAndWakeup(Runnable task) {
         taskQueue.add(task);
-        if (selectMode != SelectorMode.SELECT_NOW) {
+        if (selectMode != SELECT_NOW) {
             selector.wakeup();
         }
     }

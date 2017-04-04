@@ -584,13 +584,20 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
         }
         byte b;
         for (int i = 0; i < charCount; i++) {
-            b = readByte();
+            int ch = (pos < size) ? (data[pos++] & 0xff) : -1;
+
+            if (ch < 0) {
+                throw new EOFException();
+            }
+
+            b = (byte) (ch);
             if (b < 0) {
                 charBuffer[i] = Bits.readUtf8Char(this, b);
             } else {
                 charBuffer[i] = (char) b;
             }
         }
+
         return new String(charBuffer, 0, charCount);
     }
 

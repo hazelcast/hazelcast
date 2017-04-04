@@ -23,6 +23,7 @@ import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -74,6 +75,12 @@ public class StringSerializationTest {
     @After
     public void tearDown() {
         serializationService.dispose();
+    }
+
+    @Test
+    public void normalResponse(){
+        NormalResponse normalResponse = new NormalResponse("",1,0,true);
+        serializationService.toBytes(normalResponse);
     }
 
     @Test

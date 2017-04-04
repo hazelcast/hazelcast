@@ -30,7 +30,7 @@ import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
 
-class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements BufferObjectDataOutput {
+public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements BufferObjectDataOutput {
 
     final int initialSize;
 
@@ -259,9 +259,13 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
     public void writeByteArray(byte[] bytes) throws IOException {
         int len = (bytes != null) ? bytes.length : NULL_ARRAY_LENGTH;
         writeInt(len);
-        if (len > 0) {
-            write(bytes);
+        if (len <= 0) {
+            return;
         }
+
+        ensureAvailable(len);
+        System.arraycopy(bytes, 0, this.buffer, pos, len);
+        pos += len;
     }
 
     @Override

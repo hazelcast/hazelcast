@@ -339,6 +339,9 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
     // =============================== processing operation  ===============================
 
+    private final int backupSlowThresholdMillis = Integer.getInteger("backup.slow.threshold.millis", 0);
+    private final int backupSlowDurationMillis = Integer.getInteger("backup.slow.duration.millis", 1000);
+
     @Override
     public boolean isCallTimedOut(Operation op) {
         // Join operations should not be checked for timeout because caller is not member of this cluster
@@ -347,16 +350,25 @@ public final class OperationServiceImpl implements InternalOperationService, Met
             return false;
         }
 
+        ClusterClock clusterClock = nodeEngine.getClusterService().getClusterClock();
+        long now = clusterClock.getClusterTime();
+
         long callTimeout = op.getCallTimeout();
         long invocationTime = op.getInvocationTime();
+
+        if (backupSlowThresholdMillis > 0) {
+            long delay = now - invocationTime;
+            if (delay > backupSlowThresholdMillis) {
+                OperationBackupHandler.syncUntil = System.currentTimeMillis() + backupSlowDurationMillis;
+            }
+        }
+
         long expireTime = invocationTime + callTimeout;
 
         if (expireTime <= 0 || expireTime == Long.MAX_VALUE) {
             return false;
         }
 
-        ClusterClock clusterClock = nodeEngine.getClusterService().getClusterClock();
-        long now = clusterClock.getClusterTime();
         if (expireTime < now) {
             return true;
         }
@@ -445,8 +457,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
     private void initInvocationContext() {
         ManagedExecutorService asyncExecutor = nodeEngine.getExecutionService().register(
-                    ExecutionService.ASYNC_EXECUTOR, Runtime.getRuntime().availableProcessors(),
-                    ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
+                ExecutionService.ASYNC_EXECUTOR, Runtime.getRuntime().availableProcessors(),
+                ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
 
         this.invocationContext = new Invocation.Context(
                 asyncExecutor,

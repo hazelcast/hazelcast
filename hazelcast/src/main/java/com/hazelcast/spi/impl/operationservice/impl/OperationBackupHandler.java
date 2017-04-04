@@ -26,6 +26,8 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.spi.OperationAccessor.hasActiveInvocation;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
@@ -41,9 +43,20 @@ final class OperationBackupHandler {
     private final NodeEngineImpl nodeEngine;
     private final BackpressureRegulator backpressureRegulator;
 
+    public static volatile long syncUntil = 0;
+
+
+    private final AtomicLong x = new AtomicLong();
+    private final int syncFrequency = Integer.getInteger("syncFrequency",10);
+
+    private final AtomicLong total = new AtomicLong();
+    private final AtomicLong totalForcedSynced = new AtomicLong();
+    private final AtomicLong previousTotalForcedSynced = new AtomicLong();
+
     OperationBackupHandler(OperationServiceImpl operationService) {
         this.operationService = operationService;
         this.node = operationService.node;
+
         this.nodeEngine = operationService.nodeEngine;
         this.backpressureRegulator = operationService.backpressureRegulator;
     }
@@ -83,7 +96,7 @@ final class OperationBackupHandler {
         long[] replicaVersions = partitionService.incrementPartitionReplicaVersions(op.getPartitionId(),
                 requestedTotalBackups);
 
-        boolean syncForced = backpressureRegulator.isSyncForced(backupAwareOp);
+        boolean syncForced = isSyncForced(backupAwareOp);
 
         int syncBackups = syncBackups(requestedSyncBackups, requestedAsyncBackups, syncForced);
         int asyncBackups = asyncBackups(requestedSyncBackups, requestedAsyncBackups, syncForced);
@@ -101,6 +114,20 @@ final class OperationBackupHandler {
         return makeBackups(backupAwareOp, op.getPartitionId(), replicaVersions, syncBackups, asyncBackups);
     }
 
+    private boolean isSyncForced(BackupAwareOperation backupAwareOp) {
+//        if (backpressureRegulator.isEnabled()) {
+//            return backpressureRegulator.isSyncForced(backupAwareOp);
+//        }
+
+        if(syncFrequency == 0){
+            return false;
+        }
+
+       return x.incrementAndGet() % syncFrequency == 0;
+
+       // return System.currentTimeMillis()< syncUntil;
+    }
+
     int syncBackups(int requestedSyncBackups, int requestedAsyncBackups, boolean syncForced) {
         if (syncForced) {
             // if force sync enabled, then the sum of the backups
@@ -113,6 +140,25 @@ final class OperationBackupHandler {
     }
 
     int asyncBackups(int requestedSyncBackups, int requestedAsyncBackups, boolean syncForced) {
+        if (syncForced) {
+            totalForcedSynced.addAndGet(requestedAsyncBackups);
+        }
+
+//        if (requestedSyncBackups > 0) {
+//            throw new RuntimeException("requestedSyncBackups=" + requestedSyncBackups);
+//        }
+
+        long currentTotal = total.addAndGet(requestedAsyncBackups + requestedSyncBackups);
+
+        if (currentTotal % 1000000 == 0) {
+            long currentTotalForcedSynced = totalForcedSynced.get();
+            long previousTotalForcedSync = previousTotalForcedSynced.get();
+            long intervalForcedSync = currentTotalForcedSynced - previousTotalForcedSync;
+            previousTotalForcedSynced.set(currentTotalForcedSynced);
+            operationService.logger.info("forced sync " + (100d * totalForcedSynced.get() / total.get())
+                    + " % interval " + (100d * intervalForcedSync / 1000000) + "%s");
+        }
+
         if (syncForced || requestedAsyncBackups == 0) {
             // if syncForced, then there will never be any async backups (they are forced to become sync)
             // if there are no asyncBackups then we are also done.

@@ -69,11 +69,6 @@ public abstract class AbstractHandler
         return socketChannel;
     }
 
-    @Override
-    public long getEventCount() {
-        return eventCount.get();
-    }
-
     @Probe(level = DEBUG)
     private long opsInterested() {
         SelectionKey selectionKey = this.selectionKey;
@@ -111,6 +106,8 @@ public abstract class AbstractHandler
         SelectionKey selectionKey = getSelectionKey();
         selectionKey.interestOps(selectionKey.interestOps() & ~operation);
     }
+
+    protected abstract void publish();
 
     @Override
     public void onFailure(Throwable e) {

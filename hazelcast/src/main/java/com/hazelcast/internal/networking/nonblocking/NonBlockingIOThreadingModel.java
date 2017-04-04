@@ -31,6 +31,8 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.networking.nonblocking.SelectorMode.SELECT;
@@ -76,6 +78,7 @@ public class NonBlockingIOThreadingModel
     private volatile IOBalancer ioBalancer;
     private boolean selectorWorkaroundTest = Boolean.getBoolean("hazelcast.io.selector.workaround.test");
     private BackoffIdleStrategy idleStrategy;
+    private volatile boolean stop;
 
     public NonBlockingIOThreadingModel(
             LoggingService loggingService,
@@ -184,10 +187,111 @@ public class NonBlockingIOThreadingModel
             thread.start();
         }
         startIOBalancer();
+
+        new Thread() {
+            public void run() {
+                while (!stop) {
+                    try {
+                        sleep(9000);
+                    } catch (InterruptedException e) {
+                    }
+
+                    render();
+                }
+            }
+        }.start();
+    }
+
+    private final Map<SocketConnection, SocketConnection> connections = new ConcurrentHashMap<SocketConnection, SocketConnection>();
+
+    public void render() {
+        for (SocketConnection connection : connections.values()) {
+            final NonBlockingSocketReader r = (NonBlockingSocketReader) connection.getSocketReader();
+            final NonBlockingIOThread t = r.getOwner();
+            if (t != null) {
+                t.addTaskAndWakeup(new Runnable() {
+                    @Override
+                    public void run() {
+                        r.publish();
+                    }
+                });
+            }
+
+            final NonBlockingSocketWriter w = (NonBlockingSocketWriter) connection.getSocketWriter();
+            final NonBlockingIOThread tw = w.getOwner();
+            if (tw != null) {
+                tw.addTaskAndWakeup(new Runnable() {
+                    @Override
+                    public void run() {
+                        w.publish();
+                    }
+                });
+            }
+        }
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        StringBuffer sb = new StringBuffer("IO Thread Imbalance detector");
+        sb.append("InputThreads:\n");
+        render(sb, inputThreads);
+        sb.append("OutputThreads:\n");
+        render(sb, outputThreads);
+
+        logger.info(sb.toString());
+    }
+
+    private void render(StringBuffer sb, NonBlockingIOThread[] ioThreads) {
+        long totalPriorityFramesReceived = 0;
+        long totalFramesReceived = 0;
+        long totalBytesReceived = 0;
+        long totalEvents = 0;
+        long totalTaskCount = 0;
+        long totalHandleEvents = 0;
+        long totalTime = 0;
+
+        for (NonBlockingIOThread ioThread : ioThreads) {
+            if (ioThread == null) {
+                return;
+            }
+            totalBytesReceived += ioThread.bytesTransceived;
+            totalFramesReceived += ioThread.framesTransceived;
+            totalPriorityFramesReceived += ioThread.priorityFramesTransceived;
+            totalEvents += ioThread.eventCount();
+            totalTaskCount += ioThread.completedTaskCount();
+            totalHandleEvents += ioThread.handleEvents;
+            totalTime += ioThread.time;
+        }
+
+        for (NonBlockingIOThread ioThread : ioThreads) {
+            if (ioThread == null) {
+                return;
+            }
+
+            sb.append("\t").append(ioThread.getName()).append("\n")
+                    .append("\t\ttime ").append(toPercentage(ioThread.time, totalTime)).append("\n")
+                    .append("\t\tframes ").append(toPercentage(ioThread.framesTransceived, totalFramesReceived)).append("\n")
+                    .append("\t\tpriorityFrames ").append(toPercentage(ioThread.priorityFramesTransceived, totalPriorityFramesReceived)).append("\n")
+                    .append("\t\tbytes ").append(toPercentage(ioThread.bytesTransceived, totalBytesReceived)).append("\n")
+                    .append("\t\tevents ").append(toPercentage(ioThread.eventCount(), totalEvents)).append(' ').append(ioThread.eventCount()).append("\n")
+                    .append("\t\thandle-events ").append(toPercentage(ioThread.handleEvents, totalHandleEvents)).append(' ').append(ioThread.handleEvents).append("\n")
+                    .append("\t\ttask ").append(toPercentage(ioThread.completedTaskCount(), totalTaskCount)).append("\n");
+        }
+    }
+
+    private String toPercentage(long amount, long total) {
+        //NumberFormat formatter = new DecimalFormat("#0.00");
+        double percentage = (100d * amount) / total;
+        return String.format("%1$,.2f", percentage) + " %";
     }
 
     @Override
     public void onConnectionAdded(SocketConnection connection) {
+        connections.put(connection, connection);
+
         MigratableHandler reader = (MigratableHandler) connection.getSocketReader();
         MigratableHandler writer = (MigratableHandler) connection.getSocketWriter();
         ioBalancer.connectionAdded(reader, writer);
@@ -195,6 +299,8 @@ public class NonBlockingIOThreadingModel
 
     @Override
     public void onConnectionRemoved(SocketConnection connection) {
+        connections.remove(connection);
+
         MigratableHandler reader = (MigratableHandler) connection.getSocketReader();
         MigratableHandler writer = (MigratableHandler) connection.getSocketWriter();
         ioBalancer.connectionRemoved(reader, writer);
@@ -209,6 +315,7 @@ public class NonBlockingIOThreadingModel
 
     @Override
     public void shutdown() {
+        stop = true;
         ioBalancer.stop();
 
         if (logger.isFinestEnabled()) {

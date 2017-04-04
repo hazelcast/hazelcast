@@ -17,8 +17,10 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractInvocationFuture;
+import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -99,6 +101,12 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
             return newOperationTimeoutException(false);
         } else if (unresolved == HEARTBEAT_TIMEOUT) {
             return newOperationTimeoutException(true);
+        }
+
+        if (unresolved.getClass() == Packet.class) {
+            Packet packet = (Packet)unresolved;
+            NormalResponse response = invocation.context.serializationService.toObject(packet);
+            unresolved = response.getValue();
         }
 
         Object value = unresolved;
