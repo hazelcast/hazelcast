@@ -40,7 +40,8 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public abstract class AbstractTransactionalCollectionProxy<S extends RemoteService, E> extends TransactionalDistributedObject<S> {
+public abstract class AbstractTransactionalCollectionProxy<S extends RemoteService, E>
+        extends TransactionalDistributedObject<S> {
 
     protected final String name;
     protected final int partitionId;

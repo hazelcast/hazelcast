@@ -45,7 +45,7 @@ import java.util.Map;
 /**
  * Provides a context to perform transactional operations: beginning/committing transactions, but also retrieving
  * transactional data-structures like the {@link com.hazelcast.core.TransactionalMap}.
- * <p/>
+ *
  * Provides client instance and client connection proxies that need to be accessed for sending invocations.
  */
 public class TransactionContextProxy implements ClientTransactionContext {

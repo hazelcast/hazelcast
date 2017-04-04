@@ -249,7 +249,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
 
         TxnValueWrapper wrapper = txMap.get(keyData);
-        //Wrapper is null which means this entry is not touched by transaction
+        // wrapper is null which means this entry is not touched by transaction
         if (wrapper == null) {
             boolean removed = removeIfSameInternal(keyData, value);
             if (removed) {
@@ -318,7 +318,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         QueryResult queryResult = queryEngine.execute(query, Target.ALL_NODES);
         Set result = QueryResultUtils.transformToSet(serializationService, queryResult, predicate, IterationType.KEY, true);
 
-        // TODO: Can't we just use the original set?
+        // TODO: can't we just use the original set?
         Set<Object> keySet = new HashSet<Object>(result);
         Extractors extractors = mapServiceContext.getExtractors(name);
         for (Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
@@ -360,10 +360,10 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         SerializationService serializationService = getNodeEngine().getSerializationService();
 
         Query query = Query.of().mapName(name).predicate(predicate).iterationType(IterationType.ENTRY).build();
-        QueryResult queryResylt = queryEngine.execute(query, Target.ALL_NODES);
-        Set result = QueryResultUtils.transformToSet(serializationService, queryResylt, predicate, IterationType.ENTRY, true);
+        QueryResult queryResult = queryEngine.execute(query, Target.ALL_NODES);
+        Set result = QueryResultUtils.transformToSet(serializationService, queryResult, predicate, IterationType.ENTRY, true);
 
-        // TODO: Can't we just use the original set?
+        // TODO: can't we just use the original set?
         List<Object> valueSet = new ArrayList<Object>();
         Set<Object> keyWontBeIncluded = new HashSet<Object>();
         Extractors extractors = mapServiceContext.getExtractors(name);

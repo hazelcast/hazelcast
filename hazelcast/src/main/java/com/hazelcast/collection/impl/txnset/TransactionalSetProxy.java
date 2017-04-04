@@ -32,7 +32,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.Future;
 
-public class TransactionalSetProxy<E> extends AbstractTransactionalCollectionProxy<SetService, E>
+public class TransactionalSetProxy<E>
+        extends AbstractTransactionalCollectionProxy<SetService, E>
         implements TransactionalSet<E> {
 
     private final HashSet<CollectionItem> set = new HashSet<CollectionItem>();

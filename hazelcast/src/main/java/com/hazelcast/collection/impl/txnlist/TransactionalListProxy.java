@@ -26,7 +26,8 @@ import com.hazelcast.transaction.impl.Transaction;
 import java.util.Collection;
 import java.util.LinkedList;
 
-public class TransactionalListProxy<E> extends AbstractTransactionalCollectionProxy<ListService, E>
+public class TransactionalListProxy<E>
+        extends AbstractTransactionalCollectionProxy<ListService, E>
         implements TransactionalList<E> {
 
     private final LinkedList<CollectionItem> list = new LinkedList<CollectionItem>();

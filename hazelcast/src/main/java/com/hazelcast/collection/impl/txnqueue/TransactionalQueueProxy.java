@@ -32,7 +32,9 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  *
  * @param <E>
  */
-public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport implements TransactionalQueue<E> {
+public class TransactionalQueueProxy<E>
+        extends TransactionalQueueProxySupport
+        implements TransactionalQueue<E> {
 
     public TransactionalQueueProxy(NodeEngine nodeEngine, QueueService service, String name, Transaction tx) {
         super(nodeEngine, service, name, tx);

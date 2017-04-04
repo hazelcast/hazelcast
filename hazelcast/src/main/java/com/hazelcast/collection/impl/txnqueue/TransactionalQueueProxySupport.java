@@ -46,7 +46,8 @@ import java.util.concurrent.Future;
 /**
  * Provides support for proxy of the Transactional Queue.
  */
-public abstract class TransactionalQueueProxySupport extends TransactionalDistributedObject<QueueService>
+public abstract class TransactionalQueueProxySupport
+        extends TransactionalDistributedObject<QueueService>
         implements TransactionalObject {
 
     protected final String name;
