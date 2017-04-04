@@ -42,6 +42,7 @@ import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UP
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeThat;
 import static org.junit.Assume.assumeTrue;
 
@@ -128,6 +129,16 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
 
         return service.getMapServiceContext().getMapNearCacheManager();
+    }
+
+    /**
+     * Assumes that the given {@link NearCacheConfig} has
+     * {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#INVALIDATE} configured.
+     *
+     * @param nearCacheConfig the {@link NearCacheConfig} to test
+     */
+    public static void assumeThatLocalUpdatePolicyIsInvalidate(NearCacheConfig nearCacheConfig) {
+        assumeFalse(isCacheOnUpdate(nearCacheConfig));
     }
 
     /**

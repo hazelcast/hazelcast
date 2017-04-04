@@ -117,7 +117,13 @@ public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasi
     @Test
     @Override
     @Ignore(value = "The ClientReplicatedMapProxy is missing `invalidateNearCache(keyData)` calls")
-    public void whenPutAllIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+    public void whenSetIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+    }
+
+    @Test
+    @Override
+    @Ignore(value = "The ClientReplicatedMapProxy is missing `invalidateNearCache(keyData)` calls")
+    public void whenPutIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
     }
 
     @Test
@@ -130,5 +136,11 @@ public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasi
     @Override
     @Ignore(value = "The ClientReplicatedMapProxy is missing `invalidateNearCache(keyData)` calls")
     public void whenRemoveIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+    }
+
+    @Test
+    @Override
+    @Ignore(value = "The ClientReplicatedMapProxy is missing `invalidateNearCache(keyData)` calls")
+    public void whenPutAllIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
     }
 }

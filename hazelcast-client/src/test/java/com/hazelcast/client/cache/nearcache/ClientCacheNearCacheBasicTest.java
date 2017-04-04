@@ -40,8 +40,6 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -148,11 +146,5 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
         }
 
         return cacheConfig;
-    }
-
-    @Test
-    @Override
-    @Ignore(value = "The NearCachedClientCacheProxy is missing `invalidateNearCache(keyData)` calls")
-    public void whenPutAllIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
     }
 }

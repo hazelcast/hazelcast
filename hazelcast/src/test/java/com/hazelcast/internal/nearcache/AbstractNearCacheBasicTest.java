@@ -43,6 +43,7 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCach
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheStats;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assumeThatLocalUpdatePolicyIsCacheOnUpdate;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assumeThatLocalUpdatePolicyIsInvalidate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assumeThatMethodIsAvailable;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getFuture;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
@@ -333,42 +334,45 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     /**
-     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#PUT_ALL} is used.
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#SET} is used.
      *
      * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
      */
     @Test
-    public void whenPutAllIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
-        whenPutAllIsUsed_thenNearCacheShouldBeInvalidated(true);
+    public void whenSetIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.SET);
     }
 
     /**
-     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#PUT_ALL} is used.
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#SET} is used.
      *
      * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
      */
     @Test
-    public void whenPutAllIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+    public void whenSetIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
         nearCacheConfig.setInvalidateOnChange(true);
-        whenPutAllIsUsed_thenNearCacheShouldBeInvalidated(false);
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.SET);
     }
 
-    private void whenPutAllIsUsed_thenNearCacheShouldBeInvalidated(boolean useNearCacheAdapter) {
-        NearCacheTestContext<Integer, String, NK, NV> context = createContext();
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#PUT} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
+     */
+    @Test
+    public void whenPutIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.PUT);
+    }
 
-        populateMap(context);
-        populateNearCache(context);
-
-        Map<Integer, String> invalidationMap = new HashMap<Integer, String>(DEFAULT_RECORD_COUNT);
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            invalidationMap.put(i, "newValue-" + i);
-        }
-
-        // this should invalidate the Near Cache
-        DataStructureAdapter<Integer, String> adapter = useNearCacheAdapter ? context.nearCacheAdapter : context.dataAdapter;
-        adapter.putAll(invalidationMap);
-
-        assertNearCacheSizeEventually(context, 0, "Invalidation is not working on putAll()");
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#PUT} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
+     */
+    @Test
+    public void whenPutIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+        nearCacheConfig.setInvalidateOnChange(true);
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.PUT);
     }
 
     /**
@@ -378,7 +382,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      */
     @Test
     public void whenReplaceIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
-        whenReplaceIsUsed_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.REPLACE);
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.REPLACE);
     }
 
     /**
@@ -389,7 +393,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     @Test
     public void whenReplaceIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
         nearCacheConfig.setInvalidateOnChange(true);
-        whenReplaceIsUsed_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.REPLACE);
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.REPLACE);
     }
 
     /**
@@ -399,7 +403,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      */
     @Test
     public void whenReplaceWithOldValueIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
-        whenReplaceIsUsed_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.REPLACE_WITH_OLD_VALUE);
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.REPLACE_WITH_OLD_VALUE);
     }
 
     /**
@@ -410,10 +414,33 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     @Test
     public void whenReplaceWithOldValueIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
         nearCacheConfig.setInvalidateOnChange(true);
-        whenReplaceIsUsed_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.REPLACE_WITH_OLD_VALUE);
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.REPLACE_WITH_OLD_VALUE);
     }
 
-    private void whenReplaceIsUsed_thenNearCacheShouldBeInvalidated(boolean useNearCacheAdapter, DataStructureMethods method) {
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#PUT_ALL} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
+     */
+    @Test
+    public void whenPutAllIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.PUT_ALL);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#PUT_ALL} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
+     */
+    @Test
+    public void whenPutAllIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+        nearCacheConfig.setInvalidateOnChange(true);
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.PUT_ALL);
+    }
+
+    private void whenEntryIsChanged_thenNearCacheShouldBeInvalidated(boolean useNearCacheAdapter, DataStructureMethods method) {
+        assumeThatLocalUpdatePolicyIsInvalidate(nearCacheConfig);
+
         NearCacheTestContext<Integer, String, NK, NV> context = createContext();
         DataStructureAdapter<Integer, String> adapter = useNearCacheAdapter ? context.nearCacheAdapter : context.dataAdapter;
         assumeThatMethodIsAvailable(adapter, method);
@@ -422,17 +449,36 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         populateNearCache(context);
 
         // this should invalidate the Near Cache
+        Map<Integer, String> invalidationMap = new HashMap<Integer, String>(DEFAULT_RECORD_COUNT);
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            if (method == DataStructureMethods.REPLACE_WITH_OLD_VALUE) {
-                assertTrue(adapter.replace(i, "value-" + i, "newValue-" + i));
-            } else {
-                assertEquals("value-" + i, adapter.replace(i, "newValue-" + i));
+            String value = "value-" + i;
+            String newValue = "newValue-" + i;
+            switch (method) {
+                case SET:
+                    adapter.set(i, newValue);
+                    break;
+                case PUT:
+                    assertEquals(value, adapter.put(i, newValue));
+                    break;
+                case REPLACE:
+                    assertEquals(value, adapter.replace(i, newValue));
+                    break;
+                case REPLACE_WITH_OLD_VALUE:
+                    assertTrue(adapter.replace(i, value, newValue));
+                    break;
+                case PUT_ALL:
+                    invalidationMap.put(i, newValue);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unexpected method: " + method);
             }
         }
+        if (method == DataStructureMethods.PUT_ALL) {
+            adapter.putAll(invalidationMap);
+        }
 
-        int expectedNearCacheSize = useNearCacheAdapter && isCacheOnUpdate(nearCacheConfig) ? DEFAULT_RECORD_COUNT : 0;
         String message = format("Invalidation is not working on %s()", method.getMethodName());
-        assertNearCacheSizeEventually(context, expectedNearCacheSize, message);
+        assertNearCacheSizeEventually(context, 0, message);
     }
 
     /**
