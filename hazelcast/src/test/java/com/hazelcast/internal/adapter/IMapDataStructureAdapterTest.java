@@ -199,16 +199,9 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
         assertEquals(0, map.size());
     }
 
-    @Test
+    @Test(expected = MethodNotAvailableException.class)
     public void testRemoveAllWithKeys() {
-        map.put(23, "value-23");
-        map.put(42, "value-42");
-
         adapter.removeAll(singleton(42));
-
-        assertEquals(1, map.size());
-        assertTrue(map.containsKey(23));
-        assertFalse(map.containsKey(42));
     }
 
     @Test

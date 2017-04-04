@@ -19,7 +19,6 @@ package com.hazelcast.internal.adapter;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 
 import java.util.Map;
@@ -111,14 +110,9 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
+    @MethodNotAvailable
     public void removeAll(final Set<K> keys) {
-        Predicate<K, V> predicate = new Predicate<K, V>() {
-            @Override
-            public boolean apply(Map.Entry<K, V> mapEntry) {
-                return keys.contains(mapEntry.getKey());
-            }
-        };
-        map.removeAll(predicate);
+        throw new MethodNotAvailableException();
     }
 
     @Override
