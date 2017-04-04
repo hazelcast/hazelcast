@@ -43,6 +43,7 @@ import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeThat;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * Provides utility methods for unified Near Cache tests.
@@ -127,6 +128,16 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
 
         return service.getMapServiceContext().getMapNearCacheManager();
+    }
+
+    /**
+     * Assumes that the given {@link NearCacheConfig} has
+     * {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE} configured.
+     *
+     * @param nearCacheConfig the {@link NearCacheConfig} to test
+     */
+    public static void assumeThatLocalUpdatePolicyIsCacheOnUpdate(NearCacheConfig nearCacheConfig) {
+        assumeTrue(isCacheOnUpdate(nearCacheConfig));
     }
 
     /**
