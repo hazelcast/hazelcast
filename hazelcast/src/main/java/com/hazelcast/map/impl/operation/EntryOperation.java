@@ -46,6 +46,7 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.UuidUtil;
 
 import java.io.IOException;
 import java.util.Map;
@@ -166,19 +167,9 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
     @Override
     public void innerBeforeRun() throws Exception {
         super.innerBeforeRun();
-
-        if (entryProcessor instanceof Offloadable) {
-            String executorName = ((Offloadable) entryProcessor).getExecutorName();
-            if (!executorName.equals(NO_OFFLOADING)) {
-                offloading = true;
-            }
-        }
-
-        if (offloading) {
-            this.ops = (OperationServiceImpl) getNodeEngine().getOperationService();
-            this.begin = getNow();
-            this.readOnly = entryProcessor instanceof ReadOnly;
-        }
+        this.ops = (OperationServiceImpl) getNodeEngine().getOperationService();
+        this.begin = getNow();
+        this.readOnly = entryProcessor instanceof ReadOnly;
 
         final SerializationService serializationService = getNodeEngine().getSerializationService();
         final ManagedContext managedContext = serializationService.getManagedContext();
@@ -249,8 +240,10 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
     private void runOffloadedModifyingEntryProcessor(final Object previousValue, String executorName) {
         final OperationServiceImpl ops = (OperationServiceImpl) getNodeEngine().getOperationService();
 
+        // callerId is random since the local locks are NOT re-entrant
+        // using a randomID every time prevents from re-entering the already acquired lock
+        final String finalCaller = UuidUtil.newUnsecureUuidString();
         final Data finalDataKey = dataKey;
-        final String finalCaller = getCallerUuid();
         final long finalThreadId = threadId;
         final long finalCallId = getCallId();
         final long finalBegin = begin;
@@ -430,9 +423,28 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
     public boolean shouldWait() {
         // optimisation for ReadOnly processors -> they will not wait for the lock
         if (entryProcessor instanceof ReadOnly) {
+            offloading = isOffloadingRequested(entryProcessor);
             return false;
         }
+        // mutating offloading -> only if key not locked, since it uses locking too (but on reentrant one)
+        if (!recordStore.isLocked(dataKey) && isOffloadingRequested(entryProcessor)) {
+            offloading = true;
+            return false;
+        }
+        //at this point we cannot offload. the entry is locked or the EP does not support offloading
+        //if the entry is locked by us then we can still run the EP on the partition thread
+        offloading = false;
         return !recordStore.canAcquireLock(dataKey, getCallerUuid(), getThreadId());
+    }
+
+    private boolean isOffloadingRequested(EntryProcessor entryProcessor) {
+        if (entryProcessor instanceof Offloadable) {
+            String executorName = ((Offloadable) entryProcessor).getExecutorName();
+            if (!executorName.equals(NO_OFFLOADING)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
