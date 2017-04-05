@@ -20,6 +20,9 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.monitor.LocalMapStats;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.cache.processor.EntryProcessor;
+import javax.cache.processor.EntryProcessorException;
+import javax.cache.processor.EntryProcessorResult;
 import java.util.Map;
 import java.util.Set;
 
@@ -50,6 +53,12 @@ public interface DataStructureAdapter<K, V> {
 
     ICompletableFuture<V> removeAsync(K key);
 
+    <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments) throws EntryProcessorException;
+
+    Object executeOnKey(K key, com.hazelcast.map.EntryProcessor entryProcessor);
+
+    Map<K, Object> executeOnKeys(Set<K> keys, com.hazelcast.map.EntryProcessor entryProcessor);
+
     boolean containsKey(K key);
 
     Map<K, V> getAll(Set<K> keys);
@@ -59,6 +68,9 @@ public interface DataStructureAdapter<K, V> {
     void removeAll();
 
     void removeAll(Set<K> keys);
+
+    <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor,
+                                                  Object... arguments);
 
     void clear();
 
@@ -79,11 +91,15 @@ public interface DataStructureAdapter<K, V> {
         REMOVE("remove", Object.class),
         REMOVE_WITH_OLD_VALUE("remove", Object.class, Object.class),
         REMOVE_ASYNC("removeAsync", Object.class),
+        INVOKE("invoke", Object.class, EntryProcessor.class, Object[].class),
+        EXECUTE_ON_KEY("executeOnKey", Object.class, com.hazelcast.map.EntryProcessor.class),
+        EXECUTE_ON_KEYS("executeOnKeys", Set.class, com.hazelcast.map.EntryProcessor.class),
         CONTAINS_KEY("containsKey", Object.class),
         GET_ALL("getAll", Set.class),
         PUT_ALL("putAll", Map.class),
         REMOVE_ALL("removeAll"),
         REMOVE_ALL_WITH_KEYS("removeAll", Set.class),
+        INVOKE_ALL("invokeAll", Set.class, EntryProcessor.class, Object[].class),
         CLEAR("clear"),
         GET_LOCAL_MAP_STATS("getLocalMapStats");
 

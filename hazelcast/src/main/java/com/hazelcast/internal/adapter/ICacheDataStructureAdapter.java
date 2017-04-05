@@ -20,6 +20,9 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.monitor.LocalMapStats;
 
+import javax.cache.processor.EntryProcessor;
+import javax.cache.processor.EntryProcessorException;
+import javax.cache.processor.EntryProcessorResult;
 import java.util.Map;
 import java.util.Set;
 
@@ -87,6 +90,23 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     }
 
     @Override
+    public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments) throws EntryProcessorException {
+        return cache.invoke(key, entryProcessor, arguments);
+    }
+
+    @Override
+    @MethodNotAvailable
+    public Object executeOnKey(K key, com.hazelcast.map.EntryProcessor entryProcessor) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public Map<K, Object> executeOnKeys(Set<K> keys, com.hazelcast.map.EntryProcessor entryProcessor) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
     public boolean containsKey(K key) {
         return cache.containsKey(key);
     }
@@ -109,6 +129,12 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     @Override
     public void removeAll(Set<K> keys) {
         cache.removeAll(keys);
+    }
+
+    @Override
+    public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor,
+                                                         Object... arguments) {
+        return cache.invokeAll(keys, entryProcessor, arguments);
     }
 
     @Override

@@ -31,14 +31,19 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.cache.CacheManager;
+import javax.cache.processor.EntryProcessorResult;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.HazelcastServerCachingProvider.createCachingProvider;
+import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -168,6 +173,29 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testInvoke() {
+        cache.put(23, "value-23");
+        cache.put(42, "value-42");
+
+        String result = adapter.invoke(23, new ICacheReplaceEntryProcessor(), "value", "newValue");
+        assertEquals("newValue-23", result);
+
+        assertEquals("newValue-23", cache.get(23));
+        assertEquals("value-42", cache.get(42));
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testExecuteOnKey() {
+        adapter.executeOnKey(23, new IMapReplaceEntryProcessor("value", "newValue"));
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testExecuteOnKeys() {
+        Set<Integer> keys = new HashSet<Integer>(singleton(23));
+        adapter.executeOnKeys(keys, new IMapReplaceEntryProcessor("value", "newValue"));
+    }
+
+    @Test
     public void testContainsKey() {
         cache.put(23, "value-23");
 
@@ -222,6 +250,25 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
         assertEquals(1, cache.size());
         assertTrue(cache.containsKey(23));
         assertFalse(cache.containsKey(42));
+    }
+
+    @Test
+    public void testInvokeAll() {
+        cache.put(23, "value-23");
+        cache.put(42, "value-42");
+        cache.put(65, "value-65");
+
+        Set<Integer> keys = new HashSet<Integer>(asList(23, 65, 88));
+        Map<Integer, EntryProcessorResult<String>> resultMap = adapter.invokeAll(keys, new ICacheReplaceEntryProcessor(),
+                "value", "newValue");
+        assertEquals(2, resultMap.size());
+        assertEquals("newValue-23", resultMap.get(23).get());
+        assertEquals("newValue-65", resultMap.get(65).get());
+
+        assertEquals("newValue-23", cache.get(23));
+        assertEquals("value-42", cache.get(42));
+        assertEquals("newValue-65", cache.get(65));
+        assertNull(cache.get(88));
     }
 
     @Test

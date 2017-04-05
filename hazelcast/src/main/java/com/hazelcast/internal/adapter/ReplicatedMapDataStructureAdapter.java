@@ -20,6 +20,9 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.monitor.LocalMapStats;
 
+import javax.cache.processor.EntryProcessor;
+import javax.cache.processor.EntryProcessorException;
+import javax.cache.processor.EntryProcessorResult;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -94,6 +97,24 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     }
 
     @Override
+    @MethodNotAvailable
+    public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments) throws EntryProcessorException {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public Object executeOnKey(K key, com.hazelcast.map.EntryProcessor entryProcessor) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public Map<K, Object> executeOnKeys(Set<K> keys, com.hazelcast.map.EntryProcessor entryProcessor) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
     public boolean containsKey(K key) {
         return map.containsKey(key);
     }
@@ -121,6 +142,13 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     @Override
     @MethodNotAvailable
     public void removeAll(Set<K> keys) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor,
+                                                         Object... arguments) {
         throw new MethodNotAvailableException();
     }
 

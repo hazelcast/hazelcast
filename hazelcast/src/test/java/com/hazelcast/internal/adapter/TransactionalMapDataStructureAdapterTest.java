@@ -29,8 +29,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -144,6 +147,22 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
         adapter.removeAsync(23);
     }
 
+    @Test(expected = MethodNotAvailableException.class)
+    public void testInvoke() {
+        adapter.invoke(23, new ICacheReplaceEntryProcessor(), "value", "newValue");
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testExecuteOnKey() {
+        adapter.executeOnKey(23, new IMapReplaceEntryProcessor("value", "newValue"));
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testExecuteOnKeys() {
+        Set<Integer> keys = new HashSet<Integer>(singleton(23));
+        adapter.executeOnKeys(keys, new IMapReplaceEntryProcessor("value", "newValue"));
+    }
+
     @Test
     public void testContainsKey() {
         map.put(23, "value-23");
@@ -187,6 +206,12 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
     @Test(expected = MethodNotAvailableException.class)
     public void testRemoveAllWithKeys() {
         adapter.removeAll(singleton(42));
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testInvokeAll() {
+        Set<Integer> keys = new HashSet<Integer>(asList(23, 65, 88));
+        adapter.invokeAll(keys, new ICacheReplaceEntryProcessor(), "value", "newValue");
     }
 
     @Test
