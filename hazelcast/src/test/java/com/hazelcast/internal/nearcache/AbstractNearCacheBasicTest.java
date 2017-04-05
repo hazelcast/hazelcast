@@ -54,6 +54,7 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getFuture;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.setEvictionConfig;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -78,6 +79,16 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * The default name used for the data structures which have a Near Cache.
      */
     protected static final String DEFAULT_NEAR_CACHE_NAME = "defaultNearCache";
+
+    /**
+     * Defines all {@link DataStructureMethods} which are using EntryProcessors.
+     */
+    private static final List<DataStructureMethods> ENTRY_PROCESSOR_METHODS = asList(
+            DataStructureMethods.INVOKE,
+            DataStructureMethods.EXECUTE_ON_KEY,
+            DataStructureMethods.EXECUTE_ON_KEYS,
+            DataStructureMethods.INVOKE_ALL
+    );
 
     /**
      * The {@link NearCacheConfig} used by the Near Cache tests.
@@ -496,7 +507,11 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     private void whenEntryIsChanged_thenNearCacheShouldBeInvalidated(boolean useNearCacheAdapter, DataStructureMethods method) {
-        assumeThatLocalUpdatePolicyIsInvalidate(nearCacheConfig);
+        if (!ENTRY_PROCESSOR_METHODS.contains(method)) {
+            // since EntryProcessors return a user-defined result we cannot directly put this into the Near Cache,
+            // so we execute this test also for CACHE_ON_UPDATE configurations
+            assumeThatLocalUpdatePolicyIsInvalidate(nearCacheConfig);
+        }
 
         NearCacheTestContext<Integer, String, NK, NV> context = createContext();
         DataStructureAdapter<Integer, String> adapter = useNearCacheAdapter ? context.nearCacheAdapter : context.dataAdapter;
