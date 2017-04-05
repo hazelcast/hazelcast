@@ -21,7 +21,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.Offloadable;
@@ -41,6 +40,8 @@ import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -315,30 +316,36 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
                 dataKey, previousValue, newValue, caller, threadId, now, entryProcessor.getBackupProcessor());
 
         updateOperation.setPartitionId(getPartitionId());
-        ops.invokeOnPartition(updateOperation).andThen(new ExecutionCallback<Object>() {
+        updateOperation.setReplicaIndex(0);
+        updateOperation.setNodeEngine(getNodeEngine());
+        updateOperation.setCallerUuid(getCallerUuid());
+        OperationAccessor.setCallerAddress(updateOperation, getCallerAddress());
+        OperationResponseHandler setUnlockResponseHandler = new OperationResponseHandler() {
             @Override
-            public void onResponse(Object response) {
-                try {
-                    getOperationResponseHandler().sendResponse(EntryOperation.this, result);
-                } finally {
-                    ops.onCompletionAsyncOperation(EntryOperation.this);
-                }
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                try {
-                    // EntryOffloadableLockMismatchException is a marker send from the EntryOffloadableSetUnlockOperation
-                    // meaning that the whole invocation of the EntryOffloadableOperation should be retried
-                    if (t instanceof EntryOffloadableLockMismatchException) {
-                        t = new RetryableHazelcastException(t.getMessage(), t);
+            public void sendResponse(Operation op, Object response) {
+                if (response instanceof Throwable) {
+                    try {
+                        Throwable t = (Throwable) response;
+                        // EntryOffloadableLockMismatchException is a marker send from the EntryOffloadableSetUnlockOperation
+                        // meaning that the whole invocation of the EntryOffloadableOperation should be retried
+                        if (t instanceof EntryOffloadableLockMismatchException) {
+                            t = new RetryableHazelcastException(t.getMessage(), t);
+                        }
+                        getOperationResponseHandler().sendResponse(EntryOperation.this, t);
+                    } finally {
+                        ops.onCompletionAsyncOperation(EntryOperation.this);
                     }
-                    getOperationResponseHandler().sendResponse(EntryOperation.this, t);
-                } finally {
-                    ops.onCompletionAsyncOperation(EntryOperation.this);
+                } else {
+                    try {
+                        getOperationResponseHandler().sendResponse(EntryOperation.this, result);
+                    } finally {
+                        ops.onCompletionAsyncOperation(EntryOperation.this);
+                    }
                 }
             }
-        });
+        };
+        updateOperation.setOperationResponseHandler(setUnlockResponseHandler);
+        ops.execute(updateOperation);
     }
 
     private void unlockOnly(final Object result, String caller, long threadId, long now) {

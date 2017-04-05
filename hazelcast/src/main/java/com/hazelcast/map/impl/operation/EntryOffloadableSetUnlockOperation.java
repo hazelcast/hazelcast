@@ -35,7 +35,6 @@ import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.util.Clock;
 
@@ -53,8 +52,7 @@ import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
  *
  * See the javadoc on {@link EntryOperation}
  */
-public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOperation implements BackupAwareOperation,
-        Notifier, UrgentSystemOperation {
+public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOperation implements BackupAwareOperation, Notifier {
 
     protected Data value;
     protected Data oldValue;
@@ -227,6 +225,10 @@ public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOpera
     @Override
     public WaitNotifyKey getNotifiedKey() {
         return new LockWaitNotifyKey(new DefaultObjectNamespace(MapService.SERVICE_NAME, name), dataKey);
+    }
+
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
     }
 
     @Override
