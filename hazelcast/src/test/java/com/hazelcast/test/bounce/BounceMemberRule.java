@@ -390,6 +390,7 @@ public class BounceMemberRule implements TestRule {
         private int driversCount = DEFAULT_DRIVERS_COUNT;
         private DriverFactory driverFactory;
         private DriverType testDriverType;
+        private boolean useTerminate;
 
         private Builder(Config memberConfig) {
             this.memberConfig = memberConfig;
@@ -420,7 +421,7 @@ public class BounceMemberRule implements TestRule {
                 }
             }
             return new BounceMemberRule(new BounceTestConfiguration(clusterSize, testDriverType, memberConfig,
-                    driversCount, driverFactory));
+                    driversCount, driverFactory, useTerminate));
         }
 
         public Builder clusterSize(int clusterSize) {
@@ -440,6 +441,11 @@ public class BounceMemberRule implements TestRule {
 
         public Builder driverFactory(DriverFactory driverFactory) {
             this.driverFactory = driverFactory;
+            return this;
+        }
+
+        public Builder useTerminate() {
+            this.useTerminate = true;
             return this;
         }
 
@@ -472,7 +478,11 @@ public class BounceMemberRule implements TestRule {
             int nextInstance;
             try {
                 while (testRunning.get()) {
-                    instances[i].shutdown();
+                    if (bounceTestConfig.isUseTerminate()) {
+                        instances[i].getLifecycleService().terminate();
+                    } else {
+                        instances[i].shutdown();
+                    }
                     nextInstance = (i + 1) % instances.length;
                     sleepSeconds(2);
 
