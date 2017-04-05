@@ -40,6 +40,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 
@@ -47,7 +48,7 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCach
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category(QuickTest.class)
 public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, String> {
 
@@ -130,12 +131,6 @@ public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasi
     @Override
     @Ignore(value = "The ClientReplicatedMapProxy is missing `invalidateNearCache(keyData)` calls")
     public void whenRemoveIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
-    }
-
-    @Test
-    @Override
-    @Ignore(value = "The ClientReplicatedMapProxy is missing `invalidateNearCache(keyData)` calls")
-    public void whenRemoveIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
     }
 
     @Test
