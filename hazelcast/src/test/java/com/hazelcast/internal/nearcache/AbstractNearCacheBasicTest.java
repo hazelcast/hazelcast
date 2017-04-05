@@ -285,8 +285,9 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                     assertNull(adapter.replace(i, value));
                     break;
                 case REPLACE_WITH_OLD_VALUE:
-                    context.dataAdapter.put(i, value);
-                    assertTrue(adapter.replace(i, value, "newValue-" + i));
+                    String oldValue = "oldValue-" + i;
+                    context.dataAdapter.put(i, oldValue);
+                    assertTrue(adapter.replace(i, oldValue, value));
                     break;
                 case PUT_ALL:
                     putAllMap.put(i, value);
@@ -301,6 +302,9 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
         String message = format("Population is not working on %s()", method.getMethodName());
         assertNearCacheSizeEventually(context, DEFAULT_RECORD_COUNT, message);
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            assertEquals("value-" + i, context.nearCacheAdapter.get(i));
+        }
     }
 
     /**
