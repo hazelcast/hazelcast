@@ -19,11 +19,9 @@ package com.hazelcast.jet.stream;
 import com.hazelcast.core.IList;
 import org.junit.Test;
 
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static org.junit.Assert.assertEquals;
 
 public class SortTest extends AbstractStreamTest {
@@ -36,69 +34,95 @@ public class SortTest extends AbstractStreamTest {
         IList<Integer> result = list
                 .stream()
                 .sorted()
-                .collect(DistributedCollectors.toIList(uniqueListName()));
+                .collect(DistributedCollectors.toIList(randomString()));
 
-        assertEquals(COUNT, result.size());
-
-        int i = 0;
-        for (Integer val : result) {
-            assertEquals(i++, (int) val);
-        }
+        assertList(result);
     }
 
     @Test
     public void sourceMap() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
-
-        IList<Integer> result = map
-                .stream()
+        IList<Integer> list = streamMap()
                 .map(Entry::getValue)
                 .sorted()
-                .collect(DistributedCollectors.toIList(uniqueListName()));
+                .collect(DistributedCollectors.toIList(randomString()));
 
-        assertEquals(COUNT, result.size());
+        assertList(list);
+    }
 
-        int i = 0;
-        for (Integer val : result) {
-            assertEquals(i++, (int) val);
-        }
+    @Test
+    public void sourceCache() {
+        IList<Integer> list = streamCache()
+                .map(Entry::getValue)
+                .sorted()
+                .collect(DistributedCollectors.toIList(randomString()));
+
+        assertList(list);
     }
 
     @Test
     public void sourceMap_withComparator() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
-
-        IList<Integer> result = map
-                .stream()
+        IList<Integer> list = streamMap()
                 .map(Entry::getValue)
                 .sorted((left, right) -> right.compareTo(left))
-                .collect(DistributedCollectors.toIList(uniqueListName()));
+                .collect(DistributedCollectors.toIList(randomString()));
 
-        assertEquals(COUNT, result.size());
+        assertListDescending(list);
+    }
+
+    @Test
+    public void sourceCache_withComparator() {
+        IList<Integer> list = streamCache()
+                .map(Entry::getValue)
+                .sorted((left, right) -> right.compareTo(left))
+                .collect(DistributedCollectors.toIList(randomString()));
+
+        assertListDescending(list);
+    }
+
+    @Test
+    public void operationsAfterSort_sourceMap() {
+        IList<Integer> list = streamMap()
+                .map(Entry::getValue)
+                .sorted(Integer::compareTo)
+                .map(i -> i * i)
+                .collect(DistributedCollectors.toIList(randomString()));
+
+        assertListSquare(list);
+    }
+
+    @Test
+    public void operationsAfterSort_sourceCache() {
+        IList<Integer> list = streamCache()
+                .map(Entry::getValue)
+                .sorted(Integer::compareTo)
+                .map(i -> i * i)
+                .collect(DistributedCollectors.toIList(randomString()));
+
+        assertListSquare(list);
+    }
+
+    private void assertList(IList<Integer> list) {
+        assertEquals(COUNT, list.size());
+
+        int i = 0;
+        for (Integer val : list) {
+            assertEquals(i++, (int) val);
+        }
+    }
+
+    private void assertListDescending(IList<Integer> list) {
+        assertEquals(COUNT, list.size());
 
         int i = COUNT - 1;
-        for (Integer val : result) {
+        for (Integer val : list) {
             assertEquals(i--, (int) val);
         }
     }
 
-    @Test
-    public void operationsAfterSort() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
-
-        IList<Integer> result = map
-                .stream()
-                .map(Map.Entry::getValue)
-                .sorted(Integer::compareTo)
-                .map(i -> i * i)
-                .collect(DistributedCollectors.toIList(uniqueListName()));
-
-        assertEquals(COUNT, result.size());
+    private void assertListSquare(IList<Integer> list) {
+        assertEquals(COUNT, list.size());
         for (int i = 0; i < COUNT; i++) {
-            assertEquals(i * i, (int) result.get(i));
+            assertEquals(i * i, (int) list.get(i));
         }
     }
 

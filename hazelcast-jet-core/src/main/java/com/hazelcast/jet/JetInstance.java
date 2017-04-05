@@ -20,6 +20,7 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.stream.IStreamCache;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.IStreamMap;
 
@@ -71,6 +72,14 @@ public interface JetInstance {
      * @return distributed map instance with the specified name
      */
     <K, V> IStreamMap<K, V> getMap(String name);
+
+    /**
+     * Returns the distributed cache instance with the specified name.
+     *
+     * @param name name of the distributed cache
+     * @return distributed cache instance with the specified name
+     */
+    <K, V> IStreamCache<K, V> getCache(String name);
 
     /**
      * Returns the distributed list instance with the specified name.

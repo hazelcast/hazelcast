@@ -19,6 +19,7 @@ package com.hazelcast.jet;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.stream.IStreamCache;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.nio.Address;
@@ -65,6 +66,10 @@ public class JetTestSupport extends HazelcastTestSupport {
 
     protected static <K, V> IStreamMap<K, V> getMap(JetInstance instance) {
         return instance.getMap(randomName());
+    }
+
+    protected static <K, V> IStreamCache<K, V> getCache(JetInstance instance) {
+        return instance.getCache(randomName());
     }
 
 

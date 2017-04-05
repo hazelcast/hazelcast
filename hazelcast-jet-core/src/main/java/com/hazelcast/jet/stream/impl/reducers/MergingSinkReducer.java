@@ -17,38 +17,36 @@
 package com.hazelcast.jet.stream.impl.reducers;
 
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Processors;
+import com.hazelcast.jet.Distributed.BinaryOperator;
+import com.hazelcast.jet.Distributed.Function;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.MergeP;
-
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
 
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 
-public class MergingIMapReducer<T, K, V> extends IMapReducer<T, K, V> {
+public class MergingSinkReducer<T, K, V, R> extends SinkReducer<T, K, V, R> {
 
     private final BinaryOperator<V> mergeFunction;
 
-    public MergingIMapReducer(
-            String mapName,
-            Function<? super T, ? extends K> keyMapper,
-            Function<? super T, ? extends V> valueMapper,
-            BinaryOperator<V> mergeFunction
-    ) {
-        super(mapName, keyMapper, valueMapper);
+    public MergingSinkReducer(String sinkName,
+                              Function<JetInstance, ? extends R> toDistributedObject,
+                              Function<? super T, ? extends K> keyMapper,
+                              Function<? super T, ? extends V> valueMapper,
+                              BinaryOperator<V> mergeFunction,
+                              ProcessorSupplier processorSupplier) {
+        super(sinkName, toDistributedObject, keyMapper, valueMapper, processorSupplier);
         this.mergeFunction = mergeFunction;
     }
 
     @Override
-    public IStreamMap<K, V> reduce(StreamContext context, Pipeline<? extends T> upstream) {
-        IStreamMap<K, V> target = getTarget(context.getJetInstance());
+    public R reduce(StreamContext context, Pipeline<? extends T> upstream) {
         DAG dag = new DAG();
         Vertex previous = upstream.buildDAG(dag);
 
@@ -56,12 +54,12 @@ public class MergingIMapReducer<T, K, V> extends IMapReducer<T, K, V> {
                 () -> new MergeP<>(keyMapper, valueMapper, mergeFunction));
         Vertex combine = dag.newVertex("merge-distributed",
                 () -> new MergeP<T, K, V>(null, null, mergeFunction));
-        Vertex writer = dag.newVertex("write-map-" + mapName, Processors.writeMap(mapName));
+        Vertex writer = dag.newVertex(sinkName, processorSupplier);
 
         dag.edge(between(previous, merge).partitioned(keyMapper::apply, HASH_CODE))
            .edge(between(merge, combine).distributed().partitioned(entryKey()))
            .edge(between(combine, writer));
         executeJob(context, dag);
-        return target;
+        return toDistributedObject.apply(context.getJetInstance());
     }
 }

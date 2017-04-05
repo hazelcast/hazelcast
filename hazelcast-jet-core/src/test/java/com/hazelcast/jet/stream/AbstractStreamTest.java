@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.stream;
 
+import com.hazelcast.cache.ICache;
+import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.JetInstance;
@@ -37,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -56,11 +59,12 @@ public abstract class AbstractStreamTest extends JetTestSupport {
 
     protected static JetInstance client;
     protected static JetInstance instance;
+    private static JetInstance[] instances;
+    private static JetTestInstanceFactory factory = new JetTestInstanceFactory();
+
     private static final TestMode MEMBER_TEST_MODE = new TestMode("member", () -> instance);
     private static final TestMode CLIENT_TEST_MODE = new TestMode("client", () -> client);
 
-    private static JetTestInstanceFactory factory = new JetTestInstanceFactory();
-    private static final ExecutorService executor = Executors.newCachedThreadPool();
 
     @Parameter
     public TestMode testMode;
@@ -78,43 +82,83 @@ public abstract class AbstractStreamTest extends JetTestSupport {
         int parallelism = Runtime.getRuntime().availableProcessors() / NODE_COUNT / 2;
         JetConfig config = new JetConfig();
         config.getInstanceConfig().setCooperativeThreadCount(parallelism <= 2 ? 2 : parallelism);
+        //Necessary for ICache
+        config.getHazelcastConfig().addCacheConfig(new CacheSimpleConfig().setName("*"));
         instance = createCluster(NODE_COUNT, config);
         client = factory.newClient();
-    }
-
-    private static JetInstance createCluster(int nodeCount, JetConfig config) throws ExecutionException, InterruptedException {
-        factory = new JetTestInstanceFactory();
-        List<Future<JetInstance>> futures = new ArrayList<>();
-        for (int i = 0; i < nodeCount; i++) {
-            futures.add(executor.submit(() -> factory.newMember(config)));
-        }
-        JetInstance instance = null;
-        for (Future<JetInstance> future : futures) {
-            instance = future.get();
-        }
-        return instance;
     }
 
     @AfterClass
     public static void shutdown() {
         factory.shutdownAll();
+        factory = null;
+        instances = null;
+        instance = null;
+        client = null;
+    }
+
+    protected DistributedStream<Map.Entry<String, Integer>> streamMap() {
+        IStreamMap<String, Integer> map = getMap(testMode.getInstance());
+        fillMap(map);
+        return map.stream();
+    }
+
+    protected DistributedStream<Map.Entry<String, Integer>> streamCache() {
+        IStreamCache<String, Integer> cache = getCache();
+        fillCache(cache);
+        return cache.stream();
+    }
+
+    protected DistributedStream<Integer> streamList() {
+        IStreamList<Integer> list = getList(testMode.getInstance());
+        fillList(list);
+        return list.stream();
     }
 
     protected <K, V> IStreamMap<K, V> getMap() {
         return getMap(testMode.getInstance());
     }
 
+    protected <K, V> IStreamCache<K, V> getCache() {
+        String cacheName = randomName();
+        IStreamCache<K, V> cache = null;
+        for (JetInstance jetInstance : instances) {
+            cache = jetInstance.getCache(cacheName);
+        }
+        return cache;
+    }
+
     protected <E> IStreamList<E> getList() {
         return getList(testMode.getInstance());
+    }
+
+    private static JetInstance createCluster(int nodeCount, JetConfig config) throws ExecutionException, InterruptedException {
+        factory = new JetTestInstanceFactory();
+        instances = new JetInstance[nodeCount];
+        for (int i = 0; i < nodeCount; i++) {
+            instances[i] = factory.newMember(config);
+        }
+        return instances[0];
     }
 
     protected static int fillMap(IMap<String, Integer> map) {
         return fillMap(map, COUNT);
     }
 
+    protected static int fillCache(ICache<String, Integer> cache) {
+        return fillCache(cache, COUNT);
+    }
+
     protected static int fillMap(IMap<String, Integer> map, int count) {
         for (int i = 0; i < count; i++) {
             map.put("key-" + i, i);
+        }
+        return count;
+    }
+
+    protected static int fillCache(ICache<String, Integer> cache, int count) {
+        for (int i = 0; i < count; i++) {
+            cache.put("key-" + i, i);
         }
         return count;
     }

@@ -20,7 +20,7 @@ import com.hazelcast.core.IList;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.Map;
+import java.util.Map.Entry;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static org.junit.Assert.assertEquals;
@@ -29,66 +29,55 @@ public class UnorderedTest extends AbstractStreamTest {
 
     @Test
     public void orderedSource() {
-        IStreamList<Integer> list = getList();
-        fillList(list);
-
-        IList<Integer> collected = list.stream()
+        IList<Integer> list = streamList()
                 .unordered()
                 .map(i -> i)
                 .collect(DistributedCollectors.toIList(uniqueListName()));
 
-        assertEquals(COUNT, collected.size());
-        Integer[] result = collected.toArray(new Integer[COUNT]);
-
-        assertNotSorted(result);
-
-        Arrays.sort(result);
-        for (int i = 0; i < COUNT; i++) {
-            assertEquals(i, (int)result[i]);
-        }
+        assertNotSorted(list);
     }
 
     @Test
     public void orderedSource_asIntermediateOperation() {
-        IStreamList<Integer> list = getList();
-        fillList(list);
-
-        IList<Integer> collected = list.stream()
+        IList<Integer> list = streamList()
                 .map(i -> i)
                 .unordered()
                 .map(i -> i)
                 .collect(DistributedCollectors.toIList(uniqueListName()));
 
-        assertEquals(COUNT, collected.size());
-        Integer[] result = collected.toArray(new Integer[COUNT]);
-
-        assertNotSorted(result);
-
-        Arrays.sort(result);
-        for (int i = 0; i < COUNT; i++) {
-            assertEquals(i, (int)result[i]);
-        }
+        assertNotSorted(list);
     }
 
 
     @Test
-    public void unorderedSource() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
-
-        IList<Integer> collected = map.stream()
+    public void unorderedSourceMap() {
+        IList<Integer> list = streamMap()
                 .unordered()
-                .map(Map.Entry::getValue)
+                .map(Entry::getValue)
                 .collect(DistributedCollectors.toIList(uniqueListName()));
 
-        assertEquals(COUNT, collected.size());
-        Integer[] result = collected.toArray(new Integer[COUNT]);
+        assertNotSorted(list);
+    }
+
+    @Test
+    public void unorderedSourceCache() {
+        IList<Integer> list = streamCache()
+                .unordered()
+                .map(Entry::getValue)
+                .collect(DistributedCollectors.toIList(uniqueListName()));
+
+        assertNotSorted(list);
+    }
+
+    private void assertNotSorted(IList<Integer> list) {
+        assertEquals(COUNT, list.size());
+        Integer[] result = list.toArray(new Integer[COUNT]);
 
         assertNotSorted(result);
 
         Arrays.sort(result);
         for (int i = 0; i < COUNT; i++) {
-            assertEquals(i, (int)result[i]);
+            assertEquals(i, (int) result[i]);
         }
     }
 

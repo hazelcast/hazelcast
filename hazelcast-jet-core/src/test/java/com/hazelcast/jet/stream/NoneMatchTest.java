@@ -18,7 +18,7 @@ package com.hazelcast.jet.stream;
 
 import org.junit.Test;
 
-import java.util.Map;
+import java.util.Map.Entry;
 
 import static org.junit.Assert.assertEquals;
 
@@ -26,61 +26,76 @@ public class NoneMatchTest extends AbstractStreamTest {
 
     @Test
     public void sourceMap_noneMatchTrue() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
+        boolean found = streamMap()
+                .noneMatch(m -> m.getValue() > COUNT);
 
-        boolean found = map.stream()
-                           .noneMatch(m -> m.getValue() > COUNT);
+        assertEquals(true, found);
+    }
 
+    @Test
+    public void sourceCache_noneMatchTrue() {
+        boolean found = streamCache()
+                .noneMatch(m -> m.getValue() > COUNT);
 
         assertEquals(true, found);
     }
 
     @Test
     public void sourceMap_noneMatchFalse() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
-
-        boolean found = map.stream()
-                           .noneMatch(m -> m.getValue() > COUNT / 2);
-
+        boolean found = streamMap()
+                .noneMatch(m -> m.getValue() > COUNT / 2);
 
         assertEquals(false, found);
     }
 
     @Test
-    public void intermediateOperation_noneMatchTrue() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
+    public void sourceCache_noneMatchFalse() {
+        boolean found = streamCache()
+                .noneMatch(m -> m.getValue() > COUNT / 2);
 
-        boolean found = map.stream()
-                           .map(Map.Entry::getValue)
-                           .noneMatch(m -> m > COUNT);
+        assertEquals(false, found);
+    }
 
+    @Test
+    public void intermediateOperation_noneMatchTrue_sourceMap() {
+        boolean found = streamMap()
+                .map(Entry::getValue)
+                .noneMatch(m -> m > COUNT);
 
         assertEquals(true, found);
     }
 
     @Test
-    public void intermediateOperation_noneMatchFalse() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
+    public void intermediateOperation_noneMatchTrue_sourceCache() {
+        boolean found = streamCache()
+                .map(Entry::getValue)
+                .noneMatch(m -> m > COUNT);
 
-        boolean found = map.stream()
-                           .map(Map.Entry::getValue)
-                           .noneMatch(m -> m > COUNT / 2);
+        assertEquals(true, found);
+    }
 
+    @Test
+    public void intermediateOperation_noneMatchFalse_sourceMap() {
+        boolean found = streamMap()
+                .map(Entry::getValue)
+                .noneMatch(m -> m > COUNT / 2);
+
+        assertEquals(false, found);
+    }
+
+    @Test
+    public void intermediateOperation_noneMatchFalse_sourceCache() {
+        boolean found = streamCache()
+                .map(Entry::getValue)
+                .noneMatch(m -> m > COUNT / 2);
 
         assertEquals(false, found);
     }
 
     @Test
     public void sourceList_noneMatch() {
-        IStreamList<Integer> list = getList();
-        fillList(list);
-
-        boolean found = list.stream()
-                            .noneMatch(l -> l > COUNT);
+        boolean found = streamList()
+                .noneMatch(l -> l > COUNT);
 
         assertEquals(true, found);
     }

@@ -18,9 +18,8 @@ package com.hazelcast.jet.stream;
 
 import org.junit.Test;
 
-import java.util.Map;
+import java.util.Map.Entry;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -28,61 +27,72 @@ public class AnyMatchTest extends AbstractStreamTest {
 
     @Test
     public void sourceMap_matchSuccess() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
+        boolean found = streamMap().anyMatch(m -> m.getValue() > COUNT / 2);
 
-        boolean found = map.stream()
-                           .anyMatch(m -> m.getValue() > COUNT / 2);
+        assertTrue(found);
+    }
 
+    @Test
+    public void sourceCache_matchSuccess() {
+        boolean found = streamCache().anyMatch(m -> m.getValue() > COUNT / 2);
 
         assertTrue(found);
     }
 
     @Test
     public void sourceMap_matchFail() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
-
-        boolean found = map.stream()
-                           .anyMatch(m -> m.getValue() > COUNT);
-
+        boolean found = streamMap().anyMatch(m -> m.getValue() > COUNT);
 
         assertFalse(found);
     }
 
     @Test
-    public void intermediateOperation_matchSuccess() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
+    public void sourceCache_matchFail() {
+        boolean found = streamCache().anyMatch(m -> m.getValue() > COUNT);
 
-        boolean found = map.stream()
-                           .map(Map.Entry::getValue)
-                           .anyMatch(m -> m > COUNT / 2);
+        assertFalse(found);
+    }
 
+    @Test
+    public void intermediateOperation_sourceMap_matchSuccess() {
+        boolean found = streamMap()
+                .map(Entry::getValue)
+                .anyMatch(m -> m > COUNT / 2);
 
         assertTrue(found);
     }
 
     @Test
-    public void intermediateOperation_matchFail() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
+    public void intermediateOperation_sourceCache_matchSuccess() {
+        boolean found = streamCache()
+                .map(Entry::getValue)
+                .anyMatch(m -> m > COUNT / 2);
 
-        boolean found = map.stream()
-                           .map(Map.Entry::getValue)
-                           .anyMatch(m -> m > COUNT);
+        assertTrue(found);
+    }
 
+    @Test
+    public void intermediateOperation_sourceMap_matchFail() {
+        boolean found = streamMap()
+                .map(Entry::getValue)
+                .anyMatch(m -> m > COUNT);
+
+        assertFalse(found);
+    }
+
+    @Test
+    public void intermediateOperation_sourceCache_matchFail() {
+        boolean found = streamCache()
+                .map(Entry::getValue)
+                .anyMatch(m -> m > COUNT);
 
         assertFalse(found);
     }
 
     @Test
     public void sourceList() {
-        IStreamList<Integer> list = getList();
-        fillList(list);
-
-        boolean found = list.stream()
-                            .anyMatch(l -> l > COUNT / 2);
+        boolean found = streamList()
+                .anyMatch(l -> l > COUNT / 2);
 
         assertTrue(found);
     }

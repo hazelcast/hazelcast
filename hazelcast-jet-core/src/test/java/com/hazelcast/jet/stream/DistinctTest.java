@@ -19,7 +19,6 @@ package com.hazelcast.jet.stream;
 import com.hazelcast.core.IList;
 import org.junit.Test;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -34,7 +33,7 @@ public class DistinctTest extends AbstractStreamTest {
         IList<Integer> result = list
                 .stream()
                 .distinct()
-                .collect(DistributedCollectors.toIList(uniqueListName()));
+                .collect(DistributedCollectors.toIList(randomString()));
 
         assertEquals(modulus, result.size());
 
@@ -45,16 +44,27 @@ public class DistinctTest extends AbstractStreamTest {
 
     @Test
     public void sourceMap() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
-
         int modulus = 10;
-        IList<Integer> result = map
-                .stream()
+        IList<Integer> result = streamMap()
                 .map(f -> f.getValue() % modulus)
                 .distinct()
-                .collect(DistributedCollectors.toIList(uniqueListName()));
+                .collect(DistributedCollectors.toIList(randomString()));
 
+        assertModulus(modulus, result);
+    }
+
+    @Test
+    public void sourceCache() {
+        int modulus = 10;
+        IList<Integer> result = streamCache()
+                .map(f -> f.getValue() % modulus)
+                .distinct()
+                .collect(DistributedCollectors.toIList(randomString()));
+
+        assertModulus(modulus, result);
+    }
+
+    private void assertModulus(int modulus, IList<Integer> result) {
         assertEquals(modulus, result.size());
 
         for (int i = 0; i < 10; i++) {

@@ -26,24 +26,27 @@ public class MaxTest extends AbstractStreamTest {
 
     @Test
     public void sourceMap() throws Exception {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
+        int result = streamMap()
+                .map(Entry::getValue)
+                .max(Integer::compareTo)
+                .get();
 
-        int result = map.stream()
-                        .map(Entry::getValue)
-                        .max(Integer::compareTo)
-                        .get();
+        assertEquals(COUNT - 1, result);
+    }
+
+    @Test
+    public void sourceCache() throws Exception {
+        int result = streamCache()
+                .map(Entry::getValue)
+                .max(Integer::compareTo)
+                .get();
 
         assertEquals(COUNT - 1, result);
     }
 
     @Test
     public void sourceList() throws Exception {
-        IStreamList<Integer> list = getList();
-        fillList(list);
-
-        long result = list
-                .stream()
+        long result = streamList()
                 .max(Integer::compareTo)
                 .get();
 

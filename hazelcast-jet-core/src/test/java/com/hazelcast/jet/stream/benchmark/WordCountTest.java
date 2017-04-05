@@ -42,7 +42,6 @@ import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueMapName;
 import static org.junit.Assert.assertEquals;
 
 @Category(NightlyTest.class)
@@ -102,7 +101,7 @@ public class WordCountTest extends AbstractStreamTest implements Serializable {
             long start = System.currentTimeMillis();
             wordCounts = map.stream()
                             .flatMap(m -> Stream.of(space.split(m.getValue())))
-                            .collect(DistributedCollectors.groupingByToIMap(uniqueMapName(), m -> m, DistributedCollectors.counting()));
+                            .collect(DistributedCollectors.groupingByToIMap(randomString(), m -> m, DistributedCollectors.counting()));
             long time = System.currentTimeMillis() - start;
             times.add(time);
             System.out.println("java.util.stream: totalTime=" + time);

@@ -32,7 +32,6 @@
 
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
-        <jsr107.api.version>1.0.0</jsr107.api.version>
     </properties>
 
     <build>

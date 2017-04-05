@@ -18,7 +18,6 @@ package com.hazelcast.jet.stream;
 
 import org.junit.Test;
 
-import java.util.Map;
 import java.util.Map.Entry;
 
 import static org.junit.Assert.assertEquals;
@@ -26,25 +25,37 @@ import static org.junit.Assert.assertEquals;
 public class ReduceTest extends AbstractStreamTest {
 
     @Test
-    public void wIdentity() throws Exception {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
-
-        int result = map.stream()
-                        .map(Entry::getValue)
-                        .reduce(0, (left, right) -> left + right);
+    public void withIdentity_sourceMap() throws Exception {
+        int result = streamMap()
+                .map(Entry::getValue)
+                .reduce(0, (left, right) -> left + right);
 
         assertEquals((COUNT - 1) * (COUNT) / 2, result);
     }
 
     @Test
-    public void withoutIdentity() throws Exception {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
+    public void withIdentity_sourceCache() throws Exception {
+        int result = streamCache()
+                .map(Entry::getValue)
+                .reduce(0, (left, right) -> left + right);
 
-        int result = map.stream()
-                        .map(Map.Entry::getValue)
-                        .reduce((left, right) -> left + right).get();
+        assertEquals((COUNT - 1) * (COUNT) / 2, result);
+    }
+
+    @Test
+    public void withoutIdentity_sourceMap() throws Exception {
+        int result = streamMap()
+                .map(Entry::getValue)
+                .reduce((left, right) -> left + right).get();
+
+        assertEquals((COUNT - 1) * (COUNT) / 2, result);
+    }
+
+    @Test
+    public void withoutIdentity_sourceCache() throws Exception {
+        int result = streamCache()
+                .map(Entry::getValue)
+                .reduce((left, right) -> left + right).get();
 
         assertEquals((COUNT - 1) * (COUNT) / 2, result);
     }

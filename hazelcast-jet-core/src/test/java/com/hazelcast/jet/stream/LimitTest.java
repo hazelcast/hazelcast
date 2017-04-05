@@ -19,37 +19,53 @@ package com.hazelcast.jet.stream;
 import com.hazelcast.core.IList;
 import org.junit.Test;
 
-import java.util.Map;
+import java.util.Map.Entry;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static org.junit.Assert.assertEquals;
 
 public class LimitTest extends AbstractStreamTest {
 
     @Test
     public void sourceMap() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
-
         int limit = 10;
-        IList list = map.stream()
-                        .limit(limit)
-                        .collect(DistributedCollectors.toIList(uniqueListName()));
+        IList list = streamMap()
+                .limit(limit)
+                .collect(DistributedCollectors.toIList(randomString()));
 
 
         assertEquals(limit, list.size());
     }
 
     @Test
-    public void intermediateOperation() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
-
+    public void sourceCache() {
         int limit = 10;
-        IList list = map.stream()
-                        .map(Map.Entry::getValue)
-                        .limit(limit)
-                        .collect(DistributedCollectors.toIList(uniqueListName()));
+        IList list = streamCache()
+                .limit(limit)
+                .collect(DistributedCollectors.toIList(randomString()));
+
+
+        assertEquals(limit, list.size());
+    }
+
+    @Test
+    public void intermediateOperation_sourceMap() {
+        int limit = 10;
+        IList list = streamMap()
+                .map(Entry::getValue)
+                .limit(limit)
+                .collect(DistributedCollectors.toIList(randomString()));
+
+
+        assertEquals(limit, list.size());
+    }
+
+    @Test
+    public void intermediateOperation_sourceCache() {
+        int limit = 10;
+        IList list = streamCache()
+                .map(Entry::getValue)
+                .limit(limit)
+                .collect(DistributedCollectors.toIList(randomString()));
 
 
         assertEquals(limit, list.size());
@@ -63,7 +79,7 @@ public class LimitTest extends AbstractStreamTest {
         int limit = 10;
         IList<Integer> result = list.stream()
                                     .limit(limit)
-                                    .collect(DistributedCollectors.toIList(uniqueListName()));
+                                    .collect(DistributedCollectors.toIList(randomString()));
 
         assertEquals(limit, result.size());
     }

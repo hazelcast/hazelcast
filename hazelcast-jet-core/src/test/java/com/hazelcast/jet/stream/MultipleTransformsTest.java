@@ -23,70 +23,80 @@ import java.util.Arrays;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static org.junit.Assert.assertEquals;
 
 public class MultipleTransformsTest extends AbstractStreamTest {
 
+    private static final int COUNT = 10;
+
     @Test
     public void sourceMap() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
+        IList<Integer> list = streamMap()
+                .map(Entry::getValue)
+                .filter(e -> e < COUNT)
+                .flatMap(Stream::of)
+                .collect(DistributedCollectors.toIList(randomString()));
 
-        int count = 10;
-        IList<Integer> list = map.stream()
-                                 .map(Entry::getValue)
-                                 .filter(e -> e < count)
-                                 .flatMap(Stream::of)
-                                 .collect(DistributedCollectors.toIList(uniqueListName()));
+        assertList(list);
+    }
 
-        assertEquals(count, list.size());
-        Integer[] result = list.toArray(new Integer[count]);
-        Arrays.sort(result);
-        for (int i = 0; i < count; i++) {
-            int val = result[i];
-            assertEquals(i, val);
-        }
+    @Test
+    public void sourceCache() {
+        IList<Integer> list = streamCache()
+                .map(Entry::getValue)
+                .filter(e -> e < COUNT)
+                .flatMap(Stream::of)
+                .collect(DistributedCollectors.toIList(randomString()));
+
+        assertList(list);
     }
 
     @Test
     public void sourceList() {
-        IStreamList<Integer> list = getList();
-        fillList(list);
+        IList<Integer> list = streamList()
+                .filter(e -> e < COUNT)
+                .map(e -> e * e)
+                .flatMap(Stream::of)
+                .collect(DistributedCollectors.toIList(randomString()));
 
-        int count = 10;
-        IList<Integer> result = list.stream()
-                                    .filter(e -> e < count)
-                                    .map(e -> e * e)
-                                    .flatMap(Stream::of)
-                                    .collect(DistributedCollectors.toIList(uniqueListName()));
-
-        assertEquals(count, result.size());
-
-        for (int i = 0; i < count; i++) {
-            int val = result.get(i);
-            assertEquals(i * i, val);
-        }
+        assertList(list, true);
     }
 
     @Test
-    public void intermediateOperation() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
+    public void intermediateOperation_sourceMap() {
+        IList<Integer> list = streamMap()
+                .sorted((o1, o2) -> o1.getValue().compareTo(o2.getValue()))
+                .map(Entry::getValue)
+                .filter(e -> e < COUNT)
+                .flatMap(Stream::of)
+                .collect(DistributedCollectors.toIList(randomString()));
 
-        int count = 10;
-        IList<Integer> list = map.stream()
-                                 .sorted((o1, o2) -> o1.getValue().compareTo(o2.getValue()))
-                                 .map(Entry::getValue)
-                                 .filter(e -> e < count)
-                                 .flatMap(Stream::of)
-                                 .collect(DistributedCollectors.toIList(uniqueListName()));
+        assertList(list);
+    }
 
-        assertEquals(count, list.size());
-        Integer[] result = list.toArray(new Integer[count]);
-        for (int i = 0; i < count; i++) {
+    @Test
+    public void intermediateOperation_sourceCache() {
+        IList<Integer> list = streamCache()
+                .sorted((o1, o2) -> o1.getValue().compareTo(o2.getValue()))
+                .map(Entry::getValue)
+                .filter(e -> e < COUNT)
+                .flatMap(Stream::of)
+                .collect(DistributedCollectors.toIList(randomString()));
+
+        assertList(list);
+    }
+
+    private void assertList(IList<Integer> list) {
+        assertList(list, false);
+    }
+
+    private void assertList(IList<Integer> list, boolean square) {
+        assertEquals(COUNT, list.size());
+        Integer[] result = list.toArray(new Integer[COUNT]);
+        Arrays.sort(result);
+        for (int i = 0; i < COUNT; i++) {
             int val = result[i];
-            assertEquals(i, val);
+            assertEquals(i * (square ? i : 1), val);
         }
     }
 }

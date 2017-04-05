@@ -21,44 +21,44 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static org.junit.Assert.assertEquals;
 
 public class MapTest extends AbstractStreamTest {
 
     @Test
     public void sourceMap() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
-
-        IList<Integer> list = map.stream()
+        IList<Integer> list = streamMap()
                                  .map(e -> e.getValue() * e.getValue())
-                                 .collect(DistributedCollectors.toIList(uniqueListName()));
+                                 .collect(DistributedCollectors.toIList(randomString()));
 
+        assertList(list);
+    }
 
+    @Test
+    public void sourceCache() {
+        IList<Integer> list = streamCache()
+                .map(e -> e.getValue() * e.getValue())
+                .collect(DistributedCollectors.toIList(randomString()));
+
+        assertList(list);
+    }
+
+    @Test
+    public void sourceList() {
+        IList<Integer> list = streamList()
+                                    .map(i -> i * i)
+                                    .collect(DistributedCollectors.toIList(randomString()));
+
+        assertList(list);
+    }
+
+    private void assertList(IList<Integer> list) {
         assertEquals(COUNT, list.size());
 
         Integer[] result = list.toArray(new Integer[COUNT]);
         Arrays.sort(result);
         for (int i = 0; i < COUNT; i++) {
             int val = result[i];
-            assertEquals(i * i, val);
-        }
-    }
-
-    @Test
-    public void sourceList() {
-        IStreamList<Integer> list = getList();
-        fillList(list);
-
-        IList<Integer> result = list.stream()
-                                    .map(i -> i * i)
-                                    .collect(DistributedCollectors.toIList(uniqueListName()));
-
-        assertEquals(COUNT, result.size());
-
-        for (int i = 0; i < COUNT; i++) {
-            int val = result.get(i);
             assertEquals(i * i, val);
         }
     }

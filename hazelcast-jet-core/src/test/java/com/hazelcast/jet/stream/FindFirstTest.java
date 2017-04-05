@@ -18,7 +18,7 @@ package com.hazelcast.jet.stream;
 
 import org.junit.Test;
 
-import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -32,23 +32,47 @@ public class FindFirstTest extends AbstractStreamTest {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
-        Optional<Map.Entry<String, Integer>> first = map.stream().findFirst();
+        Optional<Entry<String, Integer>> first = map.stream().findFirst();
 
         assertTrue(first.isPresent());
-        Map.Entry<String, Integer> entry = first.get();
+        Entry<String, Integer> entry = first.get();
 
         assertTrue(map.containsKey(entry.getKey()));
         assertEquals(map.get(entry.getKey()), entry.getValue());
     }
 
     @Test
+    public void sourceCache() {
+        IStreamCache<String, Integer> cache = getCache();
+        fillCache(cache);
+
+        Optional<Entry<String, Integer>> first = cache.stream().findFirst();
+
+        assertTrue(first.isPresent());
+        Entry<String, Integer> entry = first.get();
+
+        assertTrue(cache.containsKey(entry.getKey()));
+        assertEquals(cache.get(entry.getKey()), entry.getValue());
+    }
+
+    @Test
     public void sourceEmptyMap() {
         IStreamMap<String, Integer> map = getMap();
 
-        Optional<Map.Entry<String, Integer>> first = map.stream().findFirst();
+        Optional<Entry<String, Integer>> first = map.stream().findFirst();
 
         assertFalse(first.isPresent());
     }
+
+    @Test
+    public void sourceEmptyCache() {
+        IStreamCache<String, Integer> cache = getCache();
+
+        Optional<Entry<String, Integer>> first = cache.stream().findFirst();
+
+        assertFalse(first.isPresent());
+    }
+
 
     @Test
     public void sourceList() {

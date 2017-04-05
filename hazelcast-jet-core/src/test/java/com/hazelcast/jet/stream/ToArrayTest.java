@@ -18,7 +18,7 @@ package com.hazelcast.jet.stream;
 
 import org.junit.Test;
 
-import java.util.Map;
+import java.util.Map.Entry;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -27,55 +27,52 @@ public class ToArrayTest extends AbstractStreamTest {
 
     @Test
     public void sourceMap() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
+        Object[] objects = streamMap().toArray();
 
-        Object[] objects = map.stream().toArray();
+        assertArray(objects, Entry.class);
+    }
 
+    @Test
+    public void sourceCache() {
+        Object[] objects = streamCache().toArray();
+
+        assertArray(objects, Entry.class);
+    }
+
+    private void assertArray(Object[] objects, Class clazz) {
         assertEquals(COUNT, objects.length);
         for (int i = 0; i < COUNT; i++) {
-            assertInstanceOf(Map.Entry.class, objects[i]);
+            assertInstanceOf(clazz, objects[i]);
             assertNotNull(objects[i]);
         }
     }
 
     @Test
     public void sourceMap_withArraySupplier() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
+        Entry[] entries = streamMap().toArray(Entry[]::new);
 
-        Map.Entry[] entries = map.stream().toArray(Map.Entry[]::new);
+        assertArray(entries, Entry.class);
+    }
 
-        assertEquals(COUNT, entries.length);
-        for (int i = 0; i < COUNT; i++) {
-            assertNotNull(entries[i]);
-        }
+    @Test
+    public void sourceCache_withArraySupplier() {
+        Entry[] entries = streamCache().toArray(Entry[]::new);
+
+        assertArray(entries, Entry.class);
     }
 
     @Test
     public void sourceList() {
-        IStreamList<Integer> list = getList();
-        fillList(list);
+        Object[] objects = streamList().toArray();
 
-        Object[] objects = list.stream().toArray();
-
-        assertEquals(COUNT, objects.length);
-        for (int i = 0; i < COUNT; i++) {
-            assertEquals(i, objects[i]);
-        }
+        assertArray(objects, Integer.class);
     }
 
     @Test
     public void sourceList_withArraySupplier() {
-        IStreamList<Integer> list = getList();
-        fillList(list);
+        Integer[] elements = streamList().toArray(Integer[]::new);
 
-        Integer[] elements = list.stream().toArray(Integer[]::new);
-
-        assertEquals(COUNT, elements.length);
-        for (int i = 0; i < COUNT; i++) {
-            assertEquals(i, (int) elements[i]);
-        }
+        assertArray(elements, Integer.class);
     }
 
 }

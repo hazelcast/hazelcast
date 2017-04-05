@@ -35,7 +35,6 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 public final class StreamUtil {
 
-    private static final String MAP_PREFIX = "__jet_map_";
     private static final String LIST_PREFIX = "__jet_list_";
     private static final int UUID_TRUNCATE_INDEX = 24;
 
@@ -44,10 +43,6 @@ public final class StreamUtil {
 
     public static String uniqueListName() {
         return LIST_PREFIX + randomName();
-    }
-
-    public static String uniqueMapName() {
-        return MAP_PREFIX + randomName();
     }
 
     /**

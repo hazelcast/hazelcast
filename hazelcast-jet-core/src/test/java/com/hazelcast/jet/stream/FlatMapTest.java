@@ -23,53 +23,52 @@ import java.util.List;
 import java.util.function.IntUnaryOperator;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static org.junit.Assert.assertEquals;
 
 public class FlatMapTest extends AbstractStreamTest {
 
+    private static final int REPETITIONS = 10;
+
     @Test
     public void sourceMap() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
+        IList<Integer> result = streamMap()
+                .flatMap(e -> IntStream.iterate(e.getValue(), IntUnaryOperator.identity())
+                                       .limit(REPETITIONS)
+                                       .boxed())
+                .collect(DistributedCollectors.toIList(randomString()));
 
-        int repetitions = 10;
+        assertList(result);
+    }
 
-        IList<Integer> result = map.stream()
-                                   .flatMap(e -> IntStream.iterate(e.getValue(), IntUnaryOperator.identity())
-                                                          .limit(repetitions)
-                                                          .boxed())
-                                   .collect(DistributedCollectors.toIList(uniqueListName()));
+    @Test
+    public void sourceCache() {
+        IList<Integer> result = streamCache()
+                .flatMap(e -> IntStream.iterate(e.getValue(), IntUnaryOperator.identity())
+                                       .limit(REPETITIONS)
+                                       .boxed())
+                .collect(DistributedCollectors.toIList(randomString()));
 
-        assertEquals(COUNT * repetitions, result.size());
-
-        List<Integer> sortedResult = sortedList(result);
-        for (int i = 0; i < COUNT; i++) {
-            for (int j = i; j < repetitions; j++) {
-                int val = sortedResult.get(i * repetitions + j);
-                assertEquals(i, val);
-            }
-        }
+        assertList(result);
     }
 
     @Test
     public void sourceList() {
-        IStreamList<Integer> list = getList();
-        fillList(list);
+        IList<Integer> result = streamList()
+                .flatMap(i -> IntStream.iterate(i, IntUnaryOperator.identity())
+                                       .limit(REPETITIONS)
+                                       .boxed())
+                .collect(DistributedCollectors.toIList(randomString()));
 
-        int repetitions = 10;
+        assertList(result);
+    }
 
-        IList<Integer> result = list.stream()
-                                    .flatMap(i -> IntStream.iterate(i, IntUnaryOperator.identity())
-                                                           .limit(repetitions)
-                                                           .boxed())
-                                    .collect(DistributedCollectors.toIList(uniqueListName()));
+    private void assertList(IList<Integer> result) {
+        assertEquals(COUNT * REPETITIONS, result.size());
 
-        assertEquals(COUNT * repetitions, result.size());
-
+        List<Integer> sortedResult = sortedList(result);
         for (int i = 0; i < COUNT; i++) {
-            for (int j = i; j < repetitions; j++) {
-                int val = result.get(i * repetitions + j);
+            for (int j = i; j < REPETITIONS; j++) {
+                int val = sortedResult.get(i * REPETITIONS + j);
                 assertEquals(i, val);
             }
         }

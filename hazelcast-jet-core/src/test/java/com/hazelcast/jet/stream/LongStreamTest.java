@@ -33,7 +33,6 @@ import java.util.PrimitiveIterator;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.LongStream;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -110,7 +109,7 @@ public class LongStreamTest extends AbstractStreamTest {
     public void boxed() {
         DistributedStream<Long> boxed = stream.boxed();
 
-        IList<Long> list = boxed.collect(DistributedCollectors.toIList(uniqueListName()));
+        IList<Long> list = boxed.collect(DistributedCollectors.toIList(randomString()));
 
         assertEquals(COUNT, list.size());
     }
@@ -272,7 +271,7 @@ public class LongStreamTest extends AbstractStreamTest {
 
     @Test
     public void mapToObj() {
-        IList<Long> list = stream.mapToObj(m -> (Long) m).collect(DistributedCollectors.toIList(uniqueListName()));
+        IList<Long> list = stream.mapToObj(m -> (Long) m).collect(DistributedCollectors.toIList(randomString()));
 
         Object[] array = list.toArray();
         Arrays.sort(array);

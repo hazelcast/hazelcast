@@ -19,7 +19,7 @@ package com.hazelcast.jet.stream;
 import org.junit.Test;
 
 import java.util.Iterator;
-import java.util.Map;
+import java.util.Map.Entry;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -28,30 +28,35 @@ public class IteratorTest extends AbstractStreamTest {
 
     @Test
     public void sourceMap() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
+        Iterator<Entry<String, Integer>> iterator = streamMap().iterator();
 
-        Iterator<Map.Entry<String, Integer>> iterator = map.stream().iterator();
+        assertIterator(iterator);
+    }
+
+    @Test
+    public void sourceCache() {
+        Iterator<Entry<String, Integer>> iterator = streamCache().iterator();
+
+        assertIterator(iterator);
+    }
+
+    @Test
+    public void sourceList() {
+        Iterator<Integer> iterator = streamList().iterator();
 
         int count = 0;
         while (iterator.hasNext()) {
-            Map.Entry<String, Integer> next = iterator.next();
-            assertNotNull(next);
+            assertEquals(count, (int) iterator.next());
             count++;
         }
         assertEquals(COUNT, count);
     }
 
-    @Test
-    public void sourceList() {
-        IStreamList<Integer> list = getList();
-        fillList(list);
-
-        Iterator<Integer> iterator = list.stream().iterator();
-
+    private <T> void assertIterator(Iterator<T> iterator) {
         int count = 0;
         while (iterator.hasNext()) {
-            assertEquals(count, (int) iterator.next());
+            T next = iterator.next();
+            assertNotNull(next);
             count++;
         }
         assertEquals(COUNT, count);

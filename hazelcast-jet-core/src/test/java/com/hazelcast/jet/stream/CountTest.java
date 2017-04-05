@@ -25,20 +25,21 @@ public class CountTest extends AbstractStreamTest {
 
     @Test
     public void testCount_whenSourceMap() throws Exception {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
+        long result = streamMap().count();
 
-        long result = map.stream().count();
+        assertEquals(COUNT, result);
+    }
+
+    @Test
+    public void testCount_whenSourceCache() throws Exception {
+        long result = streamCache().count();
 
         assertEquals(COUNT, result);
     }
 
     @Test
     public void testCount_whenSourceList() throws Exception {
-        IList<Integer> list = getList();
-        fillList(list);
-
-        long result = list.stream().count();
+        long result = streamList().count();
 
         assertEquals(COUNT, result);
     }

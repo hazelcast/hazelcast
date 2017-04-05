@@ -16,24 +16,37 @@
 
 package com.hazelcast.jet.stream;
 
+import com.hazelcast.cache.ICache;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import org.junit.Test;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
-import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueMapName;
+import java.util.AbstractMap;
+
 import static org.junit.Assert.assertEquals;
 
 public class FilterTest extends AbstractStreamTest {
 
     @Test
     public void sourceMap() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
-
-        IMap<String, Integer> result = map.stream()
+        IMap<String, Integer> result = streamMap()
                                           .filter(f -> f.getValue() < 10)
-                                          .collect(DistributedCollectors.toIMap(uniqueMapName()));
+                                          .collect(DistributedCollectors.toIMap(randomName()));
+
+        assertEquals(10, result.size());
+
+        for (int i = 0; i < 10; i++) {
+            int val = result.get("key-" + i);
+            assertEquals(i, val);
+        }
+    }
+
+    @Test
+    public void sourceCache() {
+        ICache<String, Integer> result = streamCache()
+                .filter(f -> f.getValue() < 10)
+                .map(e -> new AbstractMap.SimpleImmutableEntry<>(e.getKey(), e.getValue()))
+                .collect(DistributedCollectors.toICache(randomName()));
 
         assertEquals(10, result.size());
 
@@ -51,7 +64,7 @@ public class FilterTest extends AbstractStreamTest {
         IList<Integer> result = list
                 .stream()
                 .filter(f -> f < 100)
-                .collect(DistributedCollectors.toIList(uniqueListName()));
+                .collect(DistributedCollectors.toIList(randomString()));
 
         assertEquals(100, result.size());
 

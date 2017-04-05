@@ -19,51 +19,60 @@ package com.hazelcast.jet.stream;
 import com.hazelcast.core.IList;
 import org.junit.Test;
 
-import java.util.Map;
+import java.util.Map.Entry;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static org.junit.Assert.assertEquals;
 
 public class SkipTest extends AbstractStreamTest {
 
     @Test
     public void sourceMap() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
-
         int skip = 10;
-        IList list = map.stream()
-                        .skip(skip)
-                        .collect(DistributedCollectors.toIList(uniqueListName()));
-
+        IList list = streamMap()
+                .skip(skip)
+                .collect(DistributedCollectors.toIList(randomString()));
 
         assertEquals(COUNT - skip, list.size());
     }
 
     @Test
-    public void intermediateOperation() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
-
+    public void sourceCache() {
         int skip = 10;
-        IList list = map.stream()
-                        .map(Map.Entry::getValue)
-                        .skip(skip)
-                        .collect(DistributedCollectors.toIList(uniqueListName()));
+        IList list = streamCache()
+                .skip(skip)
+                .collect(DistributedCollectors.toIList(randomString()));
 
+        assertEquals(COUNT - skip, list.size());
+    }
+
+    @Test
+    public void intermediateOperation_sourceMap() {
+        int skip = 10;
+        IList list = streamMap()
+                .map(Entry::getValue)
+                .skip(skip)
+                .collect(DistributedCollectors.toIList(randomString()));
+
+        assertEquals(COUNT - skip, list.size());
+    }
+
+    @Test
+    public void intermediateOperation_sourceCache() {
+        int skip = 10;
+        IList list = streamCache()
+                .map(Entry::getValue)
+                .skip(skip)
+                .collect(DistributedCollectors.toIList(randomString()));
 
         assertEquals(COUNT - skip, list.size());
     }
 
     @Test
     public void sourceList() {
-        IStreamList<Integer> list = getList();
-        fillList(list);
-
         int skip = 1024;
-        IList<Integer> result = list.stream()
-                                    .skip(skip)
-                                    .collect(DistributedCollectors.toIList(uniqueListName()));
+        IList<Integer> result = streamList()
+                .skip(skip)
+                .collect(DistributedCollectors.toIList(randomString()));
 
         assertEquals(COUNT - skip, result.size());
 

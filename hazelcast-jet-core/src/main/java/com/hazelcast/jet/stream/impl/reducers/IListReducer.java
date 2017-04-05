@@ -16,12 +16,18 @@
 
 package com.hazelcast.jet.stream.impl.reducers;
 
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.ProcessorMetaSupplier;
-import com.hazelcast.jet.Processors;
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.stream.DistributedCollector.Reducer;
 import com.hazelcast.jet.stream.IStreamList;
+import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
+import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 
-public class IListReducer<T> extends AbstractSinkReducer<T, IStreamList<T>> {
+import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.Processors.writeList;
+import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
+
+public class IListReducer<T> implements Reducer<T, IStreamList<T>> {
 
     private final String listName;
 
@@ -30,23 +36,14 @@ public class IListReducer<T> extends AbstractSinkReducer<T, IStreamList<T>> {
     }
 
     @Override
-    protected IStreamList<T> getTarget(JetInstance instance) {
-        return instance.getList(listName);
-    }
+    public IStreamList<T> reduce(StreamContext context, Pipeline<? extends T> upstream) {
+        IStreamList<T> target = context.getJetInstance().getList(listName);
+        DAG dag = new DAG();
+        Vertex vertex = upstream.buildDAG(dag);
+        Vertex writer = dag.newVertex("write-list-" + listName, writeList(listName)).localParallelism(1);
 
-    @Override
-    protected ProcessorMetaSupplier getSupplier() {
-        return ProcessorMetaSupplier.of(Processors.writeList(listName));
+        dag.edge(between(vertex, writer));
+        executeJob(context, dag);
+        return target;
     }
-
-    @Override
-    protected int localParallelism() {
-        return 1;
-    }
-
-    @Override
-    protected String getName() {
-        return listName;
-    }
-
 }

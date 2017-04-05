@@ -26,22 +26,24 @@ public class ForEachTest extends AbstractStreamTest {
 
     @Test
     public void sourceMap() {
-        IStreamMap<String, Integer> map = getMap();
-        fillMap(map);
-
         final AtomicInteger runningTotal = new AtomicInteger(0);
-        map.stream().forEach(e -> runningTotal.addAndGet(e.getValue()));
+        streamMap().forEach(e -> runningTotal.addAndGet(e.getValue()));
+
+        assertEquals((COUNT - 1) * (COUNT) / 2, runningTotal.get());
+    }
+
+    @Test
+    public void sourceCache() {
+        final AtomicInteger runningTotal = new AtomicInteger(0);
+        streamCache().forEach(e -> runningTotal.addAndGet(e.getValue()));
 
         assertEquals((COUNT - 1) * (COUNT) / 2, runningTotal.get());
     }
 
     @Test
     public void sourceList() {
-        IStreamList<Integer> list = getList();
-        fillList(list);
-
         final AtomicInteger runningTotal = new AtomicInteger(0);
-        list.stream().forEach(runningTotal::addAndGet);
+        streamList().forEach(runningTotal::addAndGet);
 
         assertEquals((COUNT - 1) * (COUNT) / 2, runningTotal.get());
     }
