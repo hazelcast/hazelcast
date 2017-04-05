@@ -59,6 +59,7 @@ import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 import static com.hazelcast.spi.ExecutionService.OFFLOADABLE_EXECUTOR;
+import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 
 /**
  * Contains implementation of the off-loadable contract for EntryProcessor execution on a single key.
@@ -256,35 +257,62 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
 
         // The off-loading uses local locks, since the locking is used only on primary-replica.
         // The locks are not supposed to be migrated on partition migration or partition promotion & downgrade.
-        recordStore.localLock(finalDataKey, finalCaller, finalThreadId, finalCallId, -1);
+        lock(finalDataKey, finalCaller, finalThreadId, finalCallId);
 
-        ops.onStartAsyncOperation(this);
-        getNodeEngine().getExecutionService().execute(executorName, new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    final Map.Entry entry = createMapEntry(dataKey, previousValue);
-                    final Data result = process(entry);
-                    if (!noOp(entry, previousValue)) {
-                        Data newValue = toData(entry.getValue());
+        try {
+            ops.onStartAsyncOperation(this);
+            getNodeEngine().getExecutionService().execute(executorName, new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        final Map.Entry entry = createMapEntry(dataKey, previousValue);
+                        final Data result = process(entry);
+                        if (!noOp(entry, previousValue)) {
+                            Data newValue = toData(entry.getValue());
 
-                        EntryEventType modificationType;
-                        if (entry.getValue() == null) {
-                            modificationType = REMOVED;
+                            EntryEventType modificationType;
+                            if (entry.getValue() == null) {
+                                modificationType = REMOVED;
+                            } else {
+                                modificationType = (previousValue == null) ? ADDED : UPDATED;
+                            }
+
+                            updateAndUnlock(toData(previousValue), newValue, modificationType, finalCaller, finalThreadId,
+                                    result, finalBegin);
                         } else {
-                            modificationType = (previousValue == null) ? ADDED : UPDATED;
+                            unlockOnly(result, finalCaller, finalThreadId, finalBegin);
                         }
-
-                        updateAndUnlock(toData(previousValue), newValue, modificationType, finalCaller, finalThreadId,
-                                result, finalBegin);
-                    } else {
-                        unlockOnly(result, finalCaller, finalThreadId, finalBegin);
+                    } catch (Throwable t) {
+                        getLogger().severe("Unexpected error on Offloadable execution", t);
+                        unlockOnly(t, finalCaller, finalThreadId, finalBegin);
                     }
-                } catch (Throwable t) {
-                    unlockOnly(t, finalCaller, finalThreadId, finalBegin);
                 }
+            });
+        } catch (Throwable t) {
+            try {
+                unlock(finalDataKey, finalCaller, finalThreadId, finalCallId, t);
+                sneakyThrow(t);
+            } finally {
+                ops.onCompletionAsyncOperation(this);
             }
-        });
+        }
+    }
+
+    private void lock(Data finalDataKey, String finalCaller, long finalThreadId, long finalCallId) {
+        boolean locked = recordStore.localLock(finalDataKey, finalCaller, finalThreadId, finalCallId, -1);
+        if (!locked) {
+            // should not happen since it's a lock-awaiting operation and we are on a partition-thread, but just to make sure
+            throw new IllegalStateException(
+                    String.format("Could not obtain a lock by the caller=%s and threadId=%d", finalCaller, threadId));
+        }
+    }
+
+    private void unlock(Data finalDataKey, String finalCaller, long finalThreadId, long finalCallId, Throwable cause) {
+        boolean unlocked = recordStore.unlock(finalDataKey, finalCaller, finalThreadId, finalCallId);
+        if (!unlocked) {
+            throw new IllegalStateException(
+                    String.format("Could not unlock by the caller=%s and threadId=%d", finalCaller, threadId), cause);
+        }
     }
 
     @SuppressWarnings("unchecked")

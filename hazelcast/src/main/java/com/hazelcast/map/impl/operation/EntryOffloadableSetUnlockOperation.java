@@ -80,8 +80,11 @@ public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOpera
     @Override
     public void run() throws Exception {
         verifyLock();
-        updateRecordStore();
-        unlockKey();
+        try {
+            updateRecordStore();
+        } finally {
+            unlockKey();
+        }
     }
 
     private void verifyLock() {
@@ -111,8 +114,9 @@ public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOpera
     private void unlockKey() {
         boolean unlocked = recordStore.unlock(dataKey, caller, threadId, getCallId());
         if (!unlocked) {
-            getLogger().severe(String.format("\"EntryOffloadableSetUnlockOperation finished but the unlock method "
-                    + "returned false  caller=%s and threadId=%d", caller, threadId));
+            throw new IllegalStateException(
+                    String.format("Unexpected error! EntryOffloadableSetUnlockOperation finished but the unlock method "
+                            + "returned false for caller=%s and threadId=%d", caller, threadId));
         }
     }
 
