@@ -162,12 +162,12 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     @Test
     @Override
     @Ignore(value = "This test doesn't work with the TransactionalMap due to its limited implementation")
-    public void whenCacheIsFull_thenPutOnSameKeyShouldUpdateValue_withUpdateOnNearCacheAdapter() {
+    public void whenCacheIsFull_thenPutOnSameKeyShouldUpdateValue_onNearCacheAdapter() {
     }
 
     @Test
     @Override
     @Ignore(value = "This test doesn't work with the TransactionalMap due to its limited implementation")
-    public void whenCacheIsFull_thenPutOnSameKeyShouldUpdateValue_withUpdateOnDataAdapter() {
+    public void whenCacheIsFull_thenPutOnSameKeyShouldUpdateValue_onDataAdapter() {
     }
 }

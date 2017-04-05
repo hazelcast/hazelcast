@@ -193,6 +193,9 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         assertNearCacheStats(context, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT);
     }
 
+    /**
+     * Checks that the Near Cache is not populated when {@link DataStructureMethods#GET_ALL} is used with an empty key set.
+     */
     @Test
     public void whenGetAllWithEmptySetIsUsed_thenNearCacheShouldNotBePopulated() {
         NearCacheTestContext<Integer, String, NK, NV> context = createContext();
@@ -327,7 +330,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
      */
     @Test
-    public void whenSetIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+    public void whenSetIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.SET);
     }
 
@@ -337,7 +340,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
      */
     @Test
-    public void whenSetIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+    public void whenSetIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
         nearCacheConfig.setInvalidateOnChange(true);
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.SET);
     }
@@ -348,7 +351,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
      */
     @Test
-    public void whenPutIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+    public void whenPutIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.PUT);
     }
 
@@ -358,7 +361,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
      */
     @Test
-    public void whenPutIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+    public void whenPutIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
         nearCacheConfig.setInvalidateOnChange(true);
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.PUT);
     }
@@ -369,7 +372,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
      */
     @Test
-    public void whenReplaceIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+    public void whenReplaceIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.REPLACE);
     }
 
@@ -379,7 +382,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
      */
     @Test
-    public void whenReplaceIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+    public void whenReplaceIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
         nearCacheConfig.setInvalidateOnChange(true);
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.REPLACE);
     }
@@ -390,7 +393,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
      */
     @Test
-    public void whenReplaceWithOldValueIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+    public void whenReplaceWithOldValueIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.REPLACE_WITH_OLD_VALUE);
     }
 
@@ -400,7 +403,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
      */
     @Test
-    public void whenReplaceWithOldValueIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+    public void whenReplaceWithOldValueIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
         nearCacheConfig.setInvalidateOnChange(true);
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.REPLACE_WITH_OLD_VALUE);
     }
@@ -411,7 +414,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
      */
     @Test
-    public void whenInvokeIsUsed_thenNearCacheIsInvalidated_withUpdateOnNearCacheAdapter() {
+    public void whenInvokeIsUsed_thenNearCacheIsInvalidated_onNearCacheAdapter() {
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.INVOKE);
     }
 
@@ -421,7 +424,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
      */
     @Test
-    public void whenInvokeIsUsed_thenNearCacheIsInvalidated_withUpdateOnDataCacheAdapter() {
+    public void whenInvokeIsUsed_thenNearCacheIsInvalidated_onDataAdapter() {
         nearCacheConfig.setInvalidateOnChange(true);
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.INVOKE);
     }
@@ -432,7 +435,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
      */
     @Test
-    public void whenExecuteOnKeyIsUsed_thenNearCacheIsInvalidated_withUpdateOnNearCacheAdapter() {
+    public void whenExecuteOnKeyIsUsed_thenNearCacheIsInvalidated_onNearCacheAdapter() {
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.EXECUTE_ON_KEY);
     }
 
@@ -442,7 +445,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
      */
     @Test
-    public void whenExecuteOnKeyIsUsed_thenNearCacheIsInvalidated_withUpdateOnDataCacheAdapter() {
+    public void whenExecuteOnKeyIsUsed_thenNearCacheIsInvalidated_onDataAdapter() {
         nearCacheConfig.setInvalidateOnChange(true);
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.EXECUTE_ON_KEY);
     }
@@ -453,7 +456,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
      */
     @Test
-    public void whenExecuteOnKeysIsUsed_thenNearCacheIsInvalidated_withUpdateOnNearCacheAdapter() {
+    public void whenExecuteOnKeysIsUsed_thenNearCacheIsInvalidated_onNearCacheAdapter() {
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.EXECUTE_ON_KEYS);
     }
 
@@ -463,7 +466,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
      */
     @Test
-    public void whenExecuteOnKeysIsUsed_thenNearCacheIsInvalidated_withUpdateOnDataCacheAdapter() {
+    public void whenExecuteOnKeysIsUsed_thenNearCacheIsInvalidated_onDataAdapter() {
         nearCacheConfig.setInvalidateOnChange(true);
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.EXECUTE_ON_KEYS);
     }
@@ -474,7 +477,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
      */
     @Test
-    public void whenPutAllIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+    public void whenPutAllIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.PUT_ALL);
     }
 
@@ -484,7 +487,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
      */
     @Test
-    public void whenPutAllIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+    public void whenPutAllIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
         nearCacheConfig.setInvalidateOnChange(true);
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.PUT_ALL);
     }
@@ -495,7 +498,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
      */
     @Test
-    public void whenInvokeAllIsUsed_thenNearCacheIsInvalidated_withUpdateOnNearCacheAdapter() {
+    public void whenInvokeAllIsUsed_thenNearCacheIsInvalidated_onNearCacheAdapter() {
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.INVOKE_ALL);
     }
 
@@ -505,7 +508,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
      */
     @Test
-    public void whenInvokeAllIsUsed_thenNearCacheIsInvalidated_withUpdateOnDataAdapter() {
+    public void whenInvokeAllIsUsed_thenNearCacheIsInvalidated_onDataAdapter() {
         nearCacheConfig.setInvalidateOnChange(true);
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.INVOKE_ALL);
     }
@@ -585,7 +588,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
      */
     @Test
-    public void whenRemoveIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+    public void whenRemoveIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
         whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.REMOVE);
     }
 
@@ -595,7 +598,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
      */
     @Test
-    public void whenRemoveIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+    public void whenRemoveIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
         nearCacheConfig.setInvalidateOnChange(true);
         whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.REMOVE);
     }
@@ -606,7 +609,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
      */
     @Test
-    public void whenRemoveAsyncIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+    public void whenRemoveAsyncIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
         whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.REMOVE_ASYNC);
     }
 
@@ -616,7 +619,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
      */
     @Test
-    public void whenRemoveAsyncIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+    public void whenRemoveAsyncIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
         nearCacheConfig.setInvalidateOnChange(true);
         whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.REMOVE_ASYNC);
     }
@@ -627,7 +630,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
      */
     @Test
-    public void whenRemoveWithOldValueIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+    public void whenRemoveWithOldValueIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
         whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.REMOVE_WITH_OLD_VALUE);
     }
 
@@ -637,7 +640,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
      */
     @Test
-    public void whenRemoveWithOldValueIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+    public void whenRemoveWithOldValueIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
         nearCacheConfig.setInvalidateOnChange(true);
         whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.REMOVE_WITH_OLD_VALUE);
     }
@@ -648,7 +651,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
      */
     @Test
-    public void whenRemoveAllIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+    public void whenRemoveAllIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
         whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.REMOVE_ALL);
     }
 
@@ -658,7 +661,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
      */
     @Test
-    public void whenRemoveAllIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+    public void whenRemoveAllIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
         nearCacheConfig.setInvalidateOnChange(true);
         whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.REMOVE_ALL);
     }
@@ -669,7 +672,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
      */
     @Test
-    public void whenRemoveAllWithKeysIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+    public void whenRemoveAllWithKeysIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
         whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.REMOVE_ALL_WITH_KEYS);
     }
 
@@ -679,7 +682,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
      */
     @Test
-    public void whenRemoveAllWithKeysIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+    public void whenRemoveAllWithKeysIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
         nearCacheConfig.setInvalidateOnChange(true);
         whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.REMOVE_ALL_WITH_KEYS);
     }
@@ -731,17 +734,17 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
      */
     @Test
-    public void testContainsKey_withUpdateOnNearCacheAdapter() {
+    public void testContainsKey_onNearCacheAdapter() {
         testContainsKey(true);
     }
 
     /**
-     * Checks that the memory costs are calculated correctly.
+     * Checks that the Near Cache works correctly when {@link DataStructureMethods#CONTAINS_KEY} is used.
      *
      * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
      */
     @Test
-    public void testContainsKey_withUpdateOnDataAdapter() {
+    public void testContainsKey_onDataAdapter() {
         nearCacheConfig.setInvalidateOnChange(true);
         testContainsKey(false);
     }
@@ -871,7 +874,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * Checks that the Near Cache never returns its internal {@link NearCache#CACHED_AS_NULL} to the public API.
      */
     @Test
-    public void whenEmptyMap_thenPopulatedNearCacheShouldReturnNull_neverCACHED_AS_NULL() {
+    public void whenEmptyDataStructure_thenPopulatedNearCacheShouldReturnNull_neverCACHED_AS_NULL() {
         NearCacheTestContext<Integer, String, NK, NV> context = createContext();
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
@@ -903,7 +906,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
      */
     @Test
-    public void whenCacheIsFull_thenPutOnSameKeyShouldUpdateValue_withUpdateOnNearCacheAdapter() {
+    public void whenCacheIsFull_thenPutOnSameKeyShouldUpdateValue_onNearCacheAdapter() {
         int size = DEFAULT_RECORD_COUNT / 2;
         setEvictionConfig(nearCacheConfig, NONE, ENTRY_COUNT, size);
         NearCacheTestContext<Integer, String, NK, NV> context = createContext();
@@ -932,7 +935,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
      */
     @Test
-    public void whenCacheIsFull_thenPutOnSameKeyShouldUpdateValue_withUpdateOnDataAdapter() {
+    public void whenCacheIsFull_thenPutOnSameKeyShouldUpdateValue_onDataAdapter() {
         final int size = DEFAULT_RECORD_COUNT / 2;
         setEvictionConfig(nearCacheConfig, NONE, ENTRY_COUNT, size);
         nearCacheConfig.setInvalidateOnChange(true);
