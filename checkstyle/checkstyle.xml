@@ -71,7 +71,7 @@
     <!-- Checks whether files end with a new line.                        -->
     <!-- See http://checkstyle.sf.net/config_misc.html#NewlineAtEndOfFile -->
     <module name="NewlineAtEndOfFile">
-        <property name="lineSeparator" value="lf" />
+        <property name="lineSeparator" value="lf"/>
     </module>
 
     <!-- Checks that property files contain the same keys.         -->
@@ -311,7 +311,8 @@
         <module name="RegexpSinglelineJava">
             <property name="format" value="(import static java\.util\.UUID\.randomUUID|UUID\.randomUUID\(\))"/>
             <property name="ignoreComments" value="true"/>
-            <property name="message" value="Please use UuidUtil.buildRandomUUID() instead of UUID.randomUUID()!"/>
+            <property name="message"
+                      value="Please use UuidUtil.newUnsecureUUID() or UuidUtil.newSecureUUID() instead of UUID.randomUUID()"/>
         </module>
     </module>
 </module>
