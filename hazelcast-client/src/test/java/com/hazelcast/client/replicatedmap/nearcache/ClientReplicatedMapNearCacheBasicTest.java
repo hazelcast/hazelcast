@@ -111,36 +111,36 @@ public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasi
     @Test
     @Override
     @Ignore(value = "The ClientReplicatedMapProxy is missing `invalidateNearCache(keyData)` calls")
-    public void whenSetIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+    public void whenSetIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
     }
 
     @Test
     @Override
     @Ignore(value = "The ClientReplicatedMapProxy is missing `invalidateNearCache(keyData)` calls")
-    public void whenPutIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+    public void whenPutIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
     }
 
     @Test
     @Override
     @Ignore(value = "The ClientReplicatedMapProxy is missing `invalidateNearCache(keyData)` calls")
-    public void whenPutAllIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+    public void whenPutAllIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
     }
 
     @Test
     @Override
     @Ignore(value = "The ClientReplicatedMapProxy is missing `invalidateNearCache(keyData)` calls")
-    public void whenRemoveIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnNearCacheAdapter() {
+    public void whenRemoveIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
     }
 
     @Test
     @Override
     @Ignore(value = "The ClientReplicatedMapProxy is missing `invalidateNearCache(keyData)` calls")
-    public void whenRemoveIsUsed_thenNearCacheShouldBeInvalidated_withUpdateOnDataAdapter() {
+    public void whenRemoveIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
     }
 
     @Test
     @Override
     @Ignore(value = "The ClientReplicatedMapProxy is missing `invalidateNearCache(keyData)` calls")
-    public void whenCacheIsFull_thenPutOnSameKeyShouldUpdateValue_withUpdateOnNearCacheAdapter() {
+    public void whenCacheIsFull_thenPutOnSameKeyShouldUpdateValue_onNearCacheAdapter() {
     }
 }
