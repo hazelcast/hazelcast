@@ -19,11 +19,14 @@ package com.hazelcast.internal.nearcache;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
+import com.hazelcast.internal.adapter.ICacheReplaceEntryProcessor;
+import com.hazelcast.internal.adapter.IMapReplaceEntryProcessor;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
+import javax.cache.processor.EntryProcessorResult;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,6 +54,7 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getFuture;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.setEvictionConfig;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -75,6 +79,16 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * The default name used for the data structures which have a Near Cache.
      */
     protected static final String DEFAULT_NEAR_CACHE_NAME = "defaultNearCache";
+
+    /**
+     * Defines all {@link DataStructureMethods} which are using EntryProcessors.
+     */
+    private static final List<DataStructureMethods> ENTRY_PROCESSOR_METHODS = asList(
+            DataStructureMethods.INVOKE,
+            DataStructureMethods.EXECUTE_ON_KEY,
+            DataStructureMethods.EXECUTE_ON_KEYS,
+            DataStructureMethods.INVOKE_ALL
+    );
 
     /**
      * The {@link NearCacheConfig} used by the Near Cache tests.
@@ -392,6 +406,69 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#INVOKE} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
+     */
+    @Test
+    public void whenInvokeIsUsed_thenNearCacheIsInvalidated_withUpdateOnNearCacheAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.INVOKE);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#INVOKE} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
+     */
+    @Test
+    public void whenInvokeIsUsed_thenNearCacheIsInvalidated_withUpdateOnDataCacheAdapter() {
+        nearCacheConfig.setInvalidateOnChange(true);
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.INVOKE);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#EXECUTE_ON_KEY} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
+     */
+    @Test
+    public void whenExecuteOnKeyIsUsed_thenNearCacheIsInvalidated_withUpdateOnNearCacheAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.EXECUTE_ON_KEY);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#EXECUTE_ON_KEY} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
+     */
+    @Test
+    public void whenExecuteOnKeyIsUsed_thenNearCacheIsInvalidated_withUpdateOnDataCacheAdapter() {
+        nearCacheConfig.setInvalidateOnChange(true);
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.EXECUTE_ON_KEY);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#EXECUTE_ON_KEYS} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
+     */
+    @Test
+    public void whenExecuteOnKeysIsUsed_thenNearCacheIsInvalidated_withUpdateOnNearCacheAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.EXECUTE_ON_KEYS);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#EXECUTE_ON_KEYS} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
+     */
+    @Test
+    public void whenExecuteOnKeysIsUsed_thenNearCacheIsInvalidated_withUpdateOnDataCacheAdapter() {
+        nearCacheConfig.setInvalidateOnChange(true);
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.EXECUTE_ON_KEYS);
+    }
+
+    /**
      * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#PUT_ALL} is used.
      *
      * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
@@ -412,8 +489,33 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.PUT_ALL);
     }
 
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#INVOKE_ALL} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#nearCacheAdapter}, so there is no Near Cache invalidation necessary.
+     */
+    @Test
+    public void whenInvokeAllIsUsed_thenNearCacheIsInvalidated_withUpdateOnNearCacheAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.INVOKE_ALL);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#INVOKE_ALL} is used.
+     *
+     * This variant uses the {@link NearCacheTestContext#dataAdapter}, so we need to configure Near Cache invalidation.
+     */
+    @Test
+    public void whenInvokeAllIsUsed_thenNearCacheIsInvalidated_withUpdateOnDataAdapter() {
+        nearCacheConfig.setInvalidateOnChange(true);
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.INVOKE_ALL);
+    }
+
     private void whenEntryIsChanged_thenNearCacheShouldBeInvalidated(boolean useNearCacheAdapter, DataStructureMethods method) {
-        assumeThatLocalUpdatePolicyIsInvalidate(nearCacheConfig);
+        if (!ENTRY_PROCESSOR_METHODS.contains(method)) {
+            // since EntryProcessors return a user-defined result we cannot directly put this into the Near Cache,
+            // so we execute this test also for CACHE_ON_UPDATE configurations
+            assumeThatLocalUpdatePolicyIsInvalidate(nearCacheConfig);
+        }
 
         NearCacheTestContext<Integer, String, NK, NV> context = createContext();
         DataStructureAdapter<Integer, String> adapter = useNearCacheAdapter ? context.nearCacheAdapter : context.dataAdapter;
@@ -440,7 +542,15 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 case REPLACE_WITH_OLD_VALUE:
                     assertTrue(adapter.replace(i, value, newValue));
                     break;
+                case INVOKE:
+                    assertEquals(newValue, adapter.invoke(i, new ICacheReplaceEntryProcessor(), "value", "newValue"));
+                    break;
+                case EXECUTE_ON_KEY:
+                    assertEquals(newValue, adapter.executeOnKey(i, new IMapReplaceEntryProcessor("value", "newValue")));
+                    break;
                 case PUT_ALL:
+                case INVOKE_ALL:
+                case EXECUTE_ON_KEYS:
                     invalidationMap.put(i, newValue);
                     break;
                 default:
@@ -449,6 +559,20 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         }
         if (method == DataStructureMethods.PUT_ALL) {
             adapter.putAll(invalidationMap);
+        } else if (method == DataStructureMethods.INVOKE_ALL) {
+            Map<Integer, EntryProcessorResult<String>> resultMap = adapter.invokeAll(invalidationMap.keySet(),
+                    new ICacheReplaceEntryProcessor(), "value", "newValue");
+            assertEquals(DEFAULT_RECORD_COUNT, resultMap.size());
+            for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+                assertEquals("newValue-" + i, resultMap.get(i).get());
+            }
+        } else if (method == DataStructureMethods.EXECUTE_ON_KEYS) {
+            Map<Integer, Object> resultMap = adapter.executeOnKeys(invalidationMap.keySet(),
+                    new IMapReplaceEntryProcessor("value", "newValue"));
+            assertEquals(DEFAULT_RECORD_COUNT, resultMap.size());
+            for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+                assertEquals("newValue-" + i, resultMap.get(i));
+            }
         }
 
         String message = format("Invalidation is not working on %s()", method.getMethodName());

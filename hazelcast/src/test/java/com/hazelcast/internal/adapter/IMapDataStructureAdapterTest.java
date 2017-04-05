@@ -29,13 +29,17 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -154,6 +158,41 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
         assertFalse(map.containsKey(23));
     }
 
+    @Test(expected = MethodNotAvailableException.class)
+    public void testInvoke() {
+        adapter.invoke(23, new ICacheReplaceEntryProcessor(), "value", "newValue");
+    }
+
+    @Test
+    public void testExecuteOnKey() {
+        map.put(23, "value-23");
+        map.put(42, "value-42");
+
+        String result = (String) adapter.executeOnKey(23, new IMapReplaceEntryProcessor("value", "newValue"));
+        assertEquals("newValue-23", result);
+
+        assertEquals("newValue-23", map.get(23));
+        assertEquals("value-42", map.get(42));
+    }
+
+    @Test
+    public void testExecuteOnKeys() {
+        map.put(23, "value-23");
+        map.put(42, "value-42");
+        map.put(65, "value-65");
+
+        Set<Integer> keys = new HashSet<Integer>(asList(23, 65, 88));
+        Map<Integer, Object> resultMap = adapter.executeOnKeys(keys, new IMapReplaceEntryProcessor("value", "newValue"));
+        assertEquals(2, resultMap.size());
+        assertEquals("newValue-23", resultMap.get(23));
+        assertEquals("newValue-65", resultMap.get(65));
+
+        assertEquals("newValue-23", map.get(23));
+        assertEquals("value-42", map.get(42));
+        assertEquals("newValue-65", map.get(65));
+        assertNull(map.get(88));
+    }
+
     @Test
     public void testContainsKey() {
         map.put(23, "value-23");
@@ -202,6 +241,12 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
     @Test(expected = MethodNotAvailableException.class)
     public void testRemoveAllWithKeys() {
         adapter.removeAll(singleton(42));
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testInvokeAll() {
+        Set<Integer> keys = new HashSet<Integer>(asList(23, 65, 88));
+        adapter.invokeAll(keys, new ICacheReplaceEntryProcessor(), "value", "newValue");
     }
 
     @Test
