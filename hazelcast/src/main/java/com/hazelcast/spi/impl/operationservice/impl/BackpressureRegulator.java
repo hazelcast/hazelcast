@@ -19,19 +19,24 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.impl.operationservice.impl.CallIdSequence.CallIdSequenceWithBackpressure;
+import com.hazelcast.spi.impl.operationservice.impl.CallIdSequence.CallIdSequenceWithoutBackpressure;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.nio.Bits.CACHE_LINE_LENGTH;
-import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
+import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION;
 import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_SYNCWINDOW;
+import static com.hazelcast.spi.properties.GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static java.lang.Math.max;
 import static java.lang.Math.round;
+import static java.lang.String.format;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
  * The BackpressureRegulator is responsible for regulating invocation 'pressure'. If it sees that the system
@@ -65,14 +70,7 @@ class BackpressureRegulator {
      */
     static final float RANGE = 0.25f;
 
-    // number of ints in a single cache-line.
-    private static final int INTS_PER_CACHE_LINE = CACHE_LINE_LENGTH / INT_SIZE_IN_BYTES;
-
-    // There is syncDelay counter per partition. To prevent false sharing, the syncDelay for each partition is padded additional
-    // int's so that each sync delay is on its own cache-line.
-    // Each partition will always be handled by 1 thread at any given moment, so thread-safety is not required.
-    private final int[] syncDelays;
-
+    private final AtomicInteger syncCountdown = new AtomicInteger();
     private final boolean enabled;
     private final boolean disabled;
     private final int syncWindow;
@@ -81,25 +79,32 @@ class BackpressureRegulator {
     private final int backoffTimeoutMs;
 
     BackpressureRegulator(HazelcastProperties properties, ILogger logger) {
-        this.enabled = properties.getBoolean(GroupProperty.BACKPRESSURE_ENABLED);
+        this.enabled = properties.getBoolean(BACKPRESSURE_ENABLED);
         this.disabled = !enabled;
-        this.partitionCount = properties.getInteger(GroupProperty.PARTITION_COUNT);
+        this.partitionCount = properties.getInteger(PARTITION_COUNT);
         this.syncWindow = getSyncWindow(properties);
+        this.syncCountdown.set(syncWindow);
         this.maxConcurrentInvocations = getMaxConcurrentInvocations(properties);
         this.backoffTimeoutMs = getBackoffTimeoutMs(properties);
-
-        this.syncDelays = new int[INTS_PER_CACHE_LINE * partitionCount];
-        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            syncDelays[partitionId * INTS_PER_CACHE_LINE] = randomSyncDelay();
-        }
 
         if (enabled) {
             logger.info("Backpressure is enabled"
                     + ", maxConcurrentInvocations:" + maxConcurrentInvocations
                     + ", syncWindow: " + syncWindow);
+
+            int backupTimeoutMillis = properties.getInteger(OPERATION_BACKUP_TIMEOUT_MILLIS);
+            if (backupTimeoutMillis < MINUTES.toMillis(1)) {
+                logger.warning(
+                        format("Back pressure is enabled, but '%s' is too small. ",
+                                OPERATION_BACKUP_TIMEOUT_MILLIS.getName()));
+            }
         } else {
             logger.info("Backpressure is disabled");
         }
+    }
+
+    int syncCountDown() {
+        return syncCountdown.get();
     }
 
     private int getSyncWindow(HazelcastProperties props) {
@@ -138,11 +143,6 @@ class BackpressureRegulator {
         return enabled;
     }
 
-    // just for testing
-    int syncDelay(Operation op) {
-        return syncDelays[op.getPartitionId() * INTS_PER_CACHE_LINE];
-    }
-
     int getMaxConcurrentInvocations() {
         if (enabled) {
             return maxConcurrentInvocations;
@@ -153,9 +153,9 @@ class BackpressureRegulator {
 
     CallIdSequence newCallIdSequence() {
         if (enabled) {
-            return new CallIdSequence.CallIdSequenceWithBackpressure(maxConcurrentInvocations, backoffTimeoutMs);
+            return new CallIdSequenceWithBackpressure(maxConcurrentInvocations, backoffTimeoutMs);
         } else {
-            return new CallIdSequence.CallIdSequenceWithoutBackpressure();
+            return new CallIdSequenceWithoutBackpressure();
         }
     }
 
@@ -165,8 +165,6 @@ class BackpressureRegulator {
      * Once and a while for every BackupAwareOperation with one or more async backups, these async backups are transformed
      * into a sync backup.
      *
-     * For {@link com.hazelcast.spi.UrgentSystemOperation} no sync will be forced.
-     *
      * @param backupAwareOp The BackupAwareOperation to check.
      * @return true if a sync needs to be forced, false otherwise.
      */
@@ -175,34 +173,25 @@ class BackpressureRegulator {
             return false;
         }
 
-        if (backupAwareOp.getPartitionId() < 0) {
-            throw new IllegalArgumentException("A BackupAwareOperation can't have a negative partitionId, "
-                    + backupAwareOp);
-        }
-
         // if there are no asynchronous backups, there is nothing to regulate.
         if (backupAwareOp.getAsyncBackupCount() == 0) {
             return false;
         }
 
-        Operation op = (Operation) backupAwareOp;
-
-        // we never apply back-pressure on urgent operations.
-        if (op.isUrgent()) {
+        if (backupAwareOp instanceof UrgentSystemOperation) {
             return false;
         }
 
-        int index = op.getPartitionId() * INTS_PER_CACHE_LINE;
-        int oldSyncDelay = syncDelays[index];
+        for (; ; ) {
+            int current = syncCountdown.decrementAndGet();
+            if (current > 0) {
+                return false;
+            }
 
-        if (oldSyncDelay == 1) {
-            int newSyncDelay = randomSyncDelay();
-            syncDelays[index] = newSyncDelay;
-            return true;
+            if (syncCountdown.compareAndSet(current, randomSyncDelay())) {
+                return true;
+            }
         }
-
-        syncDelays[index] = oldSyncDelay - 1;
-        return false;
     }
 
     private int randomSyncDelay() {
