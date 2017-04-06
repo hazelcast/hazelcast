@@ -43,7 +43,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -54,6 +53,7 @@ import com.hazelcast.util.UuidUtil;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.core.EntryEventType.ADDED;
@@ -64,6 +64,7 @@ import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 import static com.hazelcast.spi.ExecutionService.OFFLOADABLE_EXECUTOR;
+import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 
 /**
@@ -146,6 +147,8 @@ import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 public class EntryOperation extends MutatingKeyBasedMapOperation implements BackupAwareOperation, BlockingOperation {
 
     private static final int SET_UNLOCK_RETRY_LIMIT = 1000;
+
+    private static final int SET_UNLOCK_FAST_RETRY_LIMIT = 10;
 
     private EntryProcessor entryProcessor;
 
@@ -316,7 +319,7 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
         }
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "checkstyle:methodlength"})
     private void updateAndUnlock(Data previousValue, Data newValue, EntryEventType modificationType, String caller,
                                  long threadId, final Object result, long now) {
         EntryOffloadableSetUnlockOperation updateOperation = new EntryOffloadableSetUnlockOperation(name, modificationType,
@@ -338,7 +341,8 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
                 }
             }
 
-            private void retry(Operation op) {
+            private void retry(final Operation op) {
+                setUnlockRetryCount++;
                 if (isRetryLimitReached()) {
                     try {
                         Object exceeded = new HazelcastException("Set & Unlock retry limit exceeded for key " + dataKey);
@@ -346,6 +350,13 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
                     } finally {
                         ops.onCompletionAsyncOperation(EntryOperation.this);
                     }
+                } else if (isFastRetryLimitReached()) {
+                    getNodeEngine().getExecutionService().schedule(new Runnable() {
+                        @Override
+                        public void run() {
+                            ops.execute(op);
+                        }
+                    }, DEFAULT_TRY_PAUSE_MILLIS, TimeUnit.MILLISECONDS);
                 } else {
                     ops.execute(op);
                 }
@@ -378,8 +389,7 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
     }
 
     private boolean isRetryable(Object response) {
-        return response instanceof RetryableHazelcastException
-                && !(response instanceof PartitionMigratingException || response instanceof WrongTargetException);
+        return response instanceof RetryableHazelcastException && !(response instanceof WrongTargetException);
     }
 
     private boolean isTimeout(Object response) {
@@ -387,7 +397,11 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
     }
 
     private boolean isRetryLimitReached() {
-        return ++setUnlockRetryCount > SET_UNLOCK_RETRY_LIMIT;
+        return setUnlockRetryCount > SET_UNLOCK_RETRY_LIMIT;
+    }
+
+    private boolean isFastRetryLimitReached() {
+        return setUnlockRetryCount > SET_UNLOCK_FAST_RETRY_LIMIT;
     }
 
     private void unlockOnly(final Object result, String caller, long threadId, long now) {
