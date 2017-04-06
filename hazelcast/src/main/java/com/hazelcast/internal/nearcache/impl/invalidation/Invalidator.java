@@ -24,11 +24,11 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.UUID;
 
+import static com.hazelcast.internal.nearcache.impl.invalidation.ToHeapDataConverter.toHeapData;
 import static java.lang.String.format;
 
 
@@ -42,7 +42,6 @@ public abstract class Invalidator {
     protected final ILogger logger;
     protected final NodeEngine nodeEngine;
     protected final EventService eventService;
-    protected final SerializationService serializationService;
     protected final MetaDataGenerator metaDataGenerator;
     protected final IPartitionService partitionService;
     protected final IFunction<EventRegistration, Boolean> eventFilter;
@@ -54,7 +53,6 @@ public abstract class Invalidator {
         this.logger = nodeEngine.getLogger(getClass());
         this.partitionService = nodeEngine.getPartitionService();
         this.eventService = nodeEngine.getEventService();
-        this.serializationService = nodeEngine.getSerializationService();
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.metaDataGenerator = new MetaDataGenerator(partitionCount);
     }
@@ -127,10 +125,6 @@ public abstract class Invalidator {
                 eventService.publishEvent(serviceName, registration, invalidation, orderKey);
             }
         }
-    }
-
-    private Data toHeapData(Data key) {
-        return serializationService.toData(key);
     }
 
     /**
