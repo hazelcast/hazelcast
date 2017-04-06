@@ -68,7 +68,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * {@link com.hazelcast.cache.ICache} implementation for client.
+ * {@link com.hazelcast.cache.ICache} implementation for Hazelcast clients.
  *
  * This proxy is the implementation of {@link com.hazelcast.cache.ICache} and {@link javax.cache.Cache} which is returned by
  * {@link HazelcastClientCacheManager}. Represents a cache on client.
@@ -164,7 +164,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
 
     @Override
     public boolean remove(K key) {
-        final long start = nowInNanosOrDefault();
+        long start = nowInNanosOrDefault();
 
         try {
             boolean removed = (Boolean) removeAsyncInternal(key, null, false, true, false);
@@ -179,7 +179,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
 
     @Override
     public boolean remove(K key, V oldValue) {
-        final long start = nowInNanosOrDefault();
+        long start = nowInNanosOrDefault();
         try {
             boolean removed = (Boolean) removeAsyncInternal(key, oldValue, true, true, false);
             if (statisticsEnabled) {
@@ -193,8 +193,8 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
 
     @Override
     public V getAndRemove(K key) {
-        final long start = nowInNanosOrDefault();
-        final ICompletableFuture<V> future = getAndRemoveSyncInternal(key, true);
+        long start = nowInNanosOrDefault();
+        ICompletableFuture<V> future = getAndRemoveSyncInternal(key, true);
         try {
             V removedValue = toObject(future.get());
             if (statisticsEnabled) {
@@ -256,8 +256,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
     }
 
     @Override
-    public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments)
-            throws EntryProcessorException {
+    public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments) throws EntryProcessorException {
         ensureOpen();
         validateNotNull(key);
         if (entryProcessor == null) {
@@ -278,13 +277,13 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
                 argumentsData.add(toData(arguments[i]));
             }
         }
-        final int completionId = nextCompletionId();
+        int completionId = nextCompletionId();
         ClientMessage request =
                 CacheEntryProcessorCodec.encodeRequest(nameWithPrefix, keyData, epData, argumentsData, completionId);
         try {
-            final ICompletableFuture<ClientMessage> future = invoke(request, keyData, completionId);
-            final ClientMessage response = getSafely(future);
-            final Data data = CacheEntryProcessorCodec.decodeResponse(response).response;
+            ICompletableFuture<ClientMessage> future = invoke(request, keyData, completionId);
+            ClientMessage response = getSafely(future);
+            Data data = CacheEntryProcessorCodec.decodeResponse(response).response;
             // at client side, we don't know what entry processor does so we ignore it from statistics perspective
             return toObject(data);
         } catch (CacheException ce) {
@@ -305,15 +304,15 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
         }
         Map<K, EntryProcessorResult<T>> allResult = createHashMap(keys.size());
         for (K key : keys) {
-            CacheEntryProcessorResult<T> ceResult;
+            CacheEntryProcessorResult<T> cepResult;
             try {
-                final T result = invoke(key, entryProcessor, arguments);
-                ceResult = result != null ? new CacheEntryProcessorResult<T>(result) : null;
+                T result = invoke(key, entryProcessor, arguments);
+                cepResult = result != null ? new CacheEntryProcessorResult<T>(result) : null;
             } catch (Exception e) {
-                ceResult = new CacheEntryProcessorResult<T>(e);
+                cepResult = new CacheEntryProcessorResult<T>(e);
             }
-            if (ceResult != null) {
-                allResult.put(key, ceResult);
+            if (cepResult != null) {
+                allResult.put(key, cepResult);
             }
         }
         // at client side, we don't know what entry processor does so we ignore it from statistics perspective
@@ -391,7 +390,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
-        final String regId = getListenerIdLocal(cacheEntryListenerConfiguration);
+        String regId = getListenerIdLocal(cacheEntryListenerConfiguration);
         if (regId == null) {
             return;
         }
@@ -407,15 +406,15 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
 
     protected void updateCacheListenerConfigOnOtherNodes(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
                                                          boolean isRegister) {
-        final Collection<Member> members = clientContext.getClusterService().getMemberList();
-        final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
+        Collection<Member> members = clientContext.getClusterService().getMemberList();
+        HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
         for (Member member : members) {
             try {
-                final Address address = member.getAddress();
+                Address address = member.getAddress();
                 Data configData = toData(cacheEntryListenerConfiguration);
-                final ClientMessage request =
-                        CacheListenerRegistrationCodec.encodeRequest(nameWithPrefix, configData, isRegister, address);
-                final ClientInvocation invocation = new ClientInvocation(client, request, address);
+                ClientMessage request = CacheListenerRegistrationCodec.encodeRequest(nameWithPrefix, configData, isRegister,
+                        address);
+                ClientInvocation invocation = new ClientInvocation(client, request, address);
                 invocation.invoke();
             } catch (Exception e) {
                 sneakyThrow(e);
@@ -497,7 +496,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
 
         @Override
         public void handle(int partitionId, String uuid) {
-            final Member member = clientContext.getClusterService().getMember(uuid);
+            Member member = clientContext.getClusterService().getMember(uuid);
             listener.partitionLost(new CachePartitionLostEvent(name, member, CacheEventType.PARTITION_LOST.getType(),
                     partitionId));
         }
