@@ -84,7 +84,7 @@ public abstract class NonBlockingIOThreadAbstractTest extends HazelcastTestSuppo
     }
 
     private void startThread() {
-        thread = new NonBlockingIOThread(null, "foo", logger, oomeHandler, selectorMode(), selector);
+        thread = new NonBlockingIOThread(null, "foo", logger, oomeHandler, selectorMode(), selector, null);
         beforeStartThread();
         thread.start();
     }

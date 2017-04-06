@@ -28,11 +28,15 @@ import com.hazelcast.internal.networking.SocketWriterInitializer;
 import com.hazelcast.internal.networking.nonblocking.iobalancer.IOBalancer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.networking.nonblocking.SelectorMode.SELECT;
+import static com.hazelcast.internal.networking.nonblocking.SelectorMode.SELECT_NOW_STRING;
 import static com.hazelcast.util.HashUtil.hashToIndex;
+import static com.hazelcast.util.concurrent.BackoffIdleStrategy.createBackoffIdleStrategy;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
@@ -71,6 +75,7 @@ public class NonBlockingIOThreadingModel
     private SelectorMode selectorMode;
     private volatile IOBalancer ioBalancer;
     private boolean selectorWorkaroundTest = Boolean.getBoolean("hazelcast.io.selector.workaround.test");
+    private BackoffIdleStrategy idleStrategy;
 
     public NonBlockingIOThreadingModel(
             LoggingService loggingService,
@@ -97,6 +102,11 @@ public class NonBlockingIOThreadingModel
     private SelectorMode getSelectorMode() {
         if (selectorMode == null) {
             selectorMode = SelectorMode.getConfiguredValue();
+
+            String selectorModeString = SelectorMode.getConfiguredString();
+            if (selectorModeString.startsWith(SELECT_NOW_STRING + ",")) {
+                idleStrategy = createBackoffIdleStrategy(selectorModeString);
+            }
         }
         return selectorMode;
     }
@@ -141,7 +151,8 @@ public class NonBlockingIOThreadingModel
                     + outputThreads.length + " output threads");
         }
 
-        logger.log(getSelectorMode() != SelectorMode.SELECT ? INFO : FINE, "IO threads selector mode is " + getSelectorMode());
+        logger.log(getSelectorMode() != SELECT ? INFO : FINE, "IO threads selector mode is " + getSelectorMode());
+
 
         for (int i = 0; i < inputThreads.length; i++) {
             NonBlockingIOThread thread = new NonBlockingIOThread(
@@ -149,7 +160,8 @@ public class NonBlockingIOThreadingModel
                     hazelcastThreadGroup.getThreadPoolNamePrefix("IO") + "in-" + i,
                     loggingService.getLogger(NonBlockingIOThread.class),
                     oomeHandler,
-                    selectorMode);
+                    selectorMode,
+                    idleStrategy);
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
             inputThreads[i] = thread;
@@ -163,7 +175,8 @@ public class NonBlockingIOThreadingModel
                     hazelcastThreadGroup.getThreadPoolNamePrefix("IO") + "out-" + i,
                     loggingService.getLogger(NonBlockingIOThread.class),
                     oomeHandler,
-                    selectorMode);
+                    selectorMode,
+                    idleStrategy);
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
             outputThreads[i] = thread;

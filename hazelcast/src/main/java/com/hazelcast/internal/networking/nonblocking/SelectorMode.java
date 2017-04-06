@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking.nonblocking;
 
-import com.hazelcast.util.StringUtil;
+import static java.lang.String.format;
 
 /**
  * Controls the mode in which IO and acceptor thread selectors will be operating
@@ -26,20 +26,27 @@ public enum SelectorMode {
     SELECT_NOW,
     SELECT_WITH_FIX;
 
+    public static final String SELECT_STRING = "select";
+    public static final String SELECT_WITH_FIX_STRING = "selectwithfix";
+    public static final String SELECT_NOW_STRING = "selectnow";
+
     public static SelectorMode getConfiguredValue() {
-        return fromString(System.getProperty("hazelcast.io.selectorMode"));
+        return fromString(getConfiguredString());
+    }
+
+    public static String getConfiguredString() {
+        return System.getProperty("hazelcast.io.selectorMode", SELECT_STRING).trim().toLowerCase();
     }
 
     public static SelectorMode fromString(String value) {
-        String valueToCheck = StringUtil.isNullOrEmptyAfterTrim(value) ? null : value.trim().toLowerCase();
-        if (valueToCheck == null) {
+        if (value.equals(SELECT_STRING)) {
             return SELECT;
-        } else if (valueToCheck.equals("selectnow")) {
-            return SELECT_NOW;
-        } else if (valueToCheck.equals("selectwithfix")) {
+        } else if (value.equals(SELECT_WITH_FIX_STRING)) {
             return SELECT_WITH_FIX;
+        } else if (value.equals(SELECT_NOW_STRING) || value.startsWith(SELECT_NOW_STRING + ",")) {
+            return SELECT_NOW;
         } else {
-            return SELECT;
+            throw new IllegalArgumentException(format("Unrecognized selectorMode [%s]", value));
         }
     }
 }

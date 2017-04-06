@@ -53,13 +53,12 @@ public class SelectorModeTest {
     }
 
     @Test
-    public void fromString_whenSelect() throws Exception {
-        assertEquals(SelectorMode.SELECT, SelectorMode.fromString("select"));
+    public void fromString_whenSelectNowWithConfig() throws Exception {
+        assertEquals(SelectorMode.SELECT_NOW, SelectorMode.fromString("selectnow,1,2,3,4"));
     }
 
     @Test
-    public void fromString_whenNull() throws Exception {
-        assertEquals(SelectorMode.SELECT, SelectorMode.fromString(null));
+    public void fromString_whenSelect() throws Exception {
+        assertEquals(SelectorMode.SELECT, SelectorMode.fromString("select"));
     }
-
 }

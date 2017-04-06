@@ -30,6 +30,20 @@ import static org.junit.Assert.assertEquals;
 public class BackoffIdleStrategyTest {
 
     @Test
+    public void test_createBackoffIdleStrategy() {
+        BackoffIdleStrategy idleStrategy = BackoffIdleStrategy.createBackoffIdleStrategy("foo,1,2,10,15");
+        assertEquals(1, idleStrategy.yieldThreshold);
+        assertEquals(3, idleStrategy.parkThreshold);
+        assertEquals(10, idleStrategy.minParkPeriodNs);
+        assertEquals(15, idleStrategy.maxParkPeriodNs);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test_createBackoffIdleStrategy_invalidConfig() {
+        BackoffIdleStrategy.createBackoffIdleStrategy("foo,1");
+    }
+
+    @Test
     public void when_proposedShiftLessThanAllowed_then_shiftProposed() {
         final BackoffIdleStrategy strat = new BackoffIdleStrategy(0, 0, 1, 4);
 
