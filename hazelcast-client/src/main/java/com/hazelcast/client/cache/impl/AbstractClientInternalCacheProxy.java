@@ -222,7 +222,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
     }
 
     protected <T> ICompletableFuture<T> getAndRemoveAsyncInternal(K key, boolean withCompletionEvent) {
-        final long startNanos = nowInNanosOrDefault();
+        long startNanos = nowInNanosOrDefault();
         ensureOpen();
         validateNotNull(key);
         validateConfiguredTypes(cacheConfig, key);
@@ -244,7 +244,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
     }
 
     private <T> ClientDelegatingFuture<T> getAndRemoveInternal(Data keyData, boolean withCompletionEvent) {
-        final int completionId = withCompletionEvent ? nextCompletionId() : -1;
+        int completionId = withCompletionEvent ? nextCompletionId() : -1;
         ClientMessage request = CacheGetAndRemoveCodec.encodeRequest(nameWithPrefix, keyData, completionId);
         ClientInvocationFuture future = invoke(request, keyData, completionId);
         return newDelegatingFuture(future, GET_AND_REMOVE_RESPONSE_DECODER);
@@ -255,9 +255,8 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         addCallback(delegatingFuture, callback);
     }
 
-    protected Object removeAsyncInternal(K key, V oldValue, boolean hasOldValue, boolean withCompletionEvent,
-                                         boolean async) {
-        final long startNanos = nowInNanosOrDefault();
+    protected Object removeAsyncInternal(K key, V oldValue, boolean hasOldValue, boolean withCompletionEvent, boolean async) {
+        long startNanos = nowInNanosOrDefault();
         ensureOpen();
         if (hasOldValue) {
             validateNotNull(key, oldValue);
@@ -313,7 +312,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
 
     protected <T> ICompletableFuture<T> replaceAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
                                                              boolean hasOldValue, boolean withCompletionEvent, boolean async) {
-        final long startNanos = nowInNanosOrDefault();
+        long startNanos = nowInNanosOrDefault();
         ensureOpen();
         if (hasOldValue) {
             validateNotNull(key, oldValue, newValue);
@@ -345,7 +344,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
     protected <T> ICompletableFuture<T> replaceAndGetAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
                                                                    boolean hasOldValue, boolean withCompletionEvent,
                                                                    boolean async) {
-        final long startNanos = nowInNanosOrDefault();
+        long startNanos = nowInNanosOrDefault();
         ensureOpen();
         if (hasOldValue) {
             validateNotNull(key, oldValue, newValue);
@@ -382,11 +381,11 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         delegatingFuture.andThenInternal(callback, true);
     }
 
-    private ClientInvocationFuture putInternal(Data keyData, Data valueData, Data expiryPolicyData,
-                                               boolean isGet, boolean withCompletionEvent) {
+    private ClientInvocationFuture putInternal(Data keyData, Data valueData, Data expiryPolicyData, boolean isGet,
+                                               boolean withCompletionEvent) {
         int completionId = withCompletionEvent ? nextCompletionId() : -1;
-        ClientMessage request = CachePutCodec.encodeRequest(nameWithPrefix, keyData, valueData,
-                expiryPolicyData, isGet, completionId);
+        ClientMessage request = CachePutCodec.encodeRequest(nameWithPrefix, keyData, valueData, expiryPolicyData, isGet,
+                completionId);
         return invoke(request, keyData, completionId);
     }
 
@@ -421,9 +420,8 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         // NOP
     }
 
-    protected ClientDelegatingFuture putAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy,
-                                                      boolean isGet, boolean withCompletionEvent,
-                                                      OneShotExecutionCallback<V> callback) {
+    protected ClientDelegatingFuture putAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy, boolean isGet,
+                                                      boolean withCompletionEvent, OneShotExecutionCallback<V> callback) {
         ensureOpen();
         validateNotNull(key, value);
         validateConfiguredTypes(cacheConfig, key, value);
@@ -458,7 +456,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
     }
 
     protected Object putIfAbsentInternal(K key, V value, ExpiryPolicy expiryPolicy, boolean withCompletionEvent, boolean async) {
-        final long startNanos = nowInNanosOrDefault();
+        long startNanos = nowInNanosOrDefault();
         ensureOpen();
         validateNotNull(key, value);
         validateConfiguredTypes(cacheConfig, key, value);
@@ -646,8 +644,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         }
     }
 
-    private void awaitLatch(CountDownLatch countDownLatch, ICompletableFuture future)
-            throws ExecutionException {
+    private void awaitLatch(CountDownLatch countDownLatch, ICompletableFuture future) throws ExecutionException {
         try {
             long currentTimeoutMs = MAX_COMPLETION_LATCH_WAIT_TIME;
             // Call latch await in small steps to be able to check if node is still active.
@@ -685,7 +682,8 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         return new CacheEventHandler(adaptor);
     }
 
-    private final class CacheEventHandler extends CacheAddEntryListenerCodec.AbstractEventHandler
+    private final class CacheEventHandler
+            extends CacheAddEntryListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
         private final CacheEventListenerAdaptor<K, V> adaptor;

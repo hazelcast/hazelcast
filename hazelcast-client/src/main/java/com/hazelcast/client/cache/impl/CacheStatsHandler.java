@@ -24,8 +24,8 @@ import com.hazelcast.spi.serialization.SerializationService;
  */
 final class CacheStatsHandler {
 
-    private final ClientCacheStatisticsImpl statistics;
     private final SerializationService serializationService;
+    private final ClientCacheStatisticsImpl statistics;
 
     CacheStatsHandler(SerializationService serializationService) {
         this.serializationService = serializationService;
@@ -142,7 +142,6 @@ final class CacheStatsHandler {
             }
 
             public void onFailure(Throwable t) {
-
             }
         };
     }

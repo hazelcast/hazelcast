@@ -113,7 +113,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
 
     @Override
     public ICompletableFuture<V> getAsync(K key, ExpiryPolicy expiryPolicy) {
-        final long startNanos = nowInNanosOrDefault();
+        long startNanos = nowInNanosOrDefault();
         ensureOpen();
         validateNotNull(key);
 
@@ -136,8 +136,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
 
     @Override
     public ICompletableFuture<Void> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return (ICompletableFuture<Void>) putAsyncInternal(key, value, expiryPolicy, false, true,
-                newStatsCallbackOrNull(false));
+        return (ICompletableFuture<Void>) putAsyncInternal(key, value, expiryPolicy, false, true, newStatsCallbackOrNull(false));
     }
 
     @Override
@@ -157,8 +156,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
 
     @Override
     public ICompletableFuture<V> getAndPutAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return (ICompletableFuture<V>) putAsyncInternal(key, value, expiryPolicy, true, false,
-                newStatsCallbackOrNull(true));
+        return (ICompletableFuture<V>) putAsyncInternal(key, value, expiryPolicy, true, false, newStatsCallbackOrNull(true));
     }
 
     @Override
@@ -228,8 +226,8 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         return getAllInternal(dataKeys, expiryPolicy, resultMap, startNanos);
     }
 
-    protected Map<K, V> getAllInternal(Collection<Data> binaryKeys, ExpiryPolicy expiryPolicy,
-                                       Map<K, V> resultMap, long startNanos) {
+    protected Map<K, V> getAllInternal(Collection<Data> binaryKeys, ExpiryPolicy expiryPolicy, Map<K, V> resultMap,
+                                       long startNanos) {
         Data expiryPolicyData = toData(expiryPolicy);
 
         ClientMessage request = CacheGetAllCodec.encodeRequest(nameWithPrefix, binaryKeys, expiryPolicyData);
@@ -271,12 +269,11 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         if (map.isEmpty()) {
             return;
         }
-
         putAllInternal(map, expiryPolicy, new List[partitionCount], startNanos);
     }
 
-    protected void putAllInternal(Map<? extends K, ? extends V> map,
-                                  ExpiryPolicy expiryPolicy, List<Map.Entry<Data, Data>>[] entriesPerPartition, long startNanos) {
+    protected void putAllInternal(Map<? extends K, ? extends V> map, ExpiryPolicy expiryPolicy,
+                                  List<Map.Entry<Data, Data>>[] entriesPerPartition, long startNanos) {
         try {
             // first we fill entry set per partition
             groupDataToPartitions(map, clientContext.getPartitionService(), entriesPerPartition);
@@ -287,8 +284,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         }
     }
 
-    private void groupDataToPartitions(Map<? extends K, ? extends V> map,
-                                       ClientPartitionService partitionService,
+    private void groupDataToPartitions(Map<? extends K, ? extends V> map, ClientPartitionService partitionService,
                                        List<Map.Entry<Data, Data>>[] entriesPerPartition) {
         for (Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
             K key = entry.getKey();
@@ -311,8 +307,8 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
 
     private static final class FutureEntriesTuple {
 
-        private Future future;
-        private List<Map.Entry<Data, Data>> entries;
+        private final Future future;
+        private final List<Map.Entry<Data, Data>> entries;
 
         private FutureEntriesTuple(Future future, List<Map.Entry<Data, Data>> entries) {
             this.future = future;
@@ -402,8 +398,8 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
 
     @Override
     public V getAndReplace(K key, V value, ExpiryPolicy expiryPolicy) {
-        final long startNanos = nowInNanosOrDefault();
-        final Future<V> future = replaceAndGetAsyncInternal(key, null, value, expiryPolicy, false, true, false);
+        long startNanos = nowInNanosOrDefault();
+        Future<V> future = replaceAndGetAsyncInternal(key, null, value, expiryPolicy, false, true, false);
         try {
             V oldValue = future.get();
             if (statisticsEnabled) {
