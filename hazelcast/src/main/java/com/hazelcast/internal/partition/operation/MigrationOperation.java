@@ -17,6 +17,7 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -26,6 +27,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationResponseHandler;
@@ -40,6 +42,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.logging.Level;
+
+import static com.hazelcast.internal.cluster.Versions.V3_9;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public final class MigrationOperation extends BaseMigrationOperation {
@@ -113,9 +117,15 @@ public final class MigrationOperation extends BaseMigrationOperation {
     }
 
     private void checkMigrationInitiatorIsMaster() {
-        Address masterAddress = getNodeEngine().getMasterAddress();
+        NodeEngine nodeEngine = getNodeEngine();
+        Address masterAddress = nodeEngine.getMasterAddress();
         if (!masterAddress.equals(migrationInfo.getMaster())) {
-            throw new RetryableHazelcastException("Migration initiator is not master node! => " + toString());
+            ClusterService clusterService = nodeEngine.getClusterService();
+            if (clusterService.getClusterVersion().isGreaterOrEqual(V3_9)) {
+                throw new IllegalStateException("Migration initiator is not master node! => " + toString());
+            } else {
+                throw new RetryableHazelcastException("Migration initiator is not master node! => " + toString());
+            }
         }
     }
 
