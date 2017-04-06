@@ -227,6 +227,7 @@ public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOpera
         return new LockWaitNotifyKey(new DefaultObjectNamespace(MapService.SERVICE_NAME, name), dataKey);
     }
 
+    @Override
     public String getServiceName() {
         return MapService.SERVICE_NAME;
     }

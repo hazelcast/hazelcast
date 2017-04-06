@@ -43,8 +43,11 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
@@ -142,6 +145,8 @@ import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 @SuppressWarnings("checkstyle:methodcount")
 public class EntryOperation extends MutatingKeyBasedMapOperation implements BackupAwareOperation, BlockingOperation {
 
+    private static final int SET_UNLOCK_RETRY_LIMIT = 1000;
+
     private EntryProcessor entryProcessor;
 
     private transient boolean offloading;
@@ -156,6 +161,8 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
     private transient boolean readOnly;
     private transient long begin;
     private transient OperationServiceImpl ops;
+
+    private transient int setUnlockRetryCount;
 
     public EntryOperation() {
     }
@@ -320,12 +327,34 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
         updateOperation.setNodeEngine(getNodeEngine());
         updateOperation.setCallerUuid(getCallerUuid());
         OperationAccessor.setCallerAddress(updateOperation, getCallerAddress());
+        @SuppressWarnings("checkstyle:anoninnerlength")
         OperationResponseHandler setUnlockResponseHandler = new OperationResponseHandler() {
             @Override
             public void sendResponse(Operation op, Object response) {
-                if (response instanceof Throwable) {
+                if (isRetryable(response) || isTimeout(response)) {
+                    retry(op);
+                } else {
+                    handleResponse(response);
+                }
+            }
+
+            private void retry(Operation op) {
+                if (isRetryLimitReached()) {
                     try {
-                        Throwable t = (Throwable) response;
+                        Object exceeded = new HazelcastException("Set & Unlock retry limit exceeded for key " + dataKey);
+                        getOperationResponseHandler().sendResponse(EntryOperation.this, exceeded);
+                    } finally {
+                        ops.onCompletionAsyncOperation(EntryOperation.this);
+                    }
+                } else {
+                    ops.execute(op);
+                }
+            }
+
+            private void handleResponse(Object response) {
+                if (response instanceof Throwable) {
+                    Throwable t = (Throwable) response;
+                    try {
                         // EntryOffloadableLockMismatchException is a marker send from the EntryOffloadableSetUnlockOperation
                         // meaning that the whole invocation of the EntryOffloadableOperation should be retried
                         if (t instanceof EntryOffloadableLockMismatchException) {
@@ -346,6 +375,19 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
         };
         updateOperation.setOperationResponseHandler(setUnlockResponseHandler);
         ops.execute(updateOperation);
+    }
+
+    private boolean isRetryable(Object response) {
+        return response instanceof RetryableHazelcastException
+                && !(response instanceof PartitionMigratingException || response instanceof WrongTargetException);
+    }
+
+    private boolean isTimeout(Object response) {
+        return response instanceof CallTimeoutResponse;
+    }
+
+    private boolean isRetryLimitReached() {
+        return ++setUnlockRetryCount > SET_UNLOCK_RETRY_LIMIT;
     }
 
     private void unlockOnly(final Object result, String caller, long threadId, long now) {
