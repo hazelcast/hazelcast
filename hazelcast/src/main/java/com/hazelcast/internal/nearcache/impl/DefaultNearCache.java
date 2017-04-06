@@ -128,11 +128,6 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     @Override
-    public boolean isInvalidatedOnChange() {
-        return nearCacheConfig.isInvalidateOnChange();
-    }
-
-    @Override
     public void clear() {
         nearCacheRecordStore.clear();
     }

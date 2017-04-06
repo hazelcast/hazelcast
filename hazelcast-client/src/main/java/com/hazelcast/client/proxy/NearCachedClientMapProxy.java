@@ -81,7 +81,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     // eventually consistent Near Cache can only be used with server versions >= 3.8
     private final int minConsistentNearCacheSupportingServerVersion = calculateVersion("3.8");
-    private boolean invalidateOnChange;
+
     private NearCache<Object, Object> nearCache;
     private ILogger logger;
 
@@ -101,9 +101,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         NearCacheManager nearCacheManager = context.getNearCacheManager();
         IMapDataStructureAdapter<K, V> adapter = new IMapDataStructureAdapter<K, V>(this);
         nearCache = nearCacheManager.getOrCreateNearCache(name, nearCacheConfig, adapter);
-        invalidateOnChange = nearCache.isInvalidatedOnChange();
 
-        if (invalidateOnChange) {
+        if (nearCacheConfig.isInvalidateOnChange()) {
             addNearCacheInvalidationListener(new ConnectedServerVersionAwareNearCacheEventHandler());
         }
     }
