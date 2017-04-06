@@ -41,6 +41,7 @@ import com.hazelcast.util.Clock;
 import java.util.Collection;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.internal.nearcache.impl.invalidation.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateTTLMillis;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTL;
@@ -73,7 +74,8 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         this.mapContainer = mapContainer;
         this.partitionId = partitionId;
         this.mapServiceContext = mapContainer.getMapServiceContext();
-        this.serializationService = mapServiceContext.getNodeEngine().getSerializationService();
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        this.serializationService = nodeEngine.getSerializationService();
         this.name = mapContainer.getName();
         this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
         this.inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
@@ -169,8 +171,12 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         }
     }
 
-    protected Object copyToHeap(Object value) {
-        return value instanceof Data ? toData(value) : value;
+    protected Object copyToHeap(Object object) {
+        if (object instanceof Data) {
+            return toHeapData(((Data) object));
+        } else {
+            return object;
+        }
     }
 
     protected void removeIndex(Collection<Record> records) {
