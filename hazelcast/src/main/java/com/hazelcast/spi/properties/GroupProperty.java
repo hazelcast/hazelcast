@@ -536,6 +536,9 @@ public final class GroupProperty {
      * Back pressure is implemented by making asynchronous backups operations synchronous. This prevents the internal queues from
      * overflowing because the invoker will wait for the primary and for the backups to complete. The frequency of this is
      * determined by the sync-window.
+     *
+     * To deal with overloads of backups, the property 'hazelcast.operation.backup.timeout.millis' should be set to a larger
+     * value; above 60000 is recommended. Otherwise it can still happen backups accumulate.
      */
     public static final HazelcastProperty BACKPRESSURE_ENABLED
             = new HazelcastProperty("hazelcast.backpressure.enabled", false);
