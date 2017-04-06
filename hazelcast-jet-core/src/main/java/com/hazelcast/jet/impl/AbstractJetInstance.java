@@ -23,7 +23,6 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.stream.IStreamCache;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.IStreamMap;
-import com.hazelcast.jet.stream.impl.CacheDecorator;
 import com.hazelcast.jet.stream.impl.ListDecorator;
 import com.hazelcast.jet.stream.impl.MapDecorator;
 
@@ -58,7 +57,7 @@ abstract class AbstractJetInstance implements JetInstance {
 
     @Override
     public <K, V> IStreamCache<K, V> getCache(String name) {
-        return new CacheDecorator<>(hazelcastInstance.getCacheManager().getCache(name), this);
+        return JetCacheManager.getCache(this, name);
     }
 
     @Override
