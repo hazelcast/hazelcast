@@ -26,10 +26,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
-import static com.hazelcast.util.ExceptionUtil.peel;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessage> {
@@ -37,10 +35,11 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
     private final ClientMessage request;
     private final ClientInvocation invocation;
     private final CallIdSequence callIdSequence;
-    private final AtomicInteger completeCount = new AtomicInteger(1);
 
-    public ClientInvocationFuture(ClientInvocation invocation, Executor internalExecutor,
-                                  ClientMessage request, ILogger logger,
+    public ClientInvocationFuture(ClientInvocation invocation,
+                                  Executor internalExecutor,
+                                  ClientMessage request,
+                                  ILogger logger,
                                   CallIdSequence callIdSequence) {
         super(internalExecutor, logger);
         this.request = request;
@@ -80,27 +79,12 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
     public void andThen(ExecutionCallback<ClientMessage> callback) {
         isNotNull(callback, "callback");
 
-        if (completeCount.get() == 0) {
-            try {
-                callback.onResponse(get());
-            } catch (Exception e) {
-                callback.onFailure(peel(e));
-            }
-            return;
-        }
         super.andThen(new InternalDelegatingExecutionCallback(callback));
     }
 
-
     @Override
     protected void onComplete() {
-        complete();
-    }
-
-    private void complete() {
-        if (completeCount.decrementAndGet() == 0) {
-            callIdSequence.complete();
-        }
+        callIdSequence.complete();
     }
 
     @Override
@@ -134,7 +118,7 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
 
         InternalDelegatingExecutionCallback(ExecutionCallback<ClientMessage> callback) {
             this.callback = callback;
-            completeCount.incrementAndGet();
+            callIdSequence.renew();
         }
 
         @Override
@@ -142,7 +126,7 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
             try {
                 callback.onResponse(message);
             } finally {
-                complete();
+                callIdSequence.complete();
             }
         }
 
@@ -151,7 +135,7 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
             try {
                 callback.onFailure(t);
             } finally {
-                complete();
+                callIdSequence.complete();
             }
         }
     }
