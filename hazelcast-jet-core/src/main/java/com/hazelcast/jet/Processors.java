@@ -25,10 +25,12 @@ import com.hazelcast.jet.impl.connector.ReadIListP;
 import com.hazelcast.jet.impl.connector.StreamTextSocketP;
 import com.hazelcast.jet.impl.connector.ReadWithPartitionIteratorP;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
+import com.hazelcast.jet.impl.connector.WriteFileP;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.nio.charset.Charset;
@@ -359,6 +361,50 @@ public final class Processors {
     public static ProcessorSupplier streamFiles(@Nonnull String watchedDirectory,
             @Nullable Charset charset) {
         return StreamFilesP.supplier(watchedDirectory, charset == null ? null : charset.toString());
+    }
+
+    /**
+     * Convenience for {@link #writeFile(String, Charset, boolean, boolean)}, with
+     * UTF-8 charset, overwriting the target file and no early file buffer flush.
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier writeFile(@Nonnull String file) {
+        return writeFile(file, null, false, false);
+    }
+
+    /**
+     * Returns a meta-supplier of processor, that writes all items to a local file on
+     * each member. {@code item.toString()} is written to the file, followed by
+     * {@code '\n'} (both on linux and Windows).
+     * <p>
+     * The same file must be available for writing on all nodes. The file on
+     * each node will contain part of the data processed on that member.
+     * <p>
+     *  The vertex should have {@link Vertex#localParallelism(int) local parallelism} of 1.
+     *
+     * @param file The path to the file
+     * @param charset Character set used when reading the files. If null, utf-8 is used.
+     * @param append Whether to append or overwrite the file
+     * @param flushEarly Whether to flush the file after adding data.
+     *                   {@code true} might decrease performance, with {@code false}
+     *                   you see the changes in file earlier.
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier writeFile(@Nonnull String file, @Nullable Charset charset,
+            boolean append, boolean flushEarly) {
+        String fileNamePrefix = file;
+        String fileNameSuffix = "";
+
+        // if the file name has an extension, use it as a suffix
+        String fileNameWithoutPath = new File(file).getName();
+        int lastDot = fileNameWithoutPath.lastIndexOf('.');
+        if (lastDot > 0) {
+            // non-zero is intentional, to not consider files starting with '.' as extension
+            fileNameSuffix = fileNameWithoutPath.substring(lastDot);
+            fileNamePrefix = fileNamePrefix.substring(0, fileNamePrefix.length() - fileNameSuffix.length());
+        }
+
+        return WriteFileP.supplier(fileNamePrefix, fileNameSuffix, charset == null ? null : charset.name(), append, flushEarly);
     }
 
     /**
