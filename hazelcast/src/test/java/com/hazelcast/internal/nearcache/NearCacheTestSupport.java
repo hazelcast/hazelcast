@@ -146,21 +146,6 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         assertEquals(nearCache.size(), managedNearCacheRecordStore.latestSize);
     }
 
-    protected void doConfigureInvalidateOnChangeForNearCache() {
-        NearCacheConfig config1 = createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME + "-1", DEFAULT_MEMORY_FORMAT);
-        NearCacheConfig config2 = createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME + "-2", DEFAULT_MEMORY_FORMAT);
-
-        config1.setInvalidateOnChange(false);
-        config2.setInvalidateOnChange(true);
-
-        NearCache nearCache1 = createNearCache(config1.getName(), config1, createManagedNearCacheRecordStore());
-        NearCache nearCache2 = createNearCache(config2.getName(), config2, createManagedNearCacheRecordStore());
-
-        // show that NearCache gets "isInvalidateOnChange" configuration from specified NearCacheConfig
-        assertFalse(nearCache1.isInvalidatedOnChange());
-        assertTrue(nearCache2.isInvalidatedOnChange());
-    }
-
     protected void doClearNearCache() {
         ManagedNearCacheRecordStore managedNearCacheRecordStore = createManagedNearCacheRecordStore();
         NearCache<Integer, String> nearCache = createNearCache(DEFAULT_NEAR_CACHE_NAME, managedNearCacheRecordStore);

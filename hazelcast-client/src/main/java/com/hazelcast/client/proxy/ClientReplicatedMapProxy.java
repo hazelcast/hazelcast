@@ -84,10 +84,10 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
 
+    private int targetPartitionId;
+
     private volatile NearCache nearCache;
     private volatile String invalidationListenerId;
-
-    private int targetPartitionId;
 
     public ClientReplicatedMapProxy(String serviceName, String objectName) {
         super(serviceName, objectName);
@@ -108,7 +108,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             return;
         }
         nearCache = context.getNearCacheManager().getOrCreateNearCache(name, nearCacheConfig);
-        if (nearCache.isInvalidatedOnChange()) {
+        if (nearCacheConfig.isInvalidateOnChange()) {
             addNearCacheInvalidateListener();
         }
     }

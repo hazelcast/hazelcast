@@ -87,9 +87,11 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
     private final int minConsistentNearCacheSupportingServerVersion = calculateVersion("3.8");
 
     private boolean cacheOnUpdate;
-    private String nearCacheMembershipRegistrationId;
-    private NearCache<Data, Object> nearCache;
+    private boolean invalidateOnChange;
+
     private NearCacheManager nearCacheManager;
+    private NearCache<Data, Object> nearCache;
+    private String nearCacheMembershipRegistrationId;
 
     public NearCachedClientCacheProxy(CacheConfig cacheConfig) {
         super(cacheConfig);
@@ -108,13 +110,14 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
     protected void onInitialize() {
         super.onInitialize();
 
-        nearCacheManager = clientContext.getNearCacheManager();
         ClientConfig clientConfig = clientContext.getClientConfig();
-
         NearCacheConfig nearCacheConfig = checkNearCacheConfig(clientConfig.getNearCacheConfig(name),
                 clientConfig.getNativeMemoryConfig());
         cacheOnUpdate = isCacheOnUpdate(nearCacheConfig, nameWithPrefix, logger);
+        invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
+
         ICacheDataStructureAdapter<K, V> adapter = new ICacheDataStructureAdapter<K, V>(this);
+        nearCacheManager = clientContext.getNearCacheManager();
         nearCache = nearCacheManager.getOrCreateNearCache(nameWithPrefix, nearCacheConfig, adapter);
         CacheStatistics localCacheStatistics = super.getLocalCacheStatistics();
         ((ClientCacheStatisticsImpl) localCacheStatistics).setNearCacheStats(nearCache.getNearCacheStats());
@@ -453,7 +456,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
     }
 
     private void registerInvalidationListener() {
-        if (!nearCache.isInvalidatedOnChange()) {
+        if (!invalidateOnChange) {
             return;
         }
 
@@ -522,7 +525,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
     }
 
     private void removeInvalidationListener() {
-        if (!nearCache.isInvalidatedOnChange()) {
+        if (!invalidateOnChange) {
             return;
         }
 

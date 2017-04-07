@@ -62,11 +62,6 @@ public class NearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void configureInvalidateOnChangeForNearCache() {
-        doConfigureInvalidateOnChangeForNearCache();
-    }
-
-    @Test
     public void clearNearCache() {
         doClearNearCache();
     }

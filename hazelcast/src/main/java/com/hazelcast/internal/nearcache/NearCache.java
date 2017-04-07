@@ -83,13 +83,6 @@ public interface NearCache<K, V> extends InitializingObject {
     boolean remove(K key);
 
     /**
-     * Checks if values are invalidated on changes.
-     *
-     * @return {@code true} if values are invalidated on changes, {@code false} otherwise
-     */
-    boolean isInvalidatedOnChange();
-
-    /**
      * Removes all stored values.
      */
     void clear();
