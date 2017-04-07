@@ -64,6 +64,7 @@ public class ClientInvocation implements Runnable {
     private boolean urgent;
     private long retryTimeoutPointInMillis;
     private EventHandler handler;
+    private long callId;
 
     protected ClientInvocation(HazelcastClientInstanceImpl client,
                                ClientMessage clientMessage,
@@ -115,11 +116,10 @@ public class ClientInvocation implements Runnable {
         assert (clientMessage != null);
 
         try {
-            if (urgent) {
-                clientMessage.setCorrelationId(callIdSequence.renew());
-            } else {
-                clientMessage.setCorrelationId(callIdSequence.next());
+            if (callId == 0) {
+                callId = urgent ? callIdSequence.forceNext() : callIdSequence.next();
             }
+            clientMessage.setCorrelationId(callId);
             invokeOnSelection();
         } catch (Exception e) {
             if (e instanceof HazelcastOverloadException) {
@@ -149,9 +149,15 @@ public class ClientInvocation implements Runnable {
 
     @Override
     public void run() {
+        // first we force a new invocation slot because we are going to return our old invocation slot immediately after
+        // It is important that we first 'force' taking a new slot; otherwise it could be that a sneaky invocation gets
+        // through that takes our slot!
+        callId = callIdSequence.forceNext();
+
+        //we release the old slot
+        callIdSequence.complete();
+
         try {
-            //Retrying, finished with old call id, will try to receive new one in invoke
-            callIdSequence.complete();
             invoke();
         } catch (Throwable e) {
             clientInvocationFuture.complete(e);
