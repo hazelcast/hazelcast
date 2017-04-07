@@ -20,6 +20,7 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.Distributed.Optional;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.stream.DistributedCollector.Reducer;
 import com.hazelcast.jet.stream.impl.reducers.DistributedCollectorImpl;
 import com.hazelcast.jet.stream.impl.reducers.DistributedStringJoiner;
@@ -1159,7 +1160,7 @@ public abstract class DistributedCollectors {
     toICache(String cacheName,
              Distributed.Function<? super T, ? extends K> keyMapper,
              Distributed.Function<? super T, ? extends U> valueMapper) {
-        return new SinkReducer<>("write-cache-" + cacheName, jetInstance -> jetInstance.getCache(cacheName),
+        return new SinkReducer<>("write-cache-" + cacheName, CacheGetter.getCacheF(cacheName),
                 keyMapper, valueMapper, writeCache(cacheName));
     }
 
@@ -1223,7 +1224,7 @@ public abstract class DistributedCollectors {
              Distributed.Function<? super T, ? extends K> keyMapper,
              Distributed.Function<? super T, ? extends U> valueMapper,
              Distributed.BinaryOperator<U> mergeFunction) {
-        return new MergingSinkReducer<>("write-cache-" + cacheName, jetInstance -> jetInstance.getCache(cacheName),
+        return new MergingSinkReducer<>("write-cache-" + cacheName, CacheGetter.getCacheF(cacheName),
                 keyMapper, valueMapper, mergeFunction, writeCache(cacheName));
     }
 
@@ -1366,7 +1367,17 @@ public abstract class DistributedCollectors {
     Reducer<T, ICache<K, D>> groupingByToICache(String cacheName,
                                                 Distributed.Function<? super T, ? extends K> classifier,
                                                 DistributedCollector<? super T, A, D> downstream) {
-        return new GroupingSinkReducer<>("write-cache-" + cacheName, jetInstance -> jetInstance.getCache(cacheName),
+        return new GroupingSinkReducer<>("write-cache-" + cacheName, CacheGetter.getCacheF(cacheName),
                 classifier, downstream, writeCache(cacheName));
+    }
+
+    /**
+     * This class is necessary to conceal the cache-api
+     */
+    private static class CacheGetter {
+
+        private static <K, V> Distributed.Function<JetInstance, IStreamCache<K, V>> getCacheF(String name) {
+            return instance -> instance.getCache(name);
+        }
     }
 }
