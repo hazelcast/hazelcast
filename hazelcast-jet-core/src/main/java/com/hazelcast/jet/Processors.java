@@ -22,7 +22,7 @@ import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.StreamFilesP;
 import com.hazelcast.jet.impl.connector.ReadIListP;
-import com.hazelcast.jet.impl.connector.ReadSocketTextStreamP;
+import com.hazelcast.jet.impl.connector.StreamTextSocketP;
 import com.hazelcast.jet.impl.connector.ReadWithPartitionIteratorP;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 
@@ -257,11 +257,32 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processors that connect to the specified socket and read and emit text line by line.
+     * Create processor with UTF-8 character set.
+     * @see #streamTextSocket(String, int, Charset)
      */
     @Nonnull
-    public static ProcessorSupplier readSocket(@Nonnull String host, int port) {
-        return ReadSocketTextStreamP.supplier(host, port);
+    public static Distributed.Supplier<Processor> streamTextSocket(@Nonnull String host, int port) {
+        return streamTextSocket(host, port, null);
+    }
+
+    /**
+     * A reader that connects to a specified socket and reads and emits text line by line.
+     * This processor expects a server-side socket to be available to connect to.
+     * <p>
+     * Each processor instance will create a socket connection to the configured [host:port],
+     * so there will be {@code clusterSize * localParallelism} connections. The server
+     * should do the load-balancing.
+     * <p>
+     * The processor will complete, when the socket is closed by the server. No reconnection
+     * is attempted.
+     *
+     * @param host The host name to connect to
+     * @param port The port number to connect to
+     * @param charset Character set used to decode the stream
+     */
+    @Nonnull
+    public static Distributed.Supplier<Processor> streamTextSocket(@Nonnull String host, int port, Charset charset) {
+        return StreamTextSocketP.supplier(host, port, charset != null ? charset.name() : null);
     }
 
     /**
