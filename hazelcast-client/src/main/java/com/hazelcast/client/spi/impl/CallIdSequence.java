@@ -37,7 +37,7 @@ public abstract class CallIdSequence {
      *
      * @return the generated call id.
      */
-    public abstract long renew();
+    public abstract long forceNext();
 
     public abstract void complete();
 
@@ -74,7 +74,7 @@ public abstract class CallIdSequence {
         }
 
         @Override
-        public long renew() {
+        public long forceNext() {
             return longs.incrementAndGet(INDEX_HEAD);
         }
 
