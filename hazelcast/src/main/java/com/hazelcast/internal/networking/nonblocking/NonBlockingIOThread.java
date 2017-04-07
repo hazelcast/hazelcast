@@ -127,7 +127,8 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     private static Selector newSelector(ILogger logger) {
         try {
             Selector selector = Selector.open();
-            if (Boolean.getBoolean("tcp.optimizedselector")) {
+            boolean optimize = Boolean.parseBoolean(System.getProperty("hazelcast.io.optimizeselector", "true"));
+            if (optimize) {
                 optimize(selector, logger);
             }
             return selector;
