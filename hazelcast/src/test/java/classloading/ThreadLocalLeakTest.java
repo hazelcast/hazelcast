@@ -17,7 +17,7 @@
 package classloading;
 
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.util.FilteringClassLoader;
 import org.junit.After;
 import org.junit.Test;
@@ -40,7 +40,7 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category(QuickTest.class)
+@Category(NightlyTest.class)
 public class ThreadLocalLeakTest {
 
     private enum ClassLoaderType {
