@@ -37,9 +37,9 @@ import java.util.stream.StreamSupport;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 
 /**
- * @see com.hazelcast.jet.Processors#readFile(String, Charset, String)
+ * @see com.hazelcast.jet.Processors#readFiles(String, Charset, String)
  */
-public class ReadFileP extends AbstractProcessor {
+public class ReadFilesP extends AbstractProcessor {
 
     private final Charset charset;
     private final int parallelism;
@@ -47,7 +47,7 @@ public class ReadFileP extends AbstractProcessor {
     private final Path directory;
     private final String glob;
 
-    ReadFileP(String directory, Charset charset, String glob, int parallelism, int id) {
+    ReadFilesP(String directory, Charset charset, String glob, int parallelism, int id) {
         this.directory = Paths.get(directory);
         this.glob = glob;
         this.charset = charset;
@@ -93,7 +93,7 @@ public class ReadFileP extends AbstractProcessor {
     }
 
     /**
-     * @see com.hazelcast.jet.Processors#readFile(String, Charset, String)
+     * @see com.hazelcast.jet.Processors#readFiles(String, Charset, String)
      */
     public static ProcessorSupplier supplier(String directory, String charset, String glob) {
         return new ProcessorSupplier() {
@@ -104,7 +104,7 @@ public class ReadFileP extends AbstractProcessor {
             public Collection<? extends Processor> get(int count) {
                 Charset charsetObj = charset == null ? StandardCharsets.UTF_8 : Charset.forName(charset);
                 return IntStream.range(0, count)
-                        .mapToObj(i -> new ReadFileP(directory, charsetObj, glob, count, i))
+                        .mapToObj(i -> new ReadFilesP(directory, charsetObj, glob, count, i))
                         .collect(Collectors.toList());
             }
         };

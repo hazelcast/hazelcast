@@ -41,14 +41,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.Processors.readFile;
+import static com.hazelcast.jet.Processors.readFiles;
 import static com.hazelcast.jet.Processors.writeList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class ReadFilePTest extends JetTestSupport {
+public class ReadFilesPTest extends JetTestSupport {
 
     private JetInstance instance;
     private File directory;
@@ -108,7 +108,7 @@ public class ReadFilePTest extends JetTestSupport {
 
     private DAG buildDag(String glob) {
         DAG dag = new DAG();
-        Vertex reader = dag.newVertex("reader", readFile(directory.getPath(), StandardCharsets.UTF_8, glob))
+        Vertex reader = dag.newVertex("reader", readFiles(directory.getPath(), StandardCharsets.UTF_8, glob))
                 .localParallelism(1);
         Vertex writer = dag.newVertex("writer", writeList(list.getName())).localParallelism(1);
         dag.edge(between(reader, writer));

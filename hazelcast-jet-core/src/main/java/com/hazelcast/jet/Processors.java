@@ -19,7 +19,8 @@ package com.hazelcast.jet;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.Traversers.ResettableSingletonTraverser;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
-import com.hazelcast.jet.impl.connector.ReadFileP;
+import com.hazelcast.jet.impl.connector.ReadFilesP;
+import com.hazelcast.jet.impl.connector.StreamFilesP;
 import com.hazelcast.jet.impl.connector.ReadIListP;
 import com.hazelcast.jet.impl.connector.ReadSocketTextStreamP;
 import com.hazelcast.jet.impl.connector.ReadWithPartitionIteratorP;
@@ -269,11 +270,11 @@ public final class Processors {
      *
      * @param directory Parent directory of the files.
      *
-     * @see #readFile(String, Charset, String)
+     * @see #readFiles(String, Charset, String)
      */
     @Nonnull
-    public static ProcessorSupplier readFile(@Nonnull String directory) {
-        return readFile(directory, StandardCharsets.UTF_8, null);
+    public static ProcessorSupplier readFiles(@Nonnull String directory) {
+        return readFiles(directory, StandardCharsets.UTF_8, null);
     }
 
     /**
@@ -296,9 +297,47 @@ public final class Processors {
      *          {@link java.nio.file.FileSystem#getPathMatcher(String) getPathMatcher()}
      */
     @Nonnull
-    public static ProcessorSupplier readFile(@Nonnull String directory, @Nullable Charset charset,
+    public static ProcessorSupplier readFiles(@Nonnull String directory, @Nullable Charset charset,
             @Nullable String glob) {
-        return ReadFileP.supplier(directory, charset == null ? "utf-8" : charset.name(), glob);
+        return ReadFilesP.supplier(directory, charset == null ? "utf-8" : charset.name(), glob);
+    }
+
+    /**
+     * @see #streamFiles(String, Charset)
+     */
+    public static ProcessorSupplier streamFiles(@Nonnull String watchedDirectory) {
+        return streamFiles(watchedDirectory, null);
+    }
+
+    /**
+     * A source processor designed to handle log files in a directory in a streaming
+     * way. It processes files, as they are created/appended to. It ignores files in
+     * subdirectories. Contents of the files are emitted line by line. There is no
+     * indication, which file a particular line comes from.
+     * <p>
+     * Only content appended to the files is read.
+     * Pre-existing files will be scanned for file sizes on startup, and will be
+     * processed from that position, ignoring possibly incomplete first line, if the
+     * file is being written to during startup.
+     * <p>
+     * Only lines terminated with a newline character are emitted. This is to avoid
+     * emitting single line in two chunks, if the file is being actively written to.
+     * <p>
+     * The same directory should be available on all members, but it should not
+     * contain the same files (i.e. it should not a network shared directory, but logs
+     * local to the machine).
+     * <p>
+     * It completes, when the directory is deleted. However, in order to delete
+     * the directory all files in it must be deleted, and if you delete a file, that is
+     * currently being read from, the job will encounter an IOException. Directory
+     * must be deleted on all nodes.
+     *
+     * @param watchedDirectory The directory where we watch files
+     * @param charset Charset used to read files. If null, UTF-8 is used
+     */
+    public static ProcessorSupplier streamFiles(@Nonnull String watchedDirectory,
+            @Nullable Charset charset) {
+        return StreamFilesP.supplier(watchedDirectory, charset == null ? null : charset.toString());
     }
 
     /**
