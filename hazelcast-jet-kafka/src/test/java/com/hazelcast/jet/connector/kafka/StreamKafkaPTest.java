@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.connector.kafka;
 
-
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
@@ -33,17 +32,19 @@ import org.junit.runner.RunWith;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.Processors.writeList;
-import static com.hazelcast.jet.connector.kafka.ReadKafkaP.readKafka;
+import static com.hazelcast.jet.connector.kafka.StreamKafkaP.streamKafka;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
-public class ReadKafkaPTest extends KafkaTestSupport {
+public class StreamKafkaPTest extends KafkaTestSupport {
 
     @Test
     public void testReadTopic() throws Exception {
@@ -60,14 +61,14 @@ public class ReadKafkaPTest extends KafkaTestSupport {
 
         Properties properties = getProperties(brokerConnectionString, IntegerDeserializer.class, StringDeserializer.class);
         Vertex source = dag.newVertex("source",
-                readKafka(properties, topic1, topic2)).localParallelism(4);
+                streamKafka(properties, topic1, topic2)).localParallelism(4);
 
         Vertex sink = dag.newVertex("sink", writeList("sink"))
                          .localParallelism(1);
 
         dag.edge(between(source, sink));
 
-        instance.newJob(dag).execute();
+        Future<Void> jobFuture = instance.newJob(dag).execute();
         sleepAtLeastSeconds(3);
         range(0, messageCount).forEach(i -> {
             produce(topic1, i, Integer.toString(i));
@@ -85,6 +86,12 @@ public class ReadKafkaPTest extends KafkaTestSupport {
                 });
             }
         });
+
+        assertFalse(jobFuture.isDone());
+
+        // cancel the job
+        jobFuture.cancel(true);
+        assertTrueEventually(() -> assertTrue(jobFuture.isDone()));
     }
 
     private Properties getProperties(String brokerConnectionString, Class keyDeserializer, Class valueDeserializer) {
