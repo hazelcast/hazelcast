@@ -24,8 +24,8 @@ import javax.annotation.Nonnull;
  * Does the computation needed to transform zero or more input data streams
  * into zero or more output streams. Each input/output stream corresponds
  * to one edge on the vertex represented by this processor. The
- * correspondence between a stream and an edge is established via the edge's
- * <em>ordinal</em>.
+ * correspondence between a stream and an edge is established via the
+ * edge's <em>ordinal</em>.
  * <p>
  * The special case of zero input streams applies to a <em>source</em>
  * vertex, which gets its data from the environment. The special case of
@@ -35,35 +35,37 @@ import javax.annotation.Nonnull;
  * The processor accepts input from instances of {@link Inbox} and pushes
  * its output to an instance of {@link Outbox}.
  * <p>
- * If this processor declares itself as "cooperative" ({@link
- * #isCooperative()} returns {@code true}, the default), it should limit
- * the amount of time it spends per call because it will participate in a
- * cooperative multithreading scheme. The processing methods should also
- * limit the amount of data they output per invocation because the outbox
- * will not be emptied until the processor yields control back to its
- * caller. Specifically, {@code Outbox} has a method {@link
- * Outbox#isHighWater isHighWater()} that can be tested to see whether it's
- * time to stop pushing more data into it.  There is also a finer-grained
- * method {@link Outbox#isHighWater(int) isHighWater(ordinal)}, which tells
- * the state of an individual output bucket.
+ * By default the processor declares itself as "cooperative" ({@link
+ * #isCooperative()} returns {@code true}). It will be assigned an outbox
+ * of finite capacity which is not emptied until the processor yields back
+ * to the execution engine. As soon as the outbox refuses an offered item,
+ * the processor should save its current state and return to the caller.
+ * It should also limit the amount of time it spends per call because it
+ * will participate in a cooperative multithreading scheme, sharing a
+ * thread with other processors.
  * <p>
  * On the other hand, if the processor declares itself as "non-cooperative"
  * ({@link #isCooperative()} returns {@code false}), then each item it
  * emits to the outbox will be immediately pushed into the outbound edge's
  * queue, blocking as needed until the queue accepts it. Therefore there is
  * no limit on the number of items that can be emitted during a single
- * processor call, and there is no limit on the time taken to complete a
- * call. For example, a source processor can do all of its work in a
- * single invocation of {@link Processor#complete() complete()}, even if
- * the stream it generates is infinite.
+ * processor call, and there is no limit on the time spent per call. For
+ * example, a source processor can do all of its work in a single
+ * invocation of {@link Processor#complete() complete()}, even if the stream
+ * it generates is infinite.
+ * <p>
+ * Jet prefers cooperative processors because they result in greater overall
+ * throughput. A processor should be non-cooperative only if it involves
+ * blocking operations, which would cause all other processors on the same
+ * shared thread to starve.
  */
 public interface Processor {
 
     /**
      * Initializes this processor with the outbox that the processing methods
-     * must use to deposit their output items. This method will be called exactly
-     * once and strictly before any calls to processing methods
-     * ({@link #process(int, Inbox)} and {@link #complete()}).
+     * must use to deposit their output items. This method will be called
+     * exactly once and strictly before any calls to processing methods ({@link
+     * #process(int, Inbox)} and {@link #complete()}).
      * <p>
      * The default implementation does nothing.
      */
@@ -71,8 +73,8 @@ public interface Processor {
     }
 
     /**
-     * Processes some items in the supplied inbox. Removes the items it's
-     * done with. Does not remove an item until it is done with it.
+     * Processes some items in the supplied inbox. Removes the items it's done
+     * with. Does not remove an item until it is done with it.
      * <p>
      * The default implementation does nothing.
      *
@@ -83,25 +85,30 @@ public interface Processor {
     }
 
     /**
-     * Called after all the inputs are exhausted. If it returns {@code false}, it will be
-     * invoked again until it returns {@code true}. After this method is called, no other
-     * processing methods will be called on this processor.
+     * Called after all the inputs are exhausted. If it returns {@code false},
+     * it will be invoked again until it returns {@code true}. After this
+     * method is called, no other processing methods will be called on this
+     * processor.
      *
-     * @return {@code true} if the completing step is now done, {@code false} otherwise.
+     * @return {@code true} if the completing step is now done, {@code false}
+     *          otherwise.
      */
     default boolean complete() {
         return true;
     }
 
     /**
-     * Tells whether this processor is able to participate in cooperative multithreading.
-     * This means that each invocation of a processing method will take a reasonably small
-     * amount of time (up to a millisecond). A cooperative processor should not attempt
-     * any blocking I/O operations.
+     * Tells whether this processor is able to participate in cooperative
+     * multithreading. This means that each invocation of a processing method
+     * will take a reasonably small amount of time (up to a millisecond). A
+     * cooperative processor should not attempt any blocking I/O operations.
      * <p>
-     * If this processor declares itself non-cooperative, it will be allocated a dedicated
-     * Java thread. Otherwise it will be allocated a tasklet which shares a thread with other
-     * tasklets.
+     * If this processor declares itself cooperative, it will get a
+     * non-blocking, buffering outbox of limited capacity and share a thread
+     * with other cooperative processors. Otherwise it will get an
+     * auto-flushing, blocking outbox and run in a dedicated Java thread.
+     * <p>
+     * The default implementation returns {@code true}.
      */
     default boolean isCooperative() {
         return true;
@@ -109,7 +116,8 @@ public interface Processor {
 
 
     /**
-     * Context passed to the processor in the {@link #init(Outbox, Processor.Context) init()} call.
+     * Context passed to the processor in the
+     * {@link #init(Outbox, Processor.Context) init()} call.
      */
     interface Context {
 
@@ -126,12 +134,13 @@ public interface Processor {
         ILogger logger();
 
         /**
-         * Returns the index of the current processor among all the processors created for this vertex on this node.
+         * Returns the index of the current processor among all the processors
+         * created for this vertex on this node.
          */
         int index();
 
         /***
-         * Returns the name of the vertex associated with this processor
+         * Returns the name of the vertex associated with this processor.
          */
         @Nonnull
         String vertexName();

@@ -40,8 +40,8 @@ public class CooperativeProcessorTasklet extends ProcessorTaskletBase {
                                        List<InboundEdgeStream> instreams, List<OutboundEdgeStream> outstreams) {
         super(vertexName, context, processor, instreams, outstreams);
         Preconditions.checkTrue(processor.isCooperative(), "Processor is non-cooperative");
-        int[] highWaterMarks = Stream.of(this.outstreams).mapToInt(OutboundEdgeStream::getHighWaterMark).toArray();
-        this.outbox = new ArrayDequeOutbox(outstreams.size(), highWaterMarks);
+        int[] bucketCapacities = Stream.of(this.outstreams).mapToInt(OutboundEdgeStream::getOutboxCapacity).toArray();
+        this.outbox = new ArrayDequeOutbox(outstreams.size(), bucketCapacities, progTracker);
     }
 
     @Override
@@ -68,34 +68,22 @@ public class CooperativeProcessorTasklet extends ProcessorTaskletBase {
     }
 
     private void tryProcessInbox() {
-        if (outbox.isHighWater()) {
-            progTracker.notDone();
-            return;
-        }
-        progTracker.madeProgress(true);
-        final int inboundOrdinal = currInstream.ordinal();
-        processor.process(inboundOrdinal, inbox());
+        processor.process(currInstream.ordinal(), inbox());
         if (!inbox().isEmpty()) {
             progTracker.notDone();
         }
     }
 
     private void completeIfNeeded() {
-        if (processorCompleted) {
-            return;
+        if (!processorCompleted) {
+            processorCompleted = processor.complete();
+            if (!processorCompleted) {
+                progTracker.notDone();
+                return;
+            }
         }
-        if (outbox.isHighWater()) {
+        if (!outbox.offer(DONE_ITEM)) {
             progTracker.notDone();
-            return;
-        }
-        progTracker.madeProgress(true);
-        if (!processor.complete()) {
-            progTracker.notDone();
-            return;
-        }
-        processorCompleted = true;
-        for (OutboundEdgeStream outstream : outstreams) {
-            outbox.add(outstream.ordinal(), DONE_ITEM);
         }
     }
 

@@ -100,7 +100,7 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        return emitCooperatively(trav);
+        return emitFromTraverser(trav);
     }
 
     private Traverser<R> traverseRecordReader(RecordReader<K, V> r) {

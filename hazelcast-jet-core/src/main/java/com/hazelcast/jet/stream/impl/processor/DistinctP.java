@@ -42,6 +42,6 @@ public class DistinctP<T> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        return emitCooperatively(resultTraverser);
+        return emitFromTraverser(resultTraverser);
     }
 }

@@ -28,7 +28,7 @@
     </properties>
     <edge-defaults>
        <queue-size>1024</queue-size>
-       <high-water-mark>2048</high-water-mark>
+       <outbox-capacity>2048</outbox-capacity>
        <packet-size-limit>16384</packet-size-limit>
        <receive-window-multiplier>3</receive-window-multiplier>
     </edge-defaults>

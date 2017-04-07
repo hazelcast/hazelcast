@@ -53,7 +53,7 @@ public class CombineGroupsP<K, V, A, R> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        return emitCooperatively(resultTraverser);
+        return emitFromTraverser(resultTraverser);
     }
 
 }

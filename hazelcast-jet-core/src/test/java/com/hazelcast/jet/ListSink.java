@@ -20,41 +20,17 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
-class ListConsumer extends AbstractProcessor {
+class ListSink extends AbstractProcessor {
 
-    private final List<Object> list;
-    private boolean isComplete;
-    private int yieldIndex = -1;
-
-    ListConsumer() {
-        list = new ArrayList<>();
-    }
+    private final List<Object> list = new ArrayList<>();
 
     @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-        if (list.size() == yieldIndex) {
-            yieldIndex = -1;
-            return false;
-        }
         list.add(item);
         return true;
     }
 
-    @Override
-    public boolean complete() {
-        isComplete = true;
-        return true;
-    }
-
-    public void yieldOn(int index) {
-        yieldIndex = index;
-    }
-
-    public boolean isComplete() {
-        return isComplete;
-    }
-
-    public List<Object> getList() {
+    List<Object> getList() {
         return list;
     }
 }

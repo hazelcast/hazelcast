@@ -48,6 +48,6 @@ public class SortP<T> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        return emitCooperatively(resultTraverser);
+        return emitFromTraverser(resultTraverser);
     }
 }

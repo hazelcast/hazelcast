@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
+import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,13 +42,15 @@ public class ReadWithPartitionIteratorPTest {
     @Test
     @SuppressWarnings("unchecked")
     public void when_readFromTwoPartitions_then_emitRoundRobin() {
+
+        // Given
         final List<Integer> partitions = asList(0, 1);
         final Iterator<Entry<Integer, Integer>>[] content = new Iterator[] {
                 iterate(51, 52, 53),
                 iterate(71, 72, 73),
         };
         ReadWithPartitionIteratorP<Entry<Integer, Integer>> r = new ReadWithPartitionIteratorP<>(p -> content[p], partitions);
-        ArrayDequeOutbox outbox = new ArrayDequeOutbox(1, new int[]{3});
+        ArrayDequeOutbox outbox = new ArrayDequeOutbox(1, new int[]{3}, new ProgressTracker());
         Queue<Object> bucket = outbox.queueWithOrdinal(0);
         r.init(outbox, mock(Processor.Context.class));
 

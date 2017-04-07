@@ -62,7 +62,7 @@ public class ForwardingTest extends JetTestSupport {
     @Test
     public void when_single() throws Throwable {
         DAG dag = new DAG();
-        Vertex producer = new Vertex("producer", () -> new ListProducer(NUMBERS, 4)).localParallelism(1);
+        Vertex producer = new Vertex("producer", () -> new ListSource(NUMBERS)).localParallelism(1);
 
         int parallelism = 4;
         ProcSupplier supplier = new ProcSupplier();
@@ -84,7 +84,7 @@ public class ForwardingTest extends JetTestSupport {
     @Test
     public void when_broadcast() throws Throwable {
         DAG dag = new DAG();
-        Vertex producer = new Vertex("producer", () -> new ListProducer(NUMBERS, 4)).localParallelism(1);
+        Vertex producer = new Vertex("producer", () -> new ListSource(NUMBERS)).localParallelism(1);
 
         int parallelism = 4;
         ProcSupplier supplier = new ProcSupplier();
@@ -104,7 +104,7 @@ public class ForwardingTest extends JetTestSupport {
     @Test
     public void when_partitioned() throws Throwable {
         DAG dag = new DAG();
-        Vertex producer = new Vertex("producer", () -> new ListProducer(NUMBERS, 4)).localParallelism(1);
+        Vertex producer = new Vertex("producer", () -> new ListSource(NUMBERS)).localParallelism(1);
 
         int parallelism = 2;
         ProcSupplier supplier = new ProcSupplier();
@@ -132,7 +132,7 @@ public class ForwardingTest extends JetTestSupport {
 
         @Override
         public void init(@Nonnull Context context) {
-            processors = Stream.generate(ListConsumer::new).limit(context.localParallelism()).collect(toList());
+            processors = Stream.generate(ListSink::new).limit(context.localParallelism()).collect(toList());
         }
 
         @Override @Nonnull
@@ -142,7 +142,7 @@ public class ForwardingTest extends JetTestSupport {
         }
 
         List<Object> getListAt(int i) {
-            return ((ListConsumer) processors.get(i)).getList();
+            return ((ListSink) processors.get(i)).getList();
         }
     }
 }

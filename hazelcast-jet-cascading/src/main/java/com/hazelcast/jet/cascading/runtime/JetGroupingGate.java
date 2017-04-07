@@ -53,7 +53,8 @@ class JetGroupingGate extends GroupingSpliceGate {
         Tuple keyTuple = keyBuilder[pos].makeResult(incomingEntry.getTuple(), null);
         Tuple valueTuple = incomingEntry.getTupleCopy();
         SimpleImmutableEntry<Tuple, Tuple> pair = new SimpleImmutableEntry<>(new Tuple(keyTuple), valueTuple);
-        outbox.add(pair);
+        boolean accepted = outbox.offer(pair);
+        assert accepted : "Outbox refused item";
     }
 
     @Override

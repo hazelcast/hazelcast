@@ -22,21 +22,18 @@ import javax.annotation.Nonnull;
 
 public class SkipP extends AbstractProcessor {
 
-    private final long skip;
-    private long index;
+    private long remainingToSkip;
 
-    public SkipP(Long skip) {
-        this.skip = skip;
+    public SkipP(long skipCount) {
+        this.remainingToSkip = skipCount;
     }
 
-
     @Override
-    protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-        if (index >= skip) {
-            emit(item);
-        } else {
-            index++;
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+        if (remainingToSkip == 0) {
+            return tryEmit(item);
         }
+        remainingToSkip--;
         return true;
     }
 }

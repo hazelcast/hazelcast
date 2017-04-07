@@ -45,9 +45,6 @@ public class CombineP<T, R> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        if (result != null) {
-            emit(finisher.apply(result));
-        }
-        return true;
+        return result == null || tryEmit(finisher.apply(result));
     }
 }

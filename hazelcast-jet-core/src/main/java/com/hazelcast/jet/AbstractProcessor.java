@@ -18,6 +18,7 @@ package com.hazelcast.jet;
 
 import com.hazelcast.logging.ILogger;
 
+import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import java.util.function.Function;
 
@@ -30,8 +31,8 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  *     {@link #init(Outbox, Context)} retains the supplied outbox and the
  *     logger retrieved from the context.
  * </li><li>
- *     {@link #process(int, Inbox) process(n, inbox)} delegates to the
- *     matching {@code tryProcessN} with each item received in the inbox.
+ *     {@link #process(int, Inbox) process(n, inbox)} delegates to the matching
+ *     {@code tryProcessN} with each item received in the inbox.
  * </li><li>
  *     There is also the catch-all {@link #tryProcess(int, Object)} to which
  *     the {@code tryProcessN} methods delegate by default. It must be used
@@ -41,17 +42,17 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  *     The {@code emit(...)} methods avoid the need to deal with {@code Outbox}
  *     directly.
  * </li><li>
- *     The {@code emitCooperatively(...)} methods handle the boilerplate of
- *     cooperative item emission. They are especially useful in the {@link #complete()}
- *     step when there is a collection of items to emit. The {@link Traversers}
- *     class contains traversers tailored to simplify the implementation of
- *     {@code complete()}.
+ *     The {@code emitFromTraverser(...)} methods handle the boilerplate of
+ *     cooperative item emission. They are especially useful in the
+ *     {@link #complete()} step when there is a collection of items to emit.
+ *     The {@link Traversers} class contains traversers tailored to simplify
+ *     the implementation of {@code complete()}.
  * </li><li>
- *     The {@link FlatMapper TryProcessor} class additionally simplifies the
- *     usage of {@code emitCooperatively()} inside {@code tryProcess()}, in a
- *     scenario where an input item results in a collection of output items.
- *     {@code TryProcessor} is obtained from its factory method
- *     {@link #flatMapper(Function)}.
+ *     The {@link FlatMapper FlatMapper} class additionally simplifies the
+ *     usage of {@code emitFromTraverser()} inside {@code tryProcess()}, in
+ *     a scenario where an input item results in a collection of output
+ *     items. {@code FlatMapper} is obtained from one of the factory methods
+ *     {@link #flatMapper(Function) flatMapper(...)}.
  * </li></ol>
  */
 public abstract class AbstractProcessor implements Processor {
@@ -88,12 +89,11 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * Method that can be overridden to perform any necessary initialization for
-     * the processor. It is called exactly once and strictly before any of the
-     * processing methods ({@link #process(int, Inbox) process()},
-     * {@link #completeEdge(int) completeEdge()}, {@link #complete() complete()}),
-     * but after the {@link #getOutbox() outbox} and {@link #getLogger() logger}
-     * have been initialized.
+     * Method that can be overridden to perform any necessary initialization
+     * for the processor. It is called exactly once and strictly before any of
+     * the processing methods ({@link #process(int, Inbox) process()} and
+     * {@link #complete() complete()}), but after the outbox {@link #getLogger()
+     * logger} have been initialized.
      *
      * @param context the {@link Context context} associated with this processor
      */
@@ -249,44 +249,91 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * Returns the outbox received in the {@code init()} method call.
+     * Offers the item to the outbox bucket at the supplied ordinal.
+     *
+     * @return whether the outbox accepted the item
      */
-    protected final Outbox getOutbox() {
-        return outbox;
+    @CheckReturnValue
+    protected boolean tryEmit(int ordinal, @Nonnull Object item) {
+        return outbox.offer(ordinal, item);
     }
 
     /**
-     * Emits the item to the outbox bucket at the supplied ordinal.
+     * Offers the item to all the outbox buckets.
+     *
+     * @return whether the outbox accepted the item
+     */
+    @CheckReturnValue
+    protected boolean tryEmit(@Nonnull Object item) {
+        return outbox.offer(item);
+    }
+
+    /**
+     * Offers the item to the outbox buckets identified in the supplied array.
+     *
+     * @return whether the outbox accepted the item
+     */
+    @CheckReturnValue
+    protected boolean tryEmit(int[] ordinals, @Nonnull Object item) {
+        return outbox.offer(ordinals, item);
+    }
+
+    /**
+     * Adds the item to the outbox bucket with the supplied ordinal, throwing
+     * an exception if the outbox refuses it. Useful for non-cooperative
+     * processors that work with an auto-flushing outbox.
+     *
+     * @throws IndexOutOfBoundsException if the outbox refused the item
      */
     protected void emit(int ordinal, @Nonnull Object item) {
-        outbox.add(ordinal, item);
+        ensureAccepted(tryEmit(ordinal, item));
     }
 
     /**
-     * Emits the item to all the outbox buckets.
+     * Adds the item to all the outbox buckets, throwing an exception if the
+     * outbox refuses it. Useful for non-cooperative processors that work with
+     * an auto-flushing outbox.
+     *
+     * @throws IndexOutOfBoundsException if the outbox refused the item
      */
     protected void emit(@Nonnull Object item) {
-        outbox.add(item);
+        ensureAccepted(tryEmit(item));
     }
 
     /**
-     * Emits the items obtained from the traverser to the outbox bucket with the
-     * supplied ordinal, in a cooperative fashion: if the outbox reports a
-     * {@link Outbox#isHighWater() high-water condition}, backs off and returns
-     * {@code false}.
+     * Adds the item to the outbox buckets identified in the supplied array,
+     * throwing an exception if the outbox refuses it. Useful for
+     * non-cooperative processors that work with an auto-flushing outbox.
      *
-     * <p>If this method returns {@code false}, then the same traverser must be
+     * @throws IndexOutOfBoundsException if the outbox refused the item
+     */
+    protected void emit(int[] ordinals, @Nonnull Object item) {
+        ensureAccepted(tryEmit(ordinals, item));
+    }
+
+    private static void ensureAccepted(boolean accepted) {
+        if (!accepted) {
+            throw new IllegalStateException("Attempt to emit an item to a full outbox");
+        }
+    }
+
+    /**
+     * Obtains items from the traverser and offers them to the outbox's bucket
+     * with the supplied ordinal. If the outbox refuses an item, it backs off
+     * and returns {@code false}.
+     * <p>
+     * If this method returns {@code false}, then the same traverser must be
      * retained by the caller and passed again in the subsequent invocation of
      * this method, so as to resume emitting where it left off.
-     *
-     * <p>For simplified usage from {@link #tryProcess(int, Object) tryProcess()}
+     * <p>
+     * For simplified usage from {@link #tryProcess(int, Object) tryProcess()}
      * methods, see {@link FlatMapper}.
      *
      * @param ordinal ordinal of the target bucket
      * @param traverser traverser over items to emit
      * @return whether the traverser has been exhausted
      */
-    protected boolean emitCooperatively(int ordinal, @Nonnull Traverser<?> traverser) {
+    protected boolean emitFromTraverser(int ordinal, @Nonnull Traverser<?> traverser) {
         Object item;
         if (pendingItem != null) {
             item = pendingItem;
@@ -295,20 +342,52 @@ public abstract class AbstractProcessor implements Processor {
             item = traverser.next();
         }
         for (; item != null; item = traverser.next()) {
-            if (outbox.isHighWater(ordinal)) {
+            if (!tryEmit(ordinal, item)) {
                 pendingItem = item;
                 return false;
             }
-            emit(ordinal, item);
         }
         return true;
     }
 
     /**
-     * Convenience for {@link #emitCooperatively(int, Traverser)} which emits to all ordinals.
+     * Convenience for {@link #emitFromTraverser(int, Traverser)} which emits to all ordinals.
      */
-    protected boolean emitCooperatively(@Nonnull Traverser<?> traverser) {
-        return emitCooperatively(-1, traverser);
+    protected boolean emitFromTraverser(@Nonnull Traverser<?> traverser) {
+        return emitFromTraverser(-1, traverser);
+    }
+
+    /**
+     * Obtains items from the traverser and offers them to the outbox's buckets
+     * identified in the supplied array. If the outbox refuses an item, it
+     * backs off and returns {@code false}.
+     * <p>
+     * If this method returns {@code false}, then the same traverser must be
+     * retained by the caller and passed again in the subsequent invocation of
+     * this method, so as to resume emitting where it left off.
+     * <p>
+     * For simplified usage from {@link #tryProcess(int, Object) tryProcess()}
+     * methods, see {@link FlatMapper}.
+     *
+     * @param ordinals ordinals of the target bucket
+     * @param traverser traverser over items to emit
+     * @return whether the traverser has been exhausted
+     */
+    protected boolean emitFromTraverser(@Nonnull int[] ordinals, @Nonnull Traverser<?> traverser) {
+        Object item;
+        if (pendingItem != null) {
+            item = pendingItem;
+            pendingItem = null;
+        } else {
+            item = traverser.next();
+        }
+        for (; item != null; item = traverser.next()) {
+            if (!tryEmit(ordinals, item)) {
+                pendingItem = item;
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -317,9 +396,9 @@ public abstract class AbstractProcessor implements Processor {
      */
     @Nonnull
     protected <T, R> FlatMapper<T, R> flatMapper(
-            int outputOrdinal, @Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper
+            int ordinal, @Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper
     ) {
-        return new FlatMapper<>(outputOrdinal, mapper);
+        return ordinal != -1 ? flatMapper(new int[] {ordinal}, mapper) : flatMapper(mapper);
     }
 
     /**
@@ -330,23 +409,34 @@ public abstract class AbstractProcessor implements Processor {
     protected <T, R> FlatMapper<T, R> flatMapper(
             @Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper
     ) {
-        return flatMapper(-1, mapper);
+        return flatMapper(null, mapper);
     }
 
     /**
-     * A helper that simplifies the implementation of
-     * {@link AbstractProcessor#tryProcess(int, Object) tryProcess()} for emitting
-     * collections. User supplies a {@code mapper} which takes an item and
-     * returns a traverser over all output items that should be emitted. The
-     * {@link #tryProcess(Object)} method obtains and passes the traverser to
-     * {@link #emitCooperatively(int, Traverser)}.
+     * Factory of {@link FlatMapper}. The {@code FlatMapper} will emit items to
+     * the ordinals identified in the array.
+     */
+    @Nonnull
+    protected <T, R> FlatMapper<T, R> flatMapper(
+            int[] ordinals, @Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper
+    ) {
+        return new FlatMapper<>(ordinals, mapper);
+    }
+
+    /**
+     * A helper that simplifies the implementation of {@link #tryProcess(int,
+     * Object) tryProcess()} for emitting collections. User supplies a {@code
+     * mapper} which takes an item and returns a traverser over all output
+     * items that should be emitted. The {@link #tryProcess(Object)} method
+     * obtains and passes the traverser to {@link #emitFromTraverser(int,
+     * Traverser)}.
      *
      * Example:
      * <pre>
      * public static class SplitWordsP extends AbstractProcessor {
      *
      *    {@code private FlatMapper<String, String> flatMapper =
-     *             flatMapper((String item) -> Traverser.over(item.split("\\W")));}
+     *             flatMapper(item -> Traverser.over(item.split("\\W")));}
      *
      *    {@code @Override}
      *     protected boolean tryProcess(int ordinal, Object item) throws Exception {
@@ -358,12 +448,12 @@ public abstract class AbstractProcessor implements Processor {
      * @param <R> type of the emitted item
      */
     protected final class FlatMapper<T, R> {
-        private final int outputOrdinal;
+        private final int[] outputOrdinals;
         private final Function<? super T, ? extends Traverser<? extends R>> mapper;
         private Traverser<? extends R> outputTraverser;
 
-        FlatMapper(int outputOrdinal, @Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper) {
-            this.outputOrdinal = outputOrdinal;
+        FlatMapper(int[] outputOrdinals, @Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper) {
+            this.outputOrdinals = outputOrdinals;
             this.mapper = mapper;
         }
 
@@ -379,11 +469,17 @@ public abstract class AbstractProcessor implements Processor {
             if (outputTraverser == null) {
                 outputTraverser = mapper.apply(item);
             }
-            if (emitCooperatively(outputOrdinal, outputTraverser)) {
+            if (emit()) {
                 outputTraverser = null;
                 return true;
             }
             return false;
+        }
+
+        private boolean emit() {
+            return outputOrdinals != null
+                    ? emitFromTraverser(outputOrdinals, outputTraverser)
+                    : emitFromTraverser(outputTraverser);
         }
     }
 

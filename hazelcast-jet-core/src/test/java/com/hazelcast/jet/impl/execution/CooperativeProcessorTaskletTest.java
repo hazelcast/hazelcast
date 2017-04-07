@@ -20,7 +20,6 @@ import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Processor.Context;
-import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -37,8 +36,10 @@ import java.util.stream.IntStream;
 import static com.hazelcast.jet.impl.util.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -50,14 +51,14 @@ public class CooperativeProcessorTaskletTest {
     private List<Object> mockInput;
     private List<InboundEdgeStream> instreams;
     private List<OutboundEdgeStream> outstreams;
-    private MockProcessor processor;
+    private PassThroughProcessor processor;
     private Context context;
 
 
     @Before
     public void setUp() throws Exception {
         this.mockInput = IntStream.range(0, MOCK_INPUT_LENGTH).boxed().collect(toList());
-        this.processor = new MockProcessor();
+        this.processor = new PassThroughProcessor();
         this.context = mock(Context.class);
         this.instreams = new ArrayList<>();
         this.outstreams = new ArrayList<>();
@@ -154,7 +155,22 @@ public class CooperativeProcessorTaskletTest {
         callUntil(tasklet, NO_PROGRESS);
 
         // Then
-        assertTrue("isEmpty", outstream1.getBuffer().equals(mockInput.subList(0, 4)));
+        assertTrue(outstream1.getBuffer().equals(mockInput.subList(0, 4)));
+    }
+
+    @Test
+    public void when_outboxRefusesDoneItem_then_notDone() throws Exception {
+        // Given
+        MockInboundStream instream1 = new MockInboundStream(0, emptyList(), 0);
+        MockOutboundStream outstream1 = new MockOutboundStream(0, 0, 0);
+        instreams.add(instream1);
+        outstreams.add(outstream1);
+        Tasklet tasklet = createTasklet();
+
+        // When - then
+        for (int i = 0; i < CALL_COUNT_LIMIT; i++) {
+            assertFalse(tasklet.call().isDone());
+        }
     }
 
     private Tasklet createTasklet() {
@@ -164,19 +180,19 @@ public class CooperativeProcessorTaskletTest {
         return t;
     }
 
-    private static class MockProcessor implements Processor {
-        private ArrayDequeOutbox outbox;
+    private static class PassThroughProcessor implements Processor {
+        private Outbox outbox;
 
         @Override
         public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
-            this.outbox = (ArrayDequeOutbox) outbox;
+            this.outbox = outbox;
         }
 
         @Override
         public void process(int ordinal, @Nonnull Inbox inbox) {
             for (Object item; (item = inbox.poll()) != null; ) {
-                for (int i = 0; i < outbox.bucketCount(); i++) {
-                    outbox.add(i, item);
+                if (!outbox.offer(item)) {
+                    return;
                 }
             }
         }
@@ -185,7 +201,6 @@ public class CooperativeProcessorTaskletTest {
     private static void callUntil(Tasklet tasklet, ProgressState expectedState) throws Exception {
         int iterCount = 0;
         for (ProgressState r; (r = tasklet.call()) != expectedState; ) {
-            System.out.println(r);
             assertTrue("Failed to make progress: " + r, r.isMadeProgress());
             assertTrue(String.format(
                     "tasklet.call() invoked %d times without reaching %s. Last state was %s",

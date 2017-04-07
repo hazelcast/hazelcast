@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.Inbox;
+import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -43,7 +44,7 @@ public class WriteBufferedPTest {
                 map -> {}
         );
 
-        MockInbox inbox = new MockInbox();
+        ArrayDequeInbox inbox = new ArrayDequeInbox();
         Map<Integer, Integer> map = new HashMap<>();
         for (int i = 0; i < ENTRY_COUNT; i++) {
             map.put(i, i);
@@ -51,8 +52,4 @@ public class WriteBufferedPTest {
         inbox.addAll(map.keySet());
         p.process(0, inbox);
     }
-
-    private static class MockInbox extends ArrayDeque<Object> implements Inbox {
-    }
-
 }

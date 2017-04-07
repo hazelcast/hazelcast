@@ -55,7 +55,7 @@ public final class ReadIListP extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        return emitCooperatively(traverser);
+        return emitFromTraverser(traverser);
     }
 
     @Override

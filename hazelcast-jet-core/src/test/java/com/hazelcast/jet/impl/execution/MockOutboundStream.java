@@ -23,13 +23,17 @@ import java.util.List;
 
 import static com.hazelcast.jet.impl.util.DoneItem.DONE_ITEM;
 
-public class MockOutboundStream extends OutboundEdgeStream {
+class MockOutboundStream extends OutboundEdgeStream {
 
-    public MockOutboundStream(int ordinal, int capacity) {
-        super(ordinal, 1024, new MockOutboundCollector(capacity));
+    MockOutboundStream(int ordinal, int capacity) {
+        this(ordinal, capacity, 1024);
     }
 
-    public List<Object> getBuffer() {
+    MockOutboundStream(int ordinal, int capacity, int outboxCapacity) {
+        super(ordinal, outboxCapacity, new MockOutboundCollector(capacity));
+    }
+
+    List<Object> getBuffer() {
         return ((MockOutboundCollector) getCollector()).getBuffer();
     }
 
@@ -38,11 +42,10 @@ public class MockOutboundStream extends OutboundEdgeStream {
         private final ArrayList<Object> buffer;
         private final int capacity;
 
-        public MockOutboundCollector(int capacity) {
+        MockOutboundCollector(int capacity) {
             this.capacity = capacity;
             this.buffer = new ArrayList<>(capacity);
         }
-
 
         @Override
         public ProgressState offer(Object item) {
@@ -64,13 +67,7 @@ public class MockOutboundStream extends OutboundEdgeStream {
             return null;
         }
 
-        public List<Object> drain() {
-            List<Object> copy = new ArrayList<>(this.buffer);
-            this.buffer.clear();
-            return copy;
-        }
-
-        public List<Object> getBuffer() {
+        List<Object> getBuffer() {
             return buffer;
         }
 

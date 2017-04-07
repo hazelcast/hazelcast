@@ -65,7 +65,7 @@ public class BlockingProcessorTasklet extends ProcessorTaskletBase {
             if (progTracker.isDone()) {
                 complete();
             } else if (!inbox().isEmpty()) {
-                process();
+                processor.process(currInstream.ordinal(), inbox());
             }
             return progTracker.toProgressState();
         } catch (JobFutureCompletedExceptionally e) {
@@ -73,15 +73,9 @@ public class BlockingProcessorTasklet extends ProcessorTaskletBase {
         }
     }
 
-    private void process() {
-        progTracker.madeProgress();
-        processor.process(currInstream.ordinal(), inbox());
-    }
-
     private void complete() {
-        progTracker.madeProgress();
         if (processor.complete()) {
-            outbox.add(DONE_ITEM);
+            outbox.offer(DONE_ITEM);
         } else {
             progTracker.notDone();
         }
@@ -95,12 +89,8 @@ public class BlockingProcessorTasklet extends ProcessorTaskletBase {
         }
 
         @Override
-        public boolean isHighWater(int ordinal) {
-            return false;
-        }
-
-        @Override
-        public void add(int ordinal, @Nonnull Object item) {
+        public boolean offer(int ordinal, @Nonnull Object item) {
+            progTracker.madeProgress();
             if (ordinal != -1) {
                 submit(outstreams[ordinal], item);
             } else {
@@ -108,6 +98,16 @@ public class BlockingProcessorTasklet extends ProcessorTaskletBase {
                     submit(outstream, item);
                 }
             }
+            return true;
+        }
+
+        @Override
+        public boolean offer(int[] ordinals, @Nonnull Object item) {
+            progTracker.madeProgress();
+            for (int ord : ordinals) {
+                submit(outstreams[ord], item);
+            }
+            return true;
         }
 
         private void submit(OutboundEdgeStream outstream, @Nonnull Object item) {

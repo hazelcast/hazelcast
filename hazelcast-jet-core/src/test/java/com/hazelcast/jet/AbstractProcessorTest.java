@@ -17,7 +17,9 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.AbstractProcessor.FlatMapper;
+import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
+import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.logging.ILogger;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,12 +27,11 @@ import org.mockito.Mockito;
 
 import javax.annotation.Nonnull;
 
-import java.util.NoSuchElementException;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -41,6 +42,7 @@ public class AbstractProcessorTest {
 
     private SpecializedByOrdinal p;
 
+    private ArrayDequeInbox inbox;
     private ArrayDequeOutbox outbox;
 
     @Before
@@ -48,7 +50,9 @@ public class AbstractProcessorTest {
         p = new SpecializedByOrdinal();
         final Processor.Context ctx = mock(Processor.Context.class);
         Mockito.when(ctx.logger()).thenReturn(mock(ILogger.class));
-        outbox = new ArrayDequeOutbox(OUTBOX_BUCKET_COUNT, new int[]{1, 1});
+        inbox = new ArrayDequeInbox();
+        inbox.add(MOCK_ITEM);
+        outbox = new ArrayDequeOutbox(OUTBOX_BUCKET_COUNT, new int[]{1, 1}, new ProgressTracker());
         p.init(outbox, ctx);
     }
 
@@ -58,20 +62,18 @@ public class AbstractProcessorTest {
     }
 
     @Test
-    public void when_init_then_outboxAndLoggerAvailable() {
+    public void when_init_then_loggerAvailable() {
         // When
         final ILogger logger = p.getLogger();
-        final Outbox outbox = p.getOutbox();
 
         // Then
         assertNotNull(logger);
-        assertNotNull(outbox);
     }
 
     @Test
     public void when_process0_then_tryProcess0Called() {
         // When
-        p.process(0, new MockInbox(MOCK_ITEM));
+        p.process(0, inbox);
 
         // Then
         p.validateReception(0, MOCK_ITEM);
@@ -80,7 +82,7 @@ public class AbstractProcessorTest {
     @Test
     public void when_process1_then_tryProcess1Called() {
         // When
-        p.process(1, new MockInbox(MOCK_ITEM));
+        p.process(1, inbox);
 
         // Then
         p.validateReception(1, MOCK_ITEM);
@@ -89,7 +91,7 @@ public class AbstractProcessorTest {
     @Test
     public void when_process2_then_tryProcess2Called() {
         // When
-        p.process(2, new MockInbox(MOCK_ITEM));
+        p.process(2, inbox);
 
         // Then
         p.validateReception(2, MOCK_ITEM);
@@ -98,7 +100,7 @@ public class AbstractProcessorTest {
     @Test
     public void when_process3_then_tryProcess3Called() {
         // When
-        p.process(3, new MockInbox(MOCK_ITEM));
+        p.process(3, inbox);
 
         // Then
         p.validateReception(3, MOCK_ITEM);
@@ -107,7 +109,7 @@ public class AbstractProcessorTest {
     @Test
     public void when_process4_then_tryProcess4Called() {
         // When
-        p.process(4, new MockInbox(MOCK_ITEM));
+        p.process(4, inbox);
 
         // Then
         p.validateReception(4, MOCK_ITEM);
@@ -116,7 +118,7 @@ public class AbstractProcessorTest {
     @Test
     public void when_process5_then_tryProcessCalled() {
         // When
-        p.process(5, new MockInbox(MOCK_ITEM));
+        p.process(5, inbox);
 
         // Then
         p.validateReception(5, MOCK_ITEM);
@@ -125,11 +127,11 @@ public class AbstractProcessorTest {
     @Test
     public void when_emit_then_outboxHasItemInAllBuckets() {
         // When
-        p.emit(MOCK_ITEM);
+        p.tryEmit(MOCK_ITEM);
 
         // Then
         for (int i = 0; i < OUTBOX_BUCKET_COUNT; i++) {
-            assertEquals(MOCK_ITEM, ((ArrayDequeOutbox) p.getOutbox()).queueWithOrdinal(i).remove());
+            assertEquals(MOCK_ITEM, outbox.queueWithOrdinal(i).remove());
         }
     }
 
@@ -142,18 +144,16 @@ public class AbstractProcessorTest {
 
         // Then
         for (int i = 0; i < OUTBOX_BUCKET_COUNT; i++) {
-            assertEquals(i == ordinal ? MOCK_ITEM : null,
-                    ((ArrayDequeOutbox) p.getOutbox()).queueWithOrdinal(i).poll());
+            assertEquals(i == ordinal ? MOCK_ITEM : null, outbox.queueWithOrdinal(i).poll());
         }
     }
 
     @Test
-    public void when_emitCooperatively_then_outboxHasOneItem() {
+    public void when_emitFromTraverser_then_outboxHasOneItem() {
         final int ordinal = 1;
-        final ArrayDequeOutbox outbox = (ArrayDequeOutbox) p.getOutbox();
 
         // When
-        p.emitCooperatively(ordinal, () -> MOCK_ITEM);
+        p.emitFromTraverser(ordinal, () -> MOCK_ITEM);
 
         // Then
         for (int i = 0; i < OUTBOX_BUCKET_COUNT; i++) {
@@ -163,7 +163,7 @@ public class AbstractProcessorTest {
     }
 
     @Test
-    public void test() {
+    public void when_flatMapperTryProcess_then_outboxHasOneItem() {
         final Object item1 = 1;
         final Object item2 = 2;
         final FlatMapper<String, Object> flatMapper = p.flatMapper(x -> Traverser.over(item1, item2));
@@ -191,93 +191,53 @@ public class AbstractProcessorTest {
 
     private static class SpecializedByOrdinal extends AbstractProcessor {
         boolean initCalled;
-        Object[] tryProcessNItem = new Object[6];
+        Object[] resultOfTryProcessN = new Object[6];
 
         @Override
-        protected void init(@Nonnull Context context) throws Exception {
+        protected void init(@Nonnull Context context) {
             initCalled = true;
         }
 
         @Override
-        protected boolean tryProcess0(@Nonnull Object MOCK_ITEM) throws Exception {
-            tryProcessNItem[0] = MOCK_ITEM;
+        protected boolean tryProcess0(@Nonnull Object item) {
+            resultOfTryProcessN[0] = item;
             return true;
         }
 
         @Override
-        protected boolean tryProcess1(@Nonnull Object MOCK_ITEM) throws Exception {
-            tryProcessNItem[1] = MOCK_ITEM;
+        protected boolean tryProcess1(@Nonnull Object item) {
+            resultOfTryProcessN[1] = item;
             return true;
         }
 
         @Override
-        protected boolean tryProcess2(@Nonnull Object MOCK_ITEM) throws Exception {
-            tryProcessNItem[2] = MOCK_ITEM;
+        protected boolean tryProcess2(@Nonnull Object item) {
+            resultOfTryProcessN[2] = item;
             return true;
         }
 
         @Override
-        protected boolean tryProcess3(@Nonnull Object MOCK_ITEM) throws Exception {
-            tryProcessNItem[3] = MOCK_ITEM;
+        protected boolean tryProcess3(@Nonnull Object item) {
+            resultOfTryProcessN[3] = item;
             return true;
         }
 
         @Override
-        protected boolean tryProcess4(@Nonnull Object MOCK_ITEM) throws Exception {
-            tryProcessNItem[4] = MOCK_ITEM;
+        protected boolean tryProcess4(@Nonnull Object item) {
+            resultOfTryProcessN[4] = item;
             return true;
         }
 
         @Override
-        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
             assertEquals(5, ordinal);
-            tryProcessNItem[5] = item;
+            resultOfTryProcessN[5] = item;
             return true;
         }
 
-        void validateReception(int ordinal, Object MOCK_ITEM) {
-            for (int i = 0; i < tryProcessNItem.length; i++) {
-                assertEquals(i == ordinal ? MOCK_ITEM : null, tryProcessNItem[i]);
-            }
-        }
-    }
-
-    private static final class MockInbox implements Inbox {
-
-        private Object MOCK_ITEM;
-
-        private MockInbox(Object MOCK_ITEM) {
-            this.MOCK_ITEM = MOCK_ITEM;
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return MOCK_ITEM == null;
-        }
-
-        @Override
-        public Object peek() {
-            return MOCK_ITEM;
-        }
-
-        @Override
-        public Object poll() {
-            try {
-                return MOCK_ITEM;
-            } finally {
-                MOCK_ITEM = null;
-            }
-        }
-
-        @Override
-        public Object remove() {
-            if (MOCK_ITEM == null) {
-                throw new NoSuchElementException();
-            }
-            try {
-                return MOCK_ITEM;
-            } finally {
-                MOCK_ITEM = null;
+        void validateReception(int ordinal, Object item) {
+            for (int i = 0; i < resultOfTryProcessN.length; i++) {
+                assertSame(i == ordinal ? item : null, resultOfTryProcessN[i]);
             }
         }
     }

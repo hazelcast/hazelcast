@@ -168,7 +168,7 @@ public class XmlConfigTest {
         // Then
         EdgeConfig edgeConfig = jetConfig.getDefaultEdgeConfig();
         assertEquals("queueSize", 999, edgeConfig.getQueueSize());
-        assertEquals("highWaterMark", 998, edgeConfig.getHighWaterMark());
+        assertEquals("outboxCapacity", 998, edgeConfig.getOutboxCapacity());
         assertEquals("packetSizeLimit", 997, edgeConfig.getPacketSizeLimit());
         assertEquals("receiveWindowMultiplier", 996, edgeConfig.getReceiveWindowMultiplier());
     }
@@ -180,7 +180,7 @@ public class XmlConfigTest {
         assertEquals("value1", jetConfig.getProperties().getProperty("property1"));
         assertEquals("value2", jetConfig.getProperties().getProperty("property2"));
     }
-    
+
     private static void assertDefaultMemberConfig(Config config) {
         assertThat(config, not(nullValue()));
     	assertThat(config.getGroupConfig().getName(), not(equalTo(TEST_XML_2_GROUP_NAME)));

@@ -34,9 +34,11 @@ public class LimitP extends AbstractProcessor {
         if (index >= limit) {
             return true;
         }
-        index++;
-        emit(item);
-        return true;
+        if (tryEmit(item)) {
+            index++;
+            return true;
+        }
+        return false;
     }
 }
 

@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
+import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -45,7 +46,7 @@ public class ReadIListPTest {
     }
 
     private static void testReader(int fetchSize) {
-        final ArrayDequeOutbox outbox = new ArrayDequeOutbox(1, new int[]{2});
+        final ArrayDequeOutbox outbox = new ArrayDequeOutbox(1, new int[]{2}, new ProgressTracker());
         final Queue<Object> bucket = outbox.queueWithOrdinal(0);
         final ReadIListP r = new ReadIListP(asList(1, 2, 3, 4), fetchSize);
         r.init(outbox, Mockito.mock(Processor.Context.class));

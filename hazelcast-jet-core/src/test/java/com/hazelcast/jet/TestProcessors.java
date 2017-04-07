@@ -22,16 +22,21 @@ public class TestProcessors {
 
     public static class Identity extends AbstractProcessor {
         @Override
-        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-            emit(item);
-            return true;
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+            return tryEmit(item);
         }
     }
 
-    public static class BlockingIdentity extends Identity {
+    public static class BlockingIdentity extends AbstractProcessor {
         @Override
         public boolean isCooperative() {
             return false;
+        }
+
+        @Override
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+            emit(item);
+            return true;
         }
     }
 
@@ -39,7 +44,7 @@ public class TestProcessors {
 
         private final RuntimeException e;
 
-        public ProcessorThatFailsInComplete(@Nonnull RuntimeException e) {
+        ProcessorThatFailsInComplete(@Nonnull RuntimeException e) {
             this.e = e;
         }
 
@@ -53,7 +58,7 @@ public class TestProcessors {
 
         private final RuntimeException e;
 
-        public ProcessorThatFailsInInit(@Nonnull RuntimeException e) {
+        ProcessorThatFailsInInit(@Nonnull RuntimeException e) {
             this.e = e;
         }
 

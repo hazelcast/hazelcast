@@ -384,7 +384,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             }
         }
         return new OutboundEdgeStream(edge.sourceOrdinal(),
-                edge.isBuffered() ? Integer.MAX_VALUE : edge.getConfig().getHighWaterMark(),
+                edge.isBuffered() ? Integer.MAX_VALUE : edge.getConfig().getOutboxCapacity(),
                 compositeCollector(allCollectors, edge, totalPtionCount));
     }
 

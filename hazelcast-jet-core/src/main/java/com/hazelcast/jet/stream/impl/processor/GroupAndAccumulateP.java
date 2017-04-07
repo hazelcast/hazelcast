@@ -56,6 +56,6 @@ public class GroupAndAccumulateP<T, K, V, A, R> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        return emitCooperatively(resultTraverser);
+        return emitFromTraverser(resultTraverser);
     }
 }

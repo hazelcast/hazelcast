@@ -96,7 +96,7 @@ public final class ReadKafkaP<K, V> extends AbstractProcessor implements Closeab
 
     @Override
     public boolean complete() {
-        if (emitCooperatively(traverser)) {
+        if (emitFromTraverser(traverser)) {
             consumer.commitSync();
             traverser = traverseIterable(consumer.poll(POLL_TIMEOUT_MS)).map(r -> entry(r.key(), r.value()));
         }

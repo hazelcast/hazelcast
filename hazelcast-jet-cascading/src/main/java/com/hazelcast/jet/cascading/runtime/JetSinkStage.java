@@ -52,7 +52,7 @@ public class JetSinkStage extends SinkStage {
                 Fields fields = getIncomingScopes().get(0).getIncomingTapFields();
                 collector.setFields(fields);
             }
-            collector.setOutput((Consumer<Entry>) outbox::add);
+            collector.setOutput((Consumer<Entry>) outbox::offer);
         } catch (IOException exception) {
             throw new DuctException("failed opening sink", exception);
         }
@@ -88,7 +88,7 @@ public class JetSinkStage extends SinkStage {
 
     private SettableTupleEntryCollector getCollector(Tap sink) throws IOException {
         if (sink instanceof InternalJetTap) {
-            return (SettableTupleEntryCollector) ((InternalJetTap) sink).openForWrite(flowProcess, outbox::add);
+            return (SettableTupleEntryCollector) ((InternalJetTap) sink).openForWrite(flowProcess, outbox::offer);
         } else if (sink instanceof MultiSinkTap) {
             Tap tap = (Tap) ((MultiSinkTap) sink).getChildTaps().next();
             return getCollector(tap);

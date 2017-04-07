@@ -41,6 +41,6 @@ public class TransformP<T, R> extends AbstractProcessor {
         if (itemDone) {
             inputConsumer.accept((T) item);
         }
-        return itemDone = emitCooperatively(outputTraverser);
+        return itemDone = emitFromTraverser(outputTraverser);
     }
 }

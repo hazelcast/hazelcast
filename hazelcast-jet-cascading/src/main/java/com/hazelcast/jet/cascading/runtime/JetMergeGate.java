@@ -32,8 +32,10 @@ import cascading.tuple.io.ValueTuple;
 import cascading.util.Util;
 import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Outbox;
-import java.util.AbstractMap;
+
 import java.util.Map;
+
+import static com.hazelcast.jet.Util.entry;
 
 public class JetMergeGate extends SpliceGate<TupleEntry, TupleEntry> implements ProcessorInputSource {
 
@@ -77,7 +79,8 @@ public class JetMergeGate extends SpliceGate<TupleEntry, TupleEntry> implements 
     @Override
     public void receive(Duct previous, TupleEntry incomingEntry) {
         try {
-            outbox.add(new AbstractMap.SimpleImmutableEntry<>(incomingEntry.getTupleCopy(), ValueTuple.NULL));
+            boolean accepted = outbox.offer(entry(incomingEntry.getTupleCopy(), ValueTuple.NULL));
+            assert accepted : "Outbox refused item";
             flowProcess.increment(SliceCounters.Tuples_Written, 1);
         } catch (OutOfMemoryError error) {
             handleReThrowableException("out of memory, try increasing task memory allocation", error);

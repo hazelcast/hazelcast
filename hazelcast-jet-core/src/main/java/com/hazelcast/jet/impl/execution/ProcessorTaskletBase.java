@@ -20,6 +20,7 @@ import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Processor.Context;
+import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.jet.impl.util.CircularListCursor;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
@@ -45,7 +46,7 @@ abstract class ProcessorTaskletBase implements Tasklet {
     InboundEdgeStream currInstream;
 
     private final Context context;
-    private final ArrayDequeInbox inbox = new ArrayDequeInbox();
+    private final ArrayDequeInbox inbox = new ArrayDequeInbox(progTracker);
     private final Queue<ArrayList<InboundEdgeStream>> instreamGroupQueue;
     private final String vertexName;
     private CircularListCursor<InboundEdgeStream> instreamCursor;
@@ -114,7 +115,5 @@ abstract class ProcessorTaskletBase implements Tasklet {
         return "ProcessorTasklet{vertex=" + vertexName + ", processor=" + processor + '}';
     }
 
-    private static final class ArrayDequeInbox extends ArrayDeque<Object> implements Inbox {
-    }
 }
 

@@ -26,9 +26,9 @@ import java.io.Serializable;
 public class EdgeConfig implements Serializable {
 
     /**
-     * The default value of the {@link #setHighWaterMark(int) high water mark}.
+     * The default value of the {@link #setOutboxCapacity(int) outbox bucket capacity}.
      */
-    public static final int DEFAULT_HIGH_WATER_MARK = 2048;
+    public static final int DEFAULT_OUTBOX_CAPACITY = 2048;
 
     /**
      * The default size of the {@link #setQueueSize(int) concurrent queues}
@@ -46,7 +46,7 @@ public class EdgeConfig implements Serializable {
      */
     public static final int DEFAULT_PACKET_SIZE_LIMIT = 1 << 14;
 
-    private int highWaterMark = DEFAULT_HIGH_WATER_MARK;
+    private int outboxCapacity = DEFAULT_OUTBOX_CAPACITY;
     private int queueSize = DEFAULT_QUEUE_SIZE;
     private int receiveWindowMultiplier = DEFAULT_RECEIVE_WINDOW_MULTIPLIER;
     private int packetSizeLimit = DEFAULT_PACKET_SIZE_LIMIT;
@@ -79,37 +79,38 @@ public class EdgeConfig implements Serializable {
     }
 
     /**
-     * Sets the high water mark for the edge.
+     * Sets the capacity of the outbox bucket corresponding to this edge.
      * <p>
-     * A {@code Processor} deposits the output items in its {@code Outbox}&mdash;
-     * an unbounded buffer, but with a "high water mark" which should be respected
-     * by a well-behaving processor. When its outbox reaches the high water mark,
-     * the processor should refrain from emitting any more items and yield control
-     * back to its caller. This method sets the value of the high water mark.
-     * The default value is {@value #DEFAULT_HIGH_WATER_MARK}.
+     * A cooperative processor's {@code Outbox} will contain a bucket dedicated
+     * to this edge. When the bucket reaches the configured capacity, it will
+     * refuse further items. At that time the processor must yield control back
+     * to its caller.
+     * <p>
+     * The default value is {@value #DEFAULT_OUTBOX_CAPACITY}.
      */
-    public EdgeConfig setHighWaterMark(int highWaterMark) {
-        this.highWaterMark = highWaterMark;
+    public EdgeConfig setOutboxCapacity(int capacity) {
+        this.outboxCapacity = capacity;
         return this;
     }
 
     /**
-     * Returns the {@link #setHighWaterMark(int) high water mark} that will be
-     * set on the bucket of {@code Outbox} corresponding to this edge.
+     * Returns the {@link #setOutboxCapacity(int) capacity} of the {@code Outbox}
+     * bucket corresponding to this edge.
      */
-    public int getHighWaterMark() {
-        return highWaterMark;
+    public int getOutboxCapacity() {
+        return outboxCapacity;
     }
 
     /**
-     * Sets the scaling factor used by the adaptive receive window sizing function.
+     * Sets the scaling factor used by the adaptive receive window sizing
+     * function.
      * <p>
-     * For each distributed edge the receiving member regularly sends flow-control
-     * ("ack") packets to its sender which prevent it from sending too much data
-     * and overflowing the buffers. The sender is allowed to send the data one
-     * <em>receive window</em> further than the last acknowledged byte and the
-     * receive window is sized in proportion to the rate of processing at the
-     * receiver.
+     * For each distributed edge the receiving member regularly sends
+     * flow-control ("ack") packets to its sender which prevent it from sending
+     * too much data and overflowing the buffers. The sender is allowed to send
+     * the data one <em>receive window</em> further than the last acknowledged
+     * byte and the receive window is sized in proportion to the rate of
+     * processing at the receiver.
      * <p>
      * Ack packets are sent in {@link InstanceConfig#setFlowControlPeriodMs(int)
      * regular intervals} and the <em>receive window multiplier</em> sets the

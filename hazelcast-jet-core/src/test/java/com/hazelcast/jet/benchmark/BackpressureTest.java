@@ -143,7 +143,7 @@ public class BackpressureTest extends JetTestSupport {
 
         @Override
         public boolean complete() {
-            return emitCooperatively(trav);
+            return emitFromTraverser(trav);
         }
     }
 
@@ -160,7 +160,7 @@ public class BackpressureTest extends JetTestSupport {
 
         @Override
         public boolean complete() {
-            return emitCooperatively(resultTraverser);
+            return emitFromTraverser(resultTraverser);
         }
     }
 
