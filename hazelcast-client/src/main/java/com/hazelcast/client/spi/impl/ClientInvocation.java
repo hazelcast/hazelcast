@@ -61,10 +61,8 @@ public class ClientInvocation implements Runnable {
     private final Connection connection;
     private volatile ClientConnection sendConnection;
     private boolean bypassHeartbeatCheck;
-    private boolean urgent;
     private long retryTimeoutPointInMillis;
     private EventHandler handler;
-    private long callId;
 
     protected ClientInvocation(HazelcastClientInstanceImpl client,
                                ClientMessage clientMessage,
@@ -114,51 +112,52 @@ public class ClientInvocation implements Runnable {
 
     public ClientInvocationFuture invoke() {
         assert (clientMessage != null);
+        clientMessage.setCorrelationId(callIdSequence.next());
+        invokeOnSelection();
+        return clientInvocationFuture;
+    }
 
+    public ClientInvocationFuture invokeUrgent() {
+        assert (clientMessage != null);
+        clientMessage.setCorrelationId(callIdSequence.forceNext());
+        invokeOnSelection();
+        return clientInvocationFuture;
+    }
+
+    private void invokeOnSelection() {
         try {
-            if (callId == 0) {
-                callId = urgent ? callIdSequence.forceNext() : callIdSequence.next();
+            if (isBindToSingleConnection()) {
+                invocationService.invokeOnConnection(this, (ClientConnection) connection);
+            } else if (partitionId != -1) {
+                invocationService.invokeOnPartitionOwner(this, partitionId);
+            } else if (address != null) {
+                invocationService.invokeOnTarget(this, address);
+            } else {
+                invocationService.invokeOnRandomTarget(this);
             }
-            clientMessage.setCorrelationId(callId);
-            invokeOnSelection();
         } catch (Exception e) {
             if (e instanceof HazelcastOverloadException) {
                 throw (HazelcastOverloadException) e;
             }
             notifyException(e);
         }
-        return clientInvocationFuture;
-    }
-
-    public ClientInvocationFuture invokeUrgent() {
-        urgent = true;
-        return invoke();
-    }
-
-    private void invokeOnSelection() throws IOException {
-        if (isBindToSingleConnection()) {
-            invocationService.invokeOnConnection(this, (ClientConnection) connection);
-        } else if (partitionId != -1) {
-            invocationService.invokeOnPartitionOwner(this, partitionId);
-        } else if (address != null) {
-            invocationService.invokeOnTarget(this, address);
-        } else {
-            invocationService.invokeOnRandomTarget(this);
-        }
     }
 
     @Override
     public void run() {
+        retry();
+    }
+
+    private void retry() {
         // first we force a new invocation slot because we are going to return our old invocation slot immediately after
         // It is important that we first 'force' taking a new slot; otherwise it could be that a sneaky invocation gets
         // through that takes our slot!
-        callId = callIdSequence.forceNext();
-
+        clientMessage.setCorrelationId(callIdSequence.forceNext());
         //we release the old slot
         callIdSequence.complete();
 
         try {
-            invoke();
+            invokeOnSelection();
         } catch (Throwable e) {
             clientInvocationFuture.complete(e);
         }
