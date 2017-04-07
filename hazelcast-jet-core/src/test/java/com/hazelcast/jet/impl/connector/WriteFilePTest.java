@@ -262,7 +262,7 @@ public class WriteFilePTest extends JetTestSupport {
             int number = 0;
             while (number < limit) {
                 uncheckRun(semaphore::acquire);
-                outbox.add(String.valueOf(number));
+                outbox.offer(String.valueOf(number));
                 number++;
             }
             return true;
