@@ -37,6 +37,9 @@ import java.io.IOException;
  */
 public abstract class Response implements IdentifiedDataSerializable {
 
+    public static final int OFFSET_TYPE_ID = 13;
+    public static final int OFFSET_CALL_ID = 17;
+
     protected long callId;
     protected boolean urgent;
 
