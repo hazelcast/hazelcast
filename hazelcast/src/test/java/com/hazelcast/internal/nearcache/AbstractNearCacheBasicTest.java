@@ -41,6 +41,7 @@ import java.util.concurrent.Future;
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.EvictionPolicy.NONE;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheContent;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheEvictionsEventually;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSize;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
@@ -50,6 +51,7 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertThatMemo
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assumeThatLocalUpdatePolicyIsCacheOnUpdate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assumeThatLocalUpdatePolicyIsInvalidate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assumeThatMethodIsAvailable;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getFromNearCache;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getFuture;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.setEvictionConfig;
@@ -106,17 +108,14 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      */
     protected abstract <K, V> NearCacheTestContext<K, V, NK, NV> createContext();
 
-    protected final void populateMap(NearCacheTestContext<Integer, String, NK, NV> context) {
+    protected final void populateDataAdapter(NearCacheTestContext<Integer, String, NK, NV> context) {
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             context.dataAdapter.put(i, "value-" + i);
         }
     }
 
     protected final void populateNearCache(NearCacheTestContext<Integer, String, NK, NV> context) {
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            String value = context.nearCacheAdapter.get(i);
-            assertEquals("value-" + i, value);
-        }
+        populateNearCache(context, DataStructureMethods.GET);
     }
 
     protected void populateNearCache(NearCacheTestContext<Integer, String, NK, NV> context, DataStructureMethods method) {
@@ -126,7 +125,10 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     private void populateNearCache(NearCacheTestContext<Integer, String, NK, NV> context, DataStructureMethods method, int size) {
         switch (method) {
             case GET:
-                populateNearCache(context);
+                for (int i = 0; i < size; i++) {
+                    String value = context.nearCacheAdapter.get(i);
+                    assertEquals("value-" + i, value);
+                }
                 break;
             case GET_ASYNC:
                 List<Future<String>> futures = new ArrayList<Future<String>>(size);
@@ -134,7 +136,8 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                     futures.add(context.nearCacheAdapter.getAsync(i));
                 }
                 for (int i = 0; i < size; i++) {
-                    assertEquals("value-" + i, getFuture(futures.get(i), "Could not get value via getAsync()"));
+                    String value = getFuture(futures.get(i), "Could not get value for index " + i + " via getAsync()");
+                    assertEquals("value-" + i, value);
                 }
                 break;
             case GET_ALL:
@@ -145,7 +148,8 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 Map<Integer, String> resultMap = context.nearCacheAdapter.getAll(getAllSet);
                 assertEquals(size, resultMap.size());
                 for (int i = 0; i < size; i++) {
-                    assertEquals("value-" + i, resultMap.get(i));
+                    String value = resultMap.get(i);
+                    assertEquals("value-" + i, value);
                 }
                 break;
             default:
@@ -185,7 +189,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         assumeThatMethodIsAvailable(context.nearCacheAdapter, method);
 
         // populate the data structure
-        populateMap(context);
+        populateDataAdapter(context);
         assertNearCacheSize(context, 0);
         assertNearCacheStats(context, 0, 0, 0);
 
@@ -198,6 +202,8 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         populateNearCache(context, method);
         assertNearCacheSize(context, DEFAULT_RECORD_COUNT);
         assertNearCacheStats(context, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT);
+
+        assertNearCacheContent(context, DEFAULT_RECORD_COUNT);
     }
 
     /**
@@ -210,7 +216,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         assumeThatMethodIsAvailable(context.nearCacheAdapter, DataStructureMethods.GET_ALL);
 
         // populate the data structure
-        populateMap(context);
+        populateDataAdapter(context);
         assertNearCacheSize(context, 0);
         assertNearCacheStats(context, 0, 0, 0);
 
@@ -231,6 +237,8 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         populateNearCache(context, DataStructureMethods.GET_ALL);
         assertNearCacheSize(context, DEFAULT_RECORD_COUNT);
         assertNearCacheStats(context, DEFAULT_RECORD_COUNT, expectedHits, DEFAULT_RECORD_COUNT);
+
+        assertNearCacheContent(context, DEFAULT_RECORD_COUNT);
     }
 
     /**
@@ -242,7 +250,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         assumeThatMethodIsAvailable(context.nearCacheAdapter, DataStructureMethods.GET_ALL);
 
         // populate the data structure
-        populateMap(context);
+        populateDataAdapter(context);
         assertNearCacheSize(context, 0);
         assertNearCacheStats(context, 0, 0, 0);
 
@@ -359,9 +367,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
         String message = format("Population is not working on %s()", method.getMethodName());
         assertNearCacheSizeEventually(context, DEFAULT_RECORD_COUNT, message);
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            assertEquals("value-" + i, context.nearCacheAdapter.get(i));
-        }
+        assertNearCacheContent(context, DEFAULT_RECORD_COUNT);
     }
 
     /**
@@ -524,7 +530,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         DataStructureAdapter<Integer, String> adapter = useDataAdapter ? context.dataAdapter : context.nearCacheAdapter;
         assumeThatMethodIsAvailable(adapter, method);
 
-        populateMap(context);
+        populateDataAdapter(context);
         populateNearCache(context);
 
         // this should invalidate the Near Cache
@@ -672,7 +678,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         DataStructureAdapter<Integer, String> adapter = useDataAdapter ? context.dataAdapter : context.nearCacheAdapter;
         assumeThatMethodIsAvailable(adapter, method);
 
-        populateMap(context);
+        populateDataAdapter(context);
         populateNearCache(context);
 
         // this should invalidate the Near Cache
@@ -733,7 +739,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         final NearCacheTestContext<Integer, String, NK, NV> context = createContext();
         assumeThatMethodIsAvailable(context.nearCacheAdapter, DataStructureMethods.CONTAINS_KEY);
 
-        // populate map
+        // populate data structure
         context.dataAdapter.put(1, "value-1");
         context.dataAdapter.put(2, "value-2");
         context.dataAdapter.put(3, "value-3");
@@ -777,8 +783,8 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         // all Near Cache implementations use the same eviction algorithm, which evicts a single entry
         int expectedEvictions = 1;
 
-        // populate map with an extra entry
-        populateMap(context);
+        // populate data structure with an extra entry
+        populateDataAdapter(context);
         context.dataAdapter.put(DEFAULT_RECORD_COUNT, "value-" + DEFAULT_RECORD_COUNT);
 
         // populate Near Caches
@@ -820,7 +826,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         nearCacheConfig.setInvalidateOnChange(true);
         final NearCacheTestContext<Integer, String, NK, NV> context = createContext();
 
-        populateMap(context);
+        populateDataAdapter(context);
 
         final CountDownLatch countDownLatch = new CountDownLatch(threadCount);
         Runnable task = new Runnable() {
@@ -864,19 +870,12 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
             assertNull("Expected null from near cached data structure for key " + i, context.nearCacheAdapter.get(i));
 
             // fetch internal value directly from Near Cache
-            NK key = getNearCacheKey(context, i);
-            NV value = context.nearCache.get(key);
+            NV value = getFromNearCache(context, i);
             if (value != null) {
                 // the internal value should either be `null` or `CACHED_AS_NULL`
-                assertEquals("Expected CACHED_AS_NULL in Near Cache for key " + i,
-                        NearCache.CACHED_AS_NULL, context.nearCache.get(key));
+                assertEquals("Expected CACHED_AS_NULL in Near Cache for key " + i, NearCache.CACHED_AS_NULL, value);
             }
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private NK getNearCacheKey(NearCacheTestContext<Integer, String, NK, NV> context, int key) {
-        return (NK) context.serializationService.toData(key);
     }
 
     /**
@@ -891,7 +890,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         setEvictionConfig(nearCacheConfig, NONE, ENTRY_COUNT, size);
         NearCacheTestContext<Integer, String, NK, NV> context = createContext();
 
-        populateMap(context);
+        populateDataAdapter(context);
         populateNearCache(context);
 
         assertNearCacheSize(context, size);
@@ -921,7 +920,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         nearCacheConfig.setInvalidateOnChange(true);
         final NearCacheTestContext<Integer, String, NK, NV> context = createContext();
 
-        populateMap(context);
+        populateDataAdapter(context);
         populateNearCache(context);
 
         assertNearCacheSize(context, size);
