@@ -198,6 +198,7 @@ public abstract class Operation implements DataSerializable {
     /**
      * Tells whether this operation is involved in an ongoing invocation. Such an operation always has a
      * positive call ID.
+     *
      * @return {@code true} if the operation's invocation is active; {@code false} otherwise
      */
     final boolean isActive() {
@@ -206,6 +207,7 @@ public abstract class Operation implements DataSerializable {
 
     /**
      * Marks this operation as "not involved in an ongoing invocation".
+     *
      * @return {@code true} if this call deactivated the operation; {@code false} if it was already inactive
      */
     final boolean deactivate() {
@@ -224,6 +226,7 @@ public abstract class Operation implements DataSerializable {
 
     /**
      * Atomically ensures that the operation is not already involved in an invocation and sets the supplied call ID.
+     *
      * @param newId the requested call ID, must be positive
      * @throws IllegalArgumentException if the supplied call ID is non-positive
      * @throws IllegalStateException if the operation already has an ongoing invocation
@@ -256,6 +259,7 @@ public abstract class Operation implements DataSerializable {
      * <p>
      * For example an operation can distinguish the first invocation and invocation retries by keeping
      * the initial <tt>callId</tt>.
+     *
      * @param callId the new call ID that was set on the operation
      */
     protected void onSetCallId(long callId) {
