@@ -26,6 +26,7 @@ import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
 import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.MethodAvailableMatcher;
+import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.monitor.NearCacheStats;
@@ -123,7 +124,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     /**
      * Returns the {@link MapNearCacheManager} from a given {@link HazelcastInstance}.
      *
-     * @param instance the {@link HazelcastInstance} to retrieve the {@link MapNearCacheManager} frp,
+     * @param instance the {@link HazelcastInstance} to retrieve the {@link MapNearCacheManager} from
      * @return the {@link MapNearCacheManager}
      */
     public static MapNearCacheManager getMapNearCacheManager(HazelcastInstance instance) {
@@ -131,6 +132,23 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
 
         return service.getMapServiceContext().getMapNearCacheManager();
+    }
+
+    /**
+     * Returns a value directly from the Near Cache.
+     *
+     * @param context the {@link NearCacheTestContext} to retrieve the Near Cache from
+     * @param key     the key to get the value from
+     * @param <NK>    the key type of the Near Cache
+     * @param <NV>    the value type of the Near Cache
+     * @return the value of the given key from the Near Cache
+     */
+    @SuppressWarnings("unchecked")
+    public static <NK, NV> NV getFromNearCache(NearCacheTestContext<?, ?, NK, NV> context, Object key) {
+        // the ReplicatedMap already uses keys by-reference
+        boolean isReplicatedMap = context.nearCacheAdapter instanceof ReplicatedMapDataStructureAdapter;
+        Object nearCacheKey = isReplicatedMap ? key : context.serializationService.toData(key);
+        return context.nearCache.get((NK) nearCacheKey);
     }
 
     /**
@@ -171,6 +189,19 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      */
     public static void assumeThatMethodIsAvailable(DataStructureAdapter adapter, DataStructureAdapterMethod method) {
         assumeThat(adapter, new MethodAvailableMatcher(method));
+    }
+
+    /**
+     * Asserts the values of the Near Cache itself.
+     *
+     * @param context the {@link NearCacheTestContext} to retrieve the Near Cache from
+     * @param size    the number of entries to check
+     */
+    public static void assertNearCacheContent(NearCacheTestContext<Integer, String, ?, ?> context, int size) {
+        for (int i = 0; i < size; i++) {
+            String value = context.serializationService.toObject(getFromNearCache(context, i));
+            assertEquals("value-" + i, value);
+        }
     }
 
     /**

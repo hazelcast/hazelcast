@@ -118,7 +118,7 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
         assumeThatMethodIsAvailable(context.nearCacheAdapter, method);
 
         // populate the data structure
-        populateMap(context);
+        populateDataAdapter(context);
         assertNearCacheSize(context, 0);
         assertNearCacheStats(context, 0, 0, 0);
 
