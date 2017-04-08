@@ -52,11 +52,15 @@ public final class NonBlockingSocketReader
     private final SwCounter normalFramesRead = newSwCounter();
     @Probe(name = "priorityFramesRead")
     private final SwCounter priorityFramesRead = newSwCounter();
-
-    private ReadHandler readHandler;
-    private volatile long lastReadTime;
     private final SocketReaderInitializer initializer;
     private final ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
+    private ReadHandler readHandler;
+    private volatile long lastReadTime;
+
+    private long bytesReadLastPublish;
+    private long normalFramesReadLastPublish;
+    private long priorityFramesReadLastPublish;
+    private long handleCountLastPublish;
 
     public NonBlockingSocketReader(
             SocketConnection connection,
@@ -66,6 +70,20 @@ public final class NonBlockingSocketReader
             SocketReaderInitializer initializer) {
         super(connection, ioThread, OP_READ, logger, balancer);
         this.initializer = initializer;
+    }
+
+    @Override
+    public long getEventCount() {
+        switch (LOAD_TYPE) {
+            case 0:
+                return handleCount.get();
+            case 1:
+                return bytesRead.get();
+            case 2:
+                return normalFramesRead.get() + priorityFramesRead.get();
+            default:
+                throw new RuntimeException();
+        }
     }
 
     @Override
@@ -134,7 +152,7 @@ public final class NonBlockingSocketReader
 
     @Override
     public void handle() throws Exception {
-        eventCount.inc();
+        handleCount.inc();
         // we are going to set the timestamp even if the socketChannel is going to fail reading. In that case
         // the connection is going to be closed anyway.
         lastReadTime = currentTimeMillis();
@@ -207,11 +225,30 @@ public final class NonBlockingSocketReader
                 return;
             }
 
+            publish();
+
             try {
                 startMigration(newOwner);
             } catch (Throwable t) {
                 onFailure(t);
             }
         }
+    }
+
+    @Override
+    public void publish() {
+        if (Thread.currentThread() != ioThread) {
+            return;
+        }
+
+        ioThread.bytesTransceived += bytesRead.get() - bytesReadLastPublish;
+        ioThread.framesTransceived += normalFramesRead.get() - normalFramesReadLastPublish;
+        ioThread.priorityFramesTransceived += priorityFramesRead.get() - priorityFramesReadLastPublish;
+        ioThread.handleCount += handleCount.get() - handleCountLastPublish;
+
+        bytesReadLastPublish = bytesRead.get();
+        normalFramesReadLastPublish = normalFramesRead.get();
+        priorityFramesReadLastPublish = priorityFramesRead.get();
+        handleCountLastPublish = handleCount.get();
     }
 }

@@ -37,6 +37,8 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
+import static com.hazelcast.internal.networking.nonblocking.SelectorMode.SELECT_NOW;
 import static com.hazelcast.internal.networking.nonblocking.SelectorOptimizer.optimize;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.lang.Math.max;
@@ -61,6 +63,15 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     // indicate which thread they are currently bound to.
     @Probe(name = "ioThreadId", level = ProbeLevel.INFO)
     public int id;
+
+    @Probe(level = DEBUG)
+    volatile long bytesTransceived;
+    @Probe(level = DEBUG)
+    volatile long framesTransceived;
+    @Probe(level = DEBUG)
+    volatile long priorityFramesTransceived;
+    @Probe(level = DEBUG)
+    volatile long handleCount;
 
     @Probe(name = "taskQueueSize")
     private final Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<Runnable>();
@@ -91,6 +102,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
 
     // set to true while testing
     private boolean selectorWorkaroundTest;
+
 
     public NonBlockingIOThread(ThreadGroup threadGroup,
                                String threadName,
@@ -135,6 +147,30 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
         } catch (final IOException e) {
             throw new HazelcastException("Failed to open a Selector", e);
         }
+    }
+
+    public long bytesTransceived() {
+        return bytesTransceived;
+    }
+
+    public long framesTransceived() {
+        return framesTransceived;
+    }
+
+    public long priorityFramesTransceived() {
+        return priorityFramesTransceived;
+    }
+
+    public long handleCount() {
+        return handleCount;
+    }
+
+    public long eventCount() {
+        return eventCount.get();
+    }
+
+    public long completedTaskCount() {
+        return completedTaskCount.get();
     }
 
     /**
@@ -188,7 +224,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
      */
     public void addTaskAndWakeup(Runnable task) {
         taskQueue.add(task);
-        if (selectMode != SelectorMode.SELECT_NOW) {
+        if (selectMode != SELECT_NOW) {
             selector.wakeup();
         }
     }

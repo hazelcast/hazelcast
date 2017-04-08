@@ -53,6 +53,11 @@ import java.util.concurrent.TimeUnit;
 public interface MetricsRegistry {
 
     /**
+     * Returns the minimum ProbeLevel this MetricsRegistry is recording.
+     */
+    ProbeLevel minimumLevel();
+
+    /**
      * Creates a LongGauge for a given metric name.
      *
      * If no gauge exists for the name, it will be created but no probe is set. The reason to do so is that you don't want to

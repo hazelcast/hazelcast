@@ -31,12 +31,16 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.networking.nonblocking.SelectorMode.SELECT;
 import static com.hazelcast.internal.networking.nonblocking.SelectorMode.SELECT_NOW_STRING;
 import static com.hazelcast.util.HashUtil.hashToIndex;
 import static com.hazelcast.util.concurrent.BackoffIdleStrategy.createBackoffIdleStrategy;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
@@ -51,8 +55,8 @@ import static java.util.logging.Level.INFO;
 public class NonBlockingIOThreadingModel
         implements IOThreadingModel {
 
-    private final NonBlockingIOThread[] inputThreads;
-    private final NonBlockingIOThread[] outputThreads;
+    private volatile NonBlockingIOThread[] inputThreads;
+    private volatile NonBlockingIOThread[] outputThreads;
     private final AtomicInteger nextInputThreadIndex = new AtomicInteger();
     private final AtomicInteger nextOutputThreadIndex = new AtomicInteger();
     private final ILogger logger;
@@ -76,6 +80,9 @@ public class NonBlockingIOThreadingModel
     private volatile IOBalancer ioBalancer;
     private boolean selectorWorkaroundTest = Boolean.getBoolean("hazelcast.io.selector.workaround.test");
     private BackoffIdleStrategy idleStrategy;
+    private volatile boolean stop;
+    private final Map<SocketConnection, SocketConnection> connections
+            = new ConcurrentHashMap<SocketConnection, SocketConnection>();
 
     public NonBlockingIOThreadingModel(
             LoggingService loggingService,
@@ -153,7 +160,6 @@ public class NonBlockingIOThreadingModel
 
         logger.log(getSelectorMode() != SELECT ? INFO : FINE, "IO threads selector mode is " + getSelectorMode());
 
-
         for (int i = 0; i < inputThreads.length; i++) {
             NonBlockingIOThread thread = new NonBlockingIOThread(
                     hazelcastThreadGroup.getInternalThreadGroup(),
@@ -184,10 +190,45 @@ public class NonBlockingIOThreadingModel
             thread.start();
         }
         startIOBalancer();
+
+        if (metricsRegistry.minimumLevel().isEnabled(DEBUG)) {
+            metricsRegistry.scheduleAtFixedRate(new PublishAllTask(), 1, SECONDS);
+        }
+    }
+
+    private class PublishAllTask implements Runnable {
+        @Override
+        public void run() {
+            for (SocketConnection connection : connections.values()) {
+                final NonBlockingSocketReader reader = (NonBlockingSocketReader) connection.getSocketReader();
+                final NonBlockingIOThread inputThread = reader.getOwner();
+                if (inputThread != null) {
+                    inputThread.addTaskAndWakeup(new Runnable() {
+                        @Override
+                        public void run() {
+                            reader.publish();
+                        }
+                    });
+                }
+
+                final NonBlockingSocketWriter writer = (NonBlockingSocketWriter) connection.getSocketWriter();
+                final NonBlockingIOThread outputThread = writer.getOwner();
+                if (outputThread != null) {
+                    outputThread.addTaskAndWakeup(new Runnable() {
+                        @Override
+                        public void run() {
+                            writer.publish();
+                        }
+                    });
+                }
+            }
+        }
     }
 
     @Override
     public void onConnectionAdded(SocketConnection connection) {
+        connections.put(connection, connection);
+
         MigratableHandler reader = (MigratableHandler) connection.getSocketReader();
         MigratableHandler writer = (MigratableHandler) connection.getSocketWriter();
         ioBalancer.connectionAdded(reader, writer);
@@ -195,6 +236,8 @@ public class NonBlockingIOThreadingModel
 
     @Override
     public void onConnectionRemoved(SocketConnection connection) {
+        connections.remove(connection);
+
         MigratableHandler reader = (MigratableHandler) connection.getSocketReader();
         MigratableHandler writer = (MigratableHandler) connection.getSocketWriter();
         ioBalancer.connectionRemoved(reader, writer);
@@ -209,6 +252,7 @@ public class NonBlockingIOThreadingModel
 
     @Override
     public void shutdown() {
+        stop = true;
         ioBalancer.stop();
 
         if (logger.isFinestEnabled()) {
@@ -216,27 +260,29 @@ public class NonBlockingIOThreadingModel
         }
 
         shutdown(inputThreads);
+        inputThreads = null;
         shutdown(outputThreads);
+        outputThreads = null;
     }
 
     private void shutdown(NonBlockingIOThread[] threads) {
-        for (int i = 0; i < threads.length; i++) {
-            NonBlockingIOThread ioThread = threads[i];
-            if (ioThread != null) {
-                ioThread.shutdown();
-            }
-            threads[i] = null;
+        if (threads == null) {
+            return;
+        }
+        for (NonBlockingIOThread thread : threads) {
+            thread.shutdown();
         }
     }
 
     @Override
     public SocketWriter newSocketWriter(SocketConnection connection) {
         int index = hashToIndex(nextOutputThreadIndex.getAndIncrement(), outputThreads.length);
-        NonBlockingIOThread outputThread = outputThreads[index];
-        if (outputThread == null) {
+        NonBlockingIOThread[] threads = outputThreads;
+        if (threads == null) {
             throw new IllegalStateException("IO thread is closed!");
         }
 
+        NonBlockingIOThread outputThread = threads[index];
         return new NonBlockingSocketWriter(
                 connection,
                 outputThread,
@@ -248,11 +294,12 @@ public class NonBlockingIOThreadingModel
     @Override
     public SocketReader newSocketReader(SocketConnection connection) {
         int index = hashToIndex(nextInputThreadIndex.getAndIncrement(), inputThreads.length);
-        NonBlockingIOThread inputThread = inputThreads[index];
-        if (inputThread == null) {
+        NonBlockingIOThread[] threads = inputThreads;
+        if (threads == null) {
             throw new IllegalStateException("IO thread is closed!");
         }
 
+        NonBlockingIOThread inputThread = threads[index];
         return new NonBlockingSocketReader(
                 connection,
                 inputThread,
