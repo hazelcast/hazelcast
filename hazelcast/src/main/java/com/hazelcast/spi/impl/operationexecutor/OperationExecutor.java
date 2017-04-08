@@ -49,6 +49,11 @@ public interface OperationExecutor extends PacketHandler {
     int getPriorityQueueSize();
 
     /**
+     * Returns the number of executed operations.
+     */
+    long getExecutedOperationCount();
+
+    /**
      * Returns the number of partition threads.
      *
      * @return number of partition threads.
@@ -175,4 +180,5 @@ public interface OperationExecutor extends PacketHandler {
      * Shuts down this OperationExecutor. Any pending tasks are discarded.
      */
     void shutdown();
+
 }

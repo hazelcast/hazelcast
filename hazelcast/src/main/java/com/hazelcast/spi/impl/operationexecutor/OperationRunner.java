@@ -43,6 +43,8 @@ public abstract class OperationRunner {
         this.partitionId = partitionId;
     }
 
+    public abstract long executedOperationsCount();
+
     public abstract void run(Packet packet) throws Exception;
 
     public abstract void run(Runnable task);

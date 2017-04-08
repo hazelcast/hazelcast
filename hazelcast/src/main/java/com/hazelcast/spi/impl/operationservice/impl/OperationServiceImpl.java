@@ -59,7 +59,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
@@ -103,9 +102,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
     final InvocationRegistry invocationRegistry;
     final OperationExecutor operationExecutor;
-
-    @Probe(name = "completedCount", level = MANDATORY)
-    final AtomicLong completedOperationsCount = new AtomicLong();
 
     @Probe(name = "operationTimeoutCount", level = MANDATORY)
     final MwCounter operationTimeoutCount = newMwCounter();
@@ -219,7 +215,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
     @Override
     public long getExecutedOperationCount() {
-        return completedOperationsCount.get();
+        return operationExecutor.getExecutedOperationCount();
     }
 
     @Override

@@ -65,7 +65,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         remote = cluster[1];
         operationService = (OperationServiceImpl) getOperationService(local);
         clusterService = getClusterService(local);
-        operationRunner = new OperationRunnerImpl(operationService, getPartitionId(local), newSwCounter());
+        operationRunner = new OperationRunnerImpl(operationService, getPartitionId(local), 0, newSwCounter());
         responseHandler = mock(OperationResponseHandler.class);
     }
 
