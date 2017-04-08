@@ -156,6 +156,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.credentials = client.getCredentials();
     }
 
+    public NonBlockingIOThreadingModel getIoThreadingModel() {
+        return ioThreadingModel;
+    }
+
     protected void initIOThreads(HazelcastClientInstanceImpl client) {
         HazelcastProperties properties = client.getProperties();
         boolean directBuffer = properties.getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);

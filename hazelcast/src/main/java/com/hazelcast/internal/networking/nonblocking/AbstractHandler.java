@@ -33,8 +33,11 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 public abstract class AbstractHandler
         implements SelectionHandler, MigratableHandler {
 
-    @Probe(name = "eventCount")
-    protected final SwCounter eventCount = newSwCounter();
+    // for the time being we configure using a int until we have decided which load strategy to use.
+    protected static final int LOAD_TYPE = Integer.getInteger("io.load", 0);
+
+    @Probe(name = "handleCount")
+    protected final SwCounter handleCount = newSwCounter();
     protected final ILogger logger;
     protected final SocketChannelWrapper socketChannel;
     protected final SocketConnection connection;
@@ -67,11 +70,6 @@ public abstract class AbstractHandler
 
     public SocketChannelWrapper getSocketChannel() {
         return socketChannel;
-    }
-
-    @Override
-    public long getEventCount() {
-        return eventCount.get();
     }
 
     @Probe(level = DEBUG)
@@ -114,6 +112,8 @@ public abstract class AbstractHandler
             selectionKey.interestOps(interestOps & ~operation);
         }
     }
+
+    protected abstract void publish();
 
     @Override
     public void onFailure(Throwable e) {
