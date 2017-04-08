@@ -39,6 +39,7 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationResponseHandler;
@@ -146,8 +147,6 @@ import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 @SuppressWarnings("checkstyle:methodcount")
 public class EntryOperation extends MutatingKeyBasedMapOperation implements BackupAwareOperation, BlockingOperation {
 
-    private static final int SET_UNLOCK_RETRY_LIMIT = 1000;
-
     private static final int SET_UNLOCK_FAST_RETRY_LIMIT = 10;
 
     private EntryProcessor entryProcessor;
@@ -164,6 +163,7 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
     private transient boolean readOnly;
     private transient long begin;
     private transient OperationServiceImpl ops;
+    private transient ExecutionService exs;
 
     private transient int setUnlockRetryCount;
 
@@ -179,6 +179,7 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
     public void innerBeforeRun() throws Exception {
         super.innerBeforeRun();
         this.ops = (OperationServiceImpl) getNodeEngine().getOperationService();
+        this.exs = getNodeEngine().getExecutionService();
         this.begin = getNow();
         this.readOnly = entryProcessor instanceof ReadOnly;
 
@@ -343,15 +344,8 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
 
             private void retry(final Operation op) {
                 setUnlockRetryCount++;
-                if (isRetryLimitReached()) {
-                    try {
-                        Object exceeded = new HazelcastException("Set & Unlock retry limit exceeded for key " + dataKey);
-                        getOperationResponseHandler().sendResponse(EntryOperation.this, exceeded);
-                    } finally {
-                        ops.onCompletionAsyncOperation(EntryOperation.this);
-                    }
-                } else if (isFastRetryLimitReached()) {
-                    getNodeEngine().getExecutionService().schedule(new Runnable() {
+                if (isFastRetryLimitReached()) {
+                    exs.schedule(new Runnable() {
                         @Override
                         public void run() {
                             ops.execute(op);
@@ -394,10 +388,6 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
 
     private boolean isTimeout(Object response) {
         return response instanceof CallTimeoutResponse;
-    }
-
-    private boolean isRetryLimitReached() {
-        return setUnlockRetryCount > SET_UNLOCK_RETRY_LIMIT;
     }
 
     private boolean isFastRetryLimitReached() {
