@@ -144,6 +144,12 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     @Test
     @Override
     @Ignore(value = "This test doesn't work with the TransactionalMap due to its limited implementation")
+    public void whenGetAllWithHalfFilledNearCacheIsUsed_thenNearCacheShouldBePopulated() {
+    }
+
+    @Test
+    @Override
+    @Ignore(value = "This test doesn't work with the TransactionalMap due to its limited implementation")
     public void testNearCacheEviction() {
     }
 
