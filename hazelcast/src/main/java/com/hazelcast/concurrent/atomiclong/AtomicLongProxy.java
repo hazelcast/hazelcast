@@ -26,7 +26,7 @@ import com.hazelcast.concurrent.atomiclong.operations.GetAndAlterOperation;
 import com.hazelcast.concurrent.atomiclong.operations.GetAndSetOperation;
 import com.hazelcast.concurrent.atomiclong.operations.GetOperation;
 import com.hazelcast.concurrent.atomiclong.operations.SetOperation;
-import com.hazelcast.core.AsyncAtomicLong;
+import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -35,7 +35,7 @@ import com.hazelcast.spi.Operation;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 
-public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService> implements AsyncAtomicLong {
+public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService> implements IAtomicLong {
 
     private final String name;
     private final int partitionId;
@@ -72,11 +72,6 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     }
 
     @Override
-    public InternalCompletableFuture<Long> asyncAddAndGet(long delta) {
-        return addAndGetAsync(delta);
-    }
-
-    @Override
     public boolean compareAndSet(long expect, long update) {
         return compareAndSetAsync(expect, update).join();
     }
@@ -86,11 +81,6 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
         Operation operation = new CompareAndSetOperation(name, expect, update)
                 .setPartitionId(partitionId);
         return invokeOnPartition(operation);
-    }
-
-    @Override
-    public InternalCompletableFuture<Boolean> asyncCompareAndSet(long expect, long update) {
-        return compareAndSetAsync(expect, update);
     }
 
     @Override
@@ -106,11 +96,6 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     }
 
     @Override
-    public InternalCompletableFuture<Void> asyncSet(long newValue) {
-        return setAsync(newValue);
-    }
-
-    @Override
     public long getAndSet(long newValue) {
         return getAndSetAsync(newValue).join();
     }
@@ -120,11 +105,6 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
         Operation operation = new GetAndSetOperation(name, newValue)
                 .setPartitionId(partitionId);
         return invokeOnPartition(operation);
-    }
-
-    @Override
-    public InternalCompletableFuture<Long> asyncGetAndSet(long newValue) {
-        return getAndSetAsync(newValue);
     }
 
     @Override
@@ -140,22 +120,12 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     }
 
     @Override
-    public InternalCompletableFuture<Long> asyncGetAndAdd(long delta) {
-        return getAndAddAsync(delta);
-    }
-
-    @Override
     public long decrementAndGet() {
         return decrementAndGetAsync().join();
     }
 
     @Override
     public InternalCompletableFuture<Long> decrementAndGetAsync() {
-        return addAndGetAsync(-1);
-    }
-
-    @Override
-    public InternalCompletableFuture<Long> asyncDecrementAndGet() {
         return addAndGetAsync(-1);
     }
 
@@ -172,11 +142,6 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     }
 
     @Override
-    public InternalCompletableFuture<Long> asyncGet() {
-        return getAsync();
-    }
-
-    @Override
     public long incrementAndGet() {
         return incrementAndGetAsync().join();
     }
@@ -187,22 +152,12 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     }
 
     @Override
-    public InternalCompletableFuture<Long> asyncIncrementAndGet() {
-        return addAndGetAsync(1);
-    }
-
-    @Override
     public long getAndIncrement() {
         return getAndIncrementAsync().join();
     }
 
     @Override
     public InternalCompletableFuture<Long> getAndIncrementAsync() {
-        return getAndAddAsync(1);
-    }
-
-    @Override
-    public InternalCompletableFuture<Long> asyncGetAndIncrement() {
         return getAndAddAsync(1);
     }
 
@@ -221,11 +176,6 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     }
 
     @Override
-    public InternalCompletableFuture<Void> asyncAlter(IFunction<Long, Long> function) {
-        return alterAsync(function);
-    }
-
-    @Override
     public long alterAndGet(IFunction<Long, Long> function) {
         return alterAndGetAsync(function).join();
     }
@@ -237,11 +187,6 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
         Operation operation = new AlterAndGetOperation(name, function)
                 .setPartitionId(partitionId);
         return invokeOnPartition(operation);
-    }
-
-    @Override
-    public InternalCompletableFuture<Long> asyncAlterAndGet(IFunction<Long, Long> function) {
-        return alterAndGetAsync(function);
     }
 
     @Override
@@ -259,11 +204,6 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     }
 
     @Override
-    public InternalCompletableFuture<Long> asyncGetAndAlter(IFunction<Long, Long> function) {
-        return getAndAlterAsync(function);
-    }
-
-    @Override
     public <R> R apply(IFunction<Long, R> function) {
         return applyAsync(function).join();
     }
@@ -275,11 +215,6 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
         Operation operation = new ApplyOperation<R>(name, function)
                 .setPartitionId(partitionId);
         return invokeOnPartition(operation);
-    }
-
-    @Override
-    public <R> InternalCompletableFuture<R> asyncApply(IFunction<Long, R> function) {
-        return applyAsync(function);
     }
 
     @Override
