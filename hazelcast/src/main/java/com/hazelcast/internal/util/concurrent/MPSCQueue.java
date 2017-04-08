@@ -41,13 +41,16 @@ import static java.util.concurrent.locks.LockSupport.unpark;
  * on the stack, the owning thread can take them all using a single cas. Once this is done, the owning thread can process them
  * one by one and doesn't need to content with the putting threads; reducing contention.
  *
+ * This class contains a litter reduction optimization. In case of a single item on the put-stack; the item isn't wrapped
+ * in a Node.
+ *
  * @param <E> the type of elements held in this collection
  */
 public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueue<E> {
     static final int INITIAL_ARRAY_SIZE = 512;
     static final Node BLOCKED = new Node();
 
-    final AtomicReference<Node> putStack = new AtomicReference<Node>();
+    final AtomicReference<Object> putStack = new AtomicReference<Object>();
     private final AtomicInteger takeStackSize = new AtomicInteger();
     private final IdleStrategy idleStrategy;
 
@@ -105,18 +108,23 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
     public boolean offer(E item) {
         checkNotNull(item, "item can't be null");
 
-        AtomicReference<Node> putStack = this.putStack;
-        Node newHead = new Node();
-        newHead.item = item;
+        AtomicReference<Object> putStack = this.putStack;
+        Node newHeadNode = null;
 
         for (; ; ) {
-            Node oldHead = putStack.get();
+            Object newHead;
+            Object oldHead = putStack.get();
             if (oldHead == null || oldHead == BLOCKED) {
-                newHead.next = null;
-                newHead.size = 1;
+                newHead = item;
             } else {
-                newHead.next = oldHead;
-                newHead.size = oldHead.size + 1;
+                if (newHeadNode == null) {
+                    newHeadNode = new Node();
+                    newHeadNode.item = item;
+                }
+
+                newHeadNode.next = oldHead;
+                newHeadNode.size = oldHead.getClass() == Node.class ? ((Node) oldHead).size + 1 : 2;
+                newHead = newHeadNode;
             }
 
             if (!putStack.compareAndSet(oldHead, newHead)) {
@@ -153,7 +161,6 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
         takeAll();
         assert takeStackIndex == 0;
         assert takeStack[takeStackIndex] != null;
-
         return next();
     }
 
@@ -206,14 +213,14 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
 
     private void takeAll() throws InterruptedException {
         long iteration = 0;
-        AtomicReference<Node> putStack = this.putStack;
+        AtomicReference<Object> putStack = this.putStack;
         for (; ; ) {
             if (consumerThread.isInterrupted()) {
                 putStack.compareAndSet(BLOCKED, null);
                 throw new InterruptedException();
             }
 
-            Node currentPutStackHead = putStack.get();
+            Object currentPutStackHead = putStack.get();
 
             if (currentPutStackHead == null) {
                 if (idleStrategy != null) {
@@ -245,7 +252,7 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
 
     private boolean drainPutStack() {
         for (; ; ) {
-            Node head = putStack.get();
+            Object head = putStack.get();
             if (head == null) {
                 return false;
             }
@@ -257,20 +264,22 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
         }
     }
 
-    private void copyIntoTakeStack(Node putStackHead) {
-        int putStackSize = putStackHead.size;
+    private void copyIntoTakeStack(Object node) {
+        int putStackSize = node.getClass() == Node.class ? ((Node) node).size : 1;
 
         takeStackSize.lazySet(putStackSize);
 
         if (putStackSize > takeStack.length) {
-            takeStack = new Object[nextPowerOfTwo(putStackHead.size)];
+            takeStack = new Object[nextPowerOfTwo(putStackSize)];
         }
 
-        for (int i = putStackSize - 1; i >= 0; i--) {
-            takeStack[i] = putStackHead.item;
-            putStackHead = putStackHead.next;
+        for (int i = putStackSize - 1; i > 0; i--) {
+            Node theNode = (Node) node;
+            takeStack[i] = theNode.item;
+            node = theNode.next;
         }
 
+        takeStack[0] = node;
         takeStackIndex = 0;
         assert takeStack[0] != null;
     }
@@ -282,8 +291,13 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
      */
     @Override
     public int size() {
-        Node h = putStack.get();
-        int putStackSize = h == null ? 0 : h.size;
+        int putStackSize;
+        Object h = putStack.get();
+        if (h == null) {
+            putStackSize = 0;
+        } else {
+            putStackSize = h.getClass() == Node.class ? ((Node) h).size : 1;
+        }
         return putStackSize + takeStackSize.get();
     }
 
@@ -329,7 +343,7 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
     }
 
     private static final class Node<E> {
-        Node next;
+        Object next;
         E item;
         int size;
     }
