@@ -54,6 +54,8 @@ public interface InternalSerializationService extends SerializationService, Disp
      */
     byte[] toBytes(Object obj, int leftPadding, boolean insertPartitionHash);
 
+    <T> T toObject(byte[] bytes, int offset, boolean isData);
+
     void writeObject(ObjectDataOutput out, Object obj);
 
     <T> T readObject(ObjectDataInput in);
