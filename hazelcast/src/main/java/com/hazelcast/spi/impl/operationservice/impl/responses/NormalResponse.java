@@ -16,13 +16,19 @@
 
 package com.hazelcast.spi.impl.operationservice.impl.responses;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.readInt;
 import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
+import static java.lang.System.arraycopy;
+import static java.nio.ByteOrder.BIG_ENDIAN;
 
 /**
  * A NormalResponse is send when an Operation needs to return a value. This response value can a 'normal' value,
@@ -40,7 +46,10 @@ import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
  */
 public class NormalResponse extends Response {
     public static final int OFFSET_BACKUP_ACKS = 26;
-
+    public static final int OFFSET_IS_DATA = OFFSET_BACKUP_ACKS + 1;
+    public static final int OFFSET_NONE_DATA_PAYLOAD = OFFSET_IS_DATA + 1;
+    public static final int OFFSET_DATA_LENGTH = OFFSET_IS_DATA + 1;
+    public static final int OFFSET_DATA_PAYLOAD = OFFSET_DATA_LENGTH + INT_SIZE_IN_BYTES;
     private Object value;
 
     //the number of backups acks; 0 if no acks are needed.
@@ -103,6 +112,24 @@ public class NormalResponse extends Response {
             value = in.readData();
         } else {
             value = in.readObject();
+        }
+    }
+
+    public static Object unpackValue(byte[] bytes, InternalSerializationService serializationService, boolean deserialize) {
+        boolean isData = bytes[OFFSET_IS_DATA] == 1;
+        if (isData) {
+            int dataLength = readInt(bytes, OFFSET_DATA_LENGTH, serializationService.getByteOrder() == BIG_ENDIAN);
+            if (dataLength == -1) {
+                return null;
+            } else if (deserialize) {
+                return serializationService.toObject(bytes, OFFSET_DATA_PAYLOAD, isData);
+            } else {
+                byte[] dataBytes = new byte[dataLength];
+                arraycopy(bytes, OFFSET_DATA_PAYLOAD, dataBytes, 0, dataLength);
+                return new HeapData(dataBytes);
+            }
+        } else {
+            return serializationService.toObject(bytes, OFFSET_NONE_DATA_PAYLOAD, isData);
         }
     }
 

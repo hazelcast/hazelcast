@@ -47,6 +47,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.internal.serialization.impl.HeapData.DATA_OFFSET;
+import static com.hazelcast.internal.serialization.impl.HeapData.TYPE_OFFSET;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_SERIALIZERS_LENGTH;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.EMPTY_PARTITIONING_STRATEGY;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createSerializerAdapter;
@@ -55,6 +57,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.handle
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.handleSerializeException;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.indexForDefaultType;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.isNullData;
+import static com.hazelcast.nio.Bits.readIntB;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public abstract class AbstractSerializationService implements InternalSerializationService {
@@ -174,6 +177,35 @@ public abstract class AbstractSerializationService implements InternalSerializat
             ClassLocator.onStartDeserialization();
             final int typeId = data.getType();
             final SerializerAdapter serializer = serializerFor(typeId);
+            if (serializer == null) {
+                if (active) {
+                    throw newHazelcastSerializationException(typeId);
+                }
+                throw new HazelcastInstanceNotActiveException();
+            }
+
+            Object obj = serializer.read(in);
+            if (managedContext != null) {
+                obj = managedContext.initialize(obj);
+            }
+            return (T) obj;
+        } catch (Throwable e) {
+            throw handleException(e);
+        } finally {
+            ClassLocator.onFinishDeserialization();
+            pool.returnInputBuffer(in);
+        }
+    }
+
+    @Override
+    public <T> T toObject(byte[] bytes, int offset, boolean isData) {
+        BufferPool pool = bufferPoolThreadLocal.get();
+        BufferObjectDataInput in = pool.takeInputBuffer(bytes, isData ? offset + DATA_OFFSET : offset);
+
+        try {
+            ClassLocator.onStartDeserialization();
+            int typeId = isData ? readIntB(bytes, offset + TYPE_OFFSET) : in.readInt();
+            SerializerAdapter serializer = serializerFor(typeId);
             if (serializer == null) {
                 if (active) {
                     throw newHazelcastSerializationException(typeId);

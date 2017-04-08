@@ -55,6 +55,8 @@ public interface BufferPool {
      */
     BufferObjectDataInput takeInputBuffer(Data data);
 
+    BufferObjectDataInput takeInputBuffer(byte[] data, int offset);
+
     /**
      * Returns a BufferObjectDataInput back to the pool.
      *
