@@ -129,6 +129,7 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
     /**
      * Deregisters an invocation. If the associated operation is inactive, takes no action and returns {@code false}.
      * This ensures the idempotence of deregistration.
+     *
      * @param invocation The Invocation to deregister.
      * @return {@code true} if this call deregistered the invocation; {@code false} if the invocation wasn't registered
      */
