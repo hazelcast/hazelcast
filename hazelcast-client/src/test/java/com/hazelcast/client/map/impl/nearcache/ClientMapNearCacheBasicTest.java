@@ -95,6 +95,7 @@ public class ClientMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data
                 member,
                 new IMapDataStructureAdapter<K, V>(clientMap),
                 new IMapDataStructureAdapter<K, V>(memberMap),
+                nearCacheConfig,
                 false,
                 nearCache,
                 nearCacheManager);

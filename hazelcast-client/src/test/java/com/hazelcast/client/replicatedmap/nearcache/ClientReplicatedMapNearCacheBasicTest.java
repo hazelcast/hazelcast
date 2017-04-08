@@ -100,6 +100,7 @@ public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasi
                 member,
                 new ReplicatedMapDataStructureAdapter<K, V>(clientMap),
                 new ReplicatedMapDataStructureAdapter<K, V>(memberMap),
+                nearCacheConfig,
                 false,
                 nearCache,
                 nearCacheManager);

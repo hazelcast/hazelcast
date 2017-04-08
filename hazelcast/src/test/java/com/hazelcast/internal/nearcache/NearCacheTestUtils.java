@@ -111,17 +111,6 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     }
 
     /**
-     * Checks if the {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy} of a {@link NearCacheConfig}
-     * is {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE}.
-     *
-     * @param nearCacheConfig the {@link NearCacheConfig} to check
-     * @return {@code true} if the {@code LocalUpdatePolicy} is {@code CACHE_ON_UPDATE}, {@code false} otherwise
-     */
-    static boolean isCacheOnUpdate(NearCacheConfig nearCacheConfig) {
-        return nearCacheConfig != null && nearCacheConfig.getLocalUpdatePolicy() == CACHE_ON_UPDATE;
-    }
-
-    /**
      * Returns the {@link MapNearCacheManager} from a given {@link HazelcastInstance}.
      *
      * @param instance the {@link HazelcastInstance} to retrieve the {@link MapNearCacheManager} from
@@ -152,6 +141,17 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     }
 
     /**
+     * Checks if the {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy} of a {@link NearCacheConfig}
+     * is {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE}.
+     *
+     * @param context the {@link NearCacheTestContext} to retrieve the {@link NearCacheConfig} from
+     * @return {@code true} if the {@code LocalUpdatePolicy} is {@code CACHE_ON_UPDATE}, {@code false} otherwise
+     */
+    static boolean isCacheOnUpdate(NearCacheTestContext<?, ?, ?, ?> context) {
+        return context.nearCacheConfig != null && context.nearCacheConfig.getLocalUpdatePolicy() == CACHE_ON_UPDATE;
+    }
+
+    /**
      * Checks if the given {@link DataStructureAdapter} implements a specified {@link DataStructureMethods}.
      *
      * @param adapter the {@link DataStructureAdapter} to test
@@ -165,20 +165,20 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      * Assumes that the given {@link NearCacheConfig} has
      * {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#INVALIDATE} configured.
      *
-     * @param nearCacheConfig the {@link NearCacheConfig} to test
+     * @param context the {@link NearCacheTestContext} to retrieve the {@link NearCacheConfig} from
      */
-    public static void assumeThatLocalUpdatePolicyIsInvalidate(NearCacheConfig nearCacheConfig) {
-        assumeFalse(isCacheOnUpdate(nearCacheConfig));
+    public static void assumeThatLocalUpdatePolicyIsInvalidate(NearCacheTestContext<?, ?, ?, ?> context) {
+        assumeFalse(isCacheOnUpdate(context));
     }
 
     /**
      * Assumes that the given {@link NearCacheConfig} has
      * {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE} configured.
      *
-     * @param nearCacheConfig the {@link NearCacheConfig} to test
+     * @param context the {@link NearCacheTestContext} to retrieve the {@link NearCacheConfig} from
      */
-    public static void assumeThatLocalUpdatePolicyIsCacheOnUpdate(NearCacheConfig nearCacheConfig) {
-        assumeTrue(isCacheOnUpdate(nearCacheConfig));
+    public static void assumeThatLocalUpdatePolicyIsCacheOnUpdate(NearCacheTestContext<?, ?, ?, ?> context) {
+        assumeTrue(isCacheOnUpdate(context));
     }
 
     /**

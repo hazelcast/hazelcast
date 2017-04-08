@@ -92,6 +92,7 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
                 getSerializationService(member),
                 member,
                 new IMapDataStructureAdapter<K, V>(map),
+                nearCacheConfig,
                 true,
                 nearCache,
                 nearCacheManager);

@@ -112,6 +112,7 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
                     getSerializationService(member),
                     member,
                     new ICacheDataStructureAdapter<K, V>(memberCache),
+                    nearCacheConfig,
                     false,
                     null,
                     null);
@@ -124,6 +125,7 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
                 member,
                 clientContext.nearCacheAdapter,
                 new ICacheDataStructureAdapter<K, V>(memberCache),
+                nearCacheConfig,
                 false,
                 clientContext.nearCache,
                 clientContext.nearCacheManager,
@@ -177,6 +179,7 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
                 null,
                 new ICacheDataStructureAdapter<K, V>(clientCache),
                 null,
+                nearCacheConfig,
                 false,
                 nearCache,
                 nearCacheManager,
