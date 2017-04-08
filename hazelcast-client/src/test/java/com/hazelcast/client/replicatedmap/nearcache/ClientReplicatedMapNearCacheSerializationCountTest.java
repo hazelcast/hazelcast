@@ -133,6 +133,7 @@ public class ClientReplicatedMapNearCacheSerializationCountTest extends Abstract
                 member,
                 new ReplicatedMapDataStructureAdapter<K, V>(clientMap),
                 new ReplicatedMapDataStructureAdapter<K, V>(memberMap),
+                nearCacheConfig,
                 false,
                 nearCache,
                 nearCacheManager);

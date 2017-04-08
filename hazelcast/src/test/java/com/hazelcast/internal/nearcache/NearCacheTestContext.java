@@ -16,6 +16,7 @@
 package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.cache.impl.HazelcastServerCacheManager;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.monitor.NearCacheStats;
@@ -57,6 +58,10 @@ public class NearCacheTestContext<K, V, NK, NV> {
      */
     public final DataStructureAdapter<K, V> dataAdapter;
     /**
+     * The {@link NearCacheConfig} of the configured Near Cache.
+     */
+    public final NearCacheConfig nearCacheConfig;
+    /**
      * Specifies if the we are able to retrieve {@link DataStructureAdapter#getLocalMapStats()}.
      */
     public final boolean hasLocalData;
@@ -85,10 +90,24 @@ public class NearCacheTestContext<K, V, NK, NV> {
     public NearCacheTestContext(SerializationService serializationService,
                                 HazelcastInstance nearCacheInstance,
                                 DataStructureAdapter<K, V> nearCacheAdapter,
+                                NearCacheConfig nearCacheConfig,
                                 boolean hasLocalData,
                                 NearCache<NK, NV> nearCache,
                                 NearCacheManager nearCacheManager) {
-        this(serializationService, nearCacheInstance, nearCacheInstance, nearCacheAdapter, nearCacheAdapter, hasLocalData,
+        this(serializationService, nearCacheInstance, nearCacheInstance, nearCacheAdapter, nearCacheAdapter, nearCacheConfig,
+                hasLocalData, nearCache, nearCacheManager, null, null);
+    }
+
+    public NearCacheTestContext(SerializationService serializationService,
+                                HazelcastInstance nearCacheInstance,
+                                HazelcastInstance dataInstance,
+                                DataStructureAdapter<K, V> nearCacheAdapter,
+                                DataStructureAdapter<K, V> dataAdapter,
+                                NearCacheConfig nearCacheConfig,
+                                boolean hasLocalData,
+                                NearCache<NK, NV> nearCache,
+                                NearCacheManager nearCacheManager) {
+        this(serializationService, nearCacheInstance, dataInstance, nearCacheAdapter, dataAdapter, nearCacheConfig, hasLocalData,
                 nearCache, nearCacheManager, null, null);
     }
 
@@ -97,18 +116,7 @@ public class NearCacheTestContext<K, V, NK, NV> {
                                 HazelcastInstance dataInstance,
                                 DataStructureAdapter<K, V> nearCacheAdapter,
                                 DataStructureAdapter<K, V> dataAdapter,
-                                boolean hasLocalData,
-                                NearCache<NK, NV> nearCache,
-                                NearCacheManager nearCacheManager) {
-        this(serializationService, nearCacheInstance, dataInstance, nearCacheAdapter, dataAdapter, hasLocalData,
-                nearCache, nearCacheManager, null, null);
-    }
-
-    public NearCacheTestContext(SerializationService serializationService,
-                                HazelcastInstance nearCacheInstance,
-                                HazelcastInstance dataInstance,
-                                DataStructureAdapter<K, V> nearCacheAdapter,
-                                DataStructureAdapter<K, V> dataAdapter,
+                                NearCacheConfig nearCacheConfig,
                                 boolean hasLocalData,
                                 NearCache<NK, NV> nearCache,
                                 NearCacheManager nearCacheManager,
@@ -119,6 +127,7 @@ public class NearCacheTestContext<K, V, NK, NV> {
         this.dataInstance = dataInstance;
         this.nearCacheAdapter = nearCacheAdapter;
         this.dataAdapter = dataAdapter;
+        this.nearCacheConfig = nearCacheConfig;
         this.hasLocalData = hasLocalData;
 
         this.nearCache = nearCache;

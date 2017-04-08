@@ -158,6 +158,7 @@ public class ClientCacheNearCacheSerializationCountTest extends AbstractNearCach
                 member,
                 new ICacheDataStructureAdapter<K, V>(clientCache),
                 new ICacheDataStructureAdapter<K, V>(memberCache),
+                nearCacheConfig,
                 false,
                 nearCache,
                 nearCacheManager,

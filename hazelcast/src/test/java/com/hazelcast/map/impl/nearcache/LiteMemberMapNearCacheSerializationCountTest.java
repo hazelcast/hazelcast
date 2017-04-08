@@ -122,6 +122,7 @@ public class LiteMemberMapNearCacheSerializationCountTest extends AbstractNearCa
                 member,
                 new IMapDataStructureAdapter<K, V>(liteMemberMap),
                 new IMapDataStructureAdapter<K, V>(memberMap),
+                nearCacheConfig,
                 true,
                 nearCache,
                 nearCacheManager);

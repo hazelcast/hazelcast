@@ -127,6 +127,7 @@ public class MapNearCacheSerializationCountTest extends AbstractNearCacheSeriali
                 getSerializationService(member),
                 member,
                 new IMapDataStructureAdapter<K, V>(map),
+                nearCacheConfig,
                 true,
                 nearCache,
                 nearCacheManager);

@@ -121,6 +121,7 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
                 member,
                 new ICacheDataStructureAdapter<K, V>(clientCache),
                 new ICacheDataStructureAdapter<K, V>(memberCache),
+                nearCacheConfig,
                 false,
                 nearCache,
                 nearCacheManager,

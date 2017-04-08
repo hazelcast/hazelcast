@@ -133,6 +133,7 @@ public class ClientMapNearCacheSerializationCountTest extends AbstractNearCacheS
                 member,
                 new IMapDataStructureAdapter<K, V>(clientMap),
                 new IMapDataStructureAdapter<K, V>(memberMap),
+                nearCacheConfig,
                 false,
                 nearCache,
                 nearCacheManager);

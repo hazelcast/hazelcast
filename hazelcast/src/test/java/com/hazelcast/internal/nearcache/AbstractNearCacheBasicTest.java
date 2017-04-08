@@ -21,7 +21,6 @@ import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
 import com.hazelcast.internal.adapter.ICacheReplaceEntryProcessor;
 import com.hazelcast.internal.adapter.IMapReplaceEntryProcessor;
-import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
@@ -324,10 +323,9 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     private void whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods method) {
-        assumeThatLocalUpdatePolicyIsCacheOnUpdate(nearCacheConfig);
-
         NearCacheTestContext<Integer, String, NK, NV> context = createContext();
         DataStructureAdapter<Integer, String> adapter = context.nearCacheAdapter;
+        assumeThatLocalUpdatePolicyIsCacheOnUpdate(context);
         assumeThatMethodIsAvailable(adapter, method);
 
         Map<Integer, String> putAllMap = new HashMap<Integer, String>(DEFAULT_RECORD_COUNT);
@@ -519,15 +517,14 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * With the {@link NearCacheTestContext#nearCacheAdapter} Near Cache invalidations are not needed.
      */
     private void whenEntryIsChanged_thenNearCacheShouldBeInvalidated(boolean useDataAdapter, DataStructureMethods method) {
+        nearCacheConfig.setInvalidateOnChange(useDataAdapter);
+        NearCacheTestContext<Integer, String, NK, NV> context = createContext();
+        DataStructureAdapter<Integer, String> adapter = useDataAdapter ? context.dataAdapter : context.nearCacheAdapter;
         if (!ENTRY_PROCESSOR_METHODS.contains(method)) {
             // since EntryProcessors return a user-defined result we cannot directly put this into the Near Cache,
             // so we execute this test also for CACHE_ON_UPDATE configurations
-            assumeThatLocalUpdatePolicyIsInvalidate(nearCacheConfig);
+            assumeThatLocalUpdatePolicyIsInvalidate(context);
         }
-        nearCacheConfig.setInvalidateOnChange(useDataAdapter);
-
-        NearCacheTestContext<Integer, String, NK, NV> context = createContext();
-        DataStructureAdapter<Integer, String> adapter = useDataAdapter ? context.dataAdapter : context.nearCacheAdapter;
         assumeThatMethodIsAvailable(adapter, method);
 
         populateDataAdapter(context);
@@ -898,8 +895,8 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
         context.nearCacheAdapter.put(1, "newValue");
 
-        long expectedMisses = getExpectedMissesWithLocalUpdatePolicy(context.stats);
-        long expectedHits = getExpectedHitsWithLocalUpdatePolicy(context.stats);
+        long expectedMisses = getExpectedMissesWithLocalUpdatePolicy(context);
+        long expectedHits = getExpectedHitsWithLocalUpdatePolicy(context);
 
         assertEquals("newValue", context.nearCacheAdapter.get(1));
         assertEquals("newValue", context.nearCacheAdapter.get(1));
@@ -932,8 +929,8 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                long expectedMisses = getExpectedMissesWithLocalUpdatePolicy(context.stats);
-                long expectedHits = getExpectedHitsWithLocalUpdatePolicy(context.stats);
+                long expectedMisses = getExpectedMissesWithLocalUpdatePolicy(context);
+                long expectedHits = getExpectedHitsWithLocalUpdatePolicy(context);
 
                 assertEquals("newValue", context.nearCacheAdapter.get(1));
                 assertEquals("newValue", context.nearCacheAdapter.get(1));
@@ -943,21 +940,21 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         });
     }
 
-    private long getExpectedMissesWithLocalUpdatePolicy(NearCacheStats stats) {
-        if (isCacheOnUpdate(nearCacheConfig)) {
+    private static long getExpectedMissesWithLocalUpdatePolicy(NearCacheTestContext<?, ?, ?, ?> context) {
+        if (isCacheOnUpdate(context)) {
             // we expect the first and second get() to be hits, since the value should be already be cached
-            return stats.getMisses();
+            return context.stats.getMisses();
         }
         // we expect the first get() to be a miss, due to the replaced / invalidated value
-        return stats.getMisses() + 1;
+        return context.stats.getMisses() + 1;
     }
 
-    private long getExpectedHitsWithLocalUpdatePolicy(NearCacheStats stats) {
-        if (isCacheOnUpdate(nearCacheConfig)) {
+    private static long getExpectedHitsWithLocalUpdatePolicy(NearCacheTestContext<?, ?, ?, ?> context) {
+        if (isCacheOnUpdate(context)) {
             // we expect the first and second get() to be hits, since the value should be already be cached
-            return stats.getHits() + 2;
+            return context.stats.getHits() + 2;
         }
         // we expect the second get() to be a hit, since it should be served from the Near Cache
-        return stats.getHits() + 1;
+        return context.stats.getHits() + 1;
     }
 }

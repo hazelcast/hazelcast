@@ -135,6 +135,7 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
                     getSerializationService(member),
                     member,
                     new IMapDataStructureAdapter<K, V>(memberMap),
+                    nearCacheConfig,
                     false,
                     null,
                     null);
@@ -147,6 +148,7 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
                 member,
                 clientContext.nearCacheAdapter,
                 new IMapDataStructureAdapter<K, V>(memberMap),
+                nearCacheConfig,
                 false,
                 clientContext.nearCache,
                 clientContext.nearCacheManager);
@@ -169,6 +171,7 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
                 null,
                 new IMapDataStructureAdapter<K, V>(clientMap),
                 null,
+                nearCacheConfig,
                 false,
                 nearCache,
                 nearCacheManager);

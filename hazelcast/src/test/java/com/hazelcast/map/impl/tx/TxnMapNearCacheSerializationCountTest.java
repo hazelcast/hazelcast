@@ -129,6 +129,7 @@ public class TxnMapNearCacheSerializationCountTest extends AbstractNearCacheSeri
                 getSerializationService(member),
                 member,
                 new TransactionalMapDataStructureAdapter<K, V>(member, DEFAULT_NEAR_CACHE_NAME),
+                nearCacheConfig,
                 false,
                 nearCache,
                 nearCacheManager);

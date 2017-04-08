@@ -112,7 +112,7 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
         SerializationCountingData value = new SerializationCountingData();
 
         context.nearCacheAdapter.put(key, value);
-        if (isCacheOnUpdate(nearCacheConfig)) {
+        if (isCacheOnUpdate(context)) {
             assertNearCacheSizeEventually(context, 1);
         }
         assertAndReset("put()", getExpectedSerializationCounts()[0], getExpectedDeserializationCounts()[0]);

@@ -104,6 +104,7 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
                 getSerializationService(member),
                 member,
                 new TransactionalMapDataStructureAdapter<K, V>(member, DEFAULT_NEAR_CACHE_NAME),
+                nearCacheConfig,
                 false,
                 nearCache,
                 nearCacheManager);
