@@ -40,7 +40,10 @@ public interface Data {
     int getType();
 
     /**
-     * Returns the total size of Data in bytes
+     * Returns the total size of Data in bytes.
+     *
+     * The total size is the size of a byte array to contain the full content of this data object. For example in case
+     * of an HeapData object, the total size will be the length of the payload.
      *
      * @return total size
      */
