@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractInvocationFuture;
@@ -26,11 +27,12 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.CALL_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.HEARTBEAT_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.INTERRUPTED;
-import static com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse.unpackValue;
+import static com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse.extractValue;
 import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
 import static com.hazelcast.util.StringUtil.timeToString;
@@ -47,9 +49,13 @@ import static com.hazelcast.util.StringUtil.timeToString;
  */
 final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
 
+    private static final AtomicReference<HeapData> HEAP_DATA = new AtomicReference<HeapData>();
+
     volatile boolean interrupted;
     final Invocation invocation;
     private final boolean deserialize;
+
+    private volatile HeapData heapData;
 
     InvocationFuture(Invocation invocation, boolean deserialize) {
         super(invocation.context.asyncExecutor, invocation.context.logger);
@@ -101,7 +107,19 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
         if (unresolved == null) {
             return null;
         } else if (unresolved.getClass() == Packet.class) {
-            value = unpackValue(((Packet) unresolved).toByteArray(), serializationService, deserialize);
+            if (heapData != null) {
+                return heapData;
+            }
+
+            // a Packet is a NormalResponse in disguise.  We don't care for the NormalResponse instance, so we just
+            // retrieve the data directly.
+
+            value = extractValue(((Packet) unresolved).toByteArray(), serializationService, deserialize);
+
+            if (value != null && value.getClass() == HeapData.class) {
+                HEAP_DATA.compareAndSet(null, (HeapData) value);
+            }
+            value = heapData;
         } else if (unresolved == INTERRUPTED) {
             return new InterruptedException(invocation.op.getClass().getSimpleName() + " was interrupted. " + invocation);
         } else if (unresolved == CALL_TIMEOUT) {

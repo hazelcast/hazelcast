@@ -117,21 +117,36 @@ public class NormalResponse extends Response {
         }
     }
 
-    public static Object unpackValue(byte[] bytes, InternalSerializationService serializationService, boolean deserialize) {
-        boolean isData = bytes[OFFSET_IS_DATA] == 1;
+    /**
+     * Extracts a value from the response-bytes.
+     *
+     * To prevent deserializing a response object, we just peek inside the bytes to extract the value.
+     *
+     * @param responseBytes
+     * @param ss            the {@link InternalSerializationService}
+     * @param deserialize   if the value needs to be deserialized.
+     * @return the extracted value.
+     */
+    public static Object extractValue(byte[] responseBytes, InternalSerializationService ss, boolean deserialize) {
+        boolean isData = responseBytes[OFFSET_IS_DATA] == 1;
         if (isData) {
-            int dataLength = readInt(bytes, OFFSET_DATA_LENGTH, serializationService.getByteOrder() == BIG_ENDIAN);
+            int dataLength = readInt(responseBytes, OFFSET_DATA_LENGTH, ss.getByteOrder() == BIG_ENDIAN);
             if (dataLength == -1) {
                 return null;
             } else if (deserialize) {
-                return serializationService.toObject(bytes, OFFSET_DATA_PAYLOAD, isData);
+                return ss.toObject(responseBytes, OFFSET_DATA_PAYLOAD, isData);
             } else {
+                // this part sucks; because we allocate a new byte-array. It would be nicer if we could reuse the 'bytes'
+                // One solution would be add an offset to 'heapdata' but this will increase it size since heap-data is also
+                // used for long term storage.
+                // Another solution would be to shift the data; the problem is thread-safety
+                // Restructuring the response so that the data is in the beginning is no option due to compatibility.
                 byte[] dataBytes = new byte[dataLength];
-                arraycopy(bytes, OFFSET_DATA_PAYLOAD, dataBytes, 0, dataLength);
+                arraycopy(responseBytes, OFFSET_DATA_PAYLOAD, dataBytes, 0, dataLength);
                 return new HeapData(dataBytes);
             }
         } else {
-            return serializationService.toObject(bytes, OFFSET_NOT_DATA, isData);
+            return ss.toObject(responseBytes, OFFSET_NOT_DATA, isData);
         }
     }
 

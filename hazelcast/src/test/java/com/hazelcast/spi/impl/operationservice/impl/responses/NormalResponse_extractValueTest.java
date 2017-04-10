@@ -12,12 +12,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse.unpackValue;
+import static com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse.extractValue;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class NormalResponse_unpackValueTest {
+public class NormalResponse_extractValueTest {
 
     private SerializationServiceV1 serializationService;
 
@@ -34,7 +34,7 @@ public class NormalResponse_unpackValueTest {
         NormalResponse normalResponse = new NormalResponse(value, 0, 0, false);
         byte[] bytes = serializationService.toBytes(normalResponse);
 
-        Object actual = unpackValue(bytes, serializationService, true);
+        Object actual = extractValue(bytes, serializationService, true);
         assertEquals(value, actual);
     }
 
@@ -44,7 +44,7 @@ public class NormalResponse_unpackValueTest {
         NormalResponse normalResponse = new NormalResponse(value, 0, 0, false);
         byte[] bytes = serializationService.toBytes(normalResponse);
 
-        Object actual = unpackValue(bytes, serializationService, false);
+        Object actual = extractValue(bytes, serializationService, false);
 
         assertEquals(value, actual);
     }
@@ -55,7 +55,7 @@ public class NormalResponse_unpackValueTest {
         NormalResponse normalResponse = new NormalResponse(value, 0, 0, false);
         byte[] bytes = serializationService.toBytes(normalResponse);
 
-        Object actual = unpackValue(bytes, serializationService, true);
+        Object actual = extractValue(bytes, serializationService, true);
 
         assertEquals("foo", actual);
     }
