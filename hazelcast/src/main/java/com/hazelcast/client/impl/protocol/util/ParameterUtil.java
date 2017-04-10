@@ -25,22 +25,28 @@ public final class ParameterUtil {
 
     static final int UTF8_MAX_BYTES_PER_CHAR = 3;
 
-    private ParameterUtil() { }
+    private ParameterUtil() {
+    }
 
     public static int calculateDataSize(String string) {
         return Bits.INT_SIZE_IN_BYTES + string.length() * UTF8_MAX_BYTES_PER_CHAR;
     }
 
     public static int calculateDataSize(Data data) {
-        return calculateDataSize(data.toByteArray());
+        return addByteArrayLengthHeader(data.totalSize());
     }
 
     public static int calculateDataSize(Map.Entry<Data, Data> entry) {
-        return calculateDataSize(entry.getKey().toByteArray()) + calculateDataSize(entry.getValue().toByteArray());
+        return addByteArrayLengthHeader(entry.getKey().totalSize())
+                + addByteArrayLengthHeader(entry.getValue().totalSize());
     }
 
     public static int calculateDataSize(byte[] bytes) {
-        return Bits.INT_SIZE_IN_BYTES + bytes.length;
+        return addByteArrayLengthHeader(bytes.length);
+    }
+
+    private static int addByteArrayLengthHeader(int length) {
+        return Bits.INT_SIZE_IN_BYTES + length;
     }
 
     public static int calculateDataSize(Integer data) {
