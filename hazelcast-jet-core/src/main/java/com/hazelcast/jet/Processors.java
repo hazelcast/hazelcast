@@ -165,6 +165,9 @@ public final class Processors {
 
     /**
      * Returns a meta-supplier of processors that emit items retrieved from an IMDG IList.
+     * <p>
+     * Note, that all elements from the list are emitted on single member, as the IMDG's list
+     * structure isn't distributed.
      */
     @Nonnull
     public static ProcessorMetaSupplier readList(@Nonnull String listName) {
@@ -174,6 +177,9 @@ public final class Processors {
     /**
      * Returns a meta-supplier of processors that emit items retrieved from an IMDG IList
      * in a remote cluster.
+     * <p>
+     * Note, that all elements from the list are emitted on single member, as the IMDG's list
+     * structure isn't distributed.
      */
     @Nonnull
     public static ProcessorMetaSupplier readList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
