@@ -204,6 +204,9 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         resultClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         resultClientMessage.setVersion(ClientMessage.VERSION);
         //TODO framing not implemented yet, should be split into frames before writing to connection
+        // PETER: There is no point in chopping it up in frames and in 1 go write all these frames because it still will
+        // not allow any interleaving with operations. It will only slow down the system. Framing should be done inside
+        // the io system; not outside.
         connection.write(resultClientMessage);
     }
 
