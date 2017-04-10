@@ -295,8 +295,8 @@
                                 </goals>
                                 <configuration combine.self="override">
                                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                                    <!-- 1C means 1 process per cpu core -->
-                                    <forkCount>1C</forkCount>
+                                    <!-- 4C means 4 processes per cpu core -->
+                                    <forkCount>4C</forkCount>
                                     <reuseForks>true</reuseForks>
                                     <argLine>
                                         -Xms128m -Xmx1G -XX:MaxPermSize=128M
