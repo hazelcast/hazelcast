@@ -42,10 +42,12 @@ import java.util.Map;
  * does contain object representation only Data representations and SerializationService is set to null. In other
  * words: It's as usable just as a regular Map.Entry.
  *
+ * @param <K> key
+ * @param <V> value
  * @see com.hazelcast.map.impl.operation.EntryOperation#createMapEntry(Data, Object)
  */
+public class LazyMapEntry<K, V> extends CachedQueryEntry<K, V> implements Serializable, IdentifiedDataSerializable {
 
-public class LazyMapEntry extends CachedQueryEntry implements Serializable, IdentifiedDataSerializable {
     private static final long serialVersionUID = 0L;
 
     private transient boolean modified;
@@ -62,9 +64,9 @@ public class LazyMapEntry extends CachedQueryEntry implements Serializable, Iden
     }
 
     @Override
-    public Object setValue(Object value) {
+    public V setValue(V value) {
         modified = true;
-        Object oldValue = getValue();
+        V oldValue = getValue();
         this.valueObject = value;
         this.valueData = null;
         return oldValue;
@@ -78,7 +80,6 @@ public class LazyMapEntry extends CachedQueryEntry implements Serializable, Iden
         valueObject = null;
         valueData = null;
     }
-
 
     public boolean isModified() {
         return modified;
@@ -108,10 +109,11 @@ public class LazyMapEntry extends CachedQueryEntry implements Serializable, Iden
         return getKey() + "=" + getValue();
     }
 
+    @SuppressWarnings("unchecked")
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
-        keyObject = in.readObject();
-        valueObject = in.readObject();
+        keyObject = (K) in.readObject();
+        valueObject = (V) in.readObject();
     }
 
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
@@ -142,4 +144,3 @@ public class LazyMapEntry extends CachedQueryEntry implements Serializable, Iden
         return MapDataSerializerHook.LAZY_MAP_ENTRY;
     }
 }
-

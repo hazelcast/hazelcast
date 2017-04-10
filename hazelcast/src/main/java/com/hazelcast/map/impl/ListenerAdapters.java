@@ -33,20 +33,20 @@ public final class ListenerAdapters {
     private ListenerAdapters() {
     }
 
-    public static ListenerAdapter createListenerAdapter(Object listener) {
+    public static <T> ListenerAdapter<T> createListenerAdapter(Object listener) {
         if (listener instanceof ListenerAdapter) {
-            return ((ListenerAdapter) listener);
+            return ((ListenerAdapter<T>) listener);
         }
 
         if (listener instanceof MapListener) {
             return createMapListenerAdaptor((MapListener) listener);
         }
 
-        // this if only works when we need binary compatibility.
+        // this if only works when we need binary compatibility
         if (listener instanceof EntryListener) {
             return createEntryListenerAdaptor((EntryListener) listener);
         }
 
-        throw new IllegalArgumentException("Not a valid type to create a listener");
+        throw new IllegalArgumentException("Not a valid type to create a listener: " + listener.getClass().getSimpleName());
     }
 }

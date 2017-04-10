@@ -57,6 +57,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
@@ -76,7 +77,6 @@ import static java.util.Collections.emptyMap;
  * @param <K> the key type for this {@code IMap} proxy.
  * @param <V> the value type for this {@code IMap} proxy.
  */
-@SuppressWarnings("checkstyle:anoninnerlength")
 public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     // eventually consistent Near Cache can only be used with server versions >= 3.8
@@ -113,40 +113,38 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         if (cached != NOT_CACHED) {
             return true;
         }
-
         return super.containsKeyInternal(keyData);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    protected V getInternal(final Data key) {
-        Object value = getCachedValue(key, true);
+    protected V getInternal(Data key) {
+        V value = (V) getCachedValue(key, true);
         if (value != NOT_CACHED) {
-            return (V) value;
+            return value;
         }
 
         long reservationId = nearCache.tryReserveForUpdate(key);
         if (reservationId == NOT_RESERVED) {
-            value = super.getInternal(key);
+            value = (V) super.getInternal(key);
         } else {
             try {
-                value = super.getInternal(key);
-                value = tryPublishReserved(key, value, reservationId);
+                value = (V) super.getInternal(key);
+                value = (V) tryPublishReserved(key, value, reservationId);
             } catch (Throwable throwable) {
                 invalidateNearCache(key);
                 throw rethrow(throwable);
             }
         }
-
-        return (V) value;
+        return value;
     }
 
     @Override
     public ICompletableFuture<V> getAsyncInternal(final Data key) {
         Object value = getCachedValue(key, false);
         if (value != NOT_CACHED) {
-            return new CompletedFuture<V>(getContext().getSerializationService(),
-                    value, getContext().getExecutionService().getUserExecutor());
+            ExecutorService executor = getContext().getExecutionService().getUserExecutor();
+            return new CompletedFuture<V>(getContext().getSerializationService(), value, executor);
         }
 
         final long reservationId = nearCache.tryReserveForUpdate(key);
@@ -290,7 +288,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     @Override
     public void loadAll(boolean replaceExistingValues) {
         super.loadAll(replaceExistingValues);
-
         if (replaceExistingValues) {
             nearCache.clear();
         }
@@ -308,7 +305,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         Map<Data, Long> reservations = new HashMap<Data, Long>();
         List<MapGetAllCodec.ResponseParameters> responses;
         try {
-
             for (Entry<Integer, List<Data>> partitionKeyEntry : pIdToKeyData.entrySet()) {
                 List<Data> keyList = partitionKeyEntry.getValue();
                 Iterator<Data> iterator = keyList.iterator();
@@ -317,22 +313,18 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
                     Object value = getCachedValue(key, true);
 
                     if (value == null || value == NOT_CACHED) {
-
                         long reservationId = nearCache.tryReserveForUpdate(key);
                         if (reservationId != NOT_RESERVED) {
                             reservations.put(key, reservationId);
                         }
-
                         continue;
                     }
-
                     result.put((K) toObject(key), (V) toObject(value));
                     iterator.remove();
                 }
             }
 
             responses = super.getAllInternal(pIdToKeyData, result);
-
             for (MapGetAllCodec.ResponseParameters resultParameters : responses) {
                 for (Entry<Data, Data> entry : resultParameters.response) {
                     Data key = entry.getKey();
@@ -391,7 +383,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         if (CollectionUtil.isEmpty(entrySet)) {
             return emptyMap();
         }
-
         Map<K, Object> result = MapUtil.createHashMap(entrySet.size());
         for (Entry<Data, Data> entry : entrySet) {
             Data dataKey = entry.getKey();
@@ -407,7 +398,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     @Override
     protected void putAllInternal(Map<Integer, List<Map.Entry<Data, Data>>> entryMap) {
         super.putAllInternal(entryMap);
-
         for (List<Entry<Data, Data>> entries : entryMap.values()) {
             for (Entry<Data, Data> entry : entries) {
                 invalidateNearCache(entry.getKey());
@@ -446,15 +436,12 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     private Object getCachedValue(Data key, boolean deserializeValue) {
         Object value = nearCache.get(key);
-
         if (value == null) {
             return NOT_CACHED;
         }
-
         if (value == CACHED_AS_NULL) {
             return null;
         }
-
         return deserializeValue ? toObject(value) : value;
     }
 
@@ -484,6 +471,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
     }
 
+    @SuppressWarnings("checkstyle:anoninnerlength")
     private ListenerMessageCodec createNearCacheEntryListenerCodec() {
         return new ListenerMessageCodec() {
             @Override
@@ -538,9 +526,10 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
      */
     private final class ConnectedServerVersionAwareNearCacheEventHandler implements EventHandler<ClientMessage> {
 
-        private volatile boolean supportsRepairableNearCache;
         private final RepairableNearCacheEventHandler repairingEventHandler = new RepairableNearCacheEventHandler();
         private final Pre38NearCacheEventHandler pre38EventHandler = new Pre38NearCacheEventHandler();
+
+        private volatile boolean supportsRepairableNearCache;
 
         @Override
         public void beforeListenerRegister() {
@@ -573,7 +562,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
      * This event handler can only be used with server versions >= 3.8 and supports Near Cache eventual consistency improvements.
      * For repairing functionality please see {@link RepairingHandler}.
      */
-    private final class RepairableNearCacheEventHandler extends MapAddNearCacheInvalidationListenerCodec.AbstractEventHandler
+    private final class RepairableNearCacheEventHandler
+            extends MapAddNearCacheInvalidationListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
         private volatile RepairingHandler repairingHandler;
@@ -614,7 +604,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
      * listen Near Cache invalidations. Because new improvements for Near Cache eventual consistency
      * cannot work with server versions < 3.8.
      */
-    private final class Pre38NearCacheEventHandler extends MapAddNearCacheEntryListenerCodec.AbstractEventHandler
+    private final class Pre38NearCacheEventHandler
+            extends MapAddNearCacheEntryListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
         @Override

@@ -23,13 +23,17 @@ import com.hazelcast.query.impl.getters.Extractors;
 
 /**
  * Entry of the Query.
+ *
+ * @param <K> key
+ * @param <V> value
  */
-public class CachedQueryEntry extends QueryableEntry {
+public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
 
     protected Data keyData;
-    protected Object keyObject;
     protected Data valueData;
-    protected Object valueObject;
+
+    protected K keyObject;
+    protected V valueObject;
 
     public CachedQueryEntry() {
     }
@@ -38,6 +42,7 @@ public class CachedQueryEntry extends QueryableEntry {
         init(serializationService, key, value, extractors);
     }
 
+    @SuppressWarnings("unchecked")
     public void init(InternalSerializationService serializationService, Data key, Object value, Extractors extractors) {
         if (key == null) {
             throw new IllegalArgumentException("keyData cannot be null");
@@ -50,14 +55,14 @@ public class CachedQueryEntry extends QueryableEntry {
             this.valueData = (Data) value;
             this.valueObject = null;
         } else {
-            this.valueObject = value;
+            this.valueObject = (V) value;
             this.valueData = null;
         }
         this.extractors = extractors;
     }
 
     @Override
-    public Object getKey() {
+    public K getKey() {
         if (keyObject == null) {
             keyObject = serializationService.toObject(keyData);
         }
@@ -65,7 +70,7 @@ public class CachedQueryEntry extends QueryableEntry {
     }
 
     @Override
-    public Object getValue() {
+    public V getValue() {
         if (valueObject == null) {
             valueObject = serializationService.toObject(valueData);
         }
@@ -89,7 +94,7 @@ public class CachedQueryEntry extends QueryableEntry {
     protected Object getTargetObject(boolean key) {
         Object targetObject;
         if (key) {
-            //keyData is never null
+            // keyData is never null
             if (keyData.isPortable()) {
                 targetObject = keyData;
             } else {
@@ -114,7 +119,7 @@ public class CachedQueryEntry extends QueryableEntry {
     }
 
     @Override
-    public Object setValue(Object value) {
+    public V setValue(V value) {
         throw new UnsupportedOperationException();
     }
 
@@ -127,15 +132,11 @@ public class CachedQueryEntry extends QueryableEntry {
             return false;
         }
         CachedQueryEntry that = (CachedQueryEntry) o;
-        if (!keyData.equals(that.keyData)) {
-            return false;
-        }
-        return true;
+        return keyData.equals(that.keyData);
     }
 
     @Override
     public int hashCode() {
         return keyData.hashCode();
     }
-
 }
