@@ -50,6 +50,20 @@ public interface Data {
     int totalSize();
 
     /**
+     * Copies the payload contained in the Data to the destination buffer.
+     *
+     * The dest byte-buffer needs to be large enough to contain the payload. Otherwise an exception is thrown.
+     *
+     * The reason this method exists instead of relying on the {@link #toByteArray()} is the existence of the NativeMemoryData.
+     * With the NativeMemoryData it would lead to a temporary byte-array. This method prevents this temporary byte-array needing
+     * to be created.
+      *
+     * @param dest to byte-buffer to write to
+     * @param destPos the position in the destination buffer.
+     */
+    void copyTo(byte[] dest, int destPos);
+
+    /**
      * Returns size of internal binary data in bytes
      *
      * @return internal data size

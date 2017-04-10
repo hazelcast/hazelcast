@@ -33,6 +33,8 @@ import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
 
 class ByteArrayObjectDataInput extends VersionedObjectDataInput implements BufferObjectDataInput {
 
+    private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+
     byte[] data;
 
     int size;
@@ -393,7 +395,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             readFully(b);
             return b;
         }
-        return new byte[0];
+        return EMPTY_BYTE_ARRAY;
     }
 
     @Override
