@@ -228,6 +228,11 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         }
 
         @Override
+        public long executedOperationsCount() {
+            return 0;
+        }
+
+        @Override
         public void run(Runnable task) {
             tasks.add(task);
             task.run();

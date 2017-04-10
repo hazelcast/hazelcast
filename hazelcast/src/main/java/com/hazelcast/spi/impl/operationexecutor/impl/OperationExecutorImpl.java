@@ -303,6 +303,21 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         return genericQueue.prioritySize();
     }
 
+    @Probe(name = "completedCount", level = MANDATORY)
+    public long getExecutedOperationCount() {
+        long result = adHocOperationRunner.executedOperationsCount();
+
+        for (OperationRunner runner : genericOperationRunners) {
+            result += runner.executedOperationsCount();
+        }
+
+        for (OperationRunner runner : partitionOperationRunners) {
+            result += runner.executedOperationsCount();
+        }
+
+        return result;
+    }
+
     @Override
     @Probe
     public int getPartitionThreadCount() {

@@ -59,10 +59,10 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setConnection;
@@ -87,15 +87,17 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     private final OperationServiceImpl operationService;
     private final Node node;
     private final NodeEngineImpl nodeEngine;
-    private final AtomicLong executedOperationsCount;
 
     @Probe(level = DEBUG)
-    private final Counter count;
+    private final Counter executedOperationsCounter;
     private final Address thisAddress;
     private final boolean staleReadOnMigrationEnabled;
 
     private final Counter failedBackupsCounter;
     private final OperationBackupHandler backupHandler;
+
+    // has only meaning for metrics.
+    private final int genericId;
 
     // This field doesn't need additional synchronization, since a partition-specific OperationRunner
     // will never be called concurrently.
@@ -108,25 +110,35 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     // when partitionId = -2, it is ad hoc
     // an ad-hoc OperationRunner can only process generic operations, but it can be shared between threads
     // and therefor the {@link OperationRunner#currentTask()} always returns null
-    OperationRunnerImpl(OperationServiceImpl operationService, int partitionId, Counter failedBackupsCounter) {
+    OperationRunnerImpl(OperationServiceImpl operationService, int partitionId, int genericId, Counter failedBackupsCounter) {
         super(partitionId);
+        this.genericId = genericId;
         this.operationService = operationService;
         this.logger = operationService.node.getLogger(OperationRunnerImpl.class);
         this.node = operationService.node;
         this.thisAddress = node.getThisAddress();
         this.nodeEngine = operationService.nodeEngine;
         this.outboundResponseHandler = operationService.outboundResponseHandler;
-        this.executedOperationsCount = operationService.completedOperationsCount;
         this.staleReadOnMigrationEnabled = !node.getProperties().getBoolean(DISABLE_STALE_READ_ON_PARTITION_MIGRATION);
         this.failedBackupsCounter = failedBackupsCounter;
         this.backupHandler = operationService.backupHandler;
-        this.count = partitionId >= 0 ? newSwCounter() : null;
+        // only a ad-hoc operation runner will be called concurrently
+        this.executedOperationsCounter = partitionId == AD_HOC_PARTITION_ID ? newMwCounter() : newSwCounter();
+    }
+
+    @Override
+    public long executedOperationsCount() {
+        return executedOperationsCounter.get();
     }
 
     @Override
     public void provideMetrics(MetricsRegistry registry) {
         if (partitionId >= 0) {
             registry.scanAndRegister(this, "operation.partition[" + partitionId + "]");
+        } else if (partitionId == -1) {
+            registry.scanAndRegister(this, "operation.generic[" + genericId + "]");
+        } else {
+            registry.scanAndRegister(this, "operation.adhoc");
         }
     }
 
@@ -154,11 +166,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
     @Override
     public void run(Operation op) {
-        if (count != null) {
-            count.inc();
-        }
-
-        executedOperationsCount.incrementAndGet();
+        executedOperationsCounter.inc();
 
         boolean publishCurrentTask = publishCurrentTask();
 
