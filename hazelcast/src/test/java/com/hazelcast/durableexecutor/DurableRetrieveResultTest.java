@@ -157,25 +157,32 @@ public class DurableRetrieveResultTest extends ExecutorServiceTestSupport {
 
     @Test
     public void testSingleExecution_WhenMigratedAfterCompletion_WhenOwnerMemberKilled() throws Exception {
-        String name = randomString();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        HazelcastInstance instance1 = factory.newHazelcastInstance();
-        HazelcastInstance instance2 = factory.newHazelcastInstance();
-        factory.newHazelcastInstance();
-        String key = generateKeyOwnedBy(instance1);
+
+        HazelcastInstance[] instances = factory.newInstances();
+        HazelcastInstance first = instances[0];
+        HazelcastInstance second = instances[1];
+
+        waitAllForSafeState(instances);
+
+        String key = generateKeyOwnedBy(first);
 
         String runCounterName = "runCount";
-        IAtomicLong runCount = instance2.getAtomicLong(runCounterName);
+        IAtomicLong runCount = second.getAtomicLong(runCounterName);
 
-        DurableExecutorService executorService = instance1.getDurableExecutorService(name);
+        String name = randomString();
+        DurableExecutorService executorService = first.getDurableExecutorService(name);
         IncrementAtomicLongRunnable task = new IncrementAtomicLongRunnable(runCounterName);
         DurableExecutorServiceFuture future = executorService.submitToKeyOwner(task, key);
 
         future.get(); // Wait for it to finish
 
-        instance1.getLifecycleService().terminate();
+        // Avoid race between PutResult & SHUTDOWN
+        sleepSeconds(3);
 
-        executorService = instance2.getDurableExecutorService(name);
+        first.getLifecycleService().terminate();
+
+        executorService = second.getDurableExecutorService(name);
         Future<Object> newFuture = executorService.retrieveResult(future.getTaskId());
         newFuture.get(); // Make sure its completed
 
