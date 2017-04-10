@@ -45,7 +45,7 @@ public class MessageFlyweight {
     protected ClientProtocolBuffer buffer;
     //initialized in wrap method by user, does not change.
     private int offset;
-    //starts from zero, incremented each tome something set to buffer
+    //starts from zero, incremented each time something set to buffer
     private int index;
 
     public MessageFlyweight() {
