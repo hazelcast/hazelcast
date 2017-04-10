@@ -70,7 +70,7 @@ public final class SelectorOptimizer {
             selectedKeysField.set(selector, set);
             publicSelectedKeysField.set(selector, set);
 
-            logger.info("Optimized Selector: " + selector.getClass().getName());
+            logger.finest("Optimized Selector: " + selector.getClass().getName());
             return set;
         } catch (Throwable t) {
             // we don't want to print at warning level because it could very well be that the target JVM doesn't
