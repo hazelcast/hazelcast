@@ -87,7 +87,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     private final OperationServiceImpl operationService;
     private final Node node;
     private final NodeEngineImpl nodeEngine;
-    private final AtomicLong executedOperationsCount;
+    //private final AtomicLong executedOperationsCount;
 
     @Probe(level = DEBUG)
     private final Counter count;
@@ -116,7 +116,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         this.thisAddress = node.getThisAddress();
         this.nodeEngine = operationService.nodeEngine;
         this.outboundResponseHandler = operationService.outboundResponseHandler;
-        this.executedOperationsCount = operationService.completedOperationsCount;
+        //this.executedOperationsCount = operationService.completedOperationsCount;
         this.staleReadOnMigrationEnabled = !node.getProperties().getBoolean(DISABLE_STALE_READ_ON_PARTITION_MIGRATION);
         this.failedBackupsCounter = failedBackupsCounter;
         this.backupHandler = operationService.backupHandler;
@@ -158,7 +158,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             count.inc();
         }
 
-        executedOperationsCount.incrementAndGet();
+        //executedOperationsCount.incrementAndGet();
 
         boolean publishCurrentTask = publishCurrentTask();
 

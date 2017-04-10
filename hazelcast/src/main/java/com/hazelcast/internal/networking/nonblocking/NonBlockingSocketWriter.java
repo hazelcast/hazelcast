@@ -52,6 +52,7 @@ public final class NonBlockingSocketWriter
         implements Runnable, SocketWriter {
 
     private static final long TIMEOUT = 3;
+    public static int loadType = Integer.getInteger("io.load", 0);
 
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
@@ -72,6 +73,9 @@ public final class NonBlockingSocketWriter
     @Probe(name = "priorityFramesWritten")
     private final SwCounter priorityFramesWritten = newSwCounter();
     private WriteHandler writeHandler;
+    @Probe
+    private final SwCounter time = newSwCounter();
+
 
     private volatile OutboundFrame currentFrame;
     private volatile long lastWriteTime;
@@ -80,6 +84,11 @@ public final class NonBlockingSocketWriter
     // it is accessed by any other thread but only that thread managed to cas the scheduled flag to true.
     // This prevents running into an NonBlockingIOThread that is migrating.
     private NonBlockingIOThread newOwner;
+    private long bytesReadLastPublish;
+    private long normalFramesReadLastPublish;
+    private long priorityFramesReadLastPublish;
+    private long eventsLastPublish;
+    private long timeLastPublish;
 
     public NonBlockingSocketWriter(SocketConnection connection,
                                    NonBlockingIOThread ioThread,
@@ -88,6 +97,22 @@ public final class NonBlockingSocketWriter
                                    SocketWriterInitializer initializer) {
         super(connection, ioThread, OP_WRITE, logger, balancer);
         this.initializer = initializer;
+    }
+
+    @Override
+    public long getEventCount() {
+        switch (loadType) {
+            case 0:
+                return eventCount.get();
+            case 1:
+                return bytesWritten.get() + priorityFramesWritten.get();
+            case 2:
+                return normalFramesWritten.get() + priorityFramesWritten.get();
+            case 3:
+                return time.get();
+            default:
+                throw new RuntimeException();
+        }
     }
 
     @Override
@@ -282,6 +307,8 @@ public final class NonBlockingSocketWriter
     @Override
     @SuppressWarnings("unchecked")
     public void handle() throws Exception {
+        long startTime = System.nanoTime();
+
         eventCount.inc();
         lastWriteTime = currentTimeMillis();
 
@@ -298,9 +325,14 @@ public final class NonBlockingSocketWriter
 
         if (newOwner == null) {
             unschedule();
+
+            long duration = System.nanoTime()-startTime;
+            time.inc(duration);
         } else {
             startMigration();
         }
+
+
     }
 
     @Override
@@ -449,8 +481,24 @@ public final class NonBlockingSocketWriter
                 return;
             }
 
+            publish();
             newOwner = theNewOwner;
         }
+    }
+
+    @Override
+    protected void publish() {
+        ioThread.bytesTransceived += bytesWritten.get() - bytesReadLastPublish;
+        ioThread.framesTransceived += normalFramesWritten.get() - normalFramesReadLastPublish;
+        ioThread.priorityFramesTransceived += priorityFramesWritten.get() - priorityFramesReadLastPublish;
+        ioThread.handleEvents += eventCount.get() - eventsLastPublish;
+        ioThread.time += time.get() - timeLastPublish;
+
+        bytesReadLastPublish = bytesWritten.get();
+        normalFramesReadLastPublish = normalFramesWritten.get();
+        priorityFramesReadLastPublish = priorityFramesWritten.get();
+        eventsLastPublish = eventCount.get();
+        timeLastPublish = time.get();
     }
 
     private class CloseTask implements Runnable {

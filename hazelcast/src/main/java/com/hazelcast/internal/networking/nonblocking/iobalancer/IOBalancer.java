@@ -186,11 +186,9 @@ public class IOBalancer {
         }
 
         NonBlockingIOThread destinationSelector = loadImbalance.destinationSelector;
-        if (logger.isFinestEnabled()) {
-            NonBlockingIOThread sourceSelector = loadImbalance.sourceSelector;
-            logger.finest("Scheduling migration of handler " + handler
-                    + " from selector thread " + sourceSelector + " to " + destinationSelector);
-        }
+        NonBlockingIOThread sourceSelector = loadImbalance.sourceSelector;
+        logger.info("Scheduling migration of handler " + handler
+                + " from selector thread " + sourceSelector + " to " + destinationSelector);
         handler.requestMigration(destinationSelector);
     }
 

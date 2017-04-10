@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl.responses;
 
+import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -73,7 +74,11 @@ public abstract class Response implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        ByteArrayObjectDataOutput b = (ByteArrayObjectDataOutput)out;
+
+        //System.out.println("callId:"+b.position());
         out.writeLong(callId);
+        //System.out.println("urgent:"+b.position());
         out.writeBoolean(urgent);
     }
 

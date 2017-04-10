@@ -25,18 +25,20 @@ import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
-import com.hazelcast.spi.impl.operationservice.impl.responses.BackupAckResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.spi.impl.SpiDataSerializerHook.BACKUP_ACK_RESPONSE;
+import static com.hazelcast.spi.impl.SpiDataSerializerHook.CALL_TIMEOUT_RESPONSE;
+import static com.hazelcast.spi.impl.SpiDataSerializerHook.ERROR_RESPONSE;
+import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
 
 /**
  * Responsible for handling responses for invocations. Based on the content of the response packet, it will lookup the
@@ -76,28 +78,28 @@ public final class InboundResponseHandler implements PacketHandler, MetricsProvi
 
     @Override
     public void handle(Packet packet) throws Exception {
-        Response response = serializationService.toObject(packet);
+        byte[] bytes = packet.toByteArray();
+        int typeId = Bits.readInt(bytes, 13, true);
+        long callId = Bits.readLong(bytes, 17, true);
         Address sender = packet.getConn().getEndPoint();
         try {
-            if (response instanceof NormalResponse) {
-                NormalResponse normalResponse = (NormalResponse) response;
-                notifyNormalResponse(
-                        normalResponse.getCallId(),
-                        normalResponse.getValue(),
-                        normalResponse.getBackupAcks(),
-                        sender);
-            } else if (response instanceof BackupAckResponse) {
-                notifyBackupComplete(response.getCallId());
-            } else if (response instanceof CallTimeoutResponse) {
-                notifyCallTimeout(response.getCallId(), sender);
-            } else if (response instanceof ErrorResponse) {
-                ErrorResponse errorResponse = (ErrorResponse) response;
-                notifyErrorResponse(
-                        errorResponse.getCallId(),
-                        errorResponse.getCause(),
-                        sender);
-            } else {
-                logger.severe("Unrecognized response: " + response);
+            switch (typeId) {
+                case NORMAL_RESPONSE:
+                    byte backupAcks = bytes[26];
+                    notifyNormalResponse(callId, packet, backupAcks, sender);
+                    break;
+                case BACKUP_ACK_RESPONSE:
+                    notifyBackupComplete(callId);
+                    break;
+                case CALL_TIMEOUT_RESPONSE:
+                    notifyCallTimeout(callId, sender);
+                    break;
+                case ERROR_RESPONSE:
+                    ErrorResponse errorResponse = serializationService.toObject(packet);
+                    notifyErrorResponse(callId, errorResponse.getCause(), sender);
+                    break;
+                default:
+                    logger.severe("Unrecognized type: " + typeId);
             }
         } catch (Throwable e) {
             logger.severe("While processing response...", e);

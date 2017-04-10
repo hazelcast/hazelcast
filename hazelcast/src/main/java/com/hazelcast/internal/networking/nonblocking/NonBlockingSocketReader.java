@@ -44,6 +44,8 @@ public final class NonBlockingSocketReader
         extends AbstractHandler
         implements SocketReader {
 
+    public static int loadType = Integer.getInteger("io.load", 0);
+
     protected ByteBuffer inputBuffer;
 
     @Probe(name = "bytesRead")
@@ -52,6 +54,14 @@ public final class NonBlockingSocketReader
     private final SwCounter normalFramesRead = newSwCounter();
     @Probe(name = "priorityFramesRead")
     private final SwCounter priorityFramesRead = newSwCounter();
+    @Probe
+    private final SwCounter time = newSwCounter();
+
+    private volatile long bytesReadLastPublish;
+    private volatile long normalFramesReadLastPublish;
+    private volatile long priorityFramesReadLastPublish;
+    private volatile long eventsLastPublish;
+    private volatile long timeLastPublish;
 
     private ReadHandler readHandler;
     private volatile long lastReadTime;
@@ -66,6 +76,22 @@ public final class NonBlockingSocketReader
             SocketReaderInitializer initializer) {
         super(connection, ioThread, OP_READ, logger, balancer);
         this.initializer = initializer;
+    }
+
+    @Override
+    public long getEventCount() {
+        switch (loadType) {
+            case 0:
+                return eventCount.get();
+            case 1:
+                return bytesRead.get();
+            case 2:
+                return normalFramesRead.get() + priorityFramesRead.get();
+            case 3:
+                return time.get();
+            default:
+                throw new RuntimeException();
+        }
     }
 
     @Override
@@ -134,6 +160,8 @@ public final class NonBlockingSocketReader
 
     @Override
     public void handle() throws Exception {
+        long start = System.nanoTime();
+
         eventCount.inc();
         // we are going to set the timestamp even if the socketChannel is going to fail reading. In that case
         // the connection is going to be closed anyway.
@@ -164,6 +192,8 @@ public final class NonBlockingSocketReader
         } else {
             inputBuffer.clear();
         }
+
+        time.inc(System.nanoTime()-start);
     }
 
     @Override
@@ -193,6 +223,7 @@ public final class NonBlockingSocketReader
         return connection + ".socketReader";
     }
 
+
     private class StartMigrationTask implements Runnable {
         private final NonBlockingIOThread newOwner;
 
@@ -207,11 +238,32 @@ public final class NonBlockingSocketReader
                 return;
             }
 
+            publish();
+
             try {
                 startMigration(newOwner);
             } catch (Throwable t) {
                 onFailure(t);
             }
         }
+    }
+
+    @Override
+    public void publish() {
+        if (Thread.currentThread() != ioThread) {
+            return;
+        }
+
+        ioThread.bytesTransceived += bytesRead.get() - bytesReadLastPublish;
+        ioThread.framesTransceived += normalFramesRead.get() - normalFramesReadLastPublish;
+        ioThread.priorityFramesTransceived += priorityFramesRead.get() - priorityFramesReadLastPublish;
+        ioThread.handleEvents += eventCount.get() - eventsLastPublish;
+        ioThread.time += time.get() - timeLastPublish;
+
+        bytesReadLastPublish = bytesRead.get();
+        normalFramesReadLastPublish = normalFramesRead.get();
+        priorityFramesReadLastPublish = priorityFramesRead.get();
+        eventsLastPublish = eventCount.get();
+        timeLastPublish = time.get();
     }
 }

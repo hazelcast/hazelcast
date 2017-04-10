@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl.responses;
 
+import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -80,12 +81,22 @@ public class NormalResponse extends Response {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
+
+        //ByteArrayObjectDataOutput b = (ByteArrayObjectDataOutput)out;
+
+        //System.out.println("backupAcks:"+b.position());
+
         // acks fit in a byte.
         out.writeByte(backupAcks);
 
+        //System.out.println("isData:"+b.position());
+
         final boolean isData = value instanceof Data;
         out.writeBoolean(isData);
+
+        //System.out.println("value:"+b.position());
         if (isData) {
+
             out.writeData((Data) value);
         } else {
             out.writeObject(value);
