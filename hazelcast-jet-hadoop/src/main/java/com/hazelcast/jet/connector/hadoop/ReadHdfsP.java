@@ -76,7 +76,7 @@ import static org.apache.hadoop.mapred.Reporter.NULL;
  * among the processor instances and each processor instance is responsible
  * for reading a part of the input. The records by default are emitted as
  * {@code Map.Entry<K,V>}, but this can also be transformed to another type
- * using an optional mapper.
+ * using an optional {@code mapper}.
  *
  * Jet cluster should be run on the same nodes as the HDFS nodes for best
  * read performance. If the hosts are aligned, each processor instance will

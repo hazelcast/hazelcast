@@ -280,7 +280,7 @@ public abstract class AbstractProcessor implements Processor {
 
     /**
      * Adds the item to the outbox bucket with the supplied ordinal, throwing
-     * an exception if the outbox refuses it. Useful for non-cooperative
+     * an exception if the outbox refuses it. Only useful for non-cooperative
      * processors that work with an auto-flushing outbox.
      *
      * @throws IndexOutOfBoundsException if the outbox refused the item
@@ -291,8 +291,8 @@ public abstract class AbstractProcessor implements Processor {
 
     /**
      * Adds the item to all the outbox buckets, throwing an exception if the
-     * outbox refuses it. Useful for non-cooperative processors that work with
-     * an auto-flushing outbox.
+     * outbox refuses it. Only useful for non-cooperative processors that work
+     * with an auto-flushing outbox.
      *
      * @throws IndexOutOfBoundsException if the outbox refused the item
      */
@@ -302,7 +302,7 @@ public abstract class AbstractProcessor implements Processor {
 
     /**
      * Adds the item to the outbox buckets identified in the supplied array,
-     * throwing an exception if the outbox refuses it. Useful for
+     * throwing an exception if the outbox refuses it. Only useful for
      * non-cooperative processors that work with an auto-flushing outbox.
      *
      * @throws IndexOutOfBoundsException if the outbox refused the item
