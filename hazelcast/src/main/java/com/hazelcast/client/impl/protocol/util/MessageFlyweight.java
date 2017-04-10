@@ -103,8 +103,10 @@ public class MessageFlyweight {
     }
 
     public MessageFlyweight set(Data data) {
-        final byte[] bytes = data.toByteArray();
-        set(bytes);
+        int length = data.totalSize();
+        set(length);
+        data.copyTo(buffer.byteArray(), index);
+        index += length;
         return this;
     }
 

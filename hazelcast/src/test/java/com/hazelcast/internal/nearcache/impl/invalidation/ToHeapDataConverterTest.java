@@ -56,6 +56,10 @@ public class ToHeapDataConverterTest {
         }
 
         @Override
+        public void copyTo(byte[] dest, int destPos) {
+        }
+
+        @Override
         public int totalSize() {
             return 0;
         }

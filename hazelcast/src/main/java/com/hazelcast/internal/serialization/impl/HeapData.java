@@ -65,6 +65,13 @@ public class HeapData implements Data {
     }
 
     @Override
+    public void copyTo(byte[] dest, int destPos) {
+        if (totalSize() > 0) {
+            System.arraycopy(payload, 0, dest, destPos, payload.length);
+        }
+    }
+
+    @Override
     public int getPartitionHash() {
         if (hasPartitionHash()) {
             return Bits.readIntB(payload, PARTITION_HASH_OFFSET);

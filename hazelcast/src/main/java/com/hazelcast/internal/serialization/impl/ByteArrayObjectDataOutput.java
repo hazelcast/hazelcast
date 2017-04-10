@@ -372,8 +372,13 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
 
     @Override
     public void writeData(Data data) throws IOException {
-        byte[] payload = data != null ? data.toByteArray() : null;
-        writeByteArray(payload);
+        int len = data == null ? NULL_ARRAY_LENGTH : data.totalSize();
+        writeInt(len);
+        if (len > 0) {
+            ensureAvailable(len);
+            data.copyTo(buffer, pos);
+            pos += len;
+        }
     }
 
     /**
