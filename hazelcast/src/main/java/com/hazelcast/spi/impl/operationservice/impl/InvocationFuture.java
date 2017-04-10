@@ -101,7 +101,7 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
         if (unresolved == null) {
             return null;
         } else if (unresolved.getClass() == Packet.class) {
-            value = unpackValue(((Packet) unresolved).toByteArray(), serializationService, deserialize);
+            value = unpackValue(((Packet) unresolved).payload(), serializationService, deserialize);
         } else if (unresolved == INTERRUPTED) {
             return new InterruptedException(invocation.op.getClass().getSimpleName() + " was interrupted. " + invocation);
         } else if (unresolved == CALL_TIMEOUT) {

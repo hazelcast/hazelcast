@@ -35,7 +35,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.BlockingOperation;
@@ -418,9 +417,9 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
      * <p>
      * It makes an assumption that the callId is the first long field in the serialized operation.
      */
-    private long extractOperationCallId(Data data) throws IOException {
+    private long extractOperationCallId(Packet packet) throws IOException {
         ObjectDataInput input = ((SerializationServiceV1) node.getSerializationService())
-                .initDataSerializableInputAndSkipTheHeader(data);
+                .initDataSerializableInputAndSkipTheHeader(packet.payload());
         return input.readLong();
     }
 

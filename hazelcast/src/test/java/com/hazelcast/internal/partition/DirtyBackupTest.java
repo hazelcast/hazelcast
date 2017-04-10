@@ -99,7 +99,7 @@ public class DirtyBackupTest extends PartitionCorrectnessTestSupport {
 
         private boolean allowOperation(Packet packet) {
             try {
-                ObjectDataInput input = serializationService.createObjectDataInput(packet);
+                ObjectDataInput input = serializationService.createObjectDataInput(packet.payload());
                 boolean identified = input.readBoolean();
                 if (identified) {
                     int factory = input.readInt();

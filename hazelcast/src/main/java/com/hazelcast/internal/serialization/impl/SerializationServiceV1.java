@@ -207,7 +207,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
      * @return the initialized ObjectDataInput without the header.
      * @throws IOException
      */
-    public ObjectDataInput initDataSerializableInputAndSkipTheHeader(Data data) throws IOException {
+    public ObjectDataInput initDataSerializableInputAndSkipTheHeader(byte[] data) throws IOException {
         ObjectDataInput input = createObjectDataInput(data);
         byte header = input.readByte();
         if (isFlagSet(header, IDS_FLAG)) {

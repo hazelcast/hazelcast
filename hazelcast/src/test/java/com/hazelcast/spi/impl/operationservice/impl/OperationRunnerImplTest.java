@@ -217,7 +217,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         setCallId(op, 1000 * 1000);
 
         Packet packet = toPacket(local, remote, op);
-        byte[] bytes = packet.toByteArray();
+        byte[] bytes = packet.payload();
         for (int k = 0; k < bytes.length; k++) {
             bytes[k]++;
         }
