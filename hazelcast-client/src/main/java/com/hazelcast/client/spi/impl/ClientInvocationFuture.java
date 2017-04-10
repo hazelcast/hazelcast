@@ -26,18 +26,21 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
 import static com.hazelcast.util.ExceptionUtil.peel;
 import static com.hazelcast.util.Preconditions.isNotNull;
+import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
 
 public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessage> {
+
+    private final AtomicIntegerFieldUpdater COMPLETED_COUNT = newUpdater(ClientInvocationFuture.class, "completeCount");
 
     private final ClientMessage request;
     private final ClientInvocation invocation;
     private final CallIdSequence callIdSequence;
-    private final AtomicInteger completeCount = new AtomicInteger(1);
+    private volatile int completeCount = 1;
 
     public ClientInvocationFuture(ClientInvocation invocation, Executor internalExecutor,
                                   ClientMessage request, ILogger logger,
@@ -80,7 +83,7 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
     public void andThen(ExecutionCallback<ClientMessage> callback) {
         isNotNull(callback, "callback");
 
-        if (completeCount.get() == 0) {
+        if (completeCount == 0) {
             try {
                 callback.onResponse(get());
             } catch (Exception e) {
@@ -98,7 +101,7 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
     }
 
     private void complete() {
-        if (completeCount.decrementAndGet() == 0) {
+        if (COMPLETED_COUNT.decrementAndGet(this) == 0) {
             callIdSequence.complete();
         }
     }
@@ -134,7 +137,7 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
 
         InternalDelegatingExecutionCallback(ExecutionCallback<ClientMessage> callback) {
             this.callback = callback;
-            completeCount.incrementAndGet();
+            COMPLETED_COUNT.incrementAndGet(ClientInvocationFuture.this);
         }
 
         @Override
