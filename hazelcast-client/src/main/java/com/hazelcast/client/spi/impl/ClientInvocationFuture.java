@@ -118,7 +118,7 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
 
         InternalDelegatingExecutionCallback(ExecutionCallback<ClientMessage> callback) {
             this.callback = callback;
-            callIdSequence.renew();
+            callIdSequence.forceNext();
         }
 
         @Override
