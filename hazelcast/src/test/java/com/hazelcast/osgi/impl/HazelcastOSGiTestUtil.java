@@ -27,8 +27,7 @@ public final class HazelcastOSGiTestUtil {
     private HazelcastOSGiTestUtil() {
     }
 
-    public static HazelcastOSGiInstance createHazelcastOSGiInstance(HazelcastInstance instance,
-                                                                    HazelcastOSGiService service) {
+    public static HazelcastOSGiInstance createHazelcastOSGiInstance(HazelcastInstance instance, HazelcastOSGiService service) {
         return new HazelcastOSGiInstanceImpl(instance, service);
     }
 
@@ -43,5 +42,4 @@ public final class HazelcastOSGiTestUtil {
     public static HazelcastOSGiInstance createHazelcastOSGiInstance() {
         return createHazelcastOSGiInstance(mock(HazelcastInstance.class), mock(HazelcastOSGiService.class));
     }
-
 }

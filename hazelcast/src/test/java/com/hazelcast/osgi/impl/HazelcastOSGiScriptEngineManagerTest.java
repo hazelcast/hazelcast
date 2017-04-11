@@ -69,5 +69,4 @@ public class HazelcastOSGiScriptEngineManagerTest extends HazelcastOSGiScripting
         bindings.put("my-key", "my-value");
         assertEquals("my-value", bindings.get("my-key"));
     }
-
 }
