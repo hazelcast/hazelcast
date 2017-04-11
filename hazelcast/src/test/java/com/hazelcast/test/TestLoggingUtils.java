@@ -23,16 +23,24 @@ public final class TestLoggingUtils {
     private static String LOGGING_CLASS_PROP_NAME = "hazelcast.logging.class";
 
     private static final boolean IS_LOG4J2_AVAILABLE = isClassAvailable("org.apache.logging.log4j.Logger");
+    private static final boolean IS_DISRUPTOR_AVAILABLE = isClassAvailable("com.lmax.disruptor.dsl.Disruptor");
 
     private TestLoggingUtils() {
     }
 
     public static void initializeLogging() {
         if (shouldForceTestLoggingFactory()) {
+            configureAsyncLogging();
             String factoryClassName = TestLoggerFactory.class.getName();
             System.setProperty(LOGGING_CLASS_PROP_NAME, factoryClassName);
             System.setProperty("isThreadContextMapInheritable", "true");
             System.clearProperty(LOGGING_TYPE_PROP_NAME);
+        }
+    }
+
+    private static void configureAsyncLogging() {
+        if (IS_DISRUPTOR_AVAILABLE) {
+            System.setProperty("Log4jContextSelector", "org.apache.logging.log4j.core.async.AsyncLoggerContextSelector");
         }
     }
 
