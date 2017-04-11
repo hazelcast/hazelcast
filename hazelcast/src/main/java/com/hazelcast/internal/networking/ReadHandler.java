@@ -52,9 +52,9 @@ import java.nio.ByteBuffer;
  *             this.next = next;
  *         }
  *
- *         public void read(ByteBuffer src) {
+ *         public void onRead(ByteBuffer src) {
  *             decrypt(src, decryptedSrc);
- *             next.read(decryptedSrc)
+ *             next.onRead(decryptedSrc)
  *         }
  *     }
  * </pre>
