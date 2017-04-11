@@ -39,6 +39,7 @@ import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
  * @author mdogan 4/10/13
  */
 public class NormalResponse extends Response {
+    public static final int OFFSET_BACKUP_ACKS = 26;
 
     private Object value;
 
