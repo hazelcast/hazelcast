@@ -195,7 +195,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         this.partitionService = getNodeEngine().getPartitionService();
         this.lockSupport = new LockProxySupport(new DefaultObjectNamespace(SERVICE_NAME, name),
                 LockServiceImpl.getMaxLeaseTimeInMillis(properties));
-        this.operationProvider = mapServiceContext.getMapOperationProvider(name);
+        this.operationProvider = mapServiceContext.getMapOperationProvider(mapConfig);
         this.operationService = nodeEngine.getOperationService();
         this.serializationService = nodeEngine.getSerializationService();
         this.thisAddress = nodeEngine.getClusterService().getThisAddress();
