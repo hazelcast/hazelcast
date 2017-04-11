@@ -25,7 +25,6 @@ import com.hazelcast.test.AbstractTestOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.UuidUtil;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -33,6 +32,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -53,12 +53,12 @@ public class SerializationServiceV1Test {
 
     @Test
     public void test_callid_on_correct_stream_position() throws Exception {
-        CancellationOperation operation = new CancellationOperation(UuidUtil.newUnsecureUuidString(), true);
-        operation.setCallerUuid(UuidUtil.newUnsecureUuidString());
+        CancellationOperation operation = new CancellationOperation(newUnsecureUuidString(), true);
+        operation.setCallerUuid(newUnsecureUuidString());
         OperationAccessor.setCallId(operation, 12345);
 
         Data data = serializationService.toData(operation);
-        long callId = serializationService.initDataSerializableInputAndSkipTheHeader(data).readLong();
+        long callId = serializationService.initDataSerializableInputAndSkipTheHeader(data.toByteArray()).readLong();
 
         assertEquals(12345, callId);
     }
@@ -69,7 +69,7 @@ public class SerializationServiceV1Test {
         OperationAccessor.setCallId(operation, 2342);
         Data data = serializationService.toData(operation);
 
-        long callId = serializationService.initDataSerializableInputAndSkipTheHeader(data).readLong();
+        long callId = serializationService.initDataSerializableInputAndSkipTheHeader(data.toByteArray()).readLong();
 
         assertEquals(2342, callId);
     }
@@ -80,7 +80,7 @@ public class SerializationServiceV1Test {
         OperationAccessor.setCallId(operation, 4223);
         Data data = serializationService.toData(operation);
 
-        long callId = serializationService.initDataSerializableInputAndSkipTheHeader(data).readLong();
+        long callId = serializationService.initDataSerializableInputAndSkipTheHeader(data.toByteArray()).readLong();
 
         assertEquals(4223, callId);
     }
@@ -113,6 +113,4 @@ public class SerializationServiceV1Test {
             return 42;
         }
     }
-
-
 }

@@ -41,6 +41,8 @@ public interface InternalSerializationService extends SerializationService, Disp
 
     byte[] toBytes(int padding, Object obj, PartitioningStrategy strategy);
 
+    <T> T toObject(byte[] bytes, int offset, boolean isData);
+
     void writeObject(ObjectDataOutput out, Object obj);
 
     <T> T readObject(ObjectDataInput in);

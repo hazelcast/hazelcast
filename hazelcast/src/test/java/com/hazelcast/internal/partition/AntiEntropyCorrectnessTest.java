@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.Packet;
@@ -94,7 +95,7 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
 
         private boolean allowOperation(Packet packet) {
             try {
-                ObjectDataInput input = serializationService.createObjectDataInput(packet);
+                ObjectDataInput input = serializationService.createObjectDataInput(new HeapData(packet.payload()));
                 byte header = input.readByte();
                 boolean identified = (header & 1 << 0) != 0;
                 if (identified) {

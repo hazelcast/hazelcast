@@ -17,6 +17,8 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractInvocationFuture;
 
@@ -28,6 +30,7 @@ import java.util.concurrent.TimeoutException;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.CALL_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.HEARTBEAT_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.INTERRUPTED;
+import static com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse.unpackValue;
 import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
 import static com.hazelcast.util.StringUtil.timeToString;
@@ -89,24 +92,31 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
         }
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     @Override
     protected Object resolve(Object unresolved) {
+        InternalSerializationService serializationService = invocation.context.serializationService;
+        Object value;
+
         if (unresolved == null) {
             return null;
+        } else if (unresolved.getClass() == Packet.class) {
+            value = unpackValue(((Packet) unresolved).payload(), serializationService, deserialize);
         } else if (unresolved == INTERRUPTED) {
             return new InterruptedException(invocation.op.getClass().getSimpleName() + " was interrupted. " + invocation);
         } else if (unresolved == CALL_TIMEOUT) {
             return newOperationTimeoutException(false);
         } else if (unresolved == HEARTBEAT_TIMEOUT) {
             return newOperationTimeoutException(true);
+        } else {
+            value = unresolved;
+            if (deserialize && value instanceof Data) {
+                value = serializationService.toObject(value);
+            }
         }
 
-        Object value = unresolved;
-        if (deserialize && value instanceof Data) {
-            value = invocation.context.serializationService.toObject(value);
-            if (value == null) {
-                return null;
-            }
+        if (value == null) {
+            return null;
         }
 
         if (value instanceof Throwable) {
@@ -117,6 +127,7 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
 
         return value;
     }
+
 
     private Object newOperationTimeoutException(boolean heartbeatTimeout) {
         StringBuilder sb = new StringBuilder();
