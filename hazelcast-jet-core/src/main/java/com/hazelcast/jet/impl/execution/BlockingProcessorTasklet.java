@@ -75,7 +75,7 @@ public class BlockingProcessorTasklet extends ProcessorTaskletBase {
 
     private void complete() {
         if (processor.complete()) {
-            outbox.offer(DONE_ITEM);
+            outbox.add(DONE_ITEM);
         } else {
             progTracker.notDone();
         }
@@ -108,6 +108,11 @@ public class BlockingProcessorTasklet extends ProcessorTaskletBase {
                 submit(outstreams[ord], item);
             }
             return true;
+        }
+
+        void add(@Nonnull Object item) {
+            boolean accepted = outbox.offer(item);
+            assert accepted : "Blocking outbox refused an item: " + item;
         }
 
         private void submit(OutboundEdgeStream outstream, @Nonnull Object item) {

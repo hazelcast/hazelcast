@@ -75,16 +75,15 @@ public class CooperativeProcessorTasklet extends ProcessorTaskletBase {
     }
 
     private void completeIfNeeded() {
-        if (!processorCompleted) {
-            processorCompleted = processor.complete();
-            if (!processorCompleted) {
-                progTracker.notDone();
-                return;
-            }
+        if (processorCompleted) {
+            return;
         }
-        if (!outbox.offer(DONE_ITEM)) {
-            progTracker.notDone();
+        processorCompleted = processor.complete();
+        if (processorCompleted) {
+            outbox.addIgnoringCapacity(DONE_ITEM);
+            return;
         }
+        progTracker.notDone();
     }
 
     private void tryFlushOutbox() {

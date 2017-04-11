@@ -56,7 +56,7 @@ public class CooperativeProcessorTaskletTest {
 
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         this.mockInput = IntStream.range(0, MOCK_INPUT_LENGTH).boxed().collect(toList());
         this.processor = new PassThroughProcessor();
         this.context = mock(Context.class);
@@ -65,7 +65,7 @@ public class CooperativeProcessorTaskletTest {
     }
 
     @Test
-    public void when_singleInstreamAndOutstream_then_outstreamGetsAll() throws Exception {
+    public void when_singleInstreamAndOutstream_then_outstreamGetsAll() {
         // Given
         mockInput.add(DONE_ITEM);
         MockInboundStream instream1 = new MockInboundStream(0, mockInput, mockInput.size());
@@ -82,7 +82,7 @@ public class CooperativeProcessorTaskletTest {
     }
 
     @Test
-    public void when_oneInstreamAndTwoOutstreams_then_allOutstreamsGetAllItems() throws Exception {
+    public void when_oneInstreamAndTwoOutstreams_then_allOutstreamsGetAllItems() {
         // Given
         mockInput.add(DONE_ITEM);
         MockInboundStream instream1 = new MockInboundStream(0, mockInput, mockInput.size());
@@ -102,7 +102,7 @@ public class CooperativeProcessorTaskletTest {
     }
 
     @Test
-    public void when_instreamChunked_then_processAllEventually() throws Exception {
+    public void when_instreamChunked_then_processAllEventually() {
         // Given
         mockInput.add(DONE_ITEM);
         MockInboundStream instream1 = new MockInboundStream(0, mockInput, 4);
@@ -119,7 +119,7 @@ public class CooperativeProcessorTaskletTest {
     }
 
     @Test
-    public void when_3instreams_then_pushAllIntoOutstream() throws Exception {
+    public void when_3instreams_then_pushAllIntoOutstream() {
         // Given
         MockInboundStream instream1 = new MockInboundStream(0, mockInput.subList(0, 4), 4);
         MockInboundStream instream2 = new MockInboundStream(1, mockInput.subList(4, 8), 4);
@@ -143,7 +143,7 @@ public class CooperativeProcessorTaskletTest {
     }
 
     @Test
-    public void when_outstreamRefusesItem_then_noProgress() throws Exception {
+    public void when_outstreamRefusesItem_then_noProgress() {
         // Given
         MockInboundStream instream1 = new MockInboundStream(0, mockInput, 4);
         MockOutboundStream outstream1 = new MockOutboundStream(0, 4);
@@ -156,21 +156,6 @@ public class CooperativeProcessorTaskletTest {
 
         // Then
         assertTrue(outstream1.getBuffer().equals(mockInput.subList(0, 4)));
-    }
-
-    @Test
-    public void when_outboxRefusesDoneItem_then_notDone() throws Exception {
-        // Given
-        MockInboundStream instream1 = new MockInboundStream(0, emptyList(), 0);
-        MockOutboundStream outstream1 = new MockOutboundStream(0, 0, 0);
-        instreams.add(instream1);
-        outstreams.add(outstream1);
-        Tasklet tasklet = createTasklet();
-
-        // When - then
-        for (int i = 0; i < CALL_COUNT_LIMIT; i++) {
-            assertFalse(tasklet.call().isDone());
-        }
     }
 
     private Tasklet createTasklet() {
@@ -198,7 +183,7 @@ public class CooperativeProcessorTaskletTest {
         }
     }
 
-    private static void callUntil(Tasklet tasklet, ProgressState expectedState) throws Exception {
+    private static void callUntil(Tasklet tasklet, ProgressState expectedState) {
         int iterCount = 0;
         for (ProgressState r; (r = tasklet.call()) != expectedState; ) {
             assertTrue("Failed to make progress: " + r, r.isMadeProgress());

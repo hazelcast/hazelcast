@@ -87,7 +87,22 @@ public final class ArrayDequeOutbox implements Outbox {
 
     // Private API for tasklets
 
+    /**
+     * Exposes individual buckets to the processor tasklets.
+     * @param ordinal ordinal of the bucket
+     */
     public Queue<Object> queueWithOrdinal(int ordinal) {
         return buckets[ordinal];
+    }
+
+    /**
+     * Forcefully adds an item to all the buckets of this outbox, ignoring the
+     * configured capacity limits. Introduced to simplify tasklet logic, which
+     * calls it to add the final done item to the buckets.
+     */
+    public void addIgnoringCapacity(Object item) {
+        for (Queue<Object> bucket : buckets) {
+            bucket.add(item);
+        }
     }
 }
