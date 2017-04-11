@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.TcpIpJoiner;
-import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.JoinConfig;
@@ -76,10 +75,12 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.PhoneHome;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.version.MemberVersion;
+import com.hazelcast.version.Version;
 
 import java.lang.reflect.Constructor;
 import java.nio.channels.ServerSocketChannel;
 import java.security.PrivilegedAction;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -87,6 +88,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.instance.NodeShutdownHelper.shutdownNodeByFiringEvents;
 import static com.hazelcast.internal.cluster.impl.MulticastService.createMulticastService;
 import static com.hazelcast.spi.properties.GroupProperty.DISCOVERY_SPI_ENABLED;
@@ -129,7 +131,6 @@ public class Node {
 
     private final ILogger logger;
 
-    private final AtomicBoolean joined = new AtomicBoolean(false);
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
     private final NodeShutdownHookThread shutdownHookThread;
@@ -148,8 +149,6 @@ public class Node {
 
     private final Joiner joiner;
 
-    private final boolean liteMember;
-
     private ManagementCenterService managementCenterService;
 
     private volatile NodeState state;
@@ -161,13 +160,10 @@ public class Node {
      */
     private final MemberVersion version;
 
-    private volatile Address masterAddress;
-
     @SuppressWarnings({"checkstyle:executablestatementcount", "checkstyle:methodlength"})
     public Node(HazelcastInstanceImpl hazelcastInstance, Config config, NodeContext nodeContext) {
         this.hazelcastInstance = hazelcastInstance;
         this.config = config;
-        this.liteMember = config.isLiteMember();
         this.configClassLoader = getConfigClassloader(config);
         this.properties = new HazelcastProperties(config);
 
@@ -189,11 +185,12 @@ public class Node {
 
         final ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel();
         try {
+            boolean liteMember = config.isLiteMember();
             address = addressPicker.getPublicAddress();
             nodeExtension = nodeContext.createNodeExtension(this);
             final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
             localMember = new MemberImpl(address, version, true, nodeExtension.createMemberUuid(address),
-                    hazelcastInstance, memberAttributes, liteMember);
+                    memberAttributes, liteMember, hazelcastInstance);
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
             hazelcastThreadGroup = new HazelcastThreadGroup(hazelcastInstance.getName(), logger, configClassLoader);
@@ -347,7 +344,7 @@ public class Node {
     }
 
     public Address getMasterAddress() {
-        return masterAddress;
+        return clusterService.getMasterAddress();
     }
 
     public Address getThisAddress() {
@@ -358,21 +355,8 @@ public class Node {
         return localMember;
     }
 
-    public boolean joined() {
-        return joined.get();
-    }
-
     public boolean isMaster() {
-        return address != null && address.equals(masterAddress);
-    }
-
-    public void setMasterAddress(final Address master) {
-        if (master != null) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("** setting master address to " + master);
-            }
-        }
-        masterAddress = master;
+        return clusterService.isMaster();
     }
 
     void start() {
@@ -434,14 +418,6 @@ public class Node {
             if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
                 logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
             }
-            try {
-                clusterService.sendShutdownMessage();
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Shutdown message sent to other members");
-                }
-            } catch (Throwable t) {
-                EmptyStatement.ignore(t);
-            }
         } else {
             logger.warning("Terminating forcefully...");
         }
@@ -449,8 +425,7 @@ public class Node {
         // set the joined=false first so that
         // threads do not process unnecessary
         // events, such as remove address
-        joined.set(false);
-        setMasterAddress(null);
+        clusterService.resetJoinState();
         try {
             if (properties.getBoolean(SHUTDOWNHOOK_ENABLED)) {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
@@ -589,8 +564,7 @@ public class Node {
      */
     public void reset() {
         state = NodeState.ACTIVE;
-        setMasterAddress(null);
-        joined.set(false);
+        clusterService.resetJoinState();
         joiner.reset();
         setNewLocalMember();
     }
@@ -666,14 +640,14 @@ public class Node {
         }
     }
 
-    public void setJoined() {
-        joined.set(true);
-    }
-
     public SplitBrainJoinMessage createSplitBrainJoinMessage() {
+        boolean liteMember = localMember.isLiteMember();
+        Collection<Address> memberAddresses = clusterService.getMemberAddresses();
+        int dataMemberCount = clusterService.getSize(DATA_MEMBER_SELECTOR);
+        Version clusterVersion = clusterService.getClusterVersion();
+        int memberListVersion = clusterService.getMembershipManager().getMemberListVersion();
         return new SplitBrainJoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), version, address, localMember.getUuid(),
-                localMember.isLiteMember(), createConfigCheck(), clusterService.getMemberAddresses(),
-                clusterService.getSize(MemberSelectors.DATA_MEMBER_SELECTOR), clusterService.getClusterVersion());
+                liteMember, createConfigCheck(), memberAddresses, dataMemberCount, clusterVersion, memberListVersion);
     }
 
     public JoinRequest createJoinRequest(boolean withCredentials) {
@@ -692,7 +666,7 @@ public class Node {
     }
 
     public void join() {
-        if (joined()) {
+        if (clusterService.isJoined()) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Calling join on already joined node. ", new Exception("stacktrace"));
             } else {
@@ -703,18 +677,18 @@ public class Node {
         if (joiner == null) {
             logger.warning("No join method is enabled! Starting standalone.");
             ClusterJoinManager clusterJoinManager = clusterService.getClusterJoinManager();
-            clusterJoinManager.setAsMaster();
+            clusterJoinManager.setThisMemberAsMaster();
             return;
         }
 
         try {
-            masterAddress = null;
+            clusterService.resetJoinState();
             joiner.join();
         } catch (Throwable e) {
             logger.severe("Error while joining the cluster!", e);
         }
 
-        if (!joined()) {
+        if (!clusterService.isJoined()) {
             long maxJoinTimeMillis = properties.getMillis(MAX_JOIN_SECONDS);
             logger.severe("Could not join cluster in " + maxJoinTimeMillis + " ms. Shutting down now!");
             shutdownNodeByFiringEvents(Node.this, true);
@@ -760,17 +734,18 @@ public class Node {
     }
 
     private void setNewLocalMember() {
-        if (joined()) {
+        if (clusterService.isJoined()) {
             logger.severe("Cannot set new local member when joined.");
             return;
         }
 
         String newUuid = UuidUtil.createMemberUuid(address);
         logger.warning("Setting new local member. old uuid: " + localMember.getUuid() + " new uuid: " + newUuid);
+        boolean liteMember = localMember.isLiteMember();
         Map<String, Object> memberAttributes = localMember.getAttributes();
-        localMember = new MemberImpl(address, version, true, newUuid, hazelcastInstance, memberAttributes, liteMember);
+        localMember = new MemberImpl(address, version, true, newUuid, memberAttributes, liteMember, hazelcastInstance);
 
-        assert !joined() : "Node should not join concurrently while setting member uuid!";
+        assert !clusterService.isJoined() : "Node should not join concurrently while setting member uuid!";
     }
 
     public Config getConfig() {
@@ -796,7 +771,7 @@ public class Node {
     }
 
     public boolean isLiteMember() {
-        return liteMember;
+        return localMember.isLiteMember();
     }
 
     @Override

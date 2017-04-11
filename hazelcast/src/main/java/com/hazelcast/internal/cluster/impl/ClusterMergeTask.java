@@ -79,7 +79,7 @@ class ClusterMergeTask implements Runnable {
     }
 
     private LifecycleState getFinalLifecycleState() {
-       return (node.isRunning() && node.joined()) ? MERGED : MERGE_FAILED;
+       return (node.isRunning() && node.getClusterService().isJoined()) ? MERGED : MERGE_FAILED;
     }
 
     private void resetState() {

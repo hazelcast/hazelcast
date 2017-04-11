@@ -16,7 +16,7 @@
 
 package com.hazelcast.version;
 
-import com.hazelcast.internal.cluster.impl.Versions;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
 import com.hazelcast.test.HazelcastParallelClassRunner;

@@ -504,8 +504,8 @@ public abstract class HazelcastTestSupport {
         Node n1 = TestUtil.getNode(h1);
         Node n2 = TestUtil.getNode(h2);
         if (n1 != null && n2 != null) {
-            n1.clusterService.removeAddress(n2.address, null);
-            n2.clusterService.removeAddress(n1.address, null);
+            n1.clusterService.suspectMember(n2.address, null, true);
+            n2.clusterService.suspectMember(n1.address, null, true);
         }
     }
 

@@ -377,7 +377,7 @@ class TestClientRegistry {
         }
 
         private void register() {
-            Node node = nodeEngine.getNode();
+            Node node = remoteNodeEngine.getNode();
             node.getConnectionManager().registerConnection(getEndPoint(), this);
         }
 
@@ -395,7 +395,7 @@ class TestClientRegistry {
 
         void handleClientMessage(ClientMessage newPacket) {
             lastReadTimeMillis = System.currentTimeMillis();
-            nodeEngine.getNode().clientEngine.handleClientMessage(newPacket, this);
+            remoteNodeEngine.getNode().clientEngine.handleClientMessage(newPacket, this);
         }
 
         @Override

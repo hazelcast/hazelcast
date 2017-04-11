@@ -19,6 +19,7 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.operation.HasOngoingMigration;
@@ -276,9 +277,10 @@ public class PartitionReplicaStateChecker {
     }
 
     boolean hasOnGoingMigrationMaster(Level level) {
-        Address masterAddress = node.getMasterAddress();
+        ClusterService clusterService = node.getClusterService();
+        Address masterAddress = clusterService.getMasterAddress();
         if (masterAddress == null) {
-            return node.joined();
+            return clusterService.isJoined();
         }
 
         Operation operation = new HasOngoingMigration();

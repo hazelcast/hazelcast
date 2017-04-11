@@ -29,14 +29,12 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipAdapter;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.DefaultNodeContext;
+import com.hazelcast.instance.FirewallingNodeContext;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.NodeIOService;
-import com.hazelcast.nio.tcp.FirewallingTcpIpConnectionManager;
+import com.hazelcast.nio.tcp.FirewallingConnectionManager;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -49,7 +47,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.nio.channels.ServerSocketChannel;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -476,17 +473,17 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         final CountDownLatch mergeLatch = new CountDownLatch(1);
         hz1.getLifecycleService().addLifecycleListener(new MergedEventLifeCycleListener(mergeLatch));
 
-        FirewallingTcpIpConnectionManager cm1 = getFireWalledConnectionManager(hz1);
-        FirewallingTcpIpConnectionManager cm2 = getFireWalledConnectionManager(hz2);
-        FirewallingTcpIpConnectionManager cm3 = getFireWalledConnectionManager(hz3);
+        FirewallingConnectionManager cm1 = getFireWalledConnectionManager(hz1);
+        FirewallingConnectionManager cm2 = getFireWalledConnectionManager(hz2);
+        FirewallingConnectionManager cm3 = getFireWalledConnectionManager(hz3);
 
         // block n2 & n3 on n1
         cm1.block(n2.address);
         cm1.block(n3.address);
 
         // remove and block n1 on n2 & n3
-        n2.clusterService.removeAddress(n1.address, null);
-        n3.clusterService.removeAddress(n1.address, null);
+        n2.clusterService.suspectMember(n1.address, null, true);
+        n3.clusterService.suspectMember(n1.address, null, true);
         cm2.block(n1.address);
         cm3.block(n1.address);
 
@@ -668,7 +665,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     }
 
     private void disconnect(final HazelcastInstance source, final HazelcastInstance target) {
-        getNode(source).clusterService.removeAddress(getNode(target).address, null);
+        getNode(source).clusterService.suspectMember(getNode(target).address, null, true);
     }
 
 
@@ -729,15 +726,15 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         final CountDownLatch mergeLatch = new CountDownLatch(1);
         hz3.getLifecycleService().addLifecycleListener(new MergedEventLifeCycleListener(mergeLatch));
 
-        FirewallingTcpIpConnectionManager cm1 = getFireWalledConnectionManager(hz1);
-        FirewallingTcpIpConnectionManager cm2 = getFireWalledConnectionManager(hz2);
-        FirewallingTcpIpConnectionManager cm3 = getFireWalledConnectionManager(hz3);
+        FirewallingConnectionManager cm1 = getFireWalledConnectionManager(hz1);
+        FirewallingConnectionManager cm2 = getFireWalledConnectionManager(hz2);
+        FirewallingConnectionManager cm3 = getFireWalledConnectionManager(hz3);
 
         cm3.block(n1.address);
         cm3.block(n2.address);
 
-        n1.clusterService.removeAddress(n3.address, null);
-        n2.clusterService.removeAddress(n3.address, null);
+        n1.clusterService.suspectMember(n3.address, null, true);
+        n2.clusterService.suspectMember(n3.address, null, true);
         cm1.block(n3.address);
         cm2.block(n3.address);
 
@@ -817,15 +814,15 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         };
         hz1.getLifecycleService().addLifecycleListener(lifecycleListener);
 
-        FirewallingTcpIpConnectionManager cm1 = getFireWalledConnectionManager(hz1);
-        FirewallingTcpIpConnectionManager cm2 = getFireWalledConnectionManager(hz2);
-        FirewallingTcpIpConnectionManager cm3 = getFireWalledConnectionManager(hz3);
+        FirewallingConnectionManager cm1 = getFireWalledConnectionManager(hz1);
+        FirewallingConnectionManager cm2 = getFireWalledConnectionManager(hz2);
+        FirewallingConnectionManager cm3 = getFireWalledConnectionManager(hz3);
 
         cm1.block(n2.address);
         cm1.block(n3.address);
 
-        n2.clusterService.removeAddress(n1.address, null);
-        n3.clusterService.removeAddress(n1.address, null);
+        n2.clusterService.suspectMember(n1.address, null, true);
+        n3.clusterService.suspectMember(n1.address, null, true);
         cm2.block(n1.address);
         cm3.block(n1.address);
 
@@ -854,21 +851,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         assertEquals(n3.getThisAddress(), n3.getMasterAddress());
     }
 
-    private static class FirewallingNodeContext extends DefaultNodeContext {
-        @Override
-        public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
-            NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
-            return new FirewallingTcpIpConnectionManager(
-                    node.loggingService,
-                    node.getHazelcastThreadGroup(),
-                    ioService,
-                    node.nodeEngine.getMetricsRegistry(),
-                    serverSocketChannel);
-        }
-    }
-
-    private static FirewallingTcpIpConnectionManager getFireWalledConnectionManager(HazelcastInstance hz) {
-        return (FirewallingTcpIpConnectionManager) getConnectionManager(hz);
+    private static FirewallingConnectionManager getFireWalledConnectionManager(HazelcastInstance hz) {
+        return (FirewallingConnectionManager) getConnectionManager(hz);
     }
 
     private static class MergedEventLifeCycleListener

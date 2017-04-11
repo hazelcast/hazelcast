@@ -77,6 +77,6 @@ public class MemberLeftException extends ExecutionException implements Retryable
         boolean liteMember = in.readBoolean();
         MemberVersion version = (MemberVersion) in.readObject();
 
-        member = new MemberImpl(new Address(host, port), version, false, uuid, null, null, liteMember);
+        member = new MemberImpl(new Address(host, port), version, false, uuid, null, liteMember);
     }
 }

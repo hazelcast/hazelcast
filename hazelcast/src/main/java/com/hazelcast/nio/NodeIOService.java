@@ -26,6 +26,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.networking.ReadHandler;
@@ -145,7 +146,7 @@ public class NodeIOService implements IOService {
             public void run() {
                 // we can safely pass null because removeEndpoint is triggered from the connectionManager after
                 // the connection is closed. So a reason is already set.
-                node.clusterService.removeAddress(endPoint, null);
+                node.clusterService.suspectMember(endPoint, null, true);
             }
         });
     }
@@ -164,17 +165,18 @@ public class NodeIOService implements IOService {
 
     @Override
     public void onSuccessfulConnection(Address address) {
-        if (!node.joined()) {
+        if (!node.getClusterService().isJoined()) {
             node.getJoiner().unblacklist(address);
         }
     }
 
     @Override
     public void onFailedConnection(final Address address) {
-        if (!node.joined()) {
+        ClusterService clusterService = node.clusterService;
+        if (!clusterService.isJoined()) {
             node.getJoiner().blacklist(address, false);
         } else {
-            if (node.clusterService.getMember(address) != null) {
+            if (clusterService.getMember(address) != null) {
                 nodeEngine.getExecutionService().schedule(ExecutionService.IO_EXECUTOR, new ReconnectionTask(address),
                         getConnectionMonitorInterval(), TimeUnit.MILLISECONDS);
             }

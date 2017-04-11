@@ -26,7 +26,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MembershipAdapter;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
+import com.hazelcast.nio.tcp.FirewallingConnectionManager;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -171,11 +171,11 @@ public class PartitionedCluster {
         Node n4 = getNode(h4);
         Node n5 = getNode(h5);
 
-        FirewallingMockConnectionManager cm1 = getConnectionManager(n1);
-        FirewallingMockConnectionManager cm2 = getConnectionManager(n2);
-        FirewallingMockConnectionManager cm3 = getConnectionManager(n3);
-        FirewallingMockConnectionManager cm4 = getConnectionManager(n4);
-        FirewallingMockConnectionManager cm5 = getConnectionManager(n5);
+        FirewallingConnectionManager cm1 = getConnectionManager(n1);
+        FirewallingConnectionManager cm2 = getConnectionManager(n2);
+        FirewallingConnectionManager cm3 = getConnectionManager(n3);
+        FirewallingConnectionManager cm4 = getConnectionManager(n4);
+        FirewallingConnectionManager cm5 = getConnectionManager(n5);
 
         cm1.block(n4.address);
         cm2.block(n4.address);
@@ -193,24 +193,24 @@ public class PartitionedCluster {
         cm5.block(n2.address);
         cm5.block(n3.address);
 
-        n4.clusterService.removeAddress(n1.address, null);
-        n4.clusterService.removeAddress(n2.address, null);
-        n4.clusterService.removeAddress(n3.address, null);
+        n4.clusterService.suspectMember(n1.address, null, true);
+        n4.clusterService.suspectMember(n2.address, null, true);
+        n4.clusterService.suspectMember(n3.address, null, true);
 
-        n5.clusterService.removeAddress(n1.address, null);
-        n5.clusterService.removeAddress(n2.address, null);
-        n5.clusterService.removeAddress(n3.address, null);
+        n5.clusterService.suspectMember(n1.address, null, true);
+        n5.clusterService.suspectMember(n2.address, null, true);
+        n5.clusterService.suspectMember(n3.address, null, true);
 
-        n1.clusterService.removeAddress(n4.address, null);
-        n2.clusterService.removeAddress(n4.address, null);
-        n3.clusterService.removeAddress(n4.address, null);
+        n1.clusterService.suspectMember(n4.address, null, true);
+        n2.clusterService.suspectMember(n4.address, null, true);
+        n3.clusterService.suspectMember(n4.address, null, true);
 
-        n1.clusterService.removeAddress(n5.address, null);
-        n2.clusterService.removeAddress(n5.address, null);
-        n3.clusterService.removeAddress(n5.address, null);
+        n1.clusterService.suspectMember(n5.address, null, true);
+        n2.clusterService.suspectMember(n5.address, null, true);
+        n3.clusterService.suspectMember(n5.address, null, true);
     }
 
-    private static FirewallingMockConnectionManager getConnectionManager(Node node) {
-        return (FirewallingMockConnectionManager) node.getConnectionManager();
+    private static FirewallingConnectionManager getConnectionManager(Node node) {
+        return (FirewallingConnectionManager) node.getConnectionManager();
     }
 }

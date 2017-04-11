@@ -21,7 +21,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.OutboundFrame;
-import com.hazelcast.test.mocknetwork.MockConnectionManager;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -77,10 +76,7 @@ class DroppingConnection implements Connection {
         if (!isAlive.compareAndSet(true, false)) {
             return;
         }
-
-        if (connectionManager instanceof MockConnectionManager) {
-            ((MockConnectionManager) connectionManager).onClose(this);
-        }
+        connectionManager.onConnectionClose(this);
     }
 
     @Override

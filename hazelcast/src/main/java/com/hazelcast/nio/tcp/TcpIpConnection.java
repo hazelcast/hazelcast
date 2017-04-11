@@ -270,7 +270,7 @@ public final class TcpIpConnection implements SocketConnection, MetricsProvider,
             logger.warning(e);
         }
 
-        connectionManager.onClose(this);
+        connectionManager.onConnectionClose(this);
         ioService.onDisconnect(endPoint, cause);
         if (cause != null && monitor != null) {
             monitor.onError(cause);

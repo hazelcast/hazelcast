@@ -18,15 +18,17 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.MembershipManagerCompat;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
 
-public class MemberRemoveOperation extends AbstractClusterOperation implements AllowedDuringPassiveState {
+@Deprecated
+// not used on 3.9+
+public class MemberRemoveOperation extends AbstractClusterOperation {
 
     private Address address;
     private String memberUuid;
@@ -59,11 +61,8 @@ public class MemberRemoveOperation extends AbstractClusterOperation implements A
             logger.fine(msg);
         }
 
-        if (memberUuid != null) {
-            clusterService.removeAddress(address, memberUuid, msg);
-        } else {
-            clusterService.removeAddress(address, msg);
-        }
+        MembershipManagerCompat membershipManagerCompat = clusterService.getMembershipManagerCompat();
+        membershipManagerCompat.removeMember(address, memberUuid, msg);
     }
 
     private boolean isCallerValid(Address caller) {

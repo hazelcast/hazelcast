@@ -28,7 +28,7 @@ import com.hazelcast.version.Version;
 
 import java.io.IOException;
 
-import static com.hazelcast.internal.cluster.impl.Versions.V3_9;
+import static com.hazelcast.internal.cluster.Versions.V3_9;
 
 public class PutResultOperation
         extends AbstractDurableExecutorOperation

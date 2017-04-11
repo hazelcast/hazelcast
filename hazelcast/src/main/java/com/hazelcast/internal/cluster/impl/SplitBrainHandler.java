@@ -47,11 +47,12 @@ final class SplitBrainHandler implements Runnable {
     }
 
     private boolean shouldRun() {
-        if (!node.joined()) {
+        ClusterServiceImpl clusterService = node.getClusterService();
+        if (!clusterService.isJoined()) {
             return false;
         }
 
-        if (!node.isMaster()) {
+        if (!clusterService.isMaster()) {
             return false;
         }
 
@@ -59,12 +60,12 @@ final class SplitBrainHandler implements Runnable {
             return false;
         }
 
-        final ClusterJoinManager clusterJoinManager = node.clusterService.getClusterJoinManager();
+        final ClusterJoinManager clusterJoinManager = clusterService.getClusterJoinManager();
         if (clusterJoinManager.isJoinInProgress()) {
             return false;
         }
 
-        final ClusterState clusterState = node.clusterService.getClusterState();
+        final ClusterState clusterState = clusterService.getClusterState();
         return clusterState == ClusterState.ACTIVE;
 
     }

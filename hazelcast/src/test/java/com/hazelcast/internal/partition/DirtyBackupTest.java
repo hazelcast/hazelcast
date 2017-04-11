@@ -16,14 +16,12 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
+import com.hazelcast.nio.tcp.FirewallingConnectionManager;
+import com.hazelcast.nio.tcp.OperationPacketFilter;
 import com.hazelcast.nio.tcp.PacketFilter;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -34,7 +32,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -81,36 +78,20 @@ public class DirtyBackupTest extends PartitionCorrectnessTestSupport {
 
     private static void setBackupPacketReorderFilter(HazelcastInstance instance) {
         Node node = getNode(instance);
-        FirewallingMockConnectionManager cm = (FirewallingMockConnectionManager) node.getConnectionManager();
-        cm.setDelayingPacketFilter(new BackupPacketReorderFilter(node.getSerializationService()));
+        FirewallingConnectionManager cm = (FirewallingConnectionManager) node.getConnectionManager();
+        cm.setDelayingPacketFilter(new BackupPacketReorderFilter(node.getSerializationService()), 100, 1000);
     }
 
-    private static class BackupPacketReorderFilter implements PacketFilter {
-        final InternalSerializationService serializationService;
+    private static class BackupPacketReorderFilter extends OperationPacketFilter implements PacketFilter {
 
         BackupPacketReorderFilter(InternalSerializationService serializationService) {
-            this.serializationService = serializationService;
+            super(serializationService);
         }
 
         @Override
-        public boolean allow(Packet packet, Address endpoint) {
-            return packet.getPacketType() != Packet.Type.OPERATION || allowOperation(packet);
-        }
-
-        private boolean allowOperation(Packet packet) {
-            try {
-                ObjectDataInput input = serializationService.createObjectDataInput(packet);
-                boolean identified = input.readBoolean();
-                if (identified) {
-                    int factory = input.readInt();
-                    int type = input.readInt();
-                    boolean isBackup = factory == SpiDataSerializerHook.F_ID && type == SpiDataSerializerHook.BACKUP;
-                    return !isBackup;
-                }
-            } catch (IOException e) {
-                throw new HazelcastException(e);
-            }
-            return true;
+        protected boolean allowOperation(Address enpoint, int factory, int type) {
+            boolean isBackup = factory == SpiDataSerializerHook.F_ID && type == SpiDataSerializerHook.BACKUP;
+            return !isBackup;
         }
     }
 }

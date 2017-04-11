@@ -77,6 +77,10 @@ public class MemberInfo implements IdentifiedDataSerializable {
         return liteMember;
     }
 
+    public MemberImpl toMember() {
+        return new MemberImpl(address, version, false, uuid,  attributes, liteMember);
+    }
+
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         address = new Address();

@@ -24,9 +24,8 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.impl.operations.MemberRemoveOperation;
-import com.hazelcast.internal.cluster.impl.operations.MergeClustersOperation;
-import com.hazelcast.internal.cluster.impl.operations.SplitBrainMergeValidationOperation;
+import com.hazelcast.internal.cluster.impl.operations.MergeClustersOp;
+import com.hazelcast.internal.cluster.impl.operations.SplitBrainMergeValidationOp;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -132,7 +131,7 @@ public abstract class AbstractJoiner implements Joiner {
     public final void join() {
         blacklistedAddresses.clear();
         doJoin();
-        if (!node.joined() && shouldResetHotRestartData()) {
+        if (!clusterService.isJoined() && shouldResetHotRestartData()) {
             logger.warning("Could not join to the cluster because hot restart data must be reset.");
             node.getNodeExtension().getInternalHotRestartService().resetHotRestartData();
             reset();
@@ -142,7 +141,7 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     protected final boolean shouldRetry() {
-        return node.isRunning() && !node.joined() && !shouldResetHotRestartData();
+        return node.isRunning() && !clusterService.isJoined() && !shouldResetHotRestartData();
     }
 
     private boolean shouldResetHotRestartData() {
@@ -155,30 +154,30 @@ public abstract class AbstractJoiner implements Joiner {
         blacklistedAddresses.clear();
 
         if (logger.isFineEnabled()) {
-            logger.fine("PostJoin master: " + node.getMasterAddress() + ", isMaster: " + node.isMaster());
+            logger.fine("PostJoin master: " + clusterService.getMasterAddress() + ", isMaster: " + clusterService.isMaster());
         }
         if (!node.isRunning()) {
             return;
         }
         if (tryCount.incrementAndGet() == JOIN_TRY_COUNT) {
             logger.warning("Join try count exceed limit, setting this node as master!");
-            clusterJoinManager.setAsMaster();
+            clusterJoinManager.setThisMemberAsMaster();
         }
 
-        if (node.joined()) {
-            if (!node.isMaster()) {
+        if (clusterService.isJoined()) {
+            if (!clusterService.isMaster()) {
                 ensureConnectionToAllMembers();
             }
 
             if (clusterService.getSize() == 1) {
-                logger.info('\n' + node.clusterService.membersString());
+                clusterService.printMemberList();
             }
         }
     }
 
     private void ensureConnectionToAllMembers() {
         boolean allConnected = false;
-        if (node.joined()) {
+        if (clusterService.isJoined()) {
             logger.fine("Waiting for all connections");
             int connectAllWaitSeconds = node.getProperties().getSeconds(GroupProperty.CONNECT_ALL_WAIT_SECONDS);
             int checkCount = 0;
@@ -326,10 +325,15 @@ public abstract class AbstractJoiner implements Joiner {
 
     private boolean checkMembershipIntersectionSetEmpty(SplitBrainJoinMessage joinMessage) {
         Collection<Address> targetMemberAddresses = joinMessage.getMemberAddresses();
+        Address joinMessageAddress = joinMessage.getAddress();
         if (targetMemberAddresses.contains(node.getThisAddress())) {
-            node.nodeEngine.getOperationService()
-                    .send(new MemberRemoveOperation(node.getThisAddress()), joinMessage.getAddress());
-            logger.info(node.getThisAddress() + " CANNOT merge to " + joinMessage.getAddress()
+            // Join request is coming from master of the split and it thinks that I am its member.
+            // This is partial split case and we want to convert it to a full split.
+            // So it should remove me from its cluster.
+            MembersViewMetadata membersViewMetadata = new MembersViewMetadata(joinMessageAddress, joinMessage.getUuid(),
+                    joinMessageAddress, joinMessage.getMemberListVersion());
+            clusterService.sendExplicitSuspicion(membersViewMetadata);
+            logger.info(node.getThisAddress() + " CANNOT merge to " + joinMessageAddress
                     + ", because it thinks this-node as its member.");
             return false;
         }
@@ -337,7 +341,7 @@ public abstract class AbstractJoiner implements Joiner {
         Collection<Address> thisMemberAddresses = clusterService.getMemberAddresses();
         for (Address address : thisMemberAddresses) {
             if (targetMemberAddresses.contains(address)) {
-                logger.info(node.getThisAddress() + " CANNOT merge to " + joinMessage.getAddress()
+                logger.info(node.getThisAddress() + " CANNOT merge to " + joinMessageAddress
                         + ", because it thinks " + address + " as its member. "
                         + "But " + address + " is member of this cluster.");
                 return false;
@@ -393,7 +397,7 @@ public abstract class AbstractJoiner implements Joiner {
 
         NodeEngine nodeEngine = node.nodeEngine;
         Future future = nodeEngine.getOperationService().createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
-                new SplitBrainMergeValidationOperation(node.createSplitBrainJoinMessage()), target)
+                new SplitBrainMergeValidationOp(node.createSplitBrainJoinMessage()), target)
                 .setTryCount(1).invoke();
         try {
             return (SplitBrainJoinMessage) future.get(SPLIT_BRAIN_JOIN_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
@@ -423,7 +427,7 @@ public abstract class AbstractJoiner implements Joiner {
         Collection<Future> futures = new ArrayList<Future>(memberList.size());
         for (Member member : memberList) {
             if (!member.localMember()) {
-                Operation op = new MergeClustersOperation(targetAddress);
+                Operation op = new MergeClustersOp(targetAddress);
                 Future<Object> future =
                         operationService.invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, member.getAddress());
                 futures.add(future);
@@ -432,10 +436,9 @@ public abstract class AbstractJoiner implements Joiner {
 
         waitWithDeadline(futures, SPLIT_BRAIN_MERGE_TIMEOUT_SECONDS, TimeUnit.SECONDS, splitBrainMergeExceptionHandler);
 
-        Operation mergeClustersOperation = new MergeClustersOperation(targetAddress);
-        mergeClustersOperation.setNodeEngine(node.nodeEngine).setService(clusterService)
-                .setOperationResponseHandler(createEmptyResponseHandler());
-        operationService.run(mergeClustersOperation);
+        Operation op = new MergeClustersOp(targetAddress);
+        op.setNodeEngine(node.nodeEngine).setService(clusterService).setOperationResponseHandler(createEmptyResponseHandler());
+        operationService.run(op);
     }
 
     /**

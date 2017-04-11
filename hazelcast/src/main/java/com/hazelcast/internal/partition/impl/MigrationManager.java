@@ -402,7 +402,7 @@ public class MigrationManager {
 
     void triggerControlTask() {
         migrationQueue.clear();
-        if (!node.joined()) {
+        if (!node.getClusterService().isJoined()) {
             logger.fine("Node is not joined, will not trigger ControlTask");
             return;
         }

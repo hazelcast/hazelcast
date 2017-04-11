@@ -27,6 +27,7 @@ import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.util.executor.StripedRunnable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -69,19 +70,48 @@ public class MockConnectionManager implements ConnectionManager {
     @Override
     public Connection getOrConnect(Address address) {
         Connection conn = mapConnections.get(address);
-        if (live && (conn == null || !conn.isAlive())) {
-            Node otherNode = registry.getNode(address);
-            if (otherNode != null && otherNode.getState() != NodeState.SHUT_DOWN) {
-                MockConnection thisConnection = new MockConnection(address, node.getThisAddress(), node.getNodeEngine());
-                MockConnection mockConn = new MockConnection(node.getThisAddress(), address, otherNode.getNodeEngine());
-                mockConn.localConnection = thisConnection;
-                thisConnection.localConnection = mockConn;
-                mapConnections.put(address, mockConn);
-                logger.info("Created connection to endpoint: " + address + ", connection: " + mockConn);
-                return mockConn;
-            }
+        if (conn != null && conn.isAlive()) {
+            return conn;
         }
-        return conn;
+        if (!live) {
+            return null;
+        }
+
+        Node targetNode = registry.getNode(address);
+        if (targetNode == null || isTargetLeft(targetNode)) {
+            suspectAddress(address);
+            return null;
+        }
+
+        return createConnection(targetNode);
+    }
+
+    private void suspectAddress(final Address address) {
+        // see NodeIOService#removeEndpoint()
+        node.getNodeEngine().getExecutionService().execute(ExecutionService.IO_EXECUTOR, new Runnable() {
+            @Override
+            public void run() {
+                node.getClusterService().suspectMember(address, address + " is already left", false);
+            }
+        });
+    }
+
+    static boolean isTargetLeft(Node targetNode) {
+        return !targetNode.isRunning() && !targetNode.getClusterService().isJoined();
+    }
+
+    private synchronized Connection createConnection(Node targetNode) {
+        if (!live) {
+            throw new IllegalStateException("connection manager is not live!");
+        }
+        Address target = targetNode.getThisAddress();
+        MockConnection thisConnection = new MockConnection(target, node.getThisAddress(), node.getNodeEngine());
+        MockConnection remoteConnection = new MockConnection(node.getThisAddress(), target, targetNode.getNodeEngine());
+        remoteConnection.localConnection = thisConnection;
+        thisConnection.localConnection = remoteConnection;
+        mapConnections.put(target, remoteConnection);
+        logger.info("Created connection to endpoint: " + target + ", connection: " + remoteConnection);
+        return remoteConnection;
     }
 
     @Override
@@ -90,15 +120,20 @@ public class MockConnectionManager implements ConnectionManager {
     }
 
     @Override
-    public void start() {
+    public synchronized void start() {
         logger.fine("Starting connection manager");
         live = true;
     }
 
     @Override
-    public void stop() {
+    public synchronized void stop() {
         logger.fine("Stopping connection manager");
         live = false;
+
+        for (Connection connection : mapConnections.values()) {
+            connection.close(null, null);
+        }
+        mapConnections.clear();
 
         final Member localMember = node.getLocalMember();
         final Address thisAddress = localMember.getAddress();
@@ -110,31 +145,33 @@ public class MockConnectionManager implements ConnectionManager {
 
             Node otherNode = registry.getNode(address);
             if (otherNode != null && otherNode.getState() != NodeState.SHUT_DOWN) {
-                logger.fine(otherNode.getThisAddress() + " is instructed to remove us.");
-                ILogger otherLogger = otherNode.getLogger(MockConnectionManager.class);
-                otherLogger.fine(localMember + " will be removed from the cluster if present, "
-                        + "because it has requested to leave.");
+                logger.fine(otherNode.getThisAddress() + " is instructed to suspect from " + thisAddress);
                 try {
                     ClusterServiceImpl clusterService = otherNode.getClusterService();
-                    clusterService.removeAddress(localMember.getAddress(), localMember.getUuid(),
-                            "Connection manager is stopped on " + localMember);
+                    clusterService.suspectMember(localMember.getAddress(), localMember.getUuid(),
+                            "Connection manager is stopped on " + localMember, true);
                 } catch (Throwable e) {
+                    ILogger otherLogger = otherNode.getLogger(MockConnectionManager.class);
                     otherLogger.warning("While removing " + thisAddress, e);
                 }
             }
         }
-        for (Connection connection : mapConnections.values()) {
-            connection.close(null, null);
-        }
     }
 
     @Override
-    public void shutdown() {
+    public synchronized void shutdown() {
         stop();
     }
 
     @Override
-    public boolean registerConnection(final Address remoteEndpoint, final Connection connection) {
+    public synchronized boolean registerConnection(final Address remoteEndpoint, final Connection connection) {
+        if (!live) {
+            throw new IllegalStateException("connection manager is not live!");
+        }
+        if (!connection.isAlive()) {
+            return false;
+        }
+
         mapConnections.put(remoteEndpoint, connection);
         ioService.getEventService().executeEventCallback(new StripedRunnable() {
             @Override
@@ -157,7 +194,8 @@ public class MockConnectionManager implements ConnectionManager {
         connectionListeners.add(connectionListener);
     }
 
-    public void onClose(final Connection connection) {
+    @Override
+    public void onConnectionClose(final Connection connection) {
         final Address endPoint = connection.getEndPoint();
         if (mapConnections.remove(endPoint, connection)) {
             logger.info("Removed connection to endpoint: " + endPoint + ", connection: " + connection);

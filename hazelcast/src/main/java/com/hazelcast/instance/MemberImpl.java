@@ -20,7 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
-import com.hazelcast.internal.cluster.impl.operations.MemberAttributeChangedOperation;
+import com.hazelcast.internal.cluster.impl.operations.MemberAttributeChangedOp;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -48,19 +48,21 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
     }
 
     public MemberImpl(Address address, MemberVersion version, boolean localMember) {
-        this(address, version, localMember, null, null);
+        this(address, version, localMember, null, null, false);
     }
 
-    public MemberImpl(Address address, MemberVersion version, boolean localMember, boolean liteMember) {
-        this(address, version, localMember, null, null, null, liteMember);
+    public MemberImpl(Address address, MemberVersion version, boolean localMember, String uuid) {
+        this(address, version, localMember, uuid, null, false);
     }
 
-    public MemberImpl(Address address, MemberVersion version, boolean localMember, String uuid, HazelcastInstanceImpl instance) {
-        this(address, version, localMember, uuid, instance, null, false);
-    }
-
-    public MemberImpl(Address address, MemberVersion version, boolean localMember, String uuid, HazelcastInstanceImpl instance,
+    public MemberImpl(Address address, MemberVersion version, boolean localMember, String uuid,
                       Map<String, Object> attributes, boolean liteMember) {
+        super(address, version, uuid, attributes, liteMember);
+        this.localMember = localMember;
+    }
+
+    public MemberImpl(Address address, MemberVersion version, boolean localMember, String uuid,
+            Map<String, Object> attributes, boolean liteMember, HazelcastInstanceImpl instance) {
         super(address, version, uuid, attributes, liteMember);
         this.localMember = localMember;
         this.instance = instance;
@@ -69,6 +71,7 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
     public MemberImpl(MemberImpl member) {
         super(member);
         this.localMember = member.localMember;
+        this.instance = member.instance;
     }
 
     @Override
@@ -172,7 +175,7 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
 
     @Override
     public void removeAttribute(String key) {
-        isLocalMember();
+        ensureLocalMember();
         isNotNull(key, "key");
 
         Object value = attributes.remove(key);
@@ -181,19 +184,19 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
         }
 
         if (instance != null) {
-            MemberAttributeChangedOperation operation = new MemberAttributeChangedOperation(REMOVE, key, null);
-            invokeOnAllMembers(operation);
+            MemberAttributeChangedOp op = new MemberAttributeChangedOp(REMOVE, key, null);
+            invokeOnAllMembers(op);
         }
     }
 
-    private void isLocalMember() {
+    private void ensureLocalMember() {
         if (!localMember) {
             throw new UnsupportedOperationException("Attributes on remote members must not be changed");
         }
     }
 
     private void setAttribute(String key, Object value) {
-        isLocalMember();
+        ensureLocalMember();
         isNotNull(key, "key");
         isNotNull(value, "value");
 
@@ -203,8 +206,8 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
         }
 
         if (instance != null) {
-            MemberAttributeChangedOperation operation = new MemberAttributeChangedOperation(PUT, key, value);
-            invokeOnAllMembers(operation);
+            MemberAttributeChangedOp op = new MemberAttributeChangedOp(PUT, key, value);
+            invokeOnAllMembers(op);
         }
     }
 
