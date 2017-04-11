@@ -696,7 +696,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         try {
             if (isJoined()) {
                 Address currentMasterAddress = getMasterAddress();
-                if (!master.equals(currentMasterAddress)) {
+                if (!currentMasterAddress.equals(master)) {
                     logger.warning("Cannot set master address to " + master
                             + " because node is already joined! Current master: " + currentMasterAddress);
                 } else {
