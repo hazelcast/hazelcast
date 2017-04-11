@@ -27,10 +27,16 @@ public final class ToHeapDataConverter {
     private ToHeapDataConverter() {
     }
 
-    public static Data toHeapData(Data key) {
-        if (key instanceof HeapData) {
-            return key;
+    /**
+     * Converts Data to HeapData. Useful for offheap conversion.
+     *
+     * @param data
+     * @return the onheap representation of data. If data is null, null is returned.
+     */
+    public static Data toHeapData(Data data) {
+        if (data == null || data instanceof HeapData) {
+            return data;
         }
-        return new HeapData(key.toByteArray());
+        return new HeapData(data.toByteArray());
     }
 }
