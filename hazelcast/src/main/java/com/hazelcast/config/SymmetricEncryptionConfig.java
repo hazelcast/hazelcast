@@ -23,12 +23,22 @@ import static java.util.Arrays.copyOf;
  */
 public class SymmetricEncryptionConfig {
 
+    /**
+     * Default symmetric encryption password
+     */
+    public static final String DEFAULT_SYMMETRIC_PASSWORD = "thepassword";
+
+    /**
+     * Default symmetric encryption salt
+     */
+    public static final String DEFAULT_SYMMETRIC_SALT = "thesalt";
+
     private static final int ITERATION_COUNT = 19;
 
     private boolean enabled;
     private String algorithm = "PBEWithMD5AndDES";
-    private String password = "thepassword";
-    private String salt = "thesalt";
+    private String password = DEFAULT_SYMMETRIC_PASSWORD;
+    private String salt = DEFAULT_SYMMETRIC_SALT;
     private int iterationCount = ITERATION_COUNT;
     private byte[] key;
 
