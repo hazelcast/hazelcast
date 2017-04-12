@@ -23,7 +23,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.UrgentSystemOperation;
 
 import java.io.IOException;
@@ -71,10 +70,15 @@ public class PostJoinOp
     @Override
     public void run() throws Exception {
         if (operations != null && operations.length > 0) {
-            NodeEngine nodeEngine = getNodeEngine();
-            OperationService operationService = nodeEngine.getOperationService();
             for (Operation op : operations) {
-                operationService.run(op);
+                try {
+                    // not running via OperationService since we don't want any restrictions like cluster state check etc.
+                    op.beforeRun();
+                    op.run();
+                    op.afterRun();
+                } catch (Exception e) {
+                    getLogger().warning("Error while running post-join operation: " + op, e);
+                }
             }
         }
     }
