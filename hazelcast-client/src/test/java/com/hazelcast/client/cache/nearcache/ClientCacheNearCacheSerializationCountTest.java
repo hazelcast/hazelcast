@@ -174,7 +174,9 @@ public class ClientCacheNearCacheSerializationCountTest extends AbstractNearCach
     private <K, V> CacheConfig<K, V> createCacheConfig(InMemoryFormat inMemoryFormat) {
         CacheConfig<K, V> cacheConfig = new CacheConfig<K, V>()
                 .setName(DEFAULT_NEAR_CACHE_NAME)
-                .setInMemoryFormat(inMemoryFormat);
+                .setInMemoryFormat(inMemoryFormat)
+                .setBackupCount(0)
+                .setAsyncBackupCount(0);
 
         if (inMemoryFormat == NATIVE) {
             cacheConfig.getEvictionConfig()

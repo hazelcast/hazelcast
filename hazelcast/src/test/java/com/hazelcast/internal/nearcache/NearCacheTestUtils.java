@@ -205,6 +205,18 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     }
 
     /**
+     * Calls {@link HazelcastTestSupport#warmUpPartitions(HazelcastInstance...)} and
+     * {@link HazelcastTestSupport#waitAllForSafeState(HazelcastInstance...)} on the instances of the given
+     * {@link NearCacheTestContext}.
+     *
+     * @param context the given {@link NearCacheTestContext} to retrieve the Hazelcast instances from
+     */
+    public static void warmupPartitionsAndWaitForAllSafeState(NearCacheTestContext<?, ?, ?, ?> context) {
+        warmUpPartitions(context.dataInstance, context.nearCacheInstance);
+        waitAllForSafeState(context.dataInstance, context.nearCacheInstance);
+    }
+
+    /**
      * Asserts the number of evicted entries of a {@link NearCache}.
      *
      * @param context       the {@link NearCacheTestContext} to retrieve the eviction count from

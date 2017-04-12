@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.warmupPartitionsAndWaitForAllSafeState;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 
@@ -108,6 +109,8 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
     @Test
     public void testSerializationCounts() {
         NearCacheTestContext<String, SerializationCountingData, NK, NV> context = createContext();
+        warmupPartitionsAndWaitForAllSafeState(context);
+
         String key = randomString();
         SerializationCountingData value = new SerializationCountingData();
 
