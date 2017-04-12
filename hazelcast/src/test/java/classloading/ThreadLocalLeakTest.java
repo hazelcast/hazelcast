@@ -57,7 +57,7 @@ public class ThreadLocalLeakTest {
     public static Iterable<Object[]> parameters() {
         return asList(new Object[][]{
                 {ClassLoaderType.FILTERING},
-                {ClassLoaderType.OWN},
+                //{ClassLoaderType.OWN},
         });
     }
 
