@@ -23,6 +23,7 @@ import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.IStreamList;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -50,6 +51,7 @@ import static com.hazelcast.jet.Processors.writeFile;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
@@ -66,9 +68,9 @@ public class WriteFilePTest extends JetTestSupport {
         instance = createJetMember();
         directory = Files.createTempDirectory("write-file-p");
         requestedFile = directory.resolve("file.txt");
-        String address = instance.getCluster().getMembers().iterator().next().getAddress().toString();
+        Address address = instance.getCluster().getMembers().iterator().next().getAddress();
         actualFile = directory.resolve(WriteFileP.createFileName("file", ".txt",
-                WriteFileP.sanitizeAddressForFilename(address), 0));
+                address.getHost() + "_" + address.getPort(), 0));
         list = instance.getList("sourceList");
     }
 
@@ -96,7 +98,7 @@ public class WriteFilePTest extends JetTestSupport {
     }
 
     @Test
-    public void when_twoMembers_then_multipleFiles() throws Exception {
+    public void when_twoMembers_then_twoFiles() throws Exception {
         // Given
         DAG dag = buildDag(null, false);
         addItemsToList(0, 10);
@@ -241,6 +243,27 @@ public class WriteFilePTest extends JetTestSupport {
         assertEquals(text + System.getProperty("line.separator"), new String(Files.readAllBytes(actualFile), charset));
     }
 
+    @Test
+    public void test_createDirectories() throws Exception {
+        // Given
+        Path file = directory.resolve("subdir1/subdir2/" + requestedFile.getFileName());
+
+        DAG dag = new DAG();
+        Vertex reader = dag.newVertex("reader", readList(list.getName()))
+                .localParallelism(1);
+        Vertex writer = dag.newVertex("writer", writeFile(file.toString(), null, false, false))
+                .localParallelism(1);
+        dag.edge(between(reader, writer));
+        addItemsToList(0, 10);
+
+        // When
+        instance.newJob(dag).execute().get();
+
+        // Then
+        assertTrue(Files.exists(directory.resolve("subdir1")));
+        assertTrue(Files.exists(directory.resolve("subdir1/subdir2")));
+    }
+
     private static class SlowSourceP implements Processor {
 
         private final Semaphore semaphore;
@@ -262,7 +285,7 @@ public class WriteFilePTest extends JetTestSupport {
             int number = 0;
             while (number < limit) {
                 uncheckRun(semaphore::acquire);
-                outbox.offer(String.valueOf(number));
+                assertTrue(outbox.offer(String.valueOf(number)));
                 number++;
             }
             return true;
