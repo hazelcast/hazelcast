@@ -67,6 +67,7 @@ public abstract class Invalidator {
     public final void invalidateKey(Data key, String dataStructureName, String sourceUuid) {
         assert key != null;
         assert dataStructureName != null;
+        assert sourceUuid != null;
 
         Invalidation invalidation = newKeyInvalidation(key, dataStructureName, sourceUuid);
         invalidateInternal(invalidation, getPartitionId(key));
@@ -79,6 +80,7 @@ public abstract class Invalidator {
      */
     public final void invalidateAllKeys(String dataStructureName, String sourceUuid) {
         assert dataStructureName != null;
+        assert sourceUuid != null;
 
         int orderKey = getPartitionId(dataStructureName);
         Invalidation invalidation = newClearInvalidation(dataStructureName, sourceUuid);
