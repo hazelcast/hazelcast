@@ -23,6 +23,9 @@ import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
 import java.io.IOException;
 
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+
 /**
  * A {@link Response} is a result of an {@link com.hazelcast.spi.Operation} being executed.
  * There are different types of responses:
@@ -37,8 +40,13 @@ import java.io.IOException;
  */
 public abstract class Response implements IdentifiedDataSerializable {
 
-    public static final int OFFSET_TYPE_ID = 13;
-    public static final int OFFSET_CALL_ID = 17;
+    public static final int OFFSET_SERIALIZER_TYPE_ID = 4;
+    public static final int OFFSET_IDENTIFIED = OFFSET_SERIALIZER_TYPE_ID + INT_SIZE_IN_BYTES;
+    public static final int OFFSET_TYPE_FACTORY_ID = OFFSET_IDENTIFIED + 1;
+    public static final int OFFSET_TYPE_ID = OFFSET_TYPE_FACTORY_ID + INT_SIZE_IN_BYTES;
+    public static final int OFFSET_CALL_ID = OFFSET_TYPE_ID + INT_SIZE_IN_BYTES;
+    public static final int OFFSET_URGENT = OFFSET_CALL_ID + LONG_SIZE_IN_BYTES;
+    public static final int RESPONSE_SIZE_IN_BYTES = OFFSET_URGENT + 1;
 
     protected long callId;
     protected boolean urgent;

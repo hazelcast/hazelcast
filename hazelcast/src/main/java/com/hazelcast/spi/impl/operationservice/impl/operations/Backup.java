@@ -31,7 +31,6 @@ import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.impl.operationservice.impl.responses.BackupAckResponse;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -151,8 +150,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
         if (nodeEngine.getThisAddress().equals(originalCaller)) {
             operationService.getInboundResponseHandler().notifyBackupComplete(callId);
         } else {
-            BackupAckResponse backupAckResponse = new BackupAckResponse(callId, backupOp.isUrgent());
-            operationService.getOutboundResponseHandler().send(backupAckResponse, originalCaller);
+            operationService.getOutboundResponseHandler().sendBackupAck(originalCaller, callId, backupOp.isUrgent());
         }
     }
 
