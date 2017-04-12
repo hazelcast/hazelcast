@@ -178,7 +178,8 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
 
     void onMemberLeft(MemberImpl member) {
         // postpone notifying invocations since real response may arrive in the mean time.
-        scheduler.schedule(new OnMemberLeftTask(member), ON_MEMBER_LEFT_DELAY_MILLIS, MILLISECONDS);
+        scheduler.schedule(new OnMemberLeftTask(member),
+                invocationRegistry.size() == 0 ? 0 : ON_MEMBER_LEFT_DELAY_MILLIS, MILLISECONDS);
     }
 
     void execute(Runnable runnable) {
