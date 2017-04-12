@@ -37,6 +37,7 @@ public class ICacheCompletionListener implements CompletionListener {
     @Override
     public void onException(Exception e) {
         exception = e;
+        completed.countDown();
     }
 
     public void await() {

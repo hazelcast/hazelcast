@@ -87,7 +87,7 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     }
 
     @Override
-    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean loaderEnabled) {
         Config config = getConfig();
         config.getMapConfig(DEFAULT_NEAR_CACHE_NAME).setNearCacheConfig(nearCacheConfig);
 

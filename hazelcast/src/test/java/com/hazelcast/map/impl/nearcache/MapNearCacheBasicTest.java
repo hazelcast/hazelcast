@@ -18,9 +18,12 @@ package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
+import com.hazelcast.internal.adapter.IMapMapStore;
 import com.hazelcast.internal.nearcache.AbstractNearCacheBasicTest;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
@@ -37,6 +40,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 
@@ -48,7 +52,7 @@ import static java.util.Arrays.asList;
  * Basic Near Cache tests for {@link IMap} on Hazelcast members.
  */
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({ParallelTest.class, QuickTest.class})
 public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, String> {
 
@@ -77,12 +81,23 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
     }
 
     @Override
-    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean loaderEnabled) {
+        IMapMapStore mapStore = loaderEnabled ? new IMapMapStore() : null;
+
         Config configWithNearCache = getConfig();
-        configWithNearCache.getMapConfig(DEFAULT_NEAR_CACHE_NAME).setNearCacheConfig(this.nearCacheConfig);
+        MapConfig mapConfig = configWithNearCache.getMapConfig(DEFAULT_NEAR_CACHE_NAME)
+                .setNearCacheConfig(nearCacheConfig);
+        if (loaderEnabled) {
+            addMapStoreConfig(mapStore, mapConfig);
+        }
+
+        Config config = getConfig();
+        if (loaderEnabled) {
+            addMapStoreConfig(mapStore, config.getMapConfig(DEFAULT_NEAR_CACHE_NAME));
+        }
 
         HazelcastInstance nearCacheInstance = hazelcastFactory.newHazelcastInstance(configWithNearCache);
-        HazelcastInstance dataInstance = hazelcastFactory.newHazelcastInstance(getConfig());
+        HazelcastInstance dataInstance = hazelcastFactory.newHazelcastInstance(config);
 
         IMap<K, V> nearCacheMap = nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
         IMap<K, V> dataMap = dataInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
@@ -99,6 +114,17 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
                 nearCacheConfig,
                 true,
                 nearCache,
-                nearCacheManager);
+                nearCacheManager,
+                mapStore);
+    }
+
+    public static void addMapStoreConfig(IMapMapStore mapStore, MapConfig mapConfig) {
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setEnabled(true)
+                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
+                .setClassName(null)
+                .setImplementation(mapStore);
+
+        mapConfig.setMapStoreConfig(mapStoreConfig);
     }
 }

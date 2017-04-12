@@ -19,6 +19,7 @@ import com.hazelcast.cache.impl.HazelcastServerCacheManager;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
+import com.hazelcast.internal.adapter.DataStructureLoader;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -86,6 +87,10 @@ public class NearCacheTestContext<K, V, NK, NV> {
      * The {@link HazelcastServerCacheManager} if the configured {@link DataStructureAdapter} is a JCache implementation.
      */
     public final HazelcastServerCacheManager memberCacheManager;
+    /**
+     * The {@link DataStructureLoader} which manages
+     */
+    public final DataStructureLoader loader;
 
     public NearCacheTestContext(SerializationService serializationService,
                                 HazelcastInstance nearCacheInstance,
@@ -95,7 +100,7 @@ public class NearCacheTestContext<K, V, NK, NV> {
                                 NearCache<NK, NV> nearCache,
                                 NearCacheManager nearCacheManager) {
         this(serializationService, nearCacheInstance, nearCacheInstance, nearCacheAdapter, nearCacheAdapter, nearCacheConfig,
-                hasLocalData, nearCache, nearCacheManager, null, null);
+                hasLocalData, nearCache, nearCacheManager, null, null, null);
     }
 
     public NearCacheTestContext(SerializationService serializationService,
@@ -108,7 +113,21 @@ public class NearCacheTestContext<K, V, NK, NV> {
                                 NearCache<NK, NV> nearCache,
                                 NearCacheManager nearCacheManager) {
         this(serializationService, nearCacheInstance, dataInstance, nearCacheAdapter, dataAdapter, nearCacheConfig, hasLocalData,
-                nearCache, nearCacheManager, null, null);
+                nearCache, nearCacheManager, null, null, null);
+    }
+
+    public NearCacheTestContext(SerializationService serializationService,
+                                HazelcastInstance nearCacheInstance,
+                                HazelcastInstance dataInstance,
+                                DataStructureAdapter<K, V> nearCacheAdapter,
+                                DataStructureAdapter<K, V> dataAdapter,
+                                NearCacheConfig nearCacheConfig,
+                                boolean hasLocalData,
+                                NearCache<NK, NV> nearCache,
+                                NearCacheManager nearCacheManager,
+                                DataStructureLoader loader) {
+        this(serializationService, nearCacheInstance, dataInstance, nearCacheAdapter, dataAdapter, nearCacheConfig, hasLocalData,
+                nearCache, nearCacheManager, null, null, loader);
     }
 
     public NearCacheTestContext(SerializationService serializationService,
@@ -122,6 +141,22 @@ public class NearCacheTestContext<K, V, NK, NV> {
                                 NearCacheManager nearCacheManager,
                                 CacheManager cacheManager,
                                 HazelcastServerCacheManager memberCacheManager) {
+        this(serializationService, nearCacheInstance, dataInstance, nearCacheAdapter, dataAdapter, nearCacheConfig, hasLocalData,
+                nearCache, nearCacheManager, cacheManager, memberCacheManager, null);
+    }
+
+    public NearCacheTestContext(SerializationService serializationService,
+                                HazelcastInstance nearCacheInstance,
+                                HazelcastInstance dataInstance,
+                                DataStructureAdapter<K, V> nearCacheAdapter,
+                                DataStructureAdapter<K, V> dataAdapter,
+                                NearCacheConfig nearCacheConfig,
+                                boolean hasLocalData,
+                                NearCache<NK, NV> nearCache,
+                                NearCacheManager nearCacheManager,
+                                CacheManager cacheManager,
+                                HazelcastServerCacheManager memberCacheManager,
+                                DataStructureLoader loader) {
         this.serializationService = serializationService;
         this.nearCacheInstance = nearCacheInstance;
         this.dataInstance = dataInstance;
@@ -135,5 +170,7 @@ public class NearCacheTestContext<K, V, NK, NV> {
         this.nearCacheManager = nearCacheManager;
         this.cacheManager = cacheManager;
         this.memberCacheManager = memberCacheManager;
+
+        this.loader = loader;
     }
 }
