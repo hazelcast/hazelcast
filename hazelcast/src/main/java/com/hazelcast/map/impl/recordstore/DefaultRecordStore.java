@@ -53,7 +53,6 @@ import com.hazelcast.util.FutureUtil;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -66,7 +65,6 @@ import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.updateExpiryTime;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 import static com.hazelcast.util.MapUtil.createHashMap;
-import static java.util.Collections.EMPTY_SET;
 import static java.util.Collections.emptyList;
 
 /**
@@ -428,28 +426,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             addEventToQueryCache(record);
         }
         return record;
-    }
-
-    @Override
-    public Set<Data> keySet() {
-        checkIfLoaded();
-        long now = getNow();
-
-        Collection<Record> records = storage.values();
-        Set<Data> keySet = EMPTY_SET;
-        for (Record record : records) {
-            Data key = record.getKey();
-            record = getOrNullIfExpired(record, now, false);
-            if (record == null) {
-                continue;
-            }
-            if (keySet == EMPTY_SET) {
-                keySet = new HashSet<Data>();
-            }
-            keySet.add(key);
-        }
-
-        return keySet;
     }
 
     @Override
