@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.serialization;
 
-import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.Disposable;
@@ -33,13 +32,27 @@ public interface InternalSerializationService extends SerializationService, Disp
 
     byte VERSION_1 = 1;
 
+    /**
+     * Writes the obj to a byte array. This call is exactly the same as calling {@link #toData(Object)} and
+     * then calling {@link Data#toByteArray()}. But it doesn't force a HeapData object being created.
+     */
     byte[] toBytes(Object obj);
 
-    byte[] toBytes(int padding, Object obj);
-
-    byte[] toBytes(Object obj, PartitioningStrategy strategy);
-
-    byte[] toBytes(int padding, Object obj, PartitioningStrategy strategy);
+    /**
+     * Writes an object to a byte-array.
+     *
+     * It allows for configurable padding on the left.
+     *
+     * The padded bytes are not zero'd out since they will be written by the caller. Zero'ing them out would be waste of
+     * time.
+     *
+     * If you want to convert an object to a Data (or its byte representation) then you want to have the partition hash, because
+     * that is part of the Data-definition.
+     *
+     * But if you want to serialize an object to a byte-array and don't care for the Data partition-hash, the hash can be
+     * disabled.
+     */
+    byte[] toBytes(Object obj, int leftPadding, boolean insertPartitionHash);
 
     void writeObject(ObjectDataOutput out, Object obj);
 
