@@ -871,7 +871,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         return (FirewallingTcpIpConnectionManager) getConnectionManager(hz);
     }
 
-    private static class MergedEventLifeCycleListener
+    public static class MergedEventLifeCycleListener
             implements LifecycleListener {
 
         private final CountDownLatch mergeLatch;
