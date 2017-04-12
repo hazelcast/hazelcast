@@ -554,16 +554,23 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 case EXECUTE_ON_KEY:
                     assertEquals(newValue, adapter.executeOnKey(i, new IMapReplaceEntryProcessor("value", "newValue")));
                     break;
+                case EXECUTE_ON_KEYS:
                 case PUT_ALL:
                 case INVOKE_ALL:
-                case EXECUTE_ON_KEYS:
                     invalidationMap.put(i, newValue);
                     break;
                 default:
                     throw new IllegalArgumentException("Unexpected method: " + method);
             }
         }
-        if (method == DataStructureMethods.PUT_ALL) {
+        if (method == DataStructureMethods.EXECUTE_ON_KEYS) {
+            Map<Integer, Object> resultMap = adapter.executeOnKeys(invalidationMap.keySet(),
+                    new IMapReplaceEntryProcessor("value", "newValue"));
+            assertEquals(DEFAULT_RECORD_COUNT, resultMap.size());
+            for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+                assertEquals("newValue-" + i, resultMap.get(i));
+            }
+        } else if (method == DataStructureMethods.PUT_ALL) {
             adapter.putAll(invalidationMap);
         } else if (method == DataStructureMethods.INVOKE_ALL) {
             Map<Integer, EntryProcessorResult<String>> resultMap = adapter.invokeAll(invalidationMap.keySet(),
@@ -571,13 +578,6 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
             assertEquals(DEFAULT_RECORD_COUNT, resultMap.size());
             for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
                 assertEquals("newValue-" + i, resultMap.get(i).get());
-            }
-        } else if (method == DataStructureMethods.EXECUTE_ON_KEYS) {
-            Map<Integer, Object> resultMap = adapter.executeOnKeys(invalidationMap.keySet(),
-                    new IMapReplaceEntryProcessor("value", "newValue"));
-            assertEquals(DEFAULT_RECORD_COUNT, resultMap.size());
-            for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-                assertEquals("newValue-" + i, resultMap.get(i));
             }
         }
 
