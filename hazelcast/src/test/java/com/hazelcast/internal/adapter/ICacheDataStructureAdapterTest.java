@@ -19,6 +19,7 @@ package com.hazelcast.internal.adapter;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CacheConfiguration;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -31,7 +32,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.cache.CacheManager;
+import javax.cache.configuration.FactoryBuilder;
 import javax.cache.processor.EntryProcessorResult;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -51,7 +54,10 @@ import static org.junit.Assert.assertTrue;
 public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
 
     private ICache<Integer, String> cache;
+    private ICache<Integer, String> cacheWithLoader;
+
     private ICacheDataStructureAdapter<Integer, String> adapter;
+    private ICacheDataStructureAdapter<Integer, String> adapterWithLoader;
 
     @Before
     public void setUp() {
@@ -62,8 +68,16 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
 
         CacheConfig<Integer, String> cacheConfig = new CacheConfig<Integer, String>();
 
+        CacheConfiguration<Integer, String> cacheConfigWithLoader = new CacheConfig<Integer, String>()
+                .setReadThrough(true)
+                .setCacheLoaderFactory(FactoryBuilder.factoryOf(ICacheCacheLoader.class));
+
         cache = (ICache<Integer, String>) cacheManager.createCache("CacheDataStructureAdapterTest", cacheConfig);
+        cacheWithLoader = (ICache<Integer, String>) cacheManager.createCache("CacheDataStructureAdapterLoaderTest",
+                cacheConfigWithLoader);
+
         adapter = new ICacheDataStructureAdapter<Integer, String>(cache);
+        adapterWithLoader = new ICacheDataStructureAdapter<Integer, String>(cacheWithLoader);
     }
 
     @Test
@@ -201,6 +215,27 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
 
         assertTrue(adapter.containsKey(23));
         assertFalse(adapter.containsKey(42));
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testLoadAll() {
+        adapterWithLoader.loadAll(true);
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testLoadAllWithKeys() {
+        adapterWithLoader.loadAll(Collections.<Integer>emptySet(), true);
+    }
+
+    @Test
+    public void testLoadAllWithListener() {
+        ICacheCompletionListener listener = new ICacheCompletionListener();
+        cacheWithLoader.put(23, "value-23");
+
+        adapterWithLoader.loadAll(Collections.singleton(23), true, listener);
+        listener.await();
+
+        assertEquals("newValue-23", cacheWithLoader.get(23));
     }
 
     @Test

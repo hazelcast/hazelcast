@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -169,6 +170,21 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
 
         assertTrue(adapter.containsKey(23));
         assertFalse(adapter.containsKey(42));
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testLoadAll() {
+        adapter.loadAll(true);
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testLoadAllWithKeys() {
+        adapter.loadAll(Collections.<Integer>emptySet(), true);
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testLoadAllWithListener() {
+        adapter.loadAll(Collections.<Integer>emptySet(), true, null);
     }
 
     @Test

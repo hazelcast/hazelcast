@@ -20,6 +20,7 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.monitor.LocalMapStats;
 
+import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
@@ -109,6 +110,23 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     @Override
     public boolean containsKey(K key) {
         return cache.containsKey(key);
+    }
+
+    @Override
+    @MethodNotAvailable
+    public void loadAll(boolean replaceExistingValues) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public void loadAll(Set<K> keys, boolean replaceExistingValues) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    public void loadAll(Set<? extends K> keys, boolean replaceExistingValues, CompletionListener completionListener) {
+        cache.loadAll(keys, replaceExistingValues, completionListener);
     }
 
     @Override

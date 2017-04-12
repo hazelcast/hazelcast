@@ -20,6 +20,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.monitor.LocalMapStats;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
@@ -61,6 +62,12 @@ public interface DataStructureAdapter<K, V> {
 
     boolean containsKey(K key);
 
+    void loadAll(boolean replaceExistingValues);
+
+    void loadAll(Set<K> keys, boolean replaceExistingValues);
+
+    void loadAll(Set<? extends K> keys, boolean replaceExistingValues, CompletionListener completionListener);
+
     Map<K, V> getAll(Set<K> keys);
 
     void putAll(Map<K, V> map);
@@ -95,6 +102,9 @@ public interface DataStructureAdapter<K, V> {
         EXECUTE_ON_KEY("executeOnKey", Object.class, com.hazelcast.map.EntryProcessor.class),
         EXECUTE_ON_KEYS("executeOnKeys", Set.class, com.hazelcast.map.EntryProcessor.class),
         CONTAINS_KEY("containsKey", Object.class),
+        LOAD_ALL("loadAll", boolean.class),
+        LOAD_ALL_WITH_KEYS("loadAll", Set.class, boolean.class),
+        LOAD_ALL_WITH_LISTENER("loadAll", Set.class, boolean.class, CompletionListener.class),
         GET_ALL("getAll", Set.class),
         PUT_ALL("putAll", Map.class),
         REMOVE_ALL("removeAll"),

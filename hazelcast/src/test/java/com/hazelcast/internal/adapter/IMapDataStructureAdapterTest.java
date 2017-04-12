@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.adapter;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -28,6 +30,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -46,16 +49,34 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
 
+    private DataStructureLoader mapStore = new IMapMapStore();
+
     private IMap<Integer, String> map;
+    private IMap<Integer, String> mapWithLoader;
+
     private IMapDataStructureAdapter<Integer, String> adapter;
+    private IMapDataStructureAdapter<Integer, String> adapterWithLoader;
 
     @Before
     public void setUp() {
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setEnabled(true)
+                .setInitialLoadMode(MapStoreConfig.InitialLoadMode.LAZY)
+                .setClassName(null)
+                .setImplementation(mapStore);
+
+        Config config = new Config();
+        config.getMapConfig("IMapDataStructureAdapterLoaderTest")
+                .setMapStoreConfig(mapStoreConfig);
+
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        HazelcastInstance hazelcastInstance = factory.newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = factory.newHazelcastInstance(config);
 
         map = hazelcastInstance.getMap("IMapDataStructureAdapterTest");
+        mapWithLoader = hazelcastInstance.getMap("IMapDataStructureAdapterLoaderTest");
+
         adapter = new IMapDataStructureAdapter<Integer, String>(map);
+        adapterWithLoader = new IMapDataStructureAdapter<Integer, String>(mapWithLoader);
     }
 
     @Test
@@ -199,6 +220,30 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
 
         assertTrue(adapter.containsKey(23));
         assertFalse(adapter.containsKey(42));
+    }
+
+    @Test
+    public void testLoadAll() {
+        mapWithLoader.put(23, "value-23");
+        mapStore.setKeys(singleton(23));
+
+        adapterWithLoader.loadAll(true);
+
+        assertEquals("newValue-23", mapWithLoader.get(23));
+    }
+
+    @Test
+    public void testLoadAllWithKeys() {
+        mapWithLoader.put(23, "value-23");
+
+        adapterWithLoader.loadAll(Collections.singleton(23), true);
+
+        assertEquals("newValue-23", mapWithLoader.get(23));
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testLoadAllWithListener() {
+        adapter.loadAll(Collections.<Integer>emptySet(), true, null);
     }
 
     @Test
