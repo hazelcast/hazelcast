@@ -215,8 +215,6 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
      */
     Iterator<Record> loadAwareIterator(long now, boolean backup);
 
-    Set<Data> keySet();
-
     int size();
 
     boolean txnLock(Data key, String caller, long threadId, long referenceId, long ttl, boolean blockReads);
