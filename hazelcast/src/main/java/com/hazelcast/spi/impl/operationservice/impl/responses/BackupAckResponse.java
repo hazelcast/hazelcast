@@ -27,6 +27,9 @@ import static com.hazelcast.spi.impl.SpiDataSerializerHook.BACKUP_ACK_RESPONSE;
  */
 public final class BackupAckResponse extends Response {
 
+    // the length of a backup-ack response in bytes.
+    public static final int BACKUP_RESPONSE_SIZE_IN_BYTES = RESPONSE_SIZE_IN_BYTES;
+
     public BackupAckResponse() {
     }
 
