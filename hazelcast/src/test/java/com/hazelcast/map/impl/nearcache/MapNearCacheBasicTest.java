@@ -55,7 +55,7 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
     @Parameter
     public InMemoryFormat inMemoryFormat;
 
-    private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory(2);
+    private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory();
 
     @Parameters(name = "format:{0}")
     public static Collection<Object[]> parameters() {
@@ -78,20 +78,24 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
 
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
-        Config config = getConfig();
-        config.getMapConfig(DEFAULT_NEAR_CACHE_NAME).setNearCacheConfig(nearCacheConfig);
+        Config configWithNearCache = getConfig();
+        configWithNearCache.getMapConfig(DEFAULT_NEAR_CACHE_NAME).setNearCacheConfig(this.nearCacheConfig);
 
-        HazelcastInstance[] instances = hazelcastFactory.newInstances(config);
-        HazelcastInstance member = instances[0];
-        IMap<K, V> map = member.getMap(DEFAULT_NEAR_CACHE_NAME);
+        HazelcastInstance nearCacheInstance = hazelcastFactory.newHazelcastInstance(configWithNearCache);
+        HazelcastInstance dataInstance = hazelcastFactory.newHazelcastInstance(getConfig());
 
-        NearCacheManager nearCacheManager = getMapNearCacheManager(member);
+        IMap<K, V> nearCacheMap = nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
+        IMap<K, V> dataMap = dataInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
+
+        NearCacheManager nearCacheManager = getMapNearCacheManager(nearCacheInstance);
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
 
         return new NearCacheTestContext<K, V, Data, String>(
-                getSerializationService(member),
-                member,
-                new IMapDataStructureAdapter<K, V>(map),
+                getSerializationService(nearCacheInstance),
+                nearCacheInstance,
+                dataInstance,
+                new IMapDataStructureAdapter<K, V>(nearCacheMap),
+                new IMapDataStructureAdapter<K, V>(dataMap),
                 nearCacheConfig,
                 true,
                 nearCache,
