@@ -19,6 +19,7 @@ package com.hazelcast.internal.nearcache;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
+import com.hazelcast.internal.adapter.ICacheCompletionListener;
 import com.hazelcast.internal.adapter.ICacheReplaceEntryProcessor;
 import com.hazelcast.internal.adapter.IMapReplaceEntryProcessor;
 import com.hazelcast.test.AssertTask;
@@ -54,6 +55,8 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getFromNearCac
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getFuture;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.setEvictionConfig;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.waitUntilLoaded;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.warmupPartitionsAndWaitForAllSafeState;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.Executors.newFixedThreadPool;
@@ -105,7 +108,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * @param <V> value type of the created {@link DataStructureAdapter}
      * @return a {@link NearCacheTestContext} used by the Near Cache tests
      */
-    protected <K, V> NearCacheTestContext<K, V, NK, NV>createContext() {
+    protected <K, V> NearCacheTestContext<K, V, NK, NV> createContext() {
         return createContext(false);
     }
 
@@ -591,6 +594,106 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
             for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
                 assertEquals("newValue-" + i, resultMap.get(i).get());
             }
+        }
+
+        String message = format("Invalidation is not working on %s()", method.getMethodName());
+        assertNearCacheSizeEventually(context, 0, message);
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            assertEquals("newValue-" + i, context.dataAdapter.get(i));
+        }
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#LOAD_ALL} is used.
+     */
+    @Test
+    public void whenLoadAllIsUsed_thenNearCacheIsInvalidated_onNearCacheAdapter() {
+        whenEntryIsLoaded_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.LOAD_ALL);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#LOAD_ALL} is used.
+     */
+    @Test
+    public void whenLoadAllIsUsed_thenNearCacheIsInvalidated_onDataAdapter() {
+        whenEntryIsLoaded_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.LOAD_ALL);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#LOAD_ALL_WITH_KEYS} is used.
+     */
+    @Test
+    public void whenLoadAllWithKeysIsUsed_thenNearCacheIsInvalidated_onNearCacheAdapter() {
+        whenEntryIsLoaded_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.LOAD_ALL_WITH_KEYS);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#LOAD_ALL_WITH_KEYS} is used.
+     */
+    @Test
+    public void whenLoadAllWithKeysIsUsed_thenNearCacheIsInvalidated_onDataAdapter() {
+        whenEntryIsLoaded_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.LOAD_ALL_WITH_KEYS);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#LOAD_ALL_WITH_LISTENER} is used.
+     */
+    @Test
+    public void whenLoadAllWithListenerIsUsed_thenNearCacheIsInvalidated_onNearCacheAdapter() {
+        whenEntryIsLoaded_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.LOAD_ALL_WITH_LISTENER);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#LOAD_ALL_WITH_LISTENER} is used.
+     */
+    @Test
+    public void whenLoadAllWithListenerIsUsed_thenNearCacheIsInvalidated_onDataAdapter() {
+        whenEntryIsLoaded_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.LOAD_ALL_WITH_LISTENER);
+    }
+
+    /**
+     * With the {@link NearCacheTestContext#dataAdapter} we have to set {@link NearCacheConfig#setInvalidateOnChange(boolean)}.
+     * With the {@link NearCacheTestContext#nearCacheAdapter} Near Cache invalidations are not needed.
+     */
+    private void whenEntryIsLoaded_thenNearCacheShouldBeInvalidated(boolean useDataAdapter, DataStructureMethods method) {
+        nearCacheConfig.setInvalidateOnChange(useDataAdapter);
+        NearCacheTestContext<Integer, String, NK, NV> context = createContext(true);
+        DataStructureAdapter<Integer, String> adapter = useDataAdapter ? context.dataAdapter : context.nearCacheAdapter;
+        assumeThatMethodIsAvailable(adapter, method);
+
+        // wait until the initial load is done and the cluster is in a safe state
+        waitUntilLoaded(context);
+        warmupPartitionsAndWaitForAllSafeState(context);
+
+        populateDataAdapter(context);
+        populateNearCache(context);
+
+        // this should invalidate the Near Cache
+        Set<Integer> keys = new HashSet<Integer>(DEFAULT_RECORD_COUNT);
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            keys.add(i);
+        }
+        switch (method) {
+            case LOAD_ALL:
+                context.loader.setKeys(keys);
+                adapter.loadAll(true);
+                break;
+            case LOAD_ALL_WITH_KEYS:
+                adapter.loadAll(keys, true);
+                break;
+            case LOAD_ALL_WITH_LISTENER:
+                ICacheCompletionListener listener = new ICacheCompletionListener();
+                adapter.loadAll(keys, true, listener);
+                listener.await();
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected method: " + method);
+        }
+
+        // wait until the loader is finished and validate the updated values
+        waitUntilLoaded(context);
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            assertEquals("newValue-" + i, context.dataAdapter.get(i));
         }
 
         String message = format("Invalidation is not working on %s()", method.getMethodName());

@@ -18,6 +18,7 @@ package com.hazelcast.internal.adapter;
 
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.TruePredicate;
 
@@ -166,5 +167,11 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     @Override
     public LocalMapStats getLocalMapStats() {
         return map.getLocalMapStats();
+    }
+
+    public void waitUntilLoaded() {
+        if (map instanceof MapProxyImpl) {
+            ((MapProxyImpl) map).waitUntilLoaded();
+        }
     }
 }

@@ -25,6 +25,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
 import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
+import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
 import com.hazelcast.internal.adapter.MethodAvailableMatcher;
 import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
 import com.hazelcast.map.impl.MapService;
@@ -214,6 +215,17 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     public static void warmupPartitionsAndWaitForAllSafeState(NearCacheTestContext<?, ?, ?, ?> context) {
         warmUpPartitions(context.dataInstance, context.nearCacheInstance);
         waitAllForSafeState(context.dataInstance, context.nearCacheInstance);
+    }
+
+    /**
+     * Waits until the {@link com.hazelcast.internal.adapter.DataStructureLoader} is finished.
+     *
+     * @param context the given {@link NearCacheTestContext} to retrieve the {@link DataStructureAdapter} from
+     */
+    public static void waitUntilLoaded(NearCacheTestContext<?, ?, ?, ?> context) {
+        if (context.dataAdapter instanceof IMapDataStructureAdapter) {
+            ((IMapDataStructureAdapter) context.dataAdapter).waitUntilLoaded();
+        }
     }
 
     /**
