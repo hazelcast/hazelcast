@@ -137,6 +137,6 @@ public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasi
     @Test
     @Override
     @Ignore(value = "The ClientReplicatedMapProxy is missing `invalidateNearCache(keyData)` calls")
-    public void whenCacheIsFull_thenPutOnSameKeyShouldUpdateValue_onNearCacheAdapter() {
+    public void whenNearCacheIsFull_thenPutOnSameKeyShouldUpdateValue_onNearCacheAdapter() {
     }
 }
