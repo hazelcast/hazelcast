@@ -40,7 +40,8 @@ public class SplitBrainMulticastListener implements MulticastListener {
         if (msg instanceof SplitBrainJoinMessage) {
             SplitBrainJoinMessage joinRequest = (SplitBrainJoinMessage) msg;
             Address thisAddress = node.getThisAddress();
-            if (!thisAddress.equals(joinRequest.getAddress())) {
+            // only master nodes execute the SplitBrainHandler that processes SplitBrainJoinMessages
+            if (!thisAddress.equals(joinRequest.getAddress()) && node.isMaster()) {
                 deque.addFirst(joinRequest);
             }
         }
