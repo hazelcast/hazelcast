@@ -1066,18 +1066,41 @@ public abstract class HazelcastTestSupport {
     // ########## reflection utils #######
     // ###################################
 
-    public static Object getFromField(Object target, String fieldName) {
+    public static <T> T getFromField(Object target, String fieldName) {
         try {
-            Field field = target.getClass().getDeclaredField(fieldName);
-            if (!Modifier.isPublic(field.getModifiers())) {
-                field.setAccessible(true);
-            }
-            return field.get(target);
-        } catch (NoSuchFieldException e) {
-            throw new AssertionError(e);
+            Field field = getField(target, fieldName);
+            return (T) field.get(target);
         } catch (IllegalAccessException e) {
             throw new AssertionError(e);
         }
+    }
+
+    public static void setToField(Object target, String fieldName, Object value) {
+        try {
+            Field field = getField(target, fieldName);
+            field.set(target, value);
+        } catch (IllegalAccessException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    private static Field getField(Object target, String fieldName) {
+        Field field = null;
+        Class<?> clazz = target.getClass();
+        do {
+            try {
+                field = clazz.getDeclaredField(fieldName);
+            } catch (NoSuchFieldException e) {
+                clazz = clazz.getSuperclass();
+                if (clazz == null) {
+                    throw new AssertionError("Class " + target.getClass() + " does not have a field " + fieldName);
+                }
+            }
+        } while (field == null);
+        if (!Modifier.isPublic(field.getModifiers())) {
+            field.setAccessible(true);
+        }
+        return field;
     }
 
     // ###################################
