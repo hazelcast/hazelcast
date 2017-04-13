@@ -410,7 +410,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         } catch (Throwable throwable) {
             // If exception happens we need to extract the callId from the bytes directly!
             long callId = extractOperationCallId(packet);
-            outboundResponseHandler.send(new ErrorResponse(throwable, callId, packet.isUrgent()), caller);
+            outboundResponseHandler.send(caller, new ErrorResponse(throwable, callId, packet.isUrgent()));
             logOperationDeserializationException(throwable, callId);
             throw ExceptionUtil.rethrow(throwable);
         } finally {

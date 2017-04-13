@@ -71,15 +71,10 @@ public class AbstractSerializationServiceTest {
         int padding = 10;
 
         byte[] unpadded = abstractSerializationService.toBytes(payload);
-        byte[] padded = abstractSerializationService.toBytes(10, payload);
+        byte[] padded = abstractSerializationService.toBytes(payload, 10, true);
 
         // make sure the size is expected
         assertEquals(unpadded.length + padding, padded.length);
-
-        // check if the header is zero'ed and doesn't contains anything unexpected
-        for (int k = 0; k < padding; k++) {
-            assertEquals(0, padded[k]);
-        }
 
         // check if the actual content is the same
         for (int k = 0; k < unpadded.length; k++) {

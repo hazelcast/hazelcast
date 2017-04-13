@@ -23,16 +23,18 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
+import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
-import java.nio.ByteOrder;
-
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_DATA_SERIALIZABLE;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_NULL;
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.writeInt;
 import static com.hazelcast.nio.Bits.writeIntB;
 import static com.hazelcast.nio.Bits.writeLong;
@@ -40,7 +42,13 @@ import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static com.hazelcast.nio.Packet.Type.OPERATION;
 import static com.hazelcast.spi.impl.SpiDataSerializerHook.BACKUP_ACK_RESPONSE;
+import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.impl.responses.BackupAckResponse.BACKUP_RESPONSE_SIZE_IN_BYTES;
+import static com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse.OFFSET_BACKUP_ACKS;
+import static com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse.OFFSET_DATA_LENGTH;
+import static com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse.OFFSET_DATA_PAYLOAD;
+import static com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse.OFFSET_IS_DATA;
+import static com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse.OFFSET_NOT_DATA;
 import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OFFSET_CALL_ID;
 import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OFFSET_IDENTIFIED;
 import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OFFSET_SERIALIZER_TYPE_ID;
@@ -48,6 +56,7 @@ import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OF
 import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OFFSET_TYPE_ID;
 import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OFFSET_URGENT;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.nio.ByteOrder.BIG_ENDIAN;
 
 /**
  * An {@link OperationResponseHandler} that is used for a remotely executed Operation. So when a calling member
@@ -70,33 +79,39 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
                             ILogger logger) {
         this.thisAddress = thisAddress;
         this.serializationService = serializationService;
-        this.useBigEndian = serializationService.getByteOrder() == ByteOrder.BIG_ENDIAN;
+        this.useBigEndian = serializationService.getByteOrder() == BIG_ENDIAN;
         this.node = node;
         this.logger = logger;
     }
 
     @Override
     public void sendResponse(Operation operation, Object obj) {
-        Response response = toResponse(operation, obj);
+        Address target = operation.getCallerAddress();
+        boolean send;
+        if (obj == null) {
+            send = sendNormalResponse(target, operation.getCallId(), 0, operation.isUrgent(), null);
+        } else if (obj.getClass() == NormalResponse.class) {
+            NormalResponse response = (NormalResponse) obj;
+            send = sendNormalResponse(
+                    target, response.getCallId(), response.getBackupAcks(), response.isUrgent(), response.getValue());
+        } else if (obj.getClass() == ErrorResponse.class || obj.getClass() == CallTimeoutResponse.class) {
+            send = send(target, (Response) obj);
+        } else if (obj instanceof Throwable) {
+            send = send(target, new ErrorResponse((Throwable) obj, operation.getCallId(), operation.isUrgent()));
+        } else {
+            // most regular responses not wrapped in a NormalResponse. So we are now completely skipping the
+            // NormalResponse instance
+            send = sendNormalResponse(target, operation.getCallId(), 0, operation.isUrgent(), obj);
+        }
 
-        if (!send(response, operation.getCallerAddress())) {
+        if (!send) {
             Connection conn = operation.getConnection();
             logger.warning("Cannot send response: " + obj + " to " + conn.getEndPoint()
                     + ". " + operation);
         }
     }
 
-    private static Response toResponse(Operation operation, Object obj) {
-        if (obj instanceof Throwable) {
-            return new ErrorResponse((Throwable) obj, operation.getCallId(), operation.isUrgent());
-        } else if (!(obj instanceof Response)) {
-            return new NormalResponse(obj, operation.getCallId(), 0, operation.isUrgent());
-        } else {
-            return (Response) obj;
-        }
-    }
-
-    public boolean send(Response response, Address target) {
+    public boolean send(Address target, Response response) {
         checkNotNull(target, "Target is required!");
 
         if (thisAddress.equals(target)) {
@@ -107,30 +122,73 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
 
         Packet packet = newResponsePacket(bytes, response.isUrgent());
 
-        ConnectionManager connectionManager = node.getConnectionManager();
-        Connection connection = connectionManager.getOrConnect(target);
-        return connectionManager.transmit(packet, connection);
+        return transmit(target, packet);
+    }
+
+    private boolean sendNormalResponse(Address target, long callId, int backupAcks, boolean urgent, Object value) {
+        checkTarget(target);
+
+        Packet packet = toNormalResponsePacket(callId, (byte) backupAcks, urgent, value);
+
+        return transmit(target, packet);
+    }
+
+    Packet toNormalResponsePacket(long callId, int backupAcks, boolean urgent, Object value) {
+        byte[] bytes;
+        boolean isData = value instanceof Data;
+        if (isData) {
+            Data data = (Data) value;
+
+            int dataLengthInBytes = data.totalSize();
+            bytes = new byte[OFFSET_DATA_PAYLOAD + dataLengthInBytes];
+            writeInt(bytes, OFFSET_DATA_LENGTH, dataLengthInBytes, useBigEndian);
+
+            // this is a crucial part. If data is NativeMemoryData, instead of calling Data.toByteArray which causes a
+            // byte-array to be created and a intermediate copy of the data, we immediately copy the NativeMemoryData
+            // into the bytes for the packet.
+            data.copyTo(bytes, OFFSET_DATA_PAYLOAD);
+        } else if (value == null) {
+            // since there are many 'null' responses we optimize this case as well.
+            bytes = new byte[OFFSET_NOT_DATA + INT_SIZE_IN_BYTES];
+            writeInt(bytes, OFFSET_NOT_DATA, CONSTANT_TYPE_NULL, useBigEndian);
+        } else {
+            // for regular object we currently can't guess how big the bytes will be; so we just hand it
+            // over to the serializationService to deal with it. The negative part is that this does lead to
+            // an intermediate copy of the data.
+
+            bytes = serializationService.toBytes(value, OFFSET_NOT_DATA, false);
+        }
+
+        writeResponsePrologueBytes(bytes, NORMAL_RESPONSE, callId, urgent);
+
+        // backup-acks (will fit in a byte)
+        bytes[OFFSET_BACKUP_ACKS] = (byte) backupAcks;
+        // isData
+        bytes[OFFSET_IS_DATA] = (byte) (isData ? 1 : 0);
+        //the remaining part of the byte array is already filled, so we are done.
+
+        return newResponsePacket(bytes, urgent);
     }
 
     public void sendBackupAck(Address target, long callId, boolean urgent) {
-        checkNotNull(target, "Target is required!");
+        checkTarget(target);
 
-        if (thisAddress.equals(target)) {
-            throw new IllegalArgumentException("Target is this node! -> " + target);
-        }
+        Packet packet = toBackupAckPacket(callId, urgent);
 
-        byte[] bytes = new byte[BACKUP_RESPONSE_SIZE_IN_BYTES];
-
-        writeResponseEpilogueBytes(bytes, BACKUP_ACK_RESPONSE, callId, urgent);
-
-        Packet packet = newResponsePacket(bytes, urgent);
-
-        ConnectionManager connectionManager = node.getConnectionManager();
-        Connection connection = connectionManager.getOrConnect(target);
-        connectionManager.transmit(packet, connection);
+        transmit(target, packet);
     }
 
-    private void writeResponseEpilogueBytes(byte[] bytes, int typeId, long callId, boolean urgent) {
+    Packet toBackupAckPacket(long callId, boolean urgent) {
+        byte[] bytes = new byte[BACKUP_RESPONSE_SIZE_IN_BYTES];
+
+        writeResponsePrologueBytes(bytes, BACKUP_ACK_RESPONSE, callId, urgent);
+
+        return newResponsePacket(bytes, urgent);
+    }
+
+    private void writeResponsePrologueBytes(byte[] bytes, int typeId, long callId, boolean urgent) {
+        // partition hash (which is always 0 in case of response)
+        writeIntB(bytes, 0, 0);
         // data-serializable type (this is always written with big endian)
         writeIntB(bytes, OFFSET_SERIALIZER_TYPE_ID, CONSTANT_TYPE_DATA_SERIALIZABLE);
         // identified or not
@@ -154,5 +212,19 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
             packet.raiseFlags(FLAG_URGENT);
         }
         return packet;
+    }
+
+    private boolean transmit(Address target, Packet packet) {
+        ConnectionManager connectionManager = node.getConnectionManager();
+        Connection connection = connectionManager.getOrConnect(target);
+        return connectionManager.transmit(packet, connection);
+    }
+
+    private void checkTarget(Address target) {
+        checkNotNull(target, "Target is required!");
+
+        if (thisAddress.equals(target)) {
+            throw new IllegalArgumentException("Target is this node! -> " + target);
+        }
     }
 }

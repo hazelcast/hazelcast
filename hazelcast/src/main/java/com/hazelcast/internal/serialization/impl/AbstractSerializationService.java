@@ -56,6 +56,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.handle
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.indexForDefaultType;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.isNullData;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.nio.ByteOrder.BIG_ENDIAN;
 
 public abstract class AbstractSerializationService implements InternalSerializationService {
 
@@ -116,40 +117,38 @@ public abstract class AbstractSerializationService implements InternalSerializat
             return (B) obj;
         }
 
-        byte[] bytes = toBytes(obj, strategy);
+        byte[] bytes = toBytes(obj, 0, true, strategy);
         return (B) new HeapData(bytes);
     }
 
     @Override
     public byte[] toBytes(Object obj) {
-        return toBytes(0, obj, globalPartitioningStrategy);
+        return toBytes(obj, 0, true, globalPartitioningStrategy);
     }
 
     @Override
-    public byte[] toBytes(int padding, Object obj) {
-        return toBytes(padding, obj, globalPartitioningStrategy);
+    public byte[] toBytes(Object obj, int leftPadding, boolean insertPartitionHash) {
+        return toBytes(obj, leftPadding, insertPartitionHash, globalPartitioningStrategy);
     }
 
-    @Override
-    public byte[] toBytes(Object obj, PartitioningStrategy strategy) {
-        return toBytes(0, obj, strategy);
-    }
-
-    @Override
-    public byte[] toBytes(int padding, Object obj, PartitioningStrategy strategy) {
+    private byte[] toBytes(Object obj, int leftPadding, boolean writeHash, PartitioningStrategy strategy) {
         checkNotNull(obj);
 
         BufferPool pool = bufferPoolThreadLocal.get();
         BufferObjectDataOutput out = pool.takeOutputBuffer();
         try {
-            SerializerAdapter serializer = serializerFor(obj);
-            int partitionHash = calculatePartitionHash(obj, strategy);
-            out.writeInt(partitionHash, ByteOrder.BIG_ENDIAN);
+            out.position(leftPadding);
 
-            out.writeInt(serializer.getTypeId(), ByteOrder.BIG_ENDIAN);
+            SerializerAdapter serializer = serializerFor(obj);
+            if (writeHash) {
+                int partitionHash = calculatePartitionHash(obj, strategy);
+                out.writeInt(partitionHash, BIG_ENDIAN);
+            }
+
+            out.writeInt(serializer.getTypeId(), BIG_ENDIAN);
 
             serializer.write(out, obj);
-            return out.toByteArray(padding);
+            return out.toByteArray();
         } catch (Throwable e) {
             throw handleSerializeException(obj, e);
         } finally {
