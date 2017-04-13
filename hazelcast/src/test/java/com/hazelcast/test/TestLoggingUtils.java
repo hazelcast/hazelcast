@@ -16,7 +16,18 @@
 
 package com.hazelcast.test;
 
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.ThreadContext;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.AbstractOutputStreamAppender;
+import org.apache.logging.log4j.core.appender.ConsoleAppender;
+import org.apache.logging.log4j.core.appender.OutputStreamManager;
+
+import java.io.BufferedOutputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Field;
+import java.util.Map;
 
 public final class TestLoggingUtils {
     private static String LOGGING_TYPE_PROP_NAME = "hazelcast.logging.type";
@@ -35,6 +46,47 @@ public final class TestLoggingUtils {
             System.setProperty(LOGGING_CLASS_PROP_NAME, factoryClassName);
             System.setProperty("isThreadContextMapInheritable", "true");
             System.clearProperty(LOGGING_TYPE_PROP_NAME);
+
+            hackLog4j();
+        }
+    }
+
+    private static void hackLog4j()  {
+        LoggerContext context = (LoggerContext) LogManager.getContext();
+        Map<String, Appender> allAppenders = context.getConfiguration().getAppenders();
+        Appender appender = allAppenders.get("Console");
+        if (appender == null) {
+            System.err.println(TestLoggingUtils.class.getName() + ": Console appender not found. ");
+        } else if (appender instanceof ConsoleAppender) {
+            ConsoleAppender consoleAppender = (ConsoleAppender) appender;
+            if (consoleAppender instanceof ConsoleAppender) {
+                try {
+                    Field flushField = AbstractOutputStreamAppender.class.getDeclaredField("immediateFlush");
+                    if (!flushField.isAccessible()) {
+                        flushField.setAccessible(true);
+                    }
+                    flushField.set(consoleAppender, false);
+
+                    Field managerField = AbstractOutputStreamAppender.class.getDeclaredField("manager");
+                    if (!managerField.isAccessible()) {
+                        managerField.setAccessible(true);
+                    }
+                    OutputStreamManager manager = (OutputStreamManager) managerField.get(consoleAppender);
+                    Field osField = OutputStreamManager.class.getDeclaredField("os");
+                    if (!osField.isAccessible()) {
+                        osField.setAccessible(true);
+                    }
+                    OutputStream originalOS = (OutputStream) osField.get(manager);
+                    BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(originalOS, 64 * 1024);
+                    osField.set(manager, bufferedOutputStream);
+                } catch (NoSuchFieldException e) {
+                    throw new AssertionError("Did you just change log4j2 version? If so then this hack has to be adjusted");
+                } catch (IllegalAccessException e) {
+                    throw new AssertionError("Did you just change log4j2 version? If so then this hack has to be adjusted");
+                }
+            }
+        } else {
+            System.err.println(TestLoggingUtils.class.getName() + ": Console appender is type of " + appender.getClass().getName());
         }
     }
 

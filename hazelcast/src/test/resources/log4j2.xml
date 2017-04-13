@@ -17,14 +17,14 @@
 
 <Configuration status="ERROR">
   <Appenders>
-    <!--<Console name="Console" target="SYSTEM_OUT">-->
-      <!--<PatternLayout pattern="%d{ABSOLUTE} %5p |%X{test-name}| - [%c{1}] %t - %m%n" />-->
-    <!--</Console>-->
-    <MemoryMappedFile name="Console" fileName="hazelcast.log">
-      <PatternLayout>
-        <Pattern>%d{ABSOLUTE} %5p |%X{test-name}| - [%c{1}] %t - %m%n</Pattern>
-      </PatternLayout>
-    </MemoryMappedFile>
+    <Console name="Console" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d{ABSOLUTE} %5p |%X{test-name}| - [%c{1}] %t - %m%n" />
+    </Console>
+    <!--<MemoryMappedFile name="Console" fileName="hazelcast.log">-->
+      <!--<PatternLayout>-->
+        <!--<Pattern>%d{ABSOLUTE} %5p |%X{test-name}| - [%c{1}] %t - %m%n</Pattern>-->
+      <!--</PatternLayout>-->
+    <!--</MemoryMappedFile>-->
   </Appenders>
   <Loggers>
     <Root level="INFO">
