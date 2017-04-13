@@ -1398,7 +1398,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 Data key = entry.getKey();
                 Object value = entry.getValue();
                 if (value != null) {
-                    put(key, value, null, null, false, true, IGNORE_COMPLETION);
+                    put(key, value, null, SOURCE_NOT_AVAILABLE, false, true, IGNORE_COMPLETION);
                     keysLoaded.add(key);
                 }
             }
