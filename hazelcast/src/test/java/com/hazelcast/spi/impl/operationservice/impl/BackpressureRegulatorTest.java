@@ -128,12 +128,12 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
         BackpressureRegulator regulator = newDisabledBackPressureService();
         PartitionSpecificOperation op = new PartitionSpecificOperation(10);
 
-        int oldSyncDelay = regulator.syncDelay(op);
+        int oldSyncDelay = regulator.syncCountDown();
 
         boolean result = regulator.isSyncForced(op);
 
         assertFalse(result);
-        assertEquals(oldSyncDelay, regulator.syncDelay(op));
+        assertEquals(oldSyncDelay, regulator.syncCountDown());
     }
 
     @Test
@@ -146,12 +146,12 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
             }
         };
 
-        int oldSyncDelay = regulator.syncDelay(op);
+        int oldSyncDelay = regulator.syncCountDown();
 
         boolean result = regulator.isSyncForced(op);
 
         assertFalse(result);
-        assertEquals(oldSyncDelay, regulator.syncDelay(op));
+        assertEquals(oldSyncDelay, regulator.syncCountDown());
     }
 
     @Test
@@ -161,13 +161,13 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
         BackupAwareOperation op = new PartitionSpecificOperation(10);
 
         for (int iteration = 0; iteration < 10; iteration++) {
-            int initialSyncDelay = regulator.syncDelay((Operation) op);
+            int initialSyncDelay = regulator.syncCountDown();
             int remainingSyncDelay = initialSyncDelay - 1;
             for (int k = 0; k < initialSyncDelay - 1; k++) {
                 boolean result = regulator.isSyncForced(op);
                 assertFalse("no sync force expected", result);
 
-                int syncDelay = regulator.syncDelay((Operation) op);
+                int syncDelay = regulator.syncCountDown();
                 assertEquals(remainingSyncDelay, syncDelay);
                 remainingSyncDelay--;
             }
@@ -175,16 +175,9 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
             boolean result = regulator.isSyncForced(op);
             assertTrue("sync force expected", result);
 
-            int syncDelay = regulator.syncDelay((Operation) op);
+            int syncDelay = regulator.syncCountDown();
             assertValidSyncDelay(syncDelay);
         }
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void isSyncForced_whenGeneric_thenIllegalArgumentException() {
-        GenericOperation op = new GenericOperation();
-        BackpressureRegulator regulator = newEnabledBackPressureService();
-        regulator.isSyncForced(op);
     }
 
     private void assertValidSyncDelay(int synDelay) {
