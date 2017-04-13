@@ -219,11 +219,11 @@ public final class GroupProperty {
 
     // number of kilobytes
     public static final HazelcastProperty SOCKET_RECEIVE_BUFFER_SIZE
-            = new HazelcastProperty("hazelcast.socket.receive.buffer.size", 32);
+            = new HazelcastProperty("hazelcast.socket.receive.buffer.size", 128);
 
     // number of kilobytes
     public static final HazelcastProperty SOCKET_SEND_BUFFER_SIZE
-            = new HazelcastProperty("hazelcast.socket.send.buffer.size", 32);
+            = new HazelcastProperty("hazelcast.socket.send.buffer.size", 128);
 
     /**
      * If the bytebuffers used in the socket should be a direct bytebuffer (true) or a regular bytebuffer (false).
