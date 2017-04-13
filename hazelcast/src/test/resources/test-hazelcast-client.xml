@@ -25,7 +25,7 @@
             <factory-class-name>com.hazelcast.nio.ssl.BasicSSLContextFactory</factory-class-name>
         </ssl>
         <socket-options>
-            <buffer-size>32</buffer-size>
+            <buffer-size>128</buffer-size>
             <keep-alive>false</keep-alive>
             <tcp-no-delay>false</tcp-no-delay>
             <reuse-address>false</reuse-address>

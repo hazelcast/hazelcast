@@ -150,7 +150,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         ClientConfig config = configBuilder.build();
         assertEquals("foobar", config.getGroupConfig().getName());
         assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory", config.getNetworkConfig().getSSLConfig().getFactoryClassName());
-        assertEquals(32, config.getNetworkConfig().getSocketOptions().getBufferSize());
+        assertEquals(128, config.getNetworkConfig().getSocketOptions().getBufferSize());
         assertFalse(config.getNetworkConfig().getSocketOptions().isKeepAlive());
         assertFalse(config.getNetworkConfig().getSocketOptions().isTcpNoDelay());
         assertEquals(3, config.getNetworkConfig().getSocketOptions().getLingerSeconds());
