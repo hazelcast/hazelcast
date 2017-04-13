@@ -45,7 +45,7 @@ public final class WriteFileP {
             @Nullable String charset, boolean append, boolean flushEarly) {
         return addresses -> address -> {
             // need to do this here, as Address is not serializable
-            String sAddress = address.getHost() + "_" + address.getPort();
+            String sAddress = address.getHost() + '_' + address.getPort();
 
             return count -> IntStream.range(0, count)
                     .mapToObj(index -> new WriteBufferedP<>(
@@ -62,8 +62,10 @@ public final class WriteFileP {
         };
     }
 
-    static String createFileName(@Nonnull String fileNamePrefix, @Nullable String fileNameSuffix, String sAddress, int index) {
-        return fileNamePrefix + "_" + sAddress + "_" + index + fileNameSuffix;
+    static String createFileName(
+            @Nonnull String fileNamePrefix, @Nullable String fileNameSuffix, String sAddress, int index
+    ) {
+        return String.format("%s_%s_%d%s", fileNamePrefix, sAddress, index, fileNameSuffix);
     }
 
     private static BufferedWriter createBufferedWriter(String fileName, String charset, boolean append) {

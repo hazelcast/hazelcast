@@ -87,6 +87,7 @@ public class StreamTextSocketP extends AbstractProcessor {
     }
 
     public static Supplier<Processor> supplier(String host, int port, String charset) {
-        return () -> new StreamTextSocketP(host, port, charset == null ? StandardCharsets.UTF_8 : Charset.forName(charset));
+        return () -> new StreamTextSocketP(host, port,
+                charset == null ? StandardCharsets.UTF_8 : Charset.forName(charset));
     }
 }

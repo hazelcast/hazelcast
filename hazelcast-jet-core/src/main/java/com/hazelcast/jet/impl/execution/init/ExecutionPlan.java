@@ -117,7 +117,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         final int clusterSize = members.size();
         final boolean isJobDistributed = clusterSize > 1;
         final EdgeConfig defaultEdgeConfig = instance.getConfig().getDefaultEdgeConfig();
-        final Map<Member, ExecutionPlan> plans = members.stream().collect(toMap(m -> m, m -> new ExecutionPlan(partitionOwners)));
+        final Map<Member, ExecutionPlan> plans =
+                members.stream().collect(toMap(m -> m, m -> new ExecutionPlan(partitionOwners)));
         final Map<String, Integer> vertexIdMap = assignVertexIds(dag);
         for (Entry<String, Integer> entry : vertexIdMap.entrySet()) {
             final Vertex vertex = dag.getVertex(entry.getKey());
@@ -135,7 +136,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             Function<Address, ProcessorSupplier> procSupplierFn = metaSupplier.get(addresses);
             for (Entry<Member, ExecutionPlan> e : plans.entrySet()) {
                 final ProcessorSupplier processorSupplier = procSupplierFn.apply(e.getKey().getAddress());
-                final VertexDef vertexDef = new VertexDef(vertexId, vertex.getName(), processorSupplier, localParallelism);
+                final VertexDef vertexDef =
+                        new VertexDef(vertexId, vertex.getName(), processorSupplier, localParallelism);
                 vertexDef.addInboundEdges(inbound);
                 vertexDef.addOutboundEdges(outbound);
                 e.getValue().vertices.add(vertexDef);

@@ -51,13 +51,12 @@ public final class ExceptionUtil {
      */
     @Nullable
     public static Throwable peel(@Nullable Throwable t) {
-        if (t instanceof CompletionException || t instanceof ExecutionException || t instanceof InvocationTargetException) {
+        if (t instanceof CompletionException
+                || t instanceof ExecutionException
+                || t instanceof InvocationTargetException
+        ) {
             Throwable cause = t.getCause();
-            if (cause != null) {
-                return peel(cause);
-            } else {
-                return t;
-            }
+            return cause != null ? peel(cause) : t;
         }
         return t;
     }

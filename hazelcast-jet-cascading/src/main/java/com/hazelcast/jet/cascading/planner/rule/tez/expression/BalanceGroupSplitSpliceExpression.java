@@ -46,9 +46,8 @@ public class BalanceGroupSplitSpliceExpression extends RuleExpression {
                                 SPLICE),
 
                 new ExpressionGraph()
-                        .arcs(
-                                new FlowElementExpression(ElementCapture.Primary, Pipe.class, TypeExpression.Topo.SplitOnly)
-                        )
+                        .arcs(new FlowElementExpression(
+                                ElementCapture.Primary, Pipe.class, TypeExpression.Topo.SplitOnly))
         );
     }
 }

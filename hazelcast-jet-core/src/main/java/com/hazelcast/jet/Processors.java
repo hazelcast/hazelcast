@@ -261,7 +261,8 @@ public final class Processors {
     }
 
     private static BufferedWriter createBufferedWriter(@Nonnull String host, int port) {
-        return uncheckCall(() -> new BufferedWriter(new OutputStreamWriter(new Socket(host, port).getOutputStream(), "UTF-8")));
+        return uncheckCall(() ->
+                new BufferedWriter(new OutputStreamWriter(new Socket(host, port).getOutputStream(), "UTF-8")));
     }
 
     /**
@@ -362,7 +363,7 @@ public final class Processors {
      * must be deleted on all nodes.
      *
      * @param watchedDirectory The directory where we watch files
-     * @param charset Charset used to read files. If null, UTF-8 is used
+     * @param charset charset to use to decode the file input, or null to use UTF-8
      */
     public static ProcessorSupplier streamFiles(@Nonnull String watchedDirectory,
             @Nullable Charset charset) {
@@ -379,38 +380,44 @@ public final class Processors {
     }
 
     /**
-     * Returns a meta-supplier of processor, that writes all items to a local file on
-     * each member. {@code item.toString()} is written to the file, followed by
-     * a platform-specific line separator.
+     * Returns a meta-supplier of a processor that writes all items to a local
+     * file on each member. {@code item.toString()} is written to the file,
+     * followed by a platform-specific line separator.
      * <p>
      * The same file must be available for writing on all nodes. The file on
      * each node will contain part of the data processed on that member.
      * <p>
-     *  The vertex should have {@link Vertex#localParallelism(int) local parallelism} of 1.
+     * Since the work of this processor is file IO-intensive, {@link
+     * Vertex#localParallelism(int) local parallelism} of the vertex should be
+     * set according to the performance characteristics of the underlying
+     * storage system. Typical values are in the range of 1 to 4.
      *
-     * @param file The path to the file
-     * @param charset Character set used when reading the files. If null, utf-8 is used.
-     * @param append Whether to append or overwrite the file
-     * @param flushEarly Whether to flush the file after adding data.
-     *                   {@code true} might decrease performance, with {@code false}
-     *                   you will not see the changes in file, until a buffer gets full.
+     * @param pathName the path to the file
+     * @param charset charset used to encode the file output, or {@code null} to use UTF-8
+     * @param append whether to append or overwrite the file
+     * @param flushEarly whether to flush the file output stream after processing each batch of
+     *                   items received from the upstream concurrent queues. {@code true} might
+     *                   decrease performance and with {@code false} you will not see the changes
+     *                   in the file until the I/O buffer gets full.
      */
     @Nonnull
-    public static ProcessorMetaSupplier writeFile(@Nonnull String file, @Nullable Charset charset,
-            boolean append, boolean flushEarly) {
-        String fileNamePrefix = file;
-        String fileNameSuffix = "";
-
-        // if the file name has an extension, use it as a suffix
-        String fileNameWithoutPath = new File(file).getName();
-        int lastDot = fileNameWithoutPath.lastIndexOf('.');
+    public static ProcessorMetaSupplier writeFile(
+            @Nonnull String pathName, @Nullable Charset charset, boolean append, boolean flushEarly
+    ) {
+        final String filename = new File(pathName).getName();
+        final int lastDot = filename.lastIndexOf('.');
+        final String filenamePrefix;
+        final String filenameSuffix;
         if (lastDot > 0) {
-            // non-zero is intentional, to not consider files starting with '.' as extension
-            fileNameSuffix = fileNameWithoutPath.substring(lastDot);
-            fileNamePrefix = fileNamePrefix.substring(0, fileNamePrefix.length() - fileNameSuffix.length());
+            filenameSuffix = filename.substring(lastDot);
+            filenamePrefix = pathName.substring(0, pathName.length() - filenameSuffix.length());
+        } else {
+            filenameSuffix = "";
+            filenamePrefix = pathName;
         }
-
-        return WriteFileP.supplier(fileNamePrefix, fileNameSuffix, charset == null ? null : charset.name(), append, flushEarly);
+        return WriteFileP.supplier(filenamePrefix, filenameSuffix,
+                charset == null ? null : charset.name(),
+                append, flushEarly);
     }
 
     /**

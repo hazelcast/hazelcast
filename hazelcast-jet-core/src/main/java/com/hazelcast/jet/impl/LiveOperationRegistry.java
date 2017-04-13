@@ -55,7 +55,8 @@ public class LiveOperationRegistry {
     }
 
     boolean cancel(Address caller, long callId) {
-        Optional<AsyncExecutionOperation> operation = Optional.ofNullable(liveOperations.get(caller)).map(m -> m.get(callId));
+        Optional<AsyncExecutionOperation> operation = Optional.ofNullable(liveOperations.get(caller))
+                                                              .map(m -> m.get(callId));
         operation.ifPresent(AsyncExecutionOperation::cancel);
         return operation.isPresent();
     }

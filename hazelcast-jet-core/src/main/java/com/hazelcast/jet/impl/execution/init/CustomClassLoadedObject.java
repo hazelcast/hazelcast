@@ -54,7 +54,9 @@ public final class CustomClassLoadedObject {
         return (T) ((CustomClassLoadedObject) input.readObject()).object;
     }
 
-    public static <T> T deserializeWithCustomClassLoader(SerializationService serializationService, ClassLoader cl, Data data) {
+    public static <T> T deserializeWithCustomClassLoader(
+            SerializationService serializationService, ClassLoader cl, Data data
+    ) {
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(cl);
         try {

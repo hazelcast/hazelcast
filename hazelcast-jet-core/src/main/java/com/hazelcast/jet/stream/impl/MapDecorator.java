@@ -491,7 +491,9 @@ public class MapDecorator<K, V> implements IStreamMap<K, V> {
     }
 
     @Override
-    public QueryCache<K, V> getQueryCache(String name, MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
+    public QueryCache<K, V> getQueryCache(
+            String name, MapListener listener, Predicate<K, V> predicate, boolean includeValue
+    ) {
         return map.getQueryCache(name, listener, predicate, includeValue);
     }
 

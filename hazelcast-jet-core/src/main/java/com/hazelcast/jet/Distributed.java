@@ -562,7 +562,9 @@ public final class Distributed {
         /**
          * @see java.util.Comparator#thenComparingDouble(java.util.function.ToDoubleFunction)
          */
-        default Distributed.Comparator<T> thenComparingDouble(java.util.function.ToDoubleFunction<? super T> keyExtractor) {
+        default Distributed.Comparator<T> thenComparingDouble(
+                java.util.function.ToDoubleFunction<? super T> keyExtractor
+        ) {
             checkSerializable(keyExtractor, "keyExtractor");
             return thenComparing(comparingDouble(keyExtractor));
         }

@@ -59,11 +59,9 @@ import static com.hazelcast.jet.Processors.writeMap;
 import static com.hazelcast.jet.Util.entry;
 
 /**
- * Distributed implementations of {@link java.util.stream.Collectors}
- * <p>
- * Implementations of {@link DistributedCollector} that implement various useful reduction
- * operations, such as accumulating elements into collections, summarizing
- * elements according to various criteria, etc.
+ * Implementations of {@link DistributedCollector} that implement various
+ * useful reduction operations, such as accumulating elements into
+ * collections, summarizing elements according to various criteria, etc.
  */
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class DistributedCollectors {
@@ -84,9 +82,9 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} that accumulates the input elements into a
-     * new {@code Collection}, in encounter order.  The {@code Collection} is
-     * created by the provided factory.
+     * Returns a {@code Distributed.Collector} that accumulates the input
+     * elements into a new {@code Collection}, in encounter order. The {@code
+     * Collection} is created by the provided factory.
      *
      * @param <T>               the type of the input elements
      * @param <C>               the type of the resulting {@code Collection}
@@ -106,14 +104,15 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} that accumulates the input elements into a
-     * new {@code List}. There are no guarantees on the type, mutability,
-     * serializability, or thread-safety of the {@code List} returned; if more
-     * control over the returned {@code List} is required, use {@link #toCollection(Distributed.Supplier)}.
+     * Returns a {@code Distributed.Collector} that accumulates the input
+     * elements into a new {@code List}. There are no guarantees on the type,
+     * mutability, serializability, or thread-safety of the {@code List}
+     * returned; if more control over the returned {@code List} is required,
+     * use {@link #toCollection(Distributed.Supplier)}.
      *
      * @param <T> the type of the input elements
      * @return a {@code Distributed.Collector} which collects all the input elements into a
-     * {@code List}, in encounter order
+     *         {@code List}, in encounter order
      */
     public static <T> DistributedCollector<T, ?, List<T>> toList() {
         return new DistributedCollectorImpl<>(ArrayList::new, List::add,
@@ -125,18 +124,18 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} that accumulates the input elements into a
-     * new {@code Set}. There are no guarantees on the type, mutability,
-     * serializability, or thread-safety of the {@code Set} returned; if more
-     * control over the returned {@code Set} is required, use
+     * Returns a {@code Distributed.Collector} that accumulates the input
+     * elements into a new {@code Set}. There are no guarantees on the type,
+     * mutability, serializability, or thread-safety of the {@code Set}
+     * returned; if more control over the returned {@code Set} is required, use
      * {@link #toCollection(Distributed.Supplier)}.
      * <p>
      * <p>This is an {@link Collector.Characteristics#UNORDERED unordered}
      * Collector.
      *
      * @param <T> the type of the input elements
-     * @return a {@code  Distributed.Collector} which collects all the input elements into a
-     * {@code Set}
+     * @return a {@code  Distributed.Collector} which collects all the input elements
+     *         into a {@code Set}
      */
     public static <T>
     DistributedCollector<T, ?, Set<T>> toSet() {
@@ -241,8 +240,10 @@ public abstract class DistributedCollectors {
      * @return a collector which performs the action of the downstream collector,
      * followed by an additional finishing step
      */
-    public static <T, A, R, RR> DistributedCollector<T, A, RR> collectingAndThen(DistributedCollector<T, A, R> downstream,
-                                                                                 Distributed.Function<R, RR> finisher) {
+    public static <T, A, R, RR> DistributedCollector<T, A, RR> collectingAndThen(
+            DistributedCollector<T, A, R> downstream,
+            Distributed.Function<R, RR> finisher
+    ) {
         Set<Collector.Characteristics> characteristics = downstream.characteristics();
         if (characteristics.contains(Collector.Characteristics.IDENTITY_FINISH)) {
             if (characteristics.size() == 1) {
@@ -705,7 +706,8 @@ public abstract class DistributedCollectors {
             A container = m.computeIfAbsent(key, k -> downstreamSupplier.get());
             downstreamAccumulator.accept(container, t);
         };
-        Distributed.BinaryOperator<Map<K, A>> merger = DistributedCollectors.<K, A, Map<K, A>>mapMerger(downstream.combiner());
+        Distributed.BinaryOperator<Map<K, A>> merger =
+                DistributedCollectors.<K, A, Map<K, A>>mapMerger(downstream.combiner());
         @SuppressWarnings("unchecked")
         Distributed.Supplier<Map<K, A>> mangledFactory = (Distributed.Supplier<Map<K, A>>) mapFactory;
 

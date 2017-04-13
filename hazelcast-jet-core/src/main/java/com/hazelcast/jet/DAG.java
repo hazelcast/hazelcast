@@ -330,8 +330,9 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
                     strongConnect(outVertex, vertexMap, edgeMap, stack, nextIndex);
                     av.lowlink = Math.min(av.lowlink, outVertex.lowlink);
                 } else if (outVertex.onstack) {
-                    // strongly connected component detected, but we will wait till later so that the full cycle can be displayed.
-                    // update lowlink in case outputVertex should be considered the root of this component.
+                    // strongly connected component detected, but we will wait till later so
+                    // that the full cycle can be displayed. Update lowlink in case
+                    // outputVertex should be considered the root of this component.
                     av.lowlink = Math.min(av.lowlink, outVertex.index);
                 }
             }
