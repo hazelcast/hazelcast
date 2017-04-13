@@ -371,17 +371,17 @@ public final class Processors {
 
     /**
      * Convenience for {@link #writeFile(String, Charset, boolean, boolean)}, with
-     * UTF-8 charset, overwriting the target file and no early file buffer flush.
+     * UTF-8 charset, overwriting the target file and early file buffer flush.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeFile(@Nonnull String file) {
-        return writeFile(file, null, false, false);
+        return writeFile(file, null, false, true);
     }
 
     /**
      * Returns a meta-supplier of processor, that writes all items to a local file on
      * each member. {@code item.toString()} is written to the file, followed by
-     * {@code '\n'} (both on linux and Windows).
+     * a platform-specific line separator.
      * <p>
      * The same file must be available for writing on all nodes. The file on
      * each node will contain part of the data processed on that member.
@@ -393,7 +393,7 @@ public final class Processors {
      * @param append Whether to append or overwrite the file
      * @param flushEarly Whether to flush the file after adding data.
      *                   {@code true} might decrease performance, with {@code false}
-     *                   you see the changes in file earlier.
+     *                   you will not see the changes in file, until a buffer gets full.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeFile(@Nonnull String file, @Nullable Charset charset,
