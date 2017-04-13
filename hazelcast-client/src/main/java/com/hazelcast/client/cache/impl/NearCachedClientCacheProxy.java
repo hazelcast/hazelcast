@@ -132,19 +132,17 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
             return value;
         }
 
-        long reservationId = nearCache.tryReserveForUpdate(keyData);
-        if (reservationId == NOT_RESERVED) {
+        try {
+            long reservationId = nearCache.tryReserveForUpdate(keyData);
             value = super.getSyncInternal(keyData, expiryPolicy);
-        } else {
-            try {
-                value = super.getSyncInternal(keyData, expiryPolicy);
+            if (reservationId != NOT_RESERVED) {
                 value = tryPublishReserved(keyData, value, reservationId);
-            } catch (Throwable throwable) {
-                invalidateNearCache(keyData);
-                throw rethrow(throwable);
             }
+            return value;
+        } catch (Throwable throwable) {
+            invalidateNearCache(keyData);
+            throw rethrow(throwable);
         }
-        return value;
     }
 
     @Override
@@ -441,8 +439,11 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
             return null;
         }
 
-        Object cachedValue = nearCache.tryPublishReserved(key, remoteValue, reservationId, deserialize);
-        return cachedValue != null ? cachedValue : remoteValue;
+        Object cachedValue = null;
+        if (reservationId != NOT_RESERVED) {
+            cachedValue = nearCache.tryPublishReserved(key, remoteValue, reservationId, deserialize);
+        }
+        return cachedValue == null ? remoteValue : cachedValue;
     }
 
     private Object tryPublishReserved(Data key, Object remoteValue, long reservationId) {
@@ -670,7 +671,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
 
     /**
      * Deals with client compatibility.
-     *
+     * <p>
      * Eventual consistency for Near Cache can be used with server versions >= 3.8,
      * other connected server versions must use {@link Pre38NearCacheEventHandler}.
      */
@@ -746,7 +747,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy {
 
     /**
      * This event handler is here to be used with server versions < 3.8.
-     *
+     * <p>
      * If server version is < 3.8 and client version is >= 3.8, this event handler must be used to
      * listen Near Cache invalidations. Because new improvements for Near Cache eventual consistency
      * cannot work with server versions < 3.8.
