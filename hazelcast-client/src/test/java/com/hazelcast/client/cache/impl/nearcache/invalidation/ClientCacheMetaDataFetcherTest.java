@@ -69,7 +69,7 @@ public class ClientCacheMetaDataFetcherTest extends HazelcastTestSupport {
         String cacheName = "test";
         int partition = 1;
         long givenSequence = getInt(1, MAX_VALUE);
-        UUID givenUuid = UuidUtil.newSecureUUID();
+        UUID givenUuid = UuidUtil.newUnsecureUUID();
 
         RepairingTask repairingTask = getRepairingTask(cacheName, partition, givenSequence, givenUuid);
         MetaDataFetcher metaDataFetcher = repairingTask.getMetaDataFetcher();

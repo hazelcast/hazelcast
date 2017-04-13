@@ -208,7 +208,7 @@ public class InvalidationMetadataDistortionTest extends NearCacheTestSupport {
         Invalidator invalidator = mapNearCacheManager.getInvalidator();
         MetaDataGenerator metaDataGenerator = invalidator.getMetaDataGenerator();
 
-        metaDataGenerator.setUuid(partitionId, UuidUtil.newSecureUUID());
+        metaDataGenerator.setUuid(partitionId, UuidUtil.newUnsecureUUID());
     }
 
     protected HazelcastClientInstanceImpl getHazelcastClientInstanceImpl(HazelcastInstance client) {

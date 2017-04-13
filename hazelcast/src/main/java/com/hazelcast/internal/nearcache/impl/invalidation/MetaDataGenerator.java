@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static com.hazelcast.util.UuidUtil.newSecureUUID;
+import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
 
 /**
  * Responsible for partition-sequence and partition-uuid generation.
@@ -52,7 +52,7 @@ public class MetaDataGenerator {
             = new ConstructorFunction<Integer, UUID>() {
         @Override
         public UUID createNew(Integer partitionId) {
-            return newSecureUUID();
+            return newUnsecureUUID();
         }
     };
 
