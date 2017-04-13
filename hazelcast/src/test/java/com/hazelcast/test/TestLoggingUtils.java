@@ -76,13 +76,11 @@ public final class TestLoggingUtils {
             System.err.println(TestLoggingUtils.class.getName() + ": Console appender is type of " + appender.getClass().getName());
         } else {
             ConsoleAppender consoleAppender = (ConsoleAppender) appender;
-            if (consoleAppender instanceof ConsoleAppender) {
-                setToField(consoleAppender, "immediateFlush", true);
-                OutputStreamManager manager = getFromField(consoleAppender, "manager");
-                OutputStream originalOS = getFromField(manager, "os");
-                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(originalOS, 64 * 1024);
-                setToField(manager, "os", bufferedOutputStream);
-            }
+            setToField(consoleAppender, "immediateFlush", true);
+            OutputStreamManager manager = getFromField(consoleAppender, "manager");
+            OutputStream originalOS = getFromField(manager, "os");
+            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(originalOS, 64 * 1024);
+            setToField(manager, "os", bufferedOutputStream);
         }
     }
 
