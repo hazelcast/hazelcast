@@ -19,8 +19,8 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
@@ -38,16 +38,20 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
@@ -660,6 +664,209 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         @Override
         public void processBackup(Map.Entry<String, SimpleValue> entry) {
             process(entry);
+        }
+
+        @Override
+        public String getExecutorName() {
+            return Offloadable.OFFLOADABLE_EXECUTOR;
+        }
+    }
+
+    private String init() {
+        String key = generateKeyOwnedBy(instances[0]);
+        SimpleValue givenValue = new SimpleValue(1);
+        IMap<Object, Object> map = instances[1].getMap(MAP_NAME);
+        map.put(key, givenValue);
+        return key;
+    }
+
+    @Test
+    public void testEntryProcessorWithKey_lockedVsUnlocked() {
+        String key = init();
+        IMap<Object, Object> map = instances[1].getMap(MAP_NAME);
+
+        // not locked -> will offload
+        String thread = (String) map.executeOnKey(key, new ThreadSneakingOffloadableEntryProcessor());
+        assertTrue(thread.contains("cached.thread"));
+
+        // locked -> won't offload
+        map.lock(key);
+        thread = (String) map.executeOnKey(key, new ThreadSneakingOffloadableEntryProcessor());
+        assertTrue(thread.contains("partition-operation.thread"));
+    }
+
+    @Test
+    public void testEntryProcessorWithKey_lockedVsUnlocked_ReadOnly() {
+        String key = init();
+        IMap<Object, Object> map = instances[1].getMap(MAP_NAME);
+
+        // not locked -> will offload
+        String thread = (String) map.executeOnKey(key, new ThreadSneakingOffloadableReadOnlyEntryProcessor());
+        assertTrue(thread.contains("cached.thread"));
+
+        // locked -> will offload
+        map.lock(key);
+        thread = (String) map.executeOnKey(key, new ThreadSneakingOffloadableReadOnlyEntryProcessor());
+        assertTrue(thread.contains("cached.thread"));
+    }
+
+    private static class ThreadSneakingOffloadableEntryProcessor extends AbstractEntryProcessor<String, SimpleValue>
+            implements Offloadable {
+        @Override
+        public Object process(Map.Entry<String, SimpleValue> entry) {
+            // returns the name of thread it runs on
+            return Thread.currentThread().getName();
+        }
+
+        @Override
+        public String getExecutorName() {
+            return OFFLOADABLE_EXECUTOR;
+        }
+    }
+
+    private static class ThreadSneakingOffloadableReadOnlyEntryProcessor implements EntryProcessor<String, SimpleValue>,
+            Offloadable, ReadOnly {
+        @Override
+        public Object process(Map.Entry<String, SimpleValue> entry) {
+            // returns the name of thread it runs on
+            return Thread.currentThread().getName();
+        }
+
+        @Override
+        public EntryBackupProcessor getBackupProcessor() {
+            return null;
+        }
+
+        @Override
+        public String getExecutorName() {
+            return OFFLOADABLE_EXECUTOR;
+        }
+    }
+
+    @Test
+    public void testEntryProcessorWithKey_localNotReentrant() throws ExecutionException, InterruptedException {
+        String key = init();
+        IMap<Object, SimpleValue> map = instances[1].getMap(MAP_NAME);
+        int count = 100;
+
+        // when
+        List<ICompletableFuture> futures = new ArrayList<ICompletableFuture>();
+        for (int i = 0; i < count; i++) {
+            futures.add(map.submitToKey(key, new IncrementingOffloadableEP()));
+        }
+        for (ICompletableFuture future : futures) {
+            future.get();
+        }
+
+        // then
+        assertEquals(count + 1, map.get(key).i);
+    }
+
+    private static class IncrementingOffloadableEP implements EntryProcessor<String, SimpleValue>, Offloadable,
+            EntryBackupProcessor<String, SimpleValue> {
+        @Override
+        public Object process(final Map.Entry<String, SimpleValue> entry) {
+            SimpleValue value = entry.getValue();
+            value.i++;
+            entry.setValue(value);
+            return null;
+        }
+
+        @Override
+        public String getExecutorName() {
+            return Offloadable.OFFLOADABLE_EXECUTOR;
+        }
+
+        @Override
+        public EntryBackupProcessor getBackupProcessor() {
+            return this;
+        }
+
+        @Override
+        public void processBackup(Map.Entry<String, SimpleValue> entry) {
+            process(entry);
+        }
+    }
+
+    @Test
+    public void testEntryProcessorWithKey_localNotReentrant_latchTest() throws ExecutionException, InterruptedException {
+        String key = generateKeyOwnedBy(instances[0]);
+        SimpleValue givenValue = new SimpleValue(1);
+        IMap<Object, Object> map = instances[0].getMap(MAP_NAME);
+        map.put(key, givenValue);
+
+        CountDownLatch mayStart = new CountDownLatch(1);
+        CountDownLatch stopped = new CountDownLatch(1);
+        ICompletableFuture first = map.submitToKey(key, new EntryLatchAwaitingModifying(mayStart, stopped));
+        mayStart.countDown();
+        ICompletableFuture second = map.submitToKey(key, new EntryOtherStoppedVerifying(stopped));
+
+        while (!(first.isDone() && second.isDone())) {
+            sleepAtLeastMillis(1);
+        }
+
+        // verifies that the other has stopped before the first one started
+        assertEquals(0L, second.get());
+    }
+
+    private static class EntryLatchAwaitingModifying implements EntryProcessor<String, SimpleValue>, Offloadable, EntryBackupProcessor<String, SimpleValue> {
+
+        private final CountDownLatch mayStart;
+        private final CountDownLatch stop;
+
+        public EntryLatchAwaitingModifying(CountDownLatch mayStart, CountDownLatch stop) {
+            this.mayStart = mayStart;
+            this.stop = stop;
+        }
+
+        @Override
+        public Object process(final Map.Entry<String, SimpleValue> entry) {
+            try {
+                mayStart.await();
+            } catch (InterruptedException e) {
+            }
+            try {
+                entry.setValue(entry.getValue());
+                return null;
+            } finally {
+                stop.countDown();
+            }
+        }
+
+        @Override
+        public EntryBackupProcessor getBackupProcessor() {
+            return null;
+        }
+
+        @Override
+        public void processBackup(Map.Entry<String, SimpleValue> entry) {
+            process(entry);
+        }
+
+        @Override
+        public String getExecutorName() {
+            return Offloadable.OFFLOADABLE_EXECUTOR;
+        }
+
+    }
+
+
+    private static class EntryOtherStoppedVerifying implements EntryProcessor<String, SimpleValue>, Offloadable {
+
+        private final CountDownLatch otherStopped;
+
+        public EntryOtherStoppedVerifying(CountDownLatch otherStopped) {
+            this.otherStopped = otherStopped;
+        }
+
+        @Override
+        public Object process(final Map.Entry<String, SimpleValue> entry) {
+            return otherStopped.getCount();
+        }
+
+        @Override
+        public EntryBackupProcessor getBackupProcessor() {
+            return null;
         }
 
         @Override
