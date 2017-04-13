@@ -61,6 +61,9 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
 
     @Override
     public String registerListener(final ListenerMessageCodec codec, final EventHandler handler) {
+        //This method should not be called from registrationExecutor
+        assert (!Thread.currentThread().getName().contains("eventRegistration"));
+
         Future<String> future = registrationExecutor.submit(new Callable<String>() {
             @Override
             public String call() {
@@ -74,7 +77,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
                         invoke(registrationKey, connection);
                     }
                 } catch (Exception e) {
-                    deregisterListener(userRegistrationId);
+                    deregisterListenerInternal(userRegistrationId);
                     throw new HazelcastException("Listener can not be added", e);
                 }
                 return userRegistrationId;
@@ -123,34 +126,13 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
 
     @Override
     public boolean deregisterListener(final String userRegistrationId) {
+        //This method should not be called from registrationExecutor
+        assert (!Thread.currentThread().getName().contains("eventRegistration"));
+
         Future<Boolean> future = registrationExecutor.submit(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                ClientRegistrationKey key = new ClientRegistrationKey(userRegistrationId);
-                Map<Connection, ClientEventRegistration> registrationMap = registrations.get(key);
-                if (registrationMap == null) {
-                    return false;
-                }
-                boolean successful = true;
-                for (ClientEventRegistration registration : registrationMap.values()) {
-                    Connection subscriber = registration.getSubscriber();
-                    try {
-                        ListenerMessageCodec listenerMessageCodec = registration.getCodec();
-                        String serverRegistrationId = registration.getServerRegistrationId();
-                        ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
-                        new ClientInvocation(client, request, subscriber).invoke().get();
-                        removeEventHandler(registration.getCallId());
-                        registrationMap.remove(subscriber);
-                    } catch (Exception e) {
-                        successful = false;
-                        logger.warning("Deregistration of listener with id " + userRegistrationId
-                                + " has failed to address " + subscriber.getEndPoint(), e);
-                    }
-                }
-                if (successful) {
-                    registrations.remove(key);
-                }
-                return successful;
+                return deregisterListenerInternal(userRegistrationId);
             }
         });
 
@@ -160,6 +142,37 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
             throw ExceptionUtil.rethrow(e);
         }
 
+    }
+
+    private Boolean deregisterListenerInternal(String userRegistrationId) {
+        //This method should only be called from registrationExecutor
+        assert (Thread.currentThread().getName().contains("eventRegistration"));
+
+        ClientRegistrationKey key = new ClientRegistrationKey(userRegistrationId);
+        Map<Connection, ClientEventRegistration> registrationMap = registrations.get(key);
+        if (registrationMap == null) {
+            return false;
+        }
+        boolean successful = true;
+        for (ClientEventRegistration registration : registrationMap.values()) {
+            Connection subscriber = registration.getSubscriber();
+            try {
+                ListenerMessageCodec listenerMessageCodec = registration.getCodec();
+                String serverRegistrationId = registration.getServerRegistrationId();
+                ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
+                new ClientInvocation(client, request, subscriber).invoke().get();
+                removeEventHandler(registration.getCallId());
+                registrationMap.remove(subscriber);
+            } catch (Exception e) {
+                successful = false;
+                logger.warning("Deregistration of listener with id " + userRegistrationId
+                        + " has failed to address " + subscriber.getEndPoint(), e);
+            }
+        }
+        if (successful) {
+            registrations.remove(key);
+        }
+        return successful;
     }
 
     @Override
@@ -180,6 +193,9 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
 
     @Override
     public void connectionAdded(final Connection connection) {
+        //This method should not be called from registrationExecutor
+        assert (!Thread.currentThread().getName().contains("eventRegistration"));
+
         registrationExecutor.submit(new Runnable() {
             @Override
             public void run() {
@@ -192,6 +208,9 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
 
     @Override
     public void connectionRemoved(final Connection connection) {
+        //This method should not be called from registrationExecutor
+        assert (!Thread.currentThread().getName().contains("eventRegistration"));
+
         registrationExecutor.submit(new Runnable() {
             @Override
             public void run() {
@@ -208,6 +227,9 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
 
     @Override
     public void heartbeatResumed(final Connection connection) {
+        //This method should not be called from registrationExecutor
+        assert (!Thread.currentThread().getName().contains("eventRegistration"));
+
         registrationExecutor.submit(new Runnable() {
             @Override
             public void run() {
@@ -245,6 +267,9 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
 
     //For Testing
     public Collection<ClientEventRegistration> getActiveRegistrations(final String uuid) {
+        //This method should not be called from registrationExecutor
+        assert (!Thread.currentThread().getName().contains("eventRegistration"));
+
         Future<Collection<ClientEventRegistration>> future = registrationExecutor.submit(
                 new Callable<Collection<ClientEventRegistration>>() {
                     @Override
