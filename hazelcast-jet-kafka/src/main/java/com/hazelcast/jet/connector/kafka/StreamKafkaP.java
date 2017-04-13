@@ -24,8 +24,10 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 
+import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.Util.entry;
 
@@ -34,9 +36,10 @@ import static com.hazelcast.jet.Util.entry;
  */
 public final class StreamKafkaP extends AbstractProcessor {
 
-    private static final int POLL_TIMEOUT_MS = 100;
+    private static final int POLL_TIMEOUT_MS = 1000;
     private final Properties properties;
     private final String[] topicIds;
+    private CompletableFuture<Void> jobFuture;
 
     private StreamKafkaP(String[] topicIds, Properties properties) {
         this.topicIds = topicIds;
@@ -66,12 +69,18 @@ public final class StreamKafkaP extends AbstractProcessor {
     }
 
     @Override
+    protected void init(@Nonnull Context context) throws Exception {
+        jobFuture = context.jobFuture();
+    }
+
+    @Override
     public boolean complete() {
         try (KafkaConsumer<?, ?> consumer = new KafkaConsumer<>(properties)) {
             consumer.subscribe(Arrays.asList(topicIds));
 
-            while (!Thread.currentThread().isInterrupted()) {
+            while (!jobFuture.isDone()) {
                 ConsumerRecords<?, ?> records = consumer.poll(POLL_TIMEOUT_MS);
+
                 for (ConsumerRecord<?, ?> r : records) {
                     emit(entry(r.key(), r.value()));
                 }

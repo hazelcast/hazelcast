@@ -20,12 +20,14 @@ import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Distributed.Supplier;
 import com.hazelcast.jet.Processor;
 
+import javax.annotation.Nonnull;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 
@@ -37,11 +39,18 @@ public class StreamTextSocketP extends AbstractProcessor {
     private final String host;
     private final int port;
     private final Charset charset;
+    private CompletableFuture<Void> jobFuture;
 
     StreamTextSocketP(String host, int port, Charset charset) {
         this.host = host;
         this.port = port;
         this.charset = charset;
+    }
+
+    @Override
+    protected void init(@Nonnull Context context) throws Exception {
+        super.init(context);
+        jobFuture = context.jobFuture();
     }
 
     @Override
@@ -55,7 +64,7 @@ public class StreamTextSocketP extends AbstractProcessor {
             ) {
                 getLogger().info("Connected to socket " + hostAndPort());
 
-                for (String line; (line = bufferedReader.readLine()) != null; ) {
+                for (String line; !jobFuture.isDone() && (line = bufferedReader.readLine()) != null; ) {
                     emit(line);
                 }
 

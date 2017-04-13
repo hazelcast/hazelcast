@@ -19,6 +19,7 @@ package com.hazelcast.jet;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Does the computation needed to transform zero or more input data streams
@@ -144,5 +145,31 @@ public interface Processor {
          */
         @Nonnull
         String vertexName();
+
+        /**
+         * Returns the future to check for cancellation status.
+         * <p>
+         * This is necessary, if the {@link #complete()} or
+         * {@link #process(int, Inbox) process()} methods do not return promptly
+         * after each blocking call (note, that blocking calls are allowed only
+         * in {@link #isCooperative() non-cooperative} processors). In this case,
+         * the methods should regularly check the {@code jobFuture}'s
+         * {@link CompletableFuture#isDone() isDone()} and return, when it returns
+         * {@code true}:
+         *
+         * <pre>
+         * public boolean complete() {
+         *     while (!jobFuture.isDone()) {
+         *         // we should not block indefinitely, but rather with a timeout
+         *         Collection data = blockingRead(timeout);
+         *         for (Object item : data) {
+         *             emit(item);
+         *         }
+         *     }
+         * }
+         * </pre>
+         */
+        @Nonnull
+        CompletableFuture<Void> jobFuture();
     }
 }

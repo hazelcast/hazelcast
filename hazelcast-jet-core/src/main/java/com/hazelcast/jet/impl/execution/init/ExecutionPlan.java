@@ -38,11 +38,11 @@ import com.hazelcast.jet.impl.execution.ConcurrentInboundEdgeStream;
 import com.hazelcast.jet.impl.execution.ConveyorCollector;
 import com.hazelcast.jet.impl.execution.ConveyorCollectorWithPartition;
 import com.hazelcast.jet.impl.execution.ConveyorEmitter;
+import com.hazelcast.jet.impl.execution.CooperativeProcessorTasklet;
 import com.hazelcast.jet.impl.execution.InboundEdgeStream;
 import com.hazelcast.jet.impl.execution.InboundEmitter;
 import com.hazelcast.jet.impl.execution.OutboundCollector;
 import com.hazelcast.jet.impl.execution.OutboundEdgeStream;
-import com.hazelcast.jet.impl.execution.CooperativeProcessorTasklet;
 import com.hazelcast.jet.impl.execution.ReceiverTasklet;
 import com.hazelcast.jet.impl.execution.SenderTasklet;
 import com.hazelcast.jet.impl.execution.Tasklet;
@@ -50,7 +50,6 @@ import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -81,8 +80,6 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 public class ExecutionPlan implements IdentifiedDataSerializable {
-
-    private static final ILogger LOGGER = Logger.getLogger(ExecutionPlan.class);
 
     private final List<Tasklet> tasklets = new ArrayList<>();
     // vertex id --> ordinal --> receiver tasklet
@@ -191,8 +188,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         + srcVertex.name() + '(' + p.getClass().getSimpleName() + ")#" + processorIdx);
                 ProcCtx context = new ProcCtx(instance, logger, srcVertex.name(), processorIdx);
                 tasklets.add(p.isCooperative()
-                        ? new CooperativeProcessorTasklet(srcVertex.name(), context, p, inboundStreams, outboundStreams)
-                        : new BlockingProcessorTasklet(srcVertex.name(), context, p, inboundStreams, outboundStreams)
+                        ? new CooperativeProcessorTasklet(context, p, inboundStreams, outboundStreams)
+                        : new BlockingProcessorTasklet(context, p, inboundStreams, outboundStreams)
                 );
             }
         }

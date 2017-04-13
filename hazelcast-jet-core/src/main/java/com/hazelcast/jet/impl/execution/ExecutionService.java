@@ -101,7 +101,6 @@ public class ExecutionService {
 
     private void submitBlockingTasklets(JobFuture jobFuture, List<Tasklet> tasklets) {
         jobFuture.blockingFutures = tasklets.stream()
-                                            .peek(t -> t.init(jobFuture))
                                             .map(t -> new BlockingWorker(new TaskletTracker(t, jobFuture)))
                                             .map(blockingTaskletExecutor::submit)
                                             .collect(toList());

@@ -23,20 +23,22 @@ import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
+import java.util.concurrent.CompletableFuture;
 
-final class Contexts {
+public final class Contexts {
 
     private Contexts() {
     }
 
-    static class ProcCtx implements Processor.Context {
+    public static class ProcCtx implements Processor.Context {
 
         private final JetInstance instance;
         private final ILogger logger;
         private final String vertexName;
         private final int index;
+        private CompletableFuture<Void> jobFuture;
 
-        ProcCtx(JetInstance instance, ILogger logger, String vertexName, int index) {
+        public ProcCtx(JetInstance instance, ILogger logger, String vertexName, int index) {
             this.instance = instance;
             this.logger = logger;
             this.vertexName = vertexName;
@@ -64,6 +66,22 @@ final class Contexts {
         @Override
         public String vertexName() {
             return vertexName;
+        }
+
+        /**
+         * Note that method is marked sa {@link Nonnull}, however, it's only
+         * non-null after {@link #initJobFuture(CompletableFuture)} is called,
+         * which means it's <i>practically non-null</i>.
+         */
+        @Nonnull
+        @Override
+        public CompletableFuture<Void> jobFuture() {
+            return jobFuture;
+        }
+
+        public void initJobFuture(CompletableFuture<Void> jobFuture) {
+            assert this.jobFuture == null : "jobFuture already initialized";
+            this.jobFuture = jobFuture;
         }
     }
 

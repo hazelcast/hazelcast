@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 
 public interface Tasklet extends Callable<ProgressState> {
 
-    default void init(CompletableFuture<?> jobFuture) {
+    default void init(CompletableFuture<Void> jobFuture) {
     }
 
     @Override @Nonnull
