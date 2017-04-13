@@ -91,26 +91,24 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     // this operation returns the object in data format,
     // except when it is retrieved from Near Cache and Near Cache memory format is object
     @Override
-    protected Object getInternal(Data key) {
-        Object value = getCachedValue(key, true);
+    @SuppressWarnings("unchecked")
+    protected V getInternal(Data key) {
+        V value = (V) getCachedValue(key, true);
         if (value != NOT_CACHED) {
             return value;
         }
 
-        long reservationId = tryReserveForUpdate(key);
-        if (reservationId == NOT_RESERVED) {
-            value = super.getInternal(key);
-        } else {
-            try {
-                value = super.getInternal(key);
-                value = tryPublishReserved(key, value, reservationId);
-            } catch (Throwable throwable) {
-                invalidateCache(key);
-                throw rethrow(throwable);
+        try {
+            long reservationId = tryReserveForUpdate(key);
+            value = (V) super.getInternal(key);
+            if (reservationId != NOT_RESERVED) {
+                value = (V) tryPublishReserved(key, value, reservationId);
             }
+            return value;
+        } catch (Throwable throwable) {
+            invalidateNearCache(key);
+            throw rethrow(throwable);
         }
-
-        return value;
     }
 
     @Override
@@ -128,156 +126,231 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         try {
             future = super.getAsyncInternal(key);
         } catch (Throwable t) {
-            invalidateCache(key);
+            invalidateNearCache(key);
             throw rethrow(t);
         }
 
-        future.andThen(new ExecutionCallback<Data>() {
-            @Override
-            public void onResponse(Data value) {
-                nearCache.tryPublishReserved(key, value, reservationId, false);
-            }
+        if (reservationId != NOT_RESERVED) {
+            future.andThen(new ExecutionCallback<Data>() {
+                @Override
+                public void onResponse(Data value) {
+                    nearCache.tryPublishReserved(key, value, reservationId, false);
+                }
 
-            @Override
-            public void onFailure(Throwable t) {
-                invalidateCache(key);
-            }
-        });
+                @Override
+                public void onFailure(Throwable t) {
+                    invalidateNearCache(key);
+                }
+            });
+        }
 
         return future;
     }
 
     @Override
     protected Data putInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        Data data = super.putInternal(key, value, ttl, timeunit);
-        invalidateCache(key);
+        Data data;
+        try {
+            data = super.putInternal(key, value, ttl, timeunit);
+        } finally {
+            invalidateNearCache(key);
+        }
         return data;
     }
 
     @Override
     protected boolean tryPutInternal(Data key, Data value, long timeout, TimeUnit timeunit) {
-        boolean putInternal = super.tryPutInternal(key, value, timeout, timeunit);
-        invalidateCache(key);
+        boolean putInternal;
+        try {
+            putInternal = super.tryPutInternal(key, value, timeout, timeunit);
+        } finally {
+            invalidateNearCache(key);
+        }
         return putInternal;
     }
 
     @Override
     protected Data putIfAbsentInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        Data data = super.putIfAbsentInternal(key, value, ttl, timeunit);
-        invalidateCache(key);
+        Data data;
+        try {
+            data = super.putIfAbsentInternal(key, value, ttl, timeunit);
+        } finally {
+            invalidateNearCache(key);
+        }
         return data;
     }
 
     @Override
     protected void putTransientInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        super.putTransientInternal(key, value, ttl, timeunit);
-        invalidateCache(key);
+        try {
+            super.putTransientInternal(key, value, ttl, timeunit);
+        } finally {
+            invalidateNearCache(key);
+        }
     }
 
     @Override
     protected InternalCompletableFuture<Data> putAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        InternalCompletableFuture<Data> future = super.putAsyncInternal(key, value, ttl, timeunit);
-        invalidateCache(key);
+        InternalCompletableFuture<Data> future;
+        try {
+            future = super.putAsyncInternal(key, value, ttl, timeunit);
+        } finally {
+            invalidateNearCache(key);
+        }
         return future;
     }
 
     @Override
     protected InternalCompletableFuture<Data> setAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        InternalCompletableFuture<Data> future = super.setAsyncInternal(key, value, ttl, timeunit);
-        invalidateCache(key);
+        InternalCompletableFuture<Data> future;
+        try {
+            future = super.setAsyncInternal(key, value, ttl, timeunit);
+        } finally {
+            invalidateNearCache(key);
+        }
         return future;
     }
 
     @Override
     protected boolean replaceInternal(Data key, Data expect, Data update) {
-        boolean replaceInternal = super.replaceInternal(key, expect, update);
-        invalidateCache(key);
+        boolean replaceInternal;
+        try {
+            replaceInternal = super.replaceInternal(key, expect, update);
+        } finally {
+            invalidateNearCache(key);
+        }
         return replaceInternal;
     }
 
     @Override
     protected Data replaceInternal(Data key, Data value) {
-        Data replaceInternal = super.replaceInternal(key, value);
-        invalidateCache(key);
+        Data replaceInternal;
+        try {
+            replaceInternal = super.replaceInternal(key, value);
+        } finally {
+            invalidateNearCache(key);
+        }
         return replaceInternal;
     }
 
     @Override
     protected void setInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        super.setInternal(key, value, ttl, timeunit);
-        invalidateCache(key);
+        try {
+            super.setInternal(key, value, ttl, timeunit);
+        } finally {
+            invalidateNearCache(key);
+        }
     }
 
     @Override
     protected boolean evictInternal(Data key) {
-        boolean evictInternal = super.evictInternal(key);
-        invalidateCache(key);
+        boolean evictInternal;
+        try {
+            evictInternal = super.evictInternal(key);
+        } finally {
+            invalidateNearCache(key);
+        }
         return evictInternal;
     }
 
     @Override
     protected void evictAllInternal() {
-        super.evictAllInternal();
-        nearCache.clear();
-    }
-
-    @Override
-    public void clearInternal() {
-        super.clearInternal();
-        nearCache.clear();
-    }
-
-    @Override
-    public void loadAllInternal(boolean replaceExistingValues) {
-        super.loadAllInternal(replaceExistingValues);
-        if (replaceExistingValues) {
+        try {
+            super.evictAllInternal();
+        } finally {
             nearCache.clear();
         }
     }
 
     @Override
+    public void clearInternal() {
+        try {
+            super.clearInternal();
+        } finally {
+            nearCache.clear();
+        }
+    }
+
+    @Override
+    public void loadAllInternal(boolean replaceExistingValues) {
+        try {
+            super.loadAllInternal(replaceExistingValues);
+        } finally {
+            if (replaceExistingValues) {
+                nearCache.clear();
+            }
+        }
+    }
+
+    @Override
     protected void loadInternal(Iterable<Data> keys, boolean replaceExistingValues) {
-        super.loadInternal(keys, replaceExistingValues);
-        invalidateCache(keys);
+        try {
+            super.loadInternal(keys, replaceExistingValues);
+        } finally {
+            invalidateNearCache(keys);
+        }
     }
 
     @Override
     protected Data removeInternal(Data key) {
-        Data data = super.removeInternal(key);
-        invalidateCache(key);
+        Data data;
+        try {
+            data = super.removeInternal(key);
+        } finally {
+            invalidateNearCache(key);
+        }
         return data;
     }
 
     @Override
     protected void removeAllInternal(Predicate predicate) {
-        super.removeAllInternal(predicate);
-        nearCache.clear();
+        try {
+            super.removeAllInternal(predicate);
+        } finally {
+            nearCache.clear();
+        }
     }
 
     @Override
     protected void deleteInternal(Data key) {
-        super.deleteInternal(key);
-        invalidateCache(key);
+        try {
+            super.deleteInternal(key);
+        } finally {
+            invalidateNearCache(key);
+        }
     }
 
     @Override
     protected boolean removeInternal(Data key, Data value) {
-        boolean removeInternal = super.removeInternal(key, value);
-        invalidateCache(key);
+        boolean removeInternal;
+        try {
+            removeInternal = super.removeInternal(key, value);
+        } finally {
+            invalidateNearCache(key);
+        }
         return removeInternal;
     }
 
     @Override
     protected boolean tryRemoveInternal(Data key, long timeout, TimeUnit timeunit) {
-        boolean removeInternal = super.tryRemoveInternal(key, timeout, timeunit);
-        invalidateCache(key);
+        boolean removeInternal;
+        try {
+            removeInternal = super.tryRemoveInternal(key, timeout, timeunit);
+        } finally {
+            invalidateNearCache(key);
+        }
         return removeInternal;
     }
 
     @Override
     protected InternalCompletableFuture<Data> removeAsyncInternal(Data key) {
-        invalidateCache(key);
-        return super.removeAsyncInternal(key);
+        InternalCompletableFuture<Data> future;
+        try {
+            future = super.removeAsyncInternal(key);
+        } finally {
+            invalidateNearCache(key);
+        }
+        return future;
     }
 
     @Override
@@ -331,51 +404,68 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     private void releaseReservedKeys(Map<Data, Long> reservationResults) {
         for (Data key : reservationResults.keySet()) {
-            invalidateCache(key);
+            invalidateNearCache(key);
         }
     }
 
     @Override
-    protected void invokePutAllOperationFactory(Address address, long size, int[] partitions, MapEntries[] entries)
-            throws Exception {
-        super.invokePutAllOperationFactory(address, size, partitions, entries);
-        for (MapEntries mapEntries : entries) {
-            for (int i = 0; i < mapEntries.size(); i++) {
-                invalidateCache(mapEntries.getKey(i));
+    protected void invokePutAllOperationFactory(Address address, long size,
+                                                int[] partitions, MapEntries[] entries) throws Exception {
+        try {
+            super.invokePutAllOperationFactory(address, size, partitions, entries);
+        } finally {
+            for (MapEntries mapEntries : entries) {
+                for (int i = 0; i < mapEntries.size(); i++) {
+                    invalidateNearCache(mapEntries.getKey(i));
+                }
             }
         }
     }
 
     @Override
     public Data executeOnKeyInternal(Data key, EntryProcessor entryProcessor) {
-        Data data = super.executeOnKeyInternal(key, entryProcessor);
-        invalidateCache(key);
+        Data data;
+        try {
+            data = super.executeOnKeyInternal(key, entryProcessor);
+        } finally {
+            invalidateNearCache(key);
+        }
         return data;
     }
 
     @Override
     public Map executeOnKeysInternal(Set<Data> keys, EntryProcessor entryProcessor) {
-        Map map = super.executeOnKeysInternal(keys, entryProcessor);
-        invalidateCache(keys);
+        Map map;
+        try {
+            map = super.executeOnKeysInternal(keys, entryProcessor);
+        } finally {
+            invalidateNearCache(keys);
+        }
         return map;
     }
 
     @Override
     public InternalCompletableFuture<Object> executeOnKeyInternal(Data key, EntryProcessor entryProcessor,
                                                                   ExecutionCallback<Object> callback) {
-        InternalCompletableFuture<Object> future = super.executeOnKeyInternal(key, entryProcessor, callback);
-        invalidateCache(key);
+        InternalCompletableFuture<Object> future;
+        try {
+            future = super.executeOnKeyInternal(key, entryProcessor, callback);
+        } finally {
+            invalidateNearCache(key);
+        }
         return future;
     }
 
     @Override
     public void executeOnEntriesInternal(EntryProcessor entryProcessor, Predicate predicate,
                                          List<Data> resultingKeyValuePairs) {
-        super.executeOnEntriesInternal(entryProcessor, predicate, resultingKeyValuePairs);
-
-        for (int i = 0; i < resultingKeyValuePairs.size(); i += 2) {
-            Data key = resultingKeyValuePairs.get(i);
-            invalidateCache(key);
+        try {
+            super.executeOnEntriesInternal(entryProcessor, predicate, resultingKeyValuePairs);
+        } finally {
+            for (int i = 0; i < resultingKeyValuePairs.size(); i += 2) {
+                Data key = resultingKeyValuePairs.get(i);
+                invalidateNearCache(key);
+            }
         }
     }
 
@@ -404,7 +494,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         }
     }
 
-    protected void invalidateCache(Data key) {
+    protected void invalidateNearCache(Data key) {
         if (key == null) {
             return;
         }
@@ -412,13 +502,13 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         nearCache.remove(key);
     }
 
-    protected void invalidateCache(Collection<Data> keys) {
+    protected void invalidateNearCache(Collection<Data> keys) {
         for (Data key : keys) {
             nearCache.remove(key);
         }
     }
 
-    protected void invalidateCache(Iterable<Data> keys) {
+    protected void invalidateNearCache(Iterable<Data> keys) {
         for (Data key : keys) {
             nearCache.remove(key);
         }

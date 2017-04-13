@@ -483,8 +483,9 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         if (nearCache == null) {
             return;
         }
-
-        nearCache.tryPublishReserved(key, value, reservationId, false);
+        if (reservationId != NOT_RESERVED) {
+            nearCache.tryPublishReserved(key, value, reservationId, false);
+        }
     }
 
     private long tryReserveForUpdate(Object key) {
