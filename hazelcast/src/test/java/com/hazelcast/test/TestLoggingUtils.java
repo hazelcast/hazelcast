@@ -41,7 +41,7 @@ public final class TestLoggingUtils {
 
     public static void initializeLogging() {
         if (shouldForceTestLoggingFactory()) {
-            configureAsyncLogging();
+//            configureAsyncLogging();
             String factoryClassName = TestLoggerFactory.class.getName();
             System.setProperty(LOGGING_CLASS_PROP_NAME, factoryClassName);
             System.setProperty("isThreadContextMapInheritable", "true");
