@@ -118,7 +118,7 @@ public class MulticastJoiner extends AbstractJoiner {
                             logger.fine("Ignoring merge join response, since " + joinInfo.getAddress()
                                     + " is already a member.");
                         }
-                        return;
+                        continue;
                     }
 
                     if (joinInfo.getMemberCount() == 1) {
@@ -144,8 +144,20 @@ public class MulticastJoiner extends AbstractJoiner {
     }
 
     @Override
+    public void reset() {
+        super.reset();
+        // since this node is going to merge with a detected cluster, clear the queued split brain join messages (if any)
+        splitBrainJoinMessages.clear();
+    }
+
+    @Override
     public String getType() {
         return "multicast";
+    }
+
+    // for tests only
+    public int getSplitBrainMessagesCount() {
+        return splitBrainJoinMessages.size();
     }
 
     void onReceivedJoinRequest(JoinRequest joinRequest) {
