@@ -297,19 +297,12 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         }
 
         private void doRun() {
-            while (true) {
+            while (!isShutdown) {
                 ClientPacket task;
                 try {
                     task = responseQueue.take();
                 } catch (InterruptedException e) {
-                    if (isShutdown) {
-                        return;
-                    }
                     continue;
-                }
-
-                if (isShutdown) {
-                    return;
                 }
                 process(task);
             }
