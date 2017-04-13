@@ -102,7 +102,6 @@ abstract class BaseMigrationSourceOperation extends BaseMigrationOperation {
         }
     }
 
-
     final PartitionReplicationEvent getPartitionReplicationEvent() {
         return new PartitionReplicationEvent(migrationInfo.getPartitionId(), migrationInfo.getDestinationNewReplicaIndex());
     }
@@ -113,6 +112,7 @@ abstract class BaseMigrationSourceOperation extends BaseMigrationOperation {
     }
 
     final void completeMigration(boolean result) {
+        success = result;
         migrationInfo.doneProcessing();
         onMigrationComplete(result);
         sendResponse(result);

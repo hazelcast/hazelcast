@@ -19,8 +19,8 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.operation.ReplicaSyncRequest;
 import com.hazelcast.internal.util.counters.MwCounter;
@@ -46,7 +46,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
@@ -193,7 +192,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
      * was not removed while the cluster was not active. Also cancel any currently scheduled sync requests for the given
      * partition and schedule a new sync request that is to be run in the case of timeout
      */
-    private void sendSyncReplicaRequest(int partitionId, Collection<ReplicaFragmentNamespace> namespaces,
+    private void sendSyncReplicaRequest(int partitionId, Collection<ReplicaFragmentNamespace> syncNamespaces,
             int replicaIndex, Address target) {
         if (node.clusterService.isMemberRemovedInNotJoinableState(target)) {
             return;
@@ -202,11 +201,38 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         if (!tryToAcquireReplicaSyncPermit()) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Cannot send sync replica request for partitionId=" + partitionId + ", replicaIndex=" + replicaIndex
-                        + ", namespaces=" + namespaces + ". No permits available!");
+                        + ", namespaces=" + syncNamespaces + ". No permits available!");
             }
             return;
         }
 
+        Collection<ReplicaFragmentNamespace> namespaces = registerSyncInfoFor(partitionId, syncNamespaces, replicaIndex, target);
+        if (namespaces.isEmpty()) {
+            releaseReplicaSyncPermit();
+            return;
+        }
+
+        // ASSERTION
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
+            assert namespaces.size() == 1 : "Only single namespace is allowed before V3.9: " + namespaces;
+        }
+
+        if (logger.isFinestEnabled()) {
+            logger.finest("Sending sync replica request for partitionId=" + partitionId + ", replicaIndex=" + replicaIndex
+                    + ", namespaces=" + namespaces);
+
+        }
+        replicaSyncRequestsCounter.inc();
+
+        ReplicaSyncRequest syncRequest = new ReplicaSyncRequest(partitionId, namespaces, replicaIndex);
+        nodeEngine.getOperationService().send(syncRequest, target);
+    }
+
+    private Collection<ReplicaFragmentNamespace> registerSyncInfoFor(int partitionId,
+            Collection<ReplicaFragmentNamespace> requestedNamespaces, int replicaIndex, Address target) {
+
+        // namespaces arg may not support removal
+        Collection<ReplicaFragmentNamespace> namespaces = new ArrayList<ReplicaFragmentNamespace>(requestedNamespaces);
         Iterator<ReplicaFragmentNamespace> iter = namespaces.iterator();
         while (iter.hasNext()) {
             ReplicaFragmentNamespace namespace = iter.next();
@@ -219,27 +245,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
 
             replicaSyncTimeoutScheduler.schedule(partitionMigrationTimeout, syncInfo, null);
         }
-
-        if (namespaces.isEmpty()) {
-            releaseReplicaSyncPermit();
-            return;
-        }
-
-        if (logger.isFinestEnabled()) {
-            logger.finest("Sending sync replica request for partitionId=" + partitionId + ", replicaIndex=" + replicaIndex
-                    + ", namespaces=" + namespaces);
-
-        }
-        replicaSyncRequestsCounter.inc();
-
-        // ASSERTION
-        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
-            assert namespaces.size() == 1 : "Only single namespace is allowed before V3.9: " + namespaces;
-        }
-        // --------
-
-        ReplicaSyncRequest syncRequest = new ReplicaSyncRequest(partitionId, namespaces, replicaIndex);
-        nodeEngine.getOperationService().send(syncRequest, target);
+        return namespaces;
     }
 
     @Override
@@ -251,6 +257,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     }
 
     @Override
+    // Caution: Returning version array without copying for performance reasons. Callers must not modify this array!
     public long[] incrementPartitionReplicaVersions(int partitionId, ReplicaFragmentNamespace namespace, int backupCount) {
         PartitionReplicaVersions replicaVersion = replicaVersions[partitionId];
         return replicaVersion.incrementAndGet(namespace, backupCount);
@@ -278,6 +285,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     }
 
     @Override
+    // Caution: Returning version array without copying for performance reasons. Callers must not modify this array!
     public long[] getPartitionReplicaVersions(int partitionId, ReplicaFragmentNamespace namespace) {
         return replicaVersions[partitionId].get(namespace);
     }
@@ -302,14 +310,11 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
      * @param versions the new replica versions for the partition
      */
     // called in operation threads
-    public void finalizeReplicaSync(int partitionId, int replicaIndex, Map<ReplicaFragmentNamespace, long[]> versions) {
+    public void finalizeReplicaSync(int partitionId, int replicaIndex, ReplicaFragmentNamespace namespace, long[] versions) {
         PartitionReplicaVersions replicaVersion = replicaVersions[partitionId];
-        for (Map.Entry<ReplicaFragmentNamespace, long[]> entry : versions.entrySet()) {
-            ReplicaFragmentNamespace namespace = entry.getKey();
-            replicaVersion.clear(namespace);
-            replicaVersion.set(namespace, entry.getValue(), replicaIndex);
-            clearReplicaSyncRequest(partitionId, namespace, replicaIndex);
-        }
+        replicaVersion.clear(namespace);
+        replicaVersion.set(namespace, versions, replicaIndex);
+        clearReplicaSyncRequest(partitionId, namespace, replicaIndex);
     }
 
     /**

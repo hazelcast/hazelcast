@@ -29,11 +29,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.singletonList;
-import static java.util.Collections.singletonMap;
-
 /**
  * Contains fragment namespaces along with their partition versions and migration data operations
+ *
+ * @since 3.9
  */
 public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable {
 
@@ -44,25 +43,13 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
     public ReplicaFragmentMigrationState() {
     }
 
-    private ReplicaFragmentMigrationState(Map<ReplicaFragmentNamespace, long[]> namespaces,
-                                          Collection<Operation> migrationOperations) {
+    public ReplicaFragmentMigrationState(Map<ReplicaFragmentNamespace, long[]> namespaces,
+            Collection<Operation> migrationOperations) {
         this.namespaces = namespaces;
         this.migrationOperations = migrationOperations;
     }
 
-    public static ReplicaFragmentMigrationState newDefaultReplicaFragmentMigrationState(long[] replicaVersions,
-                                                                                        Collection<Operation> operations) {
-        Map<ReplicaFragmentNamespace, long[]> namespaces = singletonMap(InternalReplicaFragmentNamespace.INSTANCE,
-                replicaVersions);
-        return new ReplicaFragmentMigrationState(namespaces, operations);
-    }
-
-    public static ReplicaFragmentMigrationState newGroupedReplicaFragmentMigrationState(
-            Map<ReplicaFragmentNamespace, long[]> namespaces, Operation operation) {
-        return new ReplicaFragmentMigrationState(namespaces, singletonList(operation));
-    }
-
-    public Map<ReplicaFragmentNamespace, long[]> getNamespaces() {
+    public Map<ReplicaFragmentNamespace, long[]> getNamespaceVersionMap() {
         return namespaces;
     }
 

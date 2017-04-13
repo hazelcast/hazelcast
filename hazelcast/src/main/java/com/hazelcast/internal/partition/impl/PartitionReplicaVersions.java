@@ -44,6 +44,7 @@ final class PartitionReplicaVersions {
 
     /**
      * Returns whether given replica version is behind the current version or not.
+     * @param namespace replica namespace
      * @param newVersions new replica versions
      * @param replicaIndex replica index
      * @return true if given version is stale, false otherwise
@@ -56,6 +57,7 @@ final class PartitionReplicaVersions {
      * Updates replica version if it is newer than current version. Otherwise has no effect.
      * Marks versions as dirty if version increase is not incremental.
      *
+     * @param namespace replica namespace
      * @param newVersions new replica versions
      * @param replicaIndex replica index
      * @return returns false if versions are dirty, true otherwise

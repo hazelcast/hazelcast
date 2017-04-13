@@ -7,6 +7,7 @@ import com.hazelcast.internal.partition.operation.MigrationRequestOperation;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ReplicaFragmentNamespace;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -22,7 +23,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.spi.partition.IPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.spi.partition.IPartitionService.SERVICE_NAME;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -49,7 +49,7 @@ public class MasterSplitTest extends HazelcastTestSupport {
 
         int partitionStateVersion = getPartitionService(member1).getPartitionStateVersion();
 
-        Operation op = new MigrationRequestOperation(migration, partitionStateVersion);
+        Operation op = new MigrationRequestOperation(migration, partitionStateVersion, true);
 
         InvocationBuilder invocationBuilder = getOperationServiceImpl(member1)
                 .createInvocationBuilder(SERVICE_NAME, op, getAddress(member2))
@@ -82,7 +82,9 @@ public class MasterSplitTest extends HazelcastTestSupport {
 
         int partitionStateVersion = getPartitionService(member1).getPartitionStateVersion();
 
-        Operation op = new MigrationOperation(migration, new long[MAX_BACKUP_COUNT], Collections.<Operation>emptyList(), partitionStateVersion);
+        ReplicaFragmentMigrationState migrationState
+                = new ReplicaFragmentMigrationState(Collections.<ReplicaFragmentNamespace, long[]>emptyMap(), Collections.<Operation>emptySet());
+        Operation op = new MigrationOperation(migration, partitionStateVersion, migrationState, true, true);
 
         InvocationBuilder invocationBuilder = getOperationServiceImpl(member1)
                 .createInvocationBuilder(SERVICE_NAME, op, getAddress(member2))

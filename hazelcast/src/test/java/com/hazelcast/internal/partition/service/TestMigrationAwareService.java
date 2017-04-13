@@ -19,7 +19,6 @@ package com.hazelcast.internal.partition.service;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
-import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
@@ -32,7 +31,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static org.junit.Assert.assertNull;
 
-public class TestMigrationAwareService extends TestAbstractMigrationAwareService<Void> implements MigrationAwareService {
+public class TestMigrationAwareService extends TestAbstractMigrationAwareService<Void> {
 
     public static final String SERVICE_NAME = TestMigrationAwareService.class.getSimpleName();
 

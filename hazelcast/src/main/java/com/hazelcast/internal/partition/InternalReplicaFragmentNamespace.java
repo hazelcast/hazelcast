@@ -25,8 +25,11 @@ import com.hazelcast.spi.ReplicaFragmentNamespace;
 import java.io.IOException;
 
 /**
- * TODO: Javadoc Pending...
+ * Internal {@link ReplicaFragmentNamespace} implementation used by partitioning system to identity
+ * non-fragmented service structures. All partition replica data belonging to service those do not implement
+ * {@link com.hazelcast.spi.FragmentedMigrationAwareService} will be registered with {@code InternalReplicaFragmentNamespace}.
  *
+ * @see com.hazelcast.spi.FragmentedMigrationAwareService
  * @since 3.9
  */
 public final class InternalReplicaFragmentNamespace implements ReplicaFragmentNamespace, IdentifiedDataSerializable {

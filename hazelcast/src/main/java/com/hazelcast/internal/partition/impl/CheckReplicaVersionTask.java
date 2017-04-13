@@ -17,14 +17,14 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.internal.cluster.impl.Versions;
-import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
 import com.hazelcast.internal.partition.operation.CheckReplicaVersion;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.FragmentedMigrationAwareService;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.FragmentedMigrationAwareService;
 import com.hazelcast.spi.ReplicaFragmentNamespace;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -103,7 +103,6 @@ final class CheckReplicaVersionTask implements PartitionSpecificRunnable, Urgent
         if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
             assert versionMap.size() == 1 : "Only single namespace is allowed before V3.9: " + versionMap;
         }
-        // --------
 
         CheckReplicaVersion op = new CheckReplicaVersion(versionMap, shouldInvoke());
         op.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(SERVICE_NAME);

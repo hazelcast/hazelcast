@@ -19,13 +19,16 @@ package com.hazelcast.spi;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
- * TODO: Javadoc Pending...
+ * {@code ReplicaFragmentNamespace} is a namespace to identify/distinguish replica fragments created by
+ * {@link FragmentedMigrationAwareService}. Partition replica data belonging to the same {@code ReplicaFragmentNamespace}
+ * will be transferred in the same packet.
  *
+ * @see FragmentedMigrationAwareService
  * @since 3.9
  */
 public interface ReplicaFragmentNamespace extends DataSerializable {
     /**
-     * Name of the service which fragments belongs to
+     * Name of the service which fragment belongs to
      * @return name of the service
      */
     String getServiceName();

@@ -64,8 +64,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
     private static final int PARALLEL_REPLICATIONS = 10;
     private static final int BACKUP_SYNC_INTERVAL = 1;
 
-    private static final String NAMESPACE_1 = "ns1";
-    private static final String NAMESPACE_2 = "ns2";
+    private static final String[] NAMESPACES = {"ns1", "ns2"};
 
     TestHazelcastInstanceFactory factory;
 
@@ -87,8 +86,9 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         OperationService operationService = nodeEngine.getOperationService();
         for (int i = 0; i < partitionCount; i++) {
             operationService.invokeOnPartition(null, new TestIncrementOperation(), i);
-            operationService.invokeOnPartition(null, new TestFragmentIncrementOperation(NAMESPACE_1), i);
-            operationService.invokeOnPartition(null, new TestFragmentIncrementOperation(NAMESPACE_2), i);
+            for (String name : NAMESPACES) {
+                operationService.invokeOnPartition(null, new TestFragmentIncrementOperation(name), i);
+            }
         }
     }
 
@@ -189,15 +189,15 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         final int expectedSize = partitionCount * (actualBackupCount + 1);
 
         int total = 0;
-        int totalFragmentedNS1 = 0;
-        int totalFragmentedNS2 = 0;
+        int[] fragmentTotals = new int[NAMESPACES.length];
         for (HazelcastInstance hz : instances) {
             TestMigrationAwareService service = getService(hz, TestMigrationAwareService.SERVICE_NAME);
             total += service.size();
 
             TestFragmentedMigrationAwareService fragmentedService = getService(hz, TestFragmentedMigrationAwareService.SERVICE_NAME);
-            totalFragmentedNS1 += fragmentedService.size(NAMESPACE_1);
-            totalFragmentedNS2 += fragmentedService.size(NAMESPACE_2);
+            for (int i = 0; i < NAMESPACES.length; i++) {
+                fragmentTotals[i] += fragmentedService.size(NAMESPACES[i]);
+            }
 
             Node node = getNode(hz);
             InternalPartitionService partitionService = node.getPartitionService();
@@ -206,26 +206,30 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
 
             // find leaks
             assertNoLeakingData(service, partitions, thisAddress, null);
-            assertNoLeakingData(fragmentedService, partitions, thisAddress, NAMESPACE_1);
-            assertNoLeakingData(fragmentedService, partitions, thisAddress, NAMESPACE_2);
+            for (String name : NAMESPACES) {
+                assertNoLeakingData(fragmentedService, partitions, thisAddress, name);
+            }
 
             // find missing
             assertNoMissingData(service, partitions, thisAddress, null);
-            assertNoMissingData(fragmentedService, partitions, thisAddress, NAMESPACE_1);
-            assertNoMissingData(fragmentedService, partitions, thisAddress, NAMESPACE_2);
+            for (String name : NAMESPACES) {
+                assertNoMissingData(fragmentedService, partitions, thisAddress, name);
+            }
 
             // check values
             assertPartitionVersionsAndBackupValues(actualBackupCount, service, node, partitions, null, allowDirty);
-            assertPartitionVersionsAndBackupValues(actualBackupCount, fragmentedService, node, partitions, NAMESPACE_1, allowDirty);
-            assertPartitionVersionsAndBackupValues(actualBackupCount, fragmentedService, node, partitions, NAMESPACE_2, allowDirty);
+            for (String name : NAMESPACES) {
+                assertPartitionVersionsAndBackupValues(actualBackupCount, fragmentedService, node, partitions, name, allowDirty);
+            }
 
             assertMigrationEvents(service, thisAddress);
             assertMigrationEvents(fragmentedService, thisAddress);
         }
 
         assertEquals("Missing data!", expectedSize, total);
-        assertEquals("Missing data!", expectedSize, totalFragmentedNS1);
-        assertEquals("Missing data!", expectedSize, totalFragmentedNS2);
+        for (int fragmentTotal : fragmentTotals) {
+            assertEquals("Missing data!", expectedSize, fragmentTotal);
+        }
     }
 
     private <N> void assertNoLeakingData(TestAbstractMigrationAwareService<N> service, InternalPartition[] partitions,

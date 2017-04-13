@@ -117,7 +117,7 @@ public final class LegacyMigrationRequestOperation extends BaseMigrationSourceOp
 
         Collection<Operation> tasks = new LinkedList<Operation>();
         for (ServiceInfo serviceInfo : nodeEngine.getServiceInfos(MigrationAwareService.class)) {
-            MigrationAwareService service = (MigrationAwareService) serviceInfo.getService();
+            MigrationAwareService service = serviceInfo.getService();
 
             Operation op = service.prepareReplicationOperation(replicationEvent);
             if (op != null) {

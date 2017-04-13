@@ -24,8 +24,10 @@ import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import java.io.IOException;
 
 /**
- * TODO: Javadoc Pending...
+ * Default implementation of {@link ReplicaFragmentNamespace} that can be used by services to identify
+ * their {@link com.hazelcast.core.DistributedObject}s.
  *
+ * @see FragmentedMigrationAwareService
  * @since 3.9
  */
 public final class DefaultReplicaFragmentNamespace implements ReplicaFragmentNamespace, IdentifiedDataSerializable {

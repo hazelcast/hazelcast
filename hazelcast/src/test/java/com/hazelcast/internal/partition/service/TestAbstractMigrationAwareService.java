@@ -17,8 +17,8 @@
 package com.hazelcast.internal.partition.service;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.BaseMigrationAwareService;
 import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.ReplicaFragmentNamespace;
@@ -30,7 +30,7 @@ import java.util.Properties;
 
 /**
  */
-public abstract class TestAbstractMigrationAwareService<N> implements ManagedService, BaseMigrationAwareService {
+public abstract class TestAbstractMigrationAwareService<N> implements ManagedService, MigrationAwareService {
 
     protected static final String BACKUP_COUNT_PROP = "backups.count";
 

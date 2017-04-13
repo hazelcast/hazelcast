@@ -24,7 +24,6 @@ import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BaseMigrationAwareService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
@@ -94,7 +93,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
     private void notifyServices(NodeEngineImpl nodeEngine) {
         PartitionMigrationEvent event = getPartitionMigrationEvent();
 
-        Collection<MigrationAwareService> migrationAwareServices = nodeEngine.getServices(MigrationAwareService.class);
+        Collection<MigrationAwareService> migrationAwareServices = getMigrationAwareServices();
 
         // Old backup owner is not notified about migration until migration
         // is committed on destination. This is the only place on backup owner
@@ -195,7 +194,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
         return versions;
     }
 
-    private void beforeMigration(PartitionMigrationEvent event, BaseMigrationAwareService service) {
+    private void beforeMigration(PartitionMigrationEvent event, MigrationAwareService service) {
         try {
             service.beforeMigration(event);
         } catch (Throwable e) {

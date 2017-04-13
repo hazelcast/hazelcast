@@ -68,7 +68,7 @@ package com.hazelcast.spi;
  * During commit, destination usually doesn't expected to perform any task. But service implementation may need
  * to execute custom tasks.
  */
-public interface MigrationAwareService extends BaseMigrationAwareService {
+public interface MigrationAwareService {
 
     /**
      * Returns an operation to replicate service data and/or state for a specific partition replica
@@ -84,4 +84,38 @@ public interface MigrationAwareService extends BaseMigrationAwareService {
      * @return replication operation or null if nothing will be replicated
      */
     Operation prepareReplicationOperation(PartitionReplicationEvent event);
+
+    /**
+     * Called before migration process starts, on both source and destination members.
+     * <p>
+     * Service can take actions required before migration. Migration process will block until this method returns.
+     * If this method fails by throwing an exception, migration process for specific partition will fail
+     * and will be rolled back.
+     *
+     * @param event migration event
+     */
+    void beforeMigration(PartitionMigrationEvent event);
+
+    /**
+     * Commits the migration process for this service, on both source and destination members.
+     * This method will be called after all replication operations are executed successfully on destination
+     * and master member receives success response from all participants.
+     * <p>
+     * Commit is not expected to fail at this point, all exceptions will be suppressed and logged.
+     *
+     * @param event migration event
+     */
+    void commitMigration(PartitionMigrationEvent event);
+
+    /**
+     * Rollback the migration process for this service, on both source and destination members.
+     * This method will be called when migration process fails at any moment.
+     * Reasons for failure may be an exception thrown on any migration step
+     * or failure(s) of any of the migration participants; either master or source or destination.
+     * <p>
+     * Rollback is not expected to fail at this point, all exceptions will be suppressed and logged.
+     *
+     * @param event migration event
+     */
+    void rollbackMigration(PartitionMigrationEvent event);
 }

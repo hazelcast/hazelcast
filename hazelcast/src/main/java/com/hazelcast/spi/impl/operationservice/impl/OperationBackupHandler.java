@@ -23,6 +23,7 @@ import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.FragmentedMigrationAwareService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ReplicaFragmentAware;
 import com.hazelcast.spi.ReplicaFragmentNamespace;
@@ -38,6 +39,8 @@ import static java.lang.Math.min;
  * Responsible for creating a backups of an operation.
  */
 final class OperationBackupHandler {
+
+    private static final boolean ASSERTION_ENABLED = OperationBackupHandler.class.desiredAssertionStatus();
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
@@ -253,18 +256,45 @@ final class OperationBackupHandler {
         if (backupOp == null) {
             throw new IllegalArgumentException("Backup operation should not be null! " + backupAwareOp);
         }
-        if (backupAwareOp instanceof ReplicaFragmentAware) {
-            if (!(backupOp instanceof ReplicaFragmentAware)) {
-                throw new IllegalArgumentException("Original operation is ReplicaFragmentAware, "
-                        + "backup operation must be ReplicaFragmentAware too. " + backupAwareOp);
-            }
+        if (ASSERTION_ENABLED) {
+            checkReplicaFragmentNamespaces(backupAwareOp, backupOp);
         }
+
         Operation op = (Operation) backupAwareOp;
         // set service name of backup operation.
         // if getServiceName() method is overridden to return the same name
         // then this will have no effect.
         backupOp.setServiceName(op.getServiceName());
         return backupOp;
+    }
+
+    private void checkReplicaFragmentNamespaces(BackupAwareOperation backupAwareOp, Operation backupOp) {
+        Operation op = (Operation) backupAwareOp;
+        Object service;
+        try {
+            service = op.getService();
+        } catch (Exception ignored) {
+            // operation doesn't know its service name
+            return;
+        }
+
+        if (service instanceof FragmentedMigrationAwareService) {
+            assert backupAwareOp instanceof ReplicaFragmentAware
+                    : service + " is instance of FragmentedMigrationAwareService, "
+                    + backupAwareOp + " should implement ReplicaFragmentAware!";
+
+            assert backupOp instanceof ReplicaFragmentAware
+                    : service + " is instance of FragmentedMigrationAwareService, "
+                    + backupOp + " should implement ReplicaFragmentAware!";
+        } else {
+            assert !(backupAwareOp instanceof ReplicaFragmentAware)
+                    : service + " is NOT instance of FragmentedMigrationAwareService, "
+                    + backupAwareOp + " should NOT implement ReplicaFragmentAware!";
+
+            assert !(backupOp instanceof ReplicaFragmentAware)
+                    : service + " is NOT instance of FragmentedMigrationAwareService, "
+                    + backupOp + " should NOT implement ReplicaFragmentAware!";
+        }
     }
 
     private static Backup newBackup(BackupAwareOperation backupAwareOp, Object backupOp, long[] replicaVersions,

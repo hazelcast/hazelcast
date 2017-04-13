@@ -52,7 +52,7 @@ public class MigrationOperation extends BaseMigrationDestinationOperation {
     public MigrationOperation() {
     }
 
-    MigrationOperation(MigrationInfo migrationInfo, int partitionStateVersion,
+    public MigrationOperation(MigrationInfo migrationInfo, int partitionStateVersion,
                        ReplicaFragmentMigrationState fragmentMigrationState, boolean firstFragment, boolean lastFragment) {
         super(migrationInfo, partitionStateVersion);
         this.fragmentMigrationState = fragmentMigrationState;
@@ -119,8 +119,8 @@ public class MigrationOperation extends BaseMigrationDestinationOperation {
             int destinationNewReplicaIndex = migrationInfo.getDestinationNewReplicaIndex();
             int replicaOffset = destinationNewReplicaIndex <= 1 ? 1 : destinationNewReplicaIndex;
 
-            final Map<ReplicaFragmentNamespace, long[]> replicaFragmentNamespaceVersions = fragmentMigrationState.getNamespaces();
-            for (Entry<ReplicaFragmentNamespace, long[]> e  : replicaFragmentNamespaceVersions.entrySet()) {
+            Map<ReplicaFragmentNamespace, long[]> namespaceVersions = fragmentMigrationState.getNamespaceVersionMap();
+            for (Entry<ReplicaFragmentNamespace, long[]> e  : namespaceVersions.entrySet()) {
                 ReplicaFragmentNamespace namespace = e.getKey();
                 long[] replicaVersions = e.getValue();
                 replicaManager.setPartitionReplicaVersions(migrationInfo.getPartitionId(), namespace,

@@ -17,11 +17,20 @@
 package com.hazelcast.spi;
 
 /**
- * TODO: Javadoc Pending...
+ * An object which is aware of {@link ReplicaFragmentNamespace} which object itself belongs to.
+ * <p>
+ * {@link BackupAwareOperation}s and {@link BackupOperation}s created by {@link FragmentedMigrationAwareService}s
+ * must implement {@code ReplicaFragmentAware}.
  *
+ * @see FragmentedMigrationAwareService
+ * @see ReplicaFragmentNamespace
  * @since 3.9
  */
 public interface ReplicaFragmentAware {
-
+    /**
+     * Returns the {@code ReplicaFragmentNamespace} which this object belongs to.
+     *
+     * @return replica fragment namespace
+     */
     ReplicaFragmentNamespace getReplicaFragmentNamespace();
 }

@@ -32,8 +32,8 @@ import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BaseMigrationAwareService;
 import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -163,11 +163,10 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
 
     /** Notifies all {@link MigrationAwareService}s that the migration is starting. */
     void executeBeforeMigrations() throws Exception {
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         PartitionMigrationEvent event = getMigrationEvent();
 
         Throwable t = null;
-        for (BaseMigrationAwareService service : nodeEngine.getServices(BaseMigrationAwareService.class)) {
+        for (MigrationAwareService service : getMigrationAwareServices()) {
             // we need to make sure all beforeMigration() methods are executed
             try {
                 service.beforeMigration(event);

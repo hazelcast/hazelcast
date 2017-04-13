@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.internal.cluster.impl.Versions;
-import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -42,9 +42,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Level;
 
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
@@ -64,14 +63,16 @@ public class ReplicaSyncResponse extends AbstractPartitionOperation
         implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation, AllowedDuringPassiveState {
 
     private Collection<Operation> operations;
-    private Map<ReplicaFragmentNamespace, long[]> versions;
+    private ReplicaFragmentNamespace namespace;
+    private long[] versions;
 
     public ReplicaSyncResponse() {
     }
 
-    public ReplicaSyncResponse(Collection<Operation> operations, Map<ReplicaFragmentNamespace, long[]> versionMap) {
+    public ReplicaSyncResponse(Collection<Operation> operations, ReplicaFragmentNamespace namespace, long[] versions) {
         this.operations = operations;
-        this.versions = versionMap;
+        this.namespace = namespace;
+        this.versions = versions;
     }
 
     @Override
@@ -105,13 +106,11 @@ public class ReplicaSyncResponse extends AbstractPartitionOperation
 
         PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
         if (replicaIndex == currentReplicaIndex) {
-            replicaManager.finalizeReplicaSync(partitionId, replicaIndex, versions);
+            replicaManager.finalizeReplicaSync(partitionId, replicaIndex, namespace, versions);
         } else {
-            for (ReplicaFragmentNamespace namespace : versions.keySet()) {
-                replicaManager.clearReplicaSyncRequest(partitionId, namespace, replicaIndex);
-                if (currentReplicaIndex < 0) {
-                    replicaManager.clearPartitionReplicaVersions(partitionId, namespace);
-                }
+            replicaManager.clearReplicaSyncRequest(partitionId, namespace, replicaIndex);
+            if (currentReplicaIndex < 0) {
+                replicaManager.clearPartitionReplicaVersions(partitionId, namespace);
             }
         }
     }
@@ -177,7 +176,8 @@ public class ReplicaSyncResponse extends AbstractPartitionOperation
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
             logger.finest("No data available for replica sync, partitionId=" + partitionId
-                    + ", replicaIndex=" + replicaIndex + ", namespaces=" + versions.keySet());
+                    + ", replicaIndex=" + replicaIndex + ", namespace=" + namespace
+                    + ", versions=" + Arrays.toString(versions));
         }
     }
 
@@ -194,7 +194,8 @@ public class ReplicaSyncResponse extends AbstractPartitionOperation
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
             logger.finest("Applying replica sync for partitionId=" + partitionId
-                    + ", replicaIndex=" + replicaIndex + ", namespaces=" + versions.keySet());
+                    + ", replicaIndex=" + replicaIndex + ", namespace=" + namespace
+                    + ", versions=" + Arrays.toString(versions));
         }
     }
 
@@ -240,15 +241,12 @@ public class ReplicaSyncResponse extends AbstractPartitionOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            out.writeInt(versions.size());
-            for (Map.Entry<ReplicaFragmentNamespace, long[]> entry : versions.entrySet()) {
-                out.writeObject(entry.getKey());
-                out.writeLongArray(entry.getValue());
-            }
+            out.writeObject(namespace);
         } else {
-            assert versions.size() == 1 : "Only single namespace is allowed before V3.9: " + versions.keySet();
-            out.writeLongArray(versions.get(InternalReplicaFragmentNamespace.INSTANCE));
+            assert namespace.equals(InternalReplicaFragmentNamespace.INSTANCE)
+                    : "Only internal namespace is allowed before V3.9: " + namespace;
         }
+        out.writeLongArray(versions);
 
         int size = operations != null ? operations.size() : 0;
         out.writeInt(size);
@@ -262,18 +260,11 @@ public class ReplicaSyncResponse extends AbstractPartitionOperation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            int len = in.readInt();
-            versions = new HashMap<ReplicaFragmentNamespace, long[]>(len);
-            for (int i = 0; i < len; i++) {
-                ReplicaFragmentNamespace ns = in.readObject();
-                long[] v = in.readLongArray();
-                versions.put(ns, v);
-            }
+            namespace = in.readObject();
         } else {
-            versions = new HashMap<ReplicaFragmentNamespace, long[]>(1);
-            long[] v = in.readLongArray();
-            versions.put(InternalReplicaFragmentNamespace.INSTANCE, v);
+            namespace = InternalReplicaFragmentNamespace.INSTANCE;
         }
+        versions = in.readLongArray();
 
         int size = in.readInt();
         if (size > 0) {
@@ -289,7 +280,8 @@ public class ReplicaSyncResponse extends AbstractPartitionOperation
     protected void toString(StringBuilder sb) {
         super.toString(sb);
 
-        sb.append(", versions=").append(versions);
+        sb.append(", namespace=").append(namespace);
+        sb.append(", versions=").append(Arrays.toString(versions));
     }
 
     @Override

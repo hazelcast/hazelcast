@@ -19,7 +19,6 @@ package com.hazelcast.internal.partition.service.fragment;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.internal.partition.service.TestAbstractMigrationAwareService;
 import com.hazelcast.spi.FragmentedMigrationAwareService;
-import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
@@ -36,13 +35,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static java.util.Collections.newSetFromMap;
 import static org.hamcrest.Matchers.isIn;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 
 public class TestFragmentedMigrationAwareService extends TestAbstractMigrationAwareService<String>
-        implements FragmentedMigrationAwareService, MigrationAwareService {
+        implements FragmentedMigrationAwareService {
 
     public static final String SERVICE_NAME = TestFragmentedMigrationAwareService.class.getSimpleName();
 
@@ -54,8 +52,6 @@ public class TestFragmentedMigrationAwareService extends TestAbstractMigrationAw
     }
 
     private final ConcurrentMap<Key, Integer> data = new ConcurrentHashMap<Key, Integer>();
-    private final Set<ReplicaFragmentNamespace> knownNamespaces
-            = newSetFromMap(new ConcurrentHashMap<ReplicaFragmentNamespace, Boolean>());
 
     int inc(String name, int partitionId) {
         Key key = new Key(name, partitionId);
@@ -65,13 +61,11 @@ public class TestFragmentedMigrationAwareService extends TestAbstractMigrationAw
         } else {
             count++;
         }
-        knownNamespaces.add(new TestReplicaFragmentNamespace(name));
         data.put(key, count);
         return count;
     }
 
     void put(String name, int partitionId, int value) {
-        knownNamespaces.add(new TestReplicaFragmentNamespace(name));
         data.put(new Key(name, partitionId), value);
     }
 
@@ -80,21 +74,27 @@ public class TestFragmentedMigrationAwareService extends TestAbstractMigrationAw
         if (event.getReplicaIndex() > backupCount) {
             return Collections.emptySet();
         }
+
+        Set<ReplicaFragmentNamespace> knownNamespaces = new HashSet<ReplicaFragmentNamespace>();
+        for (Key key : data.keySet()) {
+            knownNamespaces.add(new TestReplicaFragmentNamespace(key.name));
+        }
         return Collections.unmodifiableCollection(knownNamespaces);
     }
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event, Collection<ReplicaFragmentNamespace> namespaces) {
-        if (event.getReplicaIndex() > backupCount) {
+        if (event.getReplicaIndex() > backupCount || namespaces.isEmpty()) {
             return null;
         }
 
+        Collection<ReplicaFragmentNamespace> knownNamespaces = getAllFragmentNamespaces(event);
         Map<TestReplicaFragmentNamespace, Integer> values = new HashMap<TestReplicaFragmentNamespace, Integer>(namespaces.size());
         for (ReplicaFragmentNamespace ns : namespaces) {
             assertThat(ns, isIn(knownNamespaces));
 
             TestReplicaFragmentNamespace testNs = (TestReplicaFragmentNamespace) ns;
-            Integer value = get(testNs.name, event.getPartitionId());
+            int value = get(testNs.name, event.getPartitionId());
             values.put(testNs, value);
         }
 
