@@ -109,7 +109,10 @@ public abstract class AbstractHandler
 
     final void unregisterOp(int operation) throws IOException {
         SelectionKey selectionKey = getSelectionKey();
-        selectionKey.interestOps(selectionKey.interestOps() & ~operation);
+        int interestOps = selectionKey.interestOps();
+        if ((interestOps & operation) != 0) {
+            selectionKey.interestOps(interestOps & ~operation);
+        }
     }
 
     @Override
