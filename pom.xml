@@ -240,6 +240,7 @@
                 <version>${maven.surefire.plugin.version}</version>
                 <configuration combine.self="override">
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                    <useFile>false</useFile>
                     <runOrder>failedfirst</runOrder>
 
                     <!-- 1C means 1 process per cpu core -->
@@ -309,6 +310,7 @@
                                 </goals>
                                 <configuration combine.self="override">
                                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                                    <useFile>false</useFile>
                                     <!-- 1C means 1 process per cpu core -->
                                     <forkCount>1C</forkCount>
                                     <reuseForks>true</reuseForks>
@@ -352,7 +354,7 @@
                                 </goals>
                                 <configuration combine.self="override">
                                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
-
+                                    <useFile>false</useFile>
                                     <argLine>
                                         -Xms128m -Xmx1G -XX:MaxPermSize=128M
                                         -Dhazelcast.phone.home.enabled=false
@@ -390,6 +392,7 @@
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                            <useFile>false</useFile>
                             <argLine>
                                 -Xms128m -Xmx1G -XX:MaxPermSize=128M
                                 -Dhazelcast.phone.home.enabled=false
@@ -443,6 +446,7 @@
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                            <useFile>false</useFile>
                             <testFailureIgnore>true</testFailureIgnore>
                             <argLine>
                                 -Xms128m -Xmx1G -XX:MaxPermSize=128M
@@ -526,6 +530,7 @@
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                            <useFile>false</useFile>
                             <testFailureIgnore>true</testFailureIgnore>
                             <includes>
                                 <include>**/*.java</include>
@@ -603,6 +608,7 @@
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                            <useFile>false</useFile>
                             <testFailureIgnore>true</testFailureIgnore>
                             <argLine>
                                 -Xms128m -Xmx1G -XX:MaxPermSize=128M
@@ -863,6 +869,7 @@
                         <configuration combine.self="override">
                             <parallel>none</parallel>
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                            <useFile>false</useFile>
                             <argLine>
                                 -Xms128m -Xmx1G -XX:MaxPermSize=128M
                                 -Dhazelcast.phone.home.enabled=false
@@ -897,6 +904,7 @@
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                            <useFile>false</useFile>
                             <parallel>none</parallel>
                             <argLine>
                                 -Xms512m -Xmx2G -XX:MaxPermSize=128M
@@ -942,6 +950,7 @@
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                            <useFile>false</useFile>
                             <argLine>
                                 -Xms128m -Xmx1G
                                 -Dhazelcast.phone.home.enabled=false
