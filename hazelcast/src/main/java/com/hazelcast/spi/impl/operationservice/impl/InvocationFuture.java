@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractInvocationFuture;
@@ -49,13 +48,13 @@ import static com.hazelcast.util.StringUtil.timeToString;
  */
 final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
 
-    private static final AtomicReference<HeapData> HEAP_DATA = new AtomicReference<HeapData>();
+    private static final AtomicReference<Data> HEAP_DATA = new AtomicReference<Data>();
 
     volatile boolean interrupted;
     final Invocation invocation;
     private final boolean deserialize;
 
-    private volatile HeapData heapData;
+    private volatile Data heapData;
 
     InvocationFuture(Invocation invocation, boolean deserialize) {
         super(invocation.context.asyncExecutor, invocation.context.logger);
@@ -98,7 +97,7 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
         }
     }
 
-    @SuppressWarnings("checkstyle:npathcomplexity")
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     @Override
     protected Object resolve(Object unresolved) {
         InternalSerializationService serializationService = invocation.context.serializationService;
@@ -107,17 +106,15 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
         if (unresolved == null) {
             return null;
         } else if (unresolved.getClass() == Packet.class) {
-            if (heapData != null) {
-                return heapData;
-            }
+            if (heapData == null) {
+                // a Packet is a NormalResponse in disguise.  We don't care for the NormalResponse instance, so we just
+                // retrieve the data directly.
 
-            // a Packet is a NormalResponse in disguise.  We don't care for the NormalResponse instance, so we just
-            // retrieve the data directly.
+                value = extractValue(((Packet) unresolved).toByteArray(), serializationService, deserialize);
 
-            value = extractValue(((Packet) unresolved).toByteArray(), serializationService, deserialize);
-
-            if (value != null && value.getClass() == HeapData.class) {
-                HEAP_DATA.compareAndSet(null, (HeapData) value);
+                if (value != null && value instanceof Data) {
+                    HEAP_DATA.compareAndSet(null, (Data) value);
+                }
             }
             value = heapData;
         } else if (unresolved == INTERRUPTED) {
@@ -131,10 +128,6 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
             if (deserialize && value instanceof Data) {
                 value = serializationService.toObject(value);
             }
-        }
-
-        if (value == null) {
-            return null;
         }
 
         if (value instanceof Throwable) {
