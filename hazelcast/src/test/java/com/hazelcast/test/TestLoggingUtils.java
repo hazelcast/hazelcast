@@ -46,7 +46,7 @@ public final class TestLoggingUtils {
             System.setProperty("isThreadContextMapInheritable", "true");
             System.clearProperty(LOGGING_TYPE_PROP_NAME);
 
-            hackLog4jConsoleAppender();
+//            hackLog4jConsoleAppender();
         }
     }
 
