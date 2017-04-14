@@ -27,6 +27,7 @@ import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -629,6 +630,21 @@ public abstract class HazelcastTestSupport {
         }
 
         assertTrue("Instances not in safe state! " + nonSafeStates, nonSafeStates.isEmpty());
+    }
+
+    public static void assertNodeStarted(HazelcastInstance instance) {
+        NodeExtension nodeExtension = getNode(instance).getNodeExtension();
+        assertTrue(nodeExtension.isStartCompleted());
+    }
+
+    public static void assertNodeStartedEventually(final HazelcastInstance instance) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertNodeStarted(instance);
+            }
+        });
     }
 
     // ################################

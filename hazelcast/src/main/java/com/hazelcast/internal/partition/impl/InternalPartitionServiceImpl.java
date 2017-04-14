@@ -615,7 +615,15 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     private boolean applyNewState(PartitionRuntimeState partitionState, Address sender) {
-        lock.lock();
+        try {
+            if (!lock.tryLock(PTABLE_SYNC_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                return false;
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+
         try {
             final int newVersion = partitionState.getVersion();
             final int currentVersion = partitionStateManager.getVersion();
