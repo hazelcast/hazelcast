@@ -382,6 +382,13 @@
                                 </configuration>
                             </execution>
                         </executions>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.github.jerrinot.maven-surefire</groupId>
+                                <artifactId>maven-surefire-common</artifactId>
+                                <version>2.18.1-buffered</version>
+                            </dependency>
+                        </dependencies>
                     </plugin>
                 </plugins>
             </build>
