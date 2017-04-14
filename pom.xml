@@ -256,11 +256,6 @@
                         -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.test.use.network=false
-                          -XX:+UnlockCommercialFeatures
-                          -XX:+FlightRecorder
-                          -XX:StartFlightRecording=duration=7200s,filename=recording.jfr
-                          -XX:+UnlockDiagnosticVMOptions
-                          -XX:+DebugNonSafepoints
                     </argLine>
                     <includes>
                         <include>**/**.java</include>
@@ -279,7 +274,7 @@
                     <dependency>
                         <groupId>com.github.jerrinot.maven-surefire</groupId>
                         <artifactId>maven-surefire-common</artifactId>
-                        <version>2.18.1-buffered</version>
+                        <version>${maven.surefire.plugin.version}-buffered</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -321,11 +316,6 @@
                                         -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
                                         -Dhazelcast.test.multiple.jvm=true
-                                           -XX:+UnlockCommercialFeatures
-                                           -XX:+FlightRecorder
-                                           -XX:StartFlightRecording=duration=7200s,filename=recording-multiJVM.jfr
-                                           -XX:+UnlockDiagnosticVMOptions
-                                           -XX:+DebugNonSafepoints
                                     </argLine>
                                     <includes>
                                         <include>**/**.java</include>
@@ -361,11 +351,6 @@
                                         -Dhazelcast.mancenter.enabled=false
                                         -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
-                                        -XX:+UnlockCommercialFeatures
-                                        -XX:+FlightRecorder
-                                        -XX:StartFlightRecording=duration=7200s,filename=recording-singleJVM.jfr
-                                        -XX:+UnlockDiagnosticVMOptions
-                                        -XX:+DebugNonSafepoints
                                     </argLine>
                                     <includes>
                                         <include>**/**.java</include>
@@ -386,7 +371,7 @@
                             <dependency>
                                 <groupId>com.github.jerrinot.maven-surefire</groupId>
                                 <artifactId>maven-surefire-common</artifactId>
-                                <version>2.18.1-buffered</version>
+                                <version>${maven.surefire.plugin.version}-buffered</version>
                             </dependency>
                         </dependencies>
                     </plugin>
@@ -423,6 +408,13 @@
                                 com.hazelcast.test.annotation.NightlyTest
                             </excludedGroups>
                         </configuration>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.github.jerrinot.maven-surefire</groupId>
+                                <artifactId>maven-surefire-common</artifactId>
+                                <version>${maven.surefire.plugin.version}-buffered</version>
+                            </dependency>
+                        </dependencies>
                     </plugin>
                 </plugins>
             </build>
@@ -478,6 +470,13 @@
                                 <include>**/YourTestFileHear.java</include>
                             </includes>
                         </configuration>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.github.jerrinot.maven-surefire</groupId>
+                                <artifactId>maven-surefire-common</artifactId>
+                                <version>${maven.surefire.plugin.version}-buffered</version>
+                            </dependency>
+                        </dependencies>
                     </plugin>
                 </plugins>
             </build>
@@ -555,6 +554,13 @@
                                 com.hazelcast.test.annotation.NightlyTest
                             </excludedGroups>
                         </configuration>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.github.jerrinot.maven-surefire</groupId>
+                                <artifactId>maven-surefire-common</artifactId>
+                                <version>${maven.surefire.plugin.version}-buffered</version>
+                            </dependency>
+                        </dependencies>
                     </plugin>
                 </plugins>
             </build>
@@ -685,6 +691,13 @@
                                 </goals>
                             </execution>
                         </executions>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.github.jerrinot.maven-surefire</groupId>
+                                <artifactId>maven-surefire-common</artifactId>
+                                <version>${maven.surefire.plugin.version}-buffered</version>
+                            </dependency>
+                        </dependencies>
                     </plugin>
                 </plugins>
             </build>
@@ -901,6 +914,13 @@
                                 com.hazelcast.test.annotation.SlowTest
                             </groups>
                         </configuration>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.github.jerrinot.maven-surefire</groupId>
+                                <artifactId>maven-surefire-common</artifactId>
+                                <version>${maven.surefire.plugin.version}-buffered</version>
+                            </dependency>
+                        </dependencies>
                     </plugin>
                 </plugins>
             </build>
@@ -944,6 +964,13 @@
                                 com.hazelcast.test.annotation.NightlyTest
                             </groups>
                         </configuration>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.github.jerrinot.maven-surefire</groupId>
+                                <artifactId>maven-surefire-common</artifactId>
+                                <version>${maven.surefire.plugin.version}-buffered</version>
+                            </dependency>
+                        </dependencies>
                     </plugin>
                 </plugins>
             </build>
@@ -981,6 +1008,13 @@
                                 com.hazelcast.test.annotation.NightlyTest
                             </excludedGroups>
                         </configuration>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.github.jerrinot.maven-surefire</groupId>
+                                <artifactId>maven-surefire-common</artifactId>
+                                <version>${maven.surefire.plugin.version}-buffered</version>
+                            </dependency>
+                        </dependencies>
                     </plugin>
                 </plugins>
             </build>
@@ -1015,13 +1049,10 @@
             <name>release repository</name>
             <url>https://oss.sonatype.org/content/repositories/releases</url>
         </repository>
-        <repository>
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
-        </repository>
     </repositories>
 
     <pluginRepositories>
+        <!-- JitPack repository is needed to fetch patch surefire-common plugin -->
         <pluginRepository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
