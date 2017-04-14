@@ -44,6 +44,8 @@ import java.util.LinkedList;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.cluster.Versions.V3_9;
+
 public final class MigrationRequestOperation extends BaseMigrationOperation {
 
     private boolean returnResponse = true;
@@ -153,11 +155,22 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
 
     private void verifyGoodMaster(NodeEngine nodeEngine) {
         Address masterAddress = nodeEngine.getMasterAddress();
+        boolean shouldFail = nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(V3_9);
+
         if (!migrationInfo.getMaster().equals(masterAddress)) {
-            throw new RetryableHazelcastException("Migration initiator is not master node! => " + toString());
+            if (shouldFail) {
+                throw new IllegalStateException("Migration initiator is not master node! => " + toString());
+            } else {
+                throw new RetryableHazelcastException("Migration initiator is not master node! => " + toString());
+            }
         }
+
         if (!masterAddress.equals(getCallerAddress())) {
-            throw new RetryableHazelcastException("Caller is not master node! => " + toString());
+            if (shouldFail) {
+                throw new IllegalStateException("Caller is not master node! => " + toString());
+            } else {
+                throw new RetryableHazelcastException("Caller is not master node! => " + toString());
+            }
         }
     }
 
