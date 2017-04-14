@@ -256,11 +256,11 @@
                         -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.test.use.network=false
-                         <!-- -XX:+UnlockCommemvrcialFeatures-->
-                         <!-- -XX:+FlightRecorder-->
-                         <!-- -XX:StartFlightRecording=duration=7200s,filename=recording.jfr-->
-                         <!-- -XX:+UnlockDiagnosticVMOptions-->
-                         <!-- -XX:+DebugNonSafepoints-->
+                          -XX:+UnlockCommercialFeatures
+                          -XX:+FlightRecorder
+                          -XX:StartFlightRecording=duration=7200s,filename=recording.jfr
+                          -XX:+UnlockDiagnosticVMOptions
+                          -XX:+DebugNonSafepoints
                     </argLine>
                     <includes>
                         <include>**/**.java</include>
@@ -321,11 +321,11 @@
                                         -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
                                         -Dhazelcast.test.multiple.jvm=true
-                                          <!-- -XX:+UnlockCommercialFeatures-->
-                                          <!-- -XX:+FlightRecorder-->
-                                          <!-- -XX:StartFlightRecording=duration=7200s,filename=recording.jfr-->
-                                          <!-- -XX:+UnlockDiagnosticVMOptions-->
-                                          <!-- -XX:+DebugNonSafepoints-->
+                                           -XX:+UnlockCommercialFeatures
+                                           -XX:+FlightRecorder
+                                           -XX:StartFlightRecording=duration=7200s,filename=recording-multiJVM.jfr
+                                           -XX:+UnlockDiagnosticVMOptions
+                                           -XX:+DebugNonSafepoints
                                     </argLine>
                                     <includes>
                                         <include>**/**.java</include>
@@ -361,6 +361,11 @@
                                         -Dhazelcast.mancenter.enabled=false
                                         -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
+                                        -XX:+UnlockCommercialFeatures
+                                        -XX:+FlightRecorder
+                                        -XX:StartFlightRecording=duration=7200s,filename=recording-singleJVM.jfr
+                                        -XX:+UnlockDiagnosticVMOptions
+                                        -XX:+DebugNonSafepoints
                                     </argLine>
                                     <includes>
                                         <include>**/**.java</include>
