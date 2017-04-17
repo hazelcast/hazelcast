@@ -162,7 +162,9 @@ public abstract class Invocation implements OperationResponseHandler {
     final long tryPauseMillis;
     final long callTimeoutMillis;
 
-    /** Refer to {@link com.hazelcast.spi.InvocationBuilder#setDoneCallback(Runnable)} for an explanation */
+    /**
+     * Refer to {@link com.hazelcast.spi.InvocationBuilder#setDoneCallback(Runnable)} for an explanation
+     */
     private final Runnable taskDoneCallback;
 
     Invocation(Context context, Operation op, Runnable taskDoneCallback, int tryCount, long tryPauseMillis,
@@ -536,7 +538,7 @@ public abstract class Invocation implements OperationResponseHandler {
     }
 
     private void doInvokeRemote() {
-        if (!context.operationService.send(op, invTarget)) {
+        if (!context.outboundOperationHandler.send(op, invTarget)) {
             notifyError(new RetryableIOException("Packet not send to -> " + invTarget));
         }
     }
@@ -753,25 +755,27 @@ public abstract class Invocation implements OperationResponseHandler {
         final MwCounter retryCount;
         final InternalSerializationService serializationService;
         final Address thisAddress;
+        final OutboundOperationHandler outboundOperationHandler;
 
         @SuppressWarnings("checkstyle:parameternumber")
         Context(ManagedExecutorService asyncExecutor,
-                       ClusterClock clusterClock,
-                       ClusterService clusterService,
-                       ConnectionManager connectionManager,
-                       InternalExecutionService executionService,
-                       long defaultCallTimeoutMillis,
-                       InvocationRegistry invocationRegistry,
-                       InvocationMonitor invocationMonitor,
-                       ILogger logger,
-                       Node node,
-                       NodeEngine nodeEngine,
-                       InternalPartitionService partitionService,
-                       OperationServiceImpl operationService,
-                       OperationExecutor operationExecutor,
-                       MwCounter retryCount,
-                       InternalSerializationService serializationService,
-                       Address thisAddress) {
+                ClusterClock clusterClock,
+                ClusterService clusterService,
+                ConnectionManager connectionManager,
+                InternalExecutionService executionService,
+                long defaultCallTimeoutMillis,
+                InvocationRegistry invocationRegistry,
+                InvocationMonitor invocationMonitor,
+                ILogger logger,
+                Node node,
+                NodeEngine nodeEngine,
+                InternalPartitionService partitionService,
+                OperationServiceImpl operationService,
+                OperationExecutor operationExecutor,
+                MwCounter retryCount,
+                InternalSerializationService serializationService,
+                Address thisAddress,
+                OutboundOperationHandler outboundOperationHandler) {
             this.asyncExecutor = asyncExecutor;
             this.clusterClock = clusterClock;
             this.clusterService = clusterService;
@@ -789,6 +793,7 @@ public abstract class Invocation implements OperationResponseHandler {
             this.retryCount = retryCount;
             this.serializationService = serializationService;
             this.thisAddress = thisAddress;
+            this.outboundOperationHandler = outboundOperationHandler;
         }
     }
 }

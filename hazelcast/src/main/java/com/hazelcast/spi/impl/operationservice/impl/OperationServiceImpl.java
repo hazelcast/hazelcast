@@ -30,8 +30,6 @@ import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -62,7 +60,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
-import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_CALL_TIMEOUT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_REPLICA_INDEX;
@@ -121,6 +118,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     final OperationBackupHandler backupHandler;
     final BackpressureRegulator backpressureRegulator;
     final OutboundResponseHandler outboundResponseHandler;
+    final OutboundOperationHandler outboundOperationHandler;
     volatile Invocation.Context invocationContext;
 
     private final InvocationMonitor invocationMonitor;
@@ -156,7 +154,9 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 nodeEngine, thisAddress, node.getHazelcastThreadGroup(), node.getProperties(), invocationRegistry,
                 node.getLogger(InvocationMonitor.class), serializationService, nodeEngine.getServiceManager());
 
-        this.backupHandler = new OperationBackupHandler(this);
+        this.outboundOperationHandler = new OutboundOperationHandler(node, thisAddress, serializationService);
+
+        this.backupHandler = new OperationBackupHandler(this, outboundOperationHandler);
 
         this.inboundResponseHandler = new InboundResponseHandler(
                 node.getLogger(InboundResponseHandler.class), node.getSerializationService(), invocationRegistry, nodeEngine);
@@ -394,23 +394,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
     @Override
     public boolean send(Operation op, Address target) {
-        checkNotNull(target, "Target is required!");
-
-        if (thisAddress.equals(target)) {
-            throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
-        }
-
-        byte[] bytes = serializationService.toBytes(op);
-        int partitionId = op.getPartitionId();
-        Packet packet = new Packet(bytes, partitionId).setPacketType(Packet.Type.OPERATION);
-
-        if (op.isUrgent()) {
-            packet.raiseFlags(FLAG_URGENT);
-        }
-
-        ConnectionManager connectionManager = node.getConnectionManager();
-        Connection connection = connectionManager.getOrConnect(target);
-        return connectionManager.transmit(packet, connection);
+        return outboundOperationHandler.send(op, target);
     }
 
     public void onMemberLeft(MemberImpl member) {
@@ -441,8 +425,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
     private void initInvocationContext() {
         ManagedExecutorService asyncExecutor = nodeEngine.getExecutionService().register(
-                    ExecutionService.ASYNC_EXECUTOR, Runtime.getRuntime().availableProcessors(),
-                    ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
+                ExecutionService.ASYNC_EXECUTOR, Runtime.getRuntime().availableProcessors(),
+                ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
 
         this.invocationContext = new Invocation.Context(
                 asyncExecutor,
@@ -461,7 +445,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 operationExecutor,
                 retryCount,
                 serializationService,
-                nodeEngine.getThisAddress());
+                nodeEngine.getThisAddress(),
+                outboundOperationHandler);
     }
 
     /**

@@ -37,12 +37,12 @@ import static java.lang.Math.min;
 final class OperationBackupHandler {
 
     private final Node node;
-    private final OperationServiceImpl operationService;
     private final NodeEngineImpl nodeEngine;
     private final BackpressureRegulator backpressureRegulator;
+    private final OutboundOperationHandler outboundOperationHandler;
 
-    OperationBackupHandler(OperationServiceImpl operationService) {
-        this.operationService = operationService;
+    OperationBackupHandler(OperationServiceImpl operationService, OutboundOperationHandler outboundOperationHandler) {
+        this.outboundOperationHandler = outboundOperationHandler;
         this.node = operationService.node;
         this.nodeEngine = operationService.nodeEngine;
         this.backpressureRegulator = operationService.backpressureRegulator;
@@ -207,7 +207,7 @@ final class OperationBackupHandler {
             boolean isSyncBackup = syncBackups == 1;
 
             Backup backup = newBackup(backupAwareOp, backupOp, replicaVersions, 1, isSyncBackup);
-            operationService.send(backup, target);
+            outboundOperationHandler.send(backup, target);
 
             if (isSyncBackup) {
                 return 1;
@@ -234,7 +234,7 @@ final class OperationBackupHandler {
             boolean isSyncBackup = replicaIndex <= syncBackups;
 
             Backup backup = newBackup(backupAwareOp, backupOpData, replicaVersions, replicaIndex, isSyncBackup);
-            operationService.send(backup, target);
+            outboundOperationHandler.send(backup, target);
 
             if (isSyncBackup) {
                 sendSyncBackups++;
