@@ -105,7 +105,7 @@ public class NetworkingPlugin extends DiagnosticsPlugin {
         long totalBytesReceived = 0;
         long totalEvents = 0;
         long totalTaskCount = 0;
-        long totalHandleEvents = 0;
+        long totalHandleCount = 0;
 
         for (NonBlockingIOThread ioThread : ioThreads) {
             if (ioThread == null) {
@@ -116,7 +116,7 @@ public class NetworkingPlugin extends DiagnosticsPlugin {
             totalPriorityFramesReceived += ioThread.priorityFramesTransceived();
             totalEvents += ioThread.eventCount();
             totalTaskCount += ioThread.completedTaskCount();
-            totalHandleEvents += ioThread.handleCount();
+            totalHandleCount += ioThread.handleCount();
         }
 
         for (NonBlockingIOThread ioThread : ioThreads) {
@@ -124,8 +124,8 @@ public class NetworkingPlugin extends DiagnosticsPlugin {
             writer.writeKeyValueEntry("frames", toPercentage(ioThread.framesTransceived(), totalFramesReceived));
             writer.writeKeyValueEntry("priorityFrames", toPercentage(ioThread.framesTransceived(), totalFramesReceived));
             writer.writeKeyValueEntry("bytes", toPercentage(ioThread.bytesTransceived(), totalBytesReceived));
-            writer.writeKeyValueEntry("events", toPercentage(ioThread.eventCount(), totalFramesReceived));
-            writer.writeKeyValueEntry("handle-events", toPercentage(ioThread.handleCount(), totalHandleEvents));
+            writer.writeKeyValueEntry("events", toPercentage(ioThread.eventCount(), totalEvents));
+            writer.writeKeyValueEntry("handle-count", toPercentage(ioThread.handleCount(), totalHandleCount));
             writer.writeKeyValueEntry("tasks", toPercentage(ioThread.completedTaskCount(), totalTaskCount));
             writer.endSection();
         }
