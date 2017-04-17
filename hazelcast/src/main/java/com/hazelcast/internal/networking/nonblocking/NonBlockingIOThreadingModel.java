@@ -281,16 +281,15 @@ public class NonBlockingIOThreadingModel
 
     @Override
     public SocketWriter newSocketWriter(SocketConnection connection) {
-        int index = hashToIndex(nextOutputThreadIndex.getAndIncrement(), outputThreads.length);
+        int index = hashToIndex(nextOutputThreadIndex.getAndIncrement(), outputThreadCount);
         NonBlockingIOThread[] threads = outputThreads;
         if (threads == null) {
             throw new IllegalStateException("IO thread is closed!");
         }
 
-        NonBlockingIOThread outputThread = threads[index];
         return new NonBlockingSocketWriter(
                 connection,
-                outputThread,
+                threads[index],
                 loggingService.getLogger(NonBlockingSocketWriter.class),
                 ioBalancer,
                 socketWriterInitializer);
@@ -298,16 +297,15 @@ public class NonBlockingIOThreadingModel
 
     @Override
     public SocketReader newSocketReader(SocketConnection connection) {
-        int index = hashToIndex(nextInputThreadIndex.getAndIncrement(), inputThreads.length);
+        int index = hashToIndex(nextInputThreadIndex.getAndIncrement(), inputThreadCount);
         NonBlockingIOThread[] threads = inputThreads;
         if (threads == null) {
             throw new IllegalStateException("IO thread is closed!");
         }
 
-        NonBlockingIOThread inputThread = threads[index];
         return new NonBlockingSocketReader(
                 connection,
-                inputThread,
+                threads[index],
                 loggingService.getLogger(NonBlockingSocketReader.class),
                 ioBalancer,
                 socketReaderInitializer);
