@@ -20,6 +20,7 @@ import com.hazelcast.internal.networking.IOThreadingModel;
 import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThread;
 import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThreadingModel;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -62,8 +63,11 @@ public class NetworkingPlugin extends DiagnosticsPlugin {
     }
 
     private static IOThreadingModel getThreadingModel(NodeEngineImpl nodeEngine) {
-        TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) nodeEngine.getNode().getConnectionManager();
-        return connectionManager.getIoThreadingModel();
+        ConnectionManager connectionManager = nodeEngine.getNode().getConnectionManager();
+        if (!(connectionManager instanceof TcpIpConnectionManager)) {
+            return null;
+        }
+        return ((TcpIpConnectionManager) connectionManager).getIoThreadingModel();
     }
 
     @Override
