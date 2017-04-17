@@ -37,7 +37,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
@@ -90,7 +89,7 @@ public class ClientSplitBrainTest extends HazelcastTestSupport {
 
         closeConnectionBetween(h2, h1);
 
-        assertTrue(mergedLatch.await(30, TimeUnit.SECONDS));
+        assertOpenEventually(mergedLatch);
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
 
