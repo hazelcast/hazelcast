@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientProxy;
@@ -40,13 +41,14 @@ import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.topic.impl.reliable.ReliableMessageListenerAdapter;
 import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.version.MemberVersion;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
 import static com.hazelcast.topic.impl.reliable.ReliableTopicService.SERVICE_NAME;
@@ -272,7 +274,9 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
                 return;
             }
 
-            if (t instanceof ExecutionException && t.getCause() instanceof StaleSequenceException) {
+            t = ExceptionUtil.peel(t);
+
+            if (t instanceof StaleSequenceException) {
                 // StaleSequenceException.getHeadSeq() is not available on the client-side, see #7317
                 long remoteHeadSeq = ringbuffer.headSequence();
 
@@ -299,6 +303,11 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
                 if (logger.isFinestEnabled()) {
                     logger.finest("Terminating MessageListener " + listener + " on topic: " + name + ". "
                             + "Reason: Topic is destroyed");
+                }
+            } else if (t instanceof HazelcastClientNotActiveException || t instanceof RejectedExecutionException) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Terminating MessageListener " + listener + " on topic: " + name + ". "
+                            + "Reason: HazelcastClient is shutting down");
                 }
             } else {
                 logger.warning("Terminating MessageListener " + listener + " on topic: " + name + ". "
@@ -337,5 +346,4 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
             }
         }
     }
-
 }
