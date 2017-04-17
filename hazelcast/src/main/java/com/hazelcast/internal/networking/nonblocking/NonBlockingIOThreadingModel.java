@@ -67,6 +67,8 @@ public class NonBlockingIOThreadingModel
     private final int balanceIntervalSeconds;
     private final SocketWriterInitializer socketWriterInitializer;
     private final SocketReaderInitializer socketReaderInitializer;
+    private final int inputThreadCount;
+    private final int outputThreadCount;
 
     // The selector mode determines how IO threads will block (or not) on the Selector:
     //  select:         this is the default mode, uses Selector.select(long timeout)
@@ -97,9 +99,9 @@ public class NonBlockingIOThreadingModel
         this.hazelcastThreadGroup = hazelcastThreadGroup;
         this.metricsRegistry = metricsRegistry;
         this.loggingService = loggingService;
+        this.inputThreadCount = inputThreadCount;
+        this.outputThreadCount = outputThreadCount;
         this.logger = loggingService.getLogger(NonBlockingIOThreadingModel.class);
-        this.inputThreads = new NonBlockingIOThread[inputThreadCount];
-        this.outputThreads = new NonBlockingIOThread[outputThreadCount];
         this.oomeHandler = oomeHandler;
         this.balanceIntervalSeconds = balanceIntervalSeconds;
         this.socketWriterInitializer = socketWriterInitializer;
@@ -154,11 +156,13 @@ public class NonBlockingIOThreadingModel
     public void start() {
         if (logger.isFineEnabled()) {
             logger.fine("TcpIpConnectionManager configured with Non Blocking IO-threading model: "
-                    + inputThreads.length + " input threads and "
-                    + outputThreads.length + " output threads");
+                    + inputThreadCount + " input threads and "
+                    + outputThreads + " output threads");
         }
 
+
         logger.log(getSelectorMode() != SELECT ? INFO : FINE, "IO threads selector mode is " + getSelectorMode());
+        this.inputThreads = new NonBlockingIOThread[inputThreadCount];
 
         for (int i = 0; i < inputThreads.length; i++) {
             NonBlockingIOThread thread = new NonBlockingIOThread(
@@ -175,6 +179,7 @@ public class NonBlockingIOThreadingModel
             thread.start();
         }
 
+        this.outputThreads = new NonBlockingIOThread[outputThreadCount];
         for (int i = 0; i < outputThreads.length; i++) {
             NonBlockingIOThread thread = new NonBlockingIOThread(
                     hazelcastThreadGroup.getInternalThreadGroup(),
