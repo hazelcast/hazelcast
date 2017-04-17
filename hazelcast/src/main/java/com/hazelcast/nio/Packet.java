@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.nio.ByteBuffer;
@@ -26,18 +25,13 @@ import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
 
 /**
- * A Packet is a piece of data sent over the wire. The Packet is used for member to member communication.
- *
- * The Packet extends HeapData instead of wrapping it. From a design point of view this is often
- * not the preferred solution (prefer composition over inheritance), but in this case that
- * would mean more object litter.
- *
- * Since the Packet isn't used throughout the system, this design choice is visible locally.
+ * A Packet is a piece of data sent over the wire for member 2 member communication. A packet contains some header fields and
+ * a payload.
  */
 @PrivateApi
 // Declaration order suppressed due to private static int FLAG_TYPEx declarations
 @SuppressWarnings("checkstyle:declarationorder")
-public final class Packet extends HeapData implements OutboundFrame {
+public final class Packet implements OutboundFrame {
 
     public static final byte VERSION = 4;
 
@@ -52,7 +46,9 @@ public final class Packet extends HeapData implements OutboundFrame {
 
     // 1. URGENT flag
 
-    /** Marks the packet as Urgent  */
+    /**
+     * Marks the packet as Urgent
+     */
     public static final int FLAG_URGENT = 1 << 4;
 
 
@@ -65,34 +61,46 @@ public final class Packet extends HeapData implements OutboundFrame {
     // These are given below. The enum Packet.Type should be used to encode/decode the type from the
     // header flags bitfield.
 
-    /** Packet type bit 0. Historically the OPERATION type flag. */
+    /**
+     * Packet type bit 0. Historically the OPERATION type flag.
+     */
     private static final int FLAG_TYPE0 = 1 << 0;
-    /** Packet type bit 1. Historically the EVENT type flag. */
+    /**
+     * Packet type bit 1. Historically the EVENT type flag.
+     */
     private static final int FLAG_TYPE1 = 1 << 2;
-    /** Packet type bit 2. Historically the BIND type flag. */
+    /**
+     * Packet type bit 2. Historically the BIND type flag.
+     */
     private static final int FLAG_TYPE2 = 1 << 5;
 
     // 3. Type-specific flags. Same bits can be reused within each type
 
     // 3.a Operation packet flags
 
-    /** Marks an Operation packet as Response */
+    /**
+     * Marks an Operation packet as Response
+     */
     public static final int FLAG_OP_RESPONSE = 1 << 1;
-    /** Marks an Operation packet as Operation control (like invocation-heartbeats) */
+    /**
+     * Marks an Operation packet as Operation control (like invocation-heartbeats)
+     */
     public static final int FLAG_OP_CONTROL = 1 << 6;
 
 
     // 3.b Jet packet flags
 
-    /** Marks a Jet packet as Flow control */
+    /**
+     * Marks a Jet packet as Flow control
+     */
     public static final int FLAG_JET_FLOW_CONTROL = 1 << 1;
 
 
     //            END OF HEADER FLAG SECTION
 
 
-
     private static final int HEADER_SIZE = BYTE_SIZE_IN_BYTES + SHORT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES;
+    private byte[] payload;
 
     // char is a 16-bit unsigned integer. Here we use it as a bitfield.
     private char flags;
@@ -101,7 +109,7 @@ public final class Packet extends HeapData implements OutboundFrame {
     private transient Connection conn;
 
     // These 3 fields are only used during read/write. Otherwise they have no meaning.
-    private int valueOffset;
+    private int payloadOffset;
     private int size;
     private boolean headerComplete;
 
@@ -113,8 +121,17 @@ public final class Packet extends HeapData implements OutboundFrame {
     }
 
     public Packet(byte[] payload, int partitionId) {
-        super(payload);
+        this.payload = payload;
         this.partitionId = partitionId;
+    }
+
+    /**
+     * Returns the Payload of this Packet.
+     *
+     * @return the payload.
+     */
+    public byte[] getPayload() {
+        return payload;
     }
 
     /**
@@ -221,12 +238,13 @@ public final class Packet extends HeapData implements OutboundFrame {
      */
     public void reset() {
         headerComplete = false;
-        valueOffset = 0;
+        payloadOffset = 0;
     }
 
     /**
      * Writes the packet data to the supplied {@code ByteBuffer}, up to the buffer's limit. If it returns {@code false},
      * it should be called again to write the remaining data.
+     *
      * @param dst the destination byte buffer
      * @return {@code true} if all the packet's data is now written out; {@code false} otherwise.
      */
@@ -239,17 +257,18 @@ public final class Packet extends HeapData implements OutboundFrame {
             dst.put(VERSION);
             dst.putChar(flags);
             dst.putInt(partitionId);
-            size = totalSize();
+            size = payload == null ? 0 : payload.length;
             dst.putInt(size);
             headerComplete = true;
         }
 
-        return writeValue(dst);
+        return writePayload(dst);
     }
 
     /**
      * Reads the packet data from the supplied {@code ByteBuffer}. The buffer may not contain the complete packet.
      * If this method returns {@code false}, it should be called again to read more packet data.
+     *
      * @param src the source byte buffer
      * @return {@code true} if all the packet's data is now read; {@code false} otherwise.
      */
@@ -271,12 +290,12 @@ public final class Packet extends HeapData implements OutboundFrame {
             headerComplete = true;
         }
 
-        return readValue(src);
+        return readPayload(src);
     }
 
     // ========================= value =================================================
 
-    private boolean readValue(ByteBuffer src) {
+    private boolean readPayload(ByteBuffer src) {
         if (payload == null) {
             payload = new byte[size];
         }
@@ -284,7 +303,7 @@ public final class Packet extends HeapData implements OutboundFrame {
         if (size > 0) {
             int bytesReadable = src.remaining();
 
-            int bytesNeeded = size - valueOffset;
+            int bytesNeeded = size - payloadOffset;
 
             boolean done;
             int bytesRead;
@@ -297,8 +316,8 @@ public final class Packet extends HeapData implements OutboundFrame {
             }
 
             // read the data from the byte-buffer into the bytes-array.
-            src.get(payload, valueOffset, bytesRead);
-            valueOffset += bytesRead;
+            src.get(payload, payloadOffset, bytesRead);
+            payloadOffset += bytesRead;
 
             if (!done) {
                 return false;
@@ -308,13 +327,13 @@ public final class Packet extends HeapData implements OutboundFrame {
         return true;
     }
 
-    private boolean writeValue(ByteBuffer dst) {
+    private boolean writePayload(ByteBuffer dst) {
         if (size > 0) {
             // the number of bytes that can be written to the bb.
             int bytesWritable = dst.remaining();
 
             // the number of bytes that need to be written.
-            int bytesNeeded = size - valueOffset;
+            int bytesNeeded = size - payloadOffset;
 
             int bytesWrite;
             boolean done;
@@ -328,9 +347,8 @@ public final class Packet extends HeapData implements OutboundFrame {
                 done = false;
             }
 
-            byte[] byteArray = toByteArray();
-            dst.put(byteArray, valueOffset, bytesWrite);
-            valueOffset += bytesWrite;
+            dst.put(payload, payloadOffset, bytesWrite);
+            payloadOffset += bytesWrite;
 
             if (!done) {
                 return false;
@@ -345,7 +363,7 @@ public final class Packet extends HeapData implements OutboundFrame {
      * @return the size of the packet.
      */
     public int packetSize() {
-        return (payload != null ? totalSize() : 0) + HEADER_SIZE;
+        return (payload == null ? 0 : payload.length) + HEADER_SIZE;
     }
 
     @Override
@@ -472,15 +490,15 @@ public final class Packet extends HeapData implements OutboundFrame {
             final int ordinal = ordinal();
             assert ordinal < 8 : "Ordinal out of range for member " + name() + ": " + ordinal;
             return (ordinal & 0x01)
-                 | (ordinal & 0x02) << 1
-                 | (ordinal & 0x04) << 3;
+                    | (ordinal & 0x02) << 1
+                    | (ordinal & 0x04) << 3;
         }
 
         @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
         private static int headerDecode(int flags) {
             return (flags & FLAG_TYPE0)
-                 | (flags & FLAG_TYPE1) >> 1
-                 | (flags & FLAG_TYPE2) >> 3;
+                    | (flags & FLAG_TYPE1) >> 1
+                    | (flags & FLAG_TYPE2) >> 3;
         }
     }
 }

@@ -209,7 +209,7 @@ public class OutboundResponseHandlerTest {
     private void testToBackupAckPacket(int callId, boolean urgent) {
         Packet packet = handler.toBackupAckPacket(callId, urgent);
         HeapData expected = serializationService.toData(new BackupAckResponse(callId, urgent));
-        assertEquals(expected, new HeapData(packet.toByteArray()));
+        assertEquals(expected, new HeapData(packet.getPayload()));
     }
 
     @Test
@@ -232,7 +232,7 @@ public class OutboundResponseHandlerTest {
     private void testToNormalResponsePacket(Object value, int callId, int backupAcks, boolean urgent) {
         Packet packet = handler.toNormalResponsePacket(callId, backupAcks, urgent, value);
         HeapData expected = serializationService.toData(new NormalResponse(value, callId, backupAcks, urgent));
-        assertEquals(expected, new HeapData(packet.toByteArray()));
+        assertEquals(expected, new HeapData(packet.getPayload()));
     }
 
     static class PortableAddress implements Portable {
