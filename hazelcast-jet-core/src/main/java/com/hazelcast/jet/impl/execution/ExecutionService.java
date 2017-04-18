@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 
+import static java.lang.Thread.currentThread;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -50,6 +51,7 @@ public class ExecutionService {
 
     static final IdleStrategy IDLER =
             new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(1), MILLISECONDS.toNanos(1));
+
     private final ExecutorService blockingTaskletExecutor = newCachedThreadPool(new BlockingTaskThreadFactory());
     private final CooperativeWorker[] workers;
     private final Thread[] threads;
@@ -67,14 +69,17 @@ public class ExecutionService {
      * @return instance of {@code java.util.concurrent.CompletableFuture}
      */
     public CompletionStage<Void> execute(
-            List<? extends Tasklet> tasklets, @Nonnull Consumer<CompletionStage<Void>> doneCallback) {
+            @Nonnull List<? extends Tasklet> tasklets,
+            @Nonnull Consumer<CompletionStage<Void>> doneCallback,
+            @Nonnull ClassLoader jobClassLoader
+    ) {
         ensureStillRunning();
         final JobFuture jobFuture = new JobFuture(tasklets.size(), doneCallback);
         try {
             final Map<Boolean, List<Tasklet>> byCooperation =
                     tasklets.stream().collect(partitioningBy(Tasklet::isCooperative));
-            submitCooperativeTasklets(jobFuture, byCooperation.get(true));
-            submitBlockingTasklets(jobFuture, byCooperation.get(false));
+            submitCooperativeTasklets(jobFuture, jobClassLoader, byCooperation.get(true));
+            submitBlockingTasklets(jobFuture, jobClassLoader, byCooperation.get(false));
         } catch (Throwable t) {
             jobFuture.completeExceptionally(t);
             doneCallback.accept(jobFuture);
@@ -99,21 +104,21 @@ public class ExecutionService {
         }
     }
 
-    private void submitBlockingTasklets(JobFuture jobFuture, List<Tasklet> tasklets) {
+    private void submitBlockingTasklets(JobFuture jobFuture, ClassLoader jobClassLoader, List<Tasklet> tasklets) {
         jobFuture.blockingFutures = tasklets.stream()
-                                            .map(t -> new BlockingWorker(new TaskletTracker(t, jobFuture)))
+                                            .map(t -> new BlockingWorker(new TaskletTracker(t, jobFuture, jobClassLoader)))
                                             .map(blockingTaskletExecutor::submit)
                                             .collect(toList());
     }
 
-    private void submitCooperativeTasklets(JobFuture jobFuture, List<Tasklet> tasklets) {
+    private void submitCooperativeTasklets(JobFuture jobFuture, ClassLoader jobClassLoader, List<Tasklet> tasklets) {
         ensureThreadsStarted();
         final List<TaskletTracker>[] trackersByThread = new List[workers.length];
         Arrays.setAll(trackersByThread, i -> new ArrayList());
         int i = 0;
         for (Tasklet t : tasklets) {
             t.init(jobFuture);
-            trackersByThread[i++ % trackersByThread.length].add(new TaskletTracker(t, jobFuture));
+            trackersByThread[i++ % trackersByThread.length].add(new TaskletTracker(t, jobFuture, jobClassLoader));
         }
         for (i = 0; i < trackersByThread.length; i++) {
             workers[i].trackers.addAll(trackersByThread[i]);
@@ -140,7 +145,9 @@ public class ExecutionService {
 
         @Override
         public void run() {
+            final ClassLoader clBackup = currentThread().getContextClassLoader();
             final Tasklet t = tracker.tasklet;
+            currentThread().setContextClassLoader(tracker.jobClassLoader);
             try {
                 t.init(tracker.jobFuture);
                 long idleCount = 0;
@@ -157,6 +164,7 @@ public class ExecutionService {
                 logger.warning("Exception in " + t, e);
                 tracker.jobFuture.completeExceptionally(new JetException("Exception in " + t + ": " + e, e));
             } finally {
+                currentThread().setContextClassLoader(clBackup);
                 tracker.jobFuture.taskletDone();
             }
         }
@@ -174,6 +182,8 @@ public class ExecutionService {
 
         @Override
         public void run() {
+            final Thread thread = currentThread();
+            final ClassLoader clBackup = thread.getContextClassLoader();
             long idleCount = 0;
             while (!isShutdown) {
                 boolean madeProgress = false;
@@ -186,6 +196,7 @@ public class ExecutionService {
                         continue;
                     }
                     try {
+                        thread.setContextClassLoader(t.jobClassLoader);
                         final ProgressState result = t.tasklet.call();
                         if (result.isDone()) {
                             dismissTasklet(t);
@@ -203,6 +214,7 @@ public class ExecutionService {
                 if (madeProgress) {
                     idleCount = 0;
                 } else {
+                    thread.setContextClassLoader(clBackup);
                     IDLER.idle(++idleCount);
                 }
             }
@@ -243,11 +255,13 @@ public class ExecutionService {
     private static final class TaskletTracker {
         final Tasklet tasklet;
         final JobFuture jobFuture;
+        final ClassLoader jobClassLoader;
         final AtomicReference<CooperativeWorker> stealingWorker = new AtomicReference<>();
 
-        TaskletTracker(Tasklet tasklet, JobFuture jobFuture) {
+        TaskletTracker(Tasklet tasklet, JobFuture jobFuture, ClassLoader jobClassLoader) {
             this.tasklet = tasklet;
             this.jobFuture = jobFuture;
+            this.jobClassLoader = jobClassLoader;
         }
     }
 
