@@ -16,14 +16,16 @@
 
 package com.hazelcast.internal.eviction;
 
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.internal.eviction.impl.comparator.LFUEvictionPolicyComparator;
 import com.hazelcast.internal.eviction.impl.comparator.LRUEvictionPolicyComparator;
 import com.hazelcast.internal.eviction.impl.comparator.RandomEvictionPolicyComparator;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.util.StringUtil;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 
 /**
  * Provider to get any kind ({@link EvictionPolicyType}) of {@link EvictionPolicyEvaluator}.
@@ -33,8 +35,8 @@ public final class EvictionPolicyEvaluatorProvider {
     private EvictionPolicyEvaluatorProvider() {
     }
 
-    private static EvictionPolicyComparator createEvictionPolicyComparator(EvictionPolicyType evictionPolicyType) {
-        switch (evictionPolicyType) {
+    private static EvictionPolicyComparator createEvictionPolicyComparator(EvictionPolicy evictionPolicy) {
+        switch (evictionPolicy) {
             case LRU:
                 return new LRUEvictionPolicyComparator();
             case LFU:
@@ -44,7 +46,7 @@ public final class EvictionPolicyEvaluatorProvider {
             case NONE:
                 return null;
             default:
-                throw new IllegalArgumentException("Unsupported eviction policy type: " + evictionPolicyType);
+                throw new IllegalArgumentException("Unsupported eviction policy: " + evictionPolicy);
         }
     }
 
@@ -58,14 +60,12 @@ public final class EvictionPolicyEvaluatorProvider {
      */
     public static <A, E extends Evictable> EvictionPolicyEvaluator<A, E> getEvictionPolicyEvaluator(
             EvictionConfiguration evictionConfig, ClassLoader classLoader) {
-        if (evictionConfig == null) {
-            return null;
-        }
+        checkNotNull(evictionConfig);
 
         EvictionPolicyComparator evictionPolicyComparator;
 
         String evictionPolicyComparatorClassName = evictionConfig.getComparatorClassName();
-        if (!StringUtil.isNullOrEmpty(evictionPolicyComparatorClassName)) {
+        if (!isNullOrEmpty(evictionPolicyComparatorClassName)) {
             try {
                 evictionPolicyComparator = ClassLoaderUtil.newInstance(classLoader, evictionPolicyComparatorClassName);
             } catch (Exception e) {
@@ -76,11 +76,7 @@ public final class EvictionPolicyEvaluatorProvider {
             if (comparator != null) {
                 evictionPolicyComparator = comparator;
             } else {
-                EvictionPolicyType evictionPolicyType = evictionConfig.getEvictionPolicyType();
-                if (evictionPolicyType == null) {
-                    return null;
-                }
-                evictionPolicyComparator = createEvictionPolicyComparator(evictionPolicyType);
+                evictionPolicyComparator = createEvictionPolicyComparator(evictionConfig.getEvictionPolicy());
             }
         }
 

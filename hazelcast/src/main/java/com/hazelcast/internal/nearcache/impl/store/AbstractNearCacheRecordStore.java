@@ -17,11 +17,11 @@
 package com.hazelcast.internal.nearcache.impl.store;
 
 import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
-import com.hazelcast.internal.eviction.EvictionPolicyType;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
@@ -97,11 +97,12 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
             return record;
         }
     };
-    protected EvictionChecker evictionChecker;
 
-    protected EvictionPolicyEvaluator<KS, R> evictionPolicyEvaluator;
+    protected final boolean evictionDisabled;
+
+    protected EvictionChecker evictionChecker;
     protected SamplingEvictionStrategy<KS, R, NCRM> evictionStrategy;
-    protected EvictionPolicyType evictionPolicyType;
+    protected EvictionPolicyEvaluator<KS, R> evictionPolicyEvaluator;
     protected NCRM records;
 
     protected volatile StaleReadDetector staleReadDetector = ALWAYS_FRESH;
@@ -121,17 +122,19 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         this.serializationService = serializationService;
         this.classLoader = classLoader;
         this.nearCacheStats = nearCacheStats;
-        this.evictionPolicyType = nearCacheConfig.getEvictionConfig().getEvictionPolicyType();
+
+        this.evictionDisabled = nearCacheConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.NONE;
     }
 
     @Override
     public void initialize() {
-        EvictionConfig evictionConfig = nearCacheConfig.getEvictionConfig();
         this.records = createNearCacheRecordMap(nearCacheConfig);
+        EvictionConfig evictionConfig = nearCacheConfig.getEvictionConfig();
         this.evictionChecker = createNearCacheEvictionChecker(evictionConfig, nearCacheConfig);
-        this.evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
-        this.evictionStrategy = createEvictionStrategy(evictionConfig);
-        this.evictionPolicyType = evictionConfig.getEvictionPolicyType();
+        if (!evictionDisabled) {
+            this.evictionStrategy = SamplingEvictionStrategy.INSTANCE;
+            this.evictionPolicyEvaluator = getEvictionPolicyEvaluator(evictionConfig, classLoader);
+        }
     }
 
     @Override
@@ -176,18 +179,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         if (!isAvailable()) {
             throw new IllegalStateException(nearCacheConfig.getName() + " named Near Cache record store is not available");
         }
-    }
-
-    protected EvictionPolicyEvaluator<KS, R> createEvictionPolicyEvaluator(EvictionConfig evictionConfig) {
-        final EvictionPolicyType evictionPolicyType = evictionConfig.getEvictionPolicyType();
-        if (evictionPolicyType == null) {
-            throw new IllegalArgumentException("Eviction policy cannot be null");
-        }
-        return getEvictionPolicyEvaluator(evictionConfig, classLoader);
-    }
-
-    protected SamplingEvictionStrategy<KS, R, NCRM> createEvictionStrategy(EvictionConfig evictionConfig) {
-        return SamplingEvictionStrategy.INSTANCE;
     }
 
     protected boolean isAvailable() {
@@ -288,13 +279,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         nearCacheStats.incrementExpirations();
     }
 
-    protected boolean isEvictionEnabled() {
-        return evictionStrategy != null
-                && evictionPolicyEvaluator != null
-                && evictionPolicyType != null
-                && !evictionPolicyType.equals(EvictionPolicyType.NONE);
-    }
-
     @Override
     public void onEvict(KS key, R record, boolean wasExpired) {
         if (wasExpired) {
@@ -349,7 +333,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         checkAvailable();
         // if there is no eviction configured we return if the Near Cache is full and it's a new key
         // (we have to check the key, otherwise we might lose updates on existing keys)
-        if (!isEvictionEnabled() && evictionChecker.isEvictionRequired() && !containsRecordKey(key)) {
+        if (evictionDisabled && evictionChecker.isEvictionRequired() && !containsRecordKey(key)) {
             return;
         }
 
@@ -433,7 +417,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     public void doEvictionIfRequired() {
         checkAvailable();
 
-        if (isEvictionEnabled()) {
+        if (!evictionDisabled) {
             evictionStrategy.evict(records, evictionPolicyEvaluator, evictionChecker, this);
         }
     }
@@ -442,7 +426,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     public void doEviction() {
         checkAvailable();
 
-        if (isEvictionEnabled()) {
+        if (!evictionDisabled) {
             evictionStrategy.evict(records, evictionPolicyEvaluator, null, this);
         }
     }
@@ -452,7 +436,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         checkAvailable();
         // if there is no eviction configured we return if the Near Cache is full and it's a new key
         // (we have to check the key, otherwise we might lose updates on existing keys)
-        if (!isEvictionEnabled() && evictionChecker.isEvictionRequired() && !containsRecordKey(key)) {
+        if (evictionDisabled && evictionChecker.isEvictionRequired() && !containsRecordKey(key)) {
             return NOT_RESERVED;
         }
 

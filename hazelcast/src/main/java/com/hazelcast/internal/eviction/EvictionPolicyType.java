@@ -18,7 +18,9 @@ package com.hazelcast.internal.eviction;
 
 /**
  * Enum for eviction policy types.
+ * @deprecated since 3.9, use {@link com.hazelcast.config.EvictionPolicy} instead
  */
+@Deprecated
 public enum EvictionPolicyType {
 
     /**
@@ -40,6 +42,4 @@ public enum EvictionPolicyType {
      * Doesn't evict entries (will not add new entries to the Near Cache when it's full)
      */
     NONE,
-
-    // TODO: maybe another "CUSTOM" type for user defined eviction policies
 }

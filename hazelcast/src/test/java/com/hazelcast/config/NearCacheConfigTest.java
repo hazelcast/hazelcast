@@ -154,6 +154,7 @@ public class NearCacheConfigTest {
 
         EvictionConfig evictionConfig = config.getEvictionConfig();
         assertEquals(123, evictionConfig.getSize());
+        assertEquals(EvictionPolicy.LFU, evictionConfig.getEvictionPolicy());
         assertEquals(EvictionPolicyType.LFU, evictionConfig.getEvictionPolicyType());
         assertEquals(ENTRY_COUNT, evictionConfig.getMaximumSizePolicy());
     }

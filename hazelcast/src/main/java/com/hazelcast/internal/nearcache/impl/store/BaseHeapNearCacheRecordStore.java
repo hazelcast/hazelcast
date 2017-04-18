@@ -32,6 +32,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 import java.util.Map;
 
 import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
+import static java.lang.String.format;
 
 /**
  * Base implementation of {@link AbstractNearCacheRecordStore} for on-heap Near Caches.
@@ -58,18 +59,13 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     }
 
     @Override
-    protected EvictionChecker createNearCacheEvictionChecker(EvictionConfig evictionConfig,
-                                                             NearCacheConfig nearCacheConfig) {
+    protected EvictionChecker createNearCacheEvictionChecker(EvictionConfig evictionConfig, NearCacheConfig nearCacheConfig) {
         MaxSizePolicy maxSizePolicy = evictionConfig.getMaximumSizePolicy();
-        if (maxSizePolicy == null) {
-            throw new IllegalArgumentException("Max-Size policy cannot be null");
+        if (maxSizePolicy != MaxSizePolicy.ENTRY_COUNT) {
+            throw new IllegalArgumentException(format("Invalid max-size policy (%s) for %s! Only %s is supported.",
+                    maxSizePolicy, getClass().getName(), MaxSizePolicy.ENTRY_COUNT));
         }
-        if (maxSizePolicy == MaxSizePolicy.ENTRY_COUNT) {
-            return new EntryCountNearCacheEvictionChecker(evictionConfig.getSize(), records);
-        }
-        throw new IllegalArgumentException("Invalid max-size policy "
-                + '(' + maxSizePolicy + ") for " + getClass().getName() + "! Only "
-                + MaxSizePolicy.ENTRY_COUNT + " is supported.");
+        return new EntryCountNearCacheEvictionChecker(evictionConfig.getSize(), records);
     }
 
     @Override

@@ -17,6 +17,7 @@
 package com.hazelcast.internal.eviction;
 
 import com.hazelcast.cache.impl.record.CacheObjectRecord;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -82,7 +83,6 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
         public long getAccessHit() {
             return getEvictable().getAccessHit();
         }
-
     }
 
     @Test
@@ -104,6 +104,11 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
             @Override
             public EvictionStrategyType getEvictionStrategyType() {
                 return null;
+            }
+
+            @Override
+            public EvictionPolicy getEvictionPolicy() {
+                return EvictionPolicy.LRU;
             }
 
             @Override
@@ -185,6 +190,11 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
             @Override
             public EvictionStrategyType getEvictionStrategyType() {
                 return null;
+            }
+
+            @Override
+            public EvictionPolicy getEvictionPolicy() {
+                return EvictionPolicy.LFU;
             }
 
             @Override

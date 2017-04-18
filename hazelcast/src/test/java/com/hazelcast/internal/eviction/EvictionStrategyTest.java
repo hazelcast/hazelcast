@@ -117,27 +117,6 @@ public class EvictionStrategyTest<K, V extends Evictable, S extends SampleableEv
         ICacheService cacheService = node.getNodeEngine().getService(ICacheService.SERVICE_NAME);
         CacheContext cacheContext = cacheService.getOrCreateCacheContext("MyCache");
 
-        EvictionConfiguration evictionConfig = new EvictionConfiguration() {
-            @Override
-            public EvictionStrategyType getEvictionStrategyType() {
-                return EvictionStrategyType.SAMPLING_BASED_EVICTION;
-            }
-
-            @Override
-            public EvictionPolicyType getEvictionPolicyType() {
-                return null;
-            }
-
-            @Override
-            public String getComparatorClassName() {
-                return null;
-            }
-
-            @Override
-            public EvictionPolicyComparator getComparator() {
-                return null;
-            }
-        };
         SamplingEvictionStrategy<K, V, S> evictionStrategy = SamplingEvictionStrategy.INSTANCE;
         CacheRecordHashMap cacheRecordMap = new CacheRecordHashMap(serializationService, 1000, cacheContext);
         CacheObjectRecord expectedEvictedRecord = null;
