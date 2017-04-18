@@ -63,19 +63,6 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
     }
 
     @Override
-    protected Throwable unwrap(Throwable throwable) {
-        return throwable;
-    }
-
-    @Override
-    protected Object resolve(Object value) {
-        if (value instanceof Throwable) {
-            return new ExecutionException((Throwable) value);
-        }
-        return value;
-    }
-
-    @Override
     public void andThen(ExecutionCallback<ClientMessage> callback) {
         isNotNull(callback, "callback");
 
