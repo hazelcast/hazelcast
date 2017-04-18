@@ -403,9 +403,10 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.connection.monitor.interval", 100, MILLISECONDS);
     public static final HazelcastProperty CONNECTION_MONITOR_MAX_FAULTS
             = new HazelcastProperty("hazelcast.connection.monitor.max.faults", 3);
-
+    /** Time in seconds to sleep after a migration task. */
     public static final HazelcastProperty PARTITION_MIGRATION_INTERVAL
             = new HazelcastProperty("hazelcast.partition.migration.interval", 0, SECONDS);
+    /** Timeout in seconds for all migration operations. */
     public static final HazelcastProperty PARTITION_MIGRATION_TIMEOUT
             = new HazelcastProperty("hazelcast.partition.migration.timeout", 300, SECONDS);
     public static final HazelcastProperty DISABLE_STALE_READ_ON_PARTITION_MIGRATION

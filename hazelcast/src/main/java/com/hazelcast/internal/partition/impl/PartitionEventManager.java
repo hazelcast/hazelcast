@@ -39,9 +39,7 @@ import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.spi.partition.IPartitionService.SERVICE_NAME;
 
 /**
- *
- * Maintains registration of partition-system related listeners and dispatches corresponding events
- *
+ * Maintains registration of partition-system related listeners and dispatches corresponding events.
  */
 public class PartitionEventManager {
 
@@ -53,6 +51,7 @@ public class PartitionEventManager {
         this.nodeEngine = node.nodeEngine;
     }
 
+    /** Sends a {@link MigrationEvent} to the registered event listeners. */
     void sendMigrationEvent(final MigrationInfo migrationInfo, final MigrationEvent.MigrationStatus status) {
         if (migrationInfo.getSourceCurrentReplicaIndex() != 0
                 && migrationInfo.getDestinationNewReplicaIndex() != 0) {
@@ -140,6 +139,7 @@ public class PartitionEventManager {
         nodeEngine.getExecutionService().execute(SYSTEM_EXECUTOR, publisher);
     }
 
+    /** Task which notifies all {@link PartitionAwareService}s that replicas have been lost. */
     private static class InternalPartitionLostEventPublisher
             implements Runnable {
 

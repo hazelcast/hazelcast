@@ -168,6 +168,11 @@ public class MembershipManager {
         return memberMapRef.get().getVersion();
     }
 
+    /**
+     * Sends the current member list to the {@code target}. Called on the master node.
+     *
+     * @param target the destination for the member update operation
+     */
     public void sendMemberListToMember(Address target) {
         clusterServiceLock.lock();
         try {

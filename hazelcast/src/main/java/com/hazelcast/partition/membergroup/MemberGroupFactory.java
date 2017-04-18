@@ -16,10 +16,16 @@
 
 package com.hazelcast.partition.membergroup;
 
+import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.core.Member;
 
 import java.util.Collection;
 
+/**
+ * Defines how members will be grouped (e.g. during partition arrangement).
+ *
+ * @see PartitionGroupConfig#getGroupType()
+ */
 public interface MemberGroupFactory {
 
     Collection<MemberGroup> createMemberGroups(Collection<? extends Member> members);

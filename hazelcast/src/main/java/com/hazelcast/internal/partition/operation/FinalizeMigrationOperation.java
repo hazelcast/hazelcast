@@ -34,11 +34,16 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 
-// runs locally...
+/**
+ * Invoked locally on the source or destination of the migration to finalize the migration.
+ * This will notify the {@link MigrationAwareService}s that the migration finished, updates the replica versions,
+ * clears the migration flag and notifies the node engine when successful.
+ */
 public final class FinalizeMigrationOperation extends AbstractPartitionOperation
         implements PartitionAwareOperation, MigrationCycleOperation {
 
     private final MigrationInfo migrationInfo;
+    /** Defines if this node is the source or destination of the migration. */
     private final MigrationEndpoint endpoint;
     private final boolean success;
 
@@ -79,6 +84,11 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
         }
     }
 
+    /**
+     * Notifies all {@link MigrationAwareService}s that the migration finished. The services can then execute the commit or
+     * rollback logic. If this node was the source and backup replica for a partition, the services will first be notified that
+     * the migration is starting.
+     */
     private void notifyServices(NodeEngineImpl nodeEngine) {
         PartitionMigrationEvent event = getPartitionMigrationEvent();
 
@@ -109,6 +119,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
                         ? migrationInfo.getSourceNewReplicaIndex() : migrationInfo.getDestinationNewReplicaIndex());
     }
 
+    /** Updates the replica versions on the migration source if the replica index has changed. */
     private void commitSource() {
         int partitionId = getPartitionId();
         InternalPartitionServiceImpl partitionService = getService();
@@ -132,6 +143,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
         }
     }
 
+    /** Updates the replica versions on the migration destination. */
     private void rollbackDestination() {
         int partitionId = getPartitionId();
         InternalPartitionServiceImpl partitionService = getService();
@@ -157,6 +169,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
         }
     }
 
+    /** Sets all replica versions to {@code 0} up to the {@code replicaIndex}. */
     private long[] updatePartitionReplicaVersions(PartitionReplicaManager replicaManager, int partitionId, int replicaIndex) {
         long[] versions = replicaManager.getPartitionReplicaVersions(partitionId);
         // No need to set versions back right now. actual version array is modified directly.

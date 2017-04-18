@@ -31,6 +31,9 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import static com.hazelcast.internal.cluster.Versions.V3_9;
 
+/**
+ * Operation sent by the master to the cluster members to fetch their partition state.
+ */
 public final class FetchPartitionStateOperation extends AbstractPartitionOperation
         implements MigrationCycleOperation {
 

@@ -17,7 +17,8 @@
 package com.hazelcast.internal.partition.impl;
 
 /**
- * Marker interface for migration tasks
+ * Marker interface for migration tasks. These tasks are scheduled on the master node to repair, rearrange the partition table
+ * and process shutdown requests.
  */
 interface MigrationRunnable extends Runnable {
 

@@ -22,6 +22,9 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Arranges members in single-member groups (every member is its own group).
+ */
 public class SingleMemberGroupFactory implements MemberGroupFactory {
 
     @Override

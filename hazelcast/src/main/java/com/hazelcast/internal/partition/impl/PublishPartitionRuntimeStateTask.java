@@ -22,8 +22,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.logging.ILogger;
 
 /**
- * A periodic task to publish partition state to cluster members
- * in a predefined interval.
+ * A periodic task to publish partition state to cluster members in a predefined interval.
  */
 class PublishPartitionRuntimeStateTask implements Runnable {
     private final Node node;

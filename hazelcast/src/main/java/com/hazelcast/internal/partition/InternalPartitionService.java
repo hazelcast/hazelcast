@@ -16,7 +16,12 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.PartitionStateManager;
+import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.partition.IPartitionService;
 
@@ -79,8 +84,30 @@ public interface InternalPartitionService extends IPartitionService {
 
     InternalPartition[] getInternalPartitions();
 
+    /**
+     * Causes the partition table to be arranged and published to members if :
+     * <ul>
+     *     <li>the instance has started</li>
+     *     <li>the cluster is {@link ClusterState#ACTIVE}</li>
+     *     <li>if it has not already been arranged</li>
+     *     <li>if there is no cluster membership change</li>
+     * </ul>
+     * If this node is not the master, it will trigger the master to assign the partitions.
+     *
+     * @throws HazelcastException if the partition state generator failed to arrange the partitions
+     * @see PartitionStateManager#initializePartitionAssignments(java.util.Set)
+     */
     void firstArrangement();
 
+    /**
+     * Creates the current partition runtime state. May return {@code null} if the node should fetch the most recent partition
+     * table (e.g. this node is a newly appointed master) or if the partition state manager is not initialized.
+     *
+     * @return the current partition state
+     * @see InternalPartitionServiceImpl#isFetchMostRecentPartitionTableTaskRequired()
+     * @see FetchPartitionStateOperation
+     * @see PartitionStateManager#isInitialized()
+     */
     PartitionRuntimeState createPartitionState();
 
     boolean isPartitionReplicaVersionStale(int partitionId, long[] versions, int replicaIndex);
@@ -90,9 +117,10 @@ public interface InternalPartitionService extends IPartitionService {
     /**
      * Updates the partition replica version and triggers replica sync if the replica is dirty (e.g. the
      * received version is not expected and this node might have missed an update)
-     * @param partitionId the id of the partition for which we received a new version
+     *
+     * @param partitionId     the id of the partition for which we received a new version
      * @param replicaVersions the received replica versions
-     * @param replicaIndex the index of this replica
+     * @param replicaIndex    the index of this replica
      */
     void updatePartitionReplicaVersions(int partitionId, long[] replicaVersions, int replicaIndex);
 

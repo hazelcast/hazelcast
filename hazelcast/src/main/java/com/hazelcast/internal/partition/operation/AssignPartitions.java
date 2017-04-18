@@ -19,6 +19,7 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 
+/** Sent from non-master nodes to the master to initialize the partition assignment. */
 public class AssignPartitions extends AbstractPartitionOperation {
 
     @Override

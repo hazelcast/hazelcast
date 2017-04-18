@@ -27,6 +27,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
@@ -45,6 +46,10 @@ import java.util.logging.Level;
 
 import static com.hazelcast.internal.cluster.Versions.V3_9;
 
+/**
+ * Sent by the partition owner to the migration destination to start the migration process on the destination.
+ * Contains the operations which will be executed on the destination node to migrate the data and the replica versions to be set.
+ */
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public final class MigrationOperation extends BaseMigrationOperation {
 
@@ -75,6 +80,12 @@ public final class MigrationOperation extends BaseMigrationOperation {
         return MigrationParticipant.DESTINATION;
     }
 
+    /**
+     * {@inheritDoc}
+     * Sets the active migration and the migration flag for the partition, notifies {@link MigrationAwareService}s that
+     * the migration is starting and runs the sent replication operations.
+     * If the migration was successful, set the replica versions. If it failed, notify the sent migration tasks.
+     */
     @Override
     public void run() throws Exception {
         checkMigrationInitiatorIsMaster();
@@ -94,6 +105,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
         }
     }
 
+    /** Notifies services that migration started, invokes all sent migration tasks and updates the replica versions. */
     private void doRun() throws Exception {
         if (migrationInfo.startProcessing()) {
             try {
@@ -133,6 +145,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
         getLogger().warning("Migration is cancelled -> " + migrationInfo);
     }
 
+    /** Sets the partition replica versions from the destination replica index onwards, if the migration was successful. */
     private void afterMigrate() {
         if (success) {
             InternalPartitionServiceImpl partitionService = getService();
@@ -185,6 +198,10 @@ public final class MigrationOperation extends BaseMigrationOperation {
         OperationAccessor.setCallerAddress(op, migrationInfo.getSource());
     }
 
+    /**
+     * {@inheritDoc}
+     * Notifies all sent migration tasks that the migration failed.
+     */
     @Override
     public void onExecutionFailure(Throwable e) {
         if (tasks != null) {

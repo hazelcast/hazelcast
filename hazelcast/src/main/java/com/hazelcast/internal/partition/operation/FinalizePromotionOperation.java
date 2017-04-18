@@ -16,23 +16,28 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionEventManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.IPartitionLostEvent;
 
 import java.util.Arrays;
 
 import static com.hazelcast.core.MigrationEvent.MigrationStatus.COMPLETED;
 import static com.hazelcast.core.MigrationEvent.MigrationStatus.FAILED;
 
-// Runs locally when the node becomes owner of a partition
-//
-// Finds the replica indices that are on the sync-waiting state. Those indices represents the lost backups of the partition.
-// Therefore, it publishes InternalPartitionLostEvent objects to notify related services. It also updates the version for the
-// lost replicas to the first available version value after the lost backups, or 0 if N/A
+/**
+ * Runs locally when the node becomes owner of a partition.
+ * Finds the replica indices that are on the sync-waiting state. Those indices represents the lost backups of the partition.
+ * Therefore, it publishes {@link IPartitionLostEvent} to listeners and updates the version for the lost replicas to the
+ * first available version value after the lost backups, or {@code 0} if N/A.
+ * In the end it sends a {@link PartitionMigrationEvent} to notify {@link MigrationAwareService}s and a {@link MigrationEvent}
+ * to notify registered listeners of promotion commit or rollback.
+ */
 final class FinalizePromotionOperation extends AbstractPromotionOperation {
 
     private final boolean success;
@@ -80,6 +85,10 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
         sendMigrationEvent(success ? COMPLETED : FAILED);
     }
 
+    /**
+     * Sets replica versions up to this replica to the version of the last lost replica and
+     * sends a {@link IPartitionLostEvent}.
+     */
     private void shiftUpReplicaVersions() {
         final int partitionId = getPartitionId();
         try {
@@ -111,6 +120,7 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
         }
     }
 
+    /** Calls commit on all {@link MigrationAwareService}. */
     private void commitServices() {
         PartitionMigrationEvent event = getPartitionMigrationEvent();
         for (MigrationAwareService service : getMigrationAwareServices()) {
@@ -122,6 +132,7 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
         }
     }
 
+    /** Calls rollback on all {@link MigrationAwareService}. */
     private void rollbackServices() {
         PartitionMigrationEvent event = getPartitionMigrationEvent();
         for (MigrationAwareService service : getMigrationAwareServices()) {
