@@ -30,7 +30,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
@@ -42,7 +41,7 @@ public final class WriteFileP {
     private WriteFileP() { }
 
     public static ProcessorMetaSupplier supplier(@Nonnull String fileNamePrefix, @Nullable String fileNameSuffix,
-            @Nullable String charset, boolean append, boolean flushEarly) {
+            @Nullable String charset, boolean append) {
         return addresses -> address -> {
             // need to do this here, as Address is not serializable
             String sAddress = address.getHost() + '_' + address.getPort();
@@ -56,7 +55,7 @@ public final class WriteFileP {
                                 writer.write(item.toString());
                                 writer.newLine();
                             }),
-                            flushEarly ? writer -> uncheckRun(writer::flush) : noopConsumer(),
+                            writer -> uncheckRun(writer::flush),
                             bufferedWriter -> uncheckRun(bufferedWriter::close)
                     )).collect(Collectors.toList());
         };

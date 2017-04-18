@@ -51,7 +51,6 @@ import static com.hazelcast.jet.Processors.readList;
 import static com.hazelcast.jet.Processors.writeFile;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
@@ -186,7 +185,7 @@ public class WriteFilePTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", () -> new SlowSourceP(semaphore, numItems))
                 .localParallelism(1);
-        Vertex sink = dag.newVertex("sink", writeFile(requestedFile.toString(), null, false, true))
+        Vertex sink = dag.newVertex("sink", writeFile(requestedFile.toString(), null, false))
                 .localParallelism(1);
         dag.edge(between(source, sink));
 
@@ -198,33 +197,6 @@ public class WriteFilePTest extends JetTestSupport {
             // Then
             assertTrueEventually(() -> checkFileContents(StandardCharsets.UTF_8, finalI + 1), 5);
         }
-
-        // wait for the job to finish
-        jobFuture.get();
-    }
-
-    @Test
-    public void when_noEarlyFlush_then_fileEmptyAfterFewBytes() throws Exception {
-        // Given
-        Semaphore semaphore = new Semaphore(0);
-
-        DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", () -> new SlowSourceP(semaphore, 2))
-                .localParallelism(1);
-        Vertex sink = dag.newVertex("sink", writeFile(requestedFile.toString(), null, false, false))
-                .localParallelism(1);
-        dag.edge(between(source, sink));
-
-        Future<Void> jobFuture = instance.newJob(dag).execute();
-        // When
-        semaphore.release();
-        // Then
-        sleepAtLeastMillis(500);
-        assertEquals("file should be empty", 0, Files.size(actualFile));
-        assertFalse(jobFuture.isDone());
-
-        // this causes the job to finish
-        semaphore.release();
 
         // wait for the job to finish
         jobFuture.get();
@@ -253,7 +225,7 @@ public class WriteFilePTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex reader = dag.newVertex("reader", readList(list.getName()))
                 .localParallelism(1);
-        Vertex writer = dag.newVertex("writer", writeFile(file.toString(), null, false, false))
+        Vertex writer = dag.newVertex("writer", writeFile(file.toString(), null, false))
                 .localParallelism(1);
         dag.edge(between(reader, writer));
         addItemsToList(0, 10);
@@ -320,7 +292,7 @@ public class WriteFilePTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex reader = dag.newVertex("reader", readList(list.getName()))
                 .localParallelism(1);
-        Vertex writer = dag.newVertex("writer", writeFile(requestedFile.toString(), charset, append, false))
+        Vertex writer = dag.newVertex("writer", writeFile(requestedFile.toString(), charset, append))
                 .localParallelism(1);
         dag.edge(between(reader, writer));
         return dag;

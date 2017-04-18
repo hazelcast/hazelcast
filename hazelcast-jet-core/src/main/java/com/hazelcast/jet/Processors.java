@@ -371,12 +371,12 @@ public final class Processors {
     }
 
     /**
-     * Convenience for {@link #writeFile(String, Charset, boolean, boolean)}, with
-     * UTF-8 charset, overwriting the target file and early file buffer flush.
+     * Convenience for {@link #writeFile(String, Charset, boolean)}, with
+     * UTF-8 charset and with overwriting the target file.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeFile(@Nonnull String file) {
-        return writeFile(file, null, false, true);
+        return writeFile(file, null, false);
     }
 
     /**
@@ -395,14 +395,10 @@ public final class Processors {
      * @param pathName the path to the file
      * @param charset charset used to encode the file output, or {@code null} to use UTF-8
      * @param append whether to append or overwrite the file
-     * @param flushEarly whether to flush the file output stream after processing each batch of
-     *                   items received from the upstream concurrent queues. {@code true} might
-     *                   decrease performance and with {@code false} you will not see the changes
-     *                   in the file until the I/O buffer gets full.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeFile(
-            @Nonnull String pathName, @Nullable Charset charset, boolean append, boolean flushEarly
+            @Nonnull String pathName, @Nullable Charset charset, boolean append
     ) {
         final String filename = new File(pathName).getName();
         final int lastDot = filename.lastIndexOf('.');
@@ -416,8 +412,7 @@ public final class Processors {
             filenamePrefix = pathName;
         }
         return WriteFileP.supplier(filenamePrefix, filenameSuffix,
-                charset == null ? null : charset.name(),
-                append, flushEarly);
+                charset == null ? null : charset.name(), append);
     }
 
     /**
