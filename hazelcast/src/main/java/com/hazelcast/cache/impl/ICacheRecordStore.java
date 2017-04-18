@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ObjectNamespace;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
@@ -448,4 +449,10 @@ public interface ICacheRecordStore {
      * @return <tt>true</tt> if wan replication is enabled for this record store, <tt>false</tt> otherwise
      */
     boolean isWanReplicationEnabled();
+
+    /**
+     * Returns {@link com.hazelcast.spi.ObjectNamespace} associated with this record store.
+     * @return ObjectNamespace associated with this record store.
+     */
+    ObjectNamespace getObjectNamespace();
 }

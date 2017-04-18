@@ -23,17 +23,15 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventPublishingService;
+import com.hazelcast.spi.FragmentedMigrationAwareService;
 import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 
 import java.util.Collection;
 
 public interface ICacheService
-        extends ManagedService,
-                RemoteService,
-                MigrationAwareService,
+        extends ManagedService, RemoteService, FragmentedMigrationAwareService,
                 EventPublishingService<Object, CacheEventListener> {
 
     String CACHE_SUPPORT_NOT_AVAILABLE_ERROR_MESSAGE =

@@ -22,6 +22,8 @@ import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
@@ -30,7 +32,7 @@ import com.hazelcast.spi.impl.MutatingOperation;
  * <p>It simply clears the records.</p>
  */
 public class CacheClearBackupOperation extends AbstractNamedOperation
-        implements BackupOperation, IdentifiedDataSerializable, MutatingOperation {
+        implements BackupOperation, ServiceNamespaceAware, IdentifiedDataSerializable, MutatingOperation {
 
     private transient ICacheRecordStore cache;
 
@@ -63,6 +65,16 @@ public class CacheClearBackupOperation extends AbstractNamedOperation
         if (cache != null) {
             cache.clear();
         }
+    }
+
+    @Override
+    public ObjectNamespace getServiceNamespace() {
+        ICacheRecordStore recordStore = cache;
+        if (recordStore == null) {
+            ICacheService service = getService();
+            recordStore = service.getOrCreateRecordStore(name, getPartitionId());
+        }
+        return recordStore.getObjectNamespace();
     }
 
     @Override

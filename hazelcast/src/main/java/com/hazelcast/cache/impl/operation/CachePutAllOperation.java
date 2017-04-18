@@ -25,8 +25,10 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
@@ -40,7 +42,7 @@ import java.util.Map;
 
 public class CachePutAllOperation
         extends AbstractNamedOperation
-        implements PartitionAwareOperation, IdentifiedDataSerializable, BackupAwareOperation,
+        implements PartitionAwareOperation, IdentifiedDataSerializable, BackupAwareOperation, ServiceNamespaceAware,
                    MutableOperation, MutatingOperation {
 
     private List<Map.Entry<Data, Data>> entries;
@@ -115,6 +117,16 @@ public class CachePutAllOperation
     @Override
     public final int getAsyncBackupCount() {
         return cache != null ? cache.getConfig().getAsyncBackupCount() : 0;
+    }
+
+    @Override
+    public ObjectNamespace getServiceNamespace() {
+        ICacheRecordStore recordStore = cache;
+        if (recordStore == null) {
+            ICacheService service = getService();
+            recordStore = service.getOrCreateRecordStore(name, getPartitionId());
+        }
+        return recordStore.getObjectNamespace();
     }
 
     @Override

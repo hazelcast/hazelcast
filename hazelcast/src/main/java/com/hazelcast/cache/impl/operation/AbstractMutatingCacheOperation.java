@@ -66,5 +66,4 @@ public abstract class AbstractMutatingCacheOperation
         super.readInternal(in);
         completionId = in.readInt();
     }
-
 }
