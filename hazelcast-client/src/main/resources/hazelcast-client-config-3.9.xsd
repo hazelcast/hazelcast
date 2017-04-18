@@ -177,7 +177,7 @@
                 <xs:element name="reuse-address" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
                 <xs:element name="linger-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="3"/>
                 <xs:element name="timeout" type="xs:int" minOccurs="0" maxOccurs="1" default="-1"/>
-                <xs:element name="buffer-size" minOccurs="0" maxOccurs="1" default="32">
+                <xs:element name="buffer-size" minOccurs="0" maxOccurs="1" default="128">
                     <xs:simpleType>
                         <xs:restriction base="xs:unsignedInt">
                             <xs:minInclusive value="1"/>
