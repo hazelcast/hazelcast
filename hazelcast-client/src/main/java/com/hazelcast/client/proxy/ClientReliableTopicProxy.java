@@ -45,7 +45,6 @@ import com.hazelcast.version.MemberVersion;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
@@ -272,7 +271,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
                 return;
             }
 
-            if (t instanceof ExecutionException && t.getCause() instanceof StaleSequenceException) {
+            if (t instanceof StaleSequenceException) {
                 // StaleSequenceException.getHeadSeq() is not available on the client-side, see #7317
                 long remoteHeadSeq = ringbuffer.headSequence();
 

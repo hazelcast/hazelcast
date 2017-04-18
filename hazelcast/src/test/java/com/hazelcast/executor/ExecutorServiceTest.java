@@ -247,7 +247,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         service.submit(new FailingTestTask(), callback);
 
         assertOpenEventually(callback.getLatch());
-        assertTrue(callback.getResult() instanceof Throwable);
+        assertTrue(callback.getResult() instanceof IllegalStateException);
     }
 
     /* ############ submit(Runnable) ############ */

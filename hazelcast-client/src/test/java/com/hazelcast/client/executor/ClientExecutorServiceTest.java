@@ -21,10 +21,10 @@ import com.hazelcast.client.executor.tasks.FailingCallable;
 import com.hazelcast.client.executor.tasks.MapPutRunnable;
 import com.hazelcast.client.executor.tasks.SelectNoMembers;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.MemberSelector;
+import com.hazelcast.executor.ExecutorServiceTestSupport;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -42,13 +42,13 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
@@ -193,22 +193,16 @@ public class ClientExecutorServiceTest {
     }
 
     @Test
-    public void testSubmitFailingCallableException_withExecutionCallback() throws ExecutionException, InterruptedException {
+    public void testSubmitFailingCallableException_withExecutionCallback() {
         IExecutorService service = client.getExecutorService(randomString());
-        final CountDownLatch latch = new CountDownLatch(1);
-        service.submit(new FailingCallable(), new ExecutionCallback<String>() {
-            @Override
-            public void onResponse(String response) {
-            }
+        ExecutorServiceTestSupport.CountingDownExecutionCallback<String> callback =
+                new ExecutorServiceTestSupport.CountingDownExecutionCallback<String>(1);
 
-            @Override
-            public void onFailure(Throwable t) {
-                latch.countDown();
-            }
-        });
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        service.submit(new ExecutorServiceTestSupport.FailingTestTask(), callback);
+
+        assertOpenEventually(callback.getLatch());
+        assertTrue(callback.getResult() instanceof IllegalStateException);
     }
-
 
     @Test(expected = IllegalStateException.class)
     public void testSubmitFailingCallableReasonExceptionCause() throws Throwable {
