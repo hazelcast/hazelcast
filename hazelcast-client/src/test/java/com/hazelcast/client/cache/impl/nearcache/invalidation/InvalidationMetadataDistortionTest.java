@@ -209,7 +209,7 @@ public class InvalidationMetadataDistortionTest extends ClientNearCacheTestSuppo
         CacheEventHandler cacheEventHandler = service.getCacheEventHandler();
         MetaDataGenerator metaDataGenerator = cacheEventHandler.getMetaDataGenerator();
 
-        UUID uuid = UuidUtil.newSecureUUID();
+        UUID uuid = UuidUtil.newUnsecureUUID();
         int randomPartition = getInt(partitionCount);
         metaDataGenerator.setUuid(randomPartition, uuid);
     }

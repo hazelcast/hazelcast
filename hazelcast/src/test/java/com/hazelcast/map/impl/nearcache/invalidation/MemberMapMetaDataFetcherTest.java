@@ -63,7 +63,7 @@ public class MemberMapMetaDataFetcherTest extends HazelcastTestSupport {
         String mapName = "test";
         int partition = 1;
         long givenSequence = getInt(1, Integer.MAX_VALUE);
-        UUID givenUuid = UuidUtil.newSecureUUID();
+        UUID givenUuid = UuidUtil.newUnsecureUUID();
 
         RepairingTask repairingTask = getRepairingTask(mapName, partition, givenSequence, givenUuid);
         MetaDataFetcher metaDataFetcher = repairingTask.getMetaDataFetcher();
