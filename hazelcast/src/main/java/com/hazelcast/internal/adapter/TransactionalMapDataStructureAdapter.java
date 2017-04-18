@@ -22,6 +22,7 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.transaction.TransactionContext;
 
+import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
@@ -200,6 +201,24 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
         boolean result = transactionalMap.containsKey(key);
         commit();
         return result;
+    }
+
+    @Override
+    @MethodNotAvailable
+    public void loadAll(boolean replaceExistingValues) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public void loadAll(Set<K> keys, boolean replaceExistingValues) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public void loadAll(Set<? extends K> keys, boolean replaceExistingValues, CompletionListener completionListener) {
+        throw new MethodNotAvailableException();
     }
 
     private void begin() {

@@ -76,7 +76,7 @@ public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasi
     }
 
     @Override
-    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean loaderEnabled) {
         Config config = getConfig();
         config.getReplicatedMapConfig(DEFAULT_NEAR_CACHE_NAME)
                 .setInMemoryFormat(nearCacheConfig.getInMemoryFormat());

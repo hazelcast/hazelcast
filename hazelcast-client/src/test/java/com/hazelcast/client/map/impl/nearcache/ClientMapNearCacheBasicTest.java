@@ -19,10 +19,12 @@ package com.hazelcast.client.map.impl.nearcache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
+import com.hazelcast.internal.adapter.IMapMapStore;
 import com.hazelcast.internal.nearcache.AbstractNearCacheBasicTest;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
@@ -38,17 +40,19 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
+import static com.hazelcast.map.impl.nearcache.MapNearCacheBasicTest.addMapStoreConfig;
 import static java.util.Arrays.asList;
 
 /**
  * Basic Near Cache tests for {@link IMap} on Hazelcast clients.
  */
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, String> {
 
@@ -76,11 +80,17 @@ public class ClientMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data
     }
 
     @Override
-    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean loaderEnabled) {
+        Config config = getConfig();
+        IMapMapStore mapStore = loaderEnabled ? new IMapMapStore() : null;
+        if (loaderEnabled) {
+            addMapStoreConfig(mapStore, config.getMapConfig(DEFAULT_NEAR_CACHE_NAME));
+        }
+
         ClientConfig clientConfig = getClientConfig()
                 .addNearCacheConfig(nearCacheConfig);
 
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(getConfig());
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
 
         IMap<K, V> memberMap = member.getMap(DEFAULT_NEAR_CACHE_NAME);
@@ -98,7 +108,8 @@ public class ClientMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data
                 nearCacheConfig,
                 false,
                 nearCache,
-                nearCacheManager);
+                nearCacheManager,
+                mapStore);
     }
 
     protected ClientConfig getClientConfig() {

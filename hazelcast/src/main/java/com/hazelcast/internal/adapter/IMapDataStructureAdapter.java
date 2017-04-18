@@ -18,9 +18,11 @@ package com.hazelcast.internal.adapter;
 
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.TruePredicate;
 
+import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
@@ -113,6 +115,22 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
+    public void loadAll(boolean replaceExistingValues) {
+        map.loadAll(replaceExistingValues);
+    }
+
+    @Override
+    public void loadAll(Set<K> keys, boolean replaceExistingValues) {
+        map.loadAll(keys, replaceExistingValues);
+    }
+
+    @Override
+    @MethodNotAvailable
+    public void loadAll(Set<? extends K> keys, boolean replaceExistingValues, CompletionListener completionListener) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
     public Map<K, V> getAll(Set<K> keys) {
         return map.getAll(keys);
     }
@@ -149,5 +167,11 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     @Override
     public LocalMapStats getLocalMapStats() {
         return map.getLocalMapStats();
+    }
+
+    public void waitUntilLoaded() {
+        if (map instanceof MapProxyImpl) {
+            ((MapProxyImpl) map).waitUntilLoaded();
+        }
     }
 }
