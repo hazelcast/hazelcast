@@ -52,7 +52,7 @@ public class CacheNearCacheStateHolder implements IdentifiedDataSerializable {
         this.cacheReplicationOperation = cacheReplicationOperation;
     }
 
-    void prepare(CachePartitionSegment segment) {
+    public void prepare(CachePartitionSegment segment) {
         ICacheService cacheService = segment.getCacheService();
         MetaDataGenerator metaData = getPartitionMetaDataGenerator(cacheService);
 
@@ -75,7 +75,7 @@ public class CacheNearCacheStateHolder implements IdentifiedDataSerializable {
         return cacheEventHandler.getMetaDataGenerator();
     }
 
-    void applyState() {
+    public void applyState() {
         CacheService cacheService = cacheReplicationOperation.getService();
         MetaDataGenerator metaDataGenerator = getPartitionMetaDataGenerator(cacheService);
 
