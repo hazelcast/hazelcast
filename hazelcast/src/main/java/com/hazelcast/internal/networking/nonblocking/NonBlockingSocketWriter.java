@@ -73,7 +73,7 @@ public final class NonBlockingSocketWriter
     private final SwCounter priorityFramesWritten = newSwCounter();
     private WriteHandler writeHandler;
 
-    private volatile OutboundFrame currentFrame;
+    private volatile OutboundFrame pendingFrame;
     private volatile long lastWriteTime;
 
     // this field will be accessed by the NonBlockingIOThread or
@@ -246,7 +246,7 @@ public final class NonBlockingSocketWriter
      * This call is only made by the IO thread.
      */
     private void unschedule() throws IOException {
-        if (dirtyOutputBuffer() || currentFrame != null) {
+        if (dirtyOutputBuffer() || pendingFrame != null) {
             // Because not all data was written to the socket, we need to register for OP_WRITE so we get
             // notified when the socketChannel is ready for more data.
             registerOp(OP_WRITE);
@@ -350,29 +350,32 @@ public final class NonBlockingSocketWriter
      * @throws Exception
      */
     private void fillOutputBuffer() throws Exception {
+        boolean pendingFrameExist = pendingFrame != null;
+        if (pendingFrameExist) {
+            // so there was a pending frame, lets try to write that one first.
+            if (!writeHandler.onWrite(pendingFrame, outputBuffer)) {
+                // not all data was written, so we leave the pendingFrame in tact so it will be picked up the next round.
+                return;
+            }
+        }
+
+        // lets move on to the next frame.
         for (; ; ) {
-            if (!outputBuffer.hasRemaining()) {
-                // The buffer is completely filled, we are done.
-                return;
-            }
+            OutboundFrame currentFrame = poll();
 
-            // If there currently is not frame sending, lets try to get one.
             if (currentFrame == null) {
-                currentFrame = poll();
-                if (currentFrame == null) {
-                    // There is no frames to write, we are done.
-                    return;
+                // no frame to write, so we are done
+                if (pendingFrameExist) {
+                    // so lets null the pendingFrame so it doesn't get picked up again.
+                    pendingFrame = null;
                 }
-            }
-
-            // Lets write the currentFrame to the outputBuffer.
-            if (!writeHandler.onWrite(currentFrame, outputBuffer)) {
+                return;
+            } else if (!writeHandler.onWrite(currentFrame, outputBuffer)) {
                 // We are done for this round because not all data of the current frame fits in the outputBuffer
+                // so lets store the currentFrame for the next round.
+                pendingFrame = currentFrame;
                 return;
             }
-
-            // The current frame has been written completely. So lets null it and lets try to write another frame.
-            currentFrame = null;
         }
     }
 
