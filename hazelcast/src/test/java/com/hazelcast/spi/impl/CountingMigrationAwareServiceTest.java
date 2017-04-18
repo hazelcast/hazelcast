@@ -16,10 +16,11 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.FragmentedMigrationAwareService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -53,7 +54,7 @@ import static org.mockito.Mockito.when;
 public class CountingMigrationAwareServiceTest {
 
     @Parameterized.Parameter
-    public MigrationAwareService wrappedMigrationAwareService;
+    public FragmentedMigrationAwareService wrappedMigrationAwareService;
 
     @Parameterized.Parameter(1)
     public PartitionMigrationEvent event;
@@ -196,7 +197,23 @@ public class CountingMigrationAwareServiceTest {
         }
     }
 
-    static class ExceptionThrowingMigrationAwareService implements MigrationAwareService {
+    static class ExceptionThrowingMigrationAwareService implements FragmentedMigrationAwareService {
+        @Override
+        public Collection<ServiceNamespace> getAllServiceNamespaces(PartitionReplicationEvent event) {
+            return null;
+        }
+
+        @Override
+        public boolean isKnownServiceNamespace(ServiceNamespace namespace) {
+            return false;
+        }
+
+        @Override
+        public Operation prepareReplicationOperation(PartitionReplicationEvent event,
+                Collection<ServiceNamespace> namespaces) {
+            return null;
+        }
+
         @Override
         public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
             return null;
@@ -224,7 +241,23 @@ public class CountingMigrationAwareServiceTest {
     }
 
 
-    static class NoOpMigrationAwareService implements MigrationAwareService {
+    static class NoOpMigrationAwareService implements FragmentedMigrationAwareService {
+        @Override
+        public Collection<ServiceNamespace> getAllServiceNamespaces(PartitionReplicationEvent event) {
+            return null;
+        }
+
+        @Override
+        public boolean isKnownServiceNamespace(ServiceNamespace namespace) {
+            return false;
+        }
+
+        @Override
+        public Operation prepareReplicationOperation(PartitionReplicationEvent event,
+                Collection<ServiceNamespace> namespaces) {
+            return null;
+        }
+
         @Override
         public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
             return null;

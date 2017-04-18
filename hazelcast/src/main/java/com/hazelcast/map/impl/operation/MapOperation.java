@@ -28,13 +28,15 @@ import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.util.List;
 
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 
-public abstract class MapOperation extends AbstractNamedOperation implements IdentifiedDataSerializable {
+public abstract class MapOperation extends AbstractNamedOperation implements IdentifiedDataSerializable, ServiceNamespaceAware {
 
     protected transient MapService mapService;
     protected transient MapContainer mapContainer;
@@ -161,5 +163,15 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
     @Override
     public int getFactoryId() {
         return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public ObjectNamespace getServiceNamespace() {
+        MapContainer container = mapContainer;
+        if (container == null) {
+            MapService service = getService();
+            container = service.getMapServiceContext().getMapContainer(name);
+        }
+        return container.getObjectNamespace();
     }
 }

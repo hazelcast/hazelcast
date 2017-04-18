@@ -23,6 +23,7 @@ import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -31,6 +32,7 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -120,6 +122,22 @@ public class PartitionContainer {
 
     public Collection<RecordStore> getAllRecordStores() {
         return maps.values();
+    }
+
+    public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
+        Collection<ServiceNamespace> namespaces = new HashSet<ServiceNamespace>();
+
+        for (RecordStore recordStore : maps.values()) {
+            MapContainer mapContainer = recordStore.getMapContainer();
+            MapConfig mapConfig = mapContainer.getMapConfig();
+            if (mapConfig.getTotalBackupCount() < replicaIndex) {
+                continue;
+            }
+
+            namespaces.add(mapContainer.getObjectNamespace());
+        }
+
+        return namespaces;
     }
 
     public int getPartitionId() {

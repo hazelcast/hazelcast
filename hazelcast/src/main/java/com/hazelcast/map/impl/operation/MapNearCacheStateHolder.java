@@ -23,17 +23,17 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.map.impl.MapDataSerializerHook.MAP_NEAR_CACHE_STATE_HOLDER;
 import static java.util.Collections.emptyList;
@@ -60,7 +60,7 @@ public class MapNearCacheStateHolder implements IdentifiedDataSerializable {
         this.mapReplicationOperation = mapReplicationOperation;
     }
 
-    void prepare(PartitionContainer container, int replicaIndex) {
+    void prepare(PartitionContainer container, Collection<ServiceNamespace> namespaces, int replicaIndex) {
         MapService mapService = container.getMapService();
 
         MetaDataGenerator metaData = getPartitionMetaDataGenerator(mapService);
@@ -68,13 +68,13 @@ public class MapNearCacheStateHolder implements IdentifiedDataSerializable {
         int partitionId = container.getPartitionId();
         partitionUuid = metaData.getUuidOrNull(partitionId);
 
-        ConcurrentMap<String, RecordStore> maps = container.getMaps();
-        for (Map.Entry<String, RecordStore> entry : maps.entrySet()) {
+        for (ServiceNamespace namespace : namespaces) {
             if (mapNameSequencePairs == emptyList()) {
-                mapNameSequencePairs = new ArrayList(container.getMaps().size());
+                mapNameSequencePairs = new ArrayList(namespaces.size());
             }
 
-            String mapName = entry.getKey();
+            ObjectNamespace mapNamespace = (ObjectNamespace) namespace;
+            String mapName = mapNamespace.getObjectName();
 
             mapNameSequencePairs.add(mapName);
             mapNameSequencePairs.add(metaData.currentSequence(mapName, partitionId));
