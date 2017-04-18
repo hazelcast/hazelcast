@@ -49,7 +49,7 @@ public abstract class AbstractHandler
 
     // counts the number of migrations that have happened so far.
     @Probe
-    private SwCounter migrationCount = newSwCounter();
+    private final SwCounter migrationCount = newSwCounter();
 
     public AbstractHandler(SocketConnection connection,
                            NonBlockingIOThread ioThread,
