@@ -67,8 +67,9 @@ public interface ClientConnectionManager extends ConnectionListenable {
      * @param address to be connected
      * @param asOwner true if connection should be authenticated as owner, false otherwise
      * @return associated connection if available, returns null and triggers new connection creation otherwise
+     * @throws IOException if connection is not able to triggered
      */
-    Connection getOrTriggerConnect(Address address, boolean asOwner);
+    Connection getOrTriggerConnect(Address address, boolean asOwner) throws IOException;
 
     /**
      * Handles incoming network package
