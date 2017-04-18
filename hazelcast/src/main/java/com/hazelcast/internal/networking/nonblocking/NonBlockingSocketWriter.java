@@ -73,13 +73,18 @@ public final class NonBlockingSocketWriter
     private final SwCounter priorityFramesWritten = newSwCounter();
     private WriteHandler writeHandler;
 
-    private volatile OutboundFrame currentFrame;
+    private OutboundFrame currentFrame;
     private volatile long lastWriteTime;
 
     // this field will be accessed by the NonBlockingIOThread or
     // it is accessed by any other thread but only that thread managed to cas the scheduled flag to true.
     // This prevents running into an NonBlockingIOThread that is migrating.
     private NonBlockingIOThread newOwner;
+
+    private long bytesReadLastPublish;
+    private long normalFramesReadLastPublish;
+    private long priorityFramesReadLastPublish;
+    private long eventsLastPublish;
 
     public NonBlockingSocketWriter(SocketConnection connection,
                                    NonBlockingIOThread ioThread,
@@ -88,6 +93,20 @@ public final class NonBlockingSocketWriter
                                    SocketWriterInitializer initializer) {
         super(connection, ioThread, OP_WRITE, logger, balancer);
         this.initializer = initializer;
+    }
+
+    @Override
+    public long getEventCount() {
+        switch (LOAD_TYPE) {
+            case 0:
+                return handleCount.get();
+            case 1:
+                return bytesWritten.get() + priorityFramesWritten.get();
+            case 2:
+                return normalFramesWritten.get() + priorityFramesWritten.get();
+            default:
+                throw new RuntimeException();
+        }
     }
 
     @Override
@@ -282,7 +301,7 @@ public final class NonBlockingSocketWriter
     @Override
     @SuppressWarnings("unchecked")
     public void handle() throws Exception {
-        eventCount.inc();
+        handleCount.inc();
         lastWriteTime = currentTimeMillis();
 
         if (writeHandler == null) {
@@ -346,33 +365,22 @@ public final class NonBlockingSocketWriter
     /**
      * Fills the outBuffer with frames. This is done till there are no more frames or till there is no more space in the
      * outputBuffer.
-     *
-     * @throws Exception
      */
     private void fillOutputBuffer() throws Exception {
-        for (; ; ) {
-            if (!outputBuffer.hasRemaining()) {
-                // The buffer is completely filled, we are done.
-                return;
-            }
+        if (currentFrame == null) {
+            // if there is no pending frame, lets try to poll one.
+            currentFrame = poll();
+        }
 
-            // If there currently is not frame sending, lets try to get one.
-            if (currentFrame == null) {
-                currentFrame = poll();
-                if (currentFrame == null) {
-                    // There is no frames to write, we are done.
-                    return;
-                }
-            }
-
+        while (currentFrame != null) {
             // Lets write the currentFrame to the outputBuffer.
             if (!writeHandler.onWrite(currentFrame, outputBuffer)) {
                 // We are done for this round because not all data of the current frame fits in the outputBuffer
                 return;
             }
 
-            // The current frame has been written completely. So lets null it and lets try to write another frame.
-            currentFrame = null;
+            // The current frame has been written completely. So lets try to poll for another one.
+            currentFrame = poll();
         }
     }
 
@@ -451,6 +459,19 @@ public final class NonBlockingSocketWriter
 
             newOwner = theNewOwner;
         }
+    }
+
+    @Override
+    protected void publish() {
+        ioThread.bytesTransceived += bytesWritten.get() - bytesReadLastPublish;
+        ioThread.framesTransceived += normalFramesWritten.get() - normalFramesReadLastPublish;
+        ioThread.priorityFramesTransceived += priorityFramesWritten.get() - priorityFramesReadLastPublish;
+        ioThread.handleCount += handleCount.get() - eventsLastPublish;
+
+        bytesReadLastPublish = bytesWritten.get();
+        normalFramesReadLastPublish = normalFramesWritten.get();
+        priorityFramesReadLastPublish = priorityFramesWritten.get();
+        eventsLastPublish = handleCount.get();
     }
 
     private class CloseTask implements Runnable {

@@ -156,6 +156,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.credentials = client.getCredentials();
     }
 
+    public NonBlockingIOThreadingModel getIoThreadingModel() {
+        return ioThreadingModel;
+    }
+
     protected void initIOThreads(HazelcastClientInstanceImpl client) {
         HazelcastProperties properties = client.getProperties();
         boolean directBuffer = properties.getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
@@ -191,6 +195,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 new ClientSocketWriterInitializer(getBufferSize(), directBuffer),
                 new ClientSocketReaderInitializer(getBufferSize(), directBuffer));
     }
+
+
 
     private SocketInterceptor initSocketInterceptor(SocketInterceptorConfig sic) {
         if (sic != null && sic.isEnabled()) {
