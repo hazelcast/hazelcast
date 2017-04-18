@@ -32,7 +32,6 @@ import java.io.IOException;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSize;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Test that the Hazelcast infrastructure can deal correctly with {@link com.hazelcast.internal.cluster.impl.ConfigCheck} violations.
@@ -49,28 +48,6 @@ public class ClusterJoinConfigCheckTest {
     @After
     public void killAllHazelcastInstances() throws IOException {
         Hazelcast.shutdownAll();
-    }
-
-    @Test
-    public void tcp_whenGroupPasswordMismatch_thenNewNodeIsShutDown() {
-        whenGroupPasswordMismatch_thenNewNodeIsShutDown(true);
-    }
-
-    @Test
-    public void multicast_whenGroupPasswordMismatch_thenNewNodeIsShutDown() {
-        whenGroupPasswordMismatch_thenNewNodeIsShutDown(false);
-    }
-
-    private void whenGroupPasswordMismatch_thenNewNodeIsShutDown(boolean tcp) {
-        Config config1 = new Config();
-        config1.getGroupConfig().setName("foo");
-        config1.getGroupConfig().setPassword("password");
-
-        Config config2 = new Config();
-        config2.getGroupConfig().setName("foo");
-        config2.getGroupConfig().setPassword("badpassword");
-
-        assertIncompatible(config1, config2, tcp);
     }
 
     @Test
@@ -103,25 +80,6 @@ public class ClusterJoinConfigCheckTest {
 
         assertTrue(hz2.getLifecycleService().isRunning());
         assertClusterSize(1, hz2);
-    }
-
-    private void assertIncompatible(Config config1, Config config2, boolean tcp) {
-        if (tcp) {
-            enableTcp(config1);
-            enableTcp(config2);
-        }
-
-        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config1);
-
-        try {
-            Hazelcast.newHazelcastInstance(config2);
-            fail();
-        } catch (IllegalStateException e) {
-
-        }
-
-        assertTrue(hz1.getLifecycleService().isRunning());
-        assertClusterSize(1, hz1);
     }
 
     private void enableTcp(Config config) {

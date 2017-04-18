@@ -112,27 +112,6 @@ public class MulticastJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    public void test_whenSameGroupNamesButDifferentPassword() throws Exception {
-        Config config1 = new Config();
-        config1.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
-        config1.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");
-        config1.getGroupConfig().setName("group").setPassword("password1");
-        config1.getNetworkConfig().getJoin().getMulticastConfig()
-                .setEnabled(true).setMulticastTimeoutSeconds(3);
-        config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
-
-        Config config2 = new Config();
-        config2.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
-        config2.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "3");
-        config2.getGroupConfig().setName("group").setPassword("password2");
-        config2.getNetworkConfig().getJoin().getMulticastConfig()
-                .setEnabled(true).setMulticastTimeoutSeconds(3);
-        config2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
-
-        assertIncompatible(config1, config2);
-    }
-
-    @Test
     public void test_whenIncompatiblePartitionGroups() throws Exception {
         Config config1 = new Config();
         config1.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");

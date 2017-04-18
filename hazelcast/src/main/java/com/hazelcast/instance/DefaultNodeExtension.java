@@ -29,6 +29,7 @@ import com.hazelcast.hotrestart.NoOpHotRestartService;
 import com.hazelcast.hotrestart.NoopInternalHotRestartService;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
+import com.hazelcast.internal.cluster.impl.EchoNoCopyByteArrayProcessor;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
@@ -57,6 +58,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.util.ByteArrayProcessor;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.Preconditions;
@@ -303,6 +305,16 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public String createMemberUuid(Address address) {
         return UuidUtil.createMemberUuid(address);
+    }
+
+    @Override
+    public ByteArrayProcessor createMulticastInputProcessor() {
+        return new EchoNoCopyByteArrayProcessor();
+    }
+
+    @Override
+    public ByteArrayProcessor createMulticastOutputProcessor() {
+        return new EchoNoCopyByteArrayProcessor();
     }
 
     // obtain cluster version, if already initialized (not null)

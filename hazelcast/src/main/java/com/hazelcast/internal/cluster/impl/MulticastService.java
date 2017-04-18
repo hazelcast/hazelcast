@@ -27,6 +27,7 @@ import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.util.ByteArrayProcessor;
 import com.hazelcast.util.EmptyStatement;
 
 import java.io.EOFException;
@@ -35,6 +36,7 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
+import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -62,16 +64,23 @@ public final class MulticastService implements Runnable {
     private final DatagramPacket datagramPacketReceive;
     private final JoinMessageTrustChecker joinMessageTrustChecker;
 
+    private final ByteArrayProcessor inputProcessor;
+    private final ByteArrayProcessor outputProcessor;
+
     private long lastLoggedJoinSerializationFailure;
     private volatile boolean running = true;
 
-
-    private MulticastService(Node node, MulticastSocket multicastSocket) throws Exception {
+    private MulticastService(Node node, MulticastSocket multicastSocket)
+            throws Exception {
         this.logger = node.getLogger(MulticastService.class.getName());
         this.node = node;
         this.multicastSocket = multicastSocket;
 
+        this.inputProcessor = node.getNodeExtension().createMulticastInputProcessor();
+        this.outputProcessor = node.getNodeExtension().createMulticastOutputProcessor();
+
         this.sendOutput = node.getSerializationService().createObjectDataOutput(SEND_OUTPUT_SIZE);
+
         Config config = node.getConfig();
         MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
         this.datagramPacketSend = new DatagramPacket(new byte[0], 0, InetAddress.getByName(multicastConfig.getMulticastGroup()),
@@ -209,12 +218,18 @@ public final class MulticastService implements Runnable {
             try {
                 final byte[] data = datagramPacketReceive.getData();
                 final int offset = datagramPacketReceive.getOffset();
-                final BufferObjectDataInput input = node.getSerializationService().createObjectDataInput(data);
-                input.position(offset);
+                final int length = datagramPacketReceive.getLength();
+
+                final BufferObjectDataInput input = node.getSerializationService()
+                                                        .createObjectDataInput(inputProcessor.process(data, offset, length));
 
                 final byte packetVersion = input.readByte();
+                // TODO need a way to differentiate between encrypted incoming byte stream and not.
+                // eg. If local node has encryption disabled, and receives encrypted datagram from remote encrypted node
+                // then the packet version identifier as expected is wrong, and the warning is misleading.
                 if (packetVersion != Packet.VERSION) {
-                    logger.warning("Received a JoinRequest with a different packet version! This -> "
+                    logger.warning("Received a JoinRequest with a different packet version, or encrypted. "
+                            + "Verify that the sender Node, doesn't have symmetric-encryption on. This -> "
                             + Packet.VERSION + ", Incoming -> " + packetVersion
                             + ", Sender -> " + datagramPacketReceive.getAddress());
                     return null;
@@ -234,6 +249,11 @@ public final class MulticastService implements Runnable {
                                 + "Are you running multiple Hazelcast clusters on this host? "
                                 + "(This message will be suppressed for 60 seconds). ");
                     }
+                } else if (e instanceof GeneralSecurityException) {
+                    logger.warning("Received a JoinRequest with an incompatible encoding. "
+                            + "Symmetric-encryption is enabled on this node, the remote node either doesn't have it on, "
+                            + "or it uses different cipher."
+                            + "(This message will be suppressed for 60 seconds). ");
                 } else {
                     throw e;
                 }
@@ -254,7 +274,7 @@ public final class MulticastService implements Runnable {
             try {
                 out.writeByte(Packet.VERSION);
                 out.writeObject(joinMessage);
-                datagramPacketSend.setData(out.toByteArray());
+                datagramPacketSend.setData(outputProcessor.process(out.toByteArray()));
                 multicastSocket.send(datagramPacketSend);
                 out.clear();
             } catch (IOException e) {
