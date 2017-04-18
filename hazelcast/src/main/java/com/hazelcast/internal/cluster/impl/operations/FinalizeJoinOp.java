@@ -37,8 +37,11 @@ import java.util.Collection;
 
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
+/**
+ * Sent by the master to all members to finalize the join operation from a joining/returning node.
+ */
 public class FinalizeJoinOp extends MembersUpdateOp {
-
+    /** The operation to be executed on the target node after join completes, can be {@code null}. */
     private PostJoinOp postJoinOp;
     private String clusterId;
     private long clusterStartTime;

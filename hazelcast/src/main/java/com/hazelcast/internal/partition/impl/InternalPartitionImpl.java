@@ -77,6 +77,7 @@ public class InternalPartitionImpl implements InternalPartition {
         return addresses[replicaIndex];
     }
 
+    /** Swaps the addresses for {@code index1} and {@code index2} and call the partition listeners */
     void swapAddresses(int index1, int index2) {
         Address[] newAddresses = Arrays.copyOf(addresses, MAX_REPLICA_COUNT);
 
@@ -120,6 +121,7 @@ public class InternalPartitionImpl implements InternalPartition {
         callPartitionListener(replicaIndex, oldAddress, newAddress);
     }
 
+    /** Calls the partition listener for all changed addresses. */
     private void callPartitionListener(Address[] newAddresses, Address[] oldAddresses) {
         if (partitionListener != null) {
             for (int replicaIndex = 0; replicaIndex < MAX_REPLICA_COUNT; replicaIndex++) {
@@ -130,6 +132,7 @@ public class InternalPartitionImpl implements InternalPartition {
         }
     }
 
+    /** Sends a {@link PartitionReplicaChangeEvent} if the address has changed. */
     private void callPartitionListener(int replicaIndex, Address oldAddress, Address newAddress) {
         boolean changed;
         if (oldAddress == null) {
@@ -162,7 +165,10 @@ public class InternalPartitionImpl implements InternalPartition {
         return getReplicaIndex(addresses, address);
     }
 
-    /** Return the index of the {@code address} in {@code addresses} or -1 if the {@code address} is null or not present */
+    /**
+     * Returns the index of the {@code address} in {@code addresses} or -1 if the {@code address} is {@code null} or
+     * not present.
+     */
     public static int getReplicaIndex(Address[] addresses, Address address) {
         if (address == null) {
             return -1;

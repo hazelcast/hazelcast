@@ -59,6 +59,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.SharedService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -447,11 +448,17 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     /**
-     * Post join operations must be lock free; means no locks at all;
-     * no partition locks, no key-based locks, no service level locks!
-     * <p/>
-     * Post join operations should return response, at least a null response.
-     * <p/>
+     * Collects all post-join operations. This will include event registrations which are not
+     * local and operations returned from services implementing {@link PostJoinAwareService}.
+     * <p>
+     * Post join operations should return response, at least a {@code null} response.
+     * <p>
+     * <b>NOTE</b>: Post join operations must be lock free, meaning no locks at all:
+     * no partition locks, no key-based locks, no service level locks, no database interaction!
+     * The {@link Operation#getPartitionId()} method should return a negative value.
+     * This means that the operations should not implement {@link PartitionAwareOperation}.
+     *
+     * @return the operations to be executed at the end of a finalized join
      */
     public Operation[] getPostJoinOperations() {
         final Collection<Operation> postJoinOps = new LinkedList<Operation>();

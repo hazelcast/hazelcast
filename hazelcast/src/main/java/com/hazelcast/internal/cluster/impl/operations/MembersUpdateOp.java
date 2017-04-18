@@ -37,9 +37,11 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 
 public class MembersUpdateOp extends VersionedClusterOperation {
-
+    /** The master cluster clock time. */
     long masterTime = Clock.currentTimeMillis();
+    /** The updated member info collection. */
     private List<MemberInfo> memberInfos;
+    /** The UUID of the receiving member. */
     private String targetUuid;
     private boolean returnResponse;
     private PartitionRuntimeState partitionRuntimeState;

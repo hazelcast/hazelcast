@@ -46,6 +46,12 @@ import java.util.logging.Level;
 
 import static com.hazelcast.internal.cluster.Versions.V3_9;
 
+/**
+ * Sent from the master node to the partition owner. It will perform the migration by preparing the migration operations and
+ * sending them to the destination. A response with a value equal to {@link Boolean#TRUE} indicates a successful migration.
+ *
+ * @see com.hazelcast.internal.partition.impl.MigrationManager.MigrateTask
+ */
 public final class MigrationRequestOperation extends BaseMigrationOperation {
 
     private boolean returnResponse = true;
@@ -122,6 +128,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                 || !getNodeEngine().isRunning() ? Level.INFO : Level.WARNING;
     }
 
+    /** Verifies that this node is the owner of the partition. */
     private void verifySource(Address thisAddress, InternalPartition partition) {
         Address owner = partition.getOwnerOrNull();
         if (owner == null) {
@@ -134,6 +141,11 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         }
     }
 
+    /**
+     * Invokes the {@link MigrationOperation} on the migration destination and sets this object as the callback.
+     *
+     * @see #handleMigrationResultFromTarget(Object)
+     */
     private void invokeMigrationOperation(Address destination, long[] replicaVersions, Collection<Operation> tasks)
             throws IOException {
 
@@ -153,6 +165,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                 .invoke();
     }
 
+    /** Verifies that the local master is equal to the migration master. */
     private void verifyGoodMaster(NodeEngine nodeEngine) {
         Address masterAddress = nodeEngine.getMasterAddress();
         boolean shouldFail = nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(V3_9);
@@ -174,6 +187,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         }
     }
 
+    /** Verifies that the destination is a cluster member. */
     private void verifyExistingTarget(NodeEngine nodeEngine, Address destination) {
         Member target = nodeEngine.getClusterService().getMember(destination);
         if (target == null) {
@@ -201,6 +215,10 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         return returnResponse;
     }
 
+    /**
+     * Processes the migration result sent from the migration destination and sends the response to the caller of this operation.
+     * A response equal to {@link Boolean#TRUE} indicates successful migration.
+     */
     private void handleMigrationResultFromTarget(Object result) {
         migrationInfo.doneProcessing();
         onMigrationComplete(Boolean.TRUE.equals(result));
@@ -218,6 +236,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         super.executeBeforeMigrations();
     }
 
+    /** Collects the migration operations from all {@link MigrationAwareService}s. */
     private Collection<Operation> prepareMigrationOperations() {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
 

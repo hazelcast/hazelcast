@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
@@ -24,8 +25,11 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 
 import static com.hazelcast.core.MigrationEvent.MigrationStatus.STARTED;
 
-// Runs locally when the node becomes owner of a partition,
-// before applying promotion result to the partition table.
+/**
+ * Runs locally when the node becomes owner of a partition, before applying a promotion result to the partition table.
+ * Sends a {@link MigrationEvent} and notifies all {@link MigrationAwareService}s that the migration is starting.
+ * After completion notifies the {@link #beforePromotionsCallback}.
+ */
 final class BeforePromotionOperation extends AbstractPromotionOperation {
 
     private Runnable beforePromotionsCallback;

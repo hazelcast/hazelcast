@@ -48,6 +48,7 @@ abstract class AbstractPromotionOperation extends AbstractPartitionOperation
         this.currentReplicaIndex = currentReplicaIndex;
     }
 
+    /** Sends a {@link MigrationEvent} to registered listeners with status {@code status}. */
     void sendMigrationEvent(final MigrationStatus status) {
         final int partitionId = getPartitionId();
         final NodeEngine nodeEngine = getNodeEngine();

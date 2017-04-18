@@ -216,7 +216,11 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         }
     }
 
-    // This is executed under partition migration lock!
+    /**
+     * Invalidates all parked operations for the migrated partition and sends a {@link PartitionMigratingException} as a
+     * response.
+     * Invoked on the migration destination. This is executed under partition migration lock!
+     */
     public void onPartitionMigrate(Address thisAddress, MigrationInfo migrationInfo) {
         if (!thisAddress.equals(migrationInfo.getSource())) {
             return;

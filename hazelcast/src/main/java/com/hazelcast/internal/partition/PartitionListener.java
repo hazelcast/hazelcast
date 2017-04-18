@@ -18,6 +18,8 @@ package com.hazelcast.internal.partition;
 
 import com.hazelcast.internal.partition.impl.PartitionReplicaChangeEvent;
 
+/** Listener for partition change events */
 public interface PartitionListener {
+    /** Called when a new partition arrangement has been set and a partition replica has been changed. */
     void replicaChanged(PartitionReplicaChangeEvent event);
 }

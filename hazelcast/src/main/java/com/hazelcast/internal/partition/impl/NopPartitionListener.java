@@ -18,6 +18,7 @@ package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.internal.partition.PartitionListener;
 
+/** No-op partition listener which does nothing on partition change events. */
 public final class NopPartitionListener implements PartitionListener {
 
     @Override

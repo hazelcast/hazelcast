@@ -23,11 +23,10 @@ import com.hazelcast.logging.ILogger;
 
 /**
  * PartitionListener used to listen partition change events internally.
- * Most significant responsibility of this listener is to increment
- * partition-state version on each change.
+ * Most significant responsibility of this listener is to increment the partition-state version on each change and
+ * cancel any ongoing replica synchronization on the changed partition.
  * <p>
- * Also this listener delegates the partition change events to its child
- * listeners.
+ * Also this listener delegates the partition change events to its child listeners.
  */
 final class InternalPartitionListener implements PartitionListener {
     private final Node node;

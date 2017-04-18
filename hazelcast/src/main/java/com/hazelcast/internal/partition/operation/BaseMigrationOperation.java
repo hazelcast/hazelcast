@@ -58,6 +58,15 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         setPartitionId(migrationInfo.getPartitionId());
     }
 
+    /**
+     * {@inheritDoc}
+     * Validates the migration operation: the UUIDs of the node should match the one in the {@link #migrationInfo},
+     * the cluster should be in {@link ClusterState#ACTIVE} and the node started and the partition state version from
+     * the sender should match the local partition state version.
+     *
+     * @throws IllegalStateException                  if the UUIDs don't match or if the cluster and node state are not
+     * @throws PartitionStateVersionMismatchException if the partition versions don't match and this node is not the master node
+     */
     @Override
     public final void beforeRun() throws Exception {
         try {
@@ -71,6 +80,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         }
     }
 
+    /** Verifies that the sent partition state version matches the local version or this node is master. */
     private void verifyPartitionStateVersion() {
         InternalPartitionService partitionService = getService();
         int localPartitionStateVersion = partitionService.getPartitionStateVersion();
@@ -84,6 +94,10 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         }
     }
 
+    /**
+     * Checks if the local UUID matches the migration source or destintion UUID if this node is the migration source or
+     * destination.
+     */
     private void verifyMemberUuid() {
         Member localMember = getNodeEngine().getLocalMember();
         if (localMember.getAddress().equals(migrationInfo.getSource())) {
@@ -99,6 +113,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         }
     }
 
+    /** Verifies that the cluster is active and the node is started. */
     private void verifyClusterState() {
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         ClusterState clusterState = nodeEngine.getClusterService().getClusterState();
@@ -112,6 +127,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         }
     }
 
+    /** Sets the active migration and the partition migration flag. */
     void setActiveMigration() {
         InternalPartitionServiceImpl partitionService = getService();
         MigrationManager migrationManager = partitionService.getMigrationManager();
@@ -140,6 +156,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         migrationListener.onMigrationComplete(getMigrationParticipantType(), migrationInfo, result);
     }
 
+    /** Notifies all {@link MigrationAwareService}s that the migration is starting. */
     void executeBeforeMigrations() throws Exception {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         PartitionMigrationEvent event = getMigrationEvent();
@@ -159,6 +176,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         }
     }
 
+    /** Returns the event which will be forwarded to {@link MigrationAwareService}s. */
     protected abstract PartitionMigrationEvent getMigrationEvent();
 
     protected abstract InternalMigrationListener.MigrationParticipant getMigrationParticipantType();

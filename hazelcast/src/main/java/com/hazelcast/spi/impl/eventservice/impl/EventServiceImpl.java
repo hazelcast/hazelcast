@@ -470,6 +470,11 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         }
     }
 
+    /**
+     * Collects all non-local registrations and returns them as a {@link PostJoinRegistrationOperation}.
+     *
+     * @return the post join operation containing all non-local registrations
+     */
     public PostJoinRegistrationOperation getPostJoinOperation() {
         final Collection<Registration> registrations = new LinkedList<Registration>();
         for (EventServiceSegment segment : segments.values()) {

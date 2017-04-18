@@ -124,13 +124,14 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     private final ExceptionHandler partitionStateSyncTimeoutHandler;
 
-    // used to limit partition assignment requests sent to master
+    /** Determines if a {@link AssignPartitions} is being sent to the master, used to limit partition assignment requests. */
     private final AtomicBoolean triggerMasterFlag = new AtomicBoolean(false);
 
     private final AtomicReference<CountDownLatch> shutdownLatchRef = new AtomicReference<CountDownLatch>();
 
     private volatile Address lastMaster;
 
+    /** Whether the master should fetch the partition tables from other nodes, can happen when node becomes new master. */
     private volatile boolean shouldFetchPartitionTables;
 
     public InternalPartitionServiceImpl(Node node) {
@@ -243,6 +244,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
+    /** Sends a {@link AssignPartitions} to the master to assign partitions. */
     private void triggerMasterToAssignPartitions() {
         if (partitionStateManager.isInitialized()) {
             return;
@@ -282,6 +284,15 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return clusterService.getMembers(DATA_MEMBER_SELECTOR).isEmpty();
     }
 
+    /**
+     * Sets the initial partition table and state version. If any partition has a replica, the partition state manager is
+     * set to initialized, otherwise {@link #partitionStateManager#isInitialized()} stays uninitialized but the current state
+     * will be updated nevertheless.
+     * This method acquires the partition service lock.
+     *
+     * @param partitionTable the initial partition table
+     * @throws IllegalStateException if the partition manager has already been initialized
+     */
     public void setInitialState(PartitionTableView partitionTable) {
         lock.lock();
         try {
@@ -406,6 +417,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return null;
     }
 
+    /**
+     * Returns a copy of the partition table or {@code null} if not initialized. This method will acquire the partition service
+     * lock.
+     */
     public PartitionRuntimeState createPartitionStateInternal() {
         lock.lock();
         try {
@@ -454,9 +469,12 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     /**
-     * Creates a transient PartitionRuntimeState to commit promotions.
-     * Results of promotions are applied to partition table.
-     * Version of created partition table is incremented by number of promotions.
+     * Creates a transient {@link PartitionRuntimeState} to commit promotions by applying the {@code migrationInfos}.
+     * The partition table version is incremented by number of promotions.
+     * This method will acquire the partition service lock.
+     *
+     * @param migrationInfos the promotions to be executed on the destination
+     * @return the partition table with the executed migrations or {@code null} if the partitions are not initialized (assigned)
      */
     PartitionRuntimeState createPromotionCommitPartitionState(Collection<MigrationInfo> migrationInfos) {
         lock.lock();
@@ -482,6 +500,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
+    /**
+     * Called on the master node to publish the current partition state to all cluster nodes. It will not publish the partition
+     * state if the partitions have not yet been initialized, there is ongoing repartitioning or a node is joining the cluster.
+     */
     @SuppressWarnings("checkstyle:npathcomplexity")
     void publishPartitionRuntimeState() {
         if (!partitionStateManager.isInitialized()) {
@@ -521,6 +543,13 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
+    /**
+     * Called on the master node to send the partition tables to other cluster members. It will not publish the partition
+     * state if the partitions have not yet been initialized.
+     * Waits for {@value PTABLE_SYNC_TIMEOUT_SECONDS} for the members to respond to the partition state operation.
+     *
+     * @return {@code true} if all cluster members have synced their partition tables, {@code false} otherwise.
+     */
     @SuppressWarnings("checkstyle:npathcomplexity")
     boolean syncPartitionRuntimeState() {
         if (!partitionStateManager.isInitialized()) {
@@ -564,6 +593,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return true;
     }
 
+    /** Sends a {@link PartitionStateOperation} to cluster members and returns the futures. */
     private List<Future<Boolean>> firePartitionStateOperation(Collection<MemberImpl> members,
                                                      PartitionRuntimeState partitionState,
                                                      OperationService operationService) {
@@ -584,6 +614,12 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return calls;
     }
 
+    /**
+     * Sets the {@code partitionState} if the node is started and the state is sent by the master known by this node.
+     *
+     * @param partitionState the new partition state
+     * @return {@code true} if the partition state was applied
+     */
     public boolean processPartitionRuntimeState(final PartitionRuntimeState partitionState) {
         final Address sender = partitionState.getEndpoint();
         if (!node.getNodeExtension().isStartCompleted()) {
@@ -614,6 +650,17 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return applyNewState(partitionState, sender);
     }
 
+    /**
+     * Applies the {@code partitionState} sent by the {@code sender} if the new state is newer than the current one
+     * and finalizes the migrations.
+     * This method does not validate the sender. It is caller method's responsibility.
+     * This method will acquire the partition service lock.
+     *
+     * @param partitionState the new partition state
+     * @param sender         the sender of the new partition state
+     * @return {@code true} if the partition state version is higher than the current one and was applied or
+     * if the partition state version is same as the current one
+     */
     private boolean applyNewState(PartitionRuntimeState partitionState, Address sender) {
         try {
             if (!lock.tryLock(PTABLE_SYNC_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
@@ -648,6 +695,12 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
+    /**
+     * Updates all partitions and version, updates (adds and retains) the completed migrations and finalizes the active
+     * migration if it is equal to any completed.
+     *
+     * @see MigrationManager#scheduleActiveMigrationFinalization(MigrationInfo)
+     */
     private void updatePartitionsAndFinalizeMigrations(PartitionRuntimeState partitionState) {
         final Address[][] partitionTable = partitionState.getPartitionTable();
         updateAllPartitions(partitionTable);
@@ -672,6 +725,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         migrationManager.retainCompletedMigrations(completedMigrations);
     }
 
+    /** Sets the replica addresses for all partitions. */
     private void updateAllPartitions(Address[][] partitionTable) {
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             Address[] replicas = partitionTable[partitionId];
@@ -679,6 +733,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
+    /**
+     * Checks if there are unknown addresses in the {@code partitionTable} and requests the member list from the master node if
+     * there are any.
+     */
     private void filterAndLogUnknownAddressesInPartitionTable(Address sender, Address[][] partitionTable) {
         final Set<Address> unknownAddresses = new HashSet<Address>();
         for (int partitionId = 0; partitionId < partitionTable.length; partitionId++) {
@@ -711,6 +769,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
+    /**
+     * Searches {@code addresses} for addresses which are currently not cluster members and were not removed while cluster was
+     * not active and add them to {@code unknownAddresses}.
+     */
     private void searchUnknownAddressesInPartitionTable(Address sender, Set<Address> unknownAddresses, int partitionId,
                                                         Address[] addresses) {
         final ClusterServiceImpl clusterService = node.clusterService;
@@ -1107,6 +1169,16 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
+    /**
+     * Invoked on a node when it becomes master. It will receive partition states from all members and consolidate them into one.
+     * It guarantees the monotonicity of the partition table.
+     * <ul>
+     * <li>Fetch partition tables from all cluster members</li>
+     * <li>Pick the most up to date partition table and apply it to local</li>
+     * <li>Complete the pending migration, if present</li>
+     * <li>Send the new partition table to all cluster members</li>
+     * </ul>
+     */
     private class FetchMostRecentPartitionTableTask implements MigrationRunnable {
 
         private final Address thisAddress = node.getThisAddress();
@@ -1133,6 +1205,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             syncPartitionRuntimeState();
         }
 
+        /** Sends {@link FetchPartitionStateOperation} to all cluster members. */
         private Collection<Future<PartitionRuntimeState>> invokeFetchPartitionStateOps() {
             Collection<MemberImpl> members = node.clusterService.getMemberImpls();
             Collection<Future<PartitionRuntimeState>> futures = new ArrayList<Future<PartitionRuntimeState>>(
@@ -1151,6 +1224,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return futures;
         }
 
+        /** Collects all completed and active migrations and sets the partition state to the latest version. */
         private void processResults(Collection<Future<PartitionRuntimeState>> futures,
                 Collection<MigrationInfo> allCompletedMigrations, Collection<MigrationInfo> allActiveMigrations) {
             for (Future<PartitionRuntimeState> future : futures) {
@@ -1185,6 +1259,13 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
         }
 
+        /**
+         * Applies a partition state and marks all migrations (including local) as complete, when a newer state is received.
+         * The method will acquire the partition state lock.
+         *
+         * @param allCompletedMigrations received completed migrations from other nodes
+         * @param allActiveMigrations    received active migrations from other nodes
+         */
         private void processNewState(Collection<MigrationInfo> allCompletedMigrations,
                 Collection<MigrationInfo> allActiveMigrations) {
 
@@ -1218,6 +1299,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
         }
 
+        /** Moves all migrations to completed (including local) and marks active migrations as {@link MigrationStatus#FAILED}. */
         private void processMigrations(Collection<MigrationInfo> allCompletedMigrations,
                                        Collection<MigrationInfo> allActiveMigrations) {
             allCompletedMigrations.addAll(migrationManager.getCompletedMigrationsCopy());

@@ -42,8 +42,11 @@ import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Used for committing a promotion on destination.
- * Updates the partition table on destination and commits the promotion.
+ * Used for committing a promotion on destination. Sent by the master to update the partition table on destination and
+ * commit the promotion.
+ * The promotion is executed in two stages which are denoted by the {@link #beforeStateCompleted} property. First it invokes
+ * {@link BeforePromotionOperation}s for every promoted partition. After all operations return it will reschedule itself
+ * and finalize the promotions by sending {@link FinalizePromotionOperation} for every promotion.
  */
 public class PromotionCommitOperation extends AbstractPartitionOperation implements MigrationCycleOperation {
 
@@ -108,6 +111,10 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
         }
     }
 
+    /**
+     * Sends {@link BeforePromotionOperation}s for all promotions and register a callback on each operation to track when
+     * operations are finished.
+     */
     private void beforePromotion() {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         InternalOperationService operationService = nodeEngine.getOperationService();
@@ -131,6 +138,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
         }
     }
 
+    /** Processes the sent partition state and sends {@link FinalizePromotionOperation} for all promotions. */
     private void finalizePromotion() {
         NodeEngine nodeEngine = getNodeEngine();
         InternalPartitionServiceImpl partitionService = getService();
@@ -159,6 +167,10 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
         return PartitionDataSerializerHook.PROMOTION_COMMIT;
     }
 
+    /**
+     * Checks if all {@link BeforePromotionOperation}s have been executed.
+     * On completion sets the {@link #beforeStateCompleted} to {@code true} and reschedules this {@link PromotionCommitOperation}.
+     */
     private static class BeforePromotionOperationCallback implements Runnable {
         private final PromotionCommitOperation promotionCommitOperation;
         private final AtomicInteger tasks;
@@ -184,6 +196,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
         }
     }
 
+    /** Reruns this operation with {@link #beforeStateCompleted} set to {@code true}. */
     private void onBeforePromotionsComplete() {
         beforeStateCompleted = true;
         getNodeEngine().getOperationService().execute(this);

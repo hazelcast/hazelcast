@@ -32,7 +32,6 @@ import java.util.Set;
  * {@link DiscoveryStrategy#discoverLocalMetadata()}
  * @since 3.7
  */
-
 public class ZoneAwareMemberGroupFactory extends BackupSafeMemberGroupFactory implements MemberGroupFactory {
 
     @Override
