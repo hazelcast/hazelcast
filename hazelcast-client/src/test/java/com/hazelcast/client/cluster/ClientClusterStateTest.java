@@ -23,6 +23,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
@@ -106,7 +107,7 @@ public class ClientClusterStateTest {
         factory.newHazelcastClient();
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = OperationTimeoutException.class)
     public void testClient_canNotExecuteWriteOperations_whenClusterState_passive() {
         warmUpPartitions(instances);
 

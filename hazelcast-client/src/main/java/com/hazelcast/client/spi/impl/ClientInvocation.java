@@ -26,6 +26,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.RetryableException;
@@ -61,7 +62,7 @@ public class ClientInvocation implements Runnable {
     private final Connection connection;
     private volatile ClientConnection sendConnection;
     private boolean bypassHeartbeatCheck;
-    private long retryTimeoutPointInMillis;
+    private long retryExpirationMillis;
     private EventHandler handler;
 
     protected ClientInvocation(HazelcastClientInstanceImpl client,
@@ -76,7 +77,7 @@ public class ClientInvocation implements Runnable {
         this.partitionId = partitionId;
         this.address = address;
         this.connection = connection;
-        this.retryTimeoutPointInMillis = System.currentTimeMillis() + invocationService.getInvocationTimeoutMillis();
+        this.retryExpirationMillis = System.currentTimeMillis() + invocationService.getInvocationTimeoutMillis();
         this.logger = invocationService.invocationLogger;
         this.callIdSequence = client.getCallIdSequence();
         this.clientInvocationFuture = new ClientInvocationFuture(this, executionService,
@@ -176,28 +177,35 @@ public class ClientInvocation implements Runnable {
             return;
         }
 
-        if ((isBindToSingleConnection() && exception instanceof IOException)
-                || System.currentTimeMillis() > retryTimeoutPointInMillis) {
+        if (isBindToSingleConnection() && exception instanceof IOException) {
             clientInvocationFuture.complete(exception);
             return;
         }
 
-        if (isRetrySafeException(exception)
+        boolean retry = isRetrySafeException(exception)
                 || invocationService.isRedoOperation()
-                || (exception instanceof TargetDisconnectedException && clientMessage.isRetryable())) {
-            try {
-                ClientExecutionServiceImpl executionServiceImpl = (ClientExecutionServiceImpl) this.executionService;
-                executionServiceImpl.schedule(this, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
-            } catch (RejectedExecutionException e) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Retry could not be scheduled ", e);
-                }
-                clientInvocationFuture.complete(exception);
-            }
+                || (exception instanceof TargetDisconnectedException && clientMessage.isRetryable());
+        if (!retry) {
+            clientInvocationFuture.complete(exception);
             return;
         }
 
-        clientInvocationFuture.complete(exception);
+        long remainingMillis = retryExpirationMillis - System.currentTimeMillis();
+        if (remainingMillis < 0) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Exception will not be retried because invocation timed out", exception);
+            }
+            clientInvocationFuture.complete(new OperationTimeoutException(this + " timed out by "
+                    + Math.abs(remainingMillis) + " ms"));
+            return;
+        }
+
+        try {
+            executionService.schedule(this, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
+        } catch (RejectedExecutionException e) {
+            clientInvocationFuture.complete(exception);
+        }
+
     }
 
     private boolean isBindToSingleConnection() {
@@ -243,5 +251,24 @@ public class ClientInvocation implements Runnable {
 
     public Executor getUserExecutor() {
         return executionService.getUserExecutor();
+    }
+
+    @Override
+    public String toString() {
+        String target;
+        if (isBindToSingleConnection()) {
+            target = "connection " + connection;
+        } else if (partitionId != -1) {
+            target = "partition " + partitionId;
+        } else if (address != null) {
+            target = "address " + address;
+        } else {
+            target = "random";
+        }
+        return "ClientInvocation{"
+                + "clientMessageType=" + clientMessage.getMessageType()
+                + ", callIdSequence=" + callIdSequence
+                + ", target=" + target
+                + ", sendConnection=" + sendConnection + '}';
     }
 }
