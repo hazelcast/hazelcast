@@ -89,6 +89,11 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         }
     }
 
+    @Override
+    public ProbeLevel minimumLevel() {
+        return minimumLevel;
+    }
+
     long modCount() {
         return sortedProbeInstancesRef.get().mod;
     }

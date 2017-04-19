@@ -81,6 +81,11 @@ public final class NonBlockingSocketWriter
     // This prevents running into an NonBlockingIOThread that is migrating.
     private NonBlockingIOThread newOwner;
 
+    private long bytesReadLastPublish;
+    private long normalFramesReadLastPublish;
+    private long priorityFramesReadLastPublish;
+    private long eventsLastPublish;
+
     public NonBlockingSocketWriter(SocketConnection connection,
                                    NonBlockingIOThread ioThread,
                                    ILogger logger,
@@ -88,6 +93,20 @@ public final class NonBlockingSocketWriter
                                    SocketWriterInitializer initializer) {
         super(connection, ioThread, OP_WRITE, logger, balancer);
         this.initializer = initializer;
+    }
+
+    @Override
+    public long getEventCount() {
+        switch (LOAD_TYPE) {
+            case 0:
+                return handleCount.get();
+            case 1:
+                return bytesWritten.get() + priorityFramesWritten.get();
+            case 2:
+                return normalFramesWritten.get() + priorityFramesWritten.get();
+            default:
+                throw new RuntimeException();
+        }
     }
 
     @Override
@@ -282,7 +301,7 @@ public final class NonBlockingSocketWriter
     @Override
     @SuppressWarnings("unchecked")
     public void handle() throws Exception {
-        eventCount.inc();
+        handleCount.inc();
         lastWriteTime = currentTimeMillis();
 
         if (writeHandler == null) {
@@ -440,6 +459,19 @@ public final class NonBlockingSocketWriter
 
             newOwner = theNewOwner;
         }
+    }
+
+    @Override
+    protected void publish() {
+        ioThread.bytesTransceived += bytesWritten.get() - bytesReadLastPublish;
+        ioThread.framesTransceived += normalFramesWritten.get() - normalFramesReadLastPublish;
+        ioThread.priorityFramesTransceived += priorityFramesWritten.get() - priorityFramesReadLastPublish;
+        ioThread.handleCount += handleCount.get() - eventsLastPublish;
+
+        bytesReadLastPublish = bytesWritten.get();
+        normalFramesReadLastPublish = normalFramesWritten.get();
+        priorityFramesReadLastPublish = priorityFramesWritten.get();
+        eventsLastPublish = handleCount.get();
     }
 
     private class CloseTask implements Runnable {

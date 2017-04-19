@@ -28,6 +28,7 @@ import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -99,6 +100,7 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.diagnostics.ConfigPropertiesPlugin;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.diagnostics.MetricsPlugin;
+import com.hazelcast.internal.diagnostics.NetworkingPlugin;
 import com.hazelcast.internal.diagnostics.SystemLogPlugin;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -402,6 +404,14 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         diagnostics.register(
                 new SystemLogPlugin(properties, connectionManager, this, loggingService.getLogger(SystemLogPlugin.class)));
 
+        if (connectionManager instanceof ClientConnectionManagerImpl) {
+            ClientConnectionManagerImpl clientConnectionManager = (ClientConnectionManagerImpl) connectionManager;
+            diagnostics.register(
+                    new NetworkingPlugin(
+                            properties,
+                            clientConnectionManager.getIoThreadingModel(),
+                            loggingService.getLogger(NetworkingPlugin.class)));
+        }
         metricsRegistry.collectMetrics(listenerService);
 
         try {
