@@ -22,7 +22,7 @@ import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.Expirable;
 import com.hazelcast.util.Clock;
 
-import java.util.Collections;
+import static java.util.Collections.singleton;
 
 /**
  * Default {@link EvictionPolicyEvaluator} implementation.
@@ -48,7 +48,6 @@ public class EvictionPolicyEvaluator<A, E extends Evictable> {
      * on the given input set of candidates.
      *
      * @param evictionCandidates Multiple {@link com.hazelcast.internal.eviction.EvictionCandidate} to be evicted
-     *
      * @return multiple {@link com.hazelcast.internal.eviction.EvictionCandidate} these are available to be evicted
      */
     public <C extends EvictionCandidate<A, E>> Iterable<C> evaluate(Iterable<C> evictionCandidates) {
@@ -59,7 +58,6 @@ public class EvictionPolicyEvaluator<A, E extends Evictable> {
                 selectedEvictionCandidate = currentEvictionCandidate;
             } else {
                 E evictable = currentEvictionCandidate.getEvictable();
-
                 if (isExpired(now, evictable)) {
                     return returnEvictionCandidate(currentEvictionCandidate);
                 }
@@ -77,21 +75,18 @@ public class EvictionPolicyEvaluator<A, E extends Evictable> {
         if (evictionCandidate == null) {
             return null;
         } else {
-            return evictionCandidate instanceof Iterable
-                    ? (Iterable<C>) evictionCandidate
-                    : Collections.singleton(evictionCandidate);
+            return evictionCandidate instanceof Iterable ? (Iterable<C>) evictionCandidate : singleton(evictionCandidate);
         }
     }
 
     private boolean isExpired(long now, Evictable evictable) {
         boolean expired = false;
-        // If evictable is also an expirable
+        // check if evictable is also an expirable
         if (evictable instanceof Expirable) {
             Expirable expirable = (Expirable) evictable;
-            // If there is an expired candidate, let's evict that one immediately
+            // if there is an expired candidate, let's evict that one immediately
             expired = expirable.isExpiredAt(now);
         }
         return expired;
     }
-
 }

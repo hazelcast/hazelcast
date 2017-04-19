@@ -200,6 +200,7 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
         return this;
     }
 
+    @Override
     public EvictionPolicy getEvictionPolicy() {
         return evictionPolicy;
     }
@@ -234,18 +235,22 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
         return EvictionStrategyType.DEFAULT_EVICTION_STRATEGY;
     }
 
-    @Override
+    /**
+     * @deprecated since 3.9, use {@link #getEvictionPolicy()} instead
+     */
+    @Deprecated
     public EvictionPolicyType getEvictionPolicyType() {
-        if (evictionPolicy == EvictionPolicy.LFU) {
-            return EvictionPolicyType.LFU;
-        } else if (evictionPolicy == EvictionPolicy.LRU) {
-            return EvictionPolicyType.LRU;
-        } else if (evictionPolicy == EvictionPolicy.RANDOM) {
-            return EvictionPolicyType.RANDOM;
-        } else if (evictionPolicy == EvictionPolicy.NONE) {
-            return EvictionPolicyType.NONE;
-        } else {
-            return null;
+        switch (evictionPolicy) {
+            case LFU:
+                return EvictionPolicyType.LFU;
+            case LRU:
+                return EvictionPolicyType.LRU;
+            case RANDOM:
+                return EvictionPolicyType.RANDOM;
+            case NONE:
+                return EvictionPolicyType.NONE;
+            default:
+                return null;
         }
     }
 
