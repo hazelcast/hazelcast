@@ -44,6 +44,7 @@ import com.hazelcast.client.spi.ClientTransactionManagerService;
 import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.spi.impl.AwsAddressProvider;
 import com.hazelcast.client.spi.impl.CallIdSequence;
+import com.hazelcast.client.spi.impl.CallIdSequenceWithBackoff;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -156,6 +157,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_BACKOFF_TIMEOUT_MILLIS;
 import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.System.currentTimeMillis;
@@ -230,7 +232,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clusterService = new ClientClusterServiceImpl(this, addressProviders);
 
         int maxAllowedConcurrentInvocations = properties.getInteger(MAX_CONCURRENT_INVOCATIONS);
-        callIdSequence = new CallIdSequence.CallIdSequenceFailFast(maxAllowedConcurrentInvocations);
+        long backofftimeoutMs = properties.getLong(INVOCATION_BACKOFF_TIMEOUT_MILLIS);
+        callIdSequence = new CallIdSequenceWithBackoff(maxAllowedConcurrentInvocations, backofftimeoutMs);
 
         invocationService = initInvocationService();
         listenerService = initListenerService();

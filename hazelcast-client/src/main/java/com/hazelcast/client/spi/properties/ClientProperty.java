@@ -86,6 +86,20 @@ public final class ClientProperty {
             = new HazelcastProperty("hazelcast.client.max.concurrent.invocations", Integer.MAX_VALUE);
 
     /**
+     * Control the maximum timeout in millis to wait for an invocation space to be available.
+     * <p/>
+     * If an invocation can't be made because there are too many pending invocations, then an exponential backoff is done
+     * to give the system time to deal with the backlog of invocations. This property controls how long an invocation is
+     * allowed to wait before getting a {@link com.hazelcast.core.HazelcastOverloadException}.
+     * <p/>
+     * <p>
+     * When set to -1 then <code>HazelcastOverloadException</code> is thrown immediately without any waiting.
+     * </p>
+     */
+    public static final HazelcastProperty INVOCATION_BACKOFF_TIMEOUT_MILLIS
+            = new HazelcastProperty("hazelcast.client.invocation.backoff.timeout.millis", -1, MILLISECONDS);
+
+    /**
      * <p>Enables the Discovery SPI lookup over the old native implementations. This property is temporary and will
      * eventually be removed when the experimental marker is removed.</p>
      * <p>Discovery SPI is <b>disabled</b> by default</p>

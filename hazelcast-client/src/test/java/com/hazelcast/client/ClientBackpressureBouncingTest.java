@@ -28,7 +28,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
@@ -37,17 +37,22 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.lang.reflect.Field;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_BACKOFF_TIMEOUT_MILLIS;
 import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static java.lang.Math.max;
 import static java.lang.String.valueOf;
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category(SlowTest.class)
 public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
 
@@ -58,13 +63,24 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
 
     private InvocationCheckingThread checkingThread;
 
+    @Parameterized.Parameter
+    public long backoff;
+
+    @Parameterized.Parameters(name = "backoff:{0}")
+    public static Iterable<Object[]> parameters() {
+        return asList(new Object[][]{
+                {-1},
+                {60000},
+        });
+    }
+
     @Rule
     public BounceMemberRule bounceMemberRule = BounceMemberRule.with(new Config())
-                                                               .driverFactory(new MultiSocketClientDriverFactory(
-                                                                       new ClientConfig()
-                                                                       .setProperty(MAX_CONCURRENT_INVOCATIONS.getName(),
-                                                                               valueOf(MAX_CONCURRENT_INVOCATION_CONFIG))))
-                                                               .build();
+            .driverFactory(new MultiSocketClientDriverFactory(
+                    new ClientConfig()
+                            .setProperty(MAX_CONCURRENT_INVOCATIONS.getName(), valueOf(MAX_CONCURRENT_INVOCATION_CONFIG))
+                            .setProperty(INVOCATION_BACKOFF_TIMEOUT_MILLIS.getName(), valueOf(backoff))))
+            .build();
 
     @After
     public void tearDown() throws InterruptedException {
@@ -147,7 +163,7 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
     }
 
 
-    private static class MyRunnable implements Runnable {
+    private class MyRunnable implements Runnable {
         private final IMap<Integer, Integer> map;
         private final AtomicLong progressCounter = new AtomicLong();
         private final AtomicLong failureCounter = new AtomicLong();
@@ -166,6 +182,8 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
                 int key = ThreadLocalRandomProvider.get().nextInt();
                 map.getAsync(key).andThen(callback);
             } catch (HazelcastOverloadException e) {
+                //HazelcastOverloadException should not be thrown when backoff is configured
+                assertEquals(-1, backoff);
                 long current = backpressureCounter.incrementAndGet();
                 if (current % 250000 == 0) {
                     System.out.println("Worker no. " + workerNo + " backpressured. counter: " + current);
