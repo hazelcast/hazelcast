@@ -16,8 +16,6 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
-
 import java.io.Serializable;
 import java.util.Map;
 
@@ -28,7 +26,6 @@ import java.util.Map;
  * @param <K>
  * @param <V>
  */
-@BinaryInterface
 public interface Predicate<K, V> extends Serializable {
 
     boolean apply(Map.Entry<K, V> mapEntry);

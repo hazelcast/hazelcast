@@ -23,7 +23,6 @@ import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.mapreduce.aggregation.Supplier;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.util.Map;
 
@@ -73,8 +72,7 @@ public class LongMinAggregation<Key, Value>
      *
      * @param <Key> the key type
      */
-    @BinaryInterface
-    static final class LongMinCombinerFactory<Key>
+        static final class LongMinCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, Long, Long> {
 
         @Override
@@ -93,8 +91,7 @@ public class LongMinAggregation<Key, Value>
      *
      * @param <Key> the key type
      */
-    @BinaryInterface
-    static final class LongMinReducerFactory<Key>
+        static final class LongMinReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, Long, Long> {
 
         @Override

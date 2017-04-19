@@ -22,6 +22,7 @@ import com.hazelcast.core.PartitionAware;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
@@ -31,6 +32,7 @@ import java.util.concurrent.Callable;
  *
  * @param <V>
  */
+@BinaryInterface
 public final class RunnableAdapter<V> implements IdentifiedDataSerializable, Callable<V>,
         HazelcastInstanceAware, PartitionAware {
 

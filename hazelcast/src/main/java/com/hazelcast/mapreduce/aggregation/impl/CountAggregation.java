@@ -23,7 +23,6 @@ import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.mapreduce.aggregation.Supplier;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.util.Map;
 
@@ -70,8 +69,7 @@ public class CountAggregation<Key, Value>
      *
      * @param <Key> the key type
      */
-    @BinaryInterface
-    static final class CountCombinerFactory<Key>
+        static final class CountCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, Object, Long> {
 
         @Override
@@ -90,8 +88,7 @@ public class CountAggregation<Key, Value>
      *
      * @param <Key> the key type
      */
-    @BinaryInterface
-    static final class CountReducerFactory<Key>
+        static final class CountReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, Long, Long> {
 
         @Override

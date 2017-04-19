@@ -15,9 +15,13 @@
  */
 
 package com.hazelcast.config;
+
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
 /**
  * Eviction Policy enum.
  */
+@BinaryInterface
 public enum EvictionPolicy {
     /**
      * Least Recently Used

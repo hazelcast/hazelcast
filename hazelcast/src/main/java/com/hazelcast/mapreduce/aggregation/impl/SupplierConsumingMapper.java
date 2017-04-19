@@ -23,7 +23,6 @@ import com.hazelcast.mapreduce.impl.task.DefaultContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -36,7 +35,6 @@ import java.io.IOException;
  * @param <ValueOut> the output value type
  */
 @SuppressFBWarnings("SE_NO_SERIALVERSIONID")
-@BinaryInterface
 class SupplierConsumingMapper<Key, ValueIn, ValueOut>
         implements Mapper<Key, ValueIn, Key, ValueOut>, IdentifiedDataSerializable {
 

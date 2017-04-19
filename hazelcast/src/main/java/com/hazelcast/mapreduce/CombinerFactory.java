@@ -16,8 +16,6 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
-
 import java.io.Serializable;
 
 /**
@@ -36,7 +34,6 @@ import java.io.Serializable;
  * For general data processing, it is superseded by <a href="http://jet.hazelcast.org">Hazelcast Jet</a>.
  */
 @Deprecated
-@BinaryInterface
 public interface CombinerFactory<KeyIn, ValueIn, ValueOut>
         extends Serializable {
 

@@ -16,8 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
-
 import java.io.Serializable;
 import java.util.Map;
 
@@ -64,7 +62,6 @@ import java.util.Map;
  * @param <V> Type of value of a {@link java.util.Map.Entry}
  * @see AbstractEntryProcessor
  */
-@BinaryInterface
 public interface EntryProcessor<K, V> extends Serializable {
 
     /**

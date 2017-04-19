@@ -21,7 +21,6 @@ import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.operation.ProcessStatsUpdateOperation;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.IOException;
@@ -36,7 +35,6 @@ import java.util.Map;
  * @param <K> type of the key
  * @param <V> type of the value
  */
-@BinaryInterface
 class KeyValueSourceFacade<K, V>
         extends KeyValueSource<K, V> {
 

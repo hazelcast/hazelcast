@@ -24,7 +24,6 @@ import com.hazelcast.mapreduce.Context;
 import com.hazelcast.mapreduce.impl.CombinerResultList;
 import com.hazelcast.mapreduce.impl.HashMapAdapter;
 import com.hazelcast.mapreduce.impl.MapReduceUtil;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
 import com.hazelcast.util.IConcurrentMap;
 
@@ -135,8 +134,7 @@ public class DefaultContext<KeyIn, ValueIn>
      * @param <KeyIn>   type of the key
      * @param <ValueIn> type of the value
      */
-    @BinaryInterface
-    private static class CollectingCombinerFactory<KeyIn, ValueIn>
+        private static class CollectingCombinerFactory<KeyIn, ValueIn>
             implements CombinerFactory<KeyIn, ValueIn, List<ValueIn>> {
 
         @Override

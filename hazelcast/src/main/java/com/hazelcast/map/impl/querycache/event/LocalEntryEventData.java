@@ -21,7 +21,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
@@ -36,7 +35,6 @@ import java.io.IOException;
  * @param <K> the key type.
  * @param <V> the value type.
  */
-@BinaryInterface
 public class LocalEntryEventData<K, V> implements EventData {
 
     private K key;

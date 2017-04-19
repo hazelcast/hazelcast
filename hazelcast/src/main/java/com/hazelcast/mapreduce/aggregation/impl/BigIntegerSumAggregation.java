@@ -23,7 +23,6 @@ import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.mapreduce.aggregation.Supplier;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -71,8 +70,7 @@ public class BigIntegerSumAggregation<Key, Value>
      *
      * @param <Key> the key type
      */
-    @BinaryInterface
-    static final class BigIntegerSumCombinerFactory<Key>
+        static final class BigIntegerSumCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, BigInteger, BigInteger> {
 
         @Override
@@ -91,8 +89,7 @@ public class BigIntegerSumAggregation<Key, Value>
      *
      * @param <Key> the key type
      */
-    @BinaryInterface
-    static final class BigIntegerSumReducerFactory<Key>
+        static final class BigIntegerSumReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, BigInteger, BigInteger> {
 
         @Override

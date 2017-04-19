@@ -19,6 +19,7 @@ package com.hazelcast.projection.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.impl.Extractable;
 
@@ -35,6 +36,7 @@ import static com.hazelcast.util.Preconditions.checkHasText;
  *
  * @param <I> type of the input
  */
+@BinaryInterface
 public final class SingleAttributeProjection<I, O> extends Projection<I, O> implements IdentifiedDataSerializable {
 
     private String attributePath;

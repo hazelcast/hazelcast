@@ -21,7 +21,6 @@ import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,7 +35,6 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  *
  * @see QueryCacheEventData
  */
-@BinaryInterface
 public class BatchEventData implements Sequenced, EventData {
 
     private String source;
