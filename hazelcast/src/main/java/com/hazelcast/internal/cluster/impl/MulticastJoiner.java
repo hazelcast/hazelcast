@@ -109,37 +109,40 @@ public class MulticastJoiner extends AbstractJoiner {
     @Override
     public void searchForOtherClusters() {
         node.multicastService.send(node.createSplitBrainJoinMessage());
-        SplitBrainJoinMessage joinInfo;
+        SplitBrainJoinMessage splitBrainMsg;
         try {
-            while ((joinInfo = splitBrainJoinMessages.poll(3, TimeUnit.SECONDS)) != null) {
-                try {
-                    if (node.clusterService.getMember(joinInfo.getAddress()) != null) {
-                        if (logger.isFineEnabled()) {
-                            logger.fine("Ignoring merge join response, since " + joinInfo.getAddress()
-                                    + " is already a member.");
-                        }
-                        continue;
-                    }
-
-                    if (joinInfo.getMemberCount() == 1) {
-                        // if the other cluster has just single member, that may be a newly starting node instead of a split node
-                        // wait 2 times 'WAIT_SECONDS_BEFORE_JOIN' seconds before processing merge JoinRequest
-                        Thread.sleep(2 * node.getProperties().getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN));
-                    }
-
-                    SplitBrainJoinMessage response = sendSplitBrainJoinMessage(joinInfo.getAddress());
-                    if (shouldMerge(response)) {
-                        logger.warning(node.getThisAddress() + " is merging [multicast] to " + joinInfo.getAddress());
-                        startClusterMerge(joinInfo.getAddress());
-                    }
-                } catch (Exception e) {
-                    if (logger != null) {
-                        logger.warning(e);
-                    }
+            while ((splitBrainMsg = splitBrainJoinMessages.poll(3, TimeUnit.SECONDS)) != null) {
+                if (logger.isFineEnabled()) {
+                    logger.fine("Received  " + splitBrainMsg);
                 }
+                Address targetAddress = splitBrainMsg.getAddress();
+                if (node.clusterService.getMember(targetAddress) != null) {
+                    if (logger.isFineEnabled()) {
+                        logger.fine("Ignoring merge join response, since " + targetAddress + " is already a member.");
+                    }
+                    continue;
+                }
+
+                if (splitBrainMsg.getMemberCount() == 1) {
+                    // if the other cluster has just single member, that may be a newly starting node instead of a split node
+                    // wait 2 times 'WAIT_SECONDS_BEFORE_JOIN' seconds before processing merge JoinRequest
+                    Thread.sleep(2 * node.getProperties().getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN));
+                }
+
+                SplitBrainJoinMessage response = sendSplitBrainJoinMessage(targetAddress);
+                if (shouldMerge(response)) {
+                    logger.warning(node.getThisAddress() + " is merging [multicast] to " + targetAddress);
+                    startClusterMerge(targetAddress);
+                    return;
+                }
+
+                // other side should join to us. broadcast a new SplitBrainJoinMessage.
+                node.multicastService.send(node.createSplitBrainJoinMessage());
             }
-        } catch (InterruptedException ignored) {
-            EmptyStatement.ignore(ignored);
+        } catch (InterruptedException e) {
+            logger.fine(e);
+        } catch (Exception e) {
+            logger.warning(e);
         }
     }
 
