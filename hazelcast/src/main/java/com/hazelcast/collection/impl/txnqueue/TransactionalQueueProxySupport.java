@@ -26,6 +26,7 @@ import com.hazelcast.collection.impl.txnqueue.operations.TxnPollOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnReserveOfferOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnReservePollOperation;
 import com.hazelcast.config.QueueConfig;
+import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
@@ -34,7 +35,6 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.TransactionalDistributedObject;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
-import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -46,37 +46,60 @@ import java.util.concurrent.Future;
 /**
  * Provides support for proxy of the Transactional Queue.
  */
-public abstract class TransactionalQueueProxySupport
+public abstract class TransactionalQueueProxySupport<E>
         extends TransactionalDistributedObject<QueueService>
-        implements TransactionalObject {
+        implements TransactionalQueue<E> {
 
     protected final String name;
     protected final int partitionId;
     protected final QueueConfig config;
+
     private final LinkedList<QueueItem> offeredQueue = new LinkedList<QueueItem>();
     private final Set<Long> itemIdSet = new HashSet<Long>();
 
-    protected TransactionalQueueProxySupport(NodeEngine nodeEngine, QueueService service, String name,
-                                             Transaction tx) {
+    TransactionalQueueProxySupport(NodeEngine nodeEngine, QueueService service, String name, Transaction tx) {
         super(nodeEngine, service, tx);
         this.name = name;
         partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
         config = nodeEngine.getConfig().findQueueConfig(name);
     }
 
-    protected void checkTransactionState() {
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public final String getServiceName() {
+        return QueueService.SERVICE_NAME;
+    }
+
+    @Override
+    public int size() {
+        checkTransactionState();
+        SizeOperation operation = new SizeOperation(name);
+        try {
+            Future<Integer> future = invoke(operation);
+            Integer size = future.get();
+            return size + offeredQueue.size();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
+    void checkTransactionState() {
         if (!tx.getState().equals(Transaction.State.ACTIVE)) {
             throw new TransactionNotActiveException("Transaction is not active!");
         }
     }
 
-    public boolean offerInternal(Data data, long timeout) {
+    boolean offerInternal(Data data, long timeout) {
         TxnReserveOfferOperation operation
                 = new TxnReserveOfferOperation(name, timeout, offeredQueue.size(), tx.getTxnId());
         operation.setCallerUuid(tx.getOwnerUuid());
         try {
-            Future<Long> f = invoke(operation);
-            Long itemId = f.get();
+            Future<Long> future = invoke(operation);
+            Long itemId = future.get();
             if (itemId != null) {
                 if (!itemIdSet.add(itemId)) {
                     throw new TransactionException("Duplicate itemId: " + itemId);
@@ -92,31 +115,14 @@ public abstract class TransactionalQueueProxySupport
         return false;
     }
 
-    private void putToRecord(BaseTxnQueueOperation operation) {
-        QueueTransactionLogRecord logRecord = (QueueTransactionLogRecord) tx.get(name);
-        if (logRecord == null) {
-            logRecord = new QueueTransactionLogRecord(tx.getTxnId(), name, partitionId);
-            tx.add(logRecord);
-        }
-        logRecord.addOperation(operation);
-    }
-
-    private void removeFromRecord(long itemId) {
-        QueueTransactionLogRecord logRecord = (QueueTransactionLogRecord) tx.get(name);
-        int size = logRecord.removeOperation(itemId);
-        if (size == 0) {
-            tx.remove(name);
-        }
-    }
-
-    public Data pollInternal(long timeout) {
+    Data pollInternal(long timeout) {
         QueueItem reservedOffer = offeredQueue.peek();
         long itemId = reservedOffer == null ? -1 : reservedOffer.getItemId();
         TxnReservePollOperation operation = new TxnReservePollOperation(name, timeout, itemId, tx.getTxnId());
         operation.setCallerUuid(tx.getOwnerUuid());
         try {
-            Future<QueueItem> f = invoke(operation);
-            QueueItem item = f.get();
+            Future<QueueItem> future = invoke(operation);
+            QueueItem item = future.get();
             if (item != null) {
                 if (reservedOffer != null && item.getItemId() == reservedOffer.getItemId()) {
                     offeredQueue.poll();
@@ -138,13 +144,13 @@ public abstract class TransactionalQueueProxySupport
         return null;
     }
 
-    public Data peekInternal(long timeout) {
-        final QueueItem offer = offeredQueue.peek();
+    Data peekInternal(long timeout) {
+        QueueItem offer = offeredQueue.peek();
         long itemId = offer == null ? -1 : offer.getItemId();
-        final TxnPeekOperation operation = new TxnPeekOperation(name, timeout, itemId, tx.getTxnId());
+        TxnPeekOperation operation = new TxnPeekOperation(name, timeout, itemId, tx.getTxnId());
         try {
-            final Future<QueueItem> f = invoke(operation);
-            final QueueItem item = f.get();
+            Future<QueueItem> future = invoke(operation);
+            QueueItem item = future.get();
             if (item != null) {
                 if (offer != null && item.getItemId() == offer.getItemId()) {
                     return offer.getData();
@@ -157,30 +163,25 @@ public abstract class TransactionalQueueProxySupport
         return null;
     }
 
-    public int size() {
-        checkTransactionState();
-        SizeOperation operation = new SizeOperation(name);
-        try {
-            Future<Integer> f = invoke(operation);
-            Integer size = f.get();
-            return size + offeredQueue.size();
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+    private void putToRecord(BaseTxnQueueOperation operation) {
+        QueueTransactionLogRecord logRecord = (QueueTransactionLogRecord) tx.get(name);
+        if (logRecord == null) {
+            logRecord = new QueueTransactionLogRecord(tx.getTxnId(), name, partitionId);
+            tx.add(logRecord);
+        }
+        logRecord.addOperation(operation);
+    }
+
+    private void removeFromRecord(long itemId) {
+        QueueTransactionLogRecord logRecord = (QueueTransactionLogRecord) tx.get(name);
+        int size = logRecord.removeOperation(itemId);
+        if (size == 0) {
+            tx.remove(name);
         }
     }
 
-    private <E> InternalCompletableFuture<E> invoke(Operation operation) {
+    private <T> InternalCompletableFuture<T> invoke(Operation operation) {
         OperationService operationService = getNodeEngine().getOperationService();
         return operationService.invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public final String getServiceName() {
-        return QueueService.SERVICE_NAME;
     }
 }

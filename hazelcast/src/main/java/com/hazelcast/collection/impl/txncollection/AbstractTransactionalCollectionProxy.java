@@ -30,7 +30,6 @@ import com.hazelcast.spi.TransactionalDistributedObject;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -38,19 +37,22 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public abstract class AbstractTransactionalCollectionProxy<S extends RemoteService, E>
         extends TransactionalDistributedObject<S> {
 
+    protected final Set<Long> itemIdSet = new HashSet<Long>();
     protected final String name;
     protected final int partitionId;
-    protected final Set<Long> itemIdSet = new HashSet<Long>();
+    protected final OperationService operationService;
 
     public AbstractTransactionalCollectionProxy(String name, Transaction tx, NodeEngine nodeEngine, S service) {
         super(nodeEngine, service, tx);
         this.name = name;
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
+        this.operationService = nodeEngine.getOperationService();
     }
 
     protected abstract Collection<CollectionItem> getCollection();
@@ -64,12 +66,11 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
         checkTransactionActive();
         checkObjectNotNull(e);
 
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data value = nodeEngine.toData(e);
+        Data value = getNodeEngine().toData(e);
         CollectionReserveAddOperation operation = new CollectionReserveAddOperation(name, tx.getTxnId(), null);
         try {
-            Future<Long> f = nodeEngine.getOperationService().invokeOnPartition(getServiceName(), operation, partitionId);
-            Long itemId = f.get();
+            Future<Long> future = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
+            Long itemId = future.get();
             if (itemId != null) {
                 if (!itemIdSet.add(itemId)) {
                     throw new TransactionException("Duplicate itemId: " + itemId);
@@ -80,7 +81,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
                 return true;
             }
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
         return false;
     }
@@ -106,26 +107,21 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
         checkTransactionActive();
         checkObjectNotNull(e);
 
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data value = nodeEngine.toData(e);
-        final Iterator<CollectionItem> iterator = getCollection().iterator();
+        Data value = getNodeEngine().toData(e);
+        Iterator<CollectionItem> iterator = getCollection().iterator();
         long reservedItemId = -1;
         while (iterator.hasNext()) {
-            final CollectionItem item = iterator.next();
+            CollectionItem item = iterator.next();
             if (value.equals(item.getValue())) {
                 reservedItemId = item.getItemId();
                 break;
             }
         }
-        final CollectionReserveRemoveOperation operation = new CollectionReserveRemoveOperation(
-                name,
-                reservedItemId,
-                value,
-                tx.getTxnId());
+        CollectionReserveRemoveOperation operation = new CollectionReserveRemoveOperation(
+                name, reservedItemId, value, tx.getTxnId());
         try {
-            final OperationService operationService = nodeEngine.getOperationService();
-            Future<CollectionItem> f = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
-            CollectionItem item = f.get();
+            Future<CollectionItem> future = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
+            CollectionItem item = future.get();
             if (item != null) {
                 if (reservedItemId == item.getItemId()) {
                     iterator.remove();
@@ -141,7 +137,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
                 return true;
             }
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
         return false;
     }
@@ -149,13 +145,13 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
     public int size() {
         checkTransactionActive();
 
-        CollectionSizeOperation operation = new CollectionSizeOperation(name);
         try {
-            Future<Integer> f = getNodeEngine().getOperationService().invokeOnPartition(getServiceName(), operation, partitionId);
-            Integer size = f.get();
+            CollectionSizeOperation operation = new CollectionSizeOperation(name);
+            Future<Integer> future = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
+            Integer size = future.get();
             return size + getCollection().size();
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
     }
 

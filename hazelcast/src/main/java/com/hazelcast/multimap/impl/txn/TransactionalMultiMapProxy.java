@@ -16,7 +16,6 @@
 
 package com.hazelcast.multimap.impl.txn;
 
-import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.serialization.Data;
@@ -27,19 +26,13 @@ import com.hazelcast.transaction.impl.Transaction;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class TransactionalMultiMapProxy<K, V> extends TransactionalMultiMapProxySupport
-        implements TransactionalMultiMap<K, V> {
+public class TransactionalMultiMapProxy<K, V> extends TransactionalMultiMapProxySupport<K, V> {
 
     public TransactionalMultiMapProxy(NodeEngine nodeEngine,
                                       MultiMapService service,
                                       String name,
                                       Transaction tx) {
         super(nodeEngine, service, name, tx);
-    }
-
-    @Override
-    public String getName() {
-        return name;
     }
 
     @Override

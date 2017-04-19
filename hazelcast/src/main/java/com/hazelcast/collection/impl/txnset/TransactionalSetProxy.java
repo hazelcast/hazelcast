@@ -47,16 +47,15 @@ public class TransactionalSetProxy<E>
         checkTransactionActive();
         checkObjectNotNull(e);
 
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data value = nodeEngine.toData(e);
+        Data value = getNodeEngine().toData(e);
         if (!getCollection().add(new CollectionItem(-1, value))) {
             return false;
         }
 
         CollectionReserveAddOperation operation = new CollectionReserveAddOperation(name, tx.getTxnId(), value);
         try {
-            Future<Long> f = nodeEngine.getOperationService().invokeOnPartition(getServiceName(), operation, partitionId);
-            Long itemId = f.get();
+            Future<Long> future = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
+            Long itemId = future.get();
             if (itemId != null) {
                 if (!itemIdSet.add(itemId)) {
                     throw new TransactionException("Duplicate itemId: " + itemId);
