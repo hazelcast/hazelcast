@@ -18,6 +18,8 @@ package com.hazelcast.internal.util.concurrent;
 
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
+import com.hazelcast.util.function.Predicate;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collection;
 import java.util.Queue;
@@ -27,24 +29,28 @@ import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.locks.LockSupport.unpark;
 
 /**
- * A many-to-one conveyor of interthread messages. Allows a setup where communication from N submitter threads
- * to 1 drainer thread happens over N one-to-one concurrent queues. Queues are numbered from 0 to N-1 and the
- * queue at index 0 is the <i>default</i> queue. There are some convenience methods which assume the usage of
- * the default queue.
+ * A many-to-one conveyor of interthread messages. Allows a setup where
+ * communication from N submitter threads to 1 drainer thread happens over N
+ * one-to-one concurrent queues. Queues are numbered from 0 to N-1 and the queue
+ * at index 0 is the <i>default</i> queue. There are some convenience methods
+ * which assume the usage of the default queue.
  * <p/>
- * Allows the drainer thread to signal completion and failure to the submitters and make their blocking
- * {@code submit()} calls fail with an exception. This mechanism supports building an implementation which
- * is both starvation-safe and uses bounded queues with blocking queue submission.
+ * Allows the drainer thread to signal completion and failure to the submitters
+ * and make their blocking {@code submit()} calls fail with an exception. This
+ * mechanism supports building an implementation which is both starvation-safe
+ * and uses bounded queues with blocking queue submission.
  * <p/>
- * There is a further option for the drainer to apply immediate backpressure to the submitter by invoking
- * {@link #backpressureOn()}. This will make the {@code submit()} invocations block after having
- * successfully submitted their item, until the drainer calls {@link #backpressureOff()} or fails.
- * This mechanism allows the drainer to apply backpressure and keep draining the queue, thus letting
- * all submitters progress until after submitting their item. Such an arrangement eliminates a class
- * of deadlock patterns where the submitter blocks to submit the item that would have made the drainer
- * remove backpressure.
+ * There is a further option for the drainer to apply immediate backpressure to
+ * the submitter by invoking {@link #backpressureOn()}. This will make the
+ * {@code submit()} invocations block after having successfully submitted their
+ * item, until the drainer calls {@link #backpressureOff()} or fails. This
+ * mechanism allows the drainer to apply backpressure and keep draining the queue,
+ * thus letting all submitters progress until after submitting their item. Such an
+ * arrangement eliminates a class of deadlock patterns where the submitter blocks
+ * to submit the item that would have made the drainer remove backpressure.
  * <p/>
- * Does not manage drainer threads. There should be only one drainer thread at a time.
+ * Does not manage drainer threads. There should be only one drainer thread at a
+ * time.
  * <p/>
  * <h3>Usage example</h3>
  * <pre>{@code
@@ -135,19 +141,33 @@ public class ConcurrentConveyor<E> {
     private volatile boolean backpressure;
     private volatile Thread drainer;
     private volatile Throwable drainerDepartureCause;
+    private volatile int liveQueueCount;
 
     ConcurrentConveyor(E submitterGoneItem, QueuedPipe<E>... queues) {
         if (queues.length == 0) {
             throw new IllegalArgumentException("No concurrent queues supplied");
         }
         this.submitterGoneItem = submitterGoneItem;
-        this.queues = queues;
+        this.queues = validateAndCopy(queues);
+        this.liveQueueCount = queues.length;
+    }
+
+    private QueuedPipe<E>[] validateAndCopy(QueuedPipe<E>[] queues) {
+        final QueuedPipe<E>[] safeCopy = new QueuedPipe[queues.length];
+        for (int i = 0; i < queues.length; i++) {
+            if (queues[i] == null) {
+                throw new IllegalArgumentException("Queue at index " + i + " is null");
+            }
+            safeCopy[i] = queues[i];
+        }
+        return safeCopy;
     }
 
     /**
      * Creates a new concurrent conveyor.
      *
-     * @param submitterGoneItem the object that a submitter thread can use to signal it's done submitting
+     * @param submitterGoneItem the object that a submitter thread can use to
+     *                          signal it's done submitting
      * @param queues            the concurrent queues the conveyor will manage
      */
     public static <E1> ConcurrentConveyor<E1> concurrentConveyor(
@@ -164,15 +184,25 @@ public class ConcurrentConveyor<E> {
     }
 
     /**
-     * Returns the size of the array holding the concurrent queues. Initially (when the conveyor is
-     * constructed) each array slot should point to a distinct concurrent queue; therefore the size
-     * of the array matches the number of queues. Some array slots may be nulled out later by calling
-     * {@link #removeQueue(int)}, but this method will keep reporting the same number. The intended
-     * use case for this method is giving the upper bound for a loop that iterates over all queues.
-     * Since queue indices never change, this number must stay the same.
+     * Returns the size of the array holding the concurrent queues. Initially
+     * (when the conveyor is constructed) each array slot should point to a
+     * distinct concurrent queue; therefore the size of the array matches the
+     * number of queues. Some array slots may be nulled out later by calling
+     * {@link #removeQueue(int)}, but this method will keep reporting the same
+     * number. The intended use case for this method is giving the upper bound
+     * for a loop that iterates over all queues. Since queue indices never
+     * change, this number must stay the same.
      */
     public final int queueCount() {
         return queues.length;
+    }
+
+    /**
+     * Returns the number of remaining live queues, i.e., {@link #queueCount()}
+     * minus the number of queues nulled out by calling {@link #removeQueue(int)}.
+     */
+    public final int liveQueueCount() {
+        return liveQueueCount;
     }
 
     /**
@@ -182,9 +212,12 @@ public class ConcurrentConveyor<E> {
         return queues[index];
     }
 
+    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
+            justification = "liveQueueCount is updated only by the drainer thread")
     public final boolean removeQueue(int index) {
         final boolean didRemove = queues[index] != null;
         queues[index] = null;
+        liveQueueCount--;
         return didRemove;
     }
 
@@ -198,8 +231,8 @@ public class ConcurrentConveyor<E> {
     }
 
     /**
-     * Offers an item to the given queue. No check is performed that the queue actually belongs
-     * to this conveyor.
+     * Offers an item to the given queue. No check is performed that the queue
+     * actually belongs to this conveyor.
      *
      * @return whether the item was accepted by the queue
      * @throws ConcurrentConveyorException if the draining thread has already left
@@ -215,11 +248,13 @@ public class ConcurrentConveyor<E> {
     }
 
     /**
-     * Blocks until successfully inserting the given item to the given queue. No check is performed that
-     * the queue actually belongs to this conveyor. If the {@code #backpressure} flag is raised on this conveyor
-     * at the time the item has been submitted, further blocks until the flag is lowered.
+     * Blocks until successfully inserting the given item to the given queue.
+     * No check is performed that the queue actually belongs to this conveyor.
+     * If the {@code #backpressure} flag is raised on this conveyor at the time
+     * the item has been submitted, further blocks until the flag is lowered.
      *
-     * @throws ConcurrentConveyorException if the current thread is interrupted or the draining thread has already left
+     * @throws ConcurrentConveyorException if the current thread is interrupted
+     * or the draining thread has already left
      */
     public final void submit(Queue<E> queue, E item) throws ConcurrentConveyorException {
         for (long idleCount = 0; !queue.offer(item); idleCount++) {
@@ -244,7 +279,8 @@ public class ConcurrentConveyor<E> {
     }
 
     /**
-     * Drains a batch of items from the queue at the supplied index into the supplied collection.
+     * Drains a batch of items from the queue at the supplied index into the
+     * supplied collection.
      *
      * @return the number of items drained
      */
@@ -253,7 +289,19 @@ public class ConcurrentConveyor<E> {
     }
 
     /**
-     * Drains no more than {@code limit} items from the default queue into the supplied collection.
+     * Drains a batch of items from the queue at the supplied index to the
+     * supplied {@code itemHandler}. Stops draining, after the {@code itemHandler}
+     * returns false;
+     *
+     * @return the number of items drained
+     */
+    public final int drain(int queueIndex, Predicate<? super E> itemHandler) {
+        return queues[queueIndex].drain(itemHandler);
+    }
+
+    /**
+     * Drains no more than {@code limit} items from the default queue into the
+     * supplied collection.
      *
      * @return the number of items drained
      */
@@ -262,7 +310,8 @@ public class ConcurrentConveyor<E> {
     }
 
     /**
-     * Drains no more than {@code limit} items from the queue at the supplied index into the supplied collection.
+     * Drains no more than {@code limit} items from the queue at the supplied
+     * index into the supplied collection.
      *
      * @return the number of items drained
      */
@@ -271,7 +320,8 @@ public class ConcurrentConveyor<E> {
     }
 
     /**
-     * Called by the drainer thread to signal that it has started draining the queue.
+     * Called by the drainer thread to signal that it has started draining the
+     * queue.
      */
     public final void drainerArrived() {
         drainerDepartureCause = null;
@@ -279,7 +329,8 @@ public class ConcurrentConveyor<E> {
     }
 
     /**
-     * Called by the drainer thread to signal that it has failed and will drain no more items from the queue.
+     * Called by the drainer thread to signal that it has failed and will drain
+     * no more items from the queue.
      *
      * @param t the drainer's failure
      */
@@ -308,8 +359,9 @@ public class ConcurrentConveyor<E> {
     }
 
     /**
-     * Checks whether the drainer thread has left and throws an exception if it has. If the drainer thread
-     * has failed, its failure will be the cause of the exception thrown.
+     * Checks whether the drainer thread has left and throws an exception if it
+     * has. If the drainer thread has failed, its failure will be the cause of
+     * the exception thrown.
      */
     public final void checkDrainerGone() {
         final Throwable cause = drainerDepartureCause;
@@ -330,8 +382,8 @@ public class ConcurrentConveyor<E> {
     }
 
     /**
-     * Raises the {@code backpressure} flag, which will make the caller of {@code submit} to block until
-     * the flag is lowered.
+     * Raises the {@code backpressure} flag, which will make the caller of
+     * {@code submit} to block until the flag is lowered.
      */
     public final void backpressureOn() {
         backpressure = true;
@@ -355,7 +407,7 @@ public class ConcurrentConveyor<E> {
         }
     }
 
-    private void propagateDrainerFailure(Throwable cause) {
+    private static void propagateDrainerFailure(Throwable cause) {
         if (cause != null && cause != REGULAR_DEPARTURE) {
             throw new ConcurrentConveyorException("Queue drainer failed", cause);
         }
