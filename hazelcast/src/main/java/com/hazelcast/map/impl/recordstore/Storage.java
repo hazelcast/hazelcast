@@ -22,6 +22,7 @@ import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * Represents actual storage layer behind a {@link RecordStore}.
@@ -47,6 +48,8 @@ public interface Storage<K, R> {
     R getIfSameKey(K key);
 
     void removeRecord(R record);
+
+    void removeRecordWithIterator(Iterator iterator, R record);
 
     boolean containsKey(K key);
 
@@ -78,4 +81,5 @@ public interface Storage<K, R> {
 
     MapEntriesWithCursor fetchEntries(int tableIndex, int size, SerializationService serializationService);
 
+    <T> T unwrap(Class<T> clazz);
 }

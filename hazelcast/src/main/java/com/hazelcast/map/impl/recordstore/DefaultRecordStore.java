@@ -335,9 +335,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public boolean containsValue(Object value) {
         checkIfLoaded();
         final long now = getNow();
-        Collection<Record> records = storage.values();
-        for (Record record : records) {
-            if (getOrNullIfExpired(record, now, false) == null) {
+        Iterator<Record> iterator = storage.values().iterator();
+        while (iterator.hasNext()) {
+            Record record = iterator.next();
+            if (getOrNullIfExpired(iterator, record, now, false) == null) {
                 continue;
             }
             if (recordFactory.isEquals(value, record.getValue())) {
@@ -376,7 +377,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         checkIfLoaded();
         return lockStore != null && lockStore.lock(key, caller, threadId, referenceId, ttl);
     }
-
 
     @Override
     public boolean forceUnlock(Data dataKey) {
@@ -498,13 +498,22 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public Object evict(Data key, boolean backup) {
+        return evictWithIterator(null, key, backup);
+    }
+
+    @Override
+    public Object evictWithIterator(Iterator iterator, Data key, boolean backup) {
         Record record = storage.get(key);
         Object value = null;
         if (record != null) {
             value = record.getValue();
             mapDataStore.flush(key, value, backup);
             removeIndex(record);
-            storage.removeRecord(record);
+            if (iterator == null) {
+                storage.removeRecord(record);
+            } else {
+                storage.removeRecordWithIterator(iterator, record);
+            }
             updateStatsOnRemove(record.getHits());
             if (!backup) {
                 mapServiceContext.interceptRemove(name, value);

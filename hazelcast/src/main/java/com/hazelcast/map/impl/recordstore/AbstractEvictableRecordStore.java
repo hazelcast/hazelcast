@@ -132,7 +132,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             }
             checkedEntryCount++;
             Record record = expirationIterator.next();
-            record = getOrNullIfExpired(record, now, backup);
+            record = getOrNullIfExpired(expirationIterator, record, now, backup);
             if (record == null) {
                 evictedCount++;
             }
@@ -142,8 +142,12 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     private void initExpirationIterator() {
         if (expirationIterator == null || !expirationIterator.hasNext()) {
-            expirationIterator = storage.values().iterator();
+            expirationIterator = getValueIterator();
         }
+    }
+
+    protected Iterator<Record> getValueIterator() {
+        return storage.values().iterator();
     }
 
     @Override
@@ -172,7 +176,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * @param record {@link com.hazelcast.map.impl.record.Record}
      * @return null if evictable.
      */
-    protected Record getOrNullIfExpired(Record record, long now, boolean backup) {
+    protected Record getOrNullIfExpired(Iterator iterator, Record record, long now, boolean backup) {
         if (!isRecordStoreExpirable()) {
             return record;
         }
@@ -186,11 +190,15 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (!isExpired(record, now, backup)) {
             return record;
         }
-        evict(key, backup);
+        evictWithIterator(iterator, key, backup);
         if (!backup) {
             doPostEvictionOperations(record, backup);
         }
         return null;
+    }
+
+    protected Record getOrNullIfExpired(Record record, long now, boolean backup) {
+        return getOrNullIfExpired(null, record, now, backup);
     }
 
     public boolean isExpired(Record record, long now, boolean backup) {

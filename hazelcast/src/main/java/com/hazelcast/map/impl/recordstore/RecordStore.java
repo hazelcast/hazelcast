@@ -241,6 +241,8 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
 
     Object evict(Data key, boolean backup);
 
+    Object evictWithIterator(Iterator iterator, Data key, boolean backup);
+
     /**
      * Evicts all keys except locked ones.
      *
