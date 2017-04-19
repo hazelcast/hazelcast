@@ -49,6 +49,9 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
 
     @Override
     public String registerListener(final ListenerMessageCodec codec, final EventHandler handler) {
+        //This method should not be called from registrationExecutor
+        assert (!Thread.currentThread().getName().contains("eventRegistration"));
+
         Future<String> future = registrationExecutor.submit(new Callable<String>() {
             @Override
             public String call() throws Exception {
@@ -71,6 +74,9 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
     }
 
     private ClientEventRegistration invoke(ClientRegistrationKey registrationKey) throws Exception {
+        //This method should only be called from registrationExecutor
+        assert (Thread.currentThread().getName().contains("eventRegistration"));
+
         EventHandler handler = registrationKey.getHandler();
         handler.beforeListenerRegister();
         ClientMessage request = registrationKey.getCodec().encodeAddRequest(false);
@@ -87,6 +93,9 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
 
     @Override
     public boolean deregisterListener(final String userRegistrationId) {
+        //This method should not be called from registrationExecutor
+        assert (!Thread.currentThread().getName().contains("eventRegistration"));
+
         Future<Boolean> future = registrationExecutor.submit(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
@@ -123,6 +132,9 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
 
     @Override
     public void connectionAdded(final Connection connection) {
+        //This method should not be called from registrationExecutor
+        assert (!Thread.currentThread().getName().contains("eventRegistration"));
+
         registrationExecutor.submit(new Runnable() {
             @Override
             public void run() {
@@ -145,6 +157,9 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
 
     @Override
     public void connectionRemoved(Connection connection) {
+        //This method should not be called from registrationExecutor
+        assert (!Thread.currentThread().getName().contains("eventRegistration"));
+
         registrationExecutor.submit(new Runnable() {
             @Override
             public void run() {
@@ -157,6 +172,9 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
 
     //For Testing
     public Collection<ClientEventRegistration> getActiveRegistrations(final String uuid) {
+        //This method should not be called from registrationExecutor
+        assert (!Thread.currentThread().getName().contains("eventRegistration"));
+
         Future<Collection<ClientEventRegistration>> future = registrationExecutor.submit(
                 new Callable<Collection<ClientEventRegistration>>() {
                     @Override
