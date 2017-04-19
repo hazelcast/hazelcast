@@ -156,7 +156,7 @@ public class NonBlockingIOThreadingModel
         if (logger.isFineEnabled()) {
             logger.fine("TcpIpConnectionManager configured with Non Blocking IO-threading model: "
                     + inputThreadCount + " input threads and "
-                    + outputThreads + " output threads");
+                    + outputThreadCount + " output threads");
         }
 
 
