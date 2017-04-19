@@ -137,7 +137,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
     private final ConcurrentMap<Integer, CountDownLatch> syncLocks;
 
-    protected AbstractClientInternalCacheProxy(CacheConfig<K, V> cacheConfig) {
+    AbstractClientInternalCacheProxy(CacheConfig<K, V> cacheConfig) {
         super(cacheConfig);
         this.asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         this.syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
@@ -221,26 +221,26 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         }
     }
 
-    protected <T> ICompletableFuture<T> getAndRemoveAsyncInternal(K key, boolean withCompletionEvent) {
+    protected <T> ICompletableFuture<T> getAndRemoveAsyncInternal(K key) {
         long startNanos = nowInNanosOrDefault();
         ensureOpen();
         validateNotNull(key);
         validateConfiguredTypes(cacheConfig, key);
 
         Data keyData = toData(key);
-        ClientDelegatingFuture<T> delegatingFuture = getAndRemoveInternal(keyData, withCompletionEvent);
-        ExecutionCallback callback = !statisticsEnabled ? null : statsHandler.newOnRemoveCallback(true, startNanos);
+        ClientDelegatingFuture<T> delegatingFuture = getAndRemoveInternal(keyData, false);
+        ExecutionCallback callback = !statisticsEnabled ? null : statsHandler.<T>newOnRemoveCallback(true, startNanos);
         onGetAndRemoveAsyncInternal(delegatingFuture, callback, keyData);
         return delegatingFuture;
     }
 
-    protected <T> ClientDelegatingFuture<T> getAndRemoveSyncInternal(K key, boolean withCompletionEvent) {
+    protected <T> ClientDelegatingFuture<T> getAndRemoveSyncInternal(K key) {
         ensureOpen();
         validateNotNull(key);
         validateConfiguredTypes(cacheConfig, key);
 
         Data keyData = toData(key);
-        return getAndRemoveInternal(keyData, withCompletionEvent);
+        return getAndRemoveInternal(keyData, true);
     }
 
     private <T> ClientDelegatingFuture<T> getAndRemoveInternal(Data keyData, boolean withCompletionEvent) {
@@ -250,8 +250,8 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         return newDelegatingFuture(future, GET_AND_REMOVE_RESPONSE_DECODER);
     }
 
-    protected <T> void onGetAndRemoveAsyncInternal(ClientDelegatingFuture<T> delegatingFuture,
-                                                   ExecutionCallback<T> callback, Data keyData) {
+    protected <T> void onGetAndRemoveAsyncInternal(ClientDelegatingFuture<T> delegatingFuture, ExecutionCallback<T> callback,
+                                                   Data keyData) {
         addCallback(delegatingFuture, callback);
     }
 
@@ -336,8 +336,8 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         return delegatingFuture;
     }
 
-    protected <T> void onReplaceInternalAsync(Data keyData, Data valueData, Object value,
-                                              ClientDelegatingFuture<T> delegatingFuture, ExecutionCallback<T> callback) {
+    protected <T> void onReplaceInternalAsync(Data keyData, Data valueData, V value, ClientDelegatingFuture<T> delegatingFuture,
+                                              ExecutionCallback<T> callback) {
         addCallback(delegatingFuture, callback);
     }
 
@@ -368,8 +368,8 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         return delegatingFuture;
     }
 
-    protected <T> void onReplaceAndGetAsync(Data keyData, Data valueData, Object value,
-                                            ClientDelegatingFuture<T> delegatingFuture, ExecutionCallback<T> callback) {
+    protected <T> void onReplaceAndGetAsync(Data keyData, Data valueData, V value, ClientDelegatingFuture<T> delegatingFuture,
+                                            ExecutionCallback<T> callback) {
         addCallback(delegatingFuture, callback);
     }
 
@@ -389,7 +389,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         return invoke(request, keyData, completionId);
     }
 
-    protected Object putSyncInternal(K key, V value, ExpiryPolicy expiryPolicy, boolean isGet, boolean withCompletionEvent) {
+    protected V putSyncInternal(K key, V value, ExpiryPolicy expiryPolicy, boolean isGet) {
         long startNanos = nowInNanosOrDefault();
         ensureOpen();
         validateNotNull(key, value);
@@ -400,10 +400,9 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         Data expiryPolicyData = toData(expiryPolicy);
 
         try {
-            ClientInvocationFuture invocationFuture = putInternal(keyData, valueData,
-                    expiryPolicyData, isGet, withCompletionEvent);
-            ClientDelegatingFuture delegatingFuture = newDelegatingFuture(invocationFuture, PUT_RESPONSE_DECODER);
-            Object response = delegatingFuture.get();
+            ClientInvocationFuture invocationFuture = putInternal(keyData, valueData, expiryPolicyData, isGet, true);
+            ClientDelegatingFuture<V> delegatingFuture = newDelegatingFuture(invocationFuture, PUT_RESPONSE_DECODER);
+            V response = delegatingFuture.get();
 
             if (statisticsEnabled) {
                 statsHandler.onPut(isGet, startNanos, response != null);
@@ -490,7 +489,8 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
     }
 
     protected void onPutIfAbsentAsyncInternal(Data keyData, Data valueData, V value,
-                                              ClientDelegatingFuture<Boolean> delegatingFuture, ExecutionCallback callback) {
+                                              ClientDelegatingFuture<Boolean> delegatingFuture,
+                                              ExecutionCallback<Boolean> callback) {
         addCallback(delegatingFuture, callback);
     }
 
@@ -634,8 +634,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         }
     }
 
-    protected void waitCompletionLatch(Integer countDownLatchId, ICompletableFuture future) throws
-            ExecutionException {
+    protected void waitCompletionLatch(Integer countDownLatchId, ICompletableFuture future) throws ExecutionException {
         if (countDownLatchId != IGNORE_COMPLETION) {
             CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
             if (countDownLatch != null) {

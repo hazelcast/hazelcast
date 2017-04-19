@@ -57,7 +57,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
  */
 abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements ICacheInternal<K, V> {
 
-    static final int TIMEOUT = 10;
+    private static final int TIMEOUT = 10;
 
     @SuppressWarnings("unchecked")
     private static final ClientMessageDecoder LOAD_ALL_DECODER = new ClientMessageDecoder() {
@@ -84,8 +84,9 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
 
     protected ClientContext clientContext;
     protected ILogger logger;
-    protected CacheStatsHandler statsHandler;
+
     boolean statisticsEnabled;
+    CacheStatsHandler statsHandler;
     SerializationService serializationService;
 
     private final ConcurrentMap<Future, CompletionListener> loadAllCalls = new ConcurrentHashMap<Future, CompletionListener>();
@@ -213,12 +214,11 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
     }
 
     @Override
-    protected ClientMessage invoke(ClientMessage clientMessage) {
+    protected <T> T invoke(ClientMessage clientMessage) {
         try {
             Future<ClientMessage> future = new ClientInvocation(
                     (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), clientMessage).invoke();
-            return future.get();
-
+            return (T) future.get();
         } catch (Exception e) {
             throw rethrow(e);
         }

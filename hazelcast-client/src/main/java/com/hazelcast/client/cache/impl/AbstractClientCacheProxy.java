@@ -76,15 +76,15 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         }
     };
 
-    protected AbstractClientCacheProxy(CacheConfig<K, V> cacheConfig) {
+    AbstractClientCacheProxy(CacheConfig<K, V> cacheConfig) {
         super(cacheConfig);
     }
 
-    protected Object getSyncInternal(Data keyData, ExpiryPolicy expiryPolicy) {
+    protected V getSyncInternal(Data keyData, ExpiryPolicy expiryPolicy) {
         long startNanos = nowInNanosOrDefault();
         try {
-            ClientDelegatingFuture future = getInternal(keyData, expiryPolicy, false);
-            Object value = future.get();
+            ClientDelegatingFuture<V> future = getInternal(keyData, expiryPolicy, false);
+            V value = future.get();
             if (statisticsEnabled) {
                 statsHandler.onGet(startNanos, value != null);
             }
@@ -156,7 +156,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
 
     @Override
     public ICompletableFuture<V> getAndPutAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return (ICompletableFuture<V>) putAsyncInternal(key, value, expiryPolicy, true, false, newStatsCallbackOrNull(true));
+        return putAsyncInternal(key, value, expiryPolicy, true, false, newStatsCallbackOrNull(true));
     }
 
     @Override
@@ -171,7 +171,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
 
     @Override
     public ICompletableFuture<V> getAndRemoveAsync(K key) {
-        return getAndRemoveAsyncInternal(key, false);
+        return getAndRemoveAsyncInternal(key);
     }
 
     @Override
@@ -208,7 +208,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
     public V get(K key, ExpiryPolicy expiryPolicy) {
         ensureOpen();
         validateNotNull(key);
-        return (V) toObject(getSyncInternal(toData(key), expiryPolicy));
+        return toObject(getSyncInternal(toData(key), expiryPolicy));
     }
 
     @Override
@@ -253,12 +253,12 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
 
     @Override
     public void put(K key, V value, ExpiryPolicy expiryPolicy) {
-        putSyncInternal(key, value, expiryPolicy, false, true);
+        putSyncInternal(key, value, expiryPolicy, false);
     }
 
     @Override
     public V getAndPut(K key, V value, ExpiryPolicy expiryPolicy) {
-        return (V) putSyncInternal(key, value, expiryPolicy, true, true);
+        return putSyncInternal(key, value, expiryPolicy, true);
     }
 
     @Override
