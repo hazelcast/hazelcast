@@ -20,16 +20,19 @@ import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.LifecycleService;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
 import java.util.concurrent.Executor;
@@ -52,6 +55,7 @@ public class ClientInvocation implements Runnable {
     private final ClientInvocationFuture clientInvocationFuture;
     private final ILogger logger;
     private final LifecycleService lifecycleService;
+    private final ClientClusterService clientClusterService;
     private final ClientInvocationServiceSupport invocationService;
     private final ClientExecutionService executionService;
     private final ClientMessage clientMessage;
@@ -61,7 +65,7 @@ public class ClientInvocation implements Runnable {
     private final Connection connection;
     private volatile ClientConnection sendConnection;
     private boolean bypassHeartbeatCheck;
-    private long retryTimeoutPointInMillis;
+    private long retryExpirationMillis;
     private EventHandler handler;
 
     protected ClientInvocation(HazelcastClientInstanceImpl client,
@@ -69,6 +73,7 @@ public class ClientInvocation implements Runnable {
                                int partitionId,
                                Address address,
                                Connection connection) {
+        this.clientClusterService = client.getClientClusterService();
         this.lifecycleService = client.getLifecycleService();
         this.invocationService = (ClientInvocationServiceSupport) client.getInvocationService();
         this.executionService = client.getClientExecutionService();
@@ -76,7 +81,7 @@ public class ClientInvocation implements Runnable {
         this.partitionId = partitionId;
         this.address = address;
         this.connection = connection;
-        this.retryTimeoutPointInMillis = System.currentTimeMillis() + invocationService.getInvocationTimeoutMillis();
+        this.retryExpirationMillis = System.currentTimeMillis() + invocationService.getInvocationTimeoutMillis();
         this.logger = invocationService.invocationLogger;
         this.callIdSequence = client.getCallIdSequence();
         this.clientInvocationFuture = new ClientInvocationFuture(this, executionService,
@@ -176,28 +181,52 @@ public class ClientInvocation implements Runnable {
             return;
         }
 
-        if ((isBindToSingleConnection() && exception instanceof IOException)
-                || System.currentTimeMillis() > retryTimeoutPointInMillis) {
+        if (isNotAllowedToRetryOnSelection(exception)) {
             clientInvocationFuture.complete(exception);
             return;
         }
 
-        if (isRetrySafeException(exception)
+        boolean retry = isRetrySafeException(exception)
                 || invocationService.isRedoOperation()
-                || (exception instanceof TargetDisconnectedException && clientMessage.isRetryable())) {
-            try {
-                ClientExecutionServiceImpl executionServiceImpl = (ClientExecutionServiceImpl) this.executionService;
-                executionServiceImpl.schedule(this, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
-            } catch (RejectedExecutionException e) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Retry could not be scheduled ", e);
-                }
-                clientInvocationFuture.complete(exception);
-            }
+                || (exception instanceof TargetDisconnectedException && clientMessage.isRetryable());
+        if (!retry) {
+            clientInvocationFuture.complete(exception);
             return;
         }
 
-        clientInvocationFuture.complete(exception);
+        long remainingMillis = retryExpirationMillis - System.currentTimeMillis();
+        if (remainingMillis < 0) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Exception will not be retried because invocation timed out", exception);
+            }
+            clientInvocationFuture.complete(new OperationTimeoutException(this + " timed out by "
+                    + Math.abs(remainingMillis) + " ms"));
+            return;
+        }
+
+        try {
+            executionService.schedule(this, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
+        } catch (RejectedExecutionException e) {
+            clientInvocationFuture.complete(exception);
+        }
+
+    }
+
+    private boolean isNotAllowedToRetryOnSelection(Throwable exception) {
+        if (isBindToSingleConnection() && exception instanceof IOException) {
+            return true;
+        }
+
+        if (address != null
+                && exception instanceof TargetNotMemberException
+                && clientClusterService.getMember(address) == null) {
+            //when invocation send over address
+            //if exception is target not member and
+            //address is not available in member list , don't retry
+            clientInvocationFuture.complete(exception);
+            return true;
+        }
+        return false;
     }
 
     private boolean isBindToSingleConnection() {
@@ -243,5 +272,23 @@ public class ClientInvocation implements Runnable {
 
     public Executor getUserExecutor() {
         return executionService.getUserExecutor();
+    }
+
+    @Override
+    public String toString() {
+        String target;
+        if (isBindToSingleConnection()) {
+            target = "connection " + connection;
+        } else if (partitionId != -1) {
+            target = "partition " + partitionId;
+        } else if (address != null) {
+            target = "address " + address;
+        } else {
+            target = "random";
+        }
+        return "ClientInvocation{"
+                + "clientMessageType=" + clientMessage.getMessageType()
+                + ", target=" + target
+                + ", sendConnection=" + sendConnection + '}';
     }
 }
