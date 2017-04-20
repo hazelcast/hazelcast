@@ -16,62 +16,65 @@
 
 package com.hazelcast.internal.util.concurrent;
 
-import com.hazelcast.util.function.Consumer;
+import com.hazelcast.util.function.Predicate;
 
 import java.util.Collection;
 
 /**
- * A container for items processed in sequence.
+ * A container of items processed in sequence. The point of this interface
+ * to be a mix-in to the API of JDK's standard {@link java.util.Queue} adding
+ * methods that make sense for a queue which is concurrent, bounded, and
+ * supports draining in batches.
  *
- * @param <E> type of elements in the pipe.
+ * @param <E> type of items in the pipe.
  */
 public interface Pipe<E> {
     /**
-     * The number of items added to this container since creation.
-     *
-     * @return the number of items added.
+     * Returns the number of items added to this pipe since creation.
      */
     long addedCount();
 
     /**
-     * The number of items removed from this container since creation.
-     *
-     * @return the number of items removed.
+     * Returns the number of items removed from this pipe since creation.
      */
     long removedCount();
 
     /**
-     * The maximum capacity of this container to hold items.
-     *
-     * @return the capacity of the container.
+     * Returns the number of items this pipe can hold at a time.
      */
     int capacity();
 
     /**
-     * Get the remaining capacity for elements in the container given the current size.
-     *
-     * @return remaining capacity of the container
+     * Returns the number of items this pipe has still room for.
      */
     int remainingCapacity();
 
     /**
-     * Invoke a {@link Consumer} callback on each elements to drain the collection of elements until it is empty.
+     * Drains the items available in the pipe to the supplied item handler.
+     * The handler returns a {@code boolean} which decides whether to continue
+     * draining. If it returns {@code false}, this method refrains from draining
+     * further items and returns.
+     * <p>
+     * <i>Implementation note:</i> this method is expected to take advantage of
+     * the fact that many items are being drained at once and minimize the
+     * per-item cost of housekeeping.
      *
-     * If possible, implementations should use smart batching to best handle burst traffic.
-     *
-     * @param elementHandler to callback for processing elements
-     * @return the number of elements drained
+     * @param itemHandler the item handler
+     * @return the number of drained items
      */
-    int drain(Consumer<E> elementHandler);
+    int drain(Predicate<? super E> itemHandler);
 
     /**
-     * Drain available elements into the provided {@link Collection} up to a provided maximum limit of elements.
+     * Drains at most {@code limit} available items into the provided
+     * {@link Collection}.
+     * <p>
+     * <i>Implementation note:</i> this method is expected to take advantage of
+     * the fact that many items are being drained at once and minimize the
+     * per-item cost of housekeeping.
      *
-     * If possible, implementations should use smart batching to best handle burst traffic.
-     *
-     * @param target in to which elements are drained.
-     * @param limit  of the maximum number of elements to drain.
-     * @return the number of elements actually drained.
+     * @param target destination for the drained items
+     * @param limit  the maximum number of items to drain
+     * @return the number of drained items
      */
     int drainTo(Collection<? super E> target, int limit);
 }

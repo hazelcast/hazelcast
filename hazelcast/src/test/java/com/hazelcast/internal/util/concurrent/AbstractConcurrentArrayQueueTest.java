@@ -19,6 +19,7 @@ package com.hazelcast.internal.util.concurrent;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.util.function.Consumer;
+import com.hazelcast.util.function.Predicate;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -252,10 +253,11 @@ public abstract class AbstractConcurrentArrayQueueTest extends HazelcastTestSupp
             queue.offer(i);
         }
 
-        queue.drain(new Consumer<Integer>() {
+        queue.drain(new Predicate<Integer>() {
             @Override
-            public void accept(Integer integer) {
+            public boolean test(Integer integer) {
                 assertNotNull(integer);
+                return true;
             }
         });
     }

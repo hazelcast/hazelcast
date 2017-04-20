@@ -16,13 +16,14 @@
 
 package com.hazelcast.internal.util.concurrent;
 
-import com.hazelcast.util.function.Consumer;
+import com.hazelcast.util.function.Predicate;
 
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 /**
- * Single producer to single consumer concurrent queue backed by an array. Adapted from the Agrona project.
+ * Single producer to single consumer concurrent queue backed by an array.
+ * Adapted from the Agrona project.
  *
  * @param <E> type of the elements stored in the queue.
  */
@@ -71,7 +72,7 @@ public class OneToOneConcurrentArrayQueue<E> extends AbstractConcurrentArrayQueu
 
     @Override
     @SuppressWarnings("unchecked")
-    public int drain(Consumer<E> elementHandler) {
+    public int drain(Predicate<? super E> itemHandler) {
         final AtomicReferenceArray<E> buffer = this.buffer;
         final long mask = this.capacity - 1;
         final long acquiredHead = head;
@@ -87,7 +88,9 @@ public class OneToOneConcurrentArrayQueue<E> extends AbstractConcurrentArrayQueu
             buffer.lazySet(arrayIndex, null);
             nextSequence++;
             HEAD.lazySet(this, nextSequence);
-            elementHandler.accept(item);
+            if (!itemHandler.test(item)) {
+                break;
+            }
         }
         return (int) (nextSequence - acquiredHead);
     }
