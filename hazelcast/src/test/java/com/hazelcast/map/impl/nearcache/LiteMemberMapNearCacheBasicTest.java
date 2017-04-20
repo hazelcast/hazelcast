@@ -76,7 +76,7 @@ public class LiteMemberMapNearCacheBasicTest extends AbstractNearCacheBasicTest<
 
     @Before
     public void setUp() {
-        nearCacheConfig = createNearCacheConfig(inMemoryFormat);
+        nearCacheConfig = createNearCacheConfig(inMemoryFormat, true);
     }
 
     @After

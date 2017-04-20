@@ -827,6 +827,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "  <map name=\"" + mapName + "\">\n"
                 + "    <near-cache name=\"test\">\n"
                 + "      <in-memory-format>OBJECT</in-memory-format>\n"
+                + "      <serialize-keys>false</serialize-keys>\n"
                 + "      <max-size>1234</max-size>\n"
                 + "      <time-to-live-seconds>77</time-to-live-seconds>\n"
                 + "      <max-idle-seconds>92</max-idle-seconds>\n"

@@ -109,8 +109,8 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
 
         MetaDataFetcher metaDataFetcher = new MemberMapMetaDataFetcher(clusterService, operationService, logger);
         String localUuid = nodeEngine.getLocalMember().getUuid();
-        return new RepairingTask(properties, metaDataFetcher, executionService.getGlobalTaskScheduler(), partitionService,
-                localUuid, logger);
+        return new RepairingTask(properties, metaDataFetcher, executionService.getGlobalTaskScheduler(),
+                serializationService, partitionService, localUuid, logger);
     }
 
     /**

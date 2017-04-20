@@ -91,7 +91,7 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
 
     @Before
     public void setUp() {
-        nearCacheConfig = createNearCacheConfig(inMemoryFormat)
+        nearCacheConfig = createNearCacheConfig(inMemoryFormat, true)
                 .setLocalUpdatePolicy(localUpdatePolicy);
     }
 

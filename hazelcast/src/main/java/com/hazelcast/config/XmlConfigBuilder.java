@@ -1233,7 +1233,6 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     }
     //CHECKSTYLE:ON
 
-
     private NearCacheConfig handleNearCacheConfig(Node node) {
         String name = getAttribute(node, "name");
         NearCacheConfig nearCacheConfig = new NearCacheConfig(name);
@@ -1252,6 +1251,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 LOGGER.warning("The element <eviction-policy/> for <near-cache/> is deprecated, please use <eviction/> instead!");
             } else if ("in-memory-format".equals(nodeName)) {
                 nearCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
+            } else if ("serialize-keys".equals(nodeName)) {
+                nearCacheConfig.setSerializeKeys(Boolean.parseBoolean(value));
             } else if ("invalidate-on-change".equals(nodeName)) {
                 nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(value));
             } else if ("cache-local-entries".equals(nodeName)) {

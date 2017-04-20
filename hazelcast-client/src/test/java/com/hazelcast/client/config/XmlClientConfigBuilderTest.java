@@ -250,6 +250,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("LFU", nearCacheConfig.getEvictionPolicy());
         assertEquals(EvictionPolicy.LFU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
         assertTrue(nearCacheConfig.isInvalidateOnChange());
+        assertFalse(nearCacheConfig.isSerializeKeys());
         assertEquals(InMemoryFormat.OBJECT, nearCacheConfig.getInMemoryFormat());
     }
 
