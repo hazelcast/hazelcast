@@ -36,26 +36,25 @@ public interface FilteringStrategy {
      */
      int FILTER_DOES_NOT_MATCH = -1;
 
-
     /**
      * Main entry point for filtering events according to given filter.
-     * @param filter
-     * @param dataKey
-     * @param dataOldValue
-     * @param dataValue
-     * @param eventType
-     * @param mapNameOrNull
-     * @return  {@link #FILTER_DOES_NOT_MATCH} if the event does not match the filter, otherwise
-     *          the integer event type of the event to be published. This allows a filtering strategy
-     *          to alter the type of event that is actually published, depending on the attributes of the
-     *          individual event registration.
+     *
+     * @param filter        the event filter
+     * @param dataKey       the event entry key
+     * @param dataOldValue  the old value of the event entry
+     * @param dataValue     the new value of the event entry
+     * @param eventType     the event type
+     * @param mapNameOrNull the map name. May be null if this is not a map event (e.g. cache event)
+     * @return {@link #FILTER_DOES_NOT_MATCH} if the event does not match the filter, otherwise
+     * the integer event type of the event to be published. This allows a filtering strategy
+     * to alter the type of event that is actually published, depending on the attributes of the
+     * individual event registration.
      */
     int doFilter(EventFilter filter, Data dataKey, Object dataOldValue, Object dataValue, EntryEventType eventType,
                  String mapNameOrNull);
 
     /**
-     *
-     * @return  a {@link EntryEventDataCache} implementation to be used with this filtering strategy
+     * @return a new instance of {@link EntryEventDataCache} implementation to be used with this filtering strategy
      */
     EntryEventDataCache getEntryEventDataCache();
 }

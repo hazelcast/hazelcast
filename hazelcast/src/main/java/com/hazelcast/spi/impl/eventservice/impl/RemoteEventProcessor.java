@@ -19,6 +19,13 @@ package com.hazelcast.spi.impl.eventservice.impl;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.util.executor.StripedRunnable;
 
+/**
+ * An extension of the {@link EventProcessor} which logs and swallows any exception while processing the event.
+ * The {@link #orderKey} for this processor is equal to the packet partition ID. This means that when running
+ * inside a {@link com.hazelcast.util.executor.StripedExecutor}, all events for the same partition ID will be ordered.
+ *
+ * @see EventServiceImpl#sendEvent(com.hazelcast.nio.Address, EventEnvelope, int)
+ */
 public class RemoteEventProcessor extends EventProcessor implements StripedRunnable {
     private EventServiceImpl eventService;
     private Packet packet;

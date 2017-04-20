@@ -109,11 +109,32 @@ public final class GroupProperty {
      */
     public static final HazelcastProperty CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS
             = new HazelcastProperty("hazelcast.client.endpoint.remove.delay.seconds", 10);
-
+    /**
+     * Number of threads for the {@link com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl} executor.
+     * The executor is responsible for executing the events. If you process a lot of events and have many cores, setting
+     * a higher value is a good practice. This way, more events can be processed in parallel.
+     */
     public static final HazelcastProperty EVENT_THREAD_COUNT
             = new HazelcastProperty("hazelcast.event.thread.count", 5);
+
+    /**
+     * The capacity of the {@link com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl} executor.
+     * The executor is responsible for executing the events. If the events are produced at a higher rate than they are
+     * consumed, the queue grows in size. This can lead to an {@link OutOfMemoryError} if the accumulated events
+     * are not small enough to fit in memory. This capacity is shared between event topics.
+     * When the maximum capacity is reached, the items are dropped. This means that the event system is a 'best effort' system
+     * and there is no guarantee that you are going to get an event.
+     * Since the capacity is shared between topics, one topic might fill the entire queue thus causing
+     * other topics to drop their messages.
+     */
     public static final HazelcastProperty EVENT_QUEUE_CAPACITY
             = new HazelcastProperty("hazelcast.event.queue.capacity", 1000000);
+    /**
+     * The timeout for offering the an event to the event executor for processing. If the event queue is full,
+     * the event might not be accepted to the queue and it will be dropped.
+     * This applies only to processing local events. Remote events (events on a remote subscriber) have no timeout,
+     * meaning that the event can be rejected immediately.
+     */
     public static final HazelcastProperty EVENT_QUEUE_TIMEOUT_MILLIS
             = new HazelcastProperty("hazelcast.event.queue.timeout.millis", 250, MILLISECONDS);
 

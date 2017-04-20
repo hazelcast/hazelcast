@@ -63,30 +63,93 @@ import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
+/**
+ * Service responsible for routing and dispatching local and remote events and keeping track of listener
+ * registrations. Local events are events published on a local subscriber (the subscriber is on this node)
+ * and remote events are published on a remote subscriber (the subscriber is on a different node and the
+ * event is sent to that node). The remote events are generally asnychronous meaning that we send the event
+ * and don't wait for the response. The exception to this is that every {@link #eventSyncFrequency} remote
+ * event is sent as an operation and we wait for it to be submitted to the remote queue.
+ * <p>
+ * This implementation keeps registrations grouped into {@link EventServiceSegment}s. Each segment is
+ * responsible for a single service (e.g. map service, cluster service, proxy service).
+ * <p>
+ * The events are processed on a {@link StripedExecutor}. The executor has a fixed queue and thread size
+ * and it is shared between all events meaning that it is important to configure it correctly. Inadequate thread
+ * count sizing can lead to wasted threads or low throughput. Inadequate queue size can lead
+ * to {@link OutOfMemoryError} or events being dropped when the queue is full.
+ * The events are ordered by order key which can be defined when publishing the event meaning that you can
+ * define your custom ordering. Events with the same order key will be processed by the same thread on
+ * the executor.
+ * <p>
+ * This order can still be broken in some cases. This is possible because remote events are asynchronous
+ * and we don't wait for the response before publishing the next event. The previously published
+ * event can be retransmitted causing it to be received by the target node at a later time.
+ */
 public class EventServiceImpl implements InternalEventService, MetricsProvider {
-
+    /**
+     * Usually remote events are sent asynchronously. This property dictates how often the event is sent
+     * synchronously. This means that the event will be sent as a {@link SendEventOperation} and we will
+     * wait for the response. The default value is {@value EVENT_SYNC_FREQUENCY}.
+     *
+     * @see #sendEvent(Address, EventEnvelope, int)
+     */
     public static final String EVENT_SYNC_FREQUENCY_PROP = "hazelcast.event.sync.frequency";
 
     private static final EventRegistration[] EMPTY_REGISTRATIONS = new EventRegistration[0];
 
+    /**
+     * The default value for the {@link #EVENT_SYNC_FREQUENCY_PROP}.
+     *
+     * @see #sendEvent(Address, EventEnvelope, int)
+     */
     private static final int EVENT_SYNC_FREQUENCY = 100000;
+    /**
+     * The retry count for the synchronous remote events.
+     *
+     * @see #sendEvent(Address, EventEnvelope, int)
+     */
     private static final int SEND_RETRY_COUNT = 50;
+    /**
+     * The timeout in seconds for the synchronous remote events.
+     *
+     * @see #sendEvent(Address, EventEnvelope, int)
+     */
     private static final int SEND_EVENT_TIMEOUT_SECONDS = 5;
+    /**
+     * The timeout in seconds for registering a listener registration on other
+     * nodes of the cluster. This is used when the registration is not local.
+     */
     private static final int REGISTRATION_TIMEOUT_SECONDS = 5;
     private static final int DEREGISTER_TIMEOUT_SECONDS = 5;
+    /**
+     * How often failures are logged with {@link Level#WARNING}. Otherwise the failures are
+     * logged with a lower log level.
+     */
     private static final int WARNING_LOG_FREQUENCY = 1000;
 
     final ILogger logger;
     final NodeEngineImpl nodeEngine;
 
+    /** The exception handler for remote listener registrations (those sent to other cluster members) */
     private final ExceptionHandler registrationExceptionHandler;
     private final ExceptionHandler deregistrationExceptionHandler;
+    /** Service name to event service segment map */
     private final ConcurrentMap<String, EventServiceSegment> segments;
+    /** The executor responsible for processing events */
     private final StripedExecutor eventExecutor;
+    /**
+     * The timeout in milliseconds for offering an event to the local executor for processing. If the queue is full
+     * and the event is not accepted in the defined timeout, it will not be processed.
+     * This applies only to processing local events. Remote events (events on a remote subscriber) have no timeout,
+     * meaning that the event can be rejected immediately.
+     */
     private final long eventQueueTimeoutMs;
 
+    /** The thread count for the executor processing the events. */
     @Probe(name = "threadCount")
     private final int eventThreadCount;
+    /** The capacity of the executor processing the events. This capacity is shared for all events. */
     @Probe(name = "queueCapacity")
     private final int eventQueueCapacity;
     @Probe(name = "totalFailureCount")
@@ -194,6 +257,20 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         return registerListenerInternal(serviceName, topic, filter, listener, false);
     }
 
+    /**
+     * Registers the listener for events matching the service name, topic and filter.
+     * If {@code localOnly} is {@code true}, it will register only for events published on this node,
+     * otherwise, the registration is sent to other nodes and the listener will listen for
+     * events on all cluster members.
+     *
+     * @param serviceName the service name for which we are registering
+     * @param topic       the event topic for which we are registering
+     * @param filter      the filter for the listened events
+     * @param listener    the event listener
+     * @param localOnly   whether to register on local events or on events on all cluster members
+     * @return the event registration
+     * @throws IllegalArgumentException if the listener or filter is null
+     */
     private EventRegistration registerListenerInternal(String serviceName, String topic, EventFilter filter, Object listener,
                                                        boolean localOnly) {
         if (listener == null) {
@@ -244,6 +321,14 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         }
     }
 
+    /**
+     * Sends a {@link RegistrationOperation} to other cluster members to register the listener.
+     * The method waits for {@value REGISTRATION_TIMEOUT_SECONDS} seconds before invoking the
+     * {@link #registrationExceptionHandler}.
+     *
+     * @param serviceName the service responsible for the events
+     * @param reg         the listener registration
+     */
     private void invokeRegistrationOnOtherNodes(String serviceName, Registration reg) {
         OperationService operationService = nodeEngine.getOperationService();
         Collection<Member> members = nodeEngine.getClusterService().getMembers();
@@ -288,6 +373,14 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         return EMPTY_REGISTRATIONS;
     }
 
+    /**
+     * {@inheritDoc}
+     * The returned collection is unmodifiable and the method always returns a non-null collection.
+     *
+     * @param serviceName service name
+     * @param topic       topic name
+     * @return a non-null immutable collection of listener registrations
+     */
     @Override
     public Collection<EventRegistration> getRegistrations(String serviceName, String topic) {
         final EventServiceSegment segment = getSegment(serviceName, false);
@@ -351,6 +444,15 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param serviceName   service name
+     * @param registrations multiple event registrations
+     * @param event         event object
+     * @param orderKey      order key
+     * @throws IllegalArgumentException if any registration is not an instance of {@link Registration}
+     */
     @Override
     public void publishRemoteEvent(String serviceName, Collection<EventRegistration> registrations, Object event, int orderKey) {
         if (registrations.isEmpty()) {
@@ -369,6 +471,17 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         }
     }
 
+    /**
+     * Processes the {@code event} on this node. If the event is not accepted to the executor
+     * in {@link #eventQueueTimeoutMs}, it will be rejected and not processed. This means that we increase the
+     * rejected count and log the failure.
+     *
+     * @param serviceName  the name of the service responsible for this event
+     * @param event        the event
+     * @param registration the listener registration responsible for this event
+     * @param orderKey     the key defining the thread on which the event is processed. Events with the same key maintain order.
+     * @see LocalEventDispatcher
+     */
     private void executeLocal(String serviceName, Object event, EventRegistration registration, int orderKey) {
         if (nodeEngine.isRunning()) {
             Registration reg = (Registration) registration;
@@ -390,6 +503,15 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         }
     }
 
+    /**
+     * Sends a remote event to the {@code subscriber}.
+     * Each event segment keeps track of the published event count. On every {@link #eventSyncFrequency} the event will
+     * be sent synchronously.
+     * A synchronous event means that we send the event as an {@link SendEventOperation} and in case of failure
+     * we increase the failure count and log the failure (see {@link EventProcessor})
+     * Otherwise, we send an asynchronous event. This means that we don't wait to see if the processing failed with an
+     * exception (see {@link RemoteEventProcessor})
+     */
     private void sendEvent(Address subscriber, EventEnvelope eventEnvelope, int orderKey) {
         final String serviceName = eventEnvelope.getServiceName();
         final EventServiceSegment segment = getSegment(serviceName, true);
@@ -420,6 +542,14 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         }
     }
 
+    /**
+     * Returns the {@link EventServiceSegment} for the {@code service}. If the segment is {@code null} and
+     * {@code forceCreate} is {@code true}, the segment is created and registered with the {@link MetricsRegistry}.
+     *
+     * @param service     the service of the segment
+     * @param forceCreate whether the segment should be created in case there is no segment
+     * @return the segment for the service or null if there is no segment and {@code forceCreate} is {@code false}
+     */
     public EventServiceSegment getSegment(String service, boolean forceCreate) {
         EventServiceSegment segment = segments.get(service);
         if (segment == null && forceCreate) {
@@ -436,10 +566,18 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         return segment;
     }
 
+    /** Returns {@code true} if the subscriber of the registration is this node */
     boolean isLocal(EventRegistration reg) {
         return nodeEngine.getThisAddress().equals(reg.getSubscriber());
     }
 
+    /**
+     * {@inheritDoc}
+     * If the execution is rejected, the rejection count is increased and a failure is logged.
+     * The event callback is not re-executed.
+     *
+     * @param callback the callback to execute on a random event thread
+     */
     @Override
     public void executeEventCallback(Runnable callback) {
         if (nodeEngine.isRunning()) {
@@ -455,6 +593,15 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * Handles an asynchronous remote event with a {@link RemoteEventProcessor}. The
+     * processor may determine the thread which will handle the event. If the execution is rejected,
+     * the rejection count is increased and a failure is logged. The event processing is not retried.
+     *
+     * @param packet the response packet to handle
+     * @see #sendEvent(Address, EventEnvelope, int)
+     */
     @Override
     public void handle(Packet packet) {
         try {
@@ -504,6 +651,13 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         }
     }
 
+    /**
+     * Increase the failure count and log the failure. Every {@value #WARNING_LOG_FREQUENCY} log is logged
+     * with a higher log level.
+     *
+     * @param message the log message
+     * @param args    the log message arguments
+     */
     private void logFailure(String message, Object... args) {
         totalFailures.inc();
 

@@ -24,6 +24,9 @@ import com.hazelcast.spi.EventFilter;
 
 import java.io.IOException;
 
+/**
+ * Event filter which matches events for a specified entry key.
+ */
 public class EntryEventFilter implements EventFilter, IdentifiedDataSerializable {
 
     protected boolean includeValue;

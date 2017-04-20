@@ -50,6 +50,7 @@ public final class EventEnvelope implements IdentifiedDataSerializable {
         return event;
     }
 
+    /** The event ID. This corresponds to the listener registration ID. */
     public String getEventId() {
         return id;
     }

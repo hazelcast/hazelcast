@@ -41,6 +41,12 @@ public interface WanReplicationPublisher {
      */
     void publishReplicationEventBackup(String serviceName, ReplicationEventObject eventObject);
 
+    /**
+     * Publishes the {@code wanReplicationEvent} on this publisher. This can be used to forward received events
+     * on the target cluster.
+     *
+     * @param wanReplicationEvent the WAN event to publish
+     */
     void publishReplicationEvent(WanReplicationEvent wanReplicationEvent);
 
     /**

@@ -21,5 +21,8 @@ package com.hazelcast.spi;
  */
 public interface EventFilter {
 
+    /**
+     * Returns {@code true} if the {@code event} matches this filter.
+     */
     boolean eval(Object event);
 }
