@@ -110,4 +110,9 @@ public class ClientClusterProxy implements Cluster {
     public void changeClusterVersion(Version version, TransactionOptions options) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void promoteLocalLiteMember() {
+        throw new UnsupportedOperationException();
+    }
 }

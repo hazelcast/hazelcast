@@ -270,7 +270,7 @@ public class ClusterJoinManager {
             return true;
         }
 
-        if (joinRequest.getExcludedMemberUuids().contains(node.getThisUuid())) {
+        if (joinRequest.getExcludedMemberUuids().contains(clusterService.getThisUuid())) {
             logger.warning("cannot join " + target + " since this node is excluded in its list...");
             hotRestartService.handleExcludedMemberUuids(target, joinRequest.getExcludedMemberUuids());
             return true;
@@ -539,7 +539,7 @@ public class ClusterJoinManager {
         BuildInfo buildInfo = node.getBuildInfo();
         final Address thisAddress = node.getThisAddress();
         JoinMessage joinMessage = new JoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), node.getVersion(),
-                thisAddress, node.getThisUuid(), node.isLiteMember(), node.createConfigCheck());
+                thisAddress, clusterService.getThisUuid(), node.isLiteMember(), node.createConfigCheck());
         return nodeEngine.getOperationService().send(new WhoisMasterOp(joinMessage), toAddress);
     }
 
@@ -581,7 +581,8 @@ public class ClusterJoinManager {
         }
 
         if (masterAddress.equals(node.getThisAddress())
-                && node.getNodeExtension().getInternalHotRestartService().isMemberExcluded(masterAddress, node.getThisUuid())) {
+                && node.getNodeExtension().getInternalHotRestartService()
+                    .isMemberExcluded(masterAddress, clusterService.getThisUuid())) {
             // I already know that I will do a force-start so I will not allow target to join me
             logger.info("Cannot send master answer because " + target + " should not join to this master node.");
             return;
@@ -617,7 +618,7 @@ public class ClusterJoinManager {
                         clusterClock.getClusterTime(), clusterService.getClusterId(),
                         clusterClock.getClusterStartTime(), clusterStateManager.getState(),
                         clusterService.getClusterVersion(), partitionRuntimeState, false);
-                op.setCallerUuid(node.getThisUuid());
+                op.setCallerUuid(clusterService.getThisUuid());
                 nodeEngine.getOperationService().send(op, target);
             }
             return true;
@@ -695,7 +696,7 @@ public class ClusterJoinManager {
                 boolean createPostJoinOperation = (postJoinOps != null && postJoinOps.length > 0);
                 PostJoinOp postJoinOp = (createPostJoinOperation ? new PostJoinOp(postJoinOps) : null);
 
-                if (!clusterService.updateMembers(newMembersView, node.getThisAddress(), node.getThisUuid())) {
+                if (!clusterService.updateMembers(newMembersView, node.getThisAddress(), clusterService.getThisUuid())) {
                     return;
                 }
 
@@ -705,7 +706,7 @@ public class ClusterJoinManager {
                     Operation op = new FinalizeJoinOp(member.getUuid(), newMembersView, postJoinOp, time,
                             clusterService.getClusterId(), startTime, clusterStateManager.getState(),
                             clusterService.getClusterVersion(), partitionRuntimeState, true);
-                    op.setCallerUuid(node.getThisUuid());
+                    op.setCallerUuid(clusterService.getThisUuid());
                     invokeClusterOp(op, member.getAddress());
                 }
                 for (MemberImpl member : memberMap.getMembers()) {
@@ -714,7 +715,7 @@ public class ClusterJoinManager {
                     }
                     Operation op = new MembersUpdateOp(member.getUuid(), newMembersView, time,
                             partitionRuntimeState, true);
-                    op.setCallerUuid(node.getThisUuid());
+                    op.setCallerUuid(clusterService.getThisUuid());
                     invokeClusterOp(op, member.getAddress());
                 }
 

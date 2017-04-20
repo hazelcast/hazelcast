@@ -828,11 +828,11 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         return factory.getAllHazelcastInstances();
     }
 
-    private static void assertMaster(Address masterAddress, HazelcastInstance instance) {
+    static void assertMaster(Address masterAddress, HazelcastInstance instance) {
         assertEquals(masterAddress, getNode(instance).getMasterAddress());
     }
 
-    private void suspectMember(HazelcastInstance suspectingInstance, HazelcastInstance suspectedInstance) {
+    static void suspectMember(HazelcastInstance suspectingInstance, HazelcastInstance suspectedInstance) {
         ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(suspectingInstance);
         Member suspectedMember = suspectedInstance.getCluster().getLocalMember();
         clusterService.suspectMember(suspectedMember, "test", false);

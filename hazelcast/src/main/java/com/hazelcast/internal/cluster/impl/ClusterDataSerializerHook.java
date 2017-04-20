@@ -45,6 +45,7 @@ import com.hazelcast.internal.cluster.impl.operations.ShutdownNodeOp;
 import com.hazelcast.internal.cluster.impl.operations.SplitBrainMergeValidationOp;
 import com.hazelcast.internal.cluster.impl.operations.TriggerExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOp;
+import com.hazelcast.internal.cluster.impl.operations.PromoteLiteMemberOp;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
@@ -102,8 +103,9 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int TRIGGER_EXPLICIT_SUSPICION = 39;
     public static final int MEMBERS_VIEW_METADATA = 40;
     public static final int HEARTBEAT_COMPLAINT = 41;
+    public static final int PROMOTE_LITE_MEMBER = 42;
 
-    public static final int LEN = HEARTBEAT_COMPLAINT + 1;
+    static final int LEN = PROMOTE_LITE_MEMBER + 1;
 
     @Override
     public int getFactoryId() {
@@ -331,7 +333,11 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
                 return new HeartbeatComplaintOp();
             }
         };
-
+        constructors[PROMOTE_LITE_MEMBER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PromoteLiteMemberOp();
+            }
+        };
         return new ArrayDataSerializableFactory(constructors);
     }
 }

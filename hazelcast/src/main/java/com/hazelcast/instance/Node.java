@@ -31,6 +31,7 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.internal.ascii.TextCommandService;
@@ -73,7 +74,6 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.PhoneHome;
-import com.hazelcast.util.UuidUtil;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 
@@ -126,8 +126,6 @@ public class Node {
     public final Address address;
 
     public final SecurityContext securityContext;
-
-    private volatile MemberImpl localMember;
 
     private final ILogger logger;
 
@@ -189,7 +187,7 @@ public class Node {
             address = addressPicker.getPublicAddress();
             nodeExtension = nodeContext.createNodeExtension(this);
             final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
-            localMember = new MemberImpl(address, version, true, nodeExtension.createMemberUuid(address),
+            MemberImpl localMember = new MemberImpl(address, version, true, nodeExtension.createMemberUuid(address),
                     memberAttributes, liteMember, hazelcastInstance);
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
@@ -209,10 +207,10 @@ public class Node {
             clientEngine = new ClientEngineImpl(this);
             connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
             partitionService = new InternalPartitionServiceImpl(this);
-            clusterService = new ClusterServiceImpl(this);
+            clusterService = new ClusterServiceImpl(this, localMember);
             textCommandService = new TextCommandServiceImpl(this);
             multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
-            discoveryService = createDiscoveryService(config);
+            discoveryService = createDiscoveryService(config, localMember);
             joiner = nodeContext.createJoiner(this);
         } catch (Throwable e) {
             try {
@@ -246,7 +244,7 @@ public class Node {
         return hazelcastThreadGroup;
     }
 
-    private DiscoveryService createDiscoveryService(Config config) {
+    private DiscoveryService createDiscoveryService(Config config, Member localMember) {
         JoinConfig joinConfig = config.getNetworkConfig().getJoin();
         DiscoveryConfig discoveryConfig = joinConfig.getDiscoveryConfig().getAsReadOnly();
 
@@ -352,7 +350,7 @@ public class Node {
     }
 
     public MemberImpl getLocalMember() {
-        return localMember;
+        return clusterService.getLocalMember();
     }
 
     public boolean isMaster() {
@@ -480,6 +478,7 @@ public class Node {
     }
 
     private void mergeEnvironmentProvidedMemberMetadata() {
+        MemberImpl localMember = getLocalMember();
         Map<String, Object> metadata = discoveryService.discoverLocalMetadata();
         for (Map.Entry<String, Object> entry : metadata.entrySet()) {
             Object value = entry.getValue();
@@ -556,7 +555,6 @@ public class Node {
 
     /**
      * Resets the internal cluster-state of the Node to be able to make it ready to join a new cluster.
-     * Assigns a new UUID to local member.
      * After this method is called,
      * a new join process can be triggered by calling {@link #join()}.
      * <p/>
@@ -566,7 +564,6 @@ public class Node {
         state = NodeState.ACTIVE;
         clusterService.resetJoinState();
         joiner.reset();
-        setNewLocalMember();
     }
 
     public ILogger getLogger(String name) {
@@ -641,6 +638,7 @@ public class Node {
     }
 
     public SplitBrainJoinMessage createSplitBrainJoinMessage() {
+        MemberImpl localMember = getLocalMember();
         boolean liteMember = localMember.isLiteMember();
         Collection<Address> memberAddresses = clusterService.getMemberAddresses();
         int dataMemberCount = clusterService.getSize(DATA_MEMBER_SELECTOR);
@@ -655,6 +653,7 @@ public class Node {
                 ? securityContext.getCredentialsFactory().newCredentials() : null;
         final Set<String> excludedMemberUuids = nodeExtension.getInternalHotRestartService().getExcludedMemberUuids();
 
+        MemberImpl localMember = getLocalMember();
         return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), version, address,
                 localMember.getUuid(), localMember.isLiteMember(), createConfigCheck(), credentials,
                 localMember.getAttributes(), excludedMemberUuids);
@@ -730,22 +729,7 @@ public class Node {
     }
 
     public String getThisUuid() {
-        return localMember.getUuid();
-    }
-
-    private void setNewLocalMember() {
-        if (clusterService.isJoined()) {
-            logger.severe("Cannot set new local member when joined.");
-            return;
-        }
-
-        String newUuid = UuidUtil.createMemberUuid(address);
-        logger.warning("Setting new local member. old uuid: " + localMember.getUuid() + " new uuid: " + newUuid);
-        boolean liteMember = localMember.isLiteMember();
-        Map<String, Object> memberAttributes = localMember.getAttributes();
-        localMember = new MemberImpl(address, version, true, newUuid, memberAttributes, liteMember, hazelcastInstance);
-
-        assert !clusterService.isJoined() : "Node should not join concurrently while setting member uuid!";
+        return clusterService.getThisUuid();
     }
 
     public Config getConfig() {
@@ -771,7 +755,7 @@ public class Node {
     }
 
     public boolean isLiteMember() {
-        return localMember.isLiteMember();
+        return getLocalMember().isLiteMember();
     }
 
     @Override
