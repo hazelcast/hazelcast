@@ -176,12 +176,19 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     private void ensureConnectionToAllMembers() {
-        boolean allConnected;
+        boolean allConnected = false;
         if (clusterService.isJoined()) {
             logger.fine("Waiting for all connections");
             int connectAllWaitSeconds = node.getProperties().getSeconds(GroupProperty.CONNECT_ALL_WAIT_SECONDS);
             int checkCount = 0;
-            do {
+            while (checkCount++ < connectAllWaitSeconds && !allConnected) {
+                try {
+                    //noinspection BusyWait
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException ignored) {
+                    EmptyStatement.ignore(ignored);
+                }
+
                 allConnected = true;
                 Collection<Member> members = clusterService.getMembers();
                 for (Member member : members) {
@@ -192,15 +199,7 @@ public abstract class AbstractJoiner implements Joiner {
                         }
                     }
                 }
-                if (!allConnected) {
-                    try {
-                        //noinspection BusyWait
-                        TimeUnit.SECONDS.sleep(1);
-                    } catch (InterruptedException ignored) {
-                        EmptyStatement.ignore(ignored);
-                    }
-                }
-            } while (checkCount++ < connectAllWaitSeconds && !allConnected);
+            }
         }
     }
 
@@ -356,7 +355,7 @@ public abstract class AbstractJoiner implements Joiner {
      * This is a pure function that must produce always the same output when called with the same parameters.
      * This logic should not be changed, otherwise compatibility will be broken.
      *
-     * @param thisAddress   this address
+     * @param thisAddress this address
      * @param targetAddress target address
      * @return true if this address should merge to target, false otherwise
      */
@@ -399,7 +398,7 @@ public abstract class AbstractJoiner implements Joiner {
         NodeEngine nodeEngine = node.nodeEngine;
         Future future = nodeEngine.getOperationService().createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
                 new SplitBrainMergeValidationOp(node.createSplitBrainJoinMessage()), target)
-                                  .setTryCount(1).invoke();
+                .setTryCount(1).invoke();
         try {
             return (SplitBrainJoinMessage) future.get(SPLIT_BRAIN_JOIN_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
