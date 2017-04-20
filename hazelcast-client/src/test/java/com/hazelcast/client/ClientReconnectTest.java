@@ -79,7 +79,9 @@ public class ClientReconnectTest extends HazelcastTestSupport {
     public void testReconnectToNewInstanceAtSameAddress() throws InterruptedException {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         Address localAddress = instance.getCluster().getLocalMember().getAddress();
-        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         final CountDownLatch memberRemovedLatch = new CountDownLatch(1);
         client.getCluster().addMembershipListener(new MembershipAdapter() {
