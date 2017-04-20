@@ -468,7 +468,7 @@ public class ClusterHeartbeatManager {
                             + " Now: %s, last heartbeat time was %s", member, maxNoHeartbeatMillis,
                     timeToString(now), timeToString(heartbeatTime));
             logger.warning(reason);
-            clusterService.suspectMember(member.getAddress(), reason, true);
+            clusterService.suspectMember(member, reason, true);
             return true;
         }
         if (logger.isFineEnabled() && (now - heartbeatTime) > heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR) {
@@ -500,7 +500,7 @@ public class ClusterHeartbeatManager {
                     timeToString(now),
                     timeToString(lastConfirmation));
             logger.warning(reason);
-            clusterService.suspectMember(member.getAddress(), reason, true);
+            clusterService.suspectMember(member, reason, true);
             return true;
         }
         return false;
@@ -557,17 +557,17 @@ public class ClusterHeartbeatManager {
     }
 
     /**
-     * Tries to ping the {@code memberImpl} and removes the member if it is unreachable. The actual method of determining
+     * Tries to ping the {@code member} and removes the member if it is unreachable. The actual method of determining
      * reachability is defined by the privileges and does not need to be an ICMP packet
      * (see {@link java.net.InetAddress#isReachable(NetworkInterface, int, int)}).
      *
-     * @param memberImpl the member for which we need to determine reachability
+     * @param member the member for which we need to determine reachability
      */
-    private void ping(final MemberImpl memberImpl) {
+    private void ping(final Member member) {
         nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
             public void run() {
                 try {
-                    Address address = memberImpl.getAddress();
+                    Address address = member.getAddress();
                     logger.warning(format("%s will ping %s", node.getThisAddress(), address));
                     for (int i = 0; i < MAX_PING_RETRY_COUNT; i++) {
                         try {
@@ -583,7 +583,7 @@ public class ClusterHeartbeatManager {
                     // host not reachable
                     String reason = format("%s could not ping %s", node.getThisAddress(), address);
                     logger.warning(reason);
-                    clusterService.suspectMember(address, reason, true);
+                    clusterService.suspectMember(member, reason, true);
                 } catch (Throwable ignored) {
                     EmptyStatement.ignore(ignored);
                 }

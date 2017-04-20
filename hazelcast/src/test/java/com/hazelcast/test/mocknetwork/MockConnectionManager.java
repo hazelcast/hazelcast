@@ -91,7 +91,7 @@ public class MockConnectionManager implements ConnectionManager {
         node.getNodeEngine().getExecutionService().execute(ExecutionService.IO_EXECUTOR, new Runnable() {
             @Override
             public void run() {
-                node.getClusterService().suspectMember(address, address + " is already left", false);
+                node.getClusterService().suspectAddressIfNotConnected(address);
             }
         });
     }
@@ -148,8 +148,7 @@ public class MockConnectionManager implements ConnectionManager {
                 logger.fine(otherNode.getThisAddress() + " is instructed to suspect from " + thisAddress);
                 try {
                     ClusterServiceImpl clusterService = otherNode.getClusterService();
-                    clusterService.suspectMember(localMember.getAddress(), localMember.getUuid(),
-                            "Connection manager is stopped on " + localMember, true);
+                    clusterService.suspectMember(localMember, "Connection manager is stopped on " + localMember, true);
                 } catch (Throwable e) {
                     ILogger otherLogger = otherNode.getLogger(MockConnectionManager.class);
                     otherLogger.warning("While removing " + thisAddress, e);
