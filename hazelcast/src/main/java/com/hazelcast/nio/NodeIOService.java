@@ -144,9 +144,7 @@ public class NodeIOService implements IOService {
         nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, new Runnable() {
             @Override
             public void run() {
-                // we can safely pass null because removeEndpoint is triggered from the connectionManager after
-                // the connection is closed. So a reason is already set.
-                node.clusterService.suspectMember(endPoint, null, true);
+                node.clusterService.suspectAddressIfNotConnected(endPoint);
             }
         });
     }

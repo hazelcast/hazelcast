@@ -183,15 +183,31 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         membershipManager.handleExplicitSuspicionTrigger(caller, callerMemberListVersion, suspectedMembersViewMetadata);
     }
 
-    public void suspectMember(Address suspectedAddress, String reason, boolean destroyConnection) {
-        suspectMember(suspectedAddress, null, reason, destroyConnection);
+    public void suspectMember(Member suspectedMember, String reason, boolean destroyConnection) {
+        if (getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
+            membershipManager.suspectMember((MemberImpl) suspectedMember, reason, destroyConnection);
+        } else {
+            membershipManagerCompat.removeMember(suspectedMember.getAddress(), suspectedMember.getUuid(), reason);
+        }
     }
 
-    public void suspectMember(Address suspectedAddress, String suspectedUuid, String reason, boolean destroyConnection) {
-        if (getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
-            membershipManager.suspectMember(suspectedAddress, suspectedUuid, reason, destroyConnection);
-        } else {
-            membershipManagerCompat.removeMember(suspectedAddress, suspectedUuid, reason);
+    public void suspectAddressIfNotConnected(Address address) {
+        lock.lock();
+        try {
+            MemberImpl member = getMember(address);
+            if (member == null) {
+                logger.fine("Cannot suspect " + address + ", since it's not a member.");
+                return;
+            }
+
+            Connection conn = node.getConnectionManager().getConnection(address);
+            if (conn != null && conn.isAlive()) {
+                logger.fine("Cannot suspect " + member + ", since there's a live connection -> " + conn);
+                return;
+            }
+            suspectMember(member, "No connection", false);
+        } finally {
+            lock.unlock();
         }
     }
 

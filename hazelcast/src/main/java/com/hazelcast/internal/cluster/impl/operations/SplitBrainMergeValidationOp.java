@@ -17,13 +17,13 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -38,7 +38,7 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
     private SplitBrainJoinMessage request;
     private SplitBrainJoinMessage response;
 
-    private transient boolean removeCaller;
+    private transient Member suspectedCaller;
 
     public SplitBrainMergeValidationOp() {
     }
@@ -57,7 +57,7 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
             return;
         }
 
-        if (!masterCheck(node)) {
+        if (!masterCheck()) {
             return;
         }
 
@@ -97,22 +97,22 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
         }
     }
 
-    private boolean masterCheck(Node node) {
+    private boolean masterCheck() {
         ILogger logger = getLogger();
-        Address caller = getCallerAddress();
         ClusterServiceImpl service = getService();
 
         if (service.isMaster()) {
-            if (service.getMember(caller) != null) {
-                logger.info("Removing " + caller + ", since it thinks it's already split from this cluster "
+            Member existingMember = service.getMembershipManager().getMember(request.getAddress(), request.getUuid());
+            if (existingMember != null) {
+                logger.info("Removing " + suspectedCaller + ", since it thinks it's already split from this cluster "
                         + "and looking to merge.");
-                removeCaller = true;
+                suspectedCaller = existingMember;
             }
             return true;
         } else {
             // ping master to check if it's still valid
             service.getClusterHeartbeatManager().sendMasterConfirmation();
-            logger.info("Ignoring join check from " + caller
+            logger.info("Ignoring join check from " + getCallerAddress()
                     + ", because this node is not master...");
             return false;
         }
@@ -120,13 +120,12 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
 
     @Override
     public void afterRun() throws Exception {
-        if (removeCaller) {
+        if (suspectedCaller != null) {
             ClusterServiceImpl service = getService();
-            Address caller = getCallerAddress();
             // I am the master. I can remove the member directly
-            String reason = "Removing " + caller + ", since it thinks it's already split from this cluster "
+            String reason = "Removing " + suspectedCaller + ", since it thinks it's already split from this cluster "
                     + "and looking to merge.";
-            service.suspectMember(caller, reason, true);
+            service.suspectMember(suspectedCaller, reason, true);
         }
     }
 

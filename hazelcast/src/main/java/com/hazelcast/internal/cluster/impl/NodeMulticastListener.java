@@ -17,13 +17,11 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.Joiner;
-import com.hazelcast.core.Member;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
-
-import static java.lang.String.format;
 
 public class NodeMulticastListener implements MulticastListener {
 
@@ -70,11 +68,14 @@ public class NodeMulticastListener implements MulticastListener {
             JoinMessage response = new JoinMessage(Packet.VERSION, node.getBuildInfo().getBuildNumber(), node.getVersion(),
                     node.getThisAddress(), node.getThisUuid(), node.isLiteMember(), node.createConfigCheck());
             node.multicastService.send(response);
-        } else if (joinMessage.getAddress().equals(masterAddress) && !checkMasterUuid(masterAddress, joinMessage.getUuid())) {
-            String message = "New join request has been received from current master. Suspecting " + masterAddress;
-            logger.warning(message);
-            // I just make a local suspicion. Probably other nodes will eventually suspect as well.
-            clusterService.suspectMember(masterAddress, message, false);
+        } else if (joinMessage.getAddress().equals(masterAddress)) {
+            MemberImpl master = node.getClusterService().getMember(masterAddress);
+            if (master != null && !master.getUuid().equals(joinMessage.getUuid())) {
+                String message = "New join request has been received from current master. Suspecting " + masterAddress;
+                logger.warning(message);
+                // I just make a local suspicion. Probably other nodes will eventually suspect as well.
+                clusterService.suspectMember(master, message, false);
+            }
         }
     }
 
@@ -107,13 +108,6 @@ public class NodeMulticastListener implements MulticastListener {
         return joinMessage instanceof JoinRequest;
     }
 
-    private void logJoinMessageDropped(String masterHost) {
-        if (logger.isFineEnabled()) {
-            logger.fine(format(
-                    "JoinMessage from %s is dropped because its sender is not a trusted interface", masterHost));
-        }
-    }
-
     private boolean isJoinMessage(Object msg) {
         return msg != null && msg instanceof JoinMessage && !(msg instanceof SplitBrainJoinMessage);
     }
@@ -139,10 +133,5 @@ public class NodeMulticastListener implements MulticastListener {
     private boolean isMessageToSelf(JoinMessage joinMessage) {
         Address thisAddress = node.getThisAddress();
         return thisAddress == null || thisAddress.equals(joinMessage.getAddress());
-    }
-
-    private boolean checkMasterUuid(Address masterAddress, String uuid) {
-        Member masterMember = node.getClusterService().getMember(masterAddress);
-        return masterMember == null || masterMember.getUuid().equals(uuid);
     }
 }

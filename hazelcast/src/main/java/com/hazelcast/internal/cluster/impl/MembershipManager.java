@@ -388,7 +388,13 @@ public class MembershipManager {
                 return;
             }
 
-            suspectMember(suspectedAddress, null, "explicit suspicion", true);
+            MemberImpl suspectedMember = getMember(suspectedAddress);
+            if (suspectedMember == null) {
+                logger.fine("No need for explicit suspicion, " + suspectedAddress + " is not a member.");
+                return;
+            }
+
+            suspectMember(suspectedMember, "explicit suspicion", true);
         } finally {
             clusterServiceLock.unlock();
         }
@@ -404,8 +410,8 @@ public class MembershipManager {
         return sender != null && node.getThisAddress().equals(membersViewMetadata.getMasterAddress());
     }
 
-    void suspectMember(Address suspectedAddress, String suspectedUuid, String reason, boolean shouldCloseConn) {
-        assert !suspectedAddress.equals(node.getThisAddress()) : "Cannot suspect from myself!";
+    void suspectMember(MemberImpl suspectedMember, String reason, boolean shouldCloseConn) {
+        assert !suspectedMember.equals(clusterService.getLocalMember()) : "Cannot suspect from myself!";
 
         final MembersView localMemberView;
         final Set<Member> membersToAsk;
@@ -414,11 +420,11 @@ public class MembershipManager {
         try {
             ClusterJoinManager clusterJoinManager = clusterService.getClusterJoinManager();
             if (clusterService.isMaster() && !clusterJoinManager.isMastershipClaimInProgress()) {
-                removeMember(suspectedAddress, reason, shouldCloseConn);
+                removeMember(suspectedMember, reason, shouldCloseConn);
                 return;
             }
 
-            if (!addSuspectedMember(suspectedAddress, suspectedUuid, reason, shouldCloseConn)) {
+            if (!addSuspectedMember(suspectedMember, reason, shouldCloseConn)) {
                 return;
             }
 
@@ -466,70 +472,52 @@ public class MembershipManager {
         return true;
     }
 
-    private boolean addSuspectedMember(Address suspectedAddress, String suspectedUuid, String reason,
+    private boolean addSuspectedMember(MemberImpl suspectedMember, String reason,
             boolean shouldCloseConn) {
 
-        MemberImpl suspectedMember = getSuspectedMember(suspectedAddress, suspectedUuid);
-        if (suspectedMember == null) {
-            logger.fine("Ignoring suspect request for " + suspectedAddress + " since it's not member.");
+        if (getMember(suspectedMember.getAddress(), suspectedMember.getUuid()) == null) {
+            logger.fine("Cannot suspect " + suspectedMember + ", since it's not a member.");
             return false;
         }
 
-        if (suspectedMembers.add(suspectedAddress)) {
+        if (suspectedMembers.add(suspectedMember.getAddress())) {
             if (reason != null) {
-                logger.warning(suspectedAddress + " is suspected to be dead for reason: " + reason);
+                logger.warning(suspectedMember + " is suspected to be dead for reason: " + reason);
             } else {
-                logger.warning(suspectedAddress + " is suspected to be dead");
+                logger.warning(suspectedMember + " is suspected to be dead");
             }
         }
 
         if (shouldCloseConn) {
-            closeConnection(suspectedAddress, reason);
+            closeConnection(suspectedMember.getAddress(), reason);
         }
         return true;
     }
 
-    private MemberImpl getSuspectedMember(Address suspectedAddress, String suspectedUuid) {
-        MemberImpl suspectedMember = getMember(suspectedAddress);
-        if (suspectedUuid != null && (suspectedMember == null || !suspectedUuid.equals(suspectedMember.getUuid()))) {
-            if (logger.isFineEnabled()) {
-                logger.fine("Cannot suspect " + suspectedAddress + ", either member is not present "
-                        + "or uuid is not matching. Uuid: " + suspectedUuid + ", member: " + suspectedMember);
-            }
-            return null;
-        }
-        return suspectedMember;
-    }
-
-    private void removeMember(Address address, String reason, boolean shouldCloseConn) {
+    private void removeMember(MemberImpl member, String reason, boolean shouldCloseConn) {
         clusterServiceLock.lock();
         try {
             assert clusterService.isMaster() : "Master: " + clusterService.getMasterAddress();
             assert clusterService.getClusterVersion().isGreaterOrEqual(Versions.V3_9);
-            assert !address.equals(node.getThisAddress()) : "Cannot remove myself!";
 
             if (!clusterService.isJoined()) {
-                logger.warning("Not removing member: " + address + " for reason: " + reason + " because not joined!");
+                logger.warning("Not removing " + member + " for reason: " + reason + ", because not joined!");
                 return;
             }
 
-            clusterService.getClusterJoinManager().removeJoin(address);
-
             if (shouldCloseConn) {
-                closeConnection(address, reason);
+                closeConnection(member.getAddress(), reason);
             }
 
             MemberMap currentMembers = memberMapRef.get();
-            MemberImpl member = currentMembers.getMember(address);
-
-            if (member == null) {
-                logger.fine("No member to remove with address: " + address);
+            if (currentMembers.getMember(member.getAddress(), member.getUuid()) == null) {
+                logger.fine("No need to remove " + member + ", not a member.");
                 return;
             }
 
             logger.info("Removing " + member);
-            ClusterHeartbeatManager clusterHeartbeatManager = clusterService.getClusterHeartbeatManager();
-            clusterHeartbeatManager.removeMember(member);
+            clusterService.getClusterJoinManager().removeJoin(member.getAddress());
+            clusterService.getClusterHeartbeatManager().removeMember(member);
 
             MemberMap newMembers = MemberMap.cloneExcluding(currentMembers, member);
             setMembers(newMembers);
