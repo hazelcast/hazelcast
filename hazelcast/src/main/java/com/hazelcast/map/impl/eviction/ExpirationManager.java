@@ -84,8 +84,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public final class ExpirationManager {
 
     // These are `default` for testing purposes.
-    static final String SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS = "hazelcast.internal.map.expiration.task.period.seconds";
-    static final String SYS_PROP_EXPIRATION_CLEANUP_PERCENTAGE = "hazelcast.internal.map.expiration.cleanup.percentage";
+    public static final String SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS = "hazelcast.internal.map.expiration.task.period.seconds";
+    public static final String SYS_PROP_EXPIRATION_CLEANUP_PERCENTAGE = "hazelcast.internal.map.expiration.cleanup.percentage";
     @SuppressWarnings("checkstyle:linelength")
     static final String SYS_PROP_EXPIRATION_CLEANUP_OPERATION_COUNT = "hazelcast.internal.map.expiration.cleanup.operation.count";
 

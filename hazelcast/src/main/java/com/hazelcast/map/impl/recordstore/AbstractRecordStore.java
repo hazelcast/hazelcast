@@ -63,6 +63,9 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final MapStoreContext mapStoreContext;
     protected final InMemoryFormat inMemoryFormat;
     protected final int partitionId;
+    // true when the map config indicates a max idle value > 0, so for expiration to work on backups, keys touched
+    // on any member need to update all replicas with the latest accessed time
+    protected final boolean skipTouchKeysOnBackups;
 
     protected Storage<Data, Record> storage;
 
@@ -83,6 +86,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         MapStoreManager mapStoreManager = mapStoreContext.getMapStoreManager();
         this.mapDataStore = mapStoreManager.getMapDataStore(name, partitionId);
         this.lockStore = createLockStore();
+        this.skipTouchKeysOnBackups = mapContainer.getMapConfig().getMaxIdleSeconds() <= 0;
     }
 
     @Override

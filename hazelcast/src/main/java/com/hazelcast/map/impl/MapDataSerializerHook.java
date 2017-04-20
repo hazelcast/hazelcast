@@ -103,6 +103,7 @@ import com.hazelcast.map.impl.operation.ReplaceIfSameOperation;
 import com.hazelcast.map.impl.operation.ReplaceOperation;
 import com.hazelcast.map.impl.operation.SetOperation;
 import com.hazelcast.map.impl.operation.SizeOperationFactory;
+import com.hazelcast.map.impl.operation.TouchKeysOnBackups;
 import com.hazelcast.map.impl.operation.TriggerLoadIfNeededOperation;
 import com.hazelcast.map.impl.operation.TryPutOperation;
 import com.hazelcast.map.impl.operation.TryRemoveOperation;
@@ -285,8 +286,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int REMOVE_FROM_LOAD_ALL = 134;
     public static final int ENTRY_REMOVING_PROCESSOR = 135;
     public static final int ENTRY_OFFLOADABLE_SET_UNLOCK = 136;
+    public static final int TOUCH_KEYS_ON_BACKUPS = 137;
 
-    private static final int LEN = ENTRY_OFFLOADABLE_SET_UNLOCK + 1;
+    private static final int LEN = TOUCH_KEYS_ON_BACKUPS + 1;
 
     @Override
     public int getFactoryId() {
@@ -960,6 +962,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[ENTRY_OFFLOADABLE_SET_UNLOCK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new EntryOffloadableSetUnlockOperation();
+            }
+        };
+        constructors[TOUCH_KEYS_ON_BACKUPS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new TouchKeysOnBackups();
             }
         };
 
