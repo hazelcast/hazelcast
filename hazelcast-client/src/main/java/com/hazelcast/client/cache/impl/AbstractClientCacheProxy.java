@@ -80,10 +80,10 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         super(cacheConfig, context);
     }
 
-    protected V getSyncInternal(Data keyData, ExpiryPolicy expiryPolicy) {
+    protected V getSyncInternal(Object key, ExpiryPolicy expiryPolicy) {
         long startNanos = nowInNanosOrDefault();
         try {
-            ClientDelegatingFuture<V> future = getInternal(keyData, expiryPolicy, false);
+            ClientDelegatingFuture<V> future = getInternal(key, expiryPolicy, false);
             V value = future.get();
             if (statisticsEnabled) {
                 statsHandler.onGet(startNanos, value != null);
@@ -92,17 +92,6 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         } catch (Throwable e) {
             throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
-    }
-
-    private ClientDelegatingFuture<V> getInternal(Data keyData, ExpiryPolicy expiryPolicy, boolean deserializeResponse) {
-        Data expiryPolicyData = toData(expiryPolicy);
-
-        ClientMessage request = CacheGetCodec.encodeRequest(nameWithPrefix, keyData, expiryPolicyData);
-        int partitionId = getContext().getPartitionService().getPartitionId(keyData);
-
-        ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, partitionId);
-        ClientInvocationFuture future = clientInvocation.invoke();
-        return newDelegatingFuture(future, CACHE_GET_RESPONSE_DECODER, deserializeResponse);
     }
 
     @Override
@@ -116,16 +105,28 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         ensureOpen();
         validateNotNull(key);
 
-        Data dataKey = toData(key);
         ExecutionCallback<V> callback = !statisticsEnabled ? null : statsHandler.<V>newOnGetCallback(startNanos);
-        return getAsyncInternal(dataKey, expiryPolicy, callback);
+        return getAsyncInternal(key, expiryPolicy, callback);
     }
 
-    protected InternalCompletableFuture<V> getAsyncInternal(Data dataKey, ExpiryPolicy expiryPolicy,
+    protected InternalCompletableFuture<V> getAsyncInternal(Object key, ExpiryPolicy expiryPolicy,
                                                             ExecutionCallback<V> callback) {
+        Data dataKey = toData(key);
         ClientDelegatingFuture<V> future = getInternal(dataKey, expiryPolicy, true);
         addCallback(future, callback);
         return future;
+    }
+
+    private ClientDelegatingFuture<V> getInternal(Object key, ExpiryPolicy expiryPolicy, boolean deserializeResponse) {
+        Data keyData = toData(key);
+        Data expiryPolicyData = toData(expiryPolicy);
+
+        ClientMessage request = CacheGetCodec.encodeRequest(nameWithPrefix, keyData, expiryPolicyData);
+        int partitionId = getContext().getPartitionService().getPartitionId(keyData);
+
+        ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, partitionId);
+        ClientInvocationFuture future = clientInvocation.invoke();
+        return newDelegatingFuture(future, CACHE_GET_RESPONSE_DECODER, deserializeResponse);
     }
 
     @Override
@@ -207,7 +208,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
     public V get(K key, ExpiryPolicy expiryPolicy) {
         ensureOpen();
         validateNotNull(key);
-        return toObject(getSyncInternal(toData(key), expiryPolicy));
+        return toObject(getSyncInternal(key, expiryPolicy));
     }
 
     @Override
@@ -220,34 +221,35 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         }
 
         List<Data> dataKeys = new ArrayList<Data>(keys.size());
-        objectToDataCollection(keys, dataKeys, getSerializationService(), NULL_KEY_IS_NOT_ALLOWED);
         Map<K, V> resultMap = createHashMap(keys.size());
-        return getAllInternal(dataKeys, expiryPolicy, resultMap, startNanos);
+        getAllInternal(keys, dataKeys, expiryPolicy, resultMap, startNanos);
+
+        return resultMap;
     }
 
-    protected Map<K, V> getAllInternal(Collection<Data> binaryKeys, ExpiryPolicy expiryPolicy, Map<K, V> resultMap,
-                                       long startNanos) {
+    protected List<Map.Entry<Data, Data>> getAllInternal(Set<? extends K> keys, Collection<Data> dataKeys,
+                                                         ExpiryPolicy expiryPolicy, Map<K, V> resultMap, long startNanos) {
+        if (dataKeys.isEmpty()) {
+            objectToDataCollection(keys, dataKeys, getSerializationService(), NULL_KEY_IS_NOT_ALLOWED);
+        }
         Data expiryPolicyData = toData(expiryPolicy);
 
-        ClientMessage request = CacheGetAllCodec.encodeRequest(nameWithPrefix, binaryKeys, expiryPolicyData);
+        ClientMessage request = CacheGetAllCodec.encodeRequest(nameWithPrefix, dataKeys, expiryPolicyData);
         ClientMessage responseMessage = invoke(request);
 
-        List<Map.Entry<Data, Data>> entries = CacheGetAllCodec.decodeResponse(responseMessage).response;
-        for (Map.Entry<Data, Data> dataEntry : entries) {
-            Data keyData = dataEntry.getKey();
-            Data valueData = dataEntry.getValue();
-
-            K key = toObject(keyData);
-            V value = toObject(valueData);
+        List<Map.Entry<Data, Data>> response = CacheGetAllCodec.decodeResponse(responseMessage).response;
+        for (Map.Entry<Data, Data> dataEntry : response) {
+            K key = toObject(dataEntry.getKey());
+            V value = toObject(dataEntry.getValue());
 
             resultMap.put(key, value);
         }
 
         if (statisticsEnabled) {
-            statsHandler.onBatchGet(startNanos, entries.size());
+            statsHandler.onBatchGet(startNanos, response.size());
         }
 
-        return resultMap;
+        return response;
     }
 
     @Override
