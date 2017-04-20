@@ -33,7 +33,6 @@ import java.io.IOException;
 public class RemoveOperation extends AbstractReplicatedMapOperation implements PartitionAwareOperation {
 
     private transient ReplicatedMapService service;
-    private transient ReplicatedRecordStore store;
     private transient Data oldValue;
 
     public RemoveOperation() {
@@ -47,7 +46,7 @@ public class RemoveOperation extends AbstractReplicatedMapOperation implements P
     @Override
     public void run() throws Exception {
         service = getService();
-        store = service.getReplicatedRecordStore(name, true, getPartitionId());
+        ReplicatedRecordStore store = service.getReplicatedRecordStore(name, true, getPartitionId());
         Object removed = store.remove(key);
         this.oldValue = getNodeEngine().toData(removed);
         response = new VersionResponsePair(removed, store.getVersion());

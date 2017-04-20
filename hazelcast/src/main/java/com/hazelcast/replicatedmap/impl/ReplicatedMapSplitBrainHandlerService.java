@@ -94,7 +94,7 @@ public class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerS
 
         Map<String, Collection<ReplicatedRecord>> recordMap;
 
-        public Merger(Map<String, Collection<ReplicatedRecord>> recordMap) {
+        Merger(Map<String, Collection<ReplicatedRecord>> recordMap) {
             this.recordMap = recordMap;
         }
 
@@ -104,7 +104,7 @@ public class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerS
             int recordCount = 0;
             final ILogger logger = nodeEngine.getLogger(ReplicatedMapService.class);
 
-            ExecutionCallback mergeCallback = new ExecutionCallback() {
+            ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
                 @Override
                 public void onResponse(Object response) {
                     semaphore.release(1);
@@ -129,9 +129,9 @@ public class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerS
                     MergeOperation mergeOperation = new MergeOperation(name, record.getKeyInternal(), entryView, policy);
                     try {
                         int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKeyInternal());
-                        ICompletableFuture f = nodeEngine.getOperationService()
+                        ICompletableFuture<Object> future = nodeEngine.getOperationService()
                                 .invokeOnPartition(SERVICE_NAME, mergeOperation, partitionId);
-                        f.andThen(mergeCallback);
+                        future.andThen(mergeCallback);
                     } catch (Throwable t) {
                         throw ExceptionUtil.rethrow(t);
                     }
@@ -148,7 +148,7 @@ public class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerS
         private ReplicatedMapEntryView createEntryView(ReplicatedRecord record) {
             Object key = serializationService.toObject(record.getKeyInternal());
             Object value = serializationService.toObject(record.getValueInternal());
-            ReplicatedMapEntryView entryView = new ReplicatedMapEntryView(key, value);
+            ReplicatedMapEntryView entryView = new ReplicatedMapEntryView<Object, Object>(key, value);
             entryView.setHits(record.getHits());
             entryView.setTtl(record.getTtlMillis());
             entryView.setLastAccessTime(record.getLastAccessTime());

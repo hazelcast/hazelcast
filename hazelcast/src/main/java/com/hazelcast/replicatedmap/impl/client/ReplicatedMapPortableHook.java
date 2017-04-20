@@ -31,7 +31,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.REPLICAT
 /**
  * This class registers all Portable serializers that are needed for communication between nodes and clients
  */
-//CHECKSTYLE:OFF
+@SuppressWarnings("checkstyle:anoninnerlength")
 public class ReplicatedMapPortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(REPLICATED_PORTABLE_FACTORY, REPLICATED_PORTABLE_FACTORY_ID);
@@ -41,7 +41,7 @@ public class ReplicatedMapPortableHook implements PortableHook {
     public static final int VALUES_COLLECTION = 14;
     public static final int MAP_ENTRY_EVENT = 18;
 
-    private static final int LENGTH = 21;
+    private static final int LENGTH = MAP_ENTRY_EVENT + 1;
 
     @Override
     public int getFactoryId() {
@@ -51,7 +51,9 @@ public class ReplicatedMapPortableHook implements PortableHook {
     @Override
     public PortableFactory createFactory() {
         return new PortableFactory() {
-            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[LENGTH];
+
+            @SuppressWarnings("unchecked")
+            private final ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[LENGTH];
 
             {
                 constructors[MAP_ENTRIES] = new ConstructorFunction<Integer, Portable>() {
@@ -91,4 +93,3 @@ public class ReplicatedMapPortableHook implements PortableHook {
         return null;
     }
 }
-//CHECKSTYLE:ON
