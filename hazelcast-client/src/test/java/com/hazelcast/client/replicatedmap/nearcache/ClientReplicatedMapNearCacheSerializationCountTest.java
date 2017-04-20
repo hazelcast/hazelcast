@@ -75,18 +75,25 @@ public class ClientReplicatedMapNearCacheSerializationCountTest extends Abstract
     @Parameter(value = 5)
     public InMemoryFormat nearCacheInMemoryFormat;
 
+    @Parameter(value = 6)
+    public Boolean serializeKeys;
+
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @Parameters(name = "replicatedMapFormat:{4} nearCacheFormat:{5}")
+    @Parameters(name = "replicatedMapFormat:{4} nearCacheFormat:{5} serializeKeys:{6}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, null},
-                {newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 1, 0), newInt(0, 1, 1), BINARY, BINARY},
-                {newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), BINARY, OBJECT},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, null, null},
+                {newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 1, 0), newInt(0, 1, 1), BINARY, BINARY, true},
+                {newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 1, 0), newInt(0, 1, 1), BINARY, BINARY, false},
+                {newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), BINARY, OBJECT, true},
+                {newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), BINARY, OBJECT, false},
 
-                {newInt(1, 1, 1), newInt(1, 1, 1), newInt(1, 0, 0), newInt(1, 0, 0), OBJECT, null},
-                {newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 0, 0), newInt(1, 0, 0), OBJECT, BINARY},
-                {newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 0, 0), newInt(1, 0, 0), OBJECT, OBJECT},
+                {newInt(1, 1, 1), newInt(1, 1, 1), newInt(1, 0, 0), newInt(1, 0, 0), OBJECT, null, null},
+                {newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 0, 0), newInt(1, 0, 0), OBJECT, BINARY, true},
+                {newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 0, 0), newInt(1, 0, 0), OBJECT, BINARY, false},
+                {newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 0, 0), newInt(1, 0, 0), OBJECT, OBJECT, true},
+                {newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 0, 0), newInt(1, 0, 0), OBJECT, OBJECT, false},
         });
     }
 
@@ -97,7 +104,7 @@ public class ClientReplicatedMapNearCacheSerializationCountTest extends Abstract
         expectedValueSerializationCounts = valueSerializationCounts;
         expectedValueDeserializationCounts = valueDeserializationCounts;
         if (nearCacheInMemoryFormat != null) {
-            nearCacheConfig = createNearCacheConfig(nearCacheInMemoryFormat)
+            nearCacheConfig = createNearCacheConfig(nearCacheInMemoryFormat, serializeKeys)
                     // we have to disable invalidations, otherwise there will be an non-deterministic serialization in a listener
                     .setInvalidateOnChange(false);
         }
@@ -112,6 +119,7 @@ public class ClientReplicatedMapNearCacheSerializationCountTest extends Abstract
     protected void addConfiguration(NearCacheSerializationCountConfigBuilder configBuilder) {
         configBuilder.append(replicatedMapInMemoryFormat);
         configBuilder.append(nearCacheInMemoryFormat);
+        configBuilder.append(serializeKeys);
     }
 
     @Override

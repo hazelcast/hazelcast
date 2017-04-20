@@ -22,6 +22,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Map;
 import java.util.UUID;
@@ -71,6 +72,7 @@ public final class RepairingTask implements Runnable {
 
     private final MetaDataFetcher metaDataFetcher;
     private final TaskScheduler scheduler;
+    private final SerializationService serializationService;
     private final MinimalPartitionService partitionService;
     private final int partitionCount;
     private final AtomicReferenceArray<UUID> partitionUuids;
@@ -80,12 +82,14 @@ public final class RepairingTask implements Runnable {
     private volatile long lastAntiEntropyRunNanos;
 
     public RepairingTask(HazelcastProperties properties, MetaDataFetcher metaDataFetcher, TaskScheduler scheduler,
-                         MinimalPartitionService partitionService, String localUuid, ILogger logger) {
+                         SerializationService serializationService, MinimalPartitionService partitionService, String localUuid,
+                         ILogger logger) {
         this.reconciliationIntervalNanos = SECONDS.toNanos(checkAndGetReconciliationIntervalSeconds(properties));
         this.maxToleratedMissCount = checkMaxToleratedMissCount(properties);
 
         this.metaDataFetcher = metaDataFetcher;
         this.scheduler = scheduler;
+        this.serializationService = serializationService;
         this.partitionService = partitionService;
         this.partitionCount = partitionService.getPartitionCount();
         this.partitionUuids = new AtomicReferenceArray<UUID>(partitionCount);
@@ -169,7 +173,7 @@ public final class RepairingTask implements Runnable {
 
         RepairingHandler repairingHandler = handlers.get(name);
         if (repairingHandler == null) {
-            repairingHandler = new RepairingHandler(logger, localUuid, name, nearCache, partitionService);
+            repairingHandler = new RepairingHandler(logger, localUuid, name, nearCache, serializationService, partitionService);
             repairingHandler.initUnknownUuids(partitionUuids);
 
             StaleReadDetector staleReadDetector = new StaleReadDetectorImpl(repairingHandler, partitionService);

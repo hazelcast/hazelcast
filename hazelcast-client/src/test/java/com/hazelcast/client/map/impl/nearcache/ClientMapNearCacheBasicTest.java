@@ -76,7 +76,7 @@ public class ClientMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data
 
     @Before
     public void setUp() {
-        nearCacheConfig = createNearCacheConfig(inMemoryFormat);
+        nearCacheConfig = createNearCacheConfig(inMemoryFormat, true);
     }
 
     @After

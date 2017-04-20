@@ -217,6 +217,7 @@ public class TestClientApplicationContext {
         assertEquals(EvictionPolicy.LRU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
         assertEquals(4000, nearCacheConfig.getEvictionConfig().getSize());
         assertTrue(nearCacheConfig.isInvalidateOnChange());
+        assertFalse(nearCacheConfig.isSerializeKeys());
         assertEquals(CACHE_ON_UPDATE, nearCacheConfig.getLocalUpdatePolicy());
     }
 

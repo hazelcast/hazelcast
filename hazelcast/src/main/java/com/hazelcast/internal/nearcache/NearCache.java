@@ -114,6 +114,13 @@ public interface NearCache<K, V> extends InitializingObject {
     NearCacheStats getNearCacheStats();
 
     /**
+     * Checks if the Near Cache key is stored in serialized format or by-reference.
+     *
+     * @return {@code true} if the key is stored in serialized format, {@code false} if stored by-reference.
+     */
+    boolean isSerializeKeys();
+
+    /**
      * Selects the best candidate object to store from the given {@code candidates}.
      *
      * @param candidates the candidates from which the best candidate object will be selected.

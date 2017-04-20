@@ -79,7 +79,7 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
 
     @Before
     public void setUp() {
-        nearCacheConfig = createNearCacheConfig(inMemoryFormat)
+        nearCacheConfig = createNearCacheConfig(inMemoryFormat, true)
                 .setCacheLocalEntries(true)
                 // we have to configure invalidation, otherwise the Near Cache in the TransactionalMap will not be used
                 .setInvalidateOnChange(true);
