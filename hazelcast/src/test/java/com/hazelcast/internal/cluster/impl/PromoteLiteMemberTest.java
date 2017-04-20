@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
@@ -46,6 +47,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.EXPLICIT_SUSPICION;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.PROMOTE_LITE_MEMBER;
@@ -154,7 +156,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
 
         InternalCompletableFuture<MembersView> future =
                 getOperationService(hz2).invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, getAddress(hz1));
-        exception.expect(IllegalArgumentException.class);
+        exception.expect(IllegalStateException.class);
         future.join();
     }
 
@@ -202,6 +204,30 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         hz2.getCluster().promoteLocalLiteMember();
 
         assertPartitionsAssignedEventually(hz2);
+    }
+
+    @Test
+    public void promotion_shouldFail_whenClusterStatePassive() {
+        promotion_shouldFail_whenClusterState_NotAllowMigration(ClusterState.PASSIVE);
+    }
+
+    @Test
+    public void promotion_shouldFail_whenClusterStateFrozen() {
+        promotion_shouldFail_whenClusterState_NotAllowMigration(ClusterState.FROZEN);
+    }
+
+    private void promotion_shouldFail_whenClusterState_NotAllowMigration(ClusterState state) {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+
+        HazelcastInstance hz1 = factory.newHazelcastInstance(new Config());
+        HazelcastInstance hz2 = factory.newHazelcastInstance(new Config().setLiteMember(true));
+        HazelcastInstance hz3 = factory.newHazelcastInstance(new Config());
+
+        warmUpPartitions(hz1, hz2, hz3);
+        changeClusterStateEventually(hz2, state);
+
+        exception.expect(IllegalStateException.class);
+        hz2.getCluster().promoteLocalLiteMember();
     }
 
     @Test

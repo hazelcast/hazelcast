@@ -88,9 +88,10 @@ public interface Cluster {
      * When this method returns both {@link #getLocalMember()} and {@link #getMembers()}
      * reflects the promotion.
      *
-     * @throws IllegalStateException if member is not a lite member
-     * @throws IllegalStateException if mastership claim in progress
-     * @throws IllegalArgumentException if local member cannot be identified as a member of the cluster
+     * @throws IllegalStateException when member is not a lite member or mastership claim in progress
+     *                              or local member cannot be identified as a member of the cluster
+     *                              or cluster state doesn't allow migrations/repartitioning
+     *
      * @since 3.9
      */
     void promoteLocalLiteMember();
