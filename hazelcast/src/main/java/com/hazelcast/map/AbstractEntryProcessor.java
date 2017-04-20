@@ -16,6 +16,8 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.util.Map;
@@ -65,10 +67,26 @@ public abstract class AbstractEntryProcessor<K, V> implements EntryProcessor<K, 
         return entryBackupProcessor;
     }
 
-    private class EntryBackupProcessorImpl implements EntryBackupProcessor<K, V> {
+    private class EntryBackupProcessorImpl implements EntryBackupProcessor<K, V>, HazelcastInstanceAware {
+        // to fix https://github.com/hazelcast/hazelcast/issues/10083 we need to add the HazelcastInstanceAware
+        // interface on the EntryBackupProcessorImpl. Unfortunately this changes the generated serialVersionUID
+        // so sending this to a member which doesn't contain the fix would cause a deserialization exception.
+        // That is why we will set the serialVersionUID here to the same generated value for a
+        // EntryBackupProcessorImpl without the implemented interface. The value is calculated by a specification
+        // based on types and fields so it should be the same on all JVM implementations
+        static final long serialVersionUID = -5081502753526394129L;
+
         @Override
         public void processBackup(Map.Entry<K, V> entry) {
             process(entry);
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            final AbstractEntryProcessor<K, V> outer = AbstractEntryProcessor.this;
+            if (outer instanceof HazelcastInstanceAware) {
+                ((HazelcastInstanceAware) outer).setHazelcastInstance(hazelcastInstance);
+            }
         }
     }
 }
