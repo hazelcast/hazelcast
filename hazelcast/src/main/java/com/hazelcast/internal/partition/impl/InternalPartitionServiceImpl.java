@@ -349,9 +349,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         logger.fine("Adding " + member);
         lock.lock();
         try {
-//            if (!member.localMember()) {
-                partitionStateManager.updateMemberGroupsSize();
-//            }
+            partitionStateManager.updateMemberGroupsSize();
             lastMaster = node.getClusterService().getMasterAddress();
 
             if (node.isMaster()) {

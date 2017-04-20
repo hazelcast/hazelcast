@@ -854,17 +854,12 @@ public class MembershipManager {
     public MembersView promoteToNormalMember(Address address, String uuid) {
         clusterServiceLock.lock();
         try {
-            if (!clusterService.isMaster()) {
-                throw new IllegalStateException("This node is not master!");
-            }
-            if (clusterService.getClusterJoinManager().isMastershipClaimInProgress()) {
-                throw new IllegalStateException("Mastership claim is in progress!");
-            }
+            ensureLiteMemberPromotionIsAllowed();
 
             MemberMap memberMap = memberMapRef.get();
             MemberImpl member = memberMap.getMember(address, uuid);
             if (member == null) {
-                throw new IllegalArgumentException(uuid + "/" + address + " is not a member!");
+                throw new IllegalStateException(uuid + "/" + address + " is not a member!");
             }
 
             if (!member.isLiteMember()) {
@@ -891,6 +886,20 @@ public class MembershipManager {
             return newMemberMap.toMembersView();
         } finally {
             clusterServiceLock.unlock();
+        }
+    }
+
+    private void ensureLiteMemberPromotionIsAllowed() {
+        if (!clusterService.isMaster()) {
+            throw new IllegalStateException("This node is not master!");
+        }
+        if (clusterService.getClusterJoinManager().isMastershipClaimInProgress()) {
+            throw new IllegalStateException("Mastership claim is in progress!");
+        }
+        // when migrations are not allowed by cluster state
+        ClusterState state = clusterService.getClusterState();
+        if (state != ClusterState.ACTIVE) {
+            throw new IllegalStateException("Lite member promotion is not allowed when cluster state is " + state);
         }
     }
 
