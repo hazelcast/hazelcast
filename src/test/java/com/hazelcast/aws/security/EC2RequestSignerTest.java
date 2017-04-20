@@ -43,7 +43,7 @@ public class EC2RequestSignerTest {
     private final static String TEST_SECRET_KEY = "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY";
     private final static String TEST_REQUEST_DATE = "20141106T111126Z";
     private final static String TEST_DERIVED_EXPECTED = "7038265e40236063ebcd2e201908ad6e9f64e533439bfa7a5faa07ba419329bc";
-    private final static String TEST_SIGNATURE_EXPECTED = "c9347599958aab0ea079c296b8fe3355553bac767c5957dff7e7a1fce72ce132";
+    private final static String TEST_SIGNATURE_EXPECTED = "79f7a4d346ee69ca22ba5f9bc3dd1efc13ac7509936afc5ec21cac37de071eef";
 
     @Test(expected = IllegalArgumentException.class)
     public void whenConfigIsNull() {

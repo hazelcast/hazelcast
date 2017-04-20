@@ -40,9 +40,13 @@ import java.util.regex.Pattern;
 import static com.hazelcast.aws.impl.Constants.DOC_VERSION;
 import static com.hazelcast.aws.impl.Constants.SIGNATURE_METHOD_V4;
 import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 
+/**
+ * See http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
+ * for AWS API details.
+ */
 public class DescribeInstances {
-
     public static final String IAM_ROLE_ENDPOINT = "169.254.169.254";
     public static final String IAM_TASK_ROLE_ENDPOINT = "169.254.170.2";
 
@@ -69,6 +73,7 @@ public class DescribeInstances {
         attributes.put("X-Amz-Date", timeStamp);
         attributes.put("X-Amz-SignedHeaders", "host");
         attributes.put("X-Amz-Expires", "30");
+        addFilters();
     }
 
     DescribeInstances(AwsConfig awsConfig) {
@@ -226,6 +231,27 @@ public class DescribeInstances {
         SimpleDateFormat df = new SimpleDateFormat(Constants.DATE_FORMAT);
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         return df.format(new Date());
+    }
+
+    /**
+     * Add available filters to narrow down the scope of the query
+     */
+    private void addFilters() {
+        Filter filter = new Filter();
+        if (!isNullOrEmpty(awsConfig.getTagKey())) {
+            if (!isNullOrEmpty(awsConfig.getTagValue())) {
+                filter.addFilter("tag:" + awsConfig.getTagKey(), awsConfig.getTagValue());
+            } else {
+                filter.addFilter("tag-key", awsConfig.getTagKey());
+            }
+        }
+
+        if (!isNullOrEmpty(awsConfig.getSecurityGroupName())) {
+            filter.addFilter("instance.group-name", awsConfig.getSecurityGroupName());
+        }
+
+        filter.addFilter("instance-state-name", "running");
+        attributes.putAll(filter.getFilters());
     }
 
     /**
