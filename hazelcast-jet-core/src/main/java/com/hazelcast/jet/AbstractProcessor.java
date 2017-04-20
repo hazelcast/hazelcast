@@ -32,7 +32,8 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  *     logger retrieved from the context.
  * </li><li>
  *     {@link #process(int, Inbox) process(n, inbox)} delegates to the matching
- *     {@code tryProcessN} with each item received in the inbox.
+ *     {@code tryProcessN()} with each item received in the inbox. If the item
+ *     is a punctuation, routes it to {@code tryProcessPuncN()} instead.
  * </li><li>
  *     There is also the catch-all {@link #tryProcess(int, Object)} to which
  *     the {@code tryProcessN} methods delegate by default. It must be used
@@ -57,10 +58,11 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  */
 public abstract class AbstractProcessor implements Processor {
 
-    private Outbox outbox;
-    private Object pendingItem;
-    private ILogger logger;
     private boolean isCooperative = true;
+    private ILogger logger;
+    private Outbox outbox;
+
+    private Object pendingItem;
 
     /**
      * Specifies what this processor's {@link #isCooperative} method will return.
@@ -141,17 +143,17 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * Tries to process the supplied input item, which was received over
-     * the supplied ordinal. May choose to process only partially and return
-     * {@code false}, in which case it will be called again later with the
-     * same {@code (ordinal, item)} combination.
+     * Tries to process the supplied input item, which was received from the
+     * edge with the supplied ordinal. May choose to process only partially
+     * and return {@code false}, in which case it will be called again later
+     * with the same {@code (ordinal, item)} combination.
      * <p>
      * The default implementation throws an {@code UnsupportedOperationException}.
      * <p>
-     * <strong>NOTE:</strong> unless the processor doesn't differentiate
-     * between its inbound edges, the first choice should be leaving this method
-     * alone and instead overriding the specific {@code tryProcessN()} methods
-     * for each ordinal the processor expects.
+     * <strong>NOTE:</strong> unless the processor doesn't differentiate between
+     * its inbound edges, the first choice should be leaving this method alone
+     * and instead overriding the specific {@code tryProcessN()} methods for
+     * each ordinal the processor expects.
      *
      * @param ordinal ordinal of the edge that delivered the item
      * @param item    item to be processed
@@ -168,8 +170,8 @@ public abstract class AbstractProcessor implements Processor {
      * {@code false}, in which case it will be called again later with the same
      * item.
      * <p>
-     * The default implementation delegates to
-     * {@link #tryProcess(int, Object) tryProcess(0, item)}.
+     * The default implementation delegates to {@link #tryProcess(int, Object)
+     * tryProcess(0, item)}.
      *
      * @param item    item to be processed
      * @return {@code true} if this item has now been processed,
@@ -185,8 +187,8 @@ public abstract class AbstractProcessor implements Processor {
      * {@code false}, in which case it will be called again later with the same
      * item.
      * <p>
-     * The default implementation delegates to
-     * {@link #tryProcess(int, Object) tryProcess(1, item)}.
+     * The default implementation delegates to {@link #tryProcess(int, Object)
+     * tryProcess(1, item)}.
      *
      * @param item    item to be processed
      * @return {@code true} if this item has now been processed,
@@ -202,8 +204,8 @@ public abstract class AbstractProcessor implements Processor {
      * {@code false}, in which case it will be called again later with the same
      * item.
      * <p>
-     * The default implementation delegates to
-     * {@link #tryProcess(int, Object) tryProcess(2, item)}.
+     * The default implementation delegates to {@link #tryProcess(int, Object)
+     * tryProcess(2, item)}.
      *
      * @param item    item to be processed
      * @return {@code true} if this item has now been processed,
@@ -219,8 +221,8 @@ public abstract class AbstractProcessor implements Processor {
      * {@code false}, in which case it will be called again later with the same
      * item.
      * <p>
-     * The default implementation delegates to
-     * {@link #tryProcess(int, Object) tryProcess(3, item)}.
+     * The default implementation delegates to {@link #tryProcess(int, Object)
+     * tryProcess(3, item)}.
      *
      * @param item    item to be processed
      * @return {@code true} if this item has now been processed,
@@ -236,8 +238,8 @@ public abstract class AbstractProcessor implements Processor {
      * {@code false}, in which case it will be called again later with the same
      * item.
      * <p>
-     * The default implementation delegates to
-     * {@link #tryProcess(int, Object) tryProcess(4, item)}.
+     * The default implementation delegates to {@link #tryProcess(int, Object)
+     * tryProcess(4, item)}.
      *
      * @param item    item to be processed
      * @return {@code true} if this item has now been processed,
@@ -246,6 +248,31 @@ public abstract class AbstractProcessor implements Processor {
     @SuppressWarnings("checkstyle:magicnumber")
     protected boolean tryProcess4(@Nonnull Object item) throws Exception {
         return tryProcess(4, item);
+    }
+
+    protected boolean tryProcessPunc0(@Nonnull Punctuation punc) {
+        return tryProcessPunc(0, punc);
+    }
+
+    protected boolean tryProcessPunc1(@Nonnull Punctuation punc) {
+        return tryProcessPunc(1, punc);
+    }
+
+    protected boolean tryProcessPunc2(@Nonnull Punctuation punc) {
+        return tryProcessPunc(2, punc);
+    }
+
+    protected boolean tryProcessPunc3(@Nonnull Punctuation punc) {
+        return tryProcessPunc(3, punc);
+    }
+
+    @SuppressWarnings("checkstyle:magicnumber")
+    protected boolean tryProcessPunc4(@Nonnull Punctuation punc) {
+        return tryProcessPunc(4, punc);
+    }
+
+    protected boolean tryProcessPunc(int ordinal, @Nonnull Punctuation punc) {
+        throw new UnsupportedOperationException("Missing implementation");
     }
 
     /**
@@ -486,57 +513,80 @@ public abstract class AbstractProcessor implements Processor {
 
     // The processN methods contain repeated looping code in order to give an
     // easier job to the JIT compiler to optimize each case independently, and
-    // to ensure that ordinal is dispatched on just once per
-    // process(ordinal, inbox) call.
+    // to ensure that ordinal is dispatched on just once per process(ordinal,
+    // inbox) call.
+    // An implementation with a very low-cost tryProcessN() method can choose
+    // to override processN() with an identical method, but which the JIT
+    // compiler will be able to independently optimize and avoid the cost
+    // of the megamorphic call site of tryProcessN here.
 
-    private void process0(@Nonnull Inbox inbox) throws Exception {
+
+    protected void process0(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null; ) {
-            if (!tryProcess0(item)) {
+            final boolean doneWithItem = item instanceof Punctuation
+                    ? tryProcessPunc0((Punctuation) item)
+                    : tryProcess0(item);
+            if (!doneWithItem) {
                 return;
             }
             inbox.remove();
         }
     }
 
-    private void process1(@Nonnull Inbox inbox) throws Exception {
+    protected void process1(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null; ) {
-            if (!tryProcess1(item)) {
+            final boolean doneWithItem = item instanceof Punctuation
+                    ? tryProcessPunc1((Punctuation) item)
+                    : tryProcess1(item);
+            if (!doneWithItem) {
                 return;
             }
             inbox.remove();
         }
     }
 
-    private void process2(@Nonnull Inbox inbox) throws Exception {
+    protected void process2(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null; ) {
-            if (!tryProcess2(item)) {
+            final boolean doneWithItem = item instanceof Punctuation
+                    ? tryProcessPunc2((Punctuation) item)
+                    : tryProcess2(item);
+            if (!doneWithItem) {
                 return;
             }
             inbox.remove();
         }
     }
 
-    private void process3(@Nonnull Inbox inbox) throws Exception {
+    protected void process3(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null; ) {
-            if (!tryProcess3(item)) {
+            final boolean doneWithItem = item instanceof Punctuation
+                    ? tryProcessPunc3((Punctuation) item)
+                    : tryProcess3(item);
+            if (!doneWithItem) {
                 return;
             }
             inbox.remove();
         }
     }
 
-    private void process4(@Nonnull Inbox inbox) throws Exception {
+    protected void process4(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null; ) {
-            if (!tryProcess4(item)) {
+            final boolean doneWithItem = item instanceof Punctuation
+                    ? tryProcessPunc4((Punctuation) item)
+                    : tryProcess4(item);
+            if (!doneWithItem) {
                 return;
             }
             inbox.remove();
         }
     }
 
-    private void processAny(int ordinal, @Nonnull Inbox inbox) throws Exception {
+    protected void processAny(int ordinal, @Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null; ) {
-            if (!tryProcess(ordinal, item)) {
+            final boolean doneWithItem = item instanceof Punctuation
+                    ? tryProcessPunc(ordinal, (Punctuation) item)
+                    : tryProcess(ordinal, item);
+            if (!doneWithItem) {
                 return;
             }
             inbox.remove();

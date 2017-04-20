@@ -52,6 +52,10 @@ public class ProgressTracker {
         madeProgress(true);
     }
 
+    public boolean isMadeProgress() {
+        return isMadeProgress;
+    }
+
     /**
      * Merges the state of this progress tracker with the given {@code ProgressState} enum
      * member.

@@ -16,14 +16,13 @@
 
 package com.hazelcast.jet.impl.execution;
 
-import com.hazelcast.jet.impl.util.ProgressState;
-
-import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.jet.impl.util.DoneItem.DONE_ITEM;
-
 class MockOutboundStream extends OutboundEdgeStream {
+
+    MockOutboundStream(int ordinal) {
+        this(ordinal, 1024, 1024);
+    }
 
     MockOutboundStream(int ordinal, int capacity) {
         this(ordinal, capacity, 1024);
@@ -37,41 +36,8 @@ class MockOutboundStream extends OutboundEdgeStream {
         return ((MockOutboundCollector) getCollector()).getBuffer();
     }
 
-    private static class MockOutboundCollector implements OutboundCollector {
-
-        private final ArrayList<Object> buffer;
-        private final int capacity;
-
-        MockOutboundCollector(int capacity) {
-            this.capacity = capacity;
-            this.buffer = new ArrayList<>(capacity);
-        }
-
-        @Override
-        public ProgressState offer(Object item) {
-            if (buffer.size() == capacity) {
-                return ProgressState.NO_PROGRESS;
-            }
-            buffer.add(item);
-            return ProgressState.DONE;
-        }
-
-        @Override
-        public ProgressState close() {
-            buffer.add(DONE_ITEM);
-            return ProgressState.DONE;
-        }
-
-        @Override
-        public int[] getPartitions() {
-            return null;
-        }
-
-        List<Object> getBuffer() {
-            return buffer;
-        }
-
+    void flush() {
+        getBuffer().clear();
     }
 }
-
 

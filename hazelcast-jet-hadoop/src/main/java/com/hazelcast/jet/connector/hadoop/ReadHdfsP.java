@@ -257,8 +257,8 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
                                 .collect(toSet())
                 );
             }
-            // for each split not local to any member, assign it to the member with
-            // the least splits assigned so far
+            // for each split not local to any member, assign it to the member
+            // with the least splits assigned so far
             splitToCandidates.entrySet().stream()
                     .filter(e -> e.getValue().isEmpty())
                     .peek(e -> logger.info(

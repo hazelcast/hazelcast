@@ -34,7 +34,7 @@ import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 /**
- * @see com.hazelcast.jet.Processors#writeFile(String, Charset, boolean, boolean)
+ * @see com.hazelcast.jet.Processors#writeFile(String, Charset, boolean)
  */
 public final class WriteFileP {
 

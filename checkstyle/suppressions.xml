@@ -5,26 +5,23 @@
         "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
 <suppressions>
 
-    <!-- Suppress strict duplicate code checking -->
+    <!-- Files start with the license header -->
     <suppress checks="StrictDuplicateCode" files="\.java" lines="1-15"/>
 
-    <!-- Exclude implementation packages from JavaDoc checks -->
-    <suppress checks="JavadocPackage" files="([\\/]impl|[\\/]internal)"/>
-    <suppress checks="JavadocMethod" files="([\\/]impl|[\\/]internal)"/>
-    <suppress checks="JavadocType" files="([\\/]impl|[\\/]internal)"/>
-    <suppress checks="JavadocVariable" files="([\\/]impl|[\\/]internal)"/>
+    <!-- Suppress checking of copyright notice -->
+    <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]concurrent[\\/]update[\\/]"/>
+    <suppress checks="OuterTypeNumber" files="AbstractConcurrentArrayQueue"/>
+
+    <!-- Exclude these packages from JavaDoc checks -->
     <suppress checks="JavadocMethod" files="JetException\.java"/>
-
-    <!-- Serializer Hooks -->
     <suppress checks="Javadoc(Package|Type|Method|Variable)" files="SerializerHook"/>
-
-    <!-- Cascading Javadocs -->
+    <suppress checks="Javadoc(Package|Type|Method|Variable)" files="[\\/](impl|internal)[\\/]"/>
     <suppress checks="Javadoc(Package|Type|Method|Variable)" files="[\\/]jet[\\/]cascading[\\/]"/>
 
-    <!-- j.u.stream -->
-    <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]jet[\\/]Distributed.java"/>
+    <!-- The Distributed class contains many nested types -->
+    <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]jet[\\/]Distributed\.java$"/>
 
-    <!-- Client Protocol Templates -->
+    <!-- Generated code in Client Protocol Templates -->
     <suppress checks="LineLength|MethodName|MethodCount|ParameterNumber|WhitespaceAround"
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]template[\\/].*Template\.java$"/>
 </suppressions>

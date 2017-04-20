@@ -16,10 +16,18 @@
 
 package com.hazelcast.jet.impl.execution;
 
-import com.hazelcast.jet.impl.util.ProgressState;
+import java.io.Serializable;
 
-import java.util.Collection;
+class DoneItem implements Serializable {
 
-public interface InboundEmitter {
-    ProgressState drainTo(Collection<Object> dest);
+    static final DoneItem DONE_ITEM = new DoneItem();
+
+    @Override
+    public String toString() {
+        return "DONE_ITEM";
+    }
+
+    protected Object readResolve() {
+        return DONE_ITEM;
+    }
 }

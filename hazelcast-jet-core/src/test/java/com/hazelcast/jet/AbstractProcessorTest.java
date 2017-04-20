@@ -27,6 +27,8 @@ import org.mockito.Mockito;
 
 import javax.annotation.Nonnull;
 
+import java.util.Arrays;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -52,7 +54,9 @@ public class AbstractProcessorTest {
         Mockito.when(ctx.logger()).thenReturn(mock(ILogger.class));
         inbox = new ArrayDequeInbox();
         inbox.add(MOCK_ITEM);
-        outbox = new ArrayDequeOutbox(OUTBOX_BUCKET_COUNT, new int[]{1, 1}, new ProgressTracker());
+        int[] capacities = new int[OUTBOX_BUCKET_COUNT];
+        Arrays.fill(capacities, 1);
+        outbox = new ArrayDequeOutbox(capacities, new ProgressTracker());
         p.init(outbox, ctx);
     }
 
@@ -140,7 +144,7 @@ public class AbstractProcessorTest {
         final int ordinal = 1;
 
         // When
-        p.emit(ordinal, MOCK_ITEM);
+        p.tryEmit(ordinal, MOCK_ITEM);
 
         // Then
         for (int i = 0; i < OUTBOX_BUCKET_COUNT; i++) {

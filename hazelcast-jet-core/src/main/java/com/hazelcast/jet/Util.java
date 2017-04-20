@@ -24,7 +24,6 @@ import java.util.Map.Entry;
  */
 public final class Util {
     private Util() {
-
     }
 
     /**

@@ -17,8 +17,6 @@
 
 package com.hazelcast.jet.impl.deployment;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.util.UuidUtil;
 
@@ -35,13 +33,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
-import static com.hazelcast.jet.impl.util.Util.read;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.Util.read;
 
 public class ResourceStore {
 
-    private static final ILogger LOGGER = Logger.getLogger(ResourceStore.class);
-    private static final int KILOBYTE = 1024;
+    private static final int BUFFER_SIZE = 1024;
 
     private final Path storageDirectory;
 
@@ -52,6 +49,10 @@ public class ResourceStore {
 
     public ResourceStore(String storagePath) {
         this.storageDirectory = createStorageDirectory(storagePath);
+    }
+
+    public void destroy() {
+        IOUtil.delete(storageDirectory.toFile());
     }
 
     Map<String, ClassLoaderEntry> getJarEntries() {
@@ -66,10 +67,6 @@ public class ResourceStore {
         return classEntries;
     }
 
-    public void destroy() {
-        IOUtil.delete(storageDirectory.toFile());
-    }
-
     synchronized void updateResource(ResourcePart part) throws IOException {
         File file = resources.computeIfAbsent(part.getDescriptor(), this::createResource);
         try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
@@ -80,8 +77,8 @@ public class ResourceStore {
 
     void completeResource(ResourceDescriptor descriptor) throws IOException {
         File resource = resources.get(descriptor);
-        String resourceUri = resource.toURI().toString();
         try (FileInputStream stream = new FileInputStream(resource)) {
+            String resourceUri = resource.toURI().toString();
             switch (descriptor.getResourceKind()) {
                 case JAR:
                     loadJarStream(stream, resourceUri);
@@ -98,20 +95,8 @@ public class ResourceStore {
         }
     }
 
-    private Path createStorageDirectory(String storagePath) {
-        try {
-            Path path = Paths.get(storagePath, "resources");
-            if (!path.toFile().mkdirs() && !path.toFile().exists()) {
-                throw new IOException("Could not create requested storage path " + path);
-            }
-            return path;
-        } catch (IOException e) {
-            throw rethrow(e);
-        }
-    }
-
     private File createResource(ResourceDescriptor descriptor) {
-        String fileName = descriptor.getId() + "-" + UuidUtil.newUnsecureUuidString();
+        String fileName = descriptor.getId() + '-' + UuidUtil.newUnsecureUuidString();
         File file = Paths.get(storageDirectory.toString(), fileName).toFile();
         try {
             if (!file.createNewFile()) {
@@ -131,7 +116,7 @@ public class ResourceStore {
                     continue;
                 }
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
-                byte[] buf = new byte[KILOBYTE];
+                byte[] buf = new byte[BUFFER_SIZE];
                 for (int len; (len = jis.read(buf)) > 0; ) {
                     out.write(buf, 0, len);
                 }
@@ -144,6 +129,18 @@ public class ResourceStore {
                         String.format("jar:%s!/%s", uri, name));
                 jarEntries.put(name, entry);
             }
+        }
+    }
+
+    private static Path createStorageDirectory(String storagePath) {
+        try {
+            Path path = Paths.get(storagePath, "resources");
+            if (!path.toFile().mkdirs() && !path.toFile().exists()) {
+                throw new IOException("Could not create requested storage path " + path);
+            }
+            return path;
+        } catch (IOException e) {
+            throw rethrow(e);
         }
     }
 }

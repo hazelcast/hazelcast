@@ -476,6 +476,7 @@ public final class Distributed {
         /**
          * @see java.util.Comparator#thenComparing(java.util.Comparator)
          */
+        @Override
         default Distributed.Comparator<T> thenComparing(java.util.Comparator<? super T> other) {
             Objects.requireNonNull(other);
             checkSerializable(other, "other");
@@ -495,6 +496,7 @@ public final class Distributed {
         /**
          * @see java.util.Comparator#thenComparing(java.util.function.Function, java.util.Comparator)
          */
+        @Override
         default <U> Distributed.Comparator<T> thenComparing(
                 java.util.function.Function<? super T, ? extends U> keyExtractor,
                 java.util.Comparator<? super U> keyComparator) {
@@ -515,6 +517,7 @@ public final class Distributed {
         /**
          * @see java.util.Comparator#thenComparing(java.util.function.Function)
          */
+        @Override
         default <U extends Comparable<? super U>> Distributed.Comparator<T> thenComparing(
                 java.util.function.Function<? super T, ? extends U> keyExtractor) {
             checkSerializable(keyExtractor, "keyExtractor");
@@ -532,6 +535,7 @@ public final class Distributed {
         /**
          * @see java.util.Comparator#thenComparingInt(java.util.function.ToIntFunction)
          */
+        @Override
         default Distributed.Comparator<T> thenComparingInt(java.util.function.ToIntFunction<? super T> keyExtractor) {
             checkSerializable(keyExtractor, "keyExtractor");
             return thenComparing(comparingInt(keyExtractor));
@@ -547,6 +551,7 @@ public final class Distributed {
         /**
          * @see java.util.Comparator#thenComparingLong(java.util.function.ToLongFunction)
          */
+        @Override
         default Distributed.Comparator<T> thenComparingLong(java.util.function.ToLongFunction<? super T> keyExtractor) {
             checkSerializable(keyExtractor, "keyExtractor");
             return thenComparing(comparingLong(keyExtractor));
@@ -562,6 +567,7 @@ public final class Distributed {
         /**
          * @see java.util.Comparator#thenComparingDouble(java.util.function.ToDoubleFunction)
          */
+        @Override
         default Distributed.Comparator<T> thenComparingDouble(
                 java.util.function.ToDoubleFunction<? super T> keyExtractor
         ) {
@@ -1611,6 +1617,9 @@ public final class Distributed {
      */
     @FunctionalInterface
     public interface ToLongFunction<T> extends java.util.function.ToLongFunction<T>, Serializable {
+        // TODO remove the override when IntelliJ fix released
+        @Override
+        long applyAsLong(T value);
     }
 
     /**

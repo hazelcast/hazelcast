@@ -50,13 +50,11 @@ public class JetClassLoader extends ClassLoader {
             if (cached != null) {
                 return cached;
             }
-
             try {
                 return getClass().getClassLoader().loadClass(className);
             } catch (ClassNotFoundException ignored) {
                 EmptyStatement.ignore(ignored);
             }
-
             byte[] classBytes = classBytes(className);
             if (classBytes == null) {
                 throw new ClassNotFoundException(className);
@@ -82,14 +80,7 @@ public class JetClassLoader extends ClassLoader {
 
     @Override
     public URL getResource(String name) {
-        if (isEmpty(name)) {
-            return null;
-        }
-        URL url = getResourceURL(name);
-        if (url == null) {
-            return null;
-        }
-        return url;
+        return isEmpty(name) ? null : getResourceURL(name);
     }
 
     @Override
@@ -104,24 +95,32 @@ public class JetClassLoader extends ClassLoader {
                 arr = classLoaderEntry.getResourceBytes();
             }
         }
-        if (arr == null) {
-            return null;
-        }
-        return new ByteArrayInputStream(arr);
+        return arr != null ? new ByteArrayInputStream(arr) : null;
     }
 
     @SuppressWarnings("unchecked")
     private byte[] classBytes(String name) {
         ClassLoaderEntry entry = coalesce(name, store.getClassEntries(), store.getJarEntries());
+        return entry != null ? entry.getResourceBytes() : null;
+    }
+
+    private URL getResourceURL(String name) {
+        ClassLoaderEntry entry = coalesce(name, store.getClassEntries(), store.getDataEntries(), store.getJarEntries());
         if (entry == null) {
             return null;
         }
-        return entry.getResourceBytes();
-
+        if (entry.getBaseUrl() == null) {
+            throw new IllegalArgumentException("Resource not accessible by URL: " + entry);
+        }
+        try {
+            return new URL(entry.getBaseUrl());
+        } catch (MalformedURLException e) {
+            throw rethrow(e);
+        }
     }
 
     @SafeVarargs
-    private final ClassLoaderEntry coalesce(String name, Map<String, ClassLoaderEntry>... resources) {
+    private static ClassLoaderEntry coalesce(String name, Map<String, ClassLoaderEntry>... resources) {
         for (Map<String, ClassLoaderEntry> map : resources) {
             ClassLoaderEntry entry = map.get(name);
             if (entry != null) {
@@ -131,26 +130,8 @@ public class JetClassLoader extends ClassLoader {
         return null;
     }
 
-    private URL getResourceURL(String name) {
-        ClassLoaderEntry entry = coalesce(name, store.getClassEntries(), store.getDataEntries(), store.getJarEntries());
-        if (entry == null) {
-            return null;
-        }
-        if (entry.getBaseUrl() == null) {
-            throw new IllegalArgumentException("non-URL accessible resource");
-        }
 
-        try {
-            return new URL(entry.getBaseUrl());
-        } catch (MalformedURLException e) {
-            throw rethrow(e);
-        }
-
-    }
-
-
-    private boolean isEmpty(String className) {
+    private static boolean isEmpty(String className) {
         return className == null || className.isEmpty();
     }
-
 }

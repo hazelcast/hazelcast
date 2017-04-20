@@ -43,4 +43,9 @@ public class OutboundEdgeStream {
     int getOutboxCapacity() {
         return outboxCapacity;
     }
+
+    @Override
+    public String toString() {
+        return "OutboundEdgeStream(ordinal=" + ordinal + ')';
+    }
 }

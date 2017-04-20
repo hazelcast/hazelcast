@@ -19,14 +19,19 @@ package com.hazelcast.jet;
 import com.hazelcast.jet.impl.util.FlatMappingTraverser;
 
 import javax.annotation.Nonnull;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
- * Traverses over a sequence of non-{@code null} items, then starts returning
- * {@code null}. Each invocation of {@link #next()} consumes and returns the next
- * item in the sequence, until it is exhausted. All subsequent invocations of
- * {@code next()} return {@code null}.
+ * Traverses a potentially infinite sequence of non-{@code null} items. Each
+ * invocation of {@link #next()} consumes and returns the next item in the
+ * sequence if it is available, or returns {@code null} if not. An item may
+ * still become available later on.
+ * <p>
+ * An important special case is traversing a finite sequence. In this case the
+ * {@code null} return value means "the sequence is exhausted" and all future
+ * {@code next()} calls will return {@code null}.
  *
  * @param <T> traversed item type
  */
@@ -52,8 +57,8 @@ public interface Traverser<T> {
 
     /**
      * Adds a filtering layer to this traverser. The returned traverser will
-     * emit the same items as this traverser, but only those that pass the given
-     * predicate.
+     * emit the same items as this traverser, but only those that pass the
+     * given predicate.
      */
     @Nonnull
     default Traverser<T> filter(@Nonnull Predicate<? super T> pred) {
@@ -68,6 +73,48 @@ public interface Traverser<T> {
     }
 
     /**
+     * Returns a traverser which appends an additional item to this traverser
+     * after it returns the first {@code null} value.
+     */
+    @Nonnull
+    default Traverser<T> append(T item) {
+        return new Traverser<T>() {
+            T appendedItem = item;
+            @Override
+            public T next() {
+                T t = Traverser.this.next();
+                if (t == null) {
+                    try {
+                        return appendedItem;
+                    } finally {
+                        appendedItem = null;
+                    }
+                }
+                return t;
+            }
+        };
+    }
+
+    /**
+     * Returns a traverser which prepends an additional item in front of
+     * all the items of this traverser.
+     */
+    @Nonnull
+    default Traverser<T> prepend(T item) {
+        return new Traverser<T>() {
+            private boolean itemReturned;
+            @Override
+            public T next() {
+                if (itemReturned) {
+                    return Traverser.this.next();
+                }
+                itemReturned = true;
+                return item;
+            }
+        };
+    }
+
+    /**
      * Adds a flat-mapping layer to this traverser. The returned traverser
      * will apply the given mapping function to each item retrieved from this
      * traverser, and will emit all the items from the resulting traverser(s).
@@ -75,6 +122,22 @@ public interface Traverser<T> {
     @Nonnull
     default <R> Traverser<R> flatMap(@Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper) {
         return new FlatMappingTraverser<>(this, mapper);
+    }
+
+    /**
+     * Returns a traverser that will emit the same items as this traverser,
+     * additionally passing each item to the supplied consumer. A {@code null}
+     * return value is not passed to the action.
+     */
+    @Nonnull
+    default Traverser<T> peek(@Nonnull Consumer<? super T> action) {
+        return () -> {
+            T t = next();
+            if (t != null) {
+                action.accept(t);
+            }
+            return t;
+        };
     }
 
     /**

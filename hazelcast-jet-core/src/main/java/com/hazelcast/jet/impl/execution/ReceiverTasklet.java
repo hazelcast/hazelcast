@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
+import com.hazelcast.jet.Punctuation;
 import com.hazelcast.jet.impl.util.ObjectWithPartitionId;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
@@ -26,17 +27,15 @@ import com.hazelcast.util.concurrent.IdleStrategy;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.Queue;
-import java.util.concurrent.atomic.AtomicLongArray;
 
-import static com.hazelcast.jet.impl.util.DoneItem.DONE_ITEM;
+import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.lang.Math.ceil;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * Receives from all remote members the data associated with a single edge.
+ * Receives from a remote member the data associated with a single edge.
  */
 public class ReceiverTasklet implements Tasklet {
 
@@ -54,7 +53,7 @@ public class ReceiverTasklet implements Tasklet {
      * The Receive Window, in analogy to TCP's RWIN, is the number of compressed
      * seq units the sender can be ahead of the acknowledged seq. The
      * correspondence between a compresesd seq unit and bytes is defined by the
-     * constant {@link ReceiverTasklet#COMPRESSED_SEQ_UNIT_LOG2}.
+     * constant {@link #COMPRESSED_SEQ_UNIT_LOG2}.
      * <p>
      * The receiver tasklet keeps an array of receive window sizes, one for each
      * sender.
@@ -72,77 +71,73 @@ public class ReceiverTasklet implements Tasklet {
     private final int rwinMultiplier;
     private final double flowControlPeriodNs;
 
-    private final Queue<PacketWithSender> incoming = new MPSCQueue<>((IdleStrategy) null);
+    private final Queue<BufferObjectDataInput> incoming = new MPSCQueue<>((IdleStrategy) null);
     private final ProgressTracker tracker = new ProgressTracker();
-    private final ArrayDeque<ObjPtionAndSenderId> inbox = new ArrayDeque<>();
+    private final ArrayDeque<ObjWithPtionIdAndSize> inbox = new ArrayDeque<>();
     private final OutboundCollector collector;
 
-    private int remainingSenders;
-
+    private boolean receptionDone;
 
     //                    FLOW-CONTROL STATE
     //            All arrays are indexed by sender ID.
 
     // read by a task scheduler thread, written by a tasklet execution thread
-    private final AtomicLongArray ackedSeq;
+    private volatile long ackedSeq;
 
     // read and written by updateAndGetSendSeqLimitCompressed(), which is invoked sequentially by a task scheduler
-    private final int[] receiveWindowCompressed;
-    private final int[] prevAckedSeqCompressed;
-    private final long[] prevTimestamp;
+    private int receiveWindowCompressed;
+    private int prevAckedSeqCompressed;
+    private long prevTimestamp;
 
     //                 END FLOW-CONTROL STATE
 
-    public ReceiverTasklet(OutboundCollector collector, int rwinMultiplier, int flowControlPeriodMs, int senderCount) {
+    public ReceiverTasklet(OutboundCollector collector, int rwinMultiplier, int flowControlPeriodMs) {
         this.collector = collector;
         this.rwinMultiplier = rwinMultiplier;
         this.flowControlPeriodNs = (double) MILLISECONDS.toNanos(flowControlPeriodMs);
-        this.remainingSenders = senderCount;
-        this.ackedSeq = new AtomicLongArray(senderCount);
-        this.receiveWindowCompressed = new int[senderCount];
-        Arrays.fill(receiveWindowCompressed, INITIAL_RECEIVE_WINDOW_COMPRESSED);
-        this.prevAckedSeqCompressed = new int[senderCount];
-        this.prevTimestamp = new long[senderCount];
+        this.receiveWindowCompressed = INITIAL_RECEIVE_WINDOW_COMPRESSED;
     }
 
-    @Nonnull
-    @Override
+    @Override @Nonnull
     public ProgressState call() {
+        if (receptionDone) {
+            return collector.offerBroadcast(DONE_ITEM);
+        }
         tracker.reset();
+        tracker.notDone();
         tryFillInbox();
-        for (ObjPtionAndSenderId o; (o = inbox.peek()) != null; ) {
+        for (ObjWithPtionIdAndSize o; (o = inbox.peek()) != null; ) {
             final Object item = o.getItem();
             if (item == DONE_ITEM) {
-                remainingSenders--;
-            } else {
-                ProgressState outcome = collector.offer(item, o.getPartitionId());
-                if (!outcome.isDone()) {
-                    tracker.madeProgress(outcome.isMadeProgress());
-                    break;
-                }
+                receptionDone = true;
+                inbox.remove();
+                assert inbox.peek() == null : "Found something in the queue beyond the DONE_WM: " + inbox.remove();
+                break;
+            }
+            ProgressState outcome = item instanceof Punctuation
+                    ? collector.offerBroadcast((Punctuation) item)
+                    : collector.offer(item, o.getPartitionId());
+            if (!outcome.isDone()) {
+                tracker.madeProgress(outcome.isMadeProgress());
+                break;
             }
             tracker.madeProgress();
             inbox.remove();
-            ackItem(o.senderId, o.estimatedMemoryFootprint);
-        }
-        if (remainingSenders == 0) {
-            tracker.mergeWith(collector.close());
-        } else {
-            tracker.notDone();
+            ackItem(o.estimatedMemoryFootprint);
         }
         return tracker.toProgressState();
     }
 
-    public void receiveStreamPacket(BufferObjectDataInput packetInput, int senderId) {
-        incoming.add(new PacketWithSender(senderId, packetInput));
+    void receiveStreamPacket(BufferObjectDataInput packetInput) {
+        incoming.add(packetInput);
     }
 
     /**
-     * Calls {@link #updateAndGetSendSeqLimitCompressed(int, long)} with {@code
+     * Calls {@link #updateAndGetSendSeqLimitCompressed(long)} with {@code
      * System.nanotime()} and the current acked seq for the given sender ID.
      */
-    public int updateAndGetSendSeqLimitCompressed(int senderId) {
-        return updateAndGetSendSeqLimitCompressed(senderId, System.nanoTime());
+    public int updateAndGetSendSeqLimitCompressed() {
+        return updateAndGetSendSeqLimitCompressed(System.nanoTime());
     }
 
     /**
@@ -172,35 +167,39 @@ public class ReceiverTasklet implements Tasklet {
      *     receive window.
      * </li></ol>
      *
-     * @param senderId ID of the member whose {@code sentSeq} limit to update and return
      * @param timestampNow value of the timestamp at the time the method is called. The timestamp
      *                     must be obtained from {@code System.nanoTime()}.
      */
     // Invoked sequentially by a task scheduler
-    public int updateAndGetSendSeqLimitCompressed(int senderId, long timestampNow) {
-        final boolean hadPrevStats = prevTimestamp[senderId] != 0 || prevAckedSeqCompressed[senderId] != 0;
+    int updateAndGetSendSeqLimitCompressed(long timestampNow) {
+        final boolean hadPrevStats = prevTimestamp != 0 || prevAckedSeqCompressed != 0;
 
-        final long ackTimeDelta = timestampNow - prevTimestamp[senderId];
-        prevTimestamp[senderId] = timestampNow;
+        final long ackTimeDelta = timestampNow - prevTimestamp;
+        prevTimestamp = timestampNow;
 
-        final int ackedSeqCompressed = compressSeq(ackedSeq.get(senderId));
-        final int ackedSeqCompressedDelta = ackedSeqCompressed - prevAckedSeqCompressed[senderId];
-        prevAckedSeqCompressed[senderId] = ackedSeqCompressed;
+        final int ackedSeqCompressed = compressSeq(ackedSeq);
+        final int ackedSeqCompressedDelta = ackedSeqCompressed - prevAckedSeqCompressed;
+        prevAckedSeqCompressed = ackedSeqCompressed;
 
         if (hadPrevStats) {
             final double ackedSeqsPerAckPeriod = flowControlPeriodNs * ackedSeqCompressedDelta / ackTimeDelta;
             final int targetRwin = rwinMultiplier * (int) ceil(ackedSeqsPerAckPeriod);
-            final int rwinDiff = targetRwin - receiveWindowCompressed[senderId];
-            receiveWindowCompressed[senderId] += rwinDiff / 2;
+            final int rwinDiff = targetRwin - receiveWindowCompressed;
+            receiveWindowCompressed += rwinDiff / 2;
         }
-        return ackedSeqCompressed + receiveWindowCompressed[senderId];
+        return ackedSeqCompressed + receiveWindowCompressed;
     }
 
-    long ackItem(int senderId, long itemWeight) {
-        final long seqNow = ackedSeq.get(senderId);
+    long ackItem(long itemWeight) {
+        final long seqNow = ackedSeq;
         final long seqToBe = seqNow + itemWeight;
-        ackedSeq.lazySet(senderId, seqToBe);
+        ackedSeq = seqToBe;
         return seqToBe;
+    }
+
+    @Override
+    public String toString() {
+        return "ReceiverTasklet";
     }
 
     static int compressSeq(long seq) {
@@ -222,14 +221,13 @@ public class ReceiverTasklet implements Tasklet {
 
     private void tryFillInbox() {
         try {
-            for (PacketWithSender received; (received = incoming.poll()) != null; ) {
-                final BufferObjectDataInput in = received.payload;
-                final int itemCount = in.readInt();
+            for (BufferObjectDataInput received; (received = incoming.poll()) != null; ) {
+                final int itemCount = received.readInt();
                 for (int i = 0; i < itemCount; i++) {
-                    final int mark = in.position();
-                    final Object item = in.readObject();
-                    final int itemSize = in.position() - mark;
-                    inbox.add(new ObjPtionAndSenderId(item, in.readInt(), received.senderId, itemSize));
+                    final int mark = received.position();
+                    final Object item = received.readObject();
+                    final int itemSize = received.position() - mark;
+                    inbox.add(new ObjWithPtionIdAndSize(item, received.readInt(), itemSize));
                 }
                 tracker.madeProgress();
             }
@@ -238,23 +236,11 @@ public class ReceiverTasklet implements Tasklet {
         }
     }
 
-    private static class PacketWithSender {
-        final int senderId;
-        final BufferObjectDataInput payload;
-
-        PacketWithSender(int senderId, BufferObjectDataInput payload) {
-            this.senderId = senderId;
-            this.payload = payload;
-        }
-    }
-
-    private static class ObjPtionAndSenderId extends ObjectWithPartitionId {
-        final int senderId;
+    private static class ObjWithPtionIdAndSize extends ObjectWithPartitionId {
         final long estimatedMemoryFootprint;
 
-        ObjPtionAndSenderId(Object item, int partitionId, int senderId, int itemBlobSize) {
+        ObjWithPtionIdAndSize(Object item, int partitionId, int itemBlobSize) {
             super(item, partitionId);
-            this.senderId = senderId;
             this.estimatedMemoryFootprint = estimatedMemoryFootprint(itemBlobSize);
         }
     }

@@ -17,34 +17,25 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.Distributed.Supplier;
+import com.hazelcast.jet.impl.DagValidator;
 import com.hazelcast.jet.impl.SerializationConstants;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
-import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.util.Preconditions.checkTrue;
 import static java.util.Collections.newSetFromMap;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toMap;
 
 /**
  * Describes a computation to be performed by the Jet computation engine.
@@ -76,8 +67,6 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     private Map<String, Vertex> verticesByName = new HashMap<>();
     private Set<Vertex> verticesByIdentity = newSetFromMap(new IdentityHashMap<Vertex, Boolean>());
 
-    private Deque<Vertex> topologicalVertexStack = new ArrayDeque<>();
-
     /**
      * Creates a vertex from a {@code Supplier<Processor>} and adds it to this DAG.
      *
@@ -86,7 +75,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * @param name the unique name of the vertex
      * @param simpleSupplier the simple, parameterless supplier of {@code Processor} instances
      */
-    public Vertex newVertex(String name, Supplier<Processor> simpleSupplier) {
+    public Vertex newVertex(String name, Supplier<? extends Processor> simpleSupplier) {
         return addVertex(new Vertex(name, simpleSupplier));
     }
 
@@ -217,8 +206,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * Returns an iterator over the DAG's vertices in reverse topological order.
      */
     public Iterator<Vertex> reverseIterator() {
-        validate();
-        return Collections.unmodifiableCollection(topologicalVertexStack).iterator();
+        return Collections.unmodifiableCollection(validate()).iterator();
     }
 
     /**
@@ -226,39 +214,13 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      */
     @Override
     public Iterator<Vertex> iterator() {
-        validate();
-        List<Vertex> vertices = new ArrayList<>(topologicalVertexStack);
+        final List<Vertex> vertices = new ArrayList<>(validate());
         Collections.reverse(vertices);
         return Collections.unmodifiableCollection(vertices).iterator();
     }
 
-    @Override
-    public String toString() {
-        final StringBuilder b = new StringBuilder("dag\n");
-        for (Iterator<Vertex> it = iterator(); it.hasNext();) {
-            final Vertex v = it.next();
-            b.append("    .vertex(\"").append(v.getName()).append("\")");
-            if (v.getLocalParallelism() != -1) {
-                b.append(".localParallelism(").append(v.getLocalParallelism()).append(')');
-            }
-            b.append('\n');
-        }
-        for (Edge e : edges) {
-            b.append("    .edge(").append(e).append(")\n");
-        }
-        return b.toString();
-    }
-
-    void validate() throws IllegalArgumentException {
-        topologicalVertexStack.clear();
-        checkTrue(!verticesByName.isEmpty(), "DAG must contain at least one vertex");
-        Map<String, List<Edge>> outgoingEdgeMap = edges.stream().collect(groupingBy(Edge::getSourceName));
-        validateAgainstMultigraph(edges);
-        validateOutboundEdgeOrdinals(outgoingEdgeMap);
-        validateInboundEdgeOrdinals(edges.stream().collect(groupingBy(Edge::getDestName)));
-        detectCycles(outgoingEdgeMap,
-                verticesByName.entrySet().stream()
-                              .collect(toMap(Entry::getKey, v -> new AnnotatedVertex(v.getValue()))));
+    Collection<Vertex> validate() {
+        return new DagValidator().validate(verticesByName, edges);
     }
 
     private Vertex addVertex(Vertex vertex) {
@@ -278,92 +240,21 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         return verticesByName.containsKey(vertex.getName());
     }
 
-    private static void validateOutboundEdgeOrdinals(Map<String, List<Edge>> outgoingEdgeMap) {
-        for (Map.Entry<String, List<Edge>> entry : outgoingEdgeMap.entrySet()) {
-            String vertex = entry.getKey();
-            int[] ordinals = entry.getValue().stream().mapToInt(Edge::getSourceOrdinal).sorted().toArray();
-            for (int i = 0; i < ordinals.length; i++) {
-                if (ordinals[i] != i) {
-                    throw new IllegalArgumentException("Output ordinals for vertex " + vertex + " are not ordered. "
-                            + "Actual: " + Arrays.toString(ordinals) + " Expected: "
-                            + Arrays.toString(IntStream.range(0, ordinals.length).toArray()));
-                }
+    @Override
+    public String toString() {
+        final StringBuilder b = new StringBuilder("dag\n");
+        for (Iterator<Vertex> it = iterator(); it.hasNext();) {
+            final Vertex v = it.next();
+            b.append("    .vertex(\"").append(v.getName()).append("\")");
+            if (v.getLocalParallelism() != -1) {
+                b.append(".localParallelism(").append(v.getLocalParallelism()).append(')');
             }
+            b.append('\n');
         }
-    }
-
-    // Adaptation of Tarjan's algorithm for connected components.
-    // http://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
-    private void detectCycles(Map<String, List<Edge>> edgeMap, Map<String, AnnotatedVertex> vertexMap)
-            throws IllegalArgumentException {
-        // boxed integer so it is passed by reference.
-        Integer nextIndex = 0;
-        Deque<AnnotatedVertex> stack = new ArrayDeque<>();
-        for (AnnotatedVertex av : vertexMap.values()) {
-            if (av.index == -1) {
-                assert stack.isEmpty();
-                strongConnect(av, vertexMap, edgeMap, stack, nextIndex);
-            }
+        for (Edge e : edges) {
+            b.append("    .edge(").append(e).append(")\n");
         }
-    }
-
-    // part of Tarjan's algorithm for connected components.
-    // http://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
-    private void strongConnect(
-            AnnotatedVertex av,
-            Map<String, AnnotatedVertex> vertexMap,
-            Map<String, List<Edge>> edgeMap,
-            Deque<AnnotatedVertex> stack, Integer nextIndex) throws IllegalArgumentException {
-        av.index = nextIndex;
-        av.lowlink = nextIndex;
-        nextIndex++;
-        stack.addLast(av);
-        av.onstack = true;
-
-        List<Edge> edges = edgeMap.get(av.v.getName());
-
-        if (edges != null) {
-            for (Edge e : edgeMap.get(av.v.getName())) {
-                AnnotatedVertex outVertex = vertexMap.get(e.getDestName());
-
-                if (outVertex.index == -1) {
-                    strongConnect(outVertex, vertexMap, edgeMap, stack, nextIndex);
-                    av.lowlink = Math.min(av.lowlink, outVertex.lowlink);
-                } else if (outVertex.onstack) {
-                    // strongly connected component detected, but we will wait till later so
-                    // that the full cycle can be displayed. Update lowlink in case
-                    // outputVertex should be considered the root of this component.
-                    av.lowlink = Math.min(av.lowlink, outVertex.index);
-                }
-            }
-        }
-
-        if (av.lowlink == av.index) {
-            AnnotatedVertex pop = stack.removeLast();
-            pop.onstack = false;
-            if (pop != av) {
-                // there was something on the stack other than this "av".
-                // this indicates there is a scc/cycle. It comprises all nodes from top of stack to "av"
-                StringBuilder message = new StringBuilder();
-                message.append(av.v.getName()).append(" <- ");
-                for (; pop != av; pop = stack.removeLast()) {
-                    message.append(pop.v.getName()).append(" <- ");
-                    pop.onstack = false;
-                }
-                message.append(av.v.getName());
-                throw new IllegalArgumentException("DAG contains a cycle: " + message);
-            } else {
-                // detect self-cycle
-                if (edgeMap.containsKey(pop.v.getName())) {
-                    for (Edge edge : edgeMap.get(pop.v.getName())) {
-                        if (edge.getDestName().equals(pop.v.getName())) {
-                            throw new IllegalArgumentException("DAG contains a self-cycle on vertex:" + pop.v.getName());
-                        }
-                    }
-                }
-            }
-            topologicalVertexStack.addLast(av.v);
-        }
+        return b.toString();
     }
 
     @Override
@@ -408,43 +299,5 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     @Override
     public int getId() {
         return SerializationConstants.DAG;
-    }
-
-    private static void validateAgainstMultigraph(Collection<Edge> edges) {
-        final Set<Entry<String, String>> distinctSrcDest = new HashSet<>();
-        for (Edge e : edges) {
-            final Entry<String, String> srcDestId = entry(e.getSourceName(), e.getDestName());
-            if (!distinctSrcDest.add(srcDestId)) {
-                throw new IllegalArgumentException(
-                        String.format("Duplicate edge: %s -> %s", srcDestId.getKey(), srcDestId.getValue()));
-            }
-        }
-    }
-
-    private static void validateInboundEdgeOrdinals(Map<String, List<Edge>> incomingEdgeMap) {
-        for (Map.Entry<String, List<Edge>> entry : incomingEdgeMap.entrySet()) {
-            String vertex = entry.getKey();
-            int[] ordinals = entry.getValue().stream().mapToInt(Edge::getDestOrdinal).sorted().toArray();
-            for (int i = 0; i < ordinals.length; i++) {
-                if (ordinals[i] != i) {
-                    throw new IllegalArgumentException("Input ordinals for vertex " + vertex + " are not ordered. "
-                            + "Actual: " + Arrays.toString(ordinals) + " Expected: "
-                            + Arrays.toString(IntStream.range(0, ordinals.length).toArray()));
-                }
-            }
-        }
-    }
-
-    private static final class AnnotatedVertex {
-        Vertex v;
-        int index;
-        int lowlink;
-        boolean onstack;
-
-        private AnnotatedVertex(Vertex v) {
-            this.v = v;
-            index = -1;
-            lowlink = -1;
-        }
     }
 }

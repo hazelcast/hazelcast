@@ -36,17 +36,17 @@ public interface OutboundCollector {
     ProgressState offer(Object item);
 
     /**
+     * Offer a punctuation to this collector. Punctuations will be propagated to all sub-collectors
+     * if the collector is a composite one.
+     */
+    ProgressState offerBroadcast(Object item);
+
+    /**
      * Offers an item with a known partition id
      */
     default ProgressState offer(Object item, int partitionId) {
         return offer(item);
     }
-
-    /**
-     * Tries to close this collector.
-     * If the collector didn't complete the operation now, the call must be retried later.
-     */
-    ProgressState close();
 
     /**
      * Returns the list of partitions handled by this collector.
@@ -57,8 +57,12 @@ public interface OutboundCollector {
     static OutboundCollector compositeCollector(
             OutboundCollector[] collectors, EdgeDef outboundEdge, int partitionCount
     ) {
+        if (collectors.length == 1) {
+            return collectors[0];
+        }
         switch (outboundEdge.forwardingPattern()) {
             case VARIABLE_UNICAST:
+            case ONE_TO_MANY:
                 return new RoundRobin(collectors);
             case PARTITIONED:
                 return new Partitioned(collectors, outboundEdge.partitioner(), partitionCount);
@@ -72,28 +76,33 @@ public interface OutboundCollector {
     abstract class Composite implements OutboundCollector {
 
         protected final OutboundCollector[] collectors;
-        protected final ProgressTracker progTracker = new ProgressTracker();
         protected final int[] partitions;
+        protected final ProgressTracker progTracker = new ProgressTracker();
+        protected final BitSet broadcastTracker;
 
         Composite(OutboundCollector[] collectors) {
             this.collectors = collectors;
+            this.broadcastTracker = new BitSet(collectors.length);
             this.partitions = Stream.of(collectors)
                                     .flatMapToInt(c -> IntStream.of(c.getPartitions()))
                                     .sorted().toArray();
         }
 
         @Override
-        public ProgressState close() {
+        public ProgressState offerBroadcast(Object punc) {
             progTracker.reset();
             for (int i = 0; i < collectors.length; i++) {
-                if (collectors[i] == null) {
+                if (broadcastTracker.get(i)) {
                     continue;
                 }
-                ProgressState result = collectors[i].close();
+                ProgressState result = collectors[i].offerBroadcast(punc);
                 progTracker.mergeWith(result);
                 if (result.isDone()) {
-                    collectors[i] = null;
+                    broadcastTracker.set(i);
                 }
+            }
+            if (progTracker.isDone()) {
+                broadcastTracker.clear();
             }
             return progTracker.toProgressState();
         }
@@ -133,29 +142,26 @@ public interface OutboundCollector {
     }
 
     class Broadcast extends Composite {
-        private final ProgressTracker progTracker = new ProgressTracker();
-        private final BitSet isItemSentTo;
 
         Broadcast(OutboundCollector[] collectors) {
             super(collectors);
-            this.isItemSentTo = new BitSet(collectors.length);
         }
 
         @Override
         public ProgressState offer(Object item) {
             progTracker.reset();
             for (int i = 0; i < collectors.length; i++) {
-                if (isItemSentTo.get(i)) {
+                if (broadcastTracker.get(i)) {
                     continue;
                 }
                 ProgressState result = collectors[i].offer(item);
                 progTracker.mergeWith(result);
                 if (result.isDone()) {
-                    isItemSentTo.set(i);
+                    broadcastTracker.set(i);
                 }
             }
             if (progTracker.isDone()) {
-                isItemSentTo.clear();
+                broadcastTracker.clear();
             }
             return progTracker.toProgressState();
         }

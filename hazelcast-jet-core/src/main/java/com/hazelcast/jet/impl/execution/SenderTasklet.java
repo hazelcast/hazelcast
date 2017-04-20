@@ -32,13 +32,13 @@ import java.util.ArrayDeque;
 import java.util.Queue;
 
 import static com.hazelcast.jet.impl.Networking.createStreamPacketHeader;
+import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.ReceiverTasklet.compressSeq;
 import static com.hazelcast.jet.impl.execution.ReceiverTasklet.estimatedMemoryFootprint;
-import static com.hazelcast.jet.impl.util.DoneItem.DONE_ITEM;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.createObjectDataOutput;
 import static com.hazelcast.jet.impl.util.Util.getMemberConnection;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 public class SenderTasklet implements Tasklet {
 
@@ -111,7 +111,8 @@ public class SenderTasklet implements Tasklet {
                          && (item = inbox.poll()) != null;
                  writtenCount++
                     ) {
-                ObjectWithPartitionId itemWithpId = (ObjectWithPartitionId) item;
+                ObjectWithPartitionId itemWithpId = item instanceof ObjectWithPartitionId ?
+                        (ObjectWithPartitionId) item : new ObjectWithPartitionId(item, - 1);
                 final int mark = outputBuffer.position();
                 outputBuffer.writeObject(itemWithpId.getItem());
                 sentSeq += estimatedMemoryFootprint(outputBuffer.position() - mark);
@@ -136,8 +137,13 @@ public class SenderTasklet implements Tasklet {
         this.sendSeqLimitCompressed = sendSeqLimitCompressed;
     }
 
+    @Override
+    public String toString() {
+        return "SenderTasklet " + connection.getEndPoint();
+    }
+
     /**
-     * Given an uncompressed {@code sentSeq} and a compressed {@code sendSeqLimit}, tells
+     * Given an uncompressed {@code sentSeq} and a compressed {@code sendSeqLimitCompressed}, tells
      * whether the {@code sentSeq} is within the limit specified by the compressed seq.
      */
     // The operations and types in this method must be carefully chosen to properly

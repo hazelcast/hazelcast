@@ -29,23 +29,16 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Job specific configuration options
+ * Job-specific configuration options.
  */
 public class JobConfig implements Serializable {
 
-    private static final int DEFAULT_RESOURCE_PART_SIZE = 1 << 14;
     private final Set<ResourceConfig> resourceConfigs = new HashSet<>();
 
     /**
-     * Chunk size for resources when transmitting them over the wire
-     */
-    public int getResourcePartSize() {
-        return DEFAULT_RESOURCE_PART_SIZE;
-    }
-
-    /**
-     * The given classes will be deployed to all the nodes before job execution
-     * and available for the job specific class loader.
+     * Adds the supplied classes to the list of resources that will be
+     * available on the job's classpath while it's executing in the Jet
+     * cluster.
      */
     public JobConfig addClass(Class... classes) {
         checkNotNull(classes, "Classes can not be null");
@@ -57,30 +50,27 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * The given JAR file will be deployed to all the nodes before job execution
-     * and available for the job specific class loader.
-     *
-     * The filename will be used as the ID of the resource.
+     * Adds the JAR identified by the supplied URL to the list of JARs that
+     * will be a part of the job's classpath while it's executing in the Jet
+     * cluster. The JAR filename will be used as the ID of the resource.
      */
     public JobConfig addJar(URL url) {
-        return addJar(url, getFileName(url));
+        return addJar(url, toFilename(url));
     }
 
     /**
-     * The given JAR file will be deployed to all the nodes before job execution
-     * and available for the job specific class loader.
-     *
-     * The provided ID will be assigned to the JAR file.
+     * Adds the JAR identified by the supplied URL to the list of JARs that
+     * will be a part of the job's classpath while it's executing in the Jet
+     * cluster. The JAR will be registered under the supplied resource ID.
      */
-    public JobConfig addJar(URL url, String id) {
-        return add(url, id, ResourceKind.JAR);
+    public JobConfig addJar(URL url, String resourceId) {
+        return add(url, resourceId, ResourceKind.JAR);
     }
 
     /**
-     * The given JAR file will be deployed to all the nodes before job execution
-     * and available for the job specific class loader.
-     *
-     * The filename will be used as the ID of the resource.
+     * Adds the supplied JAR file to the list of JARs that will be a part of
+     * the job's classpath while it's executing in the Jet cluster. The JAR
+     * filename will be used as the ID of the resource.
      */
     public void addJar(File file) {
         try {
@@ -91,10 +81,9 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * The given JAR file will be deployed to all the nodes before job execution
-     * and available for the job specific class loader.
-     *
-     * The provided ID will be assigned to the JAR file.
+     * Adds the supplied JAR file to the list of JARs that will be a part of
+     * the job's classpath while it's executing in the Jet cluster. The JAR
+     * will be registered under the supplied resource ID.
      */
     public void addJar(File file, String id) {
         try {
@@ -105,10 +94,9 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * The given JAR file will be deployed to all the nodes before job execution
-     * and available for the job specific class loader.
-     *
-     * The filename will be used as the ID of the resource.
+     * Adds the JAR identified by the supplied pathname to the list of JARs
+     * that will be a part of the job's classpath while it's executing in the
+     * Jet cluster. The JAR filename will be used as the ID of the resource.
      */
     public void addJar(String path) {
         try {
@@ -120,10 +108,9 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * The given JAR file will be deployed to all the nodes before job execution
-     * and available for the job specific class loader.
-     *
-     * The provided ID will be assigned to the JAR file.
+     * Adds the JAR identified by the supplied pathname to the list of JARs
+     * that will be a part of the job's classpath while it's executing in the
+     * Jet cluster. The JAR will be registered under the supplied resource ID.
      */
     public void addJar(String path, String id) {
         try {
@@ -133,32 +120,28 @@ public class JobConfig implements Serializable {
         }
     }
 
-
     /**
-     * The given resource will be deployed to all the nodes before job execution
-     * and available for the job specific class loader.
-     *
-     * The filename will be used as the ID of the resource.
+     * Adds the resource identified by the supplied URL to the list of
+     * resources that will be on the job's classpath while it's executing in
+     * the Jet cluster. The resource's filename will be used as its ID.
      */
     public JobConfig addResource(URL url) {
-        return addResource(url, getFileName(url));
+        return addResource(url, toFilename(url));
     }
 
     /**
-     * The given resource will be deployed to all the nodes before job execution
-     * and available for the job specific class loader.
-     *
-     * The provided ID will be assigned to the resource file.
+     * Adds the resource identified by the supplied URL to the list of
+     * resources that will be on the job's classpath while it's executing in
+     * the Jet cluster. The resource will be registered under the supplied ID.
      */
     public JobConfig addResource(URL url, String id) {
         return add(url, id, ResourceKind.DATA);
     }
 
     /**
-     * The given resource will be deployed to all the nodes before job execution
-     * and available for the job specific class loader.
-     *
-     * The filename will be used as the ID of the resource.
+     * Adds the supplied file to the list of resources that will be on the
+     * job's classpath while it's executing in the Jet cluster. The resource's
+     * filename will be used as its ID.
      */
     public JobConfig addResource(File file) {
         try {
@@ -166,14 +149,12 @@ public class JobConfig implements Serializable {
         } catch (MalformedURLException e) {
             throw rethrow(e);
         }
-
     }
 
     /**
-     * The given resource will be deployed to all the nodes before job execution
-     * and available for the job specific class loader.
-     *
-     * The provided ID will be assigned to the resource file.
+     * Adds the supplied file to the list of resources that will be on the
+     * job's classpath while it's executing in the Jet cluster. The resource
+     * will be registered under the supplied ID.
      */
     public JobConfig addResource(File file, String id) {
         try {
@@ -184,10 +165,9 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * The given resource will be deployed to all the nodes before job execution
-     * and available for the job specific class loader.
-     *
-     * The filename will be used as the ID of the resource.
+     * Adds the resource identified by the supplied pathname to the list of
+     * resources that will be on the job's classpath while it's executing in
+     * the Jet cluster. The resource's filename will be used as its ID.
      */
     public JobConfig addResource(String path) {
         File file = new File(path);
@@ -199,24 +179,20 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * The given resource will be deployed to all the nodes before job execution
-     * and available for the job specific class loader.
-     *
-     * The provided ID will be assigned to the resource file.
+     * Adds the resource identified by the supplied pathname to the list of
+     * resources that will be on the job's classpath while it's executing in
+     * the Jet cluster. The resource will be registered under the supplied ID.
      */
     public JobConfig addResource(String path, String id) {
-        File file = new File(path);
         try {
-            return addResource(file.toURI().toURL(), id);
+            return addResource(new File(path).toURI().toURL(), id);
         } catch (MalformedURLException e) {
             throw rethrow(e);
         }
     }
 
     /**
-     * Returns all the resource configurations
-     *
-     * @return resource configuration set
+     * Returns all the registered resource configurations.
      */
     public Set<ResourceConfig> getResourceConfigs() {
         return resourceConfigs;
@@ -227,9 +203,8 @@ public class JobConfig implements Serializable {
         return this;
     }
 
-    private String getFileName(URL url) {
+    private static String toFilename(URL url) {
         String urlFile = url.getFile();
         return urlFile.substring(urlFile.lastIndexOf('/') + 1, urlFile.length());
     }
-
 }

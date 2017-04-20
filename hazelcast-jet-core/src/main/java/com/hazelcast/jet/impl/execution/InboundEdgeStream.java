@@ -27,6 +27,10 @@ import java.util.Collection;
  */
 public interface InboundEdgeStream {
 
+    int ordinal();
+
+    int priority();
+
     /**
      * Drains all currently available items to the supplied destination collection.
      * The two {@code boolean} components of the return value have the following meaning:
@@ -37,8 +41,4 @@ public interface InboundEdgeStream {
      * </li></ul>
      */
     ProgressState drainTo(Collection<Object> dest);
-
-    int ordinal();
-
-    int priority();
 }

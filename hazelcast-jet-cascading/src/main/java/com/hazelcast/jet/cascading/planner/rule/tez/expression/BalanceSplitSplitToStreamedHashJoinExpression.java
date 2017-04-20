@@ -34,8 +34,8 @@ import static cascading.flow.planner.iso.expression.NotElementExpression.not;
  */
 public class BalanceSplitSplitToStreamedHashJoinExpression extends RuleExpression {
     public static final FlowElementExpression SHARED_HASHJOIN = new FlowElementExpression(HashJoin.class);
-    private static final FlowElementExpression SHARED_SPLIT = new FlowElementExpression(
-            Pipe.class, TypeExpression.Topo.Split);
+    private static final FlowElementExpression SHARED_SPLIT =
+            new FlowElementExpression(Pipe.class, TypeExpression.Topo.Split);
 
     public BalanceSplitSplitToStreamedHashJoinExpression() {
         super(

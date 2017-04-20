@@ -44,6 +44,15 @@ public final class DistributedFunctions {
     }
 
     /**
+     * Returns a function that extracts the value of a {@link Map.Entry}.
+     *
+     * @param <V> type of entry's value
+     */
+    public static <V> Distributed.Function<Map.Entry<?, V>, V> entryValue() {
+        return Map.Entry::getValue;
+    }
+
+    /**
      * Returns a consumer that does nothing with the argument.
      */
     public static <T> Distributed.Consumer<T> noopConsumer() {

@@ -16,19 +16,28 @@
 
 package com.hazelcast.jet.impl.util;
 
-import java.io.Serializable;
+import java.util.function.Supplier;
 
-public class DoneItem implements Serializable {
+/**
+ * Wraps a {@code Supplier} and returns a memoizing supplier which calls
+ * it only on the first invocation of {@code get()}, and afterwards
+ * returns the remembered instance.
+ */
+final class MemoizingSupplier<T> implements Supplier<T> {
+    private Supplier<T> onceSupplier;
+    private T remembered;
 
-    public static final DoneItem DONE_ITEM = new DoneItem();
+    MemoizingSupplier(Supplier<T> onceSupplier) {
+        this.onceSupplier = onceSupplier;
+    }
 
     @Override
-    public String toString() {
-        return "DONE_ITEM";
+    public T get() {
+        if (onceSupplier == null) {
+            return remembered;
+        }
+        remembered = onceSupplier.get();
+        onceSupplier = null;
+        return remembered;
     }
-
-    protected Object readResolve() {
-        return DONE_ITEM;
-    }
-
 }

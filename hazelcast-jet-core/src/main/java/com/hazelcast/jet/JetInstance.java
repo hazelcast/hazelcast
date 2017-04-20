@@ -25,7 +25,8 @@ import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.IStreamMap;
 
 /**
- * Main entry point for interacting with a Jet cluster. Each instance represents either a member (node) or a client.
+ * Represents either an instance of a Jet server node or a Jet client
+ * instance that connects to a remote cluster.
  */
 public interface JetInstance {
 
@@ -35,18 +36,20 @@ public interface JetInstance {
     String getName();
 
     /**
-     * Returns the underlying Hazelcast IMDG instance used by Jet. It will either be a member or a client, depending on
-     * which type of JetInstance is used.
+     * Returns the underlying Hazelcast IMDG instance used by Jet. It will
+     * be either a server node or a client, depending on the type of this
+     * {@code JetInstance}.
      */
     HazelcastInstance getHazelcastInstance();
 
     /**
-     * Returns information about the cluster that this Jet instance is part of.
+     * Returns information about the cluster this Jet instance is part of.
      */
     Cluster getCluster();
 
     /**
-     * Returns the configuration for this Jet member. This method is not available on client instances.
+     * Returns the configuration for this Jet member. This method is not
+     * available on client instances.
      */
     JetConfig getConfig();
 
@@ -59,9 +62,10 @@ public interface JetInstance {
     Job newJob(DAG dag);
 
     /**
-     * Creates and returns an executable Job based on a given DAG with a job specific configuration.
+     * Creates and returns an executable Job based on the supplied DAG and job
+     * configuration.
      *
-     * @return a new {@link Job} instance
+     * @return a new {@code Job} instance
      */
     Job newJob(DAG dag, JobConfig config);
 
@@ -83,7 +87,7 @@ public interface JetInstance {
 
     /**
      * Returns the distributed list instance with the specified name.
-     * Index based operations on the list are not supported.
+     * Index-based operations on the list are not supported.
      *
      * @param name name of the distributed list
      * @return distributed list instance with the specified name

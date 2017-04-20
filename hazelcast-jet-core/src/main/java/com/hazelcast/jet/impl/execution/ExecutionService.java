@@ -44,6 +44,7 @@ import static java.lang.Thread.currentThread;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
 
@@ -105,10 +106,11 @@ public class ExecutionService {
     }
 
     private void submitBlockingTasklets(JobFuture jobFuture, ClassLoader jobClassLoader, List<Tasklet> tasklets) {
-        jobFuture.blockingFutures = tasklets.stream()
-                                            .map(t -> new BlockingWorker(new TaskletTracker(t, jobFuture, jobClassLoader)))
-                                            .map(blockingTaskletExecutor::submit)
-                                            .collect(toList());
+        jobFuture.blockingFutures = tasklets
+                .stream()
+                .map(t -> new BlockingWorker(new TaskletTracker(t, jobFuture, jobClassLoader)))
+                .map(blockingTaskletExecutor::submit)
+                .collect(toList());
     }
 
     private void submitCooperativeTasklets(JobFuture jobFuture, ClassLoader jobClassLoader, List<Tasklet> tasklets) {
@@ -134,6 +136,15 @@ public class ExecutionService {
         Arrays.setAll(threads, i -> new Thread(workers[i],
                 String.format("hz.%s.jet.cooperative.thread-%d", hzInstanceName, i)));
         Arrays.stream(threads).forEach(Thread::start);
+    }
+
+    private String trackersToString() {
+        return Arrays.stream(workers)
+                     .flatMap(w -> w.trackers.stream())
+                     .map(Object::toString)
+                     .sorted()
+                     .collect(joining("\n"))
+                + "\n-----------------";
     }
 
     private final class BlockingWorker implements Runnable {
@@ -262,6 +273,11 @@ public class ExecutionService {
             this.tasklet = tasklet;
             this.jobFuture = jobFuture;
             this.jobClassLoader = jobClassLoader;
+        }
+
+        @Override
+        public String toString() {
+            return "Tracking " + tasklet;
         }
     }
 

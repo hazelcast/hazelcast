@@ -16,8 +16,10 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.Punctuation;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.util.Preconditions;
@@ -26,8 +28,8 @@ import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.ExecutionService.IDLER;
-import static com.hazelcast.jet.impl.util.DoneItem.DONE_ITEM;
 
 /**
  * Tasklet that drives a non-cooperative processor.
@@ -62,7 +64,12 @@ public class BlockingProcessorTasklet extends ProcessorTaskletBase {
     public ProgressState call() {
         try {
             progTracker.reset();
-            tryFillInbox();
+            if (inbox().isEmpty()) {
+                callNullaryProcess();
+                tryFillInbox();
+            } else {
+                progTracker.notDone();
+            }
             if (progTracker.isDone()) {
                 complete();
             } else if (!inbox().isEmpty()) {
@@ -71,6 +78,12 @@ public class BlockingProcessorTasklet extends ProcessorTaskletBase {
             return progTracker.toProgressState();
         } catch (JobFutureCompletedExceptionally e) {
             return ProgressState.DONE;
+        }
+    }
+
+    private void callNullaryProcess() {
+        if (!processor.tryProcess()) {
+            throw new JetException("Non-cooperative processor's tryProcess() returned false: " + processor);
         }
     }
 
@@ -119,7 +132,9 @@ public class BlockingProcessorTasklet extends ProcessorTaskletBase {
         private void submit(OutboundEdgeStream outstream, @Nonnull Object item) {
             OutboundCollector collector = outstream.getCollector();
             for (long idleCount = 0; ;) {
-                ProgressState result = (item != DONE_ITEM) ? collector.offer(item) : collector.close();
+                ProgressState result = (item instanceof Punctuation || item instanceof DoneItem)
+                        ? collector.offerBroadcast(item)
+                        : collector.offer(item);
                 if (result.isDone()) {
                     return;
                 }

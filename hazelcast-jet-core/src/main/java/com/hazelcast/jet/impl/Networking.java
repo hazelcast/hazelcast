@@ -117,21 +117,18 @@ public class Networking {
         final boolean[] hasData = {false};
         out.writeInt(executionContexts.size());
         executionContexts.forEach((execId, exeCtx) -> uncheckRun(() -> {
-            final Integer memberId = exeCtx.getMemberId(member);
-            if (memberId == null) {
-                // The target member is not involved in the job associated with this execution context
+            if (!exeCtx.isParticipating(member)) {
                 return;
             }
             out.writeLong(execId);
             out.writeInt(exeCtx.receiverMap().values().stream().mapToInt(Map::size).sum());
-            exeCtx.receiverMap().forEach((vertexId, m) ->
-                    m.forEach((ordinal, tasklet) -> uncheckRun(() -> {
-                                out.writeInt(vertexId);
-                                out.writeInt(ordinal);
-                                out.writeInt(tasklet.updateAndGetSendSeqLimitCompressed(memberId));
-                                hasData[0] = true;
-                            }
-                    )));
+            exeCtx.receiverMap().forEach((vertexId, ordinalToSenderToTasklet) ->
+                    ordinalToSenderToTasklet.forEach((ordinal, senderToTasklet) -> uncheckRun(() -> {
+                        out.writeInt(vertexId);
+                        out.writeInt(ordinal);
+                        out.writeInt(senderToTasklet.get(member).updateAndGetSendSeqLimitCompressed());
+                        hasData[0] = true;
+                    })));
         }));
         return hasData[0] ? out.toByteArray() : EMPTY_BYTES;
     }

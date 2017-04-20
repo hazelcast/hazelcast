@@ -25,7 +25,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -53,7 +52,7 @@ public class ProcessorsTest {
     @Before
     public void before() {
         inbox = new ArrayDequeInbox();
-        outbox = new ArrayDequeOutbox(1, new int[]{1}, new ProgressTracker());
+        outbox = new ArrayDequeOutbox(new int[]{1}, new ProgressTracker());
         context = mock(Context.class);
         bucket = outbox.queueWithOrdinal(0);
     }
@@ -319,7 +318,6 @@ public class ProcessorsTest {
     private static Processor processorFrom(ProcessorSupplier supplier) {
         return supplier.get(1).iterator().next();
     }
-
 
     private interface TwinConsumer<T> extends BiConsumer<T, T> { }
 }

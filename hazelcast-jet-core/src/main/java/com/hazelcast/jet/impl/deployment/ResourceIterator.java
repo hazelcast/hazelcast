@@ -30,6 +30,8 @@ import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 public final class ResourceIterator implements Iterator<ResourcePart>, AutoCloseable {
 
+    static final int RESOURCE_PART_SIZE = 1 << 14;
+
     private final Iterator<ResourceConfig> configIterator;
     private InputStream inputStream;
     private ResourceConfig resourceConfig;
@@ -37,10 +39,9 @@ public final class ResourceIterator implements Iterator<ResourcePart>, AutoClose
     private byte[] buffer;
     private ResourcePart nextPart;
 
-    public ResourceIterator(Set<ResourceConfig> resourceConfigs, int partSize) {
+    public ResourceIterator(Set<ResourceConfig> resourceConfigs) {
         this.configIterator = resourceConfigs.iterator();
-
-        buffer = new byte[partSize];
+        buffer = new byte[RESOURCE_PART_SIZE];
         readNext();
     }
 

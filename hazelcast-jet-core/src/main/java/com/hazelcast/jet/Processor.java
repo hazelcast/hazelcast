@@ -74,25 +74,43 @@ public interface Processor {
     }
 
     /**
-     * Processes some items in the supplied inbox. Removes the items it's done
-     * with. Does not remove an item until it is done with it.
+     * Called with a batch of items retrieved from an inbound edge's stream. The
+     * items are in the inbox and this method may process zero or more of them,
+     * removing each item after it is processed. Does not remove an item until it
+     * is done with it.
      * <p>
      * The default implementation does nothing.
      *
-     * @param ordinal ordinal of the edge the item comes from
+     * @param ordinal ordinal of the inbound edge
      * @param inbox   the inbox containing the pending items
      */
     default void process(int ordinal, @Nonnull Inbox inbox) {
     }
 
     /**
-     * Called after all the inputs are exhausted. If it returns {@code false},
-     * it will be invoked again until it returns {@code true}. After this
-     * method is called, no other processing methods will be called on this
-     * processor.
+     * Called when there is no pending data in the inbox. Allows the processor
+     * to produce output in the absence of input. If it returns {@code false},
+     * it will be called again before proceeding to call any other method.
+     * <p>
+     * <strong>NOTE:</strong> a processor that declares itself {@link
+     * #isCooperative() non-cooperative} must strictly return {@code true} from
+     * this method.
+     * <p>
+     * In non-cooperative processor, it is required to return {@code true}
+     * from this method.
+     */
+    default boolean tryProcess() {
+        return true;
+    }
+
+    /**
+     * Called after all the inbound edges' streams are exhausted. If it returns
+     * {@code false}, it will be invoked again until it returns {@code true}.
+     * After this method is called, no other processing methods will be called on
+     * this processor.
      *
      * @return {@code true} if the completing step is now done, {@code false}
-     *          otherwise.
+     *         otherwise.
      */
     default boolean complete() {
         return true;

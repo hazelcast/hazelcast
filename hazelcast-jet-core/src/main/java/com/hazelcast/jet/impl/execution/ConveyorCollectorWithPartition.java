@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.execution;
 
-import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
+import com.hazelcast.internal.util.concurrent.update.ConcurrentConveyor;
 import com.hazelcast.jet.impl.util.ObjectWithPartitionId;
 import com.hazelcast.jet.impl.util.ProgressState;
 
@@ -28,16 +28,11 @@ public class ConveyorCollectorWithPartition extends ConveyorCollector {
 
     @Override
     public ProgressState offer(Object item, int partitionId) {
-        return super.offer(new ObjectWithPartitionId(item, partitionId));
+        return offerToConveyor(new ObjectWithPartitionId(item, partitionId));
     }
 
     @Override
     public ProgressState offer(Object item) {
         return offer(item, -1);
-    }
-
-    @Override
-    public ProgressState close() {
-        return super.offer(doneItem);
     }
 }

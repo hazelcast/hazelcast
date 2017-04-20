@@ -34,6 +34,17 @@ public final class Traversers {
     }
 
     /**
+     * Returns an empty traverser equivalent to {@code () -> null}, but with
+     * guaranteed unique identity. Such a traverser is useful in a <em>null
+     * object</em> pattern, which relies on identity checks with {@code ==}
+     * against a private object.
+     */
+    @Nonnull
+    public static <T> Traverser<T> newNullTraverser() {
+        return new NullTraverser<T>();
+    }
+
+    /**
      * Returns a simple adapter from {@code Iterator} to {@code Traverser}. The
      * iterator must return non-{@code null} items. Each time its {@code next()}
      * method is called, the traverser will take another item from the iterator
@@ -79,7 +90,8 @@ public final class Traversers {
     }
 
     /**
-     * Returns a traverser over the given iterable. The iterator is obtained immediately.
+     * Returns a traverser over the given iterable. The iterator is obtained
+     * immediately.
      */
     @Nonnull
     public static <T> Traverser<T> traverseIterable(@Nonnull Iterable<T> iterable) {
@@ -95,9 +107,9 @@ public final class Traversers {
     }
 
     /**
-     * Flattens a supplier of traverser into a lazy-initialized traverser. The traverser
-     * is obtained from this method's argument just once, upon the first invocation of
-     * {@code get()}.
+     * Flattens a supplier of traverser into a lazy-initialized traverser. The
+     * traverser is obtained from this method's argument just once, upon the
+     * first invocation of {@code get()}.
      */
     @Nonnull
     public static <T> Traverser<T> lazy(@Nonnull Supplier<Traverser<T>> supplierOfTraverser) {
@@ -105,9 +117,9 @@ public final class Traversers {
     }
 
     /**
-     * Traverses over a single item which can be set from the outside, by using this
-     * traverser as a {@code Consumer<T>}. Another item can be set at any time and the
-     * subsequent {@code next()} call will consume it.
+     * Traverses over a single item which can be set from the outside, by using
+     * this traverser as a {@code Consumer<T>}. Another item can be set at any
+     * time and the subsequent {@code next()} call will consume it.
      *
      * @param <T> item type
      */
@@ -168,6 +180,13 @@ public final class Traversers {
         @Override
         public T next() {
             return i < array.length && i >= 0 ? array[i++] : null;
+        }
+    }
+
+    private static final class NullTraverser<T> implements Traverser<T> {
+        @Override
+        public T next() {
+            return null;
         }
     }
 }

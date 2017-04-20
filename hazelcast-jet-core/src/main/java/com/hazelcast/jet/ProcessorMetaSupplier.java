@@ -90,7 +90,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      * result of calling {@link ProcessorSupplier#of(Supplier<Processor>)}.
      */
     @Nonnull
-    static ProcessorMetaSupplier of(@Nonnull Supplier<Processor> procSupplier) {
+    static ProcessorMetaSupplier of(@Nonnull Supplier<? extends Processor> procSupplier) {
         return ProcessorMetaSupplier.of(ProcessorSupplier.of(procSupplier));
     }
 

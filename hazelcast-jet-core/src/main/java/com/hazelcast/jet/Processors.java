@@ -261,8 +261,8 @@ public final class Processors {
     }
 
     private static BufferedWriter createBufferedWriter(@Nonnull String host, int port) {
-        return uncheckCall(() ->
-                new BufferedWriter(new OutputStreamWriter(new Socket(host, port).getOutputStream(), "UTF-8")));
+        return uncheckCall(
+                () -> new BufferedWriter(new OutputStreamWriter(new Socket(host, port).getOutputStream(), "UTF-8")));
     }
 
     /**

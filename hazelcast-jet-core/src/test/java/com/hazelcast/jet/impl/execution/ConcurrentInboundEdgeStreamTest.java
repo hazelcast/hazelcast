@@ -16,39 +16,59 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.internal.util.concurrent.update.ConcurrentConveyor;
+import com.hazelcast.internal.util.concurrent.update.OneToOneConcurrentArrayQueue;
 import com.hazelcast.jet.impl.util.ProgressState;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 
+import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
+import static com.hazelcast.jet.impl.util.ProgressState.DONE;
+import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
 import static org.junit.Assert.assertEquals;
 
 public class ConcurrentInboundEdgeStreamTest {
 
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+    private static final Object senderGone = new Object();
+    private OneToOneConcurrentArrayQueue<Object> q1, q2;
+    private ConcurrentInboundEdgeStream stream;
+
+    @Before
+    public void setUp() {
+        q1 = new OneToOneConcurrentArrayQueue<>(128);
+        q2 = new OneToOneConcurrentArrayQueue<>(128);
+        //noinspection unchecked
+        ConcurrentConveyor<Object> conveyor = ConcurrentConveyor.concurrentConveyor(senderGone, q1, q2);
+
+        stream = new ConcurrentInboundEdgeStream(conveyor, 0, 0, 0, 0, false);
+    }
+
     @Test
     public void when_twoEmittersOneDoneFirst_then_madeProgress() {
-        IntegerSequenceEmitter emitter1 = new IntegerSequenceEmitter(1, 2, 1);
-        IntegerSequenceEmitter emitter2 = new IntegerSequenceEmitter(6, 1, 2);
-
-        ConcurrentInboundEdgeStream stream = new ConcurrentInboundEdgeStream(
-                new IntegerSequenceEmitter[]{emitter1, emitter2}, 0, 0);
-
         ArrayList<Object> list = new ArrayList<>();
+        q1.add(1);
+        q1.add(2);
+        q1.add(DONE_ITEM);
+        q2.add(6);
         ProgressState progressState = stream.drainTo(list);
-
-        // emitter1 returned 1 and 2; emitter2 returned 6
-        // emitter1 is now done
         assertEquals(Arrays.asList(1, 2, 6), list);
-        assertEquals(ProgressState.MADE_PROGRESS, progressState);
+        assertEquals(MADE_PROGRESS, progressState);
 
         list.clear();
+        q2.add(7);
+        q2.add(DONE_ITEM);
         progressState = stream.drainTo(list);
         // emitter2 returned 7 and now both emitters are done
         assertEquals(Collections.singletonList(7), list);
-        assertEquals(ProgressState.DONE, progressState);
+        assertEquals(DONE, progressState);
 
         // both emitters are now done and made no progress since last call
         list.clear();
@@ -59,34 +79,29 @@ public class ConcurrentInboundEdgeStreamTest {
 
     @Test
     public void when_twoEmittersDrainedAtOnce_then_firstCallDone() {
-        IntegerSequenceEmitter emitter1 = new IntegerSequenceEmitter(1, 2, 1);
-        IntegerSequenceEmitter emitter2 = new IntegerSequenceEmitter(6, 1, 1);
-
-        ConcurrentInboundEdgeStream stream = new ConcurrentInboundEdgeStream(
-                new IntegerSequenceEmitter[]{emitter1, emitter2}, 0, 0);
-
         ArrayList<Object> list = new ArrayList<>();
+        q1.add(1);
+        q1.add(2);
+        q1.add(DONE_ITEM);
+        q2.add(6);
+        q2.add(DONE_ITEM);
         ProgressState progressState = stream.drainTo(list);
 
         // emitter1 returned 1 and 2; emitter2 returned 6
         // both are now done
         assertEquals(Arrays.asList(1, 2, 6), list);
-        assertEquals(ProgressState.DONE, progressState);
+        assertEquals(DONE, progressState);
     }
 
     @Test
     public void when_allEmittersInitiallyDone_then_firstCallDone() {
-        IntegerSequenceEmitter emitter1 = new IntegerSequenceEmitter(1, 2, 0);
-        IntegerSequenceEmitter emitter2 = new IntegerSequenceEmitter(6, 1, 0);
-
-        ConcurrentInboundEdgeStream stream = new ConcurrentInboundEdgeStream(
-                new IntegerSequenceEmitter[]{emitter1, emitter2}, 0, 0);
-
         ArrayList<Object> list = new ArrayList<>();
+        q1.add(DONE_ITEM);
+        q2.add(DONE_ITEM);
         ProgressState progressState = stream.drainTo(list);
 
         assertEquals(0, list.size());
-        assertEquals(ProgressState.WAS_ALREADY_DONE, progressState);
+        assertEquals(ProgressState.DONE, progressState);
 
         list.clear();
         progressState = stream.drainTo(list);
@@ -96,17 +111,13 @@ public class ConcurrentInboundEdgeStreamTest {
 
     @Test
     public void when_oneEmitterWithNoProgress_then_noProgress() {
-        NoProgressEmitter emitter1 = new NoProgressEmitter();
-        IntegerSequenceEmitter emitter2 = new IntegerSequenceEmitter(1, 1, 1);
-
-        ConcurrentInboundEdgeStream stream = new ConcurrentInboundEdgeStream(
-                new InboundEmitter[]{emitter1, emitter2}, 0, 0);
-
         ArrayList<Object> list = new ArrayList<>();
+        q2.add(1);
+        q2.add(DONE_ITEM);
         ProgressState progressState = stream.drainTo(list);
 
         assertEquals(Collections.singletonList(1), list);
-        assertEquals(ProgressState.MADE_PROGRESS, progressState);
+        assertEquals(MADE_PROGRESS, progressState);
         // now emitter2 is done, emitter1 is not but has no progress
         list.clear();
         progressState = stream.drainTo(list);
@@ -114,49 +125,16 @@ public class ConcurrentInboundEdgeStreamTest {
         assertEquals(ProgressState.NO_PROGRESS, progressState);
 
         // now make emitter1 done, without returning anything
-        emitter1.done = true;
+        q1.add(DONE_ITEM);
+
+        list.clear();
+        progressState = stream.drainTo(list);
+        assertEquals(0, list.size());
+        assertEquals(ProgressState.DONE, progressState);
 
         list.clear();
         progressState = stream.drainTo(list);
         assertEquals(0, list.size());
         assertEquals(ProgressState.WAS_ALREADY_DONE, progressState);
     }
-
-    private static final class IntegerSequenceEmitter implements InboundEmitter {
-
-        private int currentValue;
-        private int drainSize;
-        private int endValue;
-
-        /**
-         * @param startAt Value to start at
-         * @param drainSize Number of items to emit in one {@code drainTo} call
-         * @param drainCallsUntilDone Total number of {@code drainTo} Calls until done
-         */
-        IntegerSequenceEmitter(int startAt, int drainSize, int drainCallsUntilDone) {
-            currentValue = startAt;
-            this.drainSize = drainSize;
-            this.endValue = startAt + drainCallsUntilDone * drainSize;
-        }
-
-        @Override
-        public ProgressState drainTo(Collection<Object> dest) {
-            int i;
-            for (i = 0; i < drainSize && currentValue < endValue; i++, currentValue++)
-                dest.add(currentValue);
-
-            return ProgressState.valueOf(i > 0, currentValue >= endValue);
-        }
-    }
-
-    private static final class NoProgressEmitter implements InboundEmitter {
-
-        boolean done;
-
-        @Override
-        public ProgressState drainTo(Collection<Object> dest) {
-            return done ? ProgressState.WAS_ALREADY_DONE : ProgressState.NO_PROGRESS;
-        }
-    }
-
 }

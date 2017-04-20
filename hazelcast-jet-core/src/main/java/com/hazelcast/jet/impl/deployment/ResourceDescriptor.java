@@ -27,43 +27,34 @@ public class ResourceDescriptor implements Serializable {
         this.resourceKind = resourceKind;
     }
 
-    public ResourceKind getResourceKind() {
-        return resourceKind;
-    }
-
     public String getId() {
         return id;
     }
 
+    ResourceKind getResourceKind() {
+        return resourceKind;
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        ResourceDescriptor that = (ResourceDescriptor) o;
-
-        if (!this.id.equals(that.id)) {
-            return false;
-        }
-
-        return resourceKind == that.resourceKind;
-
+        ResourceDescriptor that;
+        return this == o ||
+                o != null
+                && this.getClass() == o.getClass()
+                && this.id.equals((that = (ResourceDescriptor) o).id)
+                && this.resourceKind == that.resourceKind;
     }
 
     @Override
     public int hashCode() {
-        int result = id.hashCode();
-        result = 31 * result + resourceKind.hashCode();
-        return result;
+        int hc = 17;
+        hc = 37 * hc + id.hashCode();
+        hc = 37 * hc + resourceKind.hashCode();
+        return hc;
     }
 
     @Override
     public String toString() {
-        return id + " (" + getResourceKind() + ")";
+        return id + " (" + getResourceKind() + ')';
     }
 }

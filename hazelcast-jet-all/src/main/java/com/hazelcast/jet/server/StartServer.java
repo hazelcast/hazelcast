@@ -26,7 +26,7 @@ import java.io.PrintWriter;
 import static com.hazelcast.nio.IOUtil.closeResource;
 
 /**
- * Starts a Hazelcast Jet server instance.
+ * Main class that starts a Hazelcast Jet instance.
  */
 public final class StartServer {
 

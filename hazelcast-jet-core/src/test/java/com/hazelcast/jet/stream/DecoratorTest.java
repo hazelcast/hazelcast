@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.JetInstance;
@@ -87,6 +86,12 @@ public class DecoratorTest {
                 for (int i = 0; i < parameterTypes.length; i++) {
                     Class<?> clazz = parameterTypes[i];
                     args[i] = getMockedValue(clazz);
+                }
+                // mock the return value, because some methods have @Nonnull annotations
+                if (method.getReturnType() != void.class) {
+                    // get the overridden return type, it might be more specific than in superclass
+                    Class<?> returnType = decorated.getMethod(method.getName(), parameterTypes).getReturnType();
+                    Mockito.when(method.invoke(mock, args)).thenReturn(getMockedValue(returnType));
                 }
                 decoratorMethod.invoke(decoratorInstance, args);
                 method.invoke(Mockito.verify(mock), args);

@@ -23,16 +23,15 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
 import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
-import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
 import static com.hazelcast.jet.impl.util.ProgressState.WAS_ALREADY_DONE;
 import static java.util.Collections.emptyList;
 
 public class MockInboundStream implements InboundEdgeStream {
     private final int chunkSize;
     private final List<Object> mockData;
-    private final CollectionWithDoneDetector doneDetector = new CollectionWithDoneDetector();
     private final int ordinal;
     private int dataIndex;
     private boolean done;
@@ -54,23 +53,17 @@ public class MockInboundStream implements InboundEdgeStream {
 
     @Override
     public ProgressState drainTo(Collection<Object> dest) {
-        if (done) {
+        if (done || dataIndex == mockData.size()) {
             return WAS_ALREADY_DONE;
         }
         final int limit = Math.min(mockData.size(), dataIndex + chunkSize);
-        if (limit == dataIndex) {
-            return NO_PROGRESS;
-        }
-        doneDetector.wrapped = dest;
-        try {
-            for (; dataIndex < limit; dataIndex++) {
-                Object item = mockData.get(dataIndex);
-                if (!doneDetector.add(item)) {
-                    done = true;
-                }
+        for (; dataIndex < limit; dataIndex++) {
+            final Object item = mockData.get(dataIndex);
+            if (item == DONE_ITEM) {
+                done = true;
+            } else {
+                dest.add(item);
             }
-        } finally {
-            doneDetector.wrapped = null;
         }
         return done ? DONE : MADE_PROGRESS;
     }

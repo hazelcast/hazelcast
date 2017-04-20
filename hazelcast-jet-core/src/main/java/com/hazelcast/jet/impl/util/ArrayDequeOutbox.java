@@ -32,9 +32,9 @@ public final class ArrayDequeOutbox implements Outbox {
     private final int[] capacities;
     private final ProgressTracker progTracker;
 
-    public ArrayDequeOutbox(int size, int[] capacities, ProgressTracker progTracker) {
+    public ArrayDequeOutbox(int[] capacities, ProgressTracker progTracker) {
         this.capacities = capacities.clone();
-        this.buckets = new Queue[size];
+        this.buckets = new Queue[capacities.length];
         this.progTracker = progTracker;
         Arrays.setAll(buckets, i -> new ArrayDeque());
     }
@@ -84,6 +84,10 @@ public final class ArrayDequeOutbox implements Outbox {
         return buckets[ordinal].size() >= capacities[ordinal];
     }
 
+    @Override
+    public String toString() {
+        return Arrays.toString(buckets);
+    }
 
     // Private API for tasklets
 

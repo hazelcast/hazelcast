@@ -23,28 +23,31 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.spi.NodeEngine;
 
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.util.Util.getRemoteMembers;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
+import static java.util.Collections.unmodifiableSet;
 
 public class ExecutionContext {
 
-    // vertex id --> ordinal --> receiver tasklet
-    private Map<Integer, Map<Integer, ReceiverTasklet>> receiverMap = emptyMap();
+    // dest vertex id --> dest ordinal --> sender addr --> receiver tasklet
+    private Map<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> receiverMap = emptyMap();
 
     // dest vertex id --> dest ordinal --> dest addr --> sender tasklet
     private Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap = emptyMap();
 
     private List<ProcessorSupplier> procSuppliers = emptyList();
-    private Map<Address, Integer> memberToId = emptyMap();
+    private Set<Address> participatingMembers = emptySet();
     private List<Tasklet> tasklets;
     private CompletionStage<Void> executionCompletionStage;
 
@@ -74,7 +77,7 @@ public class ExecutionContext {
         return senderMap;
     }
 
-    public Map<Integer, Map<Integer, ReceiverTasklet>> receiverMap() {
+    public Map<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> receiverMap() {
         return receiverMap;
     }
 
@@ -85,15 +88,16 @@ public class ExecutionContext {
     public void handlePacket(int vertexId, int ordinal, Address sender, BufferObjectDataInput in) {
         receiverMap.get(vertexId)
                    .get(ordinal)
-                   .receiveStreamPacket(in, memberToId.get(sender));
+                   .get(sender)
+                   .receiveStreamPacket(in);
     }
 
-    public Integer getMemberId(Address member) {
-        return memberToId != null ? memberToId.get(member) : null;
+    public boolean isParticipating(Address member) {
+        return participatingMembers != null && participatingMembers.contains(member);
     }
 
     public ExecutionContext initialize(ExecutionPlan plan) {
-        populateMemberToId();
+        this.participatingMembers = unmodifiableSet(new HashSet<>(getRemoteMembers(nodeEngine)));
         // Must be populated early, so all processor suppliers are
         // available to be completed in the case of init failure
         procSuppliers = unmodifiableList(plan.getProcessorSuppliers());
@@ -103,14 +107,4 @@ public class ExecutionContext {
         tasklets = plan.getTasklets();
         return this;
     }
-
-    private void populateMemberToId() {
-        final Map<Address, Integer> memberToId = new HashMap<>();
-        int id = 0;
-        for (Address member : getRemoteMembers(nodeEngine)) {
-            memberToId.put(member, id++);
-        }
-        this.memberToId = unmodifiableMap(memberToId);
-    }
-
 }

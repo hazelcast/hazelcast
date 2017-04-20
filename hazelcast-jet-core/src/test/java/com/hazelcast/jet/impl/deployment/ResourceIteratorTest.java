@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 
+import static com.hazelcast.jet.impl.deployment.ResourceIterator.RESOURCE_PART_SIZE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -79,15 +80,14 @@ public class ResourceIteratorTest {
             }
 
             // create the ResourceIterator
-            int partSize = 5;
-            try (ResourceIterator ri = new ResourceIterator(new LinkedHashSet<>(Arrays.asList(configs)), partSize)) {
+            try (ResourceIterator ri = new ResourceIterator(new LinkedHashSet<>(Arrays.asList(configs)))) {
                 // iterate it and check, that the contents match
                 int lastIndex = -1;
                 int lastOffset = 0;
                 while (ri.hasNext()) {
                     ResourcePart rp = ri.next();
                     int fileIndex = Integer.parseInt(rp.getDescriptor().getId());
-                    assertTrue("part is too big", rp.getBytes().length <= partSize);
+                    assertTrue("part is too big", rp.getBytes().length <= RESOURCE_PART_SIZE);
                     if (contents[fileIndex].length() > 0) {
                         assertTrue("zero-length part for non-empty file", rp.getBytes().length > 0);
                     }

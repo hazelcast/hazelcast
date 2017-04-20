@@ -20,11 +20,13 @@ import com.hazelcast.jet.Traverser;
 
 import java.util.function.Function;
 
+import static com.hazelcast.jet.Traversers.newNullTraverser;
+
 /**
  * A flat-mapping decorator over a traverser.
  */
 public class FlatMappingTraverser<T, R> implements Traverser<R> {
-    private static final Traverser EMPTY_TRAVERSER = () -> null;
+    private static final Traverser NULL_TRAVERSER = newNullTraverser();
 
     private final Traverser<T> wrapped;
     private final Function<? super T, ? extends Traverser<? extends R>> mapper;
@@ -44,12 +46,12 @@ public class FlatMappingTraverser<T, R> implements Traverser<R> {
                 return r;
             }
             currentTraverser = nextTraverser();
-        } while (currentTraverser != EMPTY_TRAVERSER);
+        } while (currentTraverser != NULL_TRAVERSER);
         return null;
     }
 
     private Traverser<? extends R> nextTraverser() {
         final T t = wrapped.next();
-        return t != null ? mapper.apply(t) : EMPTY_TRAVERSER;
+        return t != null ? mapper.apply(t) : NULL_TRAVERSER;
     }
 }

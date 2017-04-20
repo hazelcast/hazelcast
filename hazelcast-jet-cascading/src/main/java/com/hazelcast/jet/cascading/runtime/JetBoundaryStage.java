@@ -84,8 +84,8 @@ public class JetBoundaryStage extends BoundaryStage<TupleEntry, TupleEntry> impl
         } catch (CascadingException exception) {
             handleException(exception, incomingEntry);
         } catch (Throwable throwable) {
-            handleException(
-                    new DuctException("internal error: " + incomingEntry.getTuple().print(), throwable), incomingEntry);
+            handleException(new DuctException(
+                    "internal error: " + incomingEntry.getTuple().print(), throwable), incomingEntry);
         }
     }
 

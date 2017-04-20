@@ -44,8 +44,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.DistributedFunctions.wholeItem;
+import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.Processors.writeMap;
 import static com.hazelcast.jet.Traversers.lazy;
 import static com.hazelcast.jet.Traversers.traverseIterable;
@@ -103,12 +103,12 @@ public class BackpressureTest extends JetTestSupport {
         Vertex source = dag.newVertex("source", ProcessorMetaSupplier.of((Address address) ->
                 ProcessorSupplier.of(address.getPort() == member1Port ? GenerateP::new : NoopP::new)
         ));
-        Vertex hiccuper = dag.newVertex("hiccuper", HiccupP::new);
+        Vertex hiccup = dag.newVertex("hiccup", HiccupP::new);
         Vertex sink = dag.newVertex("sink", writeMap("counts"));
 
-        dag.edge(between(source, hiccuper)
+        dag.edge(between(source, hiccup)
                 .distributed().partitioned(wholeItem(), (x, y) -> ptionOwnedByMember2))
-           .edge(between(hiccuper, sink));
+           .edge(between(hiccup, sink));
 
         uncheckCall(jet1.newJob(dag).execute()::get);
         assertCounts(jet1.getMap("counts"));
@@ -145,6 +145,11 @@ public class BackpressureTest extends JetTestSupport {
         public boolean complete() {
             return emitFromTraverser(trav);
         }
+
+        @Override
+        public String toString() {
+            return "GenerateP";
+        }
     }
 
     private static class CombineP extends AbstractProcessor {
@@ -161,6 +166,11 @@ public class BackpressureTest extends JetTestSupport {
         @Override
         public boolean complete() {
             return emitFromTraverser(resultTraverser);
+        }
+
+        @Override
+        public String toString() {
+            return "CombineP";
         }
     }
 
@@ -202,6 +212,11 @@ public class BackpressureTest extends JetTestSupport {
         private void updateNextHiccupTime() {
             nextHiccupTime = System.nanoTime() + MILLISECONDS.toNanos(700)
                     + MILLISECONDS.toNanos(ThreadLocalRandom.current().nextLong(2_000));
+        }
+
+        @Override
+        public String toString() {
+            return "HiccupP";
         }
     }
 }

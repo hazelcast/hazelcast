@@ -30,6 +30,7 @@ import com.hazelcast.jet.impl.deployment.ResourceStore;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.ExecutionService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
+import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -182,8 +183,8 @@ public class JetService
     }
 
     public Map<Member, ExecutionPlan> createExecutionPlans(DAG dag) {
-        return ExecutionPlan.createExecutionPlans(
-                nodeEngine, dag, config.getInstanceConfig().getCooperativeThreadCount());
+        return ExecutionPlanBuilder.createExecutionPlans(nodeEngine, dag,
+                config.getInstanceConfig().getCooperativeThreadCount());
     }
 
 

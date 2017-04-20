@@ -33,4 +33,11 @@ public class ObjectWithPartitionId {
     public int getPartitionId() {
         return partitionId;
     }
+
+    @Override public String toString() {
+        return "ObjectWithPartitionId{" +
+                "item=" + item +
+                ", partitionId=" + partitionId +
+                '}';
+    }
 }

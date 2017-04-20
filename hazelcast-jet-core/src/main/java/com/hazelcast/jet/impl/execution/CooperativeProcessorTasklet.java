@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.Punctuation;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
 import com.hazelcast.jet.impl.util.ProgressState;
@@ -28,7 +29,7 @@ import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.impl.util.DoneItem.DONE_ITEM;
+import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 
 /**
  * Tasklet that drives a cooperative processor.
@@ -42,7 +43,7 @@ public class CooperativeProcessorTasklet extends ProcessorTaskletBase {
         super(context, processor, instreams, outstreams);
         Preconditions.checkTrue(processor.isCooperative(), "Processor is non-cooperative");
         int[] bucketCapacities = Stream.of(this.outstreams).mapToInt(OutboundEdgeStream::getOutboxCapacity).toArray();
-        this.outbox = new ArrayDequeOutbox(outstreams.size(), bucketCapacities, progTracker);
+        this.outbox = new ArrayDequeOutbox(bucketCapacities, progTracker);
     }
 
     @Override
@@ -58,21 +59,23 @@ public class CooperativeProcessorTasklet extends ProcessorTaskletBase {
     @Override @Nonnull
     public ProgressState call() {
         progTracker.reset();
-        tryFillInbox();
+        if (!inbox().isEmpty()) {
+            progTracker.notDone();
+        } else {
+            if (!processor.tryProcess()) {
+                tryFlushOutbox();
+                progTracker.notDone();
+                return progTracker.toProgressState();
+            }
+            tryFillInbox();
+        }
         if (progTracker.isDone()) {
             completeIfNeeded();
         } else if (!inbox().isEmpty()) {
-            tryProcessInbox();
+            processor.process(currInstream.ordinal(), inbox());
         }
         tryFlushOutbox();
         return progTracker.toProgressState();
-    }
-
-    private void tryProcessInbox() {
-        processor.process(currInstream.ordinal(), inbox());
-        if (!inbox().isEmpty()) {
-            progTracker.notDone();
-        }
     }
 
     private void completeIfNeeded() {
@@ -92,8 +95,9 @@ public class CooperativeProcessorTasklet extends ProcessorTaskletBase {
         for (int i = 0; i < outbox.bucketCount(); i++) {
             final Queue q = outbox.queueWithOrdinal(i);
             for (Object item; (item = q.peek()) != null; ) {
-                OutboundCollector collector = outstreams[i].getCollector();
-                final ProgressState state = (item != DONE_ITEM) ? collector.offer(item) : collector.close();
+                final OutboundCollector c = outstreams[i].getCollector();
+                final ProgressState state = (item instanceof Punctuation || item instanceof DoneItem ?
+                        c.offerBroadcast(item) : c.offer(item));
                 progTracker.madeProgress(state.isMadeProgress());
                 if (!state.isDone()) {
                     progTracker.notDone();

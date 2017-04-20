@@ -18,6 +18,8 @@ package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
@@ -34,15 +36,20 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.util.stream.Collectors.toList;
 
 public final class Util {
 
-    public static final int BUFFER_SIZE = 1 << 15;
+    private static final int BUFFER_SIZE = 1 << 15;
 
     private Util() {
+    }
+
+    public static <T> Supplier<T> memoize(Supplier<T> onceSupplier) {
+        return new MemoizingSupplier<>(onceSupplier);
     }
 
     public static <T> T uncheckCall(@Nonnull Callable<T> callable) {
@@ -76,6 +83,10 @@ public final class Util {
 
     public static Connection getMemberConnection(@Nonnull NodeEngine engine, @Nonnull Address memberAddr) {
         return ((NodeEngineImpl) engine).getNode().getConnectionManager().getConnection(memberAddr);
+    }
+
+    public static JetInstance getJetInstance(NodeEngine nodeEngine) {
+        return nodeEngine.<JetService>getService(JetService.SERVICE_NAME).getJetInstance();
     }
 
     @Nonnull
@@ -116,5 +127,31 @@ public final class Util {
             list.add(output.readObject());
         }
         return list;
+    }
+
+    public static long addClamped(long a, long b) {
+        long sum = a + b;
+        return sumHadOverflow(a, b, sum)
+                ? (a >= 0 ? Long.MAX_VALUE : Long.MIN_VALUE)
+                : sum;
+    }
+
+    public static long subtractClamped(long a, long b) {
+        long diff = a - b;
+        return diffHadOverflow(a, b, diff)
+                ? (a >= 0 ? Long.MAX_VALUE : Long.MIN_VALUE)
+                : diff;
+    }
+
+    // Hacker's Delight, 2nd Ed, 2-13: overflow has occurred iff
+    // operands have the same sign which is opposite of the result
+    public static boolean sumHadOverflow(long a, long b, long sum) {
+        return ((a ^ sum) & (b ^ sum)) < 0;
+    }
+
+    // Hacker's Delight, 2nd Ed, 2-13: overflow has occurred iff operands have
+    // opposite signs and result has opposite sign of left-hand operand
+    public static boolean diffHadOverflow(long a, long b, long diff) {
+        return ((a ^ b) & (a ^ diff)) < 0;
     }
 }

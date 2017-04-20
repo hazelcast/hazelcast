@@ -80,10 +80,6 @@ abstract class ProcessorTaskletBase implements Tasklet {
     }
 
     void tryFillInbox() {
-        if (!inbox.isEmpty()) {
-            progTracker.notDone();
-            return;
-        }
         if (instreamCursor == null) {
             return;
         }

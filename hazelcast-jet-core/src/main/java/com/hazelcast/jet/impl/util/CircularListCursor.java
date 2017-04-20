@@ -77,6 +77,6 @@ public class CircularListCursor<E> {
 
     @Override
     public String toString() {
-        return "ListCursor{index=" + index + '}';
+        return "CircularListCursor{index=" + index + '}';
     }
 }

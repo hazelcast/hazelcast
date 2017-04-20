@@ -16,13 +16,11 @@
 
 package com.hazelcast.jet.impl.execution;
 
-import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
+import com.hazelcast.internal.util.concurrent.update.ConcurrentConveyor;
 import com.hazelcast.jet.impl.util.ProgressState;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 public class ConveyorCollector implements OutboundCollector {
-
-    protected final Object doneItem;
 
     private final ConcurrentConveyor<Object> conveyor;
     private final int queueIndex;
@@ -33,23 +31,26 @@ public class ConveyorCollector implements OutboundCollector {
         this.conveyor = conveyor;
         this.queueIndex = queueIndex;
         this.partitions = partitions;
-        this.doneItem = conveyor.submitterGoneItem();
     }
 
     @Override
     public ProgressState offer(Object item) {
-        return conveyor.offer(queueIndex, item) ? ProgressState.DONE : ProgressState.NO_PROGRESS;
+        return offerToConveyor(item);
     }
 
     @Override
-    public ProgressState close() {
-        return offer(doneItem);
+    public ProgressState offerBroadcast(Object punc) {
+        return offerToConveyor(punc);
     }
 
     @Override
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public int[] getPartitions() {
         return partitions;
+    }
+
+    protected ProgressState offerToConveyor(Object item) {
+        return conveyor.offer(queueIndex, item) ? ProgressState.DONE : ProgressState.NO_PROGRESS;
     }
 }
 
