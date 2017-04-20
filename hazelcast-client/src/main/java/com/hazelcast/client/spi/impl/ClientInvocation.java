@@ -20,17 +20,19 @@ import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
 import java.util.concurrent.Executor;
@@ -53,6 +55,7 @@ public class ClientInvocation implements Runnable {
     private final ClientInvocationFuture clientInvocationFuture;
     private final ILogger logger;
     private final LifecycleService lifecycleService;
+    private final ClientClusterService clientClusterService;
     private final ClientInvocationServiceSupport invocationService;
     private final ClientExecutionService executionService;
     private final ClientMessage clientMessage;
@@ -70,6 +73,7 @@ public class ClientInvocation implements Runnable {
                                int partitionId,
                                Address address,
                                Connection connection) {
+        this.clientClusterService = client.getClientClusterService();
         this.lifecycleService = client.getLifecycleService();
         this.invocationService = (ClientInvocationServiceSupport) client.getInvocationService();
         this.executionService = client.getClientExecutionService();
@@ -177,7 +181,7 @@ public class ClientInvocation implements Runnable {
             return;
         }
 
-        if (isBindToSingleConnection() && exception instanceof IOException) {
+        if (isNotAllowedToRetryOnSelection(exception)) {
             clientInvocationFuture.complete(exception);
             return;
         }
@@ -206,6 +210,23 @@ public class ClientInvocation implements Runnable {
             clientInvocationFuture.complete(exception);
         }
 
+    }
+
+    private boolean isNotAllowedToRetryOnSelection(Throwable exception) {
+        if (isBindToSingleConnection() && exception instanceof IOException) {
+            return true;
+        }
+
+        if (address != null
+                && exception instanceof TargetNotMemberException
+                && clientClusterService.getMember(address) == null) {
+            //when invocation send over address
+            //if exception is target not member and
+            //address is not available in member list , don't retry
+            clientInvocationFuture.complete(exception);
+            return true;
+        }
+        return false;
     }
 
     private boolean isBindToSingleConnection() {
@@ -267,7 +288,6 @@ public class ClientInvocation implements Runnable {
         }
         return "ClientInvocation{"
                 + "clientMessageType=" + clientMessage.getMessageType()
-                + ", callIdSequence=" + callIdSequence
                 + ", target=" + target
                 + ", sendConnection=" + sendConnection + '}';
     }
