@@ -490,7 +490,8 @@ public class BounceMemberRule implements TestRule {
         // reflectively instantiate default client-side test driver factory
         private DriverFactory newDefaultClientDriverFactory() {
             try {
-                Class factoryClass = ClassLoaderUtil.loadClass(null, "com.hazelcast.client.test.bounce.ClientDriverFactory");
+                Class factoryClass = ClassLoaderUtil.loadClass(null,
+                        "com.hazelcast.client.test.bounce.MultiSocketClientDriverFactory");
                 return (DriverFactory) factoryClass.newInstance();
             } catch (Exception e) {
                 throw new AssertionError("Could not instantiate client DriverFactory: " + e.getMessage());
