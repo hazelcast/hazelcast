@@ -19,8 +19,6 @@ package com.hazelcast.client.spi.impl;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -82,7 +80,6 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
     }
 
     private Connection getOrTriggerConnect(Address target) throws IOException {
-        ensureOwnerConnectionAvailable();
         Connection connection = connectionManager.getOrTriggerConnect(target, false);
         if (connection == null) {
             throw new IOException("No available connection to address " + target);
@@ -91,27 +88,11 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
     }
 
     private Connection getOrConnect(Address target) throws IOException {
-        ensureOwnerConnectionAvailable();
         Connection connection = connectionManager.getOrConnect(target, false);
         if (connection == null) {
             throw new IOException("No available connection to address " + target);
         }
         return connection;
-    }
-
-    private void ensureOwnerConnectionAvailable() throws IOException {
-        ClientClusterService clientClusterService = client.getClientClusterService();
-        Address ownerConnectionAddress = clientClusterService.getOwnerConnectionAddress();
-
-        boolean isOwnerConnectionAvailable = ownerConnectionAddress != null
-                && connectionManager.getConnection(ownerConnectionAddress) != null;
-
-        if (!isOwnerConnectionAvailable) {
-            if (isShutdown()) {
-                throw new HazelcastException("ConnectionManager is not active!");
-            }
-            throw new IOException("Not able to setup owner connection!");
-        }
     }
 
     @Override
