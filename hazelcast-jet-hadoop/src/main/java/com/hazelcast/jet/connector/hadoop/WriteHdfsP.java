@@ -110,12 +110,9 @@ public final class WriteHdfsP<K, KM, V, VM> extends AbstractProcessor {
      * The supplied {@code JobConf} must specify an {@code OutputFormat} with a path.
      *
      * @param jobConf     {@code JobConf} used for output format configuration
-     *
-     * @param <K>         the key type of the records
-     * @param <V>         the value type of the records
      */
     @Nonnull
-    public static <K, V> ProcessorMetaSupplier writeHdfs(@Nonnull JobConf jobConf) {
+    public static ProcessorMetaSupplier writeHdfs(@Nonnull JobConf jobConf) {
         return WriteHdfsP.writeHdfs(jobConf, identity(), identity());
     }
 

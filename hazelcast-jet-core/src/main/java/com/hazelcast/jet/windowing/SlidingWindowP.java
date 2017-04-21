@@ -46,7 +46,7 @@ import static java.util.function.Function.identity;
  * @param <F> type of the frame accumulator object
  * @param <R> type of the finished result
  */
-public class SlidingWindowP<K, F, R> extends AbstractProcessor {
+class SlidingWindowP<K, F, R> extends AbstractProcessor {
     private final WindowDefinition wDef;
     private final Supplier<F> createF;
     private final BinaryOperator<F> combineF;

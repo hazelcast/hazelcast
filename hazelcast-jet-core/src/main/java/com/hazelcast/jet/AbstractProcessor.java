@@ -271,8 +271,27 @@ public abstract class AbstractProcessor implements Processor {
         return tryProcessPunc(4, punc);
     }
 
+    /**
+     * Tries to process the supplied punctuation, which was received from the
+     * edge with the supplied ordinal. May choose to process only partially
+     * and return {@code false}, in which case it will be called again later
+     * with the same {@code (ordinal, item)} combination.
+     * <p>
+     * The default implementation just emits the punctuation downstream
+     * to all ordinals.
+     * <p>
+     * <strong>NOTE:</strong> unless the processor doesn't differentiate between
+     * its inbound edges, the first choice should be leaving this method alone
+     * and instead overriding the specific {@code tryProcessN()} methods for
+     * each ordinal the processor expects.
+     *
+     * @param ordinal ordinal of the edge that delivered the punctuation
+     * @param punc    punctuation to be processed
+     * @return {@code true} if this punctuation has now been processed,
+     *         {@code false} otherwise.
+     */
     protected boolean tryProcessPunc(int ordinal, @Nonnull Punctuation punc) {
-        throw new UnsupportedOperationException("Missing implementation");
+        return tryEmit(punc);
     }
 
     /**

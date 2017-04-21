@@ -41,7 +41,7 @@ public final class Traversers {
      */
     @Nonnull
     public static <T> Traverser<T> newNullTraverser() {
-        return new NullTraverser<T>();
+        return new NullTraverser<>();
     }
 
     /**

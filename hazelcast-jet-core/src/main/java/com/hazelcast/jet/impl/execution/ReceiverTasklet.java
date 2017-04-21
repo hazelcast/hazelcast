@@ -52,7 +52,7 @@ public class ReceiverTasklet implements Tasklet {
     /**
      * The Receive Window, in analogy to TCP's RWIN, is the number of compressed
      * seq units the sender can be ahead of the acknowledged seq. The
-     * correspondence between a compresesd seq unit and bytes is defined by the
+     * correspondence between a compressed seq unit and bytes is defined by the
      * constant {@link #COMPRESSED_SEQ_UNIT_LOG2}.
      * <p>
      * The receiver tasklet keeps an array of receive window sizes, one for each
@@ -115,7 +115,7 @@ public class ReceiverTasklet implements Tasklet {
                 break;
             }
             ProgressState outcome = item instanceof Punctuation
-                    ? collector.offerBroadcast((Punctuation) item)
+                    ? collector.offerBroadcast(item)
                     : collector.offer(item, o.getPartitionId());
             if (!outcome.isDone()) {
                 tracker.madeProgress(outcome.isMadeProgress());
@@ -134,7 +134,7 @@ public class ReceiverTasklet implements Tasklet {
 
     /**
      * Calls {@link #updateAndGetSendSeqLimitCompressed(long)} with {@code
-     * System.nanotime()} and the current acked seq for the given sender ID.
+     * System.nanoTime()} and the current acked seq for the given sender ID.
      */
     public int updateAndGetSendSeqLimitCompressed() {
         return updateAndGetSendSeqLimitCompressed(System.nanoTime());

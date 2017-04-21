@@ -20,6 +20,8 @@ import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.Distributed.BinaryOperator;
 import com.hazelcast.jet.stream.DistributedCollector;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -57,11 +59,13 @@ public interface WindowOperation<T, A, R> extends Serializable {
      * accumulator is "empty" (i.e., equal to a fresh instance returned from
      * this method) and can be evicted from a processor's storage.
      */
+    @Nonnull
     Distributed.Supplier<A> createAccumulatorF();
 
     /**
      * A function that updates the accumulated value to account for a new item.
      */
+    @Nonnull
     Distributed.BiConsumer<A, T> accumulateItemF();
 
     /**
@@ -70,6 +74,7 @@ public interface WindowOperation<T, A, R> extends Serializable {
      * the left-hand operator (presumably to return it as the new result), but
      * not the right-hand one.
      */
+    @Nonnull
     Distributed.BinaryOperator<A> combineAccumulatorsF();
 
     /**
@@ -83,13 +88,23 @@ public interface WindowOperation<T, A, R> extends Serializable {
      * #combineAccumulatorsF() combine} so that {@code deduct(combine(acc, x),
      * x)} returns an accumulator in the same state as {@code acc} was before
      * the operation.
+     * <p>
+     * <b>Note:</b> it's allowed to return {@code null} here, however it
+     * impacts performance. This function allows us to <i>combine </i> new
+     * frames into sliding window and <i>deduct</i> old frames, as the window
+     * slides. Without it, we always have to combine all frames for each window
+     * slide, which gets worse, when the window is sled by small increments
+     * (with regard to window length). For tumbling windows, it makes no
+     * difference.
      */
+    @Nullable
     BinaryOperator<A> deductAccumulatorF();
 
     /**
      * A function that finishes the accumulation process by transforming
      * the accumulator object into the final result.
      */
+    @Nonnull
     Distributed.Function<A, R> finishAccumulationF();
 
     /**
@@ -100,6 +115,7 @@ public interface WindowOperation<T, A, R> extends Serializable {
      * @param <A> the type of the accumulator
      * @param <R> the type of the final result
      */
+    @Nonnull
     static <T, A, R> WindowOperation<T, A, R> of(Distributed.Supplier<A> createAccumulatorF,
                                                  Distributed.BiConsumer<A, T> accumulateItemF,
                                                  Distributed.BinaryOperator<A> combineAccumulatorsF,
@@ -118,8 +134,9 @@ public interface WindowOperation<T, A, R> extends Serializable {
      * Returns a new {@code WindowOperation} object based on a {@code
      * DistributedCollector}. <strong>Note:</strong> the resulting operation
      * will lack the {@code deduct} primitive, which can cause poor performance
-     * of a sliding window computation.
+     * of a sliding window computation, see {@link #deductAccumulatorF()}
      */
+    @Nonnull
     static <T, A, R> WindowOperation<T, A, R> fromCollector(DistributedCollector<T, A, R> c) {
         return of(c.supplier(), c.accumulator(), c.combiner(), null, c.finisher());
     }

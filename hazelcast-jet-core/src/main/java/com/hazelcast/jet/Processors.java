@@ -440,7 +440,7 @@ public final class Processors {
      * Returns a supplier of processor which emits the same items it receives,
      * but only those that pass the given predicate.
      *
-     * @param predicate the predicate to test each received item aginst
+     * @param predicate the predicate to test each received item against
      * @param <T> type of received item
      */
     @Nonnull
@@ -756,11 +756,9 @@ public final class Processors {
      * Convenience over {@link #countDistinct(Distributed.Function)} with identity
      * function as the key extractor, which means the processor will emit the number
      * of distinct items it has seen in the input.
-     *
-     * @param <T> type of received item
      */
     @Nonnull
-    public static <T> ProcessorSupplier countDistinct() {
+    public static ProcessorSupplier countDistinct() {
         return ProcessorSupplier.of(() -> new CountDistinctP<>(x -> x));
     }
 
@@ -779,9 +777,14 @@ public final class Processors {
     }
 
     /**
-     * A processor that does nothing.
+     * A processor that does nothing. It consumes all input items and is done
+     * after that, without emitting anything.
      */
     public static class NoopP implements Processor {
+        @Override
+        public void process(int ordinal, @Nonnull Inbox inbox) {
+            inbox.drain(noopConsumer());
+        }
     }
 
     /**

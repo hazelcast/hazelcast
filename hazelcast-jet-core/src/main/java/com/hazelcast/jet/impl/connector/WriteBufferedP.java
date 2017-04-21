@@ -22,6 +22,7 @@ import com.hazelcast.jet.Distributed.Supplier;
 import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.Punctuation;
 
 import javax.annotation.Nonnull;
 
@@ -52,7 +53,11 @@ public final class WriteBufferedP<B, T> implements Processor {
 
     @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
-        inbox.drain((T t) -> addToBuffer.accept(buffer, t));
+        inbox.drain(item -> {
+            if (!(item instanceof Punctuation)) {
+                addToBuffer.accept(buffer, (T) item);
+            }
+        });
         flushBuffer.accept(buffer);
     }
 

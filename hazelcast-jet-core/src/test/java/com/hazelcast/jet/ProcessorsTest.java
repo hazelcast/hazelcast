@@ -141,6 +141,28 @@ public class ProcessorsTest {
     }
 
     @Test
+    public void when_punctuation_then_passIt() {
+        // Given
+        final Processor p = processorFrom(Processors.filter(o -> false));
+        p.init(outbox, context);
+        inbox.add(1);
+        inbox.add(new Punctuation(1));
+        inbox.add(2);
+
+        // When
+        p.process(0, inbox);
+        // Then
+        assertTrue(inbox.isEmpty());
+        assertEquals(1, bucket.size());
+        assertEquals(new Punctuation(1), bucket.remove());
+
+        // When
+        p.process(0, inbox);
+        // Then
+        assertTrue(bucket.isEmpty());
+    }
+
+    @Test
     public void groupAndAccumulateFullSignature() {
         final Processor p = processorFrom(Processors.<Integer, String, List<Integer>, String>groupAndAccumulate(
                 Object::toString,

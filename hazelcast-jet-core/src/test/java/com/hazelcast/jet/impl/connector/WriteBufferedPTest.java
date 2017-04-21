@@ -16,13 +16,11 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
