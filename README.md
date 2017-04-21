@@ -106,7 +106,7 @@ To make sure EC2 instances are found correctly, you can use the AWSClient class.
 ```java
 public static void main( String[] args )throws Exception{ 
   AwsConfig config = new AwsConfig(); 
-  config.setSecretKey( ... ) ;
+  config.setAccessKey( ... ) ;
   config.setSecretKey( ... );
   config.setRegion( ... );
   config.setSecurityGroupName( ... );
