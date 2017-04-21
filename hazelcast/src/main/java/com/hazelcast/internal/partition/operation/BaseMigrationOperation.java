@@ -117,8 +117,8 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
     private void verifyClusterState() {
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         ClusterState clusterState = nodeEngine.getClusterService().getClusterState();
-        if (clusterState != ClusterState.ACTIVE) {
-            throw new IllegalStateException("Cluster state is not active! " + clusterState);
+        if (!clusterState.isMigrationAllowed()) {
+            throw new IllegalStateException("Cluster state does not allow migrations! " + clusterState);
         }
         final Node node = nodeEngine.getNode();
         if (!node.getNodeExtension().isStartCompleted()) {

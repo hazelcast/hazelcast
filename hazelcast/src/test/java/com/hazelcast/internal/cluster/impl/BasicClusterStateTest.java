@@ -37,8 +37,10 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
@@ -53,8 +55,10 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class BasicClusterStateTest
-        extends HazelcastTestSupport {
+public class BasicClusterStateTest extends HazelcastTestSupport {
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void clusterState_isActive_whenInstancesStarted() {
@@ -64,80 +68,6 @@ public class BasicClusterStateTest
     }
 
     @Test
-    public void changeClusterState_from_Active_to_Frozen() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        HazelcastInstance[] instances = factory.newInstances();
-
-        HazelcastInstance hz = instances[instances.length - 1];
-        hz.getCluster().changeClusterState(ClusterState.FROZEN);
-
-        assertClusterState(ClusterState.FROZEN, instances);
-    }
-
-    @Test
-    public void changeClusterState_from_Active_to_Passive() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        HazelcastInstance[] instances = factory.newInstances();
-
-        HazelcastInstance hz = instances[instances.length - 1];
-        hz.getCluster().changeClusterState(ClusterState.PASSIVE);
-
-        assertClusterState(ClusterState.PASSIVE, instances);
-    }
-
-    @Test
-    public void changeClusterState_from_Frozen_to_Active() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        HazelcastInstance[] instances = factory.newInstances();
-
-        HazelcastInstance hz = instances[instances.length - 1];
-        hz.getCluster().changeClusterState(ClusterState.FROZEN);
-        assertClusterState(ClusterState.FROZEN, instances);
-
-        hz.getCluster().changeClusterState(ClusterState.ACTIVE);
-        assertClusterState(ClusterState.ACTIVE, instances);
-    }
-
-    @Test
-    public void changeClusterState_from_Frozen_to_Passive() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        HazelcastInstance[] instances = factory.newInstances();
-
-        HazelcastInstance hz = instances[instances.length - 1];
-        hz.getCluster().changeClusterState(ClusterState.FROZEN);
-        assertClusterState(ClusterState.FROZEN, instances);
-
-        hz.getCluster().changeClusterState(ClusterState.PASSIVE);
-        assertClusterState(ClusterState.PASSIVE, instances);
-    }
-
-    @Test
-    public void changeClusterState_from_Passive_to_Active() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        HazelcastInstance[] instances = factory.newInstances();
-
-        HazelcastInstance hz = instances[instances.length - 1];
-        hz.getCluster().changeClusterState(ClusterState.PASSIVE);
-        assertClusterState(ClusterState.PASSIVE, instances);
-
-        hz.getCluster().changeClusterState(ClusterState.ACTIVE);
-        assertClusterState(ClusterState.ACTIVE, instances);
-    }
-
-    @Test
-    public void changeClusterState_from_Passive_to_Frozen() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        HazelcastInstance[] instances = factory.newInstances();
-
-        HazelcastInstance hz = instances[instances.length - 1];
-        hz.getCluster().changeClusterState(ClusterState.PASSIVE);
-        assertClusterState(ClusterState.PASSIVE, instances);
-
-        hz.getCluster().changeClusterState(ClusterState.FROZEN);
-        assertClusterState(ClusterState.FROZEN, instances);
-    }
-
-    @Test(expected = IllegalStateException.class)
     public void joinNotAllowed_whenClusterState_isFrozen() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
         HazelcastInstance[] instances = new HazelcastInstance[3];
@@ -148,11 +78,12 @@ public class BasicClusterStateTest
         HazelcastInstance hz = instances[instances.length - 1];
         hz.getCluster().changeClusterState(ClusterState.FROZEN);
 
+        expectedException.expect(IllegalStateException.class);
         factory.newHazelcastInstance();
         fail("New node should not start when cluster state is: " + ClusterState.FROZEN);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void joinNotAllowed_whenClusterState_isPassive() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
         HazelcastInstance[] instances = new HazelcastInstance[3];
@@ -163,8 +94,23 @@ public class BasicClusterStateTest
         HazelcastInstance hz = instances[instances.length - 1];
         hz.getCluster().changeClusterState(ClusterState.PASSIVE);
 
+        expectedException.expect(IllegalStateException.class);
         factory.newHazelcastInstance();
         fail("New node should not start when cluster state is: " + ClusterState.PASSIVE);
+    }
+
+    @Test
+    public void joinAllowed_whenClusterState_isNoMigration() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
+        HazelcastInstance[] instances = new HazelcastInstance[3];
+        for (int i = 0; i < 3; i++) {
+            instances[i] = factory.newHazelcastInstance();
+        }
+
+        instances[instances.length - 1].getCluster().changeClusterState(ClusterState.NO_MIGRATION);
+
+        HazelcastInstance hz = factory.newHazelcastInstance();
+        assertClusterSize(4, hz);
     }
 
     @Test
@@ -211,7 +157,21 @@ public class BasicClusterStateTest
         assertEquals(NodeState.PASSIVE, getNode(hz2).getState());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
+    public void changeClusterState_toNoMigration_shouldFail_whilePartitionsMigrating() {
+        Config config = new Config();
+        config.setProperty(GroupProperty.PARTITION_MIGRATION_INTERVAL.getName(), "10");
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance hz = factory.newHazelcastInstance(config);
+        warmUpPartitions(hz);
+
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+        expectedException.expect(IllegalStateException.class);
+        hz2.getCluster().changeClusterState(ClusterState.NO_MIGRATION);
+    }
+
+    @Test
     public void changeClusterState_toFrozen_shouldFail_whilePartitionsMigrating() {
         Config config = new Config();
         config.setProperty(GroupProperty.PARTITION_MIGRATION_INTERVAL.getName(), "10");
@@ -221,10 +181,11 @@ public class BasicClusterStateTest
         warmUpPartitions(hz);
 
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+        expectedException.expect(IllegalStateException.class);
         hz2.getCluster().changeClusterState(ClusterState.FROZEN);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void changeClusterState_toPassive_shouldFail_whilePartitionsMigrating() {
         Config config = new Config();
         config.setProperty(GroupProperty.PARTITION_MIGRATION_INTERVAL.getName(), "10");
@@ -235,6 +196,7 @@ public class BasicClusterStateTest
 
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
         assertClusterSizeEventually(2, hz);
+        expectedException.expect(IllegalStateException.class);
         hz2.getCluster().changeClusterState(ClusterState.PASSIVE);
     }
 
@@ -328,11 +290,13 @@ public class BasicClusterStateTest
         assertNodeState(instances, NodeState.ACTIVE);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void changeClusterState_transaction_mustBe_TWO_PHASE() {
         HazelcastInstance hz = createHazelcastInstance();
-        hz.getCluster()
-                .changeClusterState(ClusterState.FROZEN, new TransactionOptions().setTransactionType(TransactionType.LOCAL));
+        TransactionOptions options = new TransactionOptions().setTransactionType(TransactionType.ONE_PHASE);
+
+        expectedException.expect(IllegalArgumentException.class);
+        hz.getCluster().changeClusterState(ClusterState.FROZEN, options);
     }
 
     @Test
@@ -430,7 +394,7 @@ public class BasicClusterStateTest
         });
     }
 
-    private static void assertClusterState(ClusterState expectedState, HazelcastInstance... instances) {
+    static void assertClusterState(ClusterState expectedState, HazelcastInstance... instances) {
         for (HazelcastInstance instance : instances) {
             assertEquals(expectedState, instance.getCluster().getClusterState());
         }

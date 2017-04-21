@@ -144,7 +144,7 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
         }
 
         final ClusterState clusterState = clusterService.getClusterState();
-        if (clusterState != ClusterState.ACTIVE) {
+        if (!clusterState.isJoinAllowed()) {
             logger.info("Ignoring join check from " + getCallerAddress() + ", because cluster is in "
                     + clusterState + " state ...");
             return false;

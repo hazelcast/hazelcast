@@ -149,7 +149,6 @@ public class PartitionReplicaStateChecker {
 
         ClusterServiceImpl clusterService = node.getClusterService();
         ClusterState clusterState = clusterService.getClusterState();
-        boolean isClusterNotActive = (clusterState == ClusterState.FROZEN || clusterState == ClusterState.PASSIVE);
 
         for (InternalPartition partition : partitionStateManager.getPartitions()) {
             for (int index = 0; index < replicaCount; index++) {
@@ -161,8 +160,10 @@ public class PartitionReplicaStateChecker {
                     return true;
                 }
 
+                // Checking IN_TRANSITION state is not needed,
+                // because to be able to change cluster state, we ensure that there are no ongoing/pending migrations
                 if (clusterService.getMember(address) == null
-                        && (!isClusterNotActive || !clusterService.isMemberRemovedWhileClusterIsNotActive(address))) {
+                        && (clusterState.isJoinAllowed() || !clusterService.isMemberRemovedInNotJoinableState(address))) {
 
                     if (logger.isFinestEnabled()) {
                         logger.finest("Unknown replica owner= " + address + ", partitionId="
@@ -228,7 +229,6 @@ public class PartitionReplicaStateChecker {
 
         ClusterServiceImpl clusterService = node.getClusterService();
         ClusterState clusterState = clusterService.getClusterState();
-        boolean isClusterActive = clusterState == ClusterState.ACTIVE || clusterState == ClusterState.IN_TRANSITION;
 
         int ownedCount = 0;
         for (InternalPartition partition : partitionStateManager.getPartitions()) {
@@ -259,7 +259,9 @@ public class PartitionReplicaStateChecker {
                     continue;
                 }
 
-                if (!isClusterActive && clusterService.isMemberRemovedWhileClusterIsNotActive(replicaAddress)) {
+                // Checking IN_TRANSITION state is not needed,
+                // because to be able to change cluster state, we ensure that there are no ongoing/pending migrations
+                if (!clusterState.isJoinAllowed() && clusterService.isMemberRemovedInNotJoinableState(replicaAddress)) {
                     semaphore.release();
                     continue;
                 }

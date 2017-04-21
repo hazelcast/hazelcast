@@ -117,7 +117,7 @@ public class PartitionStateManager {
      * Arranges the partitions if:
      * <ul>
      * <li>this instance {@link NodeExtension#isStartCompleted()}</li>
-     * <li>the cluster is {@link ClusterState#ACTIVE}</li>
+     * <li>the cluster state allows migrations. See {@link ClusterState#isMigrationAllowed()}</li>
      * </ul>
      * This will also set the manager state to initialized (if not already) and invoke the
      * {@link PartitionListener#replicaChanged(PartitionReplicaChangeEvent)} for all changed replicas which
@@ -149,7 +149,7 @@ public class PartitionStateManager {
         // if it's started and not locked the state yet.
         stateVersion.incrementAndGet();
         ClusterState clusterState = node.getClusterService().getClusterState();
-        if (clusterState != ClusterState.ACTIVE) {
+        if (!clusterState.isMigrationAllowed()) {
             // cluster state is either changed or locked, decrement version back and fail.
             stateVersion.decrementAndGet();
             logger.warning("Partitions can't be assigned since cluster-state= " + clusterState);
@@ -165,7 +165,10 @@ public class PartitionStateManager {
         return true;
     }
 
-    /** Returns {@code true} if the node has started and the cluster is {@link ClusterState#ACTIVE} */
+    /**
+     * Returns {@code true} if the node has started and
+     * the cluster state allows migrations (see {@link ClusterState#isMigrationAllowed()}).
+     * */
     private boolean isPartitionAssignmentAllowed() {
         if (!node.getNodeExtension().isStartCompleted()) {
             logger.warning("Partitions can't be assigned since startup is not completed yet.");
@@ -173,7 +176,7 @@ public class PartitionStateManager {
         }
 
         ClusterState clusterState = node.getClusterService().getClusterState();
-        if (clusterState != ClusterState.ACTIVE) {
+        if (!clusterState.isMigrationAllowed()) {
             logger.warning("Partitions can't be assigned since cluster-state= " + clusterState);
             return false;
         }

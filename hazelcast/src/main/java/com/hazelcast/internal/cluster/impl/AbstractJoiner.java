@@ -237,7 +237,7 @@ public abstract class AbstractJoiner implements Joiner {
             return false;
         }
 
-        if (!checkClusterStateActiveBeforeMerge(joinMessage)) {
+        if (!checkClusterStateAllowsJoinBeforeMerge(joinMessage)) {
             return false;
         }
 
@@ -311,9 +311,9 @@ public abstract class AbstractJoiner implements Joiner {
         return true;
     }
 
-    private boolean checkClusterStateActiveBeforeMerge(SplitBrainJoinMessage joinMessage) {
+    private boolean checkClusterStateAllowsJoinBeforeMerge(SplitBrainJoinMessage joinMessage) {
         ClusterState clusterState = clusterService.getClusterState();
-        if (clusterState != ClusterState.ACTIVE) {
+        if (!clusterState.isJoinAllowed()) {
             if (logger.isFineEnabled()) {
                 logger.fine("Should not merge to " + joinMessage.getAddress() + ", because this cluster is in "
                         + clusterState + " state.");
@@ -443,7 +443,7 @@ public abstract class AbstractJoiner implements Joiner {
 
     /**
      * Prepares the cluster state for cluster merge by changing it to {@link ClusterState#FROZEN}. It expects the current
-     * cluster state to be {@link ClusterState#ACTIVE}.
+     * cluster state to be {@link ClusterState#ACTIVE} or {@link ClusterState#NO_MIGRATION}.
      * The method will keep trying to change the cluster state until {@link GroupProperty#MERGE_NEXT_RUN_DELAY_SECONDS} elapses
      * or until the sleep period between two attempts has been interrupted.
      *
@@ -456,19 +456,23 @@ public abstract class AbstractJoiner implements Joiner {
         }
 
         long until = Clock.currentTimeMillis() + mergeNextRunDelayMs;
-        while (clusterService.getClusterState() == ClusterState.ACTIVE) {
-            try {
-                clusterService.changeClusterState(ClusterState.FROZEN);
+        while (Clock.currentTimeMillis() < until) {
+            ClusterState clusterState = clusterService.getClusterState();
+            if (!clusterState.isMigrationAllowed() && !clusterState.isJoinAllowed()
+                    && clusterState != ClusterState.IN_TRANSITION) {
                 return true;
-            } catch (Exception e) {
-                String error = e.getClass().getName() + ": " + e.getMessage();
-                logger.warning("While freezing cluster state! " + error);
             }
 
-            if (Clock.currentTimeMillis() >= until) {
-                logger.warning("Could not change cluster state to FROZEN in time. "
-                        + "Postponing merge process until next attempt.");
-                return false;
+            // If state is IN_TRANSITION, then skip trying to change state.
+            // Otherwise transaction will print noisy warning logs.
+            if (clusterState != ClusterState.IN_TRANSITION) {
+                try {
+                    clusterService.changeClusterState(ClusterState.FROZEN);
+                    return true;
+                } catch (Exception e) {
+                    String error = e.getClass().getName() + ": " + e.getMessage();
+                    logger.warning("While changing cluster state to FROZEN! " + error);
+                }
             }
 
             try {
@@ -480,13 +484,19 @@ public abstract class AbstractJoiner implements Joiner {
                 return false;
             }
         }
+
+        logger.warning("Could not change cluster state to FROZEN in time. "
+                + "Postponing merge process until next attempt.");
         return false;
     }
 
-    /** Returns true if the current cluster state is {@link com.hazelcast.cluster.ClusterState#ACTIVE} */
+    /**
+     * Returns true if the current cluster state allows join; either
+     * {@link ClusterState#ACTIVE} or {@link ClusterState#NO_MIGRATION}.
+     */
     private boolean preCheckClusterState(final ClusterService clusterService) {
         final ClusterState initialState = clusterService.getClusterState();
-        if (initialState != ClusterState.ACTIVE) {
+        if (!initialState.isJoinAllowed()) {
             logger.warning("Could not prepare cluster state since it has been changed to " + initialState);
             return false;
         }

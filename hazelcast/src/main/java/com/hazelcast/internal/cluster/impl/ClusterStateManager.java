@@ -73,8 +73,7 @@ public class ClusterStateManager {
     private final Node node;
     private final ILogger logger;
     private final Lock clusterServiceLock;
-    private final AtomicReference<LockGuard> stateLockRef
-            = new AtomicReference<LockGuard>(LockGuard.NOT_LOCKED);
+    private final AtomicReference<LockGuard> stateLockRef = new AtomicReference<LockGuard>(LockGuard.NOT_LOCKED);
 
     private volatile ClusterState state = ClusterState.ACTIVE;
 
@@ -116,6 +115,7 @@ public class ClusterStateManager {
                 return;
             }
             // no need to validate again
+            logger.fine("Setting initial cluster state: " + initialState + " and version: " + version);
             setClusterStateAndVersion(initialState, version, true);
         } finally {
             clusterServiceLock.unlock();
@@ -272,9 +272,9 @@ public class ClusterStateManager {
 
             stateLockRef.set(LockGuard.NOT_LOCKED);
 
-            // if state remains ACTIVE after rollback, then remove all members which left during transaction.
-            if (state == ClusterState.ACTIVE) {
-                node.getClusterService().getMembershipManager().removeMembersDeadWhileClusterIsNotActive();
+            // if state allows join after rollback, then remove all members which left during transaction.
+            if (state.isJoinAllowed()) {
+                node.getClusterService().getMembershipManager().removeMembersDeadInNotJoinableState();
             }
             return true;
         } finally {
@@ -303,9 +303,10 @@ public class ClusterStateManager {
             if (stateChange.isOfType(ClusterState.class)) {
                 ClusterState newState = (ClusterState) stateChange.getNewState();
                 doSetClusterState(newState, isTransient);
-                // if state is changed to ACTIVE, then remove all members which left while not active.
-                if (newState == ClusterState.ACTIVE) {
-                    node.getClusterService().getMembershipManager().removeMembersDeadWhileClusterIsNotActive();
+
+                // if state is changed to allow joins, then remove all members which left while not active.
+                if (newState.isJoinAllowed()) {
+                    node.getClusterService().getMembershipManager().removeMembersDeadInNotJoinableState();
                 }
             } else if (stateChange.isOfType(Version.class)) {
                 // version is validated on cluster-state-lock, thus we can commit without checking compatibility

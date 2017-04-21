@@ -232,9 +232,9 @@ public interface Cluster {
      * @throws TransactionException  if there's already an ongoing transaction
      *                               or this transaction fails
      *                               or this transaction timeouts
-     * @see {@link GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}
-     * @see {@link #changeClusterState(ClusterState)}
-     * @see {@link ClusterState#PASSIVE}
+     * @see GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS
+     * @see #changeClusterState(ClusterState)
+     * @see ClusterState#PASSIVE
      * @since 3.6
      */
     void shutdown();
@@ -256,9 +256,9 @@ public interface Cluster {
      * @throws TransactionException  if there's already an ongoing transaction
      *                               or this transaction fails
      *                               or this transaction timeouts
-     * @see {@link GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}
-     * @see {@link #changeClusterState(ClusterState)}
-     * @see {@link ClusterState#PASSIVE}
+     * @see GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS
+     * @see #changeClusterState(ClusterState)
+     * @see ClusterState#PASSIVE
      * @since 3.6
      */
     void shutdown(TransactionOptions transactionOptions);

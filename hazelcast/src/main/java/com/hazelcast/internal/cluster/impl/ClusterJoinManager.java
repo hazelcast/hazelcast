@@ -293,13 +293,13 @@ public class ClusterJoinManager {
             return true;
         }
 
-        if (state == ClusterState.ACTIVE) {
+        if (state.isJoinAllowed()) {
             return false;
         }
 
-        if (clusterService.isMemberRemovedWhileClusterIsNotActive(target)) {
+        if (clusterService.isMemberRemovedInNotJoinableState(target)) {
             MemberImpl memberRemovedWhileClusterIsNotActive =
-                    clusterService.getMembershipManager().getMemberRemovedWhileClusterIsNotActive(uuid);
+                    clusterService.getMembershipManager().getMemberRemovedInNotJoinableState(uuid);
 
             if (memberRemovedWhileClusterIsNotActive != null
                     && !target.equals(memberRemovedWhileClusterIsNotActive.getAddress())) {
@@ -314,7 +314,7 @@ public class ClusterJoinManager {
             return false;
         }
 
-        if (clusterService.isMemberRemovedWhileClusterIsNotActive(uuid)) {
+        if (clusterService.isMemberRemovedInNotJoinableState(uuid)) {
             return false;
         }
 

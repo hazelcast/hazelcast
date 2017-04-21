@@ -216,6 +216,11 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         promotion_shouldFail_whenClusterState_NotAllowMigration(ClusterState.FROZEN);
     }
 
+    @Test
+    public void promotion_shouldFail_whenClusterStateNoMigration() {
+        promotion_shouldFail_whenClusterState_NotAllowMigration(ClusterState.NO_MIGRATION);
+    }
+
     private void promotion_shouldFail_whenClusterState_NotAllowMigration(ClusterState state) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 

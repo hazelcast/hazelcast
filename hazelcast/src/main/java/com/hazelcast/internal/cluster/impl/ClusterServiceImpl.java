@@ -495,7 +495,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             return;
         }
 
-        if (getClusterState() == ClusterState.ACTIVE) {
+        if (getClusterState().isMigrationAllowed()) {
             return;
         }
 
@@ -505,11 +505,11 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
         Address address = member.getAddress();
         MemberImpl memberRemovedWhileClusterIsNotActive
-                = membershipManager.getMemberRemovedWhileClusterIsNotActive(member.getUuid());
+                = membershipManager.getMemberRemovedInNotJoinableState(member.getUuid());
         if (memberRemovedWhileClusterIsNotActive != null) {
             Address oldAddress = memberRemovedWhileClusterIsNotActive.getAddress();
             if (!oldAddress.equals(address)) {
-                assert !isMemberRemovedWhileClusterIsNotActive(address);
+                assert !isMemberRemovedInNotJoinableState(address);
 
                 logger.warning(member + " is returning with a new address. Old one was: " + oldAddress
                         + ". Will update partition table with the new address.");
@@ -639,16 +639,16 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return nodeEngine;
     }
 
-    public boolean isMemberRemovedWhileClusterIsNotActive(Address target) {
-        return membershipManager.isMemberRemovedWhileClusterIsNotActive(target);
+    public boolean isMemberRemovedInNotJoinableState(Address target) {
+        return membershipManager.isMemberRemovedInNotJoinableState(target);
     }
 
-    boolean isMemberRemovedWhileClusterIsNotActive(String uuid) {
-        return membershipManager.isMemberRemovedWhileClusterIsNotActive(uuid);
+    boolean isMemberRemovedInNotJoinableState(String uuid) {
+        return membershipManager.isMemberRemovedInNotJoinableState(uuid);
     }
 
-    public Collection<Member> getCurrentMembersAndMembersRemovedWhileClusterIsNotActive() {
-        return membershipManager.getCurrentMembersAndMembersRemovedWhileClusterIsNotActive();
+    public Collection<Member> getCurrentMembersAndMembersRemovedInNotJoinableState() {
+        return membershipManager.getCurrentMembersAndMembersRemovedInNotJoinableState();
     }
 
     public void notifyForRemovedMember(MemberImpl member) {
@@ -660,8 +660,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
-    public void shrinkMembersRemovedWhileClusterIsNotActiveState(Collection<String> memberUuidsToRemove) {
-        membershipManager.shrinkMembersRemovedWhileClusterIsNotActiveState(memberUuidsToRemove);
+    public void shrinkMembersRemovedInNotJoinableState(Collection<String> memberUuidsToRemove) {
+        membershipManager.shrinkMembersRemovedInNotJoinableState(memberUuidsToRemove);
     }
 
     private void sendMemberAttributeEvent(MemberImpl member, MemberAttributeOperationType operationType, String key,
@@ -1000,8 +1000,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 options, partitionStateVersion, false);
     }
 
-    void addMembersRemovedInNotActiveState(Collection<MemberImpl> members) {
-        membershipManager.addMembersRemovedInNotActiveState(members);
+    void addMembersRemovedInNotJoinableState(Collection<MemberImpl> members) {
+        membershipManager.addMembersRemovedInNotJoinableState(members);
     }
 
     @Override
