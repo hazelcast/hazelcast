@@ -31,6 +31,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
+import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
@@ -308,7 +309,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     @Override
-    public Connection getOrTriggerConnect(Address target, boolean asOwner) {
+    public Connection getOrTriggerConnect(Address target, boolean asOwner) throws IOException {
         Connection connection = getConnection(target, asOwner);
         if (connection != null) {
             return connection;
@@ -317,7 +318,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return null;
     }
 
-    private Connection getConnection(Address target, boolean asOwner) {
+    private Connection getConnection(Address target, boolean asOwner) throws IOException {
+        if (!asOwner) {
+            ensureOwnerConnectionAvailable();
+        }
+
         target = addressTranslator.translate(target);
 
         if (target == null) {
@@ -335,6 +340,18 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
         }
         return null;
+    }
+
+    private void ensureOwnerConnectionAvailable() throws IOException {
+        ClientClusterService clusterService = client.getClientClusterService();
+        Address ownerAddress = clusterService.getOwnerConnectionAddress();
+
+        boolean isOwnerConnectionAvailable = ownerAddress != null
+                && getConnection(ownerAddress) != null;
+
+        if (!isOwnerConnectionAvailable) {
+            throw new IOException("Not able to setup owner connection!");
+        }
     }
 
     private AuthenticationFuture triggerConnect(Address target, boolean asOwner) {
