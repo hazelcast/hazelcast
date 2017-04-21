@@ -72,9 +72,9 @@ public class JobConfig implements Serializable {
      * the job's classpath while it's executing in the Jet cluster. The JAR
      * filename will be used as the ID of the resource.
      */
-    public void addJar(File file) {
+    public JobConfig addJar(File file) {
         try {
-            addJar(file.toURI().toURL(), file.getName());
+            return addJar(file.toURI().toURL(), file.getName());
         } catch (MalformedURLException e) {
             throw rethrow(e);
         }
@@ -85,9 +85,9 @@ public class JobConfig implements Serializable {
      * the job's classpath while it's executing in the Jet cluster. The JAR
      * will be registered under the supplied resource ID.
      */
-    public void addJar(File file, String id) {
+    public JobConfig addJar(File file, String id) {
         try {
-            addJar(file.toURI().toURL(), id);
+            return addJar(file.toURI().toURL(), id);
         } catch (MalformedURLException e) {
             throw rethrow(e);
         }
@@ -98,10 +98,10 @@ public class JobConfig implements Serializable {
      * that will be a part of the job's classpath while it's executing in the
      * Jet cluster. The JAR filename will be used as the ID of the resource.
      */
-    public void addJar(String path) {
+    public JobConfig addJar(String path) {
         try {
             File file = new File(path);
-            addJar(file.toURI().toURL(), file.getName());
+            return addJar(file.toURI().toURL(), file.getName());
         } catch (MalformedURLException e) {
             throw rethrow(e);
         }
@@ -112,9 +112,9 @@ public class JobConfig implements Serializable {
      * that will be a part of the job's classpath while it's executing in the
      * Jet cluster. The JAR will be registered under the supplied resource ID.
      */
-    public void addJar(String path, String id) {
+    public JobConfig addJar(String path, String id) {
         try {
-            addJar(new File(path).toURI().toURL(), id);
+            return addJar(new File(path).toURI().toURL(), id);
         } catch (MalformedURLException e) {
             throw rethrow(e);
         }
