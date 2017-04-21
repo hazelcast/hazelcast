@@ -537,6 +537,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     public void memberListOrder_shouldBeSame_whenMemberRestartedWithSameIdentity() {
         Config config = new Config();
         config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
+        config.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5");
 
         final HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         final HazelcastInstance hz2 = factory.newHazelcastInstance(config);
@@ -571,6 +572,21 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
                 assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz2));
             }
         });
+    }
+
+    @Test
+    public void shouldNotProcessStaleJoinRequest() {
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+
+        JoinRequest staleJoinReq = getNode(hz2).createJoinRequest(true);
+        hz2.shutdown();
+        assertClusterSizeEventually(1, hz1);
+
+        ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(hz1);
+        clusterService.getClusterJoinManager().handleJoinRequest(staleJoinReq, null);
+
+        assertClusterSize(1, hz1);
     }
 
     static void assertMemberViewsAreSame(MemberMap expectedMemberMap, MemberMap actualMemberMap) {

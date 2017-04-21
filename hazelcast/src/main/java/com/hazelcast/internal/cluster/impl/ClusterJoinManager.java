@@ -29,10 +29,10 @@ import com.hazelcast.internal.cluster.impl.operations.ConfigMismatchOp;
 import com.hazelcast.internal.cluster.impl.operations.FinalizeJoinOp;
 import com.hazelcast.internal.cluster.impl.operations.GroupMismatchOp;
 import com.hazelcast.internal.cluster.impl.operations.JoinRequestOp;
-import com.hazelcast.internal.cluster.impl.operations.WhoisMasterOp;
+import com.hazelcast.internal.cluster.impl.operations.MasterResponseOp;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.internal.cluster.impl.operations.PostJoinOp;
-import com.hazelcast.internal.cluster.impl.operations.MasterResponseOp;
+import com.hazelcast.internal.cluster.impl.operations.WhoisMasterOp;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.logging.ILogger;
@@ -50,6 +50,9 @@ import com.hazelcast.version.MemberVersion;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -81,8 +84,10 @@ public class ClusterJoinManager {
     private final ClusterStateManager clusterStateManager;
 
     private final Map<Address, MemberInfo> joiningMembers = new LinkedHashMap<Address, MemberInfo>();
+    private final Map<String, Long> recentlyJoinedMemberUuids = new HashMap<String, Long>();
     private final long maxWaitMillisBeforeJoin;
     private final long waitMillisBeforeJoin;
+    private final long staleJoinPreventionDuration;
 
     private long firstJoinRequest;
     private long timeToStartJoin;
@@ -100,6 +105,7 @@ public class ClusterJoinManager {
 
         maxWaitMillisBeforeJoin = node.getProperties().getMillis(GroupProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
         waitMillisBeforeJoin = node.getProperties().getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN);
+        staleJoinPreventionDuration = node.getProperties().getMillis(GroupProperty.MAX_JOIN_SECONDS);
     }
 
     boolean isJoinInProgress() {
@@ -294,7 +300,8 @@ public class ClusterJoinManager {
         }
 
         if (state.isJoinAllowed()) {
-            return false;
+            cleanupRecentlyJoinedMemberUuids();
+            return recentlyJoinedMemberUuids.containsKey(uuid);
         }
 
         if (clusterService.isMemberRemovedInNotJoinableState(target)) {
@@ -333,6 +340,17 @@ public class ClusterJoinManager {
             logger.warning(message);
         }
         return true;
+    }
+
+    private void cleanupRecentlyJoinedMemberUuids() {
+        long currentTime = Clock.currentTimeMillis();
+        Iterator<Long> it = recentlyJoinedMemberUuids.values().iterator();
+        while (it.hasNext()) {
+            long joinTime = it.next();
+            if ((currentTime - joinTime) >= staleJoinPreventionDuration) {
+                it.remove();
+            }
+        }
     }
 
     private boolean authenticate(JoinRequest joinRequest) {
@@ -700,6 +718,8 @@ public class ClusterJoinManager {
                     return;
                 }
 
+                persistJoinedMemberUuids(joiningMembers.values());
+
                 PartitionRuntimeState partitionRuntimeState = partitionService.createPartitionState();
                 for (MemberInfo member : joiningMembers.values()) {
                     long startTime = clusterClock.getClusterStartTime();
@@ -725,6 +745,15 @@ public class ClusterJoinManager {
             }
         } finally {
             clusterServiceLock.unlock();
+        }
+    }
+
+    private void persistJoinedMemberUuids(Collection<MemberInfo> joinedMembers) {
+        if (clusterService.getClusterState().isJoinAllowed()) {
+            long localTime = Clock.currentTimeMillis();
+            for (MemberInfo member : joinedMembers) {
+                recentlyJoinedMemberUuids.put(member.getUuid(), localTime);
+            }
         }
     }
 
