@@ -20,17 +20,16 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.Traversers.ResettableSingletonTraverser;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
-import com.hazelcast.jet.impl.connector.StreamFilesP;
 import com.hazelcast.jet.impl.connector.ReadIListP;
-import com.hazelcast.jet.impl.connector.StreamTextSocketP;
 import com.hazelcast.jet.impl.connector.ReadWithPartitionIteratorP;
+import com.hazelcast.jet.impl.connector.StreamFilesP;
+import com.hazelcast.jet.impl.connector.StreamTextSocketP;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.nio.charset.Charset;
@@ -218,7 +217,7 @@ public final class Processors {
      * @param <T> type of received item
      */
     @Nonnull
-    public static <B, T> ProcessorSupplier writeBuffered(@Nonnull Distributed.Supplier<B> newBuffer,
+    public static <B, T> ProcessorSupplier writeBuffered(@Nonnull Distributed.IntFunction<B> newBuffer,
                                                          @Nonnull Distributed.BiConsumer<B, T> addToBuffer,
                                                          @Nonnull Distributed.Consumer<B> flushBuffer) {
         return WriteBufferedP.writeBuffered(newBuffer, addToBuffer, flushBuffer, noopConsumer());
@@ -241,7 +240,7 @@ public final class Processors {
      * @param <T> type of received item
      */
     @Nonnull
-    public static <B, T> ProcessorSupplier writeBuffered(@Nonnull Distributed.Supplier<B> newBuffer,
+    public static <B, T> ProcessorSupplier writeBuffered(@Nonnull Distributed.IntFunction<B> newBuffer,
                                                          @Nonnull Distributed.BiConsumer<B, T> addToBuffer,
                                                          @Nonnull Distributed.Consumer<B> flushBuffer,
                                                          @Nonnull Distributed.Consumer<B> disposeBuffer) {
@@ -253,7 +252,7 @@ public final class Processors {
      */
     public static ProcessorSupplier writeSocket(@Nonnull String host, int port) {
         return writeBuffered(
-                () -> createBufferedWriter(host, port),
+                index -> createBufferedWriter(host, port),
                 (bufferedWriter, item) -> uncheckRun(() -> bufferedWriter.write(item.toString())),
                 bufferedWriter -> uncheckRun(bufferedWriter::flush),
                 bufferedWriter -> uncheckRun(bufferedWriter::close)
@@ -392,27 +391,16 @@ public final class Processors {
      * set according to the performance characteristics of the underlying
      * storage system. Typical values are in the range of 1 to 4.
      *
-     * @param pathName the path to the file
+     * @param directoryName directory to create the files in. Will be created,
+     *                      if it doesn't exist. Must be the same on all nodes.
      * @param charset charset used to encode the file output, or {@code null} to use UTF-8
      * @param append whether to append or overwrite the file
      */
     @Nonnull
     public static ProcessorMetaSupplier writeFile(
-            @Nonnull String pathName, @Nullable Charset charset, boolean append
+            @Nonnull String directoryName, @Nullable Charset charset, boolean append
     ) {
-        final String filename = new File(pathName).getName();
-        final int lastDot = filename.lastIndexOf('.');
-        final String filenamePrefix;
-        final String filenameSuffix;
-        if (lastDot > 0) {
-            filenameSuffix = filename.substring(lastDot);
-            filenamePrefix = pathName.substring(0, pathName.length() - filenameSuffix.length());
-        } else {
-            filenameSuffix = "";
-            filenamePrefix = pathName;
-        }
-        return WriteFileP.supplier(filenamePrefix, filenameSuffix,
-                charset == null ? null : charset.name(), append);
+        return WriteFileP.supplier(directoryName, charset == null ? null : charset.name(), append);
     }
 
     /**

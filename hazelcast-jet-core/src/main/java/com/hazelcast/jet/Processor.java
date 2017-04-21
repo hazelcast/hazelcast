@@ -154,7 +154,7 @@ public interface Processor {
 
         /**
          * Returns the index of the current processor among all the processors
-         * created for this vertex on this node.
+         * created for this vertex on all nodes: an unique cluster-wide index.
          */
         int index();
 

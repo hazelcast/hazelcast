@@ -23,7 +23,6 @@ import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.IStreamList;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -59,18 +58,14 @@ public class WriteFilePTest extends JetTestSupport {
 
     private JetInstance instance;
     private Path directory;
-    private Path requestedFile;
-    private Path actualFile;
+    private Path file;
     private IStreamList<String> list;
 
     @Before
     public void setup() throws IOException {
         instance = createJetMember();
         directory = Files.createTempDirectory("write-file-p");
-        requestedFile = directory.resolve("file.txt");
-        Address address = instance.getCluster().getMembers().iterator().next().getAddress();
-        actualFile = directory.resolve(WriteFileP.createFileName("file", ".txt",
-                address.getHost() + "_" + address.getPort(), 0));
+        file = directory.resolve("0");
         list = instance.getList("sourceList");
     }
 
@@ -147,7 +142,7 @@ public class WriteFilePTest extends JetTestSupport {
         // Given
         DAG dag = buildDag(null, true);
         addItemsToList(1, 10);
-        try (BufferedWriter writer = Files.newBufferedWriter(actualFile)) {
+        try (BufferedWriter writer = Files.newBufferedWriter(file)) {
             writer.write("0");
             writer.newLine();
         }
@@ -164,7 +159,7 @@ public class WriteFilePTest extends JetTestSupport {
         // Given
         DAG dag = buildDag(null, false);
         addItemsToList(0, 10);
-        try (BufferedWriter writer = Files.newBufferedWriter(actualFile)) {
+        try (BufferedWriter writer = Files.newBufferedWriter(file)) {
             writer.write("bla bla");
             writer.newLine();
         }
@@ -177,7 +172,7 @@ public class WriteFilePTest extends JetTestSupport {
     }
 
     @Test
-    public void when_earlyFlush_then_fileFlushedAfterEachItem() throws Exception {
+    public void when_slowSource_then_fileFlushedAfterEachItem() throws Exception {
         // Given
         Semaphore semaphore = new Semaphore(0);
         int numItems = 10;
@@ -185,11 +180,13 @@ public class WriteFilePTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", () -> new SlowSourceP(semaphore, numItems))
                 .localParallelism(1);
-        Vertex sink = dag.newVertex("sink", writeFile(requestedFile.toString(), null, false))
+        Vertex sink = dag.newVertex("sink", writeFile(directory.toString(), null, false))
                 .localParallelism(1);
         dag.edge(between(source, sink));
 
         Future<Void> jobFuture = instance.newJob(dag).execute();
+        // wait, until the file is created
+        assertTrueEventually(() -> assertTrue(Files.exists(file)));
         for (int i = 0; i < numItems; i++) {
             // When
             semaphore.release();
@@ -214,18 +211,18 @@ public class WriteFilePTest extends JetTestSupport {
         instance.newJob(dag).execute().get();
 
         // Then
-        assertEquals(text + System.getProperty("line.separator"), new String(Files.readAllBytes(actualFile), charset));
+        assertEquals(text + System.getProperty("line.separator"), new String(Files.readAllBytes(file), charset));
     }
 
     @Test
     public void test_createDirectories() throws Exception {
         // Given
-        Path file = directory.resolve("subdir1/subdir2/" + requestedFile.getFileName());
+        Path myFile = directory.resolve("subdir1/subdir2/" + file.getFileName());
 
         DAG dag = new DAG();
         Vertex reader = dag.newVertex("reader", readList(list.getName()))
                 .localParallelism(1);
-        Vertex writer = dag.newVertex("writer", writeFile(file.toString(), null, false))
+        Vertex writer = dag.newVertex("writer", writeFile(myFile.toString(), null, false))
                 .localParallelism(1);
         dag.edge(between(reader, writer));
         addItemsToList(0, 10);
@@ -272,7 +269,7 @@ public class WriteFilePTest extends JetTestSupport {
     }
 
     private void checkFileContents(Charset charset, int numTo) throws IOException {
-        String actual = new String(Files.readAllBytes(actualFile), charset);
+        String actual = new String(Files.readAllBytes(file), charset);
 
         StringBuilder expected = new StringBuilder();
         for (int i = 0; i < numTo; i++) {
@@ -292,7 +289,7 @@ public class WriteFilePTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex reader = dag.newVertex("reader", readList(list.getName()))
                 .localParallelism(1);
-        Vertex writer = dag.newVertex("writer", writeFile(requestedFile.toString(), charset, append))
+        Vertex writer = dag.newVertex("writer", writeFile(directory.toString(), charset, append))
                 .localParallelism(1);
         dag.edge(between(reader, writer));
         return dag;

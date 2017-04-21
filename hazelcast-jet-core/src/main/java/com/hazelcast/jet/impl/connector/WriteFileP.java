@@ -40,16 +40,20 @@ public final class WriteFileP {
 
     private WriteFileP() { }
 
-    public static ProcessorMetaSupplier supplier(@Nonnull String fileNamePrefix, @Nullable String fileNameSuffix,
-            @Nullable String charset, boolean append) {
-        return addresses -> address -> {
-            // need to do this here, as Address is not serializable
-            String sAddress = address.getHost() + '_' + address.getPort();
+    /**
+     * Use {@link com.hazelcast.jet.Processors#writeFile(String, Charset, boolean)}
+     */
+    public static ProcessorMetaSupplier supplier(@Nonnull String directoryName, @Nullable String charset,
+            boolean append) {
+        return addresses -> address -> count -> {
+            Path directory = Paths.get(directoryName);
+            // ignore the result: we'll fail later when creating the files.
+            // It's also false, if the directory already existed
+            boolean ignored = directory.toFile().mkdirs();
 
-            return count -> IntStream.range(0, count)
-                    .mapToObj(index -> new WriteBufferedP<>(
-                            () -> createBufferedWriter(
-                                    createFileName(fileNamePrefix, fileNameSuffix, sAddress, index),
+            return IntStream.range(0, count)
+                    .mapToObj(localIndex -> new WriteBufferedP<>(
+                            globalIndex -> createBufferedWriter(directory.resolve(Integer.toString(globalIndex)),
                                     charset, append),
                             (writer, item) -> uncheckRun(() -> {
                                 writer.write(item.toString());
@@ -61,20 +65,7 @@ public final class WriteFileP {
         };
     }
 
-    static String createFileName(
-            @Nonnull String fileNamePrefix, @Nullable String fileNameSuffix, String sAddress, int index
-    ) {
-        return String.format("%s_%s_%d%s", fileNamePrefix, sAddress, index, fileNameSuffix);
-    }
-
-    private static BufferedWriter createBufferedWriter(String fileName, String charset, boolean append) {
-        Path path = Paths.get(fileName);
-        Path directory = path.getParent();
-        if (directory != null) {
-            // ignore result, we'll fail later when creating the file. Could be also false, if the directory existed
-            boolean ignored = directory.toFile().mkdirs();
-        }
-
+    private static BufferedWriter createBufferedWriter(Path path, String charset, boolean append) {
         return uncheckCall(() -> Files.newBufferedWriter(path,
                 charset == null ? StandardCharsets.UTF_8 : Charset.forName(charset), StandardOpenOption.CREATE,
                 append ? StandardOpenOption.APPEND : StandardOpenOption.TRUNCATE_EXISTING));

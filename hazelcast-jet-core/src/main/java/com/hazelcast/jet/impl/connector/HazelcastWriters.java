@@ -24,7 +24,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Distributed.BiConsumer;
 import com.hazelcast.jet.Distributed.Consumer;
 import com.hazelcast.jet.Distributed.Function;
-import com.hazelcast.jet.Distributed.Supplier;
+import com.hazelcast.jet.Distributed.IntFunction;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
 
@@ -56,7 +56,7 @@ public final class HazelcastWriters {
     public static ProcessorSupplier writeMap(String name, ClientConfig clientConfig) {
         return new HazelcastWriterSupplier<>(
                 serializableConfig(clientConfig),
-                ArrayMap::new,
+                index -> new ArrayMap(),
                 ArrayMap::add,
                 instance -> {
                     IMap map = instance.getMap(name);
@@ -78,7 +78,7 @@ public final class HazelcastWriters {
     public static ProcessorSupplier writeCache(String name, ClientConfig clientConfig) {
         return new HazelcastWriterSupplier<>(
                 serializableConfig(clientConfig),
-                ArrayMap::new,
+                index -> new ArrayMap(),
                 ArrayMap::add,
                 CacheFlush.flushToCache(name),
                 noopConsumer()
@@ -111,7 +111,7 @@ public final class HazelcastWriters {
     public static ProcessorSupplier writeList(String name, ClientConfig clientConfig) {
         return new HazelcastWriterSupplier<>(
                 serializableConfig(clientConfig),
-                ArrayList::new,
+                index -> new ArrayList(),
                 ArrayList::add,
                 instance -> {
                     IList<Object> list = instance.getList(name);
@@ -165,7 +165,7 @@ public final class HazelcastWriters {
 
         private final SerializableClientConfig clientConfig;
         private final Function<HazelcastInstance, Consumer<B>> instanceToFlushBuffer;
-        private final Supplier<B> bufferSupplier;
+        private final IntFunction<B> bufferSupplier;
         private final BiConsumer<B, T> addToBuffer;
         private final Consumer<B> disposeBuffer;
 
@@ -173,7 +173,7 @@ public final class HazelcastWriters {
         private transient HazelcastInstance client;
 
         HazelcastWriterSupplier(SerializableClientConfig clientConfig,
-                                Supplier<B> newBuffer,
+                                IntFunction<B> newBuffer,
                                 BiConsumer<B, T> addToBuffer,
                                 Function<HazelcastInstance, Consumer<B>> instanceToFlushBuffer,
                                 Consumer<B> disposeBuffer) {

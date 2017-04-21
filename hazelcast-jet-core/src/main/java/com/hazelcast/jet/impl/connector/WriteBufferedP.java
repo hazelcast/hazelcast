@@ -18,8 +18,9 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.Distributed.BiConsumer;
 import com.hazelcast.jet.Distributed.Consumer;
-import com.hazelcast.jet.Distributed.Supplier;
+import com.hazelcast.jet.Distributed.IntFunction;
 import com.hazelcast.jet.Inbox;
+import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Punctuation;
@@ -28,23 +29,29 @@ import javax.annotation.Nonnull;
 
 public final class WriteBufferedP<B, T> implements Processor {
 
-    private final B buffer;
     private final Consumer<B> flushBuffer;
+    private final IntFunction<B> newBuffer;
     private final BiConsumer<B, T> addToBuffer;
     private final Consumer<B> disposeBuffer;
+    private B buffer;
 
-    WriteBufferedP(Supplier<B> newBuffer,
+    WriteBufferedP(IntFunction<B> newBuffer,
                    BiConsumer<B, T> addToBuffer,
                    Consumer<B> flushBuffer,
                    Consumer<B> disposeBuffer) {
-        this.buffer = newBuffer.get();
+        this.newBuffer = newBuffer;
         this.addToBuffer = addToBuffer;
         this.flushBuffer = flushBuffer;
         this.disposeBuffer = disposeBuffer;
     }
 
+    @Override
+    public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
+        this.buffer = newBuffer.apply(context.index());
+    }
+
     @Nonnull
-    public static <B, T> ProcessorSupplier writeBuffered(Supplier<B> newBuffer,
+    public static <B, T> ProcessorSupplier writeBuffered(IntFunction<B> newBuffer,
                                                          BiConsumer<B, T> addToBuffer,
                                                          Consumer<B> consumeBuffer,
                                                          Consumer<B> closeBuffer) {
