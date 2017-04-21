@@ -24,8 +24,14 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.util.Preconditions.isNotNull;
+
 /**
- * Configuration object for WAN publishers.
+ * Configuration object for WAN publishers. A single publisher defines how WAN events are sent to a specific endpoint.
+ * The endpoint can be a different cluster defined by static IP's or discovered using a cloud discovery mechanism.
+ *
+ * @see DiscoveryConfig
+ * @see AwsConfig
  */
 public class WanPublisherConfig implements IdentifiedDataSerializable {
 
@@ -38,11 +44,26 @@ public class WanPublisherConfig implements IdentifiedDataSerializable {
     private Map<String, Comparable> properties = new HashMap<String, Comparable>();
     private String className;
     private Object implementation;
+    private AwsConfig awsConfig = new AwsConfig();
+    private DiscoveryConfig discoveryConfig = new DiscoveryConfig();
 
+    /**
+     * Return the group name of this publisher. The group name is used for identifying the publisher in a
+     * {@link WanReplicationConfig} and for authentication on the target endpoint.
+     *
+     * @return the publisher group name
+     */
     public String getGroupName() {
         return groupName;
     }
 
+    /**
+     * Set the group name of this publisher. The group name is used for identifying the publisher in a
+     * {@link WanReplicationConfig} and for authentication on the target endpoint.
+     *
+     * @param groupName the publisher group name
+     * @return this config
+     */
     public WanPublisherConfig setGroupName(String groupName) {
         this.groupName = groupName;
         return this;
@@ -126,15 +147,53 @@ public class WanPublisherConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * @return the awsConfig join configuration
+     */
+    public AwsConfig getAwsConfig() {
+        return awsConfig;
+    }
+
+    /**
+     * @param awsConfig the AwsConfig join configuration to set
+     * @throws IllegalArgumentException if awsConfig is null
+     */
+    public WanPublisherConfig setAwsConfig(final AwsConfig awsConfig) {
+        this.awsConfig = isNotNull(awsConfig, "awsConfig");
+        return this;
+    }
+
+    /**
+     * Returns the currently defined {@link DiscoveryConfig}
+     *
+     * @return current DiscoveryProvidersConfig instance
+     */
+    public DiscoveryConfig getDiscoveryConfig() {
+        return discoveryConfig;
+    }
+
+    /**
+     * Sets a custom defined {@link DiscoveryConfig}
+     *
+     * @param discoveryConfig configuration to set
+     * @throws java.lang.IllegalArgumentException if discoveryProvidersConfig is null
+     */
+    public WanPublisherConfig setDiscoveryConfig(DiscoveryConfig discoveryConfig) {
+        this.discoveryConfig = isNotNull(discoveryConfig, "discoveryProvidersConfig");
+        return this;
+    }
+
     @Override
     public String toString() {
         return "WanPublisherConfig{"
-                + "properties=" + properties
-                + ", className='" + className + '\''
-                + ", implementation=" + implementation
-                + ", groupName='" + groupName + '\''
+                + "groupName='" + groupName + '\''
                 + ", queueCapacity=" + queueCapacity
                 + ", queueFullBehavior=" + queueFullBehavior
+                + ", properties=" + properties
+                + ", className='" + className + '\''
+                + ", implementation=" + implementation
+                + ", awsConfig=" + awsConfig
+                + ", discoveryConfig=" + discoveryConfig
                 + '}';
     }
 

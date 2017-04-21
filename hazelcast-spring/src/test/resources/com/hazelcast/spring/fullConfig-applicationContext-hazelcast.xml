@@ -66,8 +66,35 @@
                 </hz:wan-publisher>
                 <hz:wan-publisher group-name="istanbul" class-name="com.hazelcast.wan.custom.CustomPublisher">
                     <hz:queue-full-behavior>THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE</hz:queue-full-behavior>
+                    <hz:aws enabled="false"
+                            access-key="sample-access-key"
+                            secret-key="sample-secret-key"
+                            region="sample-region"
+                            host-header="sample-header"
+                            security-group-name="sample-group"
+                            tag-key="sample-tag-key"
+                            tag-value="sample-tag-value"
+                            iam-role="sample-role"/>
+                    <hz:discovery-strategies>
+                        <hz:node-filter implementation="dummyNodeFilter"/>
+                        <hz:discovery-strategy discovery-strategy-factory="dummyDiscoveryStrategyFactory">
+                            <hz:properties>
+                                <hz:property name="key-string">foo</hz:property>
+                                <hz:property name="key-int">123</hz:property>
+                                <hz:property name="key-boolean">true</hz:property>
+                            </hz:properties>
+                        </hz:discovery-strategy>
+                        <hz:discovery-strategy class-name="com.hazelcast.spring.DummyDiscoveryStrategy">
+                            <hz:properties>
+                                <hz:property name="key-string">foo2</hz:property>
+                            </hz:properties>
+                        </hz:discovery-strategy>
+                        <hz:discovery-service-provider implementation="dummyDiscoveryServiceProvider"/>
+                    </hz:discovery-strategies>
                     <hz:properties>
                         <hz:property name="custom.prop.publisher">prop.publisher</hz:property>
+                        <hz:property name="discovery.period">5</hz:property>
+                        <hz:property name="maxEndpoints">2</hz:property>
                     </hz:properties>
                 </hz:wan-publisher>
                 <hz:wan-consumer class-name="com.hazelcast.wan.custom.WanConsumer">
@@ -97,9 +124,15 @@
                         <hz:interface>127.0.0.1:5700</hz:interface>
                         <hz:interface>127.0.0.1:5701</hz:interface>
                     </hz:tcp-ip>
-                    <hz:aws enabled="false" access-key="sample-access-key" secret-key="sample-secret-key"
-                            region="sample-region" security-group-name="sample-group"
-                            tag-key="sample-tag-key" tag-value="sample-tag-value" iam-role="sample-role"/>
+                    <hz:aws enabled="false"
+                            access-key="sample-access-key"
+                            secret-key="sample-secret-key"
+                            region="sample-region"
+                            host-header="sample-header"
+                            security-group-name="sample-group"
+                            tag-key="sample-tag-key"
+                            tag-value="sample-tag-value"
+                            iam-role="sample-role"/>
                     <hz:discovery-strategies>
                         <hz:node-filter implementation="dummyNodeFilter"/>
                         <hz:discovery-strategy discovery-strategy-factory="dummyDiscoveryStrategyFactory">

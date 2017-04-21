@@ -649,19 +649,26 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("127.0.0.1:5700", members.get(0));
         assertEquals("127.0.0.1:5701", members.get(1));
         assertEquals("127.0.0.1:5700", tcp.getRequiredMember());
-        AwsConfig aws = networkConfig.getJoin().getAwsConfig();
+        assertAwsConfig(networkConfig.getJoin().getAwsConfig());
+
+        assertTrue("reuse-address", networkConfig.isReuseAddress());
+
+        assertDiscoveryConfig(networkConfig.getJoin().getDiscoveryConfig());
+    }
+
+    private void assertAwsConfig(AwsConfig aws) {
         assertFalse(aws.isEnabled());
         assertEquals("sample-access-key", aws.getAccessKey());
         assertEquals("sample-secret-key", aws.getSecretKey());
         assertEquals("sample-region", aws.getRegion());
+        assertEquals("sample-header", aws.getHostHeader());
         assertEquals("sample-group", aws.getSecurityGroupName());
         assertEquals("sample-tag-key", aws.getTagKey());
         assertEquals("sample-tag-value", aws.getTagValue());
         assertEquals("sample-role", aws.getIamRole());
+    }
 
-        assertTrue("reuse-address", networkConfig.isReuseAddress());
-
-        DiscoveryConfig discoveryConfig = networkConfig.getJoin().getDiscoveryConfig();
+    private void assertDiscoveryConfig(DiscoveryConfig discoveryConfig) {
         assertTrue(discoveryConfig.getDiscoveryServiceProvider() instanceof DummyDiscoveryServiceProvider);
         assertTrue(discoveryConfig.getNodeFilter() instanceof DummyNodeFilter);
         List<DiscoveryStrategyConfig> discoveryStrategyConfigs
@@ -762,6 +769,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(WANQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, customPublisher.getQueueFullBehavior());
         Map<String, Comparable> customPublisherProps = customPublisher.getProperties();
         assertEquals("prop.publisher", customPublisherProps.get("custom.prop.publisher"));
+        assertEquals("5", customPublisherProps.get("discovery.period"));
+        assertEquals("2", customPublisherProps.get("maxEndpoints"));
+        assertAwsConfig(customPublisher.getAwsConfig());
+        assertDiscoveryConfig(customPublisher.getDiscoveryConfig());
 
         WanConsumerConfig consumerConfig = wcfg.getWanConsumerConfig();
         assertEquals("com.hazelcast.wan.custom.WanConsumer", consumerConfig.getClassName());

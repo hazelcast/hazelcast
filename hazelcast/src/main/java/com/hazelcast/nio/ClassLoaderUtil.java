@@ -19,6 +19,7 @@ package com.hazelcast.nio;
 import com.hazelcast.internal.usercodedeployment.impl.ClassSource;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
@@ -65,6 +66,29 @@ public final class ClassLoaderUtil {
     }
 
     private ClassLoaderUtil() {
+    }
+
+    /**
+     * Returns the {@code instance} if not null, otherwise constructs a new instance of the class using
+     * {@link #newInstance(Class, ClassLoader, String)}.
+     *
+     * @param instance    the instance of the class, can be null
+     * @param classLoader the classloader used for class instantiation
+     * @param className   the name of the class being constructed
+     * @return either the provided {@code instance} or a newly constructed instance of {@code className}
+     */
+    public static <T> T getOrCreate(T instance, ClassLoader classLoader, String className) {
+        if (instance != null) {
+            return instance;
+        } else if (className != null) {
+            try {
+                return ClassLoaderUtil.newInstance(classLoader, className);
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+        } else {
+            return null;
+        }
     }
 
     @SuppressWarnings("unchecked")

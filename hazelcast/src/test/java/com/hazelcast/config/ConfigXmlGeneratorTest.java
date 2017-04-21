@@ -26,6 +26,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
+import java.util.Collections;
+import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -183,6 +185,52 @@ public class ConfigXmlGeneratorTest {
         assertEquals(EvictionPolicy.LRU, xmlNearCacheConfig.getEvictionConfig().getEvictionPolicy());
         assertEquals(42, xmlNearCacheConfig.getMaxIdleSeconds());
         assertTrue(xmlNearCacheConfig.isCacheLocalEntries());
+    }
+
+    @Test
+    public void testWanConfig() {
+        final HashMap<String, Comparable> props = new HashMap<String, Comparable>();
+        props.put("prop1", "val1");
+        props.put("prop2", "val2");
+        props.put("prop3", "val3");
+        final WanReplicationConfig wanConfig = new WanReplicationConfig()
+                .setName("testName")
+                .setWanConsumerConfig(new WanConsumerConfig().setClassName("dummyClass").setProperties(props));
+        final WanPublisherConfig publisherConfig = new WanPublisherConfig()
+                .setGroupName("dummyGroup")
+                .setClassName("dummyClass")
+                .setAwsConfig(getDummyAwsConfig())
+                .setDiscoveryConfig(getDummyDiscoveryConfig());
+        wanConfig.setWanPublisherConfigs(Collections.singletonList(publisherConfig));
+
+        final Config config = new Config().addWanReplicationConfig(wanConfig);
+        final Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        ConfigCompatibilityChecker.checkWanConfigs(config.getWanReplicationConfigs(), xmlConfig.getWanReplicationConfigs());
+    }
+
+    private DiscoveryConfig getDummyDiscoveryConfig() {
+        final DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig("dummyClass");
+        strategyConfig.addProperty("prop1", "val1");
+        strategyConfig.addProperty("prop2", "val2");
+        final DiscoveryConfig c = new DiscoveryConfig();
+        c.setNodeFilterClass("dummyNodeFilter");
+        c.addDiscoveryStrategyConfig(strategyConfig);
+        c.addDiscoveryStrategyConfig(new DiscoveryStrategyConfig("dummyClass2"));
+        return c;
+    }
+
+    private AwsConfig getDummyAwsConfig() {
+        return new AwsConfig().setHostHeader("dummyHost")
+                              .setRegion("dummyRegion")
+                              .setEnabled(false)
+                              .setConnectionTimeoutSeconds(1)
+                              .setAccessKey("dummyKey")
+                              .setIamRole("dummyIam")
+                              .setSecretKey("dummySecretKey")
+                              .setSecurityGroupName("dummyGroupName")
+                              .setTagKey("dummyTagKey")
+                              .setTagValue("dummyTagValue");
     }
 
     private static Config getNewConfigViaXMLGenerator(Config config) {

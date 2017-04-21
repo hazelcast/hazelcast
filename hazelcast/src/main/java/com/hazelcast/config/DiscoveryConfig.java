@@ -119,4 +119,14 @@ public class DiscoveryConfig {
     public void addDiscoveryStrategyConfig(DiscoveryStrategyConfig discoveryStrategyConfig) {
         discoveryStrategyConfigs.add(discoveryStrategyConfig);
     }
+
+    @Override
+    public String toString() {
+        return "DiscoveryConfig{"
+                + "discoveryStrategyConfigs=" + discoveryStrategyConfigs
+                + ", discoveryServiceProvider=" + discoveryServiceProvider
+                + ", nodeFilter=" + nodeFilter
+                + ", nodeFilterClass='" + nodeFilterClass + '\''
+                + '}';
+    }
 }

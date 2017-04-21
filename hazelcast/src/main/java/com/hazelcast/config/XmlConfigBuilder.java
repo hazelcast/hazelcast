@@ -569,6 +569,10 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             publisherConfig.setQueueCapacity(queueCapacity);
         } else if ("properties".equals(targetChildName)) {
             fillProperties(targetChild, publisherConfig.getProperties());
+        } else if ("aws".equals(targetChildName)) {
+            handleAWS(publisherConfig.getAwsConfig(), targetChild);
+        } else if ("discovery-strategies".equals(targetChildName)) {
+            handleDiscoveryStrategies(publisherConfig.getDiscoveryConfig(), targetChild);
         }
     }
 
@@ -755,9 +759,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("tcp-ip".equals(name)) {
                 handleTcpIp(child);
             } else if ("aws".equals(name)) {
-                handleAWS(child);
+                handleAWS(config.getNetworkConfig().getJoin().getAwsConfig(), child);
             } else if ("discovery-strategies".equals(name)) {
-                handleDiscoveryStrategies(child);
+                handleDiscoveryStrategies(config.getNetworkConfig().getJoin().getDiscoveryConfig(), child);
             }
         }
 
@@ -765,9 +769,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         joinConfig.verify();
     }
 
-    private void handleDiscoveryStrategies(Node node) {
-        JoinConfig join = config.getNetworkConfig().getJoin();
-        DiscoveryConfig discoveryConfig = join.getDiscoveryConfig();
+    private void handleDiscoveryStrategies(DiscoveryConfig discoveryConfig, Node node) {
         for (Node child : childElements(node)) {
             String name = cleanNodeName(child);
             if ("discovery-strategy".equals(name)) {
@@ -818,10 +820,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         discoveryConfig.addDiscoveryStrategyConfig(new DiscoveryStrategyConfig(clazz, properties));
     }
 
-    private void handleAWS(Node node) {
-        JoinConfig join = config.getNetworkConfig().getJoin();
+    private void handleAWS(AwsConfig awsConfig, Node node) {
         NamedNodeMap atts = node.getAttributes();
-        AwsConfig awsConfig = join.getAwsConfig();
         for (int a = 0; a < atts.getLength(); a++) {
             Node att = atts.item(a);
             String value = getTextContent(att).trim();

@@ -2086,6 +2086,8 @@
                     <xs:sequence>
                         <xs:element name="queue-full-behavior" type="wan-queue-full-behavior" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="queue-capacity" type="xs:integer" default="10000" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="aws" type="aws" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                     </xs:sequence>
                     <xs:attributeGroup ref="class-or-bean-name"/>

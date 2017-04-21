@@ -25,7 +25,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Configuration for wan replication.
+ * Configuration for WAN replication. This configuration is referenced from a map or cache to determine the receivers for the
+ * WAN events. Each receiver is defined with a {@link WanPublisherConfig}
+ *
+ * @see MapConfig#setWanReplicationRef
+ * @see CacheConfig#setWanReplicationRef
  */
 public class WanReplicationConfig implements IdentifiedDataSerializable {
 

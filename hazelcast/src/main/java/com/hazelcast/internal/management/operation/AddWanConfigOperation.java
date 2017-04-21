@@ -25,7 +25,7 @@ import com.hazelcast.wan.WanReplicationService;
 import java.io.IOException;
 
 /**
- * Operation to update map configuration from Management Center.
+ * Operation to add a new {@link WanReplicationConfig} at runtime.
  */
 public class AddWanConfigOperation extends AbstractManagementOperation {
 

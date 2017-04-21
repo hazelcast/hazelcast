@@ -22,13 +22,17 @@ import com.hazelcast.spi.annotation.Beta;
 import java.util.Map;
 
 /**
- *
+ * A service implementating this interface provides local instance statistics.
  * This interface is in BETA stage and is subject to change in upcoming releases.
  *
+ * @param <T> type of returned
  */
 @Beta
-public interface StatisticsAwareService {
-
-    <T extends LocalInstanceStats> Map<String, T> getStats();
-
+public interface StatisticsAwareService<T extends LocalInstanceStats> {
+    /**
+     * Return the service statistics for the local instance.
+     *
+     * @return the statistics, grouped by distributed object name
+     */
+    Map<String, T> getStats();
 }

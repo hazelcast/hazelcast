@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import static java.text.MessageFormat.format;
@@ -55,12 +56,14 @@ class ConfigCompatibilityChecker {
         if (c1 == null || c2 == null) {
             throw new IllegalArgumentException("One of the two configs is null");
         }
-        if (!c1.getGroupConfig().getName().equals(c2.getGroupConfig().getName())) {
+        if (!nullSafeEqual(c1.getGroupConfig().getName(), c2.getGroupConfig().getName())) {
             return false;
         }
-        if (!c1.getGroupConfig().getPassword().equals(c2.getGroupConfig().getPassword())) {
+        if (!nullSafeEqual(c1.getGroupConfig().getPassword(), c2.getGroupConfig().getPassword())) {
             throw new HazelcastException("Incompatible group password");
         }
+
+        checkWanConfigs(c1.getWanReplicationConfigs(), c2.getWanReplicationConfigs());
         checkCompatibleConfigs("partition group", c1.getPartitionGroupConfig(), c2.getPartitionGroupConfig(), new PartitionGroupConfigChecker());
         checkCompatibleConfigs("serialization", c1.getSerializationConfig(), c2.getSerializationConfig(), new SerializationConfigChecker());
         checkCompatibleConfigs("services", c1.getServicesConfig(), c2.getServicesConfig(), new ServicesConfigChecker());
@@ -84,6 +87,16 @@ class ConfigCompatibilityChecker {
         checkCompatibleConfigs("job tracker", c1, c2, c1.getJobTrackerConfigs(), c2.getJobTrackerConfigs(), new JobTrackerConfigChecker());
 
         return true;
+    }
+
+    public static void checkWanConfigs(Map<String, WanReplicationConfig> c1, Map<String, WanReplicationConfig> c2) {
+        if ((c1 != c2 && (c1 == null || c2 == null)) || c1.size() != c2.size()) {
+            throw new HazelcastException(format("Incompatible wan replication config :\n{0}\n vs \n{1}", c1, c2));
+        }
+        final WanReplicationConfigChecker checker = new WanReplicationConfigChecker();
+        for (Entry<String, WanReplicationConfig> entry : c1.entrySet()) {
+            checkCompatibleConfigs("wan replication", entry.getValue(), c2.get(entry.getKey()), checker);
+        }
     }
 
     private static Map<String, SemaphoreConfig> getSemaphoreConfigsByName(Config c) {
@@ -668,34 +681,10 @@ class ConfigCompatibilityChecker {
             return c1 == c2 || !(c1 == null || c2 == null)
                     && isCompatible(c1.getMulticastConfig(), c2.getMulticastConfig())
                     && isCompatible(c1.getTcpIpConfig(), c2.getTcpIpConfig())
-                    && isCompatible(c1.getAwsConfig(), c2.getAwsConfig())
-                    && isCompatible(c1.getDiscoveryConfig(), c2.getDiscoveryConfig());
+                    && new AwsConfigChecker().check(c1.getAwsConfig(), c2.getAwsConfig())
+                    && new DiscoveryConfigChecker().check(c1.getDiscoveryConfig(), c2.getDiscoveryConfig());
         }
 
-        private static boolean isCompatible(DiscoveryConfig c1, DiscoveryConfig c2) {
-            final boolean c1Disabled = c1 == null || !c1.isEnabled();
-            final boolean c2Disabled = c2 == null || !c2.isEnabled();
-            return c1 == c2 || (c1Disabled && c2Disabled) ||
-                    (c1 != null && c2 != null
-                            && nullSafeEqual(c1.getNodeFilterClass(), c2.getNodeFilterClass())
-                            && isCollectionCompatible(c1.getDiscoveryStrategyConfigs(), c2.getDiscoveryStrategyConfigs(), new DiscoveryStrategyConfigChecker()));
-        }
-
-        private static boolean isCompatible(AwsConfig c1, AwsConfig c2) {
-            final boolean c1Disabled = c1 == null || !c1.isEnabled();
-            final boolean c2Disabled = c2 == null || !c2.isEnabled();
-            return c1 == c2 || (c1Disabled && c2Disabled) ||
-                    (c1 != null && c2 != null
-                            && nullSafeEqual(c1.getAccessKey(), c2.getAccessKey())
-                            && nullSafeEqual(c1.getSecretKey(), c2.getSecretKey())
-                            && nullSafeEqual(c1.getRegion(), c2.getRegion())
-                            && nullSafeEqual(c1.getSecurityGroupName(), c2.getSecurityGroupName())
-                            && nullSafeEqual(c1.getTagKey(), c2.getTagKey())
-                            && nullSafeEqual(c1.getTagValue(), c2.getTagValue())
-                            && nullSafeEqual(c1.getHostHeader(), c2.getHostHeader())
-                            && nullSafeEqual(c1.getIamRole(), c2.getIamRole())
-                            && nullSafeEqual(c1.getConnectionTimeoutSeconds(), c2.getConnectionTimeoutSeconds()));
-        }
 
         private static boolean isCompatible(TcpIpConfig c1, TcpIpConfig c2) {
             final boolean c1Disabled = c1 == null || !c1.isEnabled();
@@ -757,6 +746,71 @@ class ConfigCompatibilityChecker {
                             && nullSafeEqual(c1.getFactoryClassName(), c2.getFactoryClassName())
                             && nullSafeEqual(c1.getFactoryImplementation(), c2.getFactoryImplementation()))
                             && nullSafeEqual(c1.getProperties(), c2.getProperties());
+        }
+    }
+
+
+    private static class DiscoveryConfigChecker extends ConfigChecker<DiscoveryConfig> {
+        @Override
+        boolean check(DiscoveryConfig c1, DiscoveryConfig c2) {
+            final boolean c1Disabled = c1 == null || !c1.isEnabled();
+            final boolean c2Disabled = c2 == null || !c2.isEnabled();
+            return c1 == c2 || (c1Disabled && c2Disabled) ||
+                    (c1 != null && c2 != null
+                            && nullSafeEqual(c1.getNodeFilterClass(), c2.getNodeFilterClass())
+                            && nullSafeEqual(c1.getDiscoveryServiceProvider(), c2.getDiscoveryServiceProvider())
+                            && isCollectionCompatible(c1.getDiscoveryStrategyConfigs(), c2.getDiscoveryStrategyConfigs(), new DiscoveryStrategyConfigChecker()));
+        }
+    }
+
+    private static class AwsConfigChecker extends ConfigChecker<AwsConfig> {
+        @Override
+        boolean check(AwsConfig c1, AwsConfig c2) {
+            final boolean c1Disabled = c1 == null || !c1.isEnabled();
+            final boolean c2Disabled = c2 == null || !c2.isEnabled();
+            return c1 == c2 || (c1Disabled && c2Disabled) ||
+                    (c1 != null && c2 != null
+                            && nullSafeEqual(c1.getAccessKey(), c2.getAccessKey())
+                            && nullSafeEqual(c1.getSecretKey(), c2.getSecretKey())
+                            && nullSafeEqual(c1.getRegion(), c2.getRegion())
+                            && nullSafeEqual(c1.getSecurityGroupName(), c2.getSecurityGroupName())
+                            && nullSafeEqual(c1.getTagKey(), c2.getTagKey())
+                            && nullSafeEqual(c1.getTagValue(), c2.getTagValue())
+                            && nullSafeEqual(c1.getHostHeader(), c2.getHostHeader())
+                            && nullSafeEqual(c1.getIamRole(), c2.getIamRole())
+                            && nullSafeEqual(c1.getConnectionTimeoutSeconds(), c2.getConnectionTimeoutSeconds()));
+        }
+    }
+
+    private static class WanReplicationConfigChecker extends ConfigChecker<WanReplicationConfig> {
+        @Override
+        boolean check(WanReplicationConfig c1, WanReplicationConfig c2) {
+            return c1 == c2 || !(c1 == null || c2 == null)
+                    && nullSafeEqual(c1.getName(), c2.getName())
+                    && isCompatible(c1.getWanConsumerConfig(), c2.getWanConsumerConfig())
+                    && isCollectionCompatible(c1.getWanPublisherConfigs(), c2.getWanPublisherConfigs(), new WanPublisherConfigChecker());
+        }
+
+        private boolean isCompatible(WanConsumerConfig c1, WanConsumerConfig c2) {
+            return c1 == c2 || !(c1 == null || c2 == null)
+                    && nullSafeEqual(c1.getClassName(), c2.getClassName())
+                    && nullSafeEqual(c1.getImplementation(), c2.getImplementation())
+                    && nullSafeEqual(c1.getProperties(), c2.getProperties());
+        }
+    }
+
+    private static class WanPublisherConfigChecker extends ConfigChecker<WanPublisherConfig> {
+        @Override
+        boolean check(WanPublisherConfig c1, WanPublisherConfig c2) {
+            return c1 == c2 || !(c1 == null || c2 == null)
+                    && nullSafeEqual(c1.getGroupName(), c2.getGroupName())
+                    && nullSafeEqual(c1.getQueueCapacity(), c2.getQueueCapacity())
+                    && nullSafeEqual(c1.getQueueFullBehavior(), c2.getQueueFullBehavior())
+                    && new AwsConfigChecker().check(c1.getAwsConfig(), c2.getAwsConfig())
+                    && new DiscoveryConfigChecker().check(c1.getDiscoveryConfig(), c2.getDiscoveryConfig())
+                    && nullSafeEqual(c1.getClassName(), c2.getClassName())
+                    && nullSafeEqual(c1.getImplementation(), c2.getImplementation())
+                    && nullSafeEqual(c1.getProperties(), c2.getProperties());
         }
     }
 

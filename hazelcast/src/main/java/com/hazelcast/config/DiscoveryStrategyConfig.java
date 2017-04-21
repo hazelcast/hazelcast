@@ -73,4 +73,13 @@ public class DiscoveryStrategyConfig {
     public Map<String, Comparable> getProperties() {
         return Collections.unmodifiableMap(properties);
     }
+
+    @Override
+    public String toString() {
+        return "DiscoveryStrategyConfig{"
+                + "properties=" + properties
+                + ", className='" + className + '\''
+                + ", discoveryStrategyFactory=" + discoveryStrategyFactory
+                + '}';
+    }
 }
