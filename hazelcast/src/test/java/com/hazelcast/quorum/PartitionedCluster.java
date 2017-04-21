@@ -155,6 +155,12 @@ public class PartitionedCluster {
         h3 = factory.newHazelcastInstance(config);
         h4 = factory.newHazelcastInstance(config);
         h5 = factory.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(5, h1);
+        assertClusterSizeEventually(5, h2);
+        assertClusterSizeEventually(5, h3);
+        assertClusterSizeEventually(5, h4);
+        assertClusterSizeEventually(5, h5);
     }
 
     private QuorumConfig createSuccessfulSplitTestQuorum() {
