@@ -34,6 +34,14 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 /**
  * Configuration for eviction.
  * You can set a limit for number of entries or total memory cost of entries.
+ * <p/>
+ * The default values of the eviction configuration are
+ * <ul>
+ * <li>{@link EvictionPolicy#LRU} as eviction policy</li>
+ * <li>{@link EvictionConfig.MaxSizePolicy#ENTRY_COUNT} as max size policy</li>
+ * <li>{@value DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP} as maximum size for on-heap {@link com.hazelcast.core.IMap}</li>
+ * <li>{@value DEFAULT_MAX_ENTRY_COUNT} as maximum size for all other data structures and configurations</li>
+ * </ul>
  */
 @BinaryInterface
 public class EvictionConfig implements EvictionConfiguration, DataSerializable, Serializable {
@@ -57,88 +65,6 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
      * Default Eviction Policy.
      */
     public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.LRU;
-
-    protected int size = DEFAULT_MAX_ENTRY_COUNT;
-    protected MaxSizePolicy maxSizePolicy = DEFAULT_MAX_SIZE_POLICY;
-    protected EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
-    protected String comparatorClassName;
-    protected EvictionPolicyComparator comparator;
-
-    protected EvictionConfig readOnly;
-
-    /**
-     * Used by the {@link NearCacheConfigAccessor} to initialize the proper default value for on-heap maps.
-     */
-    boolean sizeConfigured;
-
-    public EvictionConfig() {
-    }
-
-    public EvictionConfig(int size, MaxSizePolicy maxSizePolicy, EvictionPolicy evictionPolicy) {
-        /**
-         * ===== NOTE =====
-         *
-         * Do not use setters, because they are overridden in the readonly version of this config and
-         * they cause an "UnsupportedOperationException". Just set directly if the value is valid.
-         */
-
-        this.sizeConfigured = true;
-        this.size = checkPositive(size, "Size must be positive number!");
-        this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null!");
-        this.evictionPolicy = checkNotNull(evictionPolicy, "Eviction policy cannot be null!");
-    }
-
-    public EvictionConfig(int size, MaxSizePolicy maxSizePolicy, String comparatorClassName) {
-        /**
-         * ===== NOTE =====
-         *
-         * Do not use setters, because they are overridden in the readonly version of this config and
-         * they cause an "UnsupportedOperationException". Just set directly if the value is valid.
-         */
-
-        this.sizeConfigured = true;
-        this.size = checkPositive(size, "Size must be positive number!");
-        this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null!");
-        this.comparatorClassName = checkNotNull(comparatorClassName, "Comparator classname cannot be null!");
-    }
-
-    public EvictionConfig(int size, MaxSizePolicy maxSizePolicy, EvictionPolicyComparator comparator) {
-        /**
-         * ===== NOTE =====
-         *
-         * Do not use setters, because they are overridden in the readonly version of this config and
-         * they cause an "UnsupportedOperationException". Just set directly if the value is valid.
-         */
-
-        this.sizeConfigured = true;
-        this.size = checkPositive(size, "Size must be positive number!");
-        this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null!");
-        this.comparator = checkNotNull(comparator, "Comparator cannot be null!");
-    }
-
-    public EvictionConfig(EvictionConfig config) {
-        /**
-         * ===== NOTE =====
-         *
-         * Do not use setters, because they are overridden in readonly version of this config and
-         * cause "UnsupportedOperationException". So just set directly if value is valid.
-         */
-
-        this.sizeConfigured = true;
-        this.size = checkPositive(config.size, "Size must be positive number!");
-        this.maxSizePolicy = checkNotNull(config.maxSizePolicy, "Max-Size policy cannot be null!");
-        if (config.evictionPolicy != null) {
-            this.evictionPolicy = config.evictionPolicy;
-        }
-        // Eviction policy comparator class name is not allowed to be null
-        if (config.comparatorClassName != null) {
-            this.comparatorClassName = config.comparatorClassName;
-        }
-        // Eviction policy comparator is not allowed to be null
-        if (config.comparator != null) {
-            this.comparator = config.comparator;
-        }
-    }
 
     /**
      * Maximum Size Policy
@@ -168,6 +94,60 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
         FREE_NATIVE_MEMORY_PERCENTAGE
     }
 
+    protected int size = DEFAULT_MAX_ENTRY_COUNT;
+    protected MaxSizePolicy maxSizePolicy = DEFAULT_MAX_SIZE_POLICY;
+    protected EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
+    protected String comparatorClassName;
+    protected EvictionPolicyComparator comparator;
+
+    protected EvictionConfig readOnly;
+
+    /**
+     * Used by the {@link NearCacheConfigAccessor} to initialize the proper default value for on-heap maps.
+     */
+    boolean sizeConfigured;
+
+    public EvictionConfig() {
+    }
+
+    public EvictionConfig(int size, MaxSizePolicy maxSizePolicy, EvictionPolicy evictionPolicy) {
+        this.sizeConfigured = true;
+        this.size = checkPositive(size, "Size must be positive number!");
+        this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null!");
+        this.evictionPolicy = checkNotNull(evictionPolicy, "Eviction policy cannot be null!");
+    }
+
+    public EvictionConfig(int size, MaxSizePolicy maxSizePolicy, String comparatorClassName) {
+        this.sizeConfigured = true;
+        this.size = checkPositive(size, "Size must be positive number!");
+        this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null!");
+        this.comparatorClassName = checkNotNull(comparatorClassName, "Comparator classname cannot be null!");
+    }
+
+    public EvictionConfig(int size, MaxSizePolicy maxSizePolicy, EvictionPolicyComparator comparator) {
+        this.sizeConfigured = true;
+        this.size = checkPositive(size, "Size must be positive number!");
+        this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null!");
+        this.comparator = checkNotNull(comparator, "Comparator cannot be null!");
+    }
+
+    public EvictionConfig(EvictionConfig config) {
+        this.sizeConfigured = true;
+        this.size = checkPositive(config.size, "Size must be positive number!");
+        this.maxSizePolicy = checkNotNull(config.maxSizePolicy, "Max-Size policy cannot be null!");
+        if (config.evictionPolicy != null) {
+            this.evictionPolicy = config.evictionPolicy;
+        }
+        // Eviction policy comparator class name is not allowed to be null
+        if (config.comparatorClassName != null) {
+            this.comparatorClassName = config.comparatorClassName;
+        }
+        // Eviction policy comparator is not allowed to be null
+        if (config.comparator != null) {
+            this.comparator = config.comparator;
+        }
+    }
+
     /**
      * Gets immutable version of this configuration.
      *
@@ -181,62 +161,89 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
         return readOnly;
     }
 
+    /**
+     * Returns the size which is used by the {@link MaxSizePolicy}.
+     * <p/>
+     * The interpretation of the value depends on the configured {@link MaxSizePolicy}.
+     *
+     * @return the size which is used by the {@link MaxSizePolicy}
+     */
     public int getSize() {
         return size;
     }
 
+    /**
+     * Sets the size which is used by the {@link MaxSizePolicy}.
+     * <p/>
+     * The interpretation of the value depends on the configured {@link MaxSizePolicy}.
+     * <p/>
+     * Accepts any positive number. The default value is {@value #DEFAULT_MAX_ENTRY_COUNT}.
+     *
+     * @param size the size which is used by the {@link MaxSizePolicy}
+     * @return this EvictionConfig instance
+     */
     public EvictionConfig setSize(int size) {
         this.sizeConfigured = true;
-        this.size = checkPositive(size, "Size must be positive number!");
+        this.size = checkPositive(size, "size must be positive number!");
         return this;
     }
 
+    /**
+     * Returns the {@link MaxSizePolicy} of this eviction configuration.
+     *
+     * @return the {@link MaxSizePolicy} of this eviction configuration
+     */
     public MaxSizePolicy getMaximumSizePolicy() {
         return maxSizePolicy;
     }
 
+    /**
+     * Sets the {@link MaxSizePolicy} of this eviction configuration.
+     *
+     * @param maxSizePolicy the {@link MaxSizePolicy} of this eviction configuration
+     * @return this EvictionConfig instance
+     */
     public EvictionConfig setMaximumSizePolicy(MaxSizePolicy maxSizePolicy) {
-        this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null!");
+        this.maxSizePolicy = checkNotNull(maxSizePolicy, "maxSizePolicy cannot be null!");
         return this;
     }
 
+    /**
+     * Returns the {@link EvictionPolicy} of this eviction configuration.
+     *
+     * @return the {@link EvictionPolicy} of this eviction configuration
+     */
     @Override
     public EvictionPolicy getEvictionPolicy() {
         return evictionPolicy;
     }
 
+    /**
+     * Sets the {@link EvictionPolicy} of this eviction configuration.
+     *
+     * @param evictionPolicy the {@link EvictionPolicy} of this eviction configuration
+     * @return this EvictionConfig instance
+     */
     public EvictionConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
         this.evictionPolicy = checkNotNull(evictionPolicy, "Eviction policy cannot be null!");
         return this;
     }
 
-    @Override
-    public String getComparatorClassName() {
-        return comparatorClassName;
-    }
-
-    public EvictionConfig setComparatorClassName(String comparatorClassName) {
-        this.comparatorClassName = checkNotNull(comparatorClassName, "Eviction policy comparator class name cannot be null!");
-        return this;
-    }
-
-    @Override
-    public EvictionPolicyComparator getComparator() {
-        return comparator;
-    }
-
-    public EvictionConfig setComparator(EvictionPolicyComparator comparator) {
-        this.comparator = checkNotNull(comparator, "Eviction policy comparator cannot be null!");
-        return this;
-    }
-
+    /**
+     * Returns the {@link EvictionStrategyType} of this eviction configuration.
+     *
+     * @return the {@link EvictionStrategyType} of this eviction configuration
+     */
     @Override
     public EvictionStrategyType getEvictionStrategyType() {
         return EvictionStrategyType.DEFAULT_EVICTION_STRATEGY;
     }
 
     /**
-     * @deprecated since 3.9, use {@link #getEvictionPolicy()} instead
+     * Returns the {@link EvictionPolicyType} of this eviction configuration.
+     *
+     * @return the {@link EvictionPolicyType} of this eviction configuration
+     * @deprecated since 3.9, please use {@link #getEvictionPolicy()}
      */
     @Deprecated
     public EvictionPolicyType getEvictionPolicyType() {
@@ -252,6 +259,52 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
             default:
                 return null;
         }
+    }
+
+    /**
+     * Returns the class name of the configured {@link EvictionPolicyComparator} implementation.
+     *
+     * @return the class name of the configured {@link EvictionPolicyComparator} implementation
+     */
+    @Override
+    public String getComparatorClassName() {
+        return comparatorClassName;
+    }
+
+    /**
+     * Sets the class name of the configured {@link EvictionPolicyComparator} implementation.
+     * <p/>
+     * Only one of the {@code comparator class name} and {@code comparator} can be configured in the eviction configuration.
+     *
+     * @param comparatorClassName the class name of the configured {@link EvictionPolicyComparator} implementation
+     * @return this EvictionConfig instance
+     */
+    public EvictionConfig setComparatorClassName(String comparatorClassName) {
+        this.comparatorClassName = checkNotNull(comparatorClassName, "Eviction policy comparator class name cannot be null!");
+        return this;
+    }
+
+    /**
+     * Returns the instance of the configured {@link EvictionPolicyComparator} implementation.
+     *
+     * @return the instance of the configured {@link EvictionPolicyComparator} implementation
+     */
+    @Override
+    public EvictionPolicyComparator getComparator() {
+        return comparator;
+    }
+
+    /**
+     * Sets the instance of the configured {@link EvictionPolicyComparator} implementation.
+     * <p/>
+     * Only one of the {@code comparator class name} and {@code comparator} can be configured in the eviction configuration.
+     *
+     * @param comparator the instance of the configured {@link EvictionPolicyComparator} implementation
+     * @return this EvictionConfig instance
+     */
+    public EvictionConfig setComparator(EvictionPolicyComparator comparator) {
+        this.comparator = checkNotNull(comparator, "Eviction policy comparator cannot be null!");
+        return this;
     }
 
     @Override

@@ -761,12 +761,12 @@ public class ConfigXmlGenerator {
         if (e == null) {
             return;
         }
-        final String comparatorClass = !isNullOrEmpty(e.getComparatorClassName()) ? e.getComparatorClassName() : null;
+        final String comparatorClassName = !isNullOrEmpty(e.getComparatorClassName()) ? e.getComparatorClassName() : null;
         gen.node("eviction", null,
+                "size", e.getSize(),
                 "max-size-policy", e.getMaximumSizePolicy(),
                 "eviction-policy", e.getEvictionPolicy(),
-                "size", e.getSize(),
-                "comparator-class-name", comparatorClass);
+                "comparator-class-name", comparatorClassName);
     }
 
     private static void multicastConfigXmlGenerator(XmlGenerator gen, JoinConfig join) {

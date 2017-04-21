@@ -56,35 +56,14 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
     }
 
     public NearCachePreloaderConfig(NearCachePreloaderConfig nearCachePreloaderConfig) {
-        /**
-         * ===== NOTE =====
-         *
-         * Do not use setters, because they are overridden in the readonly version of this config and
-         * they cause an "UnsupportedOperationException". Just set directly if the value is valid.
-         */
-
         this(nearCachePreloaderConfig.enabled, nearCachePreloaderConfig.directory);
     }
 
     public NearCachePreloaderConfig(String directory) {
-        /**
-         * ===== NOTE =====
-         *
-         * Do not use setters, because they are overridden in the readonly version of this config and
-         * they cause an "UnsupportedOperationException". Just set directly if the value is valid.
-         */
-
         this(true, directory);
     }
 
     public NearCachePreloaderConfig(boolean enabled, String directory) {
-        /**
-         * ===== NOTE =====
-         *
-         * Do not use setters, because they are overridden in the readonly version of this config and
-         * they cause an "UnsupportedOperationException". Just set directly if the value is valid.
-         */
-
         this.enabled = enabled;
         this.directory = checkNotNull(directory, "directory cannot be null!");
     }
