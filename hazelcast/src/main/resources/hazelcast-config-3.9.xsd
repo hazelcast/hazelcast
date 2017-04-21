@@ -2018,12 +2018,16 @@
             <xs:element name="class-name" type="xs:string" minOccurs="1" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        Name of the class implementation for the WAN replication.
+                        Fully qualified class name of WAN Replication implementation implementing WanReplicationEndpoint.
+                        Hazelcast Enterprise comes with com.hazelcast.enterprise.wan.replication.WanBatchReplication:
+                        Waits until a batch size is reached or a delay time is passed.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="queue-capacity" type="xs:integer" default="10000" minOccurs="0" maxOccurs="1"/>
             <xs:element name="queue-full-behavior" type="wan-queue-full-behavior" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="aws" type="aws" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="group-name" type="xs:string" use="required">

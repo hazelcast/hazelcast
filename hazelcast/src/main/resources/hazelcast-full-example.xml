@@ -111,8 +111,8 @@ https://hazelcast.org/documentation/.
     
     The <wan-replication> element has the following sub-elements:
     * <wan-publisher>:
-	Fully qualified class name of WAN Replication implementation. Hazelcast Enterprise comes with;
-    	- com.hazelcast.enterprise.wan.replication.WanBatchReplication:
+	Fully qualified class name of WAN Replication implementation implementing WanReplicationEndpoint.
+	Hazelcast Enterprise comes with com.hazelcast.enterprise.wan.replication.WanBatchReplication:
 		Waits until a batch size is reached or a delay time is passed.
 		Please see the `batch.size and batch.max.delay.millis configuration descriptions below.
     * <wan-consumer>:
@@ -151,6 +151,51 @@ https://hazelcast.org/documentation/.
 	- THROW_EXCEPTION: 
 		The WAN queue size is checked before each supported mutating operation. If one of the queues of the target 
 		cluster is full, WANReplicationQueueFullException is thrown and the operation is not allowed.
+    * <aws>:
+		Set its "enabled" attribute to true for discovery within Amazon EC2. It has the following sub-elements:
+		- <access-key>:
+			Access key of your account on EC2.
+		- <secret-key>:
+			Secret key of your account on EC2.
+		- <iam-role>:
+			IAM role that binds with your instance.
+		- <region>:
+			The region where your Hazelcast members run. Default value is us-east-1.
+                        It needs to be specified if the region is other than the default one.
+		- <host-header>:
+			The URL that is the entry point for a web service. It is optional.
+		- <security-group-name>:
+			Name of the security group you specified at the EC2 management console.
+                        It is used to narrow the Hazelcast members to be within this group. It is optional.
+		- <tag-key>:
+			To narrow the members in the cloud down to only Hazelcast members, you can set
+                        this to the one you specified in the EC2 console. It is optional.
+		- <tag-value>:
+			To narrow the members in the cloud down to only Hazelcast members, you can set
+                        this to the one you specified in the EC2 console. It is optional.
+	* <discovery-strategies>:
+		Set its "enabled" attribute to true for discovery in various cloud infrastructures.
+		You can define multiple discovery strategies using the <discovery-strategy> sub-element and its properties.
+		Please refer to
+		http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#discovering-cluster-members
+		to see the properties you can use.
+		The following is an example for EC2 cloud.
+		<discovery-strategies>
+		    <discovery-strategy enabled="true" class="com.hazelcast.aws.AwsDiscoveryStrategy">
+                <properties>
+                    <property name="access-key">test-access-key</property>
+                    <property name="secret-key">test-secret-key</property>
+                    <property name="region">test-region</property>
+                    <property name="iam-role">test-iam-role</property>
+                    <property name="host-header">ec2.test-host-header</property>
+                    <property name="security-group-name">test-security-group-name</property>
+                    <property name="tag-key">test-tag-key</property>
+                    <property name="tag-value">test-tag-value</property>
+                    <property name="connection-timeout-seconds">10</property>
+                    <property name="hz-port">5702</property>
+                </properties>
+            </discovery-strategy>
+		</discovery-strategies>
 -->        
     <wan-replication name="my-wan-cluster-batch">
         <wan-publisher group-name="nyc">
@@ -166,6 +211,25 @@ https://hazelcast.org/documentation/.
                 <property name="snapshot.enabled">false</property>
                 <property name="group.password">nyc-pass</property>
             </properties>
+            <!--<aws enabled="false">-->
+                <!--<access-key>my-access-key</access-key>-->
+                <!--<secret-key>my-secret-key</secret-key>-->
+                <!--<iam-role>dummy</iam-role>-->
+                <!--<region>us-west-1</region>-->
+                <!--<host-header>ec2.amazonaws.com</host-header>-->
+                <!--<security-group-name>hazelcast-sg</security-group-name>-->
+                <!--<tag-key>type</tag-key>-->
+                <!--<tag-value>hz-nodes</tag-value>-->
+            <!--</aws>-->
+            <!--<discovery-strategies>-->
+                <!--<discovery-strategy class="com.hazelcast.jclouds.JCloudsDiscoveryStrategy" enabled="true">-->
+                    <!--<properties>-->
+                        <!--<property name="provider">google-compute-engine</property>-->
+                        <!--<property name="identity">GCE_IDENTITY</property>-->
+                        <!--<property name="credential">GCE_CREDENTIAL</property>-->
+                    <!--</properties>-->
+                <!--</discovery-strategy>-->
+            <!--</discovery-strategies>-->
         </wan-publisher>
     </wan-replication>
 <!--
@@ -210,7 +274,7 @@ https://hazelcast.org/documentation/.
 	shut it down. It is optional and its default value is false.
     * <join>:
 	This configuration lets you choose a discovery mechanism that Hazelcast will use to form a cluster. 
-	Hazelcast can find members by multicast, TCP/IP lists and in the clouds supported by jclouds API. 
+	Hazelcast can find members by multicast, TCP/IP lists and by various discovery mechanisms provided by different cloud APIs.
 	The following are the elements of <join>:
 	- <multicast>:
 		Set its "enabled" attribute to true for discovery by multicast. It has another attribute
@@ -273,12 +337,12 @@ https://hazelcast.org/documentation/.
 			To narrow the members in the cloud down to only Hazelcast members, you can set
                         this to the one you specified in the EC2 console. It is optional.
 	- <discovery-strategies>:
-		Set its "enabled" attribute to true for discovery in a jclouds backed cloud. You also need to set the
+		Set its "enabled" attribute to true for discovery in various cloud infrastructures. You also need to set the
 		value of "hazelcast.discovery.enabled" property to true. See the description of the <properties> element
 		to learn how to do this.
 		You can define multiple discovery strategies using the <discovery-strategy> sub-element and its 
 		properties. Please refer to 
-		http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#discovering-members-with-jclouds
+		http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#discovering-cluster-members
 		to see the properties you can use.
 		The following is an example for EC2 cloud.
 		<discovery-strategies>
@@ -346,24 +410,34 @@ https://hazelcast.org/documentation/.
             <ports>34500</ports>
         </outbound-ports>
         <reuse-address>false</reuse-address>
-        <join>
-            <multicast enabled="true">
-                <multicast-group>224.2.2.3</multicast-group>
-                <multicast-port>54327</multicast-port>
-            </multicast>
-            <tcp-ip enabled="false">
-                <interface>127.0.0.1</interface>
-            </tcp-ip>
-            <discovery-strategies>
-		<discovery-strategy class="com.hazelcast.jclouds.JCloudsDiscoveryStrategy" enabled="true">
-			<properties>
-				<property name="provider">google-compute-engine</property>
-				<property name="identity">GCE_IDENTITY</property>
-				<property name="credential">GCE_CREDENTIAL</property>
-			</properties>
-		</discovery-strategy>
-            </discovery-strategies>
-        </join>
+       <join>
+           <multicast enabled="true">
+               <multicast-group>224.2.2.3</multicast-group>
+               <multicast-port>54327</multicast-port>
+           </multicast>
+           <tcp-ip enabled="false">
+               <interface>127.0.0.1</interface>
+           </tcp-ip>
+           <aws enabled="false">
+               <access-key>my-access-key</access-key>
+               <secret-key>my-secret-key</secret-key>
+               <iam-role>dummy</iam-role>
+               <region>us-west-1</region>
+               <host-header>ec2.amazonaws.com</host-header>
+               <security-group-name>hazelcast-sg</security-group-name>
+               <tag-key>type</tag-key>
+               <tag-value>hz-nodes</tag-value>
+           </aws>
+           <discovery-strategies>
+               <discovery-strategy class="com.hazelcast.jclouds.JCloudsDiscoveryStrategy" enabled="true">
+                   <properties>
+                       <property name="provider">google-compute-engine</property>
+                       <property name="identity">GCE_IDENTITY</property>
+                       <property name="credential">GCE_CREDENTIAL</property>
+                   </properties>
+               </discovery-strategy>
+           </discovery-strategies>
+       </join>
         <interfaces enabled="true">
             <interface>10.10.1.*</interface>
         </interfaces>

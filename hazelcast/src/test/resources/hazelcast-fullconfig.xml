@@ -66,8 +66,30 @@
             <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>
             <queue-full-behavior>DISCARD_AFTER_MUTATION</queue-full-behavior>
             <queue-capacity>10000</queue-capacity>
+            <aws enabled="false" connection-timeout-seconds="10">
+                <access-key>sample-access-key</access-key>
+                <secret-key>sample-secret-key</secret-key>
+                <iam-role>sample-role</iam-role>
+                <region>sample-region</region>
+                <host-header>sample-header</host-header>
+                <security-group-name>sample-group</security-group-name>
+                <tag-key>sample-tag-key</tag-key>
+                <tag-value>sample-tag-value</tag-value>
+            </aws>
+            <discovery-strategies>
+                <node-filter class="DummyFilterClass" />
+                <discovery-strategy class="DummyDiscoveryStrategy1" enabled="true">
+                    <properties>
+                        <property name="key-string">foo</property>
+                        <property name="key-int">123</property>
+                        <property name="key-boolean">true</property>
+                    </properties>
+                </discovery-strategy>
+            </discovery-strategies>
             <properties>
                 <property name="custom.prop.publisher">prop.publisher</property>
+                <property name="discovery.period">5</property>
+                <property name="maxEndpoints">2</property>
             </properties>
         </wan-publisher>
         <wan-consumer>

@@ -142,38 +142,81 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void readAwsConfig() {
         String xml = HAZELCAST_START_TAG
-                + "   <group>\n"
-                + "        <name>dev</name>\n"
-                + "        <password>dev-pass</password>\n"
-                + "    </group>\n"
-                + "    <network>\n"
-                + "        <port auto-increment=\"true\">5701</port>\n"
-                + "        <join>\n"
-                + "            <multicast enabled=\"false\">\n"
-                + "                <multicast-group>224.2.2.3</multicast-group>\n"
-                + "                <multicast-port>54327</multicast-port>\n"
-                + "            </multicast>\n"
-                + "            <tcp-ip enabled=\"false\">\n"
-                + "                <interface>127.0.0.1</interface>\n"
-                + "            </tcp-ip>\n"
-                + "            <aws enabled=\"true\" connection-timeout-seconds=\"10\" >\n"
-                + "                <access-key>access</access-key>\n"
-                + "                <secret-key>secret</secret-key>\n"
-                + "            </aws>\n"
-                + "        </join>\n"
-                + "        <interfaces enabled=\"false\">\n"
-                + "            <interface>10.10.1.*</interface>\n"
-                + "        </interfaces>\n"
-                + "    </network>\n"
+                + "   <group>\n" +
+                "        <name>dev</name>\n" +
+                "        <password>dev-pass</password>\n" +
+                "    </group>\n" +
+                "    <network>\n" +
+                "        <port auto-increment=\"true\">5701</port>\n" +
+                "        <join>\n" +
+                "            <multicast enabled=\"false\">\n" +
+                "                <multicast-group>224.2.2.3</multicast-group>\n" +
+                "                <multicast-port>54327</multicast-port>\n" +
+                "            </multicast>\n" +
+                "            <tcp-ip enabled=\"false\">\n" +
+                "                <interface>127.0.0.1</interface>\n" +
+                "            </tcp-ip>\n" +
+                "            <aws enabled=\"true\" connection-timeout-seconds=\"10\" >\n" +
+                "                <access-key>sample-access-key</access-key>\n" +
+                "                <secret-key>sample-secret-key</secret-key>\n" +
+                "                <iam-role>sample-role</iam-role>\n" +
+                "                <region>sample-region</region>\n" +
+                "                <host-header>sample-header</host-header>\n" +
+                "                <security-group-name>sample-group</security-group-name>\n" +
+                "                <tag-key>sample-tag-key</tag-key>\n" +
+                "                <tag-value>sample-tag-value</tag-value>\n" +
+                "            </aws>\n" +
+                "        </join>\n" +
+                "        <interfaces enabled=\"false\">\n" +
+                "            <interface>10.10.1.*</interface>\n" +
+                "        </interfaces>\n" +
+                "    </network>"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        AwsConfig awsConfig = config.getNetworkConfig().getJoin().getAwsConfig();
+        final AwsConfig aws = config.getNetworkConfig().getJoin().getAwsConfig();
+        assertTrue(aws.isEnabled());
+        assertAwsConfig(aws);
+    }
 
-        assertTrue(awsConfig.isEnabled());
-        assertEquals(10, config.getNetworkConfig().getJoin().getAwsConfig().getConnectionTimeoutSeconds());
-        assertEquals("access", awsConfig.getAccessKey());
-        assertEquals("secret", awsConfig.getSecretKey());
+    @Test
+    public void readDiscoveryConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "   <group>\n" +
+                "        <name>dev</name>\n" +
+                "        <password>dev-pass</password>\n" +
+                "    </group>\n" +
+                "    <network>\n" +
+                "        <port auto-increment=\"true\">5701</port>\n" +
+                "        <join>\n" +
+                "            <multicast enabled=\"false\">\n" +
+                "                <multicast-group>224.2.2.3</multicast-group>\n" +
+                "                <multicast-port>54327</multicast-port>\n" +
+                "            </multicast>\n" +
+                "            <tcp-ip enabled=\"false\">\n" +
+                "                <interface>127.0.0.1</interface>\n" +
+                "            </tcp-ip>\n" +
+                "            <discovery-strategies>\n" +
+                "                <node-filter class=\"DummyFilterClass\" />\n" +
+                "                <discovery-strategy class=\"DummyDiscoveryStrategy1\" enabled=\"true\">\n" +
+                "                    <properties>\n" +
+                "                        <property name=\"key-string\">foo</property>\n" +
+                "                        <property name=\"key-int\">123</property>\n" +
+                "                        <property name=\"key-boolean\">true</property>\n" +
+                "                    </properties>\n" +
+                "                </discovery-strategy>\n" +
+                "            </discovery-strategies>\n" +
+                "        </join>\n" +
+                "        <interfaces enabled=\"false\">\n" +
+                "            <interface>10.10.1.*</interface>\n" +
+                "        </interfaces>\n" +
+                "    </network>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        final DiscoveryConfig discoveryConfig = config.getNetworkConfig().getJoin().getDiscoveryConfig();
+        assertTrue(discoveryConfig.isEnabled());
+        assertDiscoveryConfig(discoveryConfig);
     }
 
     @Test
@@ -998,26 +1041,48 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testWanConfig() {
         String xml = HAZELCAST_START_TAG
-                + "<wan-replication name=\"my-wan-cluster\">\n"
-                + "    <wan-publisher group-name=\"istanbul\">\n"
-                + "       <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>\n"
-                + "       <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>\n"
-                + "       <queue-capacity>21</queue-capacity>\n"
-                + "       <properties>\n"
-                + "           <property name=\"custom.prop.publisher\">prop.publisher</property>\n"
-                + "       </properties>\n"
-                + "    </wan-publisher>\n"
-                + "    <wan-publisher group-name=\"ankara\">\n"
-                + "       <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>\n"
-                + "       <queue-full-behavior>THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE</queue-full-behavior>\n"
-                + "    </wan-publisher>\n"
-                + "    <wan-consumer>\n"
-                + "       <class-name>com.hazelcast.wan.custom.WanConsumer</class-name>\n"
-                + "       <properties>\n"
-                + "           <property name=\"custom.prop.consumer\">prop.consumer</property>\n"
-                + "       </properties>\n"
-                + "    </wan-consumer>\n"
-                + "</wan-replication>\n"
+                + "   <wan-replication name=\"my-wan-cluster\">\n" +
+                "      <wan-publisher group-name=\"istanbul\">\n" +
+                "         <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>\n" +
+                "         <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>\n" +
+                "         <queue-capacity>21</queue-capacity>\n" +
+                "         <aws enabled=\"false\" connection-timeout-seconds=\"10\" >\n" +
+                "            <access-key>sample-access-key</access-key>\n" +
+                "            <secret-key>sample-secret-key</secret-key>\n" +
+                "            <iam-role>sample-role</iam-role>\n" +
+                "            <region>sample-region</region>\n" +
+                "            <host-header>sample-header</host-header>\n" +
+                "            <security-group-name>sample-group</security-group-name>\n" +
+                "            <tag-key>sample-tag-key</tag-key>\n" +
+                "            <tag-value>sample-tag-value</tag-value>\n" +
+                "         </aws>\n" +
+                "         <discovery-strategies>\n" +
+                "            <node-filter class=\"DummyFilterClass\" />\n" +
+                "            <discovery-strategy class=\"DummyDiscoveryStrategy1\" enabled=\"true\">\n" +
+                "               <properties>\n" +
+                "                  <property name=\"key-string\">foo</property>\n" +
+                "                  <property name=\"key-int\">123</property>\n" +
+                "                  <property name=\"key-boolean\">true</property>\n" +
+                "               </properties>\n" +
+                "            </discovery-strategy>\n" +
+                "         </discovery-strategies>\n" +
+                "         <properties>\n" +
+                "            <property name=\"custom.prop.publisher\">prop.publisher</property>\n" +
+                "            <property name=\"discovery.period\">5</property>\n" +
+                "            <property name=\"maxEndpoints\">2</property>\n" +
+                "         </properties>\n" +
+                "      </wan-publisher>\n" +
+                "      <wan-publisher group-name=\"ankara\">\n" +
+                "         <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>\n" +
+                "         <queue-full-behavior>THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE</queue-full-behavior>\n" +
+                "      </wan-publisher>\n" +
+                "      <wan-consumer>\n" +
+                "         <class-name>com.hazelcast.wan.custom.WanConsumer</class-name>\n" +
+                "         <properties>\n" +
+                "            <property name=\"custom.prop.consumer\">prop.consumer</property>\n" +
+                "         </properties>\n" +
+                "      </wan-consumer>\n" +
+                "   </wan-replication>"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
@@ -1033,6 +1098,11 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(21, publisherConfig1.getQueueCapacity());
         Map<String, Comparable> pubProperties = publisherConfig1.getProperties();
         assertEquals("prop.publisher", pubProperties.get("custom.prop.publisher"));
+        assertEquals("5", pubProperties.get("discovery.period"));
+        assertEquals("2", pubProperties.get("maxEndpoints"));
+        assertFalse(publisherConfig1.getAwsConfig().isEnabled());
+        assertAwsConfig(publisherConfig1.getAwsConfig());
+        assertDiscoveryConfig(publisherConfig1.getDiscoveryConfig());
 
         WanPublisherConfig publisherConfig2 = publisherConfigs.get(1);
         assertEquals("ankara", publisherConfig2.getGroupName());
@@ -1042,6 +1112,29 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("com.hazelcast.wan.custom.WanConsumer", consumerConfig.getClassName());
         Map<String, Comparable> consProperties = consumerConfig.getProperties();
         assertEquals("prop.consumer", consProperties.get("custom.prop.consumer"));
+    }
+
+    private void assertDiscoveryConfig(DiscoveryConfig c) {
+        assertEquals("DummyFilterClass", c.getNodeFilterClass());
+        assertEquals(1, c.getDiscoveryStrategyConfigs().size());
+        final DiscoveryStrategyConfig config = c.getDiscoveryStrategyConfigs().iterator().next();
+        assertEquals("DummyDiscoveryStrategy1", config.getClassName());
+        final Map<String, Comparable> props = config.getProperties();
+        assertEquals("foo", props.get("key-string"));
+        assertEquals("123", props.get("key-int"));
+        assertEquals("true", props.get("key-boolean"));
+    }
+
+    private void assertAwsConfig(AwsConfig aws) {
+        assertEquals(10, aws.getConnectionTimeoutSeconds());
+        assertEquals("sample-access-key", aws.getAccessKey());
+        assertEquals("sample-secret-key", aws.getSecretKey());
+        assertEquals("sample-region", aws.getRegion());
+        assertEquals("sample-header", aws.getHostHeader());
+        assertEquals("sample-group", aws.getSecurityGroupName());
+        assertEquals("sample-tag-key", aws.getTagKey());
+        assertEquals("sample-tag-value", aws.getTagValue());
+        assertEquals("sample-role", aws.getIamRole());
     }
 
     @Test

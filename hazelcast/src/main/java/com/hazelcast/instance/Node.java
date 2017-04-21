@@ -210,7 +210,8 @@ public class Node {
             clusterService = new ClusterServiceImpl(this, localMember);
             textCommandService = new TextCommandServiceImpl(this);
             multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
-            discoveryService = createDiscoveryService(config, localMember);
+            discoveryService = createDiscoveryService(
+                    this.config.getNetworkConfig().getJoin().getDiscoveryConfig().getAsReadOnly(), localMember);
             joiner = nodeContext.createJoiner(this);
         } catch (Throwable e) {
             try {
@@ -244,10 +245,7 @@ public class Node {
         return hazelcastThreadGroup;
     }
 
-    private DiscoveryService createDiscoveryService(Config config, Member localMember) {
-        JoinConfig joinConfig = config.getNetworkConfig().getJoin();
-        DiscoveryConfig discoveryConfig = joinConfig.getDiscoveryConfig().getAsReadOnly();
-
+    public DiscoveryService createDiscoveryService(DiscoveryConfig discoveryConfig, Member localMember) {
         DiscoveryServiceProvider factory = discoveryConfig.getDiscoveryServiceProvider();
         if (factory == null) {
             factory = new DefaultDiscoveryServiceProvider();

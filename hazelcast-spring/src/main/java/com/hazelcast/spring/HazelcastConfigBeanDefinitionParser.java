@@ -590,8 +590,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             builder.addPropertyValue("members", members);
         }
 
-        public void handleAws(Node node, BeanDefinitionBuilder joinConfigBuilder) {
-            createAndFillBeanBuilder(node, AwsConfig.class, "awsConfig", joinConfigBuilder);
+        public void handleAws(Node node, BeanDefinitionBuilder builder) {
+            createAndFillBeanBuilder(node, AwsConfig.class, "awsConfig", builder);
         }
 
         public void handleReliableTopic(Node node) {
@@ -951,52 +951,47 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         public void handleWanReplication(Node node) {
-            final BeanDefinitionBuilder wanRepConfigBuilder = createBeanBuilder(WanReplicationConfig.class);
-            final AbstractBeanDefinition beanDefinition = wanRepConfigBuilder.getBeanDefinition();
-            final Node attName = node.getAttributes().getNamedItem("name");
-            final String name = getTextContent(attName);
-            wanRepConfigBuilder.addPropertyValue("name", name);
+            final BeanDefinitionBuilder replicationConfigBuilder = createBeanBuilder(WanReplicationConfig.class);
+            final String name = getAttribute(node, "name");
+            replicationConfigBuilder.addPropertyValue("name", name);
 
-            final ManagedList wanPublishers = new ManagedList();
+            final ManagedList<AbstractBeanDefinition> wanPublishers = new ManagedList<AbstractBeanDefinition>();
             for (Node n : childElements(node)) {
                 final String nName = cleanNodeName(n);
                 if ("wan-publisher".equals(nName)) {
-                    final BeanDefinitionBuilder publisherConfigBuilder = createBeanBuilder(WanPublisherConfig.class);
-                    final AbstractBeanDefinition childBeanDefinition = publisherConfigBuilder.getBeanDefinition();
-                    fillAttributeValues(n, publisherConfigBuilder, Collections.<String>emptyList());
+                    final BeanDefinitionBuilder publisherBuilder = createBeanBuilder(WanPublisherConfig.class);
+                    final AbstractBeanDefinition childBeanDefinition = publisherBuilder.getBeanDefinition();
+                    fillAttributeValues(n, publisherBuilder, Collections.<String>emptyList());
 
-                    final NamedNodeMap attrs = n.getAttributes();
-                    Node classNameNode = attrs.getNamedItem("class-name");
-                    String className = classNameNode != null ? getTextContent(classNameNode) : null;
-                    Node implNode = attrs.getNamedItem("implementation");
-                    String implementation = implNode != null ? getTextContent(implNode) : null;
-                    publisherConfigBuilder.addPropertyValue("className", className);
+                    final String className = getAttribute(n, "class-name");
+                    final String implementation = getAttribute(n, "implementation");
+
+                    publisherBuilder.addPropertyValue("className", className);
                     if (implementation != null) {
-                        publisherConfigBuilder.addPropertyReference("implementation", implementation);
+                        publisherBuilder.addPropertyReference("implementation", implementation);
                     }
                     Assert.isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation' "
                             + "attributes is required to create WanPublisherConfig!");
                     for (Node child : childElements(n)) {
+
                         final String nodeName = cleanNodeName(child);
                         if ("properties".equals(nodeName)) {
-                            handleProperties(child, publisherConfigBuilder);
-                            break;
+                            handleProperties(child, publisherBuilder);
                         } else if ("queue-full-behavior".equals(nodeName)) {
-                            publisherConfigBuilder
-                                    .addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
+                            publisherBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
                         } else if ("queue-capacity".equals(nodeName)) {
-                            publisherConfigBuilder
-                                    .addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
+                            publisherBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
+                        } else if ("aws".equals(nodeName)) {
+                            handleAws(child, publisherBuilder);
+                        } else if ("discovery-strategies".equals(nodeName)) {
+                            handleDiscoveryStrategies(child, publisherBuilder);
                         }
                     }
                     wanPublishers.add(childBeanDefinition);
                 } else if ("wan-consumer".equals(nName)) {
                     final BeanDefinitionBuilder consumerConfigBuilder = createBeanBuilder(WanConsumerConfig.class);
-                    final NamedNodeMap attrs = n.getAttributes();
-                    Node classNameNode = attrs.getNamedItem("class-name");
-                    String className = classNameNode != null ? getTextContent(classNameNode) : null;
-                    Node implNode = attrs.getNamedItem("implementation");
-                    String implementation = implNode != null ? getTextContent(implNode) : null;
+                    final String className = getAttribute(n, "class-name");
+                    final String implementation = getAttribute(n, "implementation");
                     consumerConfigBuilder.addPropertyValue("className", className);
                     if (implementation != null) {
                         consumerConfigBuilder.addPropertyReference("implementation", implementation);
@@ -1007,14 +1002,13 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         final String nodeName = cleanNodeName(child);
                         if ("properties".equals(nodeName)) {
                             handleProperties(child, consumerConfigBuilder);
-                            break;
                         }
                     }
-                    wanRepConfigBuilder.addPropertyValue("wanConsumerConfig", consumerConfigBuilder.getBeanDefinition());
+                    replicationConfigBuilder.addPropertyValue("wanConsumerConfig", consumerConfigBuilder.getBeanDefinition());
                 }
             }
-            wanRepConfigBuilder.addPropertyValue("wanPublisherConfigs", wanPublishers);
-            wanReplicationManagedMap.put(name, beanDefinition);
+            replicationConfigBuilder.addPropertyValue("wanPublisherConfigs", wanPublishers);
+            wanReplicationManagedMap.put(name, replicationConfigBuilder.getBeanDefinition());
         }
 
         private void handlePartitionGroup(final Node node) {

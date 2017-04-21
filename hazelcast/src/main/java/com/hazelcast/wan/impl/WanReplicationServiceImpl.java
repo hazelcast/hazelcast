@@ -16,13 +16,13 @@
 
 package com.hazelcast.wan.impl;
 
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.WanSyncState;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.wan.WanReplicationEndpoint;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
@@ -31,6 +31,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.nio.ClassLoaderUtil.getOrCreate;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+
 /**
  * Open source implementation of the {@link com.hazelcast.wan.WanReplicationService}
  */
@@ -38,61 +41,57 @@ public class WanReplicationServiceImpl implements WanReplicationService {
 
     private final Node node;
 
-    private final Map<String, WanReplicationPublisherDelegate> wanReplications = initializeWanReplicationPublisherMapping();
+    private final ConcurrentHashMap<String, WanReplicationPublisherDelegate> wanReplications
+            = initializeWanReplicationPublisherMapping();
+    private final ConstructorFunction<String, WanReplicationPublisherDelegate> publisherDelegateConstructorFunction =
+            new ConstructorFunction<String, WanReplicationPublisherDelegate>() {
+                @Override
+                public WanReplicationPublisherDelegate createNew(String name) {
+                    final WanReplicationConfig wanReplicationConfig = node.getConfig().getWanReplicationConfig(name);
+                    if (wanReplicationConfig == null) {
+                        return null;
+                    }
+                    final List<WanPublisherConfig> publisherConfigs = wanReplicationConfig.getWanPublisherConfigs();
+                    return new WanReplicationPublisherDelegate(name, createPublishers(wanReplicationConfig, publisherConfigs));
+                }
+            };
 
     public WanReplicationServiceImpl(Node node) {
         this.node = node;
     }
 
     @Override
-    @SuppressWarnings("SynchronizeOnThis")
     public WanReplicationPublisher getWanReplicationPublisher(String name) {
-        WanReplicationPublisherDelegate wr = wanReplications.get(name);
-        if (wr != null) {
-            return wr;
+        return getOrPutSynchronized(wanReplications, name, this, publisherDelegateConstructorFunction);
+    }
+
+    private WanReplicationEndpoint[] createPublishers(WanReplicationConfig wanReplicationConfig,
+                                                      List<WanPublisherConfig> publisherConfigs) {
+        WanReplicationEndpoint[] targetEndpoints = new WanReplicationEndpoint[publisherConfigs.size()];
+        int count = 0;
+        for (WanPublisherConfig publisherConfig : publisherConfigs) {
+            final WanReplicationEndpoint target = getOrCreate((WanReplicationEndpoint) publisherConfig.getImplementation(),
+                    node.getConfigClassLoader(),
+                    publisherConfig.getClassName());
+            if (target == null) {
+                throw new InvalidConfigurationException("Either \'implementation\' or \'className\' "
+                        + "attribute need to be set in WanPublisherConfig");
+            }
+            target.init(node, wanReplicationConfig, publisherConfig);
+            targetEndpoints[count++] = target;
         }
-        synchronized (this) {
-            wr = wanReplications.get(name);
-            if (wr != null) {
-                return wr;
-            }
-            WanReplicationConfig wanReplicationConfig = node.getConfig().getWanReplicationConfig(name);
-            if (wanReplicationConfig == null) {
-                return null;
-            }
-            List<WanPublisherConfig> publisherConfigs = wanReplicationConfig.getWanPublisherConfigs();
-            WanReplicationEndpoint[] targetEndpoints = new WanReplicationEndpoint[publisherConfigs.size()];
-            int count = 0;
-            for (WanPublisherConfig publisherConfig : publisherConfigs) {
-                WanReplicationEndpoint target;
-                try {
-                    if (publisherConfig.getImplementation() != null) {
-                        target = (WanReplicationEndpoint) publisherConfig.getImplementation();
-                    } else {
-                        target = ClassLoaderUtil
-                                .newInstance(node.getConfigClassLoader(), publisherConfig.getClassName());
-                    }
-                } catch (Exception e) {
-                    throw ExceptionUtil.rethrow(e);
-                }
-                target.init(node, wanReplicationConfig, publisherConfig);
-                targetEndpoints[count++] = target;
-            }
-            wr = new WanReplicationPublisherDelegate(name, targetEndpoints);
-            wanReplications.put(name, wr);
-            return wr;
-        }
+        return targetEndpoints;
     }
 
     @Override
     public void shutdown() {
         synchronized (this) {
             for (WanReplicationPublisherDelegate wanReplication : wanReplications.values()) {
-                WanReplicationEndpoint[] wanReplicationEndpoints = wanReplication.getEndpoints();
-                if (wanReplicationEndpoints != null) {
-                    for (WanReplicationEndpoint wanReplicationEndpoint : wanReplicationEndpoints) {
-                        if (wanReplicationEndpoint != null) {
-                            wanReplicationEndpoint.shutdown();
+                final WanReplicationEndpoint[] endpoints = wanReplication.getEndpoints();
+                if (endpoints != null) {
+                    for (WanReplicationEndpoint endpoint : endpoints) {
+                        if (endpoint != null) {
+                            endpoint.shutdown();
                         }
                     }
                 }

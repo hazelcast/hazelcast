@@ -25,7 +25,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Config to be used by WanReplicationConsumer instances (EE only).
+ * Config to be used by WanReplicationConsumer instances (EE only). This allows creating a custom WAN consumer which is
+ * usually used in combination with a custom WAN publisher.
  */
 public class WanConsumerConfig implements IdentifiedDataSerializable {
 
@@ -33,28 +34,61 @@ public class WanConsumerConfig implements IdentifiedDataSerializable {
     private String className;
     private Object implementation;
 
+    /**
+     * Return the properties for this WAN consumer.
+     *
+     * @return the WAN consumer properties
+     */
     public Map<String, Comparable> getProperties() {
         return properties;
     }
 
+    /**
+     * Set the properties for the WAN consumer. These properties are accessible when initalizing the WAN consumer.
+     *
+     * @param properties the properties for the WAN consumer
+     * @return this config
+     */
     public WanConsumerConfig setProperties(Map<String, Comparable> properties) {
         this.properties = properties;
         return this;
     }
 
+    /**
+     * Get the fully qualified class name of the class implementing WanReplicationConsumer.
+     *
+     * @return fully qualified class name
+     */
     public String getClassName() {
         return className;
     }
 
+    /**
+     * Set the name of the class implementing WanReplicationConsumer.
+     *
+     * @param className fully qualified class name
+     * @return this config
+     */
     public WanConsumerConfig setClassName(String className) {
         this.className = className;
         return this;
     }
 
+    /**
+     * Get the implementation implementing WanReplicationConsumer.
+     *
+     * @return the implementation for this WAN consumer
+     */
     public Object getImplementation() {
         return implementation;
     }
 
+    /**
+     * Set the implementation for this WAN consumer. The object must implement WanReplicationConsumer.
+     *
+     * @param implementation the object implementing WanReplicationConsumer
+     * @return this config
+     */
     public WanConsumerConfig setImplementation(Object implementation) {
         this.implementation = implementation;
         return this;

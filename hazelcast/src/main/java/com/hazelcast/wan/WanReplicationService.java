@@ -28,8 +28,7 @@ import com.hazelcast.spi.StatisticsAwareService;
  * to replicate values to other clusters over the wide area network, so it has to deal with long
  * delays, slow uploads and higher latencies.
  */
-public interface WanReplicationService
-        extends CoreService, StatisticsAwareService {
+public interface WanReplicationService extends CoreService, StatisticsAwareService {
 
     /**
      * Service name.
@@ -102,7 +101,8 @@ public interface WanReplicationService
     void clearQueues(String wanReplicationName, String targetGroupName);
 
     /**
-     * Adds a new {@link WanReplicationConfig} to all members.
+     * Adds a new {@link WanReplicationConfig} to this member and creates the {@link WanReplicationPublisher}s specified
+     * in the config.
      */
     void addWanReplicationConfig(WanReplicationConfig wanConfig);
 

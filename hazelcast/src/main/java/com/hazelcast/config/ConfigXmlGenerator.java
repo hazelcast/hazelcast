@@ -450,11 +450,13 @@ public class ConfigXmlGenerator {
             gen.open("wan-replication", "name", wan.getName());
             for (WanPublisherConfig p : wan.getWanPublisherConfigs()) {
                 gen.open("wan-publisher", "group-name", p.getGroupName())
-                        .node("class-name", p.getClassName())
-                        .node("queue-full-behavior", p.getQueueFullBehavior())
-                        .node("queue-capacity", p.getQueueCapacity())
-                        .appendProperties(p.getProperties())
-                        .close();
+                   .node("class-name", p.getClassName())
+                   .node("queue-full-behavior", p.getQueueFullBehavior())
+                   .node("queue-capacity", p.getQueueCapacity())
+                   .appendProperties(p.getProperties());
+                awsConfigXmlGenerator(gen, p.getAwsConfig());
+                discoveryStrategyConfigXmlGenerator(gen, p.getDiscoveryConfig());
+                gen.close();
             }
 
             final WanConsumerConfig consumerConfig = wan.getWanConsumerConfig();
@@ -491,8 +493,8 @@ public class ConfigXmlGenerator {
         gen.open("join");
         multicastConfigXmlGenerator(gen, join);
         tcpConfigXmlGenerator(gen, join);
-        awsConfigXmlGenerator(gen, join);
-        discoveryStrategyConfigXmlGenerator(gen, join);
+        awsConfigXmlGenerator(gen, join.getAwsConfig());
+        discoveryStrategyConfigXmlGenerator(gen, join.getDiscoveryConfig());
         gen.close();
 
         interfacesConfigXmlGenerator(gen, netCfg);
@@ -799,8 +801,10 @@ public class ConfigXmlGenerator {
                 .close();
     }
 
-    private static void awsConfigXmlGenerator(XmlGenerator gen, JoinConfig join) {
-        final AwsConfig c = join.getAwsConfig();
+    private static void awsConfigXmlGenerator(XmlGenerator gen, AwsConfig c) {
+        if (c == null) {
+            return;
+        }
         gen.open("aws", "enabled", c.isEnabled())
                 .node("access-key", c.getAccessKey())
                 .node("secret-key", c.getSecretKey())
@@ -813,8 +817,7 @@ public class ConfigXmlGenerator {
                 .close();
     }
 
-    private static void discoveryStrategyConfigXmlGenerator(XmlGenerator gen, JoinConfig join) {
-        final DiscoveryConfig c = join.getDiscoveryConfig();
+    private static void discoveryStrategyConfigXmlGenerator(XmlGenerator gen, DiscoveryConfig c) {
         if (c == null) {
             return;
         }
