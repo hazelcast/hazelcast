@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.usercodedeployment.impl;
 
+import com.hazelcast.client.impl.ClientClassLoadDemandService;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -51,6 +52,7 @@ public final class ClassLocator {
     private final NodeEngine nodeEngine;
     private final ClassloadingMutexProvider mutexFactory = new ClassloadingMutexProvider();
     private final ILogger logger;
+    private final ClientClassLoadDemandService clientClassLoadDemandService;
 
     public ClassLocator(ConcurrentMap<String, ClassSource> classSourceMap,
                         ClassLoader parent, Filter<String> classNameFilter, Filter<Member> memberFilter,
@@ -62,6 +64,7 @@ public final class ClassLocator {
         this.classCacheMode = classCacheMode;
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(ClassLocator.class);
+        this. clientClassLoadDemandService = nodeEngine.getService(ClientClassLoadDemandService.SERVICE_NAME);
     }
 
     public static void onStartDeserialization() {
@@ -139,10 +142,12 @@ public final class ClassLocator {
 
     // called while holding class lock
     private byte[] fetchBytecodeFromRemote(String className) {
+        System.out.println("FATAL fetchBytecodeFromRemote(String className) {");
         ClusterService cluster = nodeEngine.getClusterService();
         ClassData classData;
         boolean interrupted = false;
         for (Member member : cluster.getMembers()) {
+            System.out.println("FATAL fetchBytecodeFromRemote(String className) {" + member);
             if (isCandidateMember(member)) {
                 continue;
             }
@@ -173,7 +178,7 @@ public final class ClassLocator {
         if (interrupted) {
             Thread.currentThread().interrupt();
         }
-        return null;
+        return clientClassLoadDemandService.fetchBytecodeFromClient(className);
     }
 
     private ClassData tryToFetchClassDataFromMember(String className, Member member) throws ExecutionException,

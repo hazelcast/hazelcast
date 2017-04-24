@@ -108,6 +108,7 @@ public class ClientConfig {
     private ClassLoader classLoader;
 
     private String licenseKey;
+    private boolean userCodeDeploymentEnabled;
 
     public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
         if (configPatternMatcher == null) {
@@ -715,6 +716,14 @@ public class ClientConfig {
             LOGGER.finest("No configuration found for " + itemName + ", using default config!");
         }
         return null;
+    }
+
+    public boolean isUserCodeDeploymentEnabled() {
+        return userCodeDeploymentEnabled;
+    }
+
+    public void setUserCodeDeploymentEnabled(boolean userCodeDeploymentEnabled) {
+        this.userCodeDeploymentEnabled = userCodeDeploymentEnabled;
     }
 
     public String getInstanceName() {

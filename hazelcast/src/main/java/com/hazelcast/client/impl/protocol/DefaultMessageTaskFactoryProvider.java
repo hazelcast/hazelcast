@@ -16,8 +16,11 @@
 
 package com.hazelcast.client.impl.protocol;
 
+import com.hazelcast.client.impl.protocol.task.AddClassLoadDemandListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.client.impl.protocol.task.cache.Pre38CacheAddInvalidationListenerTask;
+import com.hazelcast.client.impl.protocol.task.RemoveClassLoadDemandListenerMessageTask;
+import com.hazelcast.client.impl.protocol.task.SupplyClassLoadMessageTask;
 import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorAddMessageTask;
 import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorEstimateMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorDisposeResultMessageTask;
@@ -1774,6 +1777,22 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories[com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorEstimateCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new CardinalityEstimatorEstimateMessageTask(clientMessage, node, connection);
+            }
+        };
+
+        factories[com.hazelcast.client.impl.protocol.codec.ClientAddClassLoadDemandListenerCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new AddClassLoadDemandListenerMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.ClientRemoveClassLoadDemandListenerCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new RemoveClassLoadDemandListenerMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.ClientSupplyClassLoadCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new SupplyClassLoadMessageTask(clientMessage, node, connection);
             }
         };
 //endregion
