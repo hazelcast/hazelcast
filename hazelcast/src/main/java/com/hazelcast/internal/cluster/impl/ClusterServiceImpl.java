@@ -274,9 +274,16 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             return;
         }
 
-        OperationService operationService = nodeEngine.getOperationService();
+        if (!isJoined()) {
+            logger.fine("Cannot send explicit suspicion, not joined yet!");
+            return;
+        }
 
-        if (getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
+        Version clusterVersion = getClusterVersion();
+        assert !clusterVersion.isUnknown() : "Cluster version should not be unknown after join!";
+
+        OperationService operationService = nodeEngine.getOperationService();
+        if (clusterVersion.isGreaterOrEqual(Versions.V3_9)) {
             Operation op = new ExplicitSuspicionOp(endpointMembersViewMetadata);
             operationService.send(op, endpoint);
         } else {
@@ -1072,7 +1079,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     // used for 3.8 compatibility
     public MembershipManagerCompat getMembershipManagerCompat() {
-        assert getClusterVersion().isLessThan(Versions.V3_9);
+        assert getClusterVersion().isLessThan(Versions.V3_9) : "Cluster version should be less than 3.9";
         return membershipManagerCompat;
     }
 
