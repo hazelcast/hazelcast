@@ -19,9 +19,11 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
 import com.hazelcast.jet.impl.util.ProgressTracker;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
 import java.util.Queue;
@@ -33,6 +35,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
 public class ReadIListPTest {
 
     @Test

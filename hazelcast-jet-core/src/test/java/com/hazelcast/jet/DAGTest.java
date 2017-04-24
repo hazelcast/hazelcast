@@ -17,11 +17,13 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.Distributed.Supplier;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import java.util.HashSet;
@@ -37,6 +39,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
 @Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
 public class DAGTest {
 
     private static final Supplier<Processor> PROCESSOR_SUPPLIER = TestProcessor::new;

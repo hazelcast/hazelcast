@@ -14,40 +14,27 @@
  * limitations under the License.
  */
 
-package deployment;
+package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.jet.AbstractProcessor;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class ApacheV1Isolated extends AbstractProcessor {
+public class LoadCarIsolated extends AbstractProcessor {
 
     @Override
     public boolean complete() {
         ClassLoader cl = getClass().getClassLoader();
-        URL resource = cl.getResource("apachev1");
-        assertNotNull(resource);
-        BufferedReader reader = null;
         try {
-            reader = Files.newBufferedReader(Paths.get(resource.toURI()));
-            String firstLine = reader.readLine();
-            String secondLine = reader.readLine();
-            assertTrue(secondLine.contains("Version 1.1"));
-            assertNull(cl.getResourceAsStream("apachev2"));
-
-        } catch (IOException | URISyntaxException e) {
+            cl.loadClass("com.sample.pojo.car.Car");
+        } catch (ClassNotFoundException e) {
             fail();
         }
+        try {
+            cl.loadClass("com.sample.pojo.person.Person$Appereance");
+            fail();
+        } catch (ClassNotFoundException ignored) {
+        }
         return true;
-
     }
 }

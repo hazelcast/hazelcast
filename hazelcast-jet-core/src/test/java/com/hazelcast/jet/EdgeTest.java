@@ -18,10 +18,12 @@ package com.hazelcast.jet;
 
 import com.hazelcast.jet.Edge.ForwardingPattern;
 import com.hazelcast.jet.Processors.NoopP;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.DistributedFunctions.wholeItem;
 import static org.junit.Assert.assertEquals;
@@ -31,6 +33,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
 public class EdgeTest {
     private static final String A = "a";
     private static final String B = "b";

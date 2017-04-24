@@ -28,11 +28,13 @@ import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -45,6 +47,7 @@ import java.util.stream.Stream;
 import static org.junit.Assert.assertEquals;
 
 @Category(NightlyTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
 public class WordCountTest extends AbstractStreamTest implements Serializable {
 
     private static final int COUNT = 1_000_000;
@@ -64,30 +67,10 @@ public class WordCountTest extends AbstractStreamTest implements Serializable {
                 map.put(row++, sb.toString());
                 sb.setLength(0);
             } else {
-                sb.append(" ");
+                sb.append(' ');
             }
         }
         map.put(row, sb.toString());
-    }
-
-    @Test
-    @Ignore
-    public void testMapReduce() throws Exception {
-        long start = System.currentTimeMillis();
-
-        JobTracker tracker = instance.getHazelcastInstance().getJobTracker("default");
-        KeyValueSource<Integer, String> source = KeyValueSource.fromMap(map);
-        Job<Integer, String> job = tracker.newJob(source);
-        ICompletableFuture<Map<String, Long>> future = job
-                .mapper(new TokenizerMapper())
-                .reducer(new WordcountReducerFactory())
-                .submit();
-
-        Map<String, Long> wordCounts = future.get();
-
-        System.out.println("mapreduce: totalTime=" + (System.currentTimeMillis() - start));
-
-        assertCounts(wordCounts);
     }
 
     @Test
@@ -113,51 +96,10 @@ public class WordCountTest extends AbstractStreamTest implements Serializable {
                                 .skip(warmupCount).mapToLong(l -> l).summaryStatistics());
     }
 
-    private void assertCounts(Map<String, Long> wordCounts) {
+    private static void assertCounts(Map<String, Long> wordCounts) {
         for (int i = 0; i < DISTINCT; i++) {
             Long count = wordCounts.get(Integer.toString(i));
             assertEquals(COUNT / DISTINCT, (long) count);
-        }
-    }
-
-    private static class TokenizerMapper
-            implements Mapper<Integer, String, String, Long> {
-
-        private static final Long ONE = Long.valueOf(1);
-
-        @Override
-        public void map(Integer key, String value, Context<String, Long> context) {
-            StringTokenizer tokenizer = new StringTokenizer(value);
-            while (tokenizer.hasMoreTokens()) {
-                context.emit(tokenizer.nextToken(), ONE);
-            }
-        }
-    }
-
-    private static class WordcountReducerFactory
-            implements ReducerFactory<String, Long, Long> {
-
-        @Override
-        public Reducer<Long, Long> newReducer(String key) {
-            return new WordcountReducer();
-        }
-
-        private static class WordcountReducer
-                extends Reducer<Long, Long> {
-
-            private volatile long count;
-
-            @Override
-            public void reduce(Long value) {
-                // Use with and without Combiner to show combining phase!
-                // System.out.println("Retrieved value: " + value);
-                count += value;
-            }
-
-            @Override
-            public Long finalizeReduce() {
-                return count == 0 ? null : count;
-            }
         }
     }
 }

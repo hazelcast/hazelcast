@@ -6,7 +6,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.FilteringClassLoader;
-import deployment.AbstractDeploymentTest;
+
 import java.lang.reflect.Method;
 import org.junit.After;
 import org.junit.Rule;

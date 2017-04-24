@@ -19,9 +19,13 @@ package com.hazelcast.jet.windowing;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Punctuation;
 import com.hazelcast.jet.stream.DistributedCollector;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.MutableLong;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -44,6 +48,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
+@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
 public class SessionWindowPTest extends StreamingTestSupport {
 
     private static final int MAX_SEQ_GAP = 10;

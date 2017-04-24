@@ -17,8 +17,12 @@
 package com.hazelcast.jet.windowing;
 
 import com.hazelcast.jet.Processor.Context;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.List;
 import java.util.stream.LongStream;
@@ -31,6 +35,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
+@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
 public class SlidingWindowPTest extends StreamingTestSupport {
 
     private SlidingWindowP<Object, Long, Long> processor;

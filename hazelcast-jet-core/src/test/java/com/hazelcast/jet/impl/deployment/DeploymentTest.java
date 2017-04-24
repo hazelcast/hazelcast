@@ -22,7 +22,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.FilteringClassLoader;
-import deployment.AbstractDeploymentTest;
+
 import java.lang.reflect.Method;
 import java.util.Collections;
 import org.junit.After;

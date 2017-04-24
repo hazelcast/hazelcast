@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package deployment;
+package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.jet.AbstractProcessor;
 

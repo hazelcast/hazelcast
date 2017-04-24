@@ -20,9 +20,13 @@ import com.hazelcast.jet.impl.operation.AsyncExecutionOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.CallsPerMember;
 import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 
 import java.net.UnknownHostException;
 import java.util.Arrays;
@@ -35,6 +39,8 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
 public class LiveOperationRegistryTest {
 
     @Rule

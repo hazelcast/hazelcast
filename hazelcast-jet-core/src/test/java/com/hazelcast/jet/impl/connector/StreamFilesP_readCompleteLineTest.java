@@ -16,13 +16,19 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertEquals;
 
+@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
 public class StreamFilesP_readCompleteLineTest {
 
     private StreamFilesP p = new StreamFilesP("", StandardCharsets.UTF_8, 0, 0);

@@ -18,7 +18,11 @@ package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.jet.Distributed.IntFunction;
 import com.hazelcast.jet.config.ResourceConfig;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -31,6 +35,8 @@ import static com.hazelcast.jet.impl.deployment.ResourceIterator.RESOURCE_PART_S
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
 public class ResourceIteratorTest {
 
     @Test

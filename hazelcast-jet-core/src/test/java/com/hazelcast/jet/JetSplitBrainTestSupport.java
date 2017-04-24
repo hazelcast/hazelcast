@@ -40,16 +40,19 @@ import java.util.stream.Stream;
 
 
 /**
- * A support class for high-level split-brain tests.
- * It will form a cluster, create a split-brain situation and then heal the cluster again.
+ * A support class for high-level split-brain tests. It will form a
+ * cluster, create a split-brain situation, and then heal the cluster
+ * again.
  * <p>
- * Tests are supposed to subclass this class and use its hooks to be notified about state transitions.
- * See {@link #onBeforeSplitBrainCreated(JetInstance[])},
- * {@link #onAfterSplitBrainCreated(JetInstance[], JetInstance[])}
+ * Tests are supposed to extend this class and use its hooks to be
+ * notified about state transitions. See
+ * {@link #onBeforeSplitBrainCreated(JetInstance[])},
+ * {@link #onAfterSplitBrainCreated(JetInstance[], JetInstance[])},
  * and {@link #onAfterSplitBrainHealed(JetInstance[])}
  * <p>
- * The current implementation always isolate the 1st member of the cluster, but it should be simple to customize this
- * class to support mode advanced split-brain scenarios.
+ * The current implementation always isolate the 1st member of the cluster,
+ * but it should be simple to customize this class to support mode advanced
+ * split-brain scenarios.
  * <p>
  * See {@link SplitBrainTestSupportTest} for an example test.
  */
