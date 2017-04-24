@@ -39,17 +39,23 @@ public @interface SerializableByConvention {
          */
         PUBLIC_API,
         /**
-         * Class is {@code Serializable} due to conventions and cannot be converted to {@code IdentifiedDataSerializable}.
+         * Class is {@code Serializable} due to inheritance or other coding conventions and cannot or is not desirable
+         * to have it converted to {@link IdentifiedDataSerializable}.
          * Examples:
          * <ul>
-         *     <li>inheritance from a class external to Hazelcast e.g. {@link javax.cache.event.CacheEntryEvent} imposes
-         *     serializability to its implementation in {@link com.hazelcast.cache.impl.CacheEntryEventImpl} even though
-         *     the latter is never serialized</li>
-         *     <li>inheritance from a class external to Hazelcast, however {@link IdentifiedDataSerializable} requires a
-         *     default no-args constructor and non-final fields which is not always possible (e.g. subclasses of
-         *     {@code java.util.EventObject} & {@code java.lang.Exception})</li>
+         *     <li>inheritance from a {@code Serializable} class external to Hazelcast e.g.
+         *     {@link javax.cache.event.CacheEntryEvent} is serializable however its implementation in
+         *     {@link com.hazelcast.cache.impl.CacheEntryEventImpl} is never used in serialized form, so there
+         *     is no interest in converting this class to {@link IdentifiedDataSerializable}</li>
          *     <li>a {@code Comparator} which should by convention also implement {@code Serializable}.</li>
          * </ul>
+         *
+         * Classes whose superclasses are {@link java.io.Serializable} without a default constructor or with private
+         * final fields, such as {@link Throwable} or {@link java.util.EventObject}, cannot be converted to
+         * {@link IdentifiedDataSerializable}, so these are not annotated with {@code SerializableByConvention}.
+         * Instead these classes are white-listed in
+         * {@code com.hazelcast.internal.serialization.impl.DataSerializableConventionsTest#SERIALIZABLE_WHITE_LIST}
+         * and are excluded from conventions testing.
          */
         INHERITANCE,
     }
