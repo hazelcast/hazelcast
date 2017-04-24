@@ -49,6 +49,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.EXPLICIT_SUSPICION;
+import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.HEARTBEAT;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.PROMOTE_LITE_MEMBER;
 import static com.hazelcast.internal.cluster.impl.MembershipFailureTest.assertMaster;
@@ -297,6 +298,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
 
         dropOperationsBetween(hz3, hz1, PROMOTE_LITE_MEMBER, EXPLICIT_SUSPICION);
         dropOperationsFrom(hz2, MEMBER_INFO_UPDATE, EXPLICIT_SUSPICION);
+        dropOperationsFrom(hz1, HEARTBEAT);
 
         final Cluster cluster = hz3.getCluster();
         Future future = spawn(new Runnable() {
