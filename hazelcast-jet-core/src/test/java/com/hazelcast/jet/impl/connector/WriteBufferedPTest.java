@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.jet.Outbox;
+import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -27,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 public class WriteBufferedPTest {
@@ -36,11 +39,12 @@ public class WriteBufferedPTest {
     @Test
     public void test() {
         WriteBufferedP<List<Integer>, Integer> p = new WriteBufferedP<>(
-                ArrayList::new,
+                index -> new ArrayList<>(),
                 List::add,
                 list -> assertEquals(ENTRY_COUNT, list.size()),
                 map -> {}
         );
+        p.init(mock(Outbox.class), mock(Context.class));
 
         ArrayDequeInbox inbox = new ArrayDequeInbox();
         Map<Integer, Integer> map = new HashMap<>();

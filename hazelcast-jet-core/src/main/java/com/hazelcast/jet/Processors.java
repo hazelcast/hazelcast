@@ -210,7 +210,7 @@ public final class Processors {
      * Useful for implementing sinks where the data should only be flushed
      * after the inbox has been drained.
      *
-     * @param newBuffer supplies the buffer
+     * @param newBuffer supplies the buffer. Supplier argument is the global processor index
      * @param addToBuffer adds item to buffer
      * @param flushBuffer flushes the buffer
      * @param <B> type of buffer
@@ -232,7 +232,7 @@ public final class Processors {
      * Useful for implementing sinks where the data should only be flushed
      * after the inbox has been drained.
      *
-     * @param newBuffer supplies the buffer
+     * @param newBuffer supplies the buffer. Supplier argument is the global processor index
      * @param addToBuffer adds item to buffer
      * @param flushBuffer flushes the buffer
      * @param disposeBuffer disposes of the buffer
