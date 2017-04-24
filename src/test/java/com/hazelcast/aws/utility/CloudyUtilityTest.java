@@ -56,43 +56,14 @@ public class CloudyUtilityTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testNoTags() throws IOException {
+    public void testUnmarshalling() throws IOException {
         InputStream is = new ByteArrayInputStream(xml.getBytes());
         AwsConfig awsConfig1 = new AwsConfig();
         awsConfig1.setAccessKey("some-access-key");
         awsConfig1.setSecretKey("some-secret-key");
-        awsConfig1.setSecurityGroupName("hazelcast");
 
         Map<String, String> result = CloudyUtility.unmarshalTheResponse(is, awsConfig);
         assertEquals(2, result.size());
-    }
-
-    @Test
-    public void testTagsBothNodeHave() throws IOException {
-        InputStream is = new ByteArrayInputStream(xml.getBytes());
-        AwsConfig awsConfig1 = new AwsConfig();
-        awsConfig1.setAccessKey("some-access-key");
-        awsConfig1.setSecretKey("some-secret-key");
-        awsConfig1.setSecurityGroupName("hazelcast");
-        awsConfig.setTagKey("Name1");
-        awsConfig.setTagValue("value1");
-
-        Map<String, String> result = CloudyUtility.unmarshalTheResponse(is, awsConfig);
-        assertEquals(2, result.size());
-    }
-
-    @Test
-    public void testTagOnlyOneNodeHave() throws IOException {
-        InputStream is = new ByteArrayInputStream(xml.getBytes());
-        AwsConfig awsConfig1 = new AwsConfig();
-        awsConfig1.setAccessKey("some-access-key");
-        awsConfig1.setSecretKey("some-secret-key");
-        awsConfig1.setSecurityGroupName("hazelcast");
-        awsConfig.setTagKey("name");
-        awsConfig.setTagValue("");
-
-        Map<String, String> result = CloudyUtility.unmarshalTheResponse(is, awsConfig);
-        assertEquals(1, result.size());
     }
 
     @Test

@@ -50,7 +50,7 @@ public final class CloudyUtility {
      * Unmarshal the response from {@link com.hazelcast.aws.impl.DescribeInstances} and return the discovered node map.
      * The map contains mappings from private to public IP and all contained nodes match the filtering rules defined by
      * the {@code awsConfig}.
-     * If there is an exception while unmarshaling the response, returns an empty map.
+     * If there is an exception while unmarshalling the response, returns an empty map.
      *
      * @param stream    the response XML stream
      * @param awsConfig the AWS configuration for filtering the returned addresses
@@ -64,6 +64,7 @@ public final class CloudyUtility {
             dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             builder = dbf.newDocumentBuilder();
             Document doc = builder.parse(stream);
+
             Element element = doc.getDocumentElement();
             NodeHolder elementNodeHolder = new NodeHolder(element);
             Map<String, String> addresses = new LinkedHashMap<String, String>();
@@ -72,7 +73,7 @@ public final class CloudyUtility {
                 List<NodeHolder> items = reservation.getSubNodes(NODE_ITEM);
                 for (NodeHolder item : items) {
                     NodeHolder instancesSet = item.getFirstSubNode("instancesset");
-                    addresses.putAll(instancesSet.getAddresses(awsConfig));
+                    addresses.putAll(instancesSet.getAddresses());
                 }
             }
             return addresses;
@@ -121,53 +122,30 @@ public final class CloudyUtility {
 
         /**
          * Unmarshal the response from the {@link com.hazelcast.aws.impl.DescribeInstances} service and
-         * return the map from private to public IP. All returned entries must match filters defined by the {@code config}.
+         * return the map from private to public IP.
          * This method expects that the DOM containing the XML has been positioned at the node containing the addresses.
          *
-         * @param awsConfig the AWS configuration for filtering the returned addresses
          * @return map from private to public IP
          * @see #getFirstSubNode(String)
          */
-        Map<String, String> getAddresses(AwsConfig awsConfig) {
+        Map<String, String> getAddresses() {
             Map<String, String> privatePublicPairs = new LinkedHashMap<String, String>();
             if (node == null) {
                 return privatePublicPairs;
             }
 
             for (NodeHolder childHolder : getSubNodes(NODE_ITEM)) {
-                String state = getState(childHolder);
                 String privateIp = getIp("privateipaddress", childHolder);
                 String publicIp = getIp("ipaddress", childHolder);
                 String instanceName = getInstanceName(childHolder);
 
                 if (privateIp != null) {
-                    Node child = childHolder.getNode();
-                    if (!acceptState(state)) {
-                        LOGGER.finest(format("Ignoring EC2 instance [%s][%s] reason: the instance is not running but %s",
-                                instanceName, privateIp, state));
-                    } else if (!acceptTag(awsConfig, child)) {
-                        LOGGER.finest(format("Ignoring EC2 instance [%s][%s] reason: tag-key/tag-value don't match",
-                                instanceName, privateIp));
-                    } else if (!acceptGroupName(awsConfig, child)) {
-                        LOGGER.finest(format("Ignoring EC2 instance [%s][%s] reason: security-group-name doesn't match",
-                                instanceName, privateIp));
-                    } else {
-                        privatePublicPairs.put(privateIp, publicIp);
-                        LOGGER.finest(format("Accepting EC2 instance [%s][%s]", instanceName, privateIp));
-                    }
+                    privatePublicPairs.put(privateIp, publicIp);
+                    LOGGER.finest(format("Accepting EC2 instance [%s][%s]", instanceName, privateIp));
                 }
 
             }
             return privatePublicPairs;
-        }
-
-        private static boolean acceptState(String state) {
-            return "running".equals(state);
-        }
-
-        private static String getState(NodeHolder nodeHolder) {
-            NodeHolder instanceState = nodeHolder.getFirstSubNode("instancestate");
-            return instanceState.getFirstSubNode("name").getNode().getFirstChild().getNodeValue();
         }
 
         private static String getInstanceName(NodeHolder nodeHolder) {
@@ -197,58 +175,6 @@ public final class CloudyUtility {
         private static String getIp(String name, NodeHolder nodeHolder) {
             Node child = nodeHolder.getFirstSubNode(name).getNode();
             return (child == null ? null : child.getFirstChild().getNodeValue());
-        }
-
-        private static boolean acceptTag(AwsConfig awsConfig, Node node) {
-            return applyTagFilter(node, awsConfig.getTagKey(), awsConfig.getTagValue());
-        }
-
-        private static boolean acceptGroupName(AwsConfig awsConfig, Node node) {
-            return applyFilter(node, awsConfig.getSecurityGroupName(), "groupset", "groupname");
-        }
-
-        private static boolean applyFilter(Node node, String filter, String set, String filterField) {
-            if (nullOrEmpty(filter)) {
-                return true;
-            } else {
-                for (NodeHolder group : new NodeHolder(node).getFirstSubNode(set).getSubNodes(NODE_ITEM)) {
-                    NodeHolder nh = group.getFirstSubNode(filterField);
-                    if (nh != null && nh.getNode().getFirstChild() != null
-                            && filter.equals(nh.getNode().getFirstChild().getNodeValue())) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-        }
-
-        private static boolean applyTagFilter(Node node, String keyExpected, String valueExpected) {
-            if (nullOrEmpty(keyExpected)) {
-                return true;
-            } else {
-                for (NodeHolder group : new NodeHolder(node).getFirstSubNode("tagset").getSubNodes(NODE_ITEM)) {
-                    if (keyEquals(keyExpected, group) && (nullOrEmpty(valueExpected) || valueEquals(valueExpected, group))) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-        }
-
-        private static boolean valueEquals(String valueExpected, NodeHolder group) {
-            NodeHolder nhValue = group.getFirstSubNode(NODE_VALUE);
-            return (nhValue != null && nhValue.getNode().getFirstChild() != null
-                    && valueExpected.equals(nhValue.getNode().getFirstChild().getNodeValue()));
-        }
-
-        private static boolean nullOrEmpty(String keyExpected) {
-            return keyExpected == null || keyExpected.isEmpty();
-        }
-
-        private static boolean keyEquals(String keyExpected, NodeHolder group) {
-            NodeHolder nhKey = group.getFirstSubNode(NODE_KEY);
-            return (nhKey != null && nhKey.getNode().getFirstChild() != null
-                    && keyExpected.equals(nhKey.getNode().getFirstChild().getNodeValue()));
         }
     }
 }
