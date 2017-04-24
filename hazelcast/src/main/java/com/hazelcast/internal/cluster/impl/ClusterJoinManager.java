@@ -70,7 +70,7 @@ import static java.lang.String.format;
  * If this is master node, it will handle join request and notify all other members
  * about newly joined member.
  */
-@SuppressWarnings("checkstyle:classfanoutcomplexity")
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class ClusterJoinManager {
 
     private static final int CLUSTER_OPERATION_RETRY_COUNT = 100;
@@ -300,18 +300,15 @@ public class ClusterJoinManager {
         }
 
         if (state.isJoinAllowed()) {
-            cleanupRecentlyJoinedMemberUuids();
-            return recentlyJoinedMemberUuids.containsKey(uuid);
+            return checkRecentlyJoinedMemberUuidBeforeJoin(target, uuid);
         }
 
         if (clusterService.isMemberRemovedInNotJoinableState(target)) {
-            MemberImpl memberRemovedWhileClusterIsNotActive =
-                    clusterService.getMembershipManager().getMemberRemovedInNotJoinableState(uuid);
+            MemberImpl removedMember = clusterService.getMembershipManager().getMemberRemovedInNotJoinableState(uuid);
 
-            if (memberRemovedWhileClusterIsNotActive != null
-                    && !target.equals(memberRemovedWhileClusterIsNotActive.getAddress())) {
+            if (removedMember != null && !target.equals(removedMember.getAddress())) {
 
-                logger.warning("Uuid " + uuid + " was being used by " + memberRemovedWhileClusterIsNotActive
+                logger.warning("Uuid " + uuid + " was being used by " + removedMember
                         + " before. " + target + " is not allowed to join with a uuid which belongs to"
                         + " a known passive member.");
 
@@ -340,6 +337,15 @@ public class ClusterJoinManager {
             logger.warning(message);
         }
         return true;
+    }
+
+    private boolean checkRecentlyJoinedMemberUuidBeforeJoin(Address target, String uuid) {
+        cleanupRecentlyJoinedMemberUuids();
+        boolean recentlyJoined = recentlyJoinedMemberUuids.containsKey(uuid);
+        if (recentlyJoined) {
+            logger.warning("Cannot allow join request from " + target + ", since it has been already joined with " + uuid);
+        }
+        return recentlyJoined;
     }
 
     private void cleanupRecentlyJoinedMemberUuids() {
