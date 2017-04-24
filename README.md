@@ -33,7 +33,7 @@ or you can choose configuring AWS discovery using [Discovery SPI](http://docs.ha
 Starting with hazelcast-aws-1.2, it's strongly recommended to use Discovery SPI implementation as
 the former one will be deprecated.
 
-###Configuring AWS Discovery using Discovery SPI for Hazelcast Cluster Members
+### Configuring AWS Discovery using Discovery SPI for Hazelcast Cluster Members
 
 - Add the *hazelcast-aws.jar* dependency to your project. The hazelcast-aws plugin does not depend on any other third party modules.
 - Disable join over multicast, TCP/IP and AWS by setting the `enabled` attribute of the related tags to `false`.
@@ -85,7 +85,7 @@ Here are the definitions of the properties
 * `connection-timeout-seconds`: The maximum amount of time Hazelcast will try to connect to a well known member before giving up. Setting this value too low could mean that a member is not able to connect to a cluster. Setting the value too high means that member startup could slow down because of longer timeouts (for example, when a well known member is not up). Increasing this value is recommended if you have many IPs listed and the members cannot properly build up the cluster. Its default value is 5.
 * `hz-port`: You can set searching for other ports rather than 5701 if you've members on different ports. It is optional.
 
-###Configuring AWS Discovery using Discovery SPI for Hazelcast Client
+### Configuring AWS Discovery using Discovery SPI for Hazelcast Client
 
 - Add the *hazelcast-aws.jar* dependency to your project. The hazelcast-aws plugin does not depend on any other third party modules.
 - Enable Discovery SPI by adding "hazelcast.discovery.enabled" property to your config.
@@ -126,7 +126,7 @@ The following is an example declarative configuration.
 
 List of available properties and their documentation can be found at [AwsProperties.java](https://github.com/hazelcast/hazelcast-aws/blob/master/src/main/java/com/hazelcast/aws/AwsProperties.java)
 
-###Configuring with "AwsConfig" (Deprecated)
+### Configuring with "AwsConfig" (Deprecated)
 
 - Add the *hazelcast-aws.jar* dependency to your project. The hazelcast-aws plugin does not depend on any other third party modules.
 - Disable join over multicast and TCP/IP by setting the `enabled` attribute of the `multicast` element to "false", and set the `enabled` attribute of the `tcp-ip` element to "false".
