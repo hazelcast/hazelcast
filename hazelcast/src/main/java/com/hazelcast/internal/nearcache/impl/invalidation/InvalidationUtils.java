@@ -30,14 +30,14 @@ public final class InvalidationUtils {
     public static final long NO_SEQUENCE = -1L;
     public static final IFunction<EventRegistration, Boolean> TRUE_FILTER = new TrueFilter();
 
+    private InvalidationUtils() {
+    }
+
     @SerializableByConvention
-    public static class TrueFilter implements IFunction<EventRegistration, Boolean> {
+    private static class TrueFilter implements IFunction<EventRegistration, Boolean> {
         @Override
         public Boolean apply(EventRegistration eventRegistration) {
             return TRUE;
         }
-    }
-
-    private InvalidationUtils() {
     }
 }

@@ -23,7 +23,7 @@ import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * Indicates that the annotated class cannot be converted to {@code IdentifiedDataSerializable} due to other conventions.
+ * Indicates that the annotated class cannot be converted to {@link IdentifiedDataSerializable} due to other conventions.
  * The annotation's {@link #value()} provides reasoning why class cannot be converted. Classes annotated with
  * {@code SerializableByConvention} are excluded from compliance tests by {@code DataSerializableConventionsTest}.
  */
@@ -34,17 +34,19 @@ public @interface SerializableByConvention {
 
     enum Reason {
         /**
-         * Class definition is part of public API so cannot be migrated to {@code IdentifiedDataSerializable}.
+         * Class definition is part of public API so cannot be migrated to {@link IdentifiedDataSerializable} in
+         * minor or patch releases.
          */
         PUBLIC_API,
         /**
          * Class is {@code Serializable} due to conventions and cannot be converted to {@code IdentifiedDataSerializable}.
          * Examples:
          * <ul>
-         *     <li>inheritance from a class external to Hazelcast e.g. {@code CacheEntryEvent}, which imposes
-         *     serializability even when not required</li>
-         *     <li>inheritance from a class external to Hazelcast, however {@code IdentifiedDataSerializable} requires a
-         *     default no-args constructor and non-final fields which  is not always possible (e.g. subclasses of
+         *     <li>inheritance from a class external to Hazelcast e.g. {@link javax.cache.event.CacheEntryEvent} imposes
+         *     serializability to its implementation in {@link com.hazelcast.cache.impl.CacheEntryEventImpl} even though
+         *     the latter is never serialized</li>
+         *     <li>inheritance from a class external to Hazelcast, however {@link IdentifiedDataSerializable} requires a
+         *     default no-args constructor and non-final fields which is not always possible (e.g. subclasses of
          *     {@code java.util.EventObject} & {@code java.lang.Exception})</li>
          *     <li>a {@code Comparator} which should by convention also implement {@code Serializable}.</li>
          * </ul>

@@ -255,7 +255,6 @@ public class DataSerializableConventionsTest {
 
     /**
      * Removes abstract classes and interfaces from given Set in-place.
-     * @param classes
      */
     private void filterNonConcreteClasses(Set classes) {
         Iterator<Class> iterator = classes.iterator();
