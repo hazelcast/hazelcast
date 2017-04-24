@@ -307,27 +307,25 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of source processor designed to process files in a directory
-     * in a batch. It processes all files in a directory (optionally filtering with a
-     * {@code glob}). Contents of the files are emitted line by line. There is no
-     * indication, which file a particular line comes from. Contents of subdirectories
-     * are not processed.
+     * A processor that emits lines from all files in a directory (but not its
+     * subdirectories), or only the files matching the supplied {@code glob}
+     * expression. The files must not change while being read; if they do, the
+     * behavior is unspecified. There will be no indication which file a
+     * particular line comes from.
      * <p>
-     * The same directory must be available on all members, but it should not
-     * contain the same files (i.e. it should not be a network shared directory, but
-     * files local to the machine).
-     * <p>
-     * If directory contents are changed while processing, the behavior is
-     * undefined: the changed contents might or might not be processed.
+     * The same pathname should be available on all members, but it should not
+     * contain the same files &mdash; (e.g., it shouldn't resolve to a
+     * directory shared over the network).
      *
-     * @param directory Parent directory of the files.
-     * @param charset Character set used when reading the files. If null, utf-8 is used.
-     * @param glob The filtering pattern, see
-     *          {@link java.nio.file.FileSystem#getPathMatcher(String) getPathMatcher()}
+     * @param directory parent directory of the files
+     * @param charset charset to use to decode the files, or {@code null} to use UTF-8
+     * @param glob the file filter, see {@link
+     *             java.nio.file.FileSystem#getPathMatcher(String) getPathMatcher()}
      */
     @Nonnull
-    public static ProcessorSupplier readFiles(@Nonnull String directory, @Nullable Charset charset,
-            @Nullable String glob) {
+    public static ProcessorSupplier readFiles(
+            @Nonnull String directory, @Nullable Charset charset, @Nullable String glob
+    ) {
         return ReadFilesP.supplier(directory, charset == null ? "utf-8" : charset.name(), glob);
     }
 
@@ -339,38 +337,44 @@ public final class Processors {
     }
 
     /**
-     * A source processor designed to handle log files in a directory in a streaming
-     * way. It processes files, as they are created/appended to. It ignores files in
-     * subdirectories. Contents of the files are emitted line by line. There is no
-     * indication, which file a particular line comes from.
+     * A source processor that generates a stream of lines of text coming from
+     * files in the watched directory (but not its subdirectories). It will
+     * pick up both newly created files and content appended to pre-existing
+     * files. It processor expects the file content not to change once
+     * appended. There will be no indication which file a particular line comes
+     * from.
      * <p>
-     * Only content appended to the files is read.
-     * Pre-existing files will be scanned for file sizes on startup, and will be
-     * processed from that position, ignoring possibly incomplete first line, if the
-     * file is being written to during startup.
+     * The processor will scan pre-existing files for file sizes on startup and
+     * process them from that position, except that it will ignore the first
+     * line because it may be incomplete (it is assumed that another process is
+     * concurrently appending to the file).
      * <p>
-     * Only lines terminated with a newline character are emitted. This is to avoid
-     * emitting single line in two chunks, if the file is being actively written to.
+     * The same pathname should be available on all members, but it should not
+     * contain the same files &mdash; (e.g., it shouldn't resolve to a
+     * directory shared over the network).
      * <p>
-     * The same directory should be available on all members, but it should not
-     * contain the same files (i.e. it should not a network shared directory, but logs
-     * local to the machine).
+     * The processor completes when the directory is deleted. However, in order
+     * to delete the directory, all files in it must be deleted and if you
+     * delete a file that is currently being read from, the job may encounter
+     * an {@code IOException}. The directory must be deleted on all nodes.
      * <p>
-     * It completes, when the directory is deleted. However, in order to delete
-     * the directory all files in it must be deleted, and if you delete a file, that is
-     * currently being read from, the job will encounter an IOException. Directory
-     * must be deleted on all nodes.
+     * <strong>Note:</strong> the underlying JDK API, {@link
+     * java.nio.file.WatchService}, has a history of unreliability and this
+     * processor may experience infinite blocking, missed, or duplicate events
+     * as a result. Such problems may be resolved by upgrading the JRE to the
+     * latest version.
      *
      * @param watchedDirectory The directory where we watch files
-     * @param charset charset to use to decode the file input, or null to use UTF-8
+     * @param charset charset to use to decode the files, or {@code null} to use UTF-8
      */
-    public static ProcessorSupplier streamFiles(@Nonnull String watchedDirectory,
-            @Nullable Charset charset) {
+    public static ProcessorSupplier streamFiles(
+            @Nonnull String watchedDirectory, @Nullable Charset charset
+    ) {
         return StreamFilesP.supplier(watchedDirectory, charset == null ? null : charset.toString());
     }
 
     /**
-     * Convenience for {@link #writeFile(String, Charset, boolean)}, with
+     * Convenience for {@link #writeFile(String, Charset, boolean)} with
      * UTF-8 charset and with overwriting the target file.
      */
     @Nonnull

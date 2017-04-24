@@ -17,9 +17,11 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.stream.impl.distributed.DistributedComparators;
+import com.hazelcast.jet.stream.impl.distributed.DistributedComparators.NullComparator;
 
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -359,7 +361,8 @@ public final class Distributed {
          */
         static <T> Distributed.Comparator<T> nullsFirst(java.util.Comparator<? super T> comparator) {
             checkSerializable(comparator, "comparator");
-            return new DistributedComparators.NullComparator<>(true, comparator);
+            NullComparator<T> c = new NullComparator<>(true);
+            return comparator != null ? c.thenComparing(comparator) : c;
         }
 
         /**
@@ -374,7 +377,8 @@ public final class Distributed {
          */
         static <T> Distributed.Comparator<T> nullsLast(java.util.Comparator<? super T> comparator) {
             checkSerializable(comparator, "comparator");
-            return new DistributedComparators.NullComparator<>(false, comparator);
+            NullComparator<T> c = new NullComparator<>(false);
+            return comparator != null ? c.thenComparing(comparator) : c;
         }
 
         /**
@@ -580,6 +584,11 @@ public final class Distributed {
          */
         default Distributed.Comparator<T> thenComparingDouble(Distributed.ToDoubleFunction<? super T> keyExtractor) {
             return thenComparingDouble((java.util.function.ToDoubleFunction<? super T>) keyExtractor);
+        }
+
+        @Override
+        default Distributed.Comparator<T> reversed() {
+            return (o1, o2) -> compare(o2, o1);
         }
     }
 

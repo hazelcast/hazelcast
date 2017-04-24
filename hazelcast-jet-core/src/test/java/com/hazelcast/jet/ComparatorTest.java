@@ -23,22 +23,22 @@ import static com.hazelcast.jet.stream.impl.StreamUtil.checkSerializable;
 
 public class ComparatorTest {
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
 
     }
 
     @Test
-    public void naturalOrder() throws Exception {
+    public void naturalOrder() {
         checkSerializable(Distributed.Comparator.naturalOrder(), null);
     }
 
     @Test
-    public void reverseOrder() throws Exception {
+    public void reverseOrder() {
         checkSerializable(Distributed.Comparator.reverseOrder(), null);
     }
 
     @Test
-    public void thenComparing_keyExtractor() throws Exception {
+    public void thenComparing_keyExtractor() {
         checkSerializable(
                 Distributed.Comparator.naturalOrder()
                     .thenComparing(Object::toString),
@@ -46,7 +46,7 @@ public class ComparatorTest {
     }
 
     @Test
-    public void thenComparing_otherComparator() throws Exception {
+    public void thenComparing_otherComparator() {
         checkSerializable(
                 Distributed.Comparator.naturalOrder()
                                       .thenComparing(Comparable::compareTo),
@@ -54,7 +54,7 @@ public class ComparatorTest {
     }
 
     @Test
-    public void thenComparing_keyExtractor_keyComparator() throws Exception {
+    public void thenComparing_keyExtractor_keyComparator() {
         checkSerializable(
                 Distributed.Comparator.naturalOrder()
                                       .thenComparing(Object::toString, Comparable::compareTo),
@@ -62,7 +62,7 @@ public class ComparatorTest {
     }
 
     @Test
-    public void thenComparingInt() throws Exception {
+    public void thenComparingInt() {
         checkSerializable(
                 Distributed.Comparator.naturalOrder()
                                       .thenComparingInt(Object::hashCode),
@@ -70,7 +70,7 @@ public class ComparatorTest {
     }
 
     @Test
-    public void thenComparingLong() throws Exception {
+    public void thenComparingLong() {
         checkSerializable(
                 Distributed.Comparator.<Long>naturalOrder()
                                       .thenComparingLong(Long::longValue),
@@ -78,7 +78,7 @@ public class ComparatorTest {
     }
 
     @Test
-    public void thenComparingDouble() throws Exception {
+    public void thenComparingDouble() {
         checkSerializable(
                 Distributed.Comparator.<Double>naturalOrder()
                         .thenComparingDouble(Double::doubleValue),
@@ -86,41 +86,41 @@ public class ComparatorTest {
     }
 
     @Test
-    public void nullsFirst() throws Exception {
+    public void nullsFirst() {
         checkSerializable(
                 Distributed.Comparator.<Comparable>nullsFirst(Comparable::compareTo),
                 null);
     }
 
     @Test
-    public void nullsLast() throws Exception {
+    public void nullsLast() {
         checkSerializable(
                 Distributed.Comparator.<Comparable>nullsLast(Comparable::compareTo),
                 null);
     }
 
     @Test
-    public void comparing_keyExtractor() throws Exception {
+    public void comparing_keyExtractor() {
         checkSerializable(Distributed.Comparator.comparing(Object::toString), null);
     }
 
     @Test
-    public void comparing_keyExtractor_keyComparator() throws Exception {
+    public void comparing_keyExtractor_keyComparator() {
         checkSerializable(Distributed.Comparator.comparing(Object::toString, String::compareTo), null);
     }
 
     @Test
-    public void comparingInt() throws Exception {
+    public void comparingInt() {
         checkSerializable(Distributed.Comparator.comparingInt(Object::hashCode), null);
     }
 
     @Test
-    public void comparingLong() throws Exception {
+    public void comparingLong() {
         checkSerializable(Distributed.Comparator.comparingLong(Long::longValue), null);
     }
 
     @Test
-    public void comparingDouble() throws Exception {
+    public void comparingDouble() {
         checkSerializable(Distributed.Comparator.comparingDouble(Double::doubleValue), null);
     }
 
