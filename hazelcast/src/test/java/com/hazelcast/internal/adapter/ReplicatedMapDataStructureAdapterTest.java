@@ -69,11 +69,9 @@ public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport 
         adapter.getAsync(42);
     }
 
-    @Test
+    @Test(expected = MethodNotAvailableException.class)
     public void testSet() {
         adapter.set(23, "test");
-
-        assertEquals("test", map.get(23));
     }
 
     @Test

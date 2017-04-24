@@ -33,8 +33,6 @@ import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -108,35 +106,5 @@ public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasi
 
     protected ClientConfig getClientConfig() {
         return new ClientConfig();
-    }
-
-    @Test
-    @Override
-    @Ignore(value = "The ClientReplicatedMapProxy is missing `invalidateNearCache(keyData)` calls")
-    public void whenSetIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
-    }
-
-    @Test
-    @Override
-    @Ignore(value = "The ClientReplicatedMapProxy is missing `invalidateNearCache(keyData)` calls")
-    public void whenPutIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
-    }
-
-    @Test
-    @Override
-    @Ignore(value = "The ClientReplicatedMapProxy is missing `invalidateNearCache(keyData)` calls")
-    public void whenPutAllIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
-    }
-
-    @Test
-    @Override
-    @Ignore(value = "The ClientReplicatedMapProxy is missing `invalidateNearCache(keyData)` calls")
-    public void whenRemoveIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
-    }
-
-    @Test
-    @Override
-    @Ignore(value = "The ClientReplicatedMapProxy is missing `invalidateNearCache(keyData)` calls")
-    public void whenNearCacheIsFull_thenPutOnSameKeyShouldUpdateValue_onNearCacheAdapter() {
     }
 }
