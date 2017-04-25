@@ -181,12 +181,9 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
+    @MethodNotAvailable
     public void clear() {
-        begin();
-        for (K key : transactionalMap.keySet()) {
-            transactionalMap.remove(key);
-        }
-        commit();
+        throw new MethodNotAvailableException();
     }
 
     @Override

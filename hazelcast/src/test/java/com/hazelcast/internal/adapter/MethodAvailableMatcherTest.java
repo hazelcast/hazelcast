@@ -35,8 +35,7 @@ public class MethodAvailableMatcherTest {
     @Rule
     public ExpectedException expected = ExpectedException.none();
 
-    private TransactionalMapDataStructureAdapter<Integer, String> adapter
-            = new TransactionalMapDataStructureAdapter<Integer, String>(null, "mapName");
+    private DataStructureAdapter<Integer, String> adapter = new ReplicatedMapDataStructureAdapter<Integer, String>(null);
 
     @Test
     public void assertThat_withAvailableMethod() {
@@ -56,7 +55,7 @@ public class MethodAvailableMatcherTest {
     @Test
     public void assertThat_withAvailableMethod_withParameterMismatch() {
         expected.expect(AssertionError.class);
-        expected.expectMessage("Could not find method TransactionalMapDataStructureAdapter.put(Integer, String)");
+        expected.expectMessage("Could not find method " + adapter.getClass().getSimpleName() + ".put(Integer, String)");
         assertThat(adapter, new MethodAvailableMatcher(new DataStructureAdapterMethod() {
             @Override
             public String getMethodName() {

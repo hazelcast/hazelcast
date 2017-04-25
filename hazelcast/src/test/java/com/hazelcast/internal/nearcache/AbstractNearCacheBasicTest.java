@@ -781,6 +781,22 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#CLEAR)} is used.
+     */
+    @Test
+    public void whenClearIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
+        whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.CLEAR);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#CLEAR)} is used.
+     */
+    @Test
+    public void whenClearIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
+        whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.CLEAR);
+    }
+
+    /**
      * With the {@link NearCacheTestContext#dataAdapter} we have to set {@link NearCacheConfig#setInvalidateOnChange(boolean)}.
      * With the {@link NearCacheTestContext#nearCacheAdapter} Near Cache invalidations are not needed.
      */
@@ -813,6 +829,8 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                     case REMOVE_ALL_WITH_KEYS:
                         removeKeys.add(i);
                         break;
+                    case CLEAR:
+                        break;
                     default:
                         throw new IllegalArgumentException("Unexpected method: " + method);
                 }
@@ -820,6 +838,8 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         }
         if (method == DataStructureMethods.REMOVE_ALL_WITH_KEYS) {
             adapter.removeAll(removeKeys);
+        } else if (method == DataStructureMethods.CLEAR) {
+            adapter.clear();
         }
 
         String message = format("Invalidation is not working on %s()", method.getMethodName());
