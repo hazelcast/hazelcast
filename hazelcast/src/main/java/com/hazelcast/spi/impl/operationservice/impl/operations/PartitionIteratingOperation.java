@@ -30,6 +30,7 @@ import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.List;
@@ -267,6 +268,11 @@ public final class PartitionIteratingOperation extends Operation implements Iden
             for (int i = 0; i < results.length; i++) {
                 partitionResults.put(partitions[i], results[i]);
             }
+        }
+
+        @SuppressFBWarnings("EI_EXPOSE_REP")
+        public Object[] getResults() {
+            return results;
         }
 
         @Override

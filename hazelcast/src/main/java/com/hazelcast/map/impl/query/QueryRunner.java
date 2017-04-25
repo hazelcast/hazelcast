@@ -71,10 +71,8 @@ public class QueryRunner {
     // full query = index query (if possible), then partition-scan query
     public Result runIndexOrPartitionScanQueryOnOwnedPartitions(Query query)
             throws ExecutionException, InterruptedException {
-
         int migrationStamp = getMigrationStamp();
         Collection<Integer> initialPartitions = mapServiceContext.getOwnedPartitions();
-
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
 
         // first we optimize the query
@@ -96,20 +94,46 @@ public class QueryRunner {
         } else {
             // else: if fallback to full table scan also failed to return any results due to migrations,
             // then return empty result set without any partition IDs set (so that it is ignored by callers).
-            return resultProcessorRegistry.get(query.getResultType()).populateResult(query,
-                    queryResultSizeLimiter.getNodeResultLimit(initialPartitions.size()));
+            return populateEmptyResult(query, initialPartitions);
         }
     }
 
-    private Result populateTheResult(Query query, Collection<QueryableEntry> entries, Collection<Integer> initialPartitions) {
+    // full query = index query (if possible), then partition-scan query
+    Result runIndexQueryOnOwnedPartitions(Query query) {
+        int migrationStamp = getMigrationStamp();
+        Collection<Integer> initialPartitions = mapServiceContext.getOwnedPartitions();
+        MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
+
+        // first we optimize the query
+        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes());
+
+        // then we try to run using an index, but if that doesn't work, we'll try a full table scan
+        // This would be the point where a query-plan should be added. It should determine f a full table scan
+        // or an index should be used.
+        updateStatistics(mapContainer);
+        Collection<QueryableEntry> entries = runUsingIndexSafely(predicate, mapContainer, migrationStamp);
+        if (entries != null) {
+            // if results have been returned and partition state has not changed, set the partition IDs
+            // so that caller is aware of partitions from which results were obtained.
+            return populateTheResult(query, entries, initialPartitions);
+        }
+        return null;
+    }
+
+    protected Result populateEmptyResult(Query query, Collection<Integer> initialPartitions) {
+        return resultProcessorRegistry.get(query.getResultType()).populateResult(query,
+                queryResultSizeLimiter.getNodeResultLimit(initialPartitions.size()));
+    }
+
+    protected Result populateTheResult(Query query, Collection<QueryableEntry> entries, Collection<Integer> initialPartitions) {
         ResultProcessor processor = resultProcessorRegistry.get(query.getResultType());
         return processor.populateResult(query, queryResultSizeLimiter
                 .getNodeResultLimit(initialPartitions.size()), entries, initialPartitions
         );
     }
 
-    private Collection<QueryableEntry> runUsingIndexSafely(Predicate predicate, MapContainer mapContainer,
-                                                           int migrationStamp) {
+    protected Collection<QueryableEntry> runUsingIndexSafely(Predicate predicate, MapContainer mapContainer,
+                                                             int migrationStamp) {
 
         // If a migration is in progress or migration ownership changes,
         // do not attempt to use an index as they may have not been created yet.
