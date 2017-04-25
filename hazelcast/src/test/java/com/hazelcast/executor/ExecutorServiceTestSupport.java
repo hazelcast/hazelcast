@@ -351,7 +351,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
 
         private final String name;
 
-        private HazelcastInstance instance;
+        private transient HazelcastInstance instance;
 
         public IncrementAtomicLongRunnable(String name) {
             this.name = name;
