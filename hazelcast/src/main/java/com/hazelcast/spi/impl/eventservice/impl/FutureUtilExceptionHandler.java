@@ -23,6 +23,10 @@ import com.hazelcast.util.FutureUtil;
 
 import java.util.concurrent.ExecutionException;
 
+/**
+ * Exception handler which logs the {@link #message} in case the exception is a {@link MemberLeftException},
+ * otherwise wraps the exception in a {@link HazelcastException} and rethrows it.
+ */
 public final class FutureUtilExceptionHandler implements FutureUtil.ExceptionHandler {
 
     private final ILogger logger;

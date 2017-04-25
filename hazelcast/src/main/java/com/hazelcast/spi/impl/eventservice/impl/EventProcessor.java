@@ -20,6 +20,12 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.util.executor.StripedRunnable;
 
+/**
+ * An event processor responsible of fetching the registration and service responsible for the published event
+ * and processing it. The processor is an instance of the {@link StripedRunnable} and events are processed on a
+ * thread defined by the {@link #orderKey}. This means that all events with the same {@link #orderKey} will be ordered.
+ * Any exception thrown when processing the event will be returned to the caller.
+ */
 public class EventProcessor implements StripedRunnable {
 
     private final EventServiceImpl eventService;
@@ -37,6 +43,13 @@ public class EventProcessor implements StripedRunnable {
         process(envelope);
     }
 
+    /**
+     * Processes the event by dispatching it on the responsible {@link EventPublishingService}
+     * together with the listener responsible for the event.
+     *
+     * @param envelope the event to be processed
+     * @see EventPublishingService#dispatchEvent(Object, Object)
+     */
     void process(EventEnvelope envelope) {
         Object event = getEvent(envelope);
         String serviceName = envelope.getServiceName();
@@ -48,6 +61,16 @@ public class EventProcessor implements StripedRunnable {
         service.dispatchEvent(event, registration.getListener());
     }
 
+
+    /**
+     * Returns the local registration responsible for the event and service or {@code null} if none exists,
+     * the registration is not local or there is no listener in the registration.
+     *
+     * @param eventEnvelope the event for which we need the registration
+     * @param serviceName   the service name
+     * @return the listener registration or {@code null} if none exists, it is not local or there is no listener in
+     * the registration
+     */
     private Registration getRegistration(EventEnvelope eventEnvelope, String serviceName) {
         EventServiceSegment segment = eventService.getSegment(serviceName, false);
         if (segment == null) {
@@ -82,6 +105,7 @@ public class EventProcessor implements StripedRunnable {
         return registration;
     }
 
+    /** Returns the deserialized event object contained in the {@code eventEnvelope} */
     private Object getEvent(EventEnvelope eventEnvelope) {
         Object event = eventEnvelope.getEvent();
         if (event instanceof Data) {

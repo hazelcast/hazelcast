@@ -22,6 +22,13 @@ import com.hazelcast.util.executor.TimeoutRunnable;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * A {@link StripedRunnable} responsible of processing the {@link #event} on a thread defined by the {@link #orderKey}.
+ * Processes the event by dispatching it on the responsible {@link EventPublishingService} together with the listener
+ * responsible for the event.
+ *
+ * @see EventPublishingService#dispatchEvent(Object, Object)
+ */
 public final class LocalEventDispatcher implements StripedRunnable, TimeoutRunnable {
     private EventServiceImpl eventService;
     private final String serviceName;

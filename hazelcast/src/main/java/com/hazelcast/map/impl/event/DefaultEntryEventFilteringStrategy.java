@@ -53,6 +53,11 @@ public class DefaultEntryEventFilteringStrategy extends AbstractFilteringStrateg
         super(serializationService, mapServiceContext);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IllegalArgumentException if the provided {@code filter} is not of a known type
+     */
     // This code has been moved from MapEventPublisherImpl.doFilter and
     // provides the default backwards compatible filtering strategy implementation.
     @SuppressWarnings("checkstyle:npathcomplexity")
@@ -95,6 +100,19 @@ public class DefaultEntryEventFilteringStrategy extends AbstractFilteringStrateg
         return "DefaultEntryEventFilteringStrategy";
     }
 
+    /**
+     * Evaluate if the filter matches the map event. In case of a remove, evict or expire event
+     * the old value will be used for evaluation, otherwise we use the new value.
+     * The filter must be of {@link QueryEventFilter} type.
+     *
+     * @param filter        a {@link QueryEventFilter} filter
+     * @param eventType     the event type
+     * @param dataKey       the entry key
+     * @param dataOldValue  the entry value before the event
+     * @param dataValue     the entry value after the event
+     * @param mapNameOrNull the map name. May be null if this is not a map event (e.g. cache event)
+     * @return {@code true} if the entry matches the query event filter
+     */
     private boolean processQueryEventFilter(EventFilter filter, EntryEventType eventType,
                                             Data dataKey, Object dataOldValue, Object dataValue, String mapNameOrNull) {
         Object testValue;
@@ -107,6 +125,9 @@ public class DefaultEntryEventFilteringStrategy extends AbstractFilteringStrateg
         return evaluateQueryEventFilter(filter, dataKey, testValue, mapNameOrNull);
     }
 
+    /**
+     * Cache for 2 different {@link EntryEventData} objects - one for including values and one for excluding values.
+     */
     private class DefaultEntryEventDataCache implements EntryEventDataCache {
         EntryEventData eventDataIncludingValues;
         EntryEventData eventDataExcludingValues;

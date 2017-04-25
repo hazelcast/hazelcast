@@ -187,7 +187,10 @@ public class QueryCacheNaturalFilteringStrategy extends AbstractFilteringStrateg
         }
     }
 
-    // Caches EntryEventData per {eventType, includingValues}
+    /**
+     * Caches 2 different {@link EntryEventData} objects for each event type - one for
+     * including values and one for excluding values.
+     */
     private class EntryEventDataPerEventTypeCache implements EntryEventDataCache {
         Map<Integer, EntryEventData> eventDataIncludingValues;
         Map<Integer, EntryEventData> eventDataExcludingValues;
@@ -230,16 +233,19 @@ public class QueryCacheNaturalFilteringStrategy extends AbstractFilteringStrateg
          * If an {@code EntryEventData} is already mapped to the given {@code eventType} in {@code Map eventDataPerEventType},
          * then return the mapped value, otherwise create the {@code EntryEventData}, put it in {@code Map eventDataPerEventType}
          * and return it.
-         * @param eventDataPerEventType
-         * @param mapName
-         * @param caller
-         * @param dataKey
-         * @param newValue
-         * @param oldValue
-         * @param mergingValue
-         * @param eventType
+         *
+         * @param eventDataPerEventType map from event type to cached event data
+         * @param mapName               name of map
+         * @param caller                the address of the caller that caused the event
+         * @param dataKey               the key of the event map entry
+         * @param newValue              the new value of the map entry
+         * @param oldValue              the old value of the map entry
+         * @param mergingValue          the value used when performing a merge operation in case of
+         *                              a {@link EntryEventType#MERGED} event. This value together with the old value
+         *                              produced the new value.
+         * @param eventType             the event type
          * @return {@code EntryEventData} already cached in {@code Map eventDataPerEventType} for the given {@code eventType} or
-         *          if not already cached, a new {@code EntryEventData} object.
+         * if not already cached, a new {@code EntryEventData} object.
          */
         private EntryEventData getOrCreateEventData(Map<Integer, EntryEventData> eventDataPerEventType, String mapName,
                                                     Address caller, Data dataKey, Object newValue, Object oldValue,

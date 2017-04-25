@@ -19,7 +19,7 @@ package com.hazelcast.spi;
 import java.util.Collection;
 
 /**
- * Component responsible for handling events like topic events or map.listener events.
+ * Component responsible for handling events like topic events or map.listener events. The events are divided into topics.
  */
 public interface EventService {
 
@@ -139,49 +139,65 @@ public interface EventService {
 
     /**
      * Publishes an event for all event registrations belonging to the specified service name and topic.
+     * All events with the same {@code orderKey} are ordered, otherwise the order is not preserved.
+     * <p>
+     * NOTE : The order may not be preserved in case the event needs to be republished (e.g. when the registration
+     * is not on this node and the event has to be retransmitted)
      *
      * @param serviceName service name
      * @param topic       topic name
      * @param event       event object
-     * @param orderKey    order key
+     * @param orderKey    the order key for this event. All events with the same order key are ordered.
      */
     void publishEvent(String serviceName, String topic, Object event, int orderKey);
 
     /**
      * Publishes an event for a specific event registration.
+     * All events with the same {@code orderKey} are ordered, otherwise the order is not preserved.
+     * <p>
+     * NOTE : The order may not be preserved in case the event needs to be republished (e.g. when the registration
+     * is not on this node and the event has to be retransmitted)
      *
      * @param serviceName  service name
      * @param registration event registration
      * @param event        event object
-     * @param orderKey     order key
+     * @param orderKey     the order key for this event. All events with the same order key are ordered.
      */
     void publishEvent(String serviceName, EventRegistration registration, Object event, int orderKey);
 
     /**
      * Publishes an event for multiple event registrations.
+     * All events with the same {@code orderKey} are ordered, otherwise the order is not preserved.
+     * <p>
+     * NOTE : The order may not be preserved in case the event needs to be republished (e.g. when the registration
+     * is not on this node and the event has to be retransmitted)
      *
      * @param serviceName   service name
      * @param registrations multiple event registrations
      * @param event         event object
-     * @param orderKey      order key
+     * @param orderKey      the order key for this event. All events with the same order key are ordered.
      */
     void publishEvent(String serviceName, Collection<EventRegistration> registrations, Object event, int orderKey);
 
     /**
      * Publishes an event for multiple event registrations, excluding local ones.
+     * All events with the same {@code orderKey} are ordered, otherwise the order is not preserved.
+     * <p>
+     * NOTE : The order may not be preserved in case the event needs to be republished (e.g. when the registration
+     * is not on this node and the event has to be retransmitted)
      *
      * @param serviceName   service name
      * @param registrations multiple event registrations
      * @param event         event object
-     * @param orderKey      order key
+     * @param orderKey      the order key for this event. All events with the same order key are ordered.
      */
     void publishRemoteEvent(String serviceName, Collection<EventRegistration> registrations, Object event, int orderKey);
 
     /**
      * Executes an event callback on a random event thread.
      * <p>
-     * If {@code callback} is an instance of {@code StripedRunnable},
-     * then {@code StripedRunnable.getKey()} will be used as order key
+     * If {@code callback} is an instance of {@link com.hazelcast.util.executor.StripedRunnable},
+     * then {@link com.hazelcast.util.executor.StripedRunnable#getKey()} will be used as order key
      * to pick event thread.
      * </p>
      *

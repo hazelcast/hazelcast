@@ -47,11 +47,28 @@ public abstract class AbstractFilteringStrategy implements FilteringStrategy {
         return mapServiceContext.getNodeEngine().getThisAddress().toString();
     }
 
+    /**
+     * Evaluates filters of {@link EntryEventFilter} type.
+     *
+     * @param filter  the filter which must be a {@link EntryEventFilter}
+     * @param dataKey the event entry key
+     * @return {@code true} if the filter matches
+     */
     protected boolean processEntryEventFilter(EventFilter filter, Data dataKey) {
         EntryEventFilter eventFilter = (EntryEventFilter) filter;
         return eventFilter.eval(dataKey);
     }
 
+    /**
+     * Evalues the {@code filter} using a {@link CachedQueryEntry} together with the
+     * value {@link Extractors} configured for this map. The filter must be of {@link QueryEventFilter} type.
+     *
+     * @param filter        a {@link QueryEventFilter} filter
+     * @param dataKey       the entry key
+     * @param testValue     the value used to evaluate the filter
+     * @param mapNameOrNull the map name. May be null if this is not a map event (e.g. cache event)
+     * @return {@code true} if the entry matches the query event filter
+     */
     protected boolean evaluateQueryEventFilter(EventFilter filter, Data dataKey, Object testValue, String mapNameOrNull) {
         Extractors extractors = getExtractorsForMapName(mapNameOrNull);
         QueryEventFilter queryEventFilter = (QueryEventFilter) filter;
@@ -60,6 +77,10 @@ public abstract class AbstractFilteringStrategy implements FilteringStrategy {
         return queryEventFilter.eval(entry);
     }
 
+    /**
+     * Returns the value {@link Extractors} for the map with the given name. May be null in
+     * which case no extractors are returned.
+     */
     private Extractors getExtractorsForMapName(String mapNameOrNull) {
         if (mapNameOrNull == null) {
             return Extractors.empty();

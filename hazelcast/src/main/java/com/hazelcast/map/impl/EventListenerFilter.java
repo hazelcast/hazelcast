@@ -28,6 +28,8 @@ import java.io.IOException;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.SET_ALL_LISTENER_FLAGS;
 
 /**
+ * Event filter matching events of specified types. This filter also contains an another filter but it does not
+ * involve it when evaluating if the event matches.
  * Prevents sending of not requested events to a {@link com.hazelcast.map.listener.MapListener MapListener}
  * by filtering events according the implemented {@link com.hazelcast.map.listener.MapListener MapListener} sub-interfaces.
  * <p/>

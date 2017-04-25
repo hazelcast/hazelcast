@@ -56,7 +56,8 @@ import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapSt
 import static java.lang.System.getProperty;
 
 /**
- * Map container.
+ * Map container for a map with a specific name. Contains config and supporting structures for
+ * all of the maps' functionalities.
  */
 public class MapContainer {
 
