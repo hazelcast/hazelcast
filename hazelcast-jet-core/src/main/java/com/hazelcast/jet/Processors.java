@@ -375,11 +375,14 @@ public final class Processors {
 
     /**
      * Convenience for {@link #writeFile(String, Charset, boolean)} with
-     * UTF-8 charset and with overwriting the target file.
+     * UTF-8 charset and with overwriting of existing files.
+     *
+     * @param directoryName directory to create the files in. Will be created,
+     *                      if it doesn't exist. Must be the same on all nodes.
      */
     @Nonnull
-    public static ProcessorMetaSupplier writeFile(@Nonnull String file) {
-        return writeFile(file, null, false);
+    public static ProcessorMetaSupplier writeFile(@Nonnull String directoryName) {
+        return writeFile(directoryName, null, false);
     }
 
     /**
