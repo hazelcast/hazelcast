@@ -112,6 +112,7 @@ import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryEventFilter;
 import com.hazelcast.map.impl.query.QueryOperation;
 import com.hazelcast.map.impl.query.QueryPartitionOperation;
+import com.hazelcast.map.impl.query.QueryPartitionOperationFactory;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.Target;
@@ -286,8 +287,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int REMOVE_FROM_LOAD_ALL = 134;
     public static final int ENTRY_REMOVING_PROCESSOR = 135;
     public static final int ENTRY_OFFLOADABLE_SET_UNLOCK = 136;
-    public static final int LOCK_AWARE_LAZY_MAP_ENTRY = 137;
-    public static final int INDEX_REPLICATION_INFO = 138;
+    public static final int QUERY_PARTITION_OP_FACTORY = 137;
+    public static final int LOCK_AWARE_LAZY_MAP_ENTRY = 138;
+    public static final int INDEX_REPLICATION_INFO = 139;
 
     private static final int LEN = INDEX_REPLICATION_INFO + 1;
 
@@ -963,6 +965,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[ENTRY_OFFLOADABLE_SET_UNLOCK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new EntryOffloadableSetUnlockOperation();
+            }
+        };
+        constructors[QUERY_PARTITION_OP_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new QueryPartitionOperationFactory();
             }
         };
         constructors[LOCK_AWARE_LAZY_MAP_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

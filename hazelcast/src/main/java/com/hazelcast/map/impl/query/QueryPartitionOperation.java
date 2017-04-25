@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
@@ -25,7 +24,6 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 
 public class QueryPartitionOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
@@ -41,15 +39,9 @@ public class QueryPartitionOperation extends MapOperation implements PartitionAw
     }
 
     @Override
-    public void run() {
+    public void run() throws Exception {
         QueryRunner queryRunner = mapServiceContext.getMapQueryRunner(getName());
-        try {
-            result = queryRunner.runPartitionScanQueryOnGivenOwnedPartition(query, getPartitionId());
-        } catch (ExecutionException e) {
-            throw new HazelcastException(e);
-        } catch (InterruptedException e) {
-            throw new HazelcastException(e);
-        }
+        result = queryRunner.runPartitionScanQueryOnGivenOwnedPartition(query, getPartitionId());
     }
 
     @Override
