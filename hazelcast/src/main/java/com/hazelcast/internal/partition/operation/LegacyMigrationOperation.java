@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
+import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
@@ -100,7 +100,7 @@ public final class LegacyMigrationOperation extends BaseMigrationDestinationOper
             int destinationNewReplicaIndex = migrationInfo.getDestinationNewReplicaIndex();
             int replicaOffset = destinationNewReplicaIndex <= 1 ? 1 : destinationNewReplicaIndex;
             replicaManager.setPartitionReplicaVersions(migrationInfo.getPartitionId(),
-                    InternalReplicaFragmentNamespace.INSTANCE, replicaVersions, replicaOffset);
+                    NonFragmentedServiceNamespace.INSTANCE, replicaVersions, replicaOffset);
             if (getLogger().isFinestEnabled()) {
                 getLogger().finest("ReplicaVersions are set after migration. partitionId="
                         + migrationInfo.getPartitionId() + " replicaVersions=" + Arrays.toString(replicaVersions));

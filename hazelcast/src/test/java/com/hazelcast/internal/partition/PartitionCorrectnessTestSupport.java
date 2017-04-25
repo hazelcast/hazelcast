@@ -30,7 +30,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -258,7 +258,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
             N name, boolean allowDirty) throws InterruptedException {
 
         Address thisAddress = node.getThisAddress();
-        ReplicaFragmentNamespace namespace = service.getNamespace(name);
+        ServiceNamespace namespace = service.getNamespace(name);
 
         for (InternalPartition partition : partitions) {
             if (partition.isLocal()) {

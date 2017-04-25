@@ -20,8 +20,8 @@ import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.DefaultReplicaFragmentNamespace;
 import com.hazelcast.spi.OperationControl;
+import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.impl.eventservice.impl.EventEnvelope;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperation;
@@ -66,7 +66,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     public static final int TRUE_EVENT_FILTER = 17;
     public static final int UNMODIFIABLE_LAZY_LIST = 18;
     public static final int OPERATION_CONTROL = 19;
-    public static final int DEFAULT_REPLICA_FRAGMENT_NS = 20;
+    public static final int DISTRIBUTED_OBJECT_NS = 20;
 
     private static final DataSerializableFactory FACTORY = createFactoryInternal();
 
@@ -120,8 +120,8 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new UnmodifiableLazyList();
                     case OPERATION_CONTROL:
                         return new OperationControl();
-                    case DEFAULT_REPLICA_FRAGMENT_NS:
-                        return new DefaultReplicaFragmentNamespace();
+                    case DISTRIBUTED_OBJECT_NS:
+                        return new DistributedObjectNamespace();
                     default:
                         return null;
                 }

@@ -19,7 +19,7 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
+import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
@@ -641,7 +641,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
             InternalPartitionServiceImpl partitionService = nodeEngine.getService(InternalPartitionService.SERVICE_NAME);
             partitionService.getReplicaManager().cancelReplicaSync(partitionId);
             partitionService.getReplicaManager().clearPartitionReplicaVersions(partitionId,
-                    InternalReplicaFragmentNamespace.INSTANCE);
+                    NonFragmentedServiceNamespace.INSTANCE);
         }
 
         @Override

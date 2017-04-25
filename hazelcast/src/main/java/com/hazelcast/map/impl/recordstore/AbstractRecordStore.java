@@ -33,7 +33,7 @@ import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
@@ -196,7 +196,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         if (lockService == null) {
             return null;
         }
-        return lockService.createLockStore(partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
+        return lockService.createLockStore(partitionId, new DistributedObjectNamespace(MapService.SERVICE_NAME, name));
     }
 
     public int getLockedEntryCount() {

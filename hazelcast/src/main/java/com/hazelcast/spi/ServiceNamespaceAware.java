@@ -17,20 +17,20 @@
 package com.hazelcast.spi;
 
 /**
- * An object which is aware of {@link ReplicaFragmentNamespace} which object itself belongs to.
+ * An object which is aware of {@link ServiceNamespace} which object itself belongs to.
  * <p>
  * {@link BackupAwareOperation}s and {@link BackupOperation}s created by {@link FragmentedMigrationAwareService}s
- * must implement {@code ReplicaFragmentAware}.
+ * must implement {@code ServiceNamespaceAware}.
  *
+ * @see ServiceNamespace
  * @see FragmentedMigrationAwareService
- * @see ReplicaFragmentNamespace
  * @since 3.9
  */
-public interface ReplicaFragmentAware {
+public interface ServiceNamespaceAware {
     /**
-     * Returns the {@code ReplicaFragmentNamespace} which this object belongs to.
+     * Returns the {@link ServiceNamespace} which this object belongs to.
      *
-     * @return replica fragment namespace
+     * @return service namespace
      */
-    ReplicaFragmentNamespace getReplicaFragmentNamespace();
+    ServiceNamespace getServiceNamespace();
 }

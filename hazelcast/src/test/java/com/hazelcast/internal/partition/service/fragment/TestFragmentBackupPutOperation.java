@@ -18,11 +18,11 @@ package com.hazelcast.internal.partition.service.fragment;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.ReplicaFragmentAware;
+import com.hazelcast.spi.ServiceNamespaceAware;
 
 import java.io.IOException;
 
-public class TestFragmentBackupPutOperation extends TestAbstractFragmentOperation implements ReplicaFragmentAware {
+public class TestFragmentBackupPutOperation extends TestAbstractFragmentOperation implements ServiceNamespaceAware {
 
     private int value;
 

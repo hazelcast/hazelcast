@@ -7,7 +7,7 @@ import com.hazelcast.internal.partition.operation.MigrationRequestOperation;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -83,7 +83,7 @@ public class MasterSplitTest extends HazelcastTestSupport {
         int partitionStateVersion = getPartitionService(member1).getPartitionStateVersion();
 
         ReplicaFragmentMigrationState migrationState
-                = new ReplicaFragmentMigrationState(Collections.<ReplicaFragmentNamespace, long[]>emptyMap(), Collections.<Operation>emptySet());
+                = new ReplicaFragmentMigrationState(Collections.<ServiceNamespace, long[]>emptyMap(), Collections.<Operation>emptySet());
         Operation op = new MigrationOperation(migration, partitionStateVersion, migrationState, true, true);
 
         InvocationBuilder invocationBuilder = getOperationServiceImpl(member1)

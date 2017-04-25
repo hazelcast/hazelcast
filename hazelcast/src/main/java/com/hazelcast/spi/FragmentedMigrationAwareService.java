@@ -22,19 +22,19 @@ import java.util.Collection;
  * {@code FragmentedMigrationAwareService} is an extension to the {@link MigrationAwareService} which allows
  * migration/replication of partition replicas in smaller fragments.
  * <p>
- * Each replica fragment is distinguished by a {@link ReplicaFragmentNamespace}, all replica data belonging to
+ * Each replica fragment is distinguished by a {@link ServiceNamespace}, all replica data belonging to
  * a specific namespace will be transferred in the same packet.
  * <p>
  * Both backup and backup aware operations created by {@code FragmentedMigrationAwareService} must implement
- * {@link ReplicaFragmentAware} interface and must know their related {@link ReplicaFragmentNamespace}s.
+ * {@link ServiceNamespaceAware} interface and must know their related {@link ServiceNamespace}s.
  * <p>
  * Fragmented migration can be enabled/disabled using configuration property
  * {@link com.hazelcast.spi.properties.GroupProperty#PARTITION_FRAGMENTED_MIGRATION_ENABLED}. Anti-entropy system which
  * detects and completes inconsistent backup replicas, always uses fragmented replication for services having support.
  *
  * @see MigrationAwareService
- * @see ReplicaFragmentNamespace
- * @see ReplicaFragmentAware
+ * @see ServiceNamespace
+ * @see ServiceNamespaceAware
  * @since 3.9
  */
 public interface FragmentedMigrationAwareService extends MigrationAwareService {
@@ -43,9 +43,9 @@ public interface FragmentedMigrationAwareService extends MigrationAwareService {
      * Returns all known namespaces for given replication event.
      *
      * @param event replication event
-     * @return all known replica fragment namespaces for the replication
+     * @return all known service namespaces for the replication
      */
-    Collection<ReplicaFragmentNamespace> getAllFragmentNamespaces(PartitionReplicationEvent event);
+    Collection<ServiceNamespace> getAllServiceNamespaces(PartitionReplicationEvent event);
 
     /**
      * Returns an operation to replicate service data and/or state for a specific partition replica and namespaces
@@ -66,6 +66,6 @@ public interface FragmentedMigrationAwareService extends MigrationAwareService {
      * @return replication operation or null if nothing will be replicated
      * @see #prepareReplicationOperation(PartitionReplicationEvent)
      */
-    Operation prepareReplicationOperation(PartitionReplicationEvent event, Collection<ReplicaFragmentNamespace> namespaces);
+    Operation prepareReplicationOperation(PartitionReplicationEvent event, Collection<ServiceNamespace> namespaces);
 
 }

@@ -18,7 +18,7 @@ package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
+import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
@@ -28,7 +28,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
@@ -40,14 +40,14 @@ import java.util.Map;
 public final class CheckReplicaVersion extends AbstractPartitionOperation
         implements PartitionAwareOperation, AllowedDuringPassiveState, Versioned {
 
-    private Map<ReplicaFragmentNamespace, Long> versions;
+    private Map<ServiceNamespace, Long> versions;
     private boolean returnResponse;
     private boolean response = true;
 
     public CheckReplicaVersion() {
     }
 
-    public CheckReplicaVersion(Map<ReplicaFragmentNamespace, Long> versions, boolean returnResponse) {
+    public CheckReplicaVersion(Map<ServiceNamespace, Long> versions, boolean returnResponse) {
         this.versions = versions;
         this.returnResponse = returnResponse;
     }
@@ -61,10 +61,10 @@ public final class CheckReplicaVersion extends AbstractPartitionOperation
 
         replicaManager.retainNamespaces(partitionId, versions.keySet());
 
-        Iterator<Map.Entry<ReplicaFragmentNamespace, Long>> iter = versions.entrySet().iterator();
+        Iterator<Map.Entry<ServiceNamespace, Long>> iter = versions.entrySet().iterator();
         while (iter.hasNext()) {
-            Map.Entry<ReplicaFragmentNamespace, Long> entry = iter.next();
-            ReplicaFragmentNamespace ns = entry.getKey();
+            Map.Entry<ServiceNamespace, Long> entry = iter.next();
+            ServiceNamespace ns = entry.getKey();
             long primaryVersion = entry.getValue();
 
             long[] currentVersions = replicaManager.getPartitionReplicaVersions(partitionId, ns);
@@ -83,7 +83,7 @@ public final class CheckReplicaVersion extends AbstractPartitionOperation
         }
     }
 
-    private void logBackupVersionMismatch(ReplicaFragmentNamespace ns, long currentVersion, long primaryVersion) {
+    private void logBackupVersionMismatch(ServiceNamespace ns, long currentVersion, long primaryVersion) {
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
             logger.finest("partitionId=" + getPartitionId() + ", replicaIndex=" + getReplicaIndex()
@@ -121,13 +121,13 @@ public final class CheckReplicaVersion extends AbstractPartitionOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
             out.writeInt(versions.size());
-            for (Map.Entry<ReplicaFragmentNamespace, Long> entry : versions.entrySet()) {
+            for (Map.Entry<ServiceNamespace, Long> entry : versions.entrySet()) {
                 out.writeObject(entry.getKey());
                 out.writeLong(entry.getValue());
             }
         } else {
             assert versions.size() == 1 : "Only single namespace is allowed before V3.9: " + versions.keySet();
-            out.writeLong(versions.get(InternalReplicaFragmentNamespace.INSTANCE));
+            out.writeLong(versions.get(NonFragmentedServiceNamespace.INSTANCE));
         }
         out.writeBoolean(returnResponse);
     }
@@ -136,16 +136,16 @@ public final class CheckReplicaVersion extends AbstractPartitionOperation
     protected void readInternal(ObjectDataInput in) throws IOException {
         if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
             int len = in.readInt();
-            versions = new HashMap<ReplicaFragmentNamespace, Long>(len);
+            versions = new HashMap<ServiceNamespace, Long>(len);
             for (int i = 0; i < len; i++) {
-                ReplicaFragmentNamespace ns = in.readObject();
+                ServiceNamespace ns = in.readObject();
                 long v = in.readLong();
                 versions.put(ns, v);
             }
         } else {
-            versions = new HashMap<ReplicaFragmentNamespace, Long>(1);
+            versions = new HashMap<ServiceNamespace, Long>(1);
             long v = in.readLong();
-            versions.put(InternalReplicaFragmentNamespace.INSTANCE, v);
+            versions.put(NonFragmentedServiceNamespace.INSTANCE, v);
         }
         returnResponse = in.readBoolean();
     }

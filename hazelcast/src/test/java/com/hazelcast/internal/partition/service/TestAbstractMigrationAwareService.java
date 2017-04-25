@@ -21,7 +21,7 @@ import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -128,5 +128,5 @@ public abstract class TestAbstractMigrationAwareService<N> implements ManagedSer
 
     public abstract String getServiceName();
 
-    public abstract ReplicaFragmentNamespace getNamespace(N name);
+    public abstract ServiceNamespace getNamespace(N name);
 }

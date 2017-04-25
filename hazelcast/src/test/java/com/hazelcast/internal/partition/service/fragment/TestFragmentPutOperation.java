@@ -20,11 +20,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReplicaFragmentAware;
+import com.hazelcast.spi.ServiceNamespaceAware;
 
 import java.io.IOException;
 
-public class TestFragmentPutOperation extends TestAbstractFragmentOperation implements BackupAwareOperation, ReplicaFragmentAware {
+public class TestFragmentPutOperation extends TestAbstractFragmentOperation implements BackupAwareOperation, ServiceNamespaceAware {
 
     private int value;
 

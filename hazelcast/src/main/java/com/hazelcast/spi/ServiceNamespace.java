@@ -19,16 +19,14 @@ package com.hazelcast.spi;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
- * {@code ReplicaFragmentNamespace} is a namespace to identify/distinguish replica fragments created by
- * {@link FragmentedMigrationAwareService}. Partition replica data belonging to the same {@code ReplicaFragmentNamespace}
- * will be transferred in the same packet.
+ * {@code ServiceNamespace} is a namespace to group objects, structures, fragments within a service.
  *
- * @see FragmentedMigrationAwareService
  * @since 3.9
  */
-public interface ReplicaFragmentNamespace extends DataSerializable {
+public interface ServiceNamespace extends DataSerializable {
     /**
-     * Name of the service which fragment belongs to
+     * Name of the service
+     *
      * @return name of the service
      */
     String getServiceName();

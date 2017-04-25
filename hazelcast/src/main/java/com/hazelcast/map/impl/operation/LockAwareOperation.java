@@ -20,7 +20,7 @@ import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 
 public abstract class LockAwareOperation extends MutatingKeyBasedMapOperation implements BlockingOperation {
@@ -50,6 +50,6 @@ public abstract class LockAwareOperation extends MutatingKeyBasedMapOperation im
 
     @Override
     public final WaitNotifyKey getWaitKey() {
-        return new LockWaitNotifyKey(new DefaultObjectNamespace(MapService.SERVICE_NAME, name), dataKey);
+        return new LockWaitNotifyKey(new DistributedObjectNamespace(MapService.SERVICE_NAME, name), dataKey);
     }
 }

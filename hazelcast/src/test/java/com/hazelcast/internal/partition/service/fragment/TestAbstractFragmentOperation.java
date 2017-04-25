@@ -19,7 +19,7 @@ package com.hazelcast.internal.partition.service.fragment;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 
 import java.io.IOException;
 
@@ -49,7 +49,7 @@ abstract class TestAbstractFragmentOperation extends Operation {
         return TestFragmentedMigrationAwareService.SERVICE_NAME;
     }
 
-    public final ReplicaFragmentNamespace getReplicaFragmentNamespace() {
-        return new TestReplicaFragmentNamespace(name);
+    public final ServiceNamespace getServiceNamespace() {
+        return new TestServiceNamespace(name);
     }
 }

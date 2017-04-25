@@ -26,7 +26,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 
@@ -75,7 +75,7 @@ public class MapForceUnlockMessageTask
     }
 
     private ObjectNamespace getNamespace() {
-        return new DefaultObjectNamespace(MapService.SERVICE_NAME, parameters.name);
+        return new DistributedObjectNamespace(MapService.SERVICE_NAME, parameters.name);
     }
 
     @Override

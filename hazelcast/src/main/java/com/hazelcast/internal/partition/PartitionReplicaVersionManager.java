@@ -17,14 +17,14 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReplicaFragmentAware;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespaceAware;
+import com.hazelcast.spi.ServiceNamespace;
 
 import java.util.Collection;
 
 /**
  * {@code PartitionReplicaVersionManager} maintains partition replica version handling.
- * It keeps versions for each partition and {@link ReplicaFragmentNamespace} pair.
+ * It keeps versions for each partition and {@link ServiceNamespace} pair.
  *
  * @since 3.9
  */
@@ -35,7 +35,7 @@ public interface PartitionReplicaVersionManager {
      * @param partitionId partition id
      * @return known namespaces for partition id
      */
-    Collection<ReplicaFragmentNamespace> getNamespaces(int partitionId);
+    Collection<ServiceNamespace> getNamespaces(int partitionId);
 
     /**
      * Returns whether given replica version is behind the current version or not.
@@ -45,7 +45,7 @@ public interface PartitionReplicaVersionManager {
      * @param replicaIndex specific replica index
      * @return true if given version is stale, false otherwise
      */
-    boolean isPartitionReplicaVersionStale(int partitionId, ReplicaFragmentNamespace namespace,
+    boolean isPartitionReplicaVersionStale(int partitionId, ServiceNamespace namespace,
                                            long[] replicaVersions, int replicaIndex);
 
     /**
@@ -54,7 +54,7 @@ public interface PartitionReplicaVersionManager {
      * @param namespace replica namespace
      * @return replica versions
      */
-    long[] getPartitionReplicaVersions(int partitionId, ReplicaFragmentNamespace namespace);
+    long[] getPartitionReplicaVersions(int partitionId, ServiceNamespace namespace);
 
     /**
      * Updates the partition replica version and triggers replica sync if the replica is dirty (e.g. the
@@ -65,7 +65,7 @@ public interface PartitionReplicaVersionManager {
      * @param replicaVersions the received replica versions
      * @param replicaIndex the index of this replica
      */
-    void updatePartitionReplicaVersions(int partitionId, ReplicaFragmentNamespace namespace,
+    void updatePartitionReplicaVersions(int partitionId, ServiceNamespace namespace,
                                         long[] replicaVersions, int replicaIndex);
 
     /**
@@ -76,15 +76,15 @@ public interface PartitionReplicaVersionManager {
      * @param backupCount number of desired backups
      * @return incremented replica versions
      */
-    long[] incrementPartitionReplicaVersions(int partitionId, ReplicaFragmentNamespace namespace, int backupCount);
+    long[] incrementPartitionReplicaVersions(int partitionId, ServiceNamespace namespace, int backupCount);
 
     /**
-     * Returns {@link ReplicaFragmentNamespace} for given operation. If operation is instance of
-     * {@link com.hazelcast.spi.ReplicaFragmentAware} then {@link ReplicaFragmentAware#getReplicaFragmentNamespace()}
-     * will be used. Otherwise {@link InternalReplicaFragmentNamespace} will be returned.
+     * Returns {@link ServiceNamespace} for given operation. If operation is instance of
+     * {@link ServiceNamespaceAware} then {@link ServiceNamespaceAware#getServiceNamespace()}
+     * will be used. Otherwise {@link NonFragmentedServiceNamespace} will be returned.
      *
      * @param operation operation
-     * @return replica fragment namespace for operation
+     * @return service namespace for operation
      */
-    ReplicaFragmentNamespace getReplicaFragmentNamespace(Operation operation);
+    ServiceNamespace getServiceNamespace(Operation operation);
 }

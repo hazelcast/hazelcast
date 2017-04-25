@@ -18,7 +18,7 @@ package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -48,7 +48,7 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelTest.class})
 public class LockStoreImplTest extends HazelcastTestSupport {
 
-    private static final ObjectNamespace OBJECT_NAME_SPACE = new DefaultObjectNamespace("service", "object");
+    private static final ObjectNamespace OBJECT_NAME_SPACE = new DistributedObjectNamespace("service", "object");
     private static final int BACKUP_COUNT = 0;
     private static final int ASYNC_BACKUP_COUNT = 0;
 

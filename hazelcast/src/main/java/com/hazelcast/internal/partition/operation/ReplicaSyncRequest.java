@@ -19,7 +19,7 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
+import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
@@ -37,7 +37,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -60,13 +60,13 @@ import static java.util.Collections.singleton;
 public final class ReplicaSyncRequest extends AbstractPartitionOperation
         implements PartitionAwareOperation, MigrationCycleOperation, Versioned {
 
-    private Collection<ReplicaFragmentNamespace> allNamespaces;
+    private Collection<ServiceNamespace> allNamespaces;
 
     public ReplicaSyncRequest() {
         allNamespaces = Collections.emptySet();
     }
 
-    public ReplicaSyncRequest(int partitionId, Collection<ReplicaFragmentNamespace> namespaces, int replicaIndex) {
+    public ReplicaSyncRequest(int partitionId, Collection<ServiceNamespace> namespaces, int replicaIndex) {
         this.allNamespaces = namespaces;
         setPartitionId(partitionId);
         setReplicaIndex(replicaIndex);
@@ -106,14 +106,14 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
             if (allNamespaces.isEmpty()) {
                 // version 3.8
                 Collection<Operation> operations = createAllReplicationOperations(event);
-                sendOperations(operations, InternalReplicaFragmentNamespace.INSTANCE);
+                sendOperations(operations, NonFragmentedServiceNamespace.INSTANCE);
             } else {
-                if (allNamespaces.remove(InternalReplicaFragmentNamespace.INSTANCE)) {
+                if (allNamespaces.remove(NonFragmentedServiceNamespace.INSTANCE)) {
                     Collection<Operation> operations = createNonFragmentedReplicationOperations(event);
-                    sendOperations(operations, InternalReplicaFragmentNamespace.INSTANCE);
+                    sendOperations(operations, NonFragmentedServiceNamespace.INSTANCE);
                 }
 
-                for (ReplicaFragmentNamespace namespace : allNamespaces) {
+                for (ServiceNamespace namespace : allNamespaces) {
                     Operation operation = createFragmentReplicationOperation(event, namespace);
                     sendOperations(singleton(operation), namespace);
                 }
@@ -123,7 +123,7 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
         }
     }
 
-    private void sendOperations(Collection<Operation> operations, ReplicaFragmentNamespace ns) throws Exception {
+    private void sendOperations(Collection<Operation> operations, ServiceNamespace ns) throws Exception {
         if (operations.isEmpty()) {
             logNoReplicaDataFound(getPartitionId(), ns, getReplicaIndex());
             sendResponse(null, ns);
@@ -173,7 +173,7 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
     }
 
     /** Send a synchronization response to the caller replica containing the replication operations to be executed */
-    private void sendResponse(Collection<Operation> operations, ReplicaFragmentNamespace ns) throws IOException {
+    private void sendResponse(Collection<Operation> operations, ServiceNamespace ns) throws IOException {
         NodeEngine nodeEngine = getNodeEngine();
 
         ReplicaSyncResponse syncResponse = createResponse(operations, ns);
@@ -187,7 +187,7 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
         operationService.send(syncResponse, target);
     }
 
-    private ReplicaSyncResponse createResponse(Collection<Operation> operations, ReplicaFragmentNamespace ns)
+    private ReplicaSyncResponse createResponse(Collection<Operation> operations, ServiceNamespace ns)
             throws IOException {
 
         int partitionId = getPartitionId();
@@ -201,7 +201,7 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
         return syncResponse;
     }
 
-    private void logNoReplicaDataFound(int partitionId, ReplicaFragmentNamespace namespace, int replicaIndex) {
+    private void logNoReplicaDataFound(int partitionId, ServiceNamespace namespace, int replicaIndex) {
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
             logger.finest("No replica data is found for partitionId=" + partitionId + ", replicaIndex=" + replicaIndex
@@ -238,7 +238,7 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
             out.writeInt(allNamespaces.size());
-            for (ReplicaFragmentNamespace namespace : allNamespaces) {
+            for (ServiceNamespace namespace : allNamespaces) {
                 out.writeObject(namespace);
             }
         }
@@ -248,9 +248,9 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
     protected void readInternal(ObjectDataInput in) throws IOException {
         if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
             int len = in.readInt();
-            allNamespaces = new ArrayList<ReplicaFragmentNamespace>(len);
+            allNamespaces = new ArrayList<ServiceNamespace>(len);
             for (int i = 0; i < len; i++) {
-                ReplicaFragmentNamespace ns = in.readObject();
+                ServiceNamespace ns = in.readObject();
                 allNamespaces.add(ns);
             }
         }

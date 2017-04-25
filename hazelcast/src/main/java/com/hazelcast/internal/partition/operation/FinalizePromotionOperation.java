@@ -26,7 +26,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 
 import java.util.Arrays;
 
@@ -101,7 +101,7 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
             InternalPartitionServiceImpl partitionService = getService();
             PartitionReplicaVersionManager partitionReplicaVersionManager = partitionService.getPartitionReplicaVersionManager();
 
-            for (ReplicaFragmentNamespace namespace : partitionReplicaVersionManager.getNamespaces(partitionId)) {
+            for (ServiceNamespace namespace : partitionReplicaVersionManager.getNamespaces(partitionId)) {
                 // returns the internal array itself, not the copy
                 long[] versions = partitionReplicaVersionManager.getPartitionReplicaVersions(partitionId, namespace);
 

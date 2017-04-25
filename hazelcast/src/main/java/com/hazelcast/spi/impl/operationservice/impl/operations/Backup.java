@@ -26,7 +26,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
@@ -46,7 +46,7 @@ import static com.hazelcast.spi.partition.IPartition.MAX_BACKUP_COUNT;
 public final class Backup extends Operation implements BackupOperation, IdentifiedDataSerializable {
 
     private Address originalCaller;
-    private ReplicaFragmentNamespace namespace;
+    private ServiceNamespace namespace;
     private long[] replicaVersions;
     private boolean sync;
 
@@ -98,7 +98,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
 
         ensureBackupOperationInitialized();
         PartitionReplicaVersionManager versionManager = partitionService.getPartitionReplicaVersionManager();
-        namespace = versionManager.getReplicaFragmentNamespace(backupOp);
+        namespace = versionManager.getServiceNamespace(backupOp);
 
         if (!nodeEngine.getThisAddress().equals(owner)) {
             valid = false;
