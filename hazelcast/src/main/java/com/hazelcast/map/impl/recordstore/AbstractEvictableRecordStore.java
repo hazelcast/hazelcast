@@ -19,19 +19,29 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.Evictor;
+import com.hazelcast.map.impl.operation.TouchKeysOnBackups;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.record.RecordInfo;
+import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.WeakHashMap;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.core.EntryEventType.EXPIRED;
@@ -42,23 +52,36 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.getLifeStartTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
-
+import static java.util.Collections.newSetFromMap;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Contains eviction specific functionality.
  */
 abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
+    // todo make proper assumptions here, should be overridable with (internal?) sys property
+    protected static final int MAX_EXPIRED_KEY_COUNT_IN_BATCH = 5;
+    protected static final int BACKUP_SEND_PERIOD_SECONDS = 10;
+    protected static final long BACKUP_SEND_PERIOD_MILLIS = SECONDS.toMillis(BACKUP_SEND_PERIOD_SECONDS);
+
     protected final long expiryDelayMillis;
     protected final EventService eventService;
     protected final MapEventPublisher mapEventPublisher;
     protected final Address thisAddress;
+    /**
+     * Temporarily stores keys touched by operations. These are sent to replicas for metadata upkeep and then
+     * is cleared by
+     */
+    protected final Set<Data> touchedKeys = newSetFromMap(new WeakHashMap<Data, Boolean>());
     /**
      * Iterates over a pre-set entry count/percentage in one round.
      * Used in expiration logic for traversing entries. Initializes lazily.
      */
     protected Iterator<Record> expirationIterator;
     protected volatile boolean hasEntryWithCustomTTL;
+
+    protected long latestBackupSendTimeMillis;
 
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
@@ -98,6 +121,20 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
                 break;
             }
         }
+        sendTouchedKeys();
+    }
+
+    /**
+     *
+     * @param touchedEntries
+     */
+    @Override
+    public void updateEntryMetadata(Map<Data, RecordInfo> touchedEntries) {
+       for (Map.Entry<Data, RecordInfo> touchedEntry : touchedEntries.entrySet()) {
+           Record record = storage.get(touchedEntry.getKey());
+           record.setLastAccessTime(touchedEntry.getValue().getLastAccessTime());
+           record.setHits(touchedEntry.getValue().getHits());
+       }
     }
 
     @Override
@@ -257,6 +294,45 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         updateStatsOnGet(now);
         long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
         setExpirationTime(record, maxIdleMillis);
+        touchKeysOnBackups(record.getKey());
+    }
+
+    protected void touchKeysOnBackups(Data key) {
+        if (skipTouchKeysOnBackups) {
+            return;
+        }
+        touchedKeys.add(key);
+        sendTouchedKeys();
+    }
+
+    protected void sendTouchedKeys() {
+        long now = System.currentTimeMillis();
+        if (touchedKeys.size() < MAX_EXPIRED_KEY_COUNT_IN_BATCH
+                && (now - latestBackupSendTimeMillis < BACKUP_SEND_PERIOD_MILLIS)) {
+            return;
+        }
+
+        Map<Data, RecordInfo> touchedKeysInfo = new HashMap<Data, RecordInfo>(touchedKeys.size());
+        for (Data key : touchedKeys) {
+            touchedKeysInfo.put(key, Records.buildRecordInfo(storage.get(key)));
+        }
+        touchedKeys.clear();
+
+        sendPolledKeysToBackups(touchedKeysInfo);
+    }
+
+    private void sendPolledKeysToBackups(Map<Data, RecordInfo> polledKeys) {
+        // send async backup operation
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        OperationService operationService = nodeEngine.getOperationService();
+
+        int totalBackupCount = mapContainer.getMapConfig().getTotalBackupCount();
+        for (int i = 1; i < totalBackupCount + 1; i++) {
+            Operation operation = new TouchKeysOnBackups(name, polledKeys);
+            operationService.createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId)
+                            .setReplicaIndex(i)
+                            .invoke();
+        }
     }
 
     protected void mergeRecordExpiration(Record record, EntryView mergingEntry) {

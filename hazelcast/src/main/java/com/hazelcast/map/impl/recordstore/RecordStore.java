@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
+import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.monitor.LocalRecordStoreStats;
 import com.hazelcast.nio.serialization.Data;
@@ -32,6 +33,7 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -288,6 +290,12 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
      * @param backup     <code>true</code> if a backup partition, otherwise <code>false</code>.
      */
     void evictExpiredEntries(int percentage, boolean backup);
+
+    /**
+     *
+     * @param touchedEntries
+     */
+    void updateEntryMetadata(Map<Data, RecordInfo> touchedEntries);
 
     /**
      * @return <code>true</code> if record store has at least one candidate entry
