@@ -230,13 +230,9 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
         adapter.invokeAll(keys, new ICacheReplaceEntryProcessor(), "value", "newValue");
     }
 
-    @Test
+    @Test(expected = MethodNotAvailableException.class)
     public void testClear() {
-        map.put(23, "foobar");
-
         adapter.clear();
-
-        assertEquals(0, map.size());
     }
 
     @Test(expected = MethodNotAvailableException.class)
