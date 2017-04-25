@@ -16,7 +16,12 @@
 
 package com.hazelcast.jet.windowing;
 
+import com.hazelcast.jet.Accumulators.MutableLong;
+import com.hazelcast.jet.Accumulators.MutableReference;
 import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.Distributed.BinaryOperator;
+
+import javax.annotation.Nonnull;
 
 /**
  * Utility class with factory methods for several useful windowing
@@ -30,8 +35,47 @@ public final class WindowOperations {
     /**
      * Returns an operation that counts the items in the window.
      */
-    public static <T> WindowOperation<T, ?, Long> counting() {
-        return reducing(0L, e -> 1L, Long::sum, (a, b) -> a - b);
+    public static WindowOperation<?, ?, Long> counting() {
+        return WindowOperation.of(
+                MutableLong::new,
+                (a, i) -> a.value++,
+                (a1, a2) -> {
+                    a1.value = Math.addExact(a1.value, a2.value);
+                    return a1;
+                },
+                (a1, a2) -> {
+                    // with counting, value should never go below 0, so no need for subtractExact
+                    a1.value -= a2.value;
+                    return a1;
+                },
+                a -> a.value
+        );
+    }
+
+    /**
+     * Returns an operation that sums the items in the window.
+     */
+    public static WindowOperation<Long, ?, Long> summingToLong() {
+        return WindowOperations.summingToLong(Long::longValue);
+    }
+
+    /**
+     * Returns an operation that counts the items in the window.
+     */
+    public static <T> WindowOperation<T, ?, Long> summingToLong(@Nonnull Distributed.ToLongFunction<T> mapper) {
+        return WindowOperation.of(
+                MutableLong::new,
+                (a, value) -> a.value = Math.addExact(a.value, mapper.applyAsLong(value)),
+                (a1, a2) -> {
+                    a1.value = Math.addExact(a1.value, a2.value);
+                    return a1;
+                },
+                (a1, a2) -> {
+                    a1.value = Math.subtractExact(a1.value, a2.value);
+                    return a1;
+                },
+                a -> a.value
+        );
     }
 
     /**
@@ -70,19 +114,21 @@ public final class WindowOperations {
                                                            Distributed.BinaryOperator<U> deductF) {
         return new WindowOperationImpl<>(
                 boxSupplier(identity),
-                (a, t) -> a[0] = combineF.apply(a[0], mapF.apply(t)),
+                (a, t) -> a.value = combineF.apply(a.value, mapF.apply(t)),
                 (a, b) -> {
-                    a[0] = combineF.apply(a[0], b[0]);
+                    a.value = combineF.apply(a.value, b.value);
                     return a;
                 },
-                (a, b) -> {
-                    a[0] = deductF.apply(a[0], b[0]);
-                    return a;
-                },
-                a -> a[0]);
+                deductF != null
+                        ? (BinaryOperator<MutableReference<U>>) (a, b) -> {
+                            a.value = deductF.apply(a.value, b.value);
+                            return a;
+                        }
+                        : null,
+                a -> a.value);
     }
 
-    private static <T> Distributed.Supplier<T[]> boxSupplier(T identity) {
-        return () -> (T[]) new Object[]{identity};
+    private static <T> Distributed.Supplier<MutableReference<T>> boxSupplier(T identity) {
+        return () -> new MutableReference<>(identity);
     }
 }

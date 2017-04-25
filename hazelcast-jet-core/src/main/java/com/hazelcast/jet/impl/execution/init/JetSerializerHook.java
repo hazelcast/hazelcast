@@ -17,13 +17,16 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
+import com.hazelcast.jet.Accumulators.MutableDouble;
+import com.hazelcast.jet.Accumulators.MutableInteger;
+import com.hazelcast.jet.Accumulators.MutableLong;
+import com.hazelcast.jet.Accumulators.MutableReference;
 import com.hazelcast.jet.windowing.Frame;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
-import com.hazelcast.util.MutableLong;
 
 import java.io.IOException;
 import java.util.Map;
@@ -44,7 +47,10 @@ public final class JetSerializerHook {
     public static final int CUSTOM_CLASS_LOADED_OBJECT = -301;
     public static final int OBJECT_ARRAY = -302;
     public static final int FRAME = -303;
-    public static final int MUTABLE_LONG = -304;
+    public static final int MUTABLE_INTEGER = -304;
+    public static final int MUTABLE_LONG = -305;
+    public static final int MUTABLE_DOUBLE = -306;
+    public static final int MUTABLE_REFERENCE = -307;
 
     // reserved for hadoop module -380 to -390
 
@@ -184,6 +190,44 @@ public final class JetSerializerHook {
         }
     }
 
+    public static final class MutableIntegerSerializer implements SerializerHook<MutableInteger> {
+
+        @Override
+        public Class<MutableInteger> getSerializationType() {
+            return MutableInteger.class;
+        }
+
+        @Override
+        public Serializer createSerializer() {
+            return new StreamSerializer<MutableInteger>() {
+                @Override
+                public int getTypeId() {
+                    return MUTABLE_INTEGER;
+                }
+
+                @Override
+                public void destroy() {
+
+                }
+
+                @Override
+                public void write(ObjectDataOutput out, MutableInteger object) throws IOException {
+                    out.writeInt(object.value);
+                }
+
+                @Override
+                public MutableInteger read(ObjectDataInput in) throws IOException {
+                    return new MutableInteger(in.readInt());
+                }
+            };
+        }
+
+        @Override
+        public boolean isOverwritable() {
+            return true;
+        }
+    }
+
     public static final class MutableLongSerializer implements SerializerHook<MutableLong> {
 
         @Override
@@ -211,7 +255,7 @@ public final class JetSerializerHook {
 
                 @Override
                 public MutableLong read(ObjectDataInput in) throws IOException {
-                    return MutableLong.valueOf(in.readLong());
+                    return new MutableLong(in.readLong());
                 }
             };
         }
@@ -221,4 +265,81 @@ public final class JetSerializerHook {
             return true;
         }
     }
+
+    public static final class MutableDoubleSerializer implements SerializerHook<MutableDouble> {
+
+        @Override
+        public Class<MutableDouble> getSerializationType() {
+            return MutableDouble.class;
+        }
+
+        @Override
+        public Serializer createSerializer() {
+            return new StreamSerializer<MutableDouble>() {
+                @Override
+                public int getTypeId() {
+                    return MUTABLE_DOUBLE;
+                }
+
+                @Override
+                public void destroy() {
+
+                }
+
+                @Override
+                public void write(ObjectDataOutput out, MutableDouble object) throws IOException {
+                    out.writeDouble(object.value);
+                }
+
+                @Override
+                public MutableDouble read(ObjectDataInput in) throws IOException {
+                    return new MutableDouble(in.readDouble());
+                }
+            };
+        }
+
+        @Override
+        public boolean isOverwritable() {
+            return true;
+        }
+    }
+
+    public static final class MutableObjectSerializer implements SerializerHook<MutableReference> {
+
+        @Override
+        public Class<MutableReference> getSerializationType() {
+            return MutableReference.class;
+        }
+
+        @Override
+        public Serializer createSerializer() {
+            return new StreamSerializer<MutableReference>() {
+                @Override
+                public int getTypeId() {
+                    return MUTABLE_REFERENCE;
+                }
+
+                @Override
+                public void destroy() {
+
+                }
+
+                @Override
+                public void write(ObjectDataOutput out, MutableReference object) throws IOException {
+                    out.writeObject(object.value);
+                }
+
+                @Override
+                public MutableReference read(ObjectDataInput in) throws IOException {
+                    return new MutableReference(in.readObject());
+                }
+            };
+        }
+
+        @Override
+        public boolean isOverwritable() {
+            return true;
+        }
+    }
+
 }

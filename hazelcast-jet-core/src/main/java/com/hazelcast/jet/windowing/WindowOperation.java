@@ -111,6 +111,12 @@ public interface WindowOperation<T, A, R> extends Serializable {
      * Returns a new {@code WindowOperation} object composed from the provided
      * primitives.
      *
+     * @param createAccumulatorF see {@link #createAccumulatorF()}()
+     * @param accumulateItemF see {@link #accumulateItemF()}
+     * @param combineAccumulatorsF see {@link #combineAccumulatorsF()}
+     * @param deductAccumulatorF see {@link #deductAccumulatorF()}
+     * @param finishAccumulationF see {@link #finishAccumulationF()}
+     *
      * @param <T> the type of the stream item
      * @param <A> the type of the accumulator
      * @param <R> the type of the final result
