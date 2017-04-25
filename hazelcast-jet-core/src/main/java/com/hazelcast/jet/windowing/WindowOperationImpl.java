@@ -23,6 +23,7 @@ import com.hazelcast.jet.Distributed.Function;
 import com.hazelcast.jet.Distributed.Supplier;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 class WindowOperationImpl<T, A, R> implements WindowOperation<T, A, R> {
     private final Distributed.Supplier<A> createAccumulatorF;
@@ -59,7 +60,7 @@ class WindowOperationImpl<T, A, R> implements WindowOperation<T, A, R> {
         return combineAccumulatorsF;
     }
 
-    @Override @Nonnull
+    @Override @Nullable
     public BinaryOperator<A> deductAccumulatorF() {
         return deductAccumulatorF;
     }
