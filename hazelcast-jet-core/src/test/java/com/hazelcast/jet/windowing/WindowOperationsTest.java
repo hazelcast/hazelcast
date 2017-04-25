@@ -16,38 +16,91 @@
 
 package com.hazelcast.jet.windowing;
 
+import com.hazelcast.jet.Accumulators.MutableLong;
+import com.hazelcast.jet.Accumulators.MutableReference;
+import com.hazelcast.jet.Distributed.BinaryOperator;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
 
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.function.Function;
 
+import static com.hazelcast.jet.windowing.WindowOperations.counting;
+import static com.hazelcast.jet.windowing.WindowOperations.reducing;
+import static com.hazelcast.jet.windowing.WindowOperations.summingToLong;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
-@RunWith(Parameterized.class)
+@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
 public class WindowOperationsTest {
-
-    @Parameter
-    public WindowOperation<?, ?, ?> operation;
-
-    @Parameters
-    public static Collection<WindowOperation<?, ?, ?>> data() {
-        return Arrays.asList(
-                WindowOperations.counting(),
-                WindowOperations.summingToLong(),
-                WindowOperations.reducing(1, null, null, null)
-        );
+    @Test
+    public void when_counting() {
+        validateOp(counting(), MutableLong::getValue,
+                new Object(), 1L, 2L, 1L);
     }
 
     @Test
-    public void testTwoAccumulatorsEqual() {
-        Object accumulator1 = operation.createAccumulatorF();
-        Object accumulator2 = operation.createAccumulatorF();
-
-        assertEquals("two empty accumulators not equal", accumulator1, accumulator2);
+    public void when_summingToLong() {
+        validateOp(summingToLong(), MutableLong::getValue,
+                1L, 1L, 2L, 1L);
     }
 
+    @Test
+    public void when_summingToLongWithMapper() {
+        validateOp(summingToLong(x -> 1L), MutableLong::getValue,
+                new Object(), 1L, 2L, 1L);
+    }
+
+    @Test
+    public void when_reducing() {
+        validateOp(reducing(0, Integer::valueOf, Integer::sum, (x, y) -> x - y),
+                MutableReference::getValue,
+                "1", 1, 2, 1);
+    }
+
+    private static <T, A, X, R> void validateOp(
+            WindowOperation<T, A, R> op,
+            Function<A, X> getAccValF,
+            T item,
+            X expectAcced,
+            X expectCombined,
+            R expectFinished
+    ) {
+        // Given
+        BinaryOperator<A> deductAccF = op.deductAccumulatorF();
+        assertNotNull(deductAccF);
+
+        // When
+
+        A acc1 = op.createAccumulatorF().get();
+        op.accumulateItemF().accept(acc1, item);
+
+        A acc2 = op.createAccumulatorF().get();
+        op.accumulateItemF().accept(acc2, item);
+
+        // Checks must be made early because combine/deduct
+        // are allowed to be destructive ops
+
+        // Then
+        assertEquals(expectAcced, getAccValF.apply(acc1));
+        assertEquals(expectAcced, getAccValF.apply(acc2));
+
+        // When
+        A combined = op.combineAccumulatorsF().apply(acc1, acc2);
+        // Then
+        assertEquals(expectCombined, getAccValF.apply(combined));
+
+        // When
+        A deducted = deductAccF.apply(combined, acc2);
+        // Then
+        assertEquals(expectAcced, getAccValF.apply(combined));
+
+        // When
+        R finished = op.finishAccumulationF().apply(deducted);
+        // Then
+        assertEquals(expectFinished, finished);
+    }
 }

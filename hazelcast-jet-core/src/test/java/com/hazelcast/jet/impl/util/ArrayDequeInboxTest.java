@@ -23,24 +23,59 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.*;
+import java.util.ArrayList;
+import java.util.NoSuchElementException;
+
+import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class ArrayDequeInboxTest {
+
+    private static final Integer ITEM = 1;
+
+    private ArrayDequeInbox inbox = new ArrayDequeInbox();
+
     @Before
-    public void setUp() throws Exception {
-
+    public void before() throws Exception {
+        inbox.add(ITEM);
     }
 
     @Test
-    public void poll() throws Exception {
-
+    public void when_pollNonEmpty_then_getItem() throws Exception {
+        assertEquals(ITEM, inbox.poll());
     }
 
     @Test
-    public void remove() throws Exception {
-
+    public void when_pollEmpty_then_getNull() throws Exception {
+        inbox.clear();
+        assertNull(inbox.poll());
     }
 
+    @Test
+    public void when_removeNonEmpty_then_getItem() throws Exception {
+        assertEquals(ITEM, inbox.remove());
+    }
+
+    @Test(expected = NoSuchElementException.class)
+    public void when_removeEmpty_then_getException() throws Exception {
+        inbox.clear();
+        inbox.remove();
+    }
+
+    @Test
+    public void when_drainToCollection_then_allDrained() {
+        ArrayList<Object> sink = new ArrayList<>();
+        inbox.drainTo(sink);
+        assertEquals(singletonList(ITEM), sink);
+    }
+
+    @Test
+    public void when_drainToConsumer_then_allDrained() {
+        ArrayList<Object> sink = new ArrayList<>();
+        inbox.drain(sink::add);
+        assertEquals(singletonList(ITEM), sink);
+    }
 }

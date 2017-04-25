@@ -50,6 +50,7 @@ import static org.mockito.Mockito.when;
 @RunWith(HazelcastParallelClassRunner.class)
 public class StreamFilesPTest extends JetTestSupport {
     private static final long LINE_COUNT = 1_000;
+    private static final int ASSERT_COUNT_TIMEOUT_SECONDS = 10;
 
     private File workDir;
     private StreamFilesP processor;
@@ -213,11 +214,6 @@ public class StreamFilesPTest extends JetTestSupport {
         fileOffsetsSize = processor.fileOffsets.size();
     }
 
-    private void assertEmittedCountEventually(long expected) {
-        assertTrueEventually(() -> assertTrue(emittedCount >= expected));
-        assertEquals(expected, emittedCount);
-    }
-
     private void initializeProcessor() {
         Outbox outbox = mock(Outbox.class);
         when(outbox.offer(any())).thenAnswer(item -> {
@@ -227,5 +223,17 @@ public class StreamFilesPTest extends JetTestSupport {
         Context ctx = mock(Context.class);
         when(ctx.logger()).thenReturn(new Log4jFactory().getLogger("testing"));
         processor.init(outbox, ctx);
+    }
+
+    // Asserts the eventual stable state of the item counter as follows:
+    // 1. Wait for the count to reach at least the expected value
+    // 2. Ensure the value is exactly as expceted
+    // 3. Wait a bit more
+    // 4. Ensure the value hasn't increased
+    private void assertEmittedCountEventually(long expected) throws Exception {
+        assertTrueEventually(() -> assertTrue(emittedCount >= expected), ASSERT_COUNT_TIMEOUT_SECONDS);
+        assertEquals(expected, emittedCount);
+        Thread.sleep(2000);
+        assertEquals(expected, emittedCount);
     }
 }

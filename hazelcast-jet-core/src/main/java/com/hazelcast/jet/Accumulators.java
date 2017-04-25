@@ -19,7 +19,9 @@ package com.hazelcast.jet;
 import java.util.Objects;
 
 /**
- * Collection of mutable primitive types and values.
+ * Mutable holders of primitive values and references. The classes are
+ * designed so that they have both getters/setters and the exposed value
+ * field. Depending on context, one or the other is more convenient.
  */
 public final class Accumulators {
 
@@ -27,38 +29,38 @@ public final class Accumulators {
     }
 
     /**
-     * Mutable {@code int} container.
+     * Mutable {@code int} holder.
      */
     public static class MutableInteger {
 
         /**
-         * Internal value.
+         * The holder's value.
          */
         @SuppressWarnings("checkstyle:visibilitymodifier")
         public int value;
 
         /**
-         * Create new instance with {@code value == 0}.
+         * Creates a new instance with {@code value == 0}.
          */
         public MutableInteger() {
         }
 
         /**
-         * Create new instance with specified value.
+         * Creates new instance with the given initial value.
          */
         public MutableInteger(int value) {
             this.value = value;
         }
 
         /**
-         * Get the value
+         * Returns the current value.
          */
         public int getValue() {
             return value;
         }
 
         /**
-         * Set the value
+         * Sets the value as given.
          */
         public void setValue(int value) {
             this.value = value;
@@ -66,14 +68,10 @@ public final class Accumulators {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            MutableInteger that = (MutableInteger) o;
-            return value == that.value;
+            return this == o ||
+                    o != null
+                    && this.getClass() == o.getClass()
+                    && this.value == ((MutableInteger) o).value;
         }
 
         @Override
@@ -89,38 +87,38 @@ public final class Accumulators {
 
 
     /**
-     * Mutable {@code long} container.
+     * Mutable {@code long} holder.
      */
     public static class MutableLong {
 
         /**
-         * Internal value.
+         * The holder's value.
          */
         @SuppressWarnings("checkstyle:visibilitymodifier")
         public long value;
 
         /**
-         * Create new instance with {@code value == 0}.
+         * Creates a new instance with {@code value == 0}.
          */
         public MutableLong() {
         }
 
         /**
-         * Create new instance with specified value.
+         * Creates a new instance with the specified value.
          */
         public MutableLong(long value) {
             this.value = value;
         }
 
         /**
-         * Get the value
+         * Returns the current value.
          */
         public long getValue() {
             return value;
         }
 
         /**
-         * Set the value
+         * Sets the value as given.
          */
         public void setValue(long value) {
             this.value = value;
@@ -128,14 +126,10 @@ public final class Accumulators {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            MutableLong that = (MutableLong) o;
-            return value == that.value;
+            return this == o ||
+                    o != null
+                    && this.getClass() == o.getClass()
+                    && this.value == ((MutableLong) o).value;
         }
 
         @Override
@@ -155,33 +149,33 @@ public final class Accumulators {
     public static class MutableDouble {
 
         /**
-         * Internal value.
+         * The holder's value.
          */
         @SuppressWarnings("checkstyle:visibilitymodifier")
         public double value;
 
         /**
-         * Create new instance with {@code value == 0}.
+         * Creates a new instance with {@code value == 0}.
          */
         public MutableDouble() {
         }
 
         /**
-         * Create new instance with specified value.
+         * Creates a new instance with the specified value.
          */
         public MutableDouble(double value) {
             this.value = value;
         }
 
         /**
-         * Get the value
+         * Returns the current value.
          */
         public double getValue() {
             return value;
         }
 
         /**
-         * Set the value
+         * Sets the value as given.
          */
         public void setValue(double value) {
             this.value = value;
@@ -189,14 +183,10 @@ public final class Accumulators {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            MutableDouble that = (MutableDouble) o;
-            return value == that.value;
+            return this == o ||
+                    o != null
+                    && this.getClass() == o.getClass()
+                    && this.value == ((MutableDouble) o).value;
         }
 
         @Override
@@ -211,40 +201,40 @@ public final class Accumulators {
     }
 
     /**
-     * Mutable object container.
+     * Mutable container of an object reference.
      *
      * @param <T> referenced object type
      */
     public static class MutableReference<T> {
 
         /**
-         * Internal value.
+         * The holder's value.
          */
         @SuppressWarnings("checkstyle:visibilitymodifier")
         public T value;
 
         /**
-         * Create new instance with {@code null} value.
+         * Creates a new instance with a {@code null} value.
          */
         public MutableReference() {
         }
 
         /**
-         * Create new instance with specified value.
+         * Creates a new instance with the specified value.
          */
         public MutableReference(T value) {
             this.value = value;
         }
 
         /**
-         * Get the value
+         * Returns the current value.
          */
         public T getValue() {
             return value;
         }
 
         /**
-         * Set the value
+         * Sets the value as given.
          */
         public void setValue(T value) {
             this.value = value;
@@ -252,13 +242,10 @@ public final class Accumulators {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            return Objects.equals(value, ((MutableReference<?>) o).value);
+            return this == o ||
+                    o != null
+                    && this.getClass() == o.getClass()
+                    && Objects.equals(this.value, ((MutableReference) o).value);
         }
 
         @Override

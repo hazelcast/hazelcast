@@ -35,7 +35,7 @@ public final class WindowOperations {
     /**
      * Returns an operation that counts the items in the window.
      */
-    public static WindowOperation<?, ?, Long> counting() {
+    public static WindowOperation<Object, MutableLong, Long> counting() {
         return WindowOperation.of(
                 MutableLong::new,
                 (a, i) -> a.value++,
@@ -55,14 +55,16 @@ public final class WindowOperations {
     /**
      * Returns an operation that sums the items in the window.
      */
-    public static WindowOperation<Long, ?, Long> summingToLong() {
+    public static WindowOperation<Long, MutableLong, Long> summingToLong() {
         return WindowOperations.summingToLong(Long::longValue);
     }
 
     /**
      * Returns an operation that counts the items in the window.
      */
-    public static <T> WindowOperation<T, ?, Long> summingToLong(@Nonnull Distributed.ToLongFunction<T> mapper) {
+    public static <T> WindowOperation<T, MutableLong, Long> summingToLong(
+            @Nonnull Distributed.ToLongFunction<T> mapper
+    ) {
         return WindowOperation.of(
                 MutableLong::new,
                 (a, value) -> a.value = Math.addExact(a.value, mapper.applyAsLong(value)),
@@ -74,7 +76,7 @@ public final class WindowOperations {
                     a1.value = Math.subtractExact(a1.value, a2.value);
                     return a1;
                 },
-                a -> a.value
+                MutableLong::getValue
         );
     }
 
@@ -108,12 +110,14 @@ public final class WindowOperations {
      * @param <T> type of the stream item
      * @param <U> type of the reduced result
      */
-    public static <T, U> WindowOperation<T, ?, U> reducing(U identity,
-                                                           Distributed.Function<? super T, ? extends U> mapF,
-                                                           Distributed.BinaryOperator<U> combineF,
-                                                           Distributed.BinaryOperator<U> deductF) {
+    public static <T, U> WindowOperation<T, MutableReference<U>, U> reducing(
+            U identity,
+            Distributed.Function<? super T, ? extends U> mapF,
+            Distributed.BinaryOperator<U> combineF,
+            Distributed.BinaryOperator<U> deductF
+    ) {
         return new WindowOperationImpl<>(
-                boxSupplier(identity),
+                () -> new MutableReference<>(identity),
                 (a, t) -> a.value = combineF.apply(a.value, mapF.apply(t)),
                 (a, b) -> {
                     a.value = combineF.apply(a.value, b.value);
@@ -125,10 +129,6 @@ public final class WindowOperations {
                             return a;
                         }
                         : null,
-                a -> a.value);
-    }
-
-    private static <T> Distributed.Supplier<MutableReference<T>> boxSupplier(T identity) {
-        return () -> new MutableReference<>(identity);
+                MutableReference::getValue);
     }
 }

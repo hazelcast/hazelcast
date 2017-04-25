@@ -59,7 +59,6 @@ public interface Inbox {
      */
     default <E> int drainTo(Collection<E> target) {
         int drained = 0;
-        //noinspection unchecked
         for (E o; (o = (E) poll()) != null; drained++) {
             target.add(o);
         }
@@ -73,7 +72,6 @@ public interface Inbox {
      */
     default <E> int drain(Consumer<E> consumer) {
         int consumed = 0;
-        //noinspection unchecked
         for (E o; (o = (E) poll()) != null; consumed++) {
             consumer.accept(o);
         }

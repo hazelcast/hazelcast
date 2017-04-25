@@ -250,27 +250,6 @@ public abstract class AbstractProcessor implements Processor {
         return tryProcess(4, item);
     }
 
-    protected boolean tryProcessPunc0(@Nonnull Punctuation punc) {
-        return tryProcessPunc(0, punc);
-    }
-
-    protected boolean tryProcessPunc1(@Nonnull Punctuation punc) {
-        return tryProcessPunc(1, punc);
-    }
-
-    protected boolean tryProcessPunc2(@Nonnull Punctuation punc) {
-        return tryProcessPunc(2, punc);
-    }
-
-    protected boolean tryProcessPunc3(@Nonnull Punctuation punc) {
-        return tryProcessPunc(3, punc);
-    }
-
-    @SuppressWarnings("checkstyle:magicnumber")
-    protected boolean tryProcessPunc4(@Nonnull Punctuation punc) {
-        return tryProcessPunc(4, punc);
-    }
-
     /**
      * Tries to process the supplied punctuation, which was received from the
      * edge with the supplied ordinal. May choose to process only partially
@@ -292,6 +271,27 @@ public abstract class AbstractProcessor implements Processor {
      */
     protected boolean tryProcessPunc(int ordinal, @Nonnull Punctuation punc) {
         return tryEmit(punc);
+    }
+
+    protected boolean tryProcessPunc0(@Nonnull Punctuation punc) {
+        return tryProcessPunc(0, punc);
+    }
+
+    protected boolean tryProcessPunc1(@Nonnull Punctuation punc) {
+        return tryProcessPunc(1, punc);
+    }
+
+    protected boolean tryProcessPunc2(@Nonnull Punctuation punc) {
+        return tryProcessPunc(2, punc);
+    }
+
+    protected boolean tryProcessPunc3(@Nonnull Punctuation punc) {
+        return tryProcessPunc(3, punc);
+    }
+
+    @SuppressWarnings("checkstyle:magicnumber")
+    protected boolean tryProcessPunc4(@Nonnull Punctuation punc) {
+        return tryProcessPunc(4, punc);
     }
 
     /**

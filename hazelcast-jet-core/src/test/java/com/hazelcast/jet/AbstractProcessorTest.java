@@ -31,6 +31,7 @@ import org.mockito.Mockito;
 
 import javax.annotation.Nonnull;
 
+import java.net.UnknownHostException;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
@@ -48,27 +49,31 @@ public class AbstractProcessorTest {
     private static final String MOCK_ITEM = "x";
     private static final int OUTBOX_BUCKET_COUNT = 2;
 
-    private SpecializedByOrdinal p;
+    private RegisteringMethodCallsP p;
+    private SpecializedByOrdinalP tryProcessP;
 
     private ArrayDequeInbox inbox;
     private ArrayDequeOutbox outbox;
 
     @Before
     public void before() {
-        p = new SpecializedByOrdinal();
-        final Processor.Context ctx = mock(Processor.Context.class);
-        Mockito.when(ctx.logger()).thenReturn(mock(ILogger.class));
         inbox = new ArrayDequeInbox();
         inbox.add(MOCK_ITEM);
         int[] capacities = new int[OUTBOX_BUCKET_COUNT];
         Arrays.fill(capacities, 1);
         outbox = new ArrayDequeOutbox(capacities, new ProgressTracker());
+        final Processor.Context ctx = mock(Processor.Context.class);
+        Mockito.when(ctx.logger()).thenReturn(mock(ILogger.class));
+
+        p = new RegisteringMethodCallsP();
         p.init(outbox, ctx);
+        tryProcessP = new SpecializedByOrdinalP();
+        tryProcessP.init(outbox, ctx);
     }
 
     @Test
     public void when_init_then_customInitCalled() {
-        assertTrue(p.initCalled);
+        assertTrue(tryProcessP.initCalled);
     }
 
     @Test
@@ -80,58 +85,123 @@ public class AbstractProcessorTest {
         assertNotNull(logger);
     }
 
+    @Test(expected = UnknownHostException.class)
+    public void when_customInitThrows_then_initRethrows() {
+        new AbstractProcessor() {
+            @Override
+            protected void init(@Nonnull Context context) throws Exception {
+                throw new UnknownHostException();
+            }
+        }.init(mock(Outbox.class), mock(Processor.Context.class));
+    }
+
     @Test
     public void when_process0_then_tryProcess0Called() {
         // When
-        p.process(0, inbox);
+        tryProcessP.process(0, inbox);
 
         // Then
-        p.validateReception(0, MOCK_ITEM);
+        tryProcessP.validateReception(0, MOCK_ITEM);
     }
 
     @Test
     public void when_process1_then_tryProcess1Called() {
         // When
-        p.process(1, inbox);
+        tryProcessP.process(1, inbox);
 
         // Then
-        p.validateReception(1, MOCK_ITEM);
+        tryProcessP.validateReception(1, MOCK_ITEM);
     }
 
     @Test
     public void when_process2_then_tryProcess2Called() {
         // When
-        p.process(2, inbox);
+        tryProcessP.process(2, inbox);
 
         // Then
-        p.validateReception(2, MOCK_ITEM);
+        tryProcessP.validateReception(2, MOCK_ITEM);
     }
 
     @Test
     public void when_process3_then_tryProcess3Called() {
         // When
-        p.process(3, inbox);
+        tryProcessP.process(3, inbox);
 
         // Then
-        p.validateReception(3, MOCK_ITEM);
+        tryProcessP.validateReception(3, MOCK_ITEM);
     }
 
     @Test
     public void when_process4_then_tryProcess4Called() {
         // When
-        p.process(4, inbox);
+        tryProcessP.process(4, inbox);
 
         // Then
-        p.validateReception(4, MOCK_ITEM);
+        tryProcessP.validateReception(4, MOCK_ITEM);
     }
 
     @Test
     public void when_process5_then_tryProcessCalled() {
         // When
-        p.process(5, inbox);
+        tryProcessP.process(5, inbox);
 
         // Then
-        p.validateReception(5, MOCK_ITEM);
+        tryProcessP.validateReception(5, MOCK_ITEM);
+    }
+
+    @Test(expected = UnknownHostException.class)
+    public void when_processNThrows_then_processRethrows() {
+        // Given
+        AbstractProcessor p = new AbstractProcessor() {
+            @Override
+            protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
+                throw new UnknownHostException();
+            }
+        };
+        p.init(mock(Outbox.class), mock(Processor.Context.class));
+
+        // When
+        p.process(0, inbox);
+
+        // Then don't reach this line
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void when_tryProcessNotOverridden_then_unsupportedOperation() throws Exception {
+        new AbstractProcessor() {}.tryProcess(0, MOCK_ITEM);
+    }
+
+    @Test
+    public void when_tryProcess0NotOverridden_then_delegatesToTryProcess() throws Exception {
+        // When
+        p.tryProcess0(MOCK_ITEM);
+
+        // Then
+        assertEquals(MOCK_ITEM, p.resultOfTryProcessN[0]);
+    }
+
+    @Test
+    public void when_tryProcess1NotOverridden_then_delegatesToTryProcess() throws Exception {
+        p.tryProcess1(MOCK_ITEM);
+        assertEquals(MOCK_ITEM, p.resultOfTryProcessN[1]);
+    }
+
+    @Test
+    public void when_tryProcess2NotOverridden_then_delegatesToTryProcess() throws Exception {
+        p.tryProcess2(MOCK_ITEM);
+        assertEquals(MOCK_ITEM, p.resultOfTryProcessN[2]);
+    }
+
+    @Test
+    public void when_tryProcess3NotOverridden_then_delegatesToTryProcess() throws Exception {
+        p.tryProcess3(MOCK_ITEM);
+        assertEquals(MOCK_ITEM, p.resultOfTryProcessN[3]);
+    }
+
+    @Test
+    public void when_tryProcess4NotOverridden_then_delegatesToTryProcess() throws Exception {
+        p.tryProcess4(MOCK_ITEM);
+        assertEquals(MOCK_ITEM, p.resultOfTryProcessN[4]);
     }
 
     @Test
@@ -199,13 +269,34 @@ public class AbstractProcessorTest {
         }
     }
 
-    private static class SpecializedByOrdinal extends AbstractProcessor {
+    private static class RegisteringMethodCallsP extends AbstractProcessor {
         boolean initCalled;
         Object[] resultOfTryProcessN = new Object[6];
 
         @Override
         protected void init(@Nonnull Context context) {
             initCalled = true;
+        }
+
+        @Override
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+            resultOfTryProcessN[ordinal] = item;
+            return true;
+        }
+
+        void validateReception(int ordinal, Object item) {
+            for (int i = 0; i < resultOfTryProcessN.length; i++) {
+                assertSame(i == ordinal ? item : null, resultOfTryProcessN[i]);
+            }
+        }
+    }
+
+    private static class SpecializedByOrdinalP extends RegisteringMethodCallsP {
+
+        @Override
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+            assertEquals(5, ordinal);
+            return super.tryProcess(ordinal, item);
         }
 
         @Override
@@ -236,19 +327,6 @@ public class AbstractProcessorTest {
         protected boolean tryProcess4(@Nonnull Object item) {
             resultOfTryProcessN[4] = item;
             return true;
-        }
-
-        @Override
-        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
-            assertEquals(5, ordinal);
-            resultOfTryProcessN[5] = item;
-            return true;
-        }
-
-        void validateReception(int ordinal, Object item) {
-            for (int i = 0; i < resultOfTryProcessN.length; i++) {
-                assertSame(i == ordinal ? item : null, resultOfTryProcessN[i]);
-            }
         }
     }
 }
