@@ -72,6 +72,7 @@ import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Collections.sort;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * The replicated map client side proxy implementation proxying all requests to a member node
@@ -81,12 +82,12 @@ import static java.util.Collections.sort;
  */
 public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements ReplicatedMap<K, V> {
 
-    protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
-    protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
+    private static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
+    private static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
 
     private int targetPartitionId;
 
-    private volatile NearCache nearCache;
+    private volatile NearCache<K, V> nearCache;
     private volatile String invalidationListenerId;
 
     public ClientReplicatedMapProxy(String serviceName, String objectName) {
@@ -104,12 +105,11 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     private void initNearCache() {
         ClientContext context = getContext();
         NearCacheConfig nearCacheConfig = context.getClientConfig().getNearCacheConfig(name);
-        if (nearCacheConfig == null) {
-            return;
-        }
-        nearCache = context.getNearCacheManager().getOrCreateNearCache(name, nearCacheConfig);
-        if (nearCacheConfig.isInvalidateOnChange()) {
-            addNearCacheInvalidateListener();
+        if (nearCacheConfig != null) {
+            nearCache = context.getNearCacheManager().getOrCreateNearCache(name, nearCacheConfig);
+            if (nearCacheConfig.isInvalidateOnChange()) {
+                addNearCacheInvalidateListener();
+            }
         }
     }
 
@@ -126,13 +126,17 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data valueData = toData(value);
-        Data keyData = toData(key);
-        ClientMessage request = ReplicatedMapPutCodec.encodeRequest(name, keyData, valueData, timeUnit.toMillis(ttl));
-        ClientMessage response = invoke(request, keyData);
-        ReplicatedMapPutCodec.ResponseParameters result = ReplicatedMapPutCodec.decodeResponse(response);
+        try {
+            Data valueData = toData(value);
+            Data keyData = toData(key);
+            ClientMessage request = ReplicatedMapPutCodec.encodeRequest(name, keyData, valueData, timeUnit.toMillis(ttl));
+            ClientMessage response = invoke(request, keyData);
+            ReplicatedMapPutCodec.ResponseParameters result = ReplicatedMapPutCodec.decodeResponse(response);
 
-        return toObject(result.response);
+            return toObject(result.response);
+        } finally {
+            invalidate(key);
+        }
     }
 
     @Override
@@ -172,65 +176,82 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     }
 
     @Override
-    public V get(Object key) {
-        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+    public V get(Object userKey) {
+        K key = validateKey(userKey);
 
-        Object cachedValue = getCachedValue(key);
+        V cachedValue = getCachedValue(key);
         if (cachedValue != NOT_CACHED) {
-            return (V) cachedValue;
+            return cachedValue;
         }
 
-        Data keyData = toData(key);
-        V value;
         try {
+            Data keyData = toData(key);
             long reservationId = tryReserveForUpdate(key);
             ClientMessage request = ReplicatedMapGetCodec.encodeRequest(name, keyData);
             ClientMessage response = invoke(request, keyData);
 
             ReplicatedMapGetCodec.ResponseParameters result = ReplicatedMapGetCodec.decodeResponse(response);
-            value = toObject(result.response);
+            V value = toObject(result.response);
             tryPublishReserved(key, value, reservationId);
+            return value;
         } catch (Throwable t) {
             invalidate(key);
             throw rethrow(t);
         }
-        return value;
     }
 
     @Override
     public V put(K key, V value) {
-        return put(key, value, 0, TimeUnit.MILLISECONDS);
+        return put(key, value, 0, MILLISECONDS);
     }
 
     @Override
-    public V remove(Object key) {
-        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+    public V remove(Object userKey) {
+        K key = validateKey(userKey);
 
-        Data keyData = toData(key);
-        ClientMessage request = ReplicatedMapRemoveCodec.encodeRequest(name, keyData);
-        ClientMessage response = invoke(request, keyData);
-        ReplicatedMapRemoveCodec.ResponseParameters result = ReplicatedMapRemoveCodec.decodeResponse(response);
-        return toObject(result.response);
-    }
-
-    @Override
-    public void putAll(Map<? extends K, ? extends V> m) {
-        List<Entry<Data, Data>> dataEntries = new ArrayList<Entry<Data, Data>>(m.size());
-        for (Entry<? extends K, ? extends V> entry : m.entrySet()) {
-            Data keyData = toData(entry.getKey());
-            Data valueData = toData(entry.getValue());
-
-            dataEntries.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyData, valueData));
+        try {
+            Data keyData = toData(key);
+            ClientMessage request = ReplicatedMapRemoveCodec.encodeRequest(name, keyData);
+            ClientMessage response = invoke(request, keyData);
+            ReplicatedMapRemoveCodec.ResponseParameters result = ReplicatedMapRemoveCodec.decodeResponse(response);
+            return toObject(result.response);
+        } finally {
+            invalidate(key);
         }
+    }
 
-        ClientMessage request = ReplicatedMapPutAllCodec.encodeRequest(name, dataEntries);
-        invoke(request);
+    @Override
+    public void putAll(Map<? extends K, ? extends V> map) {
+        try {
+            List<Entry<Data, Data>> dataEntries = new ArrayList<Entry<Data, Data>>(map.size());
+            for (Entry<? extends K, ? extends V> entry : map.entrySet()) {
+                Data keyData = toData(entry.getKey());
+                Data valueData = toData(entry.getValue());
+
+                dataEntries.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyData, valueData));
+            }
+
+            ClientMessage request = ReplicatedMapPutAllCodec.encodeRequest(name, dataEntries);
+            invoke(request);
+        } finally {
+            if (nearCache != null) {
+                for (K key : map.keySet()) {
+                    invalidate(key);
+                }
+            }
+        }
     }
 
     @Override
     public void clear() {
-        ClientMessage request = ReplicatedMapClearCodec.encodeRequest(name);
-        invoke(request);
+        try {
+            ClientMessage request = ReplicatedMapClearCodec.encodeRequest(name);
+            invoke(request);
+        } finally {
+            if (nearCache != null) {
+                nearCache.clear();
+            }
+        }
     }
 
     @Override
@@ -412,7 +433,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         return new ResultSet<K, V>(entries, IterationType.ENTRY);
     }
 
-    private EventHandler<ClientMessage> createHandler(final EntryListener<K, V> listener) {
+    private EventHandler<ClientMessage> createHandler(EntryListener<K, V> listener) {
         return new ReplicatedMapEventHandler(listener);
     }
 
@@ -461,25 +482,28 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         return "ReplicatedMap{" + "name='" + name + '\'' + '}';
     }
 
-    private Object getCachedValue(Object key) {
+    @SuppressWarnings("unchecked")
+    private K validateKey(Object key) {
+        return checkNotNull((K) key, NULL_KEY_IS_NOT_ALLOWED);
+    }
+
+    @SuppressWarnings("unchecked")
+    private V getCachedValue(K key) {
         if (nearCache == null) {
-            return NOT_CACHED;
+            return (V) NOT_CACHED;
         }
 
-        Object value = nearCache.get(key);
-
+        V value = nearCache.get(key);
         if (value == null) {
-            return NOT_CACHED;
+            return (V) NOT_CACHED;
         }
-
         if (value == CACHED_AS_NULL) {
             return null;
         }
-
         return toObject(value);
     }
 
-    private void tryPublishReserved(Object key, V value, long reservationId) {
+    private void tryPublishReserved(K key, V value, long reservationId) {
         if (nearCache == null) {
             return;
         }
@@ -488,23 +512,24 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         }
     }
 
-    private long tryReserveForUpdate(Object key) {
+    private long tryReserveForUpdate(K key) {
         if (nearCache == null) {
             return NOT_RESERVED;
         }
         return nearCache.tryReserveForUpdate(key);
     }
 
-    protected void invalidate(Object key) {
+    private void invalidate(K key) {
         if (nearCache == null) {
             return;
         }
-
         nearCache.remove(key);
     }
 
-    private class ReplicatedMapEventHandler extends ReplicatedMapAddEntryListenerCodec.AbstractEventHandler
+    private class ReplicatedMapEventHandler
+            extends ReplicatedMapAddEntryListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
+
         private final EntryListener<K, V> listener;
 
         ReplicatedMapEventHandler(EntryListener<K, V> listener) {
@@ -512,8 +537,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         }
 
         @Override
-        public void handle(Data keyData, Data valueData, Data oldValueData, Data mergingValue,
-                           int eventTypeId, String uuid, int numberOfAffectedEntries) {
+        public void handle(Data keyData, Data valueData, Data oldValueData, Data mergingValue, int eventTypeId, String uuid,
+                           int numberOfAffectedEntries) {
             Member member = getContext().getClusterService().getMember(uuid);
             EntryEventType eventType = EntryEventType.getByType(eventTypeId);
             EntryEvent<K, V> entryEvent = new DataAwareEntryEvent<K, V>(member, eventTypeId, name, keyData,
@@ -568,15 +593,16 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         }
 
         @Override
-        public void handle(Data key, Data value, Data oldValue, Data mergingValue,
-                           int eventType, String uuid, int numberOfAffectedEntries) {
+        public void handle(Data dataKey, Data value, Data oldValue, Data mergingValue, int eventType, String uuid,
+                           int numberOfAffectedEntries) {
             EntryEventType entryEventType = EntryEventType.getByType(eventType);
             switch (entryEventType) {
                 case ADDED:
                 case REMOVED:
                 case UPDATED:
                 case EVICTED:
-                    nearCache.remove(toObject(key));
+                    K key = toObject(dataKey);
+                    nearCache.remove(key);
                     break;
                 case CLEAR_ALL:
                     nearCache.clear();

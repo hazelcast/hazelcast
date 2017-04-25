@@ -48,8 +48,9 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     }
 
     @Override
+    @MethodNotAvailable
     public void set(K key, V value) {
-        map.put(key, value);
+        throw new MethodNotAvailableException();
     }
 
     @Override
