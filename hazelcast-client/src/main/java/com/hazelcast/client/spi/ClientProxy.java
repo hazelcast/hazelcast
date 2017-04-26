@@ -30,6 +30,8 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
 
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+
 /**
  * Base class for client proxies.
  *
@@ -101,7 +103,7 @@ public abstract class ClientProxy implements DistributedObject {
                 new ClientInvocation(getClient(), clientMessage).invoke().get();
                 postDestroy();
             } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
+                throw rethrow(e);
             }
         }
     }
@@ -153,7 +155,7 @@ public abstract class ClientProxy implements DistributedObject {
             final Future future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke();
             return (T) future.get();
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -171,7 +173,7 @@ public abstract class ClientProxy implements DistributedObject {
             final Future future = new ClientInvocation(getClient(), clientMessage).invoke();
             return (T) future.get();
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
