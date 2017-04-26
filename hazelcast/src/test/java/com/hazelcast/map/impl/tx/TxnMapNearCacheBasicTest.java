@@ -63,7 +63,7 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     @Parameter
     public InMemoryFormat inMemoryFormat;
 
-    private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory(2);
+    private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory();
 
     @Parameters(name = "format:{0}")
     public static Collection<Object[]> parameters() {
@@ -88,26 +88,31 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
 
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean loaderEnabled) {
-        Config config = getConfig();
-        config.getMapConfig(DEFAULT_NEAR_CACHE_NAME).setNearCacheConfig(nearCacheConfig);
+        Config configWithNearCache = getConfig();
+        configWithNearCache.getMapConfig(DEFAULT_NEAR_CACHE_NAME).setNearCacheConfig(nearCacheConfig);
 
-        HazelcastInstance[] instances = hazelcastFactory.newInstances(config);
-        HazelcastInstance member = instances[0];
+        Config config = getConfig();
+
+        HazelcastInstance nearCacheInstance = hazelcastFactory.newHazelcastInstance(configWithNearCache);
+        HazelcastInstance dataInstance = hazelcastFactory.newHazelcastInstance(config);
 
         // this creates the Near Cache instance
-        member.getMap(DEFAULT_NEAR_CACHE_NAME);
+        nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
 
-        NearCacheManager nearCacheManager = getMapNearCacheManager(member);
+        NearCacheManager nearCacheManager = getMapNearCacheManager(nearCacheInstance);
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
 
         return new NearCacheTestContext<K, V, Data, String>(
-                getSerializationService(member),
-                member,
-                new TransactionalMapDataStructureAdapter<K, V>(member, DEFAULT_NEAR_CACHE_NAME),
+                getSerializationService(nearCacheInstance),
+                nearCacheInstance,
+                dataInstance,
+                new TransactionalMapDataStructureAdapter<K, V>(nearCacheInstance, DEFAULT_NEAR_CACHE_NAME),
+                new TransactionalMapDataStructureAdapter<K, V>(dataInstance, DEFAULT_NEAR_CACHE_NAME),
                 nearCacheConfig,
                 false,
                 nearCache,
-                nearCacheManager);
+                nearCacheManager,
+                null);
     }
 
     /**
