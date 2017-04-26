@@ -143,7 +143,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     protected void saveIndex(Record record, Object oldValue) {
         Data dataKey = record.getKey();
-        final Indexes indexes = mapContainer.getIndexes();
+        final Indexes indexes = mapContainer.getIndexes(partitionId);
         if (indexes.hasIndex()) {
             Object value = Records.getValueOrCachedValue(record, serializationService);
             // When using format InMemoryFormat.NATIVE, just copy key & value to heap.
@@ -159,7 +159,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
 
     protected void removeIndex(Record record) {
-        Indexes indexes = mapContainer.getIndexes();
+        Indexes indexes = mapContainer.getIndexes(partitionId);
         if (indexes.hasIndex()) {
             Data key = record.getKey();
             Object value = Records.getValueOrCachedValue(record, serializationService);
@@ -180,7 +180,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     protected void removeIndex(Collection<Record> records) {
-        Indexes indexes = mapContainer.getIndexes();
+        Indexes indexes = mapContainer.getIndexes(partitionId);
         if (!indexes.hasIndex()) {
             return;
         }

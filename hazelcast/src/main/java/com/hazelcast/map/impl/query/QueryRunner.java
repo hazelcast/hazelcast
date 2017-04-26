@@ -24,11 +24,13 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
@@ -78,7 +80,7 @@ public class QueryRunner {
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
 
         // first we optimize the query
-        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes());
+        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(0));
 
         // then we try to run using an index, but if that doesn't work, we'll try a full table scan
         // This would be the point where a query-plan should be added. It should determine f a full table scan
@@ -117,7 +119,7 @@ public class QueryRunner {
             return null;
         }
 
-        Collection<QueryableEntry> entries = mapContainer.getIndexes().query(predicate);
+        Collection<QueryableEntry> entries = runIndexOnOwnedPartitions(predicate, mapContainer);
         if (entries == null) {
             return null;
         }
@@ -132,6 +134,25 @@ public class QueryRunner {
             return entries;
         }
         return null;
+    }
+
+    private Collection<QueryableEntry> runIndexOnOwnedPartitions(Predicate predicate, MapContainer mapContainer) {
+        Collection<Integer> ownedPartitions = mapServiceContext.getOwnedPartitions();
+        Collection<QueryableEntry> entries = null;
+        for (int partitionId : ownedPartitions) {
+            Indexes indexes = mapContainer.getIndexes(partitionId);
+            if (indexes == null) {
+                continue;
+            }
+            Collection<QueryableEntry> partitionEntries = indexes.query(predicate);
+            if (partitionEntries != null) {
+                if (entries == null) {
+                    entries = new ArrayList<QueryableEntry>();
+                }
+                entries.addAll(partitionEntries);
+            }
+        }
+        return entries;
     }
 
     protected Collection<QueryableEntry> runUsingPartitionScanSafely(String name, Predicate predicate,
@@ -158,7 +179,7 @@ public class QueryRunner {
     Result runPartitionScanQueryOnGivenOwnedPartition(Query query, int partitionId)
             throws ExecutionException, InterruptedException {
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
-        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes());
+        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
         Collection<QueryableEntry> entries = partitionScanExecutor.execute(query.getMapName(), predicate,
                 Collections.singletonList(partitionId));
         return populateTheResult(query, entries, Collections.singletonList(partitionId));

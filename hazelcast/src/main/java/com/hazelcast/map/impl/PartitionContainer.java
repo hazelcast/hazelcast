@@ -18,7 +18,9 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
@@ -43,6 +45,10 @@ public class PartitionContainer {
     final MapService mapService;
     final int partitionId;
     final ConcurrentMap<String, RecordStore> maps = new ConcurrentHashMap<String, RecordStore>(1000);
+
+    final ConcurrentMap<String, Indexes> indexes = new ConcurrentHashMap<String, Indexes>(10);
+
+
     final ConstructorFunction<String, RecordStore> recordStoreConstructor
             = new ConstructorFunction<String, RecordStore>() {
 
@@ -111,6 +117,11 @@ public class PartitionContainer {
         keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getMaxSizeConfig()));
         keyLoader.setHasBackup(mapConfig.getTotalBackupCount() > 0);
         keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
+
+        InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
+        Indexes indexesForMap = new Indexes(ss, mapContainer.getExtractors());
+        indexes.putIfAbsent(name, indexesForMap);
+
         RecordStore recordStore = serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);
         recordStore.init();
         return recordStore;
@@ -223,6 +234,22 @@ public class PartitionContainer {
 
     public void setLastCleanupTimeCopy(long lastCleanupTimeCopy) {
         this.lastCleanupTimeCopy = lastCleanupTimeCopy;
+    }
+
+    public Indexes getIndexes(String name) {
+        Indexes ixs = indexes.get(name);
+        if (ixs == null) {
+
+            InternalSerializationService ss = (InternalSerializationService)
+                    mapService.getMapServiceContext().getNodeEngine().getSerializationService();
+            Indexes indexesForMap = new Indexes(ss, mapService.getMapServiceContext().getMapContainer(name).getExtractors());
+            ixs = indexes.putIfAbsent(name, indexesForMap);
+            if (ixs == null) {
+                ixs = indexesForMap;
+            }
+
+        }
+        return ixs;
     }
 
 }

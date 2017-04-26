@@ -67,7 +67,6 @@ public class MapContainer {
     protected final String name;
     protected final String quorumName;
     protected final MapServiceContext mapServiceContext;
-    protected final Indexes indexes;
     protected final Extractors extractors;
     protected final PartitioningStrategy partitioningStrategy;
     protected final MapStoreContext mapStoreContext;
@@ -108,7 +107,6 @@ public class MapContainer {
         this.objectNamespace = new DistributedObjectNamespace(MapService.SERVICE_NAME, name);
         initWanReplication(nodeEngine);
         this.extractors = new Extractors(mapConfig.getMapAttributeConfigs(), config.getClassLoader());
-        this.indexes = new Indexes((InternalSerializationService) serializationService, extractors);
         this.mapStoreContext = createMapStoreContext(this);
         this.mapStoreContext.start();
         initEvictor();
@@ -178,8 +176,8 @@ public class MapContainer {
         return mapServiceContext.getPartitioningStrategy(mapConfig.getName(), mapConfig.getPartitioningStrategyConfig());
     }
 
-    public Indexes getIndexes() {
-        return indexes;
+    public Indexes getIndexes(int partitionId) {
+        return mapServiceContext.getPartitionContainer(partitionId).getIndexes(name);
     }
 
     public WanReplicationPublisher getWanReplicationPublisher() {
@@ -289,7 +287,10 @@ public class MapContainer {
     }
 
     public boolean shouldCloneOnEntryProcessing() {
-        return getIndexes().hasIndex() && OBJECT.equals(mapConfig.getInMemoryFormat());
+        // TODO
+        int firstPartitionId = mapServiceContext.getOwnedPartitions().iterator().next();
+        Indexes indexes = getIndexes(firstPartitionId);
+        return indexes != null && indexes.hasIndex() && OBJECT.equals(mapConfig.getInMemoryFormat());
     }
 
     public ObjectNamespace getObjectNamespace() {

@@ -21,6 +21,7 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -38,6 +39,7 @@ import com.hazelcast.util.collection.Int2ObjectHashMap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -118,25 +120,42 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
         // get indexes
         MapService mapService = nodeEngine.getService(SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        Indexes indexes = mapServiceContext.getMapContainer(name).getIndexes();
-        // optimize predicate
-        QueryOptimizer queryOptimizer = mapServiceContext.getQueryOptimizer();
-        predicate = queryOptimizer.optimize(predicate, indexes);
+        Set<QueryableEntry> result = queryAllPartitions(mapServiceContext);
 
-        Set<QueryableEntry> querySet = indexes.query(predicate);
-        if (querySet == null) {
+        if (result == null) {
             return emptySet();
         }
 
         List<Data> keys = null;
-        for (QueryableEntry e : querySet) {
+        for (QueryableEntry e : result) {
             if (keys == null) {
-                keys = new ArrayList<Data>(querySet.size());
+                keys = new ArrayList<Data>(result.size());
             }
             keys.add(e.getKeyData());
         }
 
         return keys == null ? Collections.<Data>emptySet() : newBuilder(keys).build();
+    }
+
+    private Set<QueryableEntry> queryAllPartitions(MapServiceContext mapServiceContext) {
+        // TODO optimize this code (index-per-partition)
+        Set<QueryableEntry> result = null;
+        Predicate optimizedPredicate = null;
+        for (PartitionContainer partitionContainer : mapServiceContext.getPartitionContainers()) {
+            final Indexes indexes = partitionContainer.getIndexes(name);
+            if (optimizedPredicate == null) {
+                QueryOptimizer queryOptimizer = mapServiceContext.getQueryOptimizer();
+                optimizedPredicate = queryOptimizer.optimize(predicate, indexes);
+            }
+            Set<QueryableEntry> querySet = indexes.query(predicate);
+            if (querySet != null) {
+                if (result == null) {
+                    result = new HashSet<QueryableEntry>();
+                }
+                result.addAll(querySet);
+            }
+        }
+        return result;
     }
 
     private Map<Integer, List<Data>> getPartitionIdToKeysMap(Set<Data> keys, InternalPartitionService partitionService) {

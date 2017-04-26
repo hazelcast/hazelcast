@@ -43,7 +43,7 @@ class MapPostJoinAwareService implements PostJoinAwareService {
         PostJoinMapOperation o = new PostJoinMapOperation();
         final Map<String, MapContainer> mapContainers = mapServiceContext.getMapContainers();
         for (MapContainer mapContainer : mapContainers.values()) {
-            o.addMapIndex(mapContainer);
+            o.addMapIndex(mapServiceContext, mapContainer);
             o.addMapInterceptors(mapContainer);
         }
         List<AccumulatorInfo> infoList = getAccumulatorInfoList();

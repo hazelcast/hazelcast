@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfoSupplier;
@@ -57,14 +58,16 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
         return MapService.SERVICE_NAME;
     }
 
-    public void addMapIndex(MapContainer mapContainer) {
-        final Indexes indexes = mapContainer.getIndexes();
-        if (indexes.hasIndex()) {
-            MapIndexInfo mapIndexInfo = new MapIndexInfo(mapContainer.getName());
-            for (Index index : indexes.getIndexes()) {
-                mapIndexInfo.addIndexInfo(index.getAttributeName(), index.isOrdered());
+    public void addMapIndex(MapServiceContext mapServiceContext, MapContainer mapContainer) {
+        for (PartitionContainer partitionContainer : mapServiceContext.getPartitionContainers()) {
+            final Indexes indexes = partitionContainer.getIndexes(mapContainer.getName());
+            if (indexes != null && indexes.hasIndex()) {
+                MapIndexInfo mapIndexInfo = new MapIndexInfo(mapContainer.getName());
+                for (Index index : indexes.getIndexes()) {
+                    mapIndexInfo.addIndexInfo(index.getAttributeName(), index.isOrdered());
+                }
+                indexInfoList.add(mapIndexInfo);
             }
-            indexInfoList.add(mapIndexInfo);
         }
     }
 
@@ -136,10 +139,11 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
         MapService mapService = getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         for (MapIndexInfo mapIndex : indexInfoList) {
-            final MapContainer mapContainer = mapServiceContext.getMapContainer(mapIndex.mapName);
-            final Indexes indexes = mapContainer.getIndexes();
-            for (MapIndexInfo.IndexInfo indexInfo : mapIndex.lsIndexes) {
-                indexes.addOrGetIndex(indexInfo.attributeName, indexInfo.ordered);
+            for (PartitionContainer partitionContainer : mapServiceContext.getPartitionContainers()) {
+                final Indexes indexes = partitionContainer.getIndexes(mapIndex.mapName);
+                for (MapIndexInfo.IndexInfo indexInfo : mapIndex.lsIndexes) {
+                    indexes.addOrGetIndex(indexInfo.attributeName, indexInfo.ordered);
+                }
             }
         }
         for (InterceptorInfo interceptorInfo : interceptorInfoList) {
