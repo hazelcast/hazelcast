@@ -121,13 +121,28 @@ public final class ProxyRegistry {
 
     /**
      * Retrieves a DistributedObject proxy or creates it if it is not available.
+     * DistributedObject will be initialized by calling {@link InitializingObject#initialize()},
+     * if it implements {@link InitializingObject}.
+     *
+     * @param name         The name of the DistributedObject proxy object to retrieve or create.
+     * @param publishEvent true if a DistributedObjectEvent should be fired.
+     * @return The DistributedObject instance.
+     */
+    public DistributedObject getOrCreateProxy(String name, boolean publishEvent) {
+        DistributedObjectFuture proxyFuture = getOrCreateProxyFuture(name, publishEvent, true);
+        return proxyFuture.get();
+    }
+
+    /**
+     * Retrieves a DistributedObjectFuture or creates it if it is not available.
+     * If {@code initialize} is false and DistributedObject implements {@link InitializingObject},
+     * {@link InitializingObject#initialize()} will be called before {@link DistributedObjectFuture#get()} returns.
      *
      * @param name         The name of the DistributedObject proxy object to retrieve or create.
      * @param publishEvent true if a DistributedObjectEvent should be fired.
      * @param initialize   true if the DistributedObject proxy object should be initialized.
-     * @return The DistributedObject instance.
      */
-    DistributedObject getOrCreateProxy(String name, boolean publishEvent, boolean initialize) {
+    public DistributedObjectFuture getOrCreateProxyFuture(String name, boolean publishEvent, boolean initialize) {
         DistributedObjectFuture proxyFuture = proxies.get(name);
         if (proxyFuture == null) {
             if (!proxyService.nodeEngine.isRunning()) {
@@ -135,17 +150,16 @@ public final class ProxyRegistry {
             }
             proxyFuture = createProxy(name, publishEvent, initialize);
             if (proxyFuture == null) {
-                // warning; recursive call! I (@mdogan) do not think this will ever cause a stack overflow..
-                return getOrCreateProxy(name, publishEvent, initialize);
+                return getOrCreateProxyFuture(name, publishEvent, initialize);
             }
         }
-        return proxyFuture.get();
+        return proxyFuture;
     }
 
     /**
      * Creates a DistributedObject proxy if it is not created yet
      *
-     * @param name         The name of the istributedObject proxy object.
+     * @param name         The name of the distributedObject proxy object.
      * @param publishEvent true if a DistributedObjectEvent should be fired.
      * @param initialize   true if he DistributedObject proxy object should be initialized.
      * @return The DistributedObject instance if it is created by this method, null otherwise.
@@ -181,7 +195,7 @@ public final class ProxyRegistry {
                     throw e;
                 }
             }
-            proxyFuture.set(proxy);
+            proxyFuture.set(proxy, initialize);
         } catch (Throwable e) {
             // proxy creation or initialization failed
             // deregister future to avoid infinite hang on future.get()
