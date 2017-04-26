@@ -65,8 +65,8 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class BasicMapTest extends HazelcastTestSupport {
 
-    static final int INSTANCE_COUNT = 3;
-    static final Random RANDOM = new Random();
+    private static final int INSTANCE_COUNT = 3;
+    private static final Random RANDOM = new Random();
 
     HazelcastInstance[] instances;
 
@@ -994,8 +994,6 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     private static class StartsWithPredicate implements Predicate<Object, Object>, Serializable {
 
-        private static final long serialVersionUID = 4193947125511602220L;
-
         String pref;
 
         StartsWithPredicate(String pref) {
@@ -1568,8 +1566,6 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     private static class SampleEntryProcessor implements EntryProcessor<Integer, Integer>, EntryBackupProcessor<Integer, Integer>,
             Serializable {
-
-        private static final long serialVersionUID = -5735493325953375570L;
 
         @Override
         public Object process(Map.Entry<Integer, Integer> entry) {
