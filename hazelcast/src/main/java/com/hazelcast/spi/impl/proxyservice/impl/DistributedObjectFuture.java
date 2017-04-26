@@ -28,8 +28,8 @@ public class DistributedObjectFuture {
     // non-initialized distributed object
     private volatile DistributedObject rawProxy;
 
-    boolean isSet() {
-        return proxy != null || error != null || rawProxy != null;
+    boolean isSetAndInitialized() {
+        return proxy != null || error != null;
     }
 
     public DistributedObject get() {
