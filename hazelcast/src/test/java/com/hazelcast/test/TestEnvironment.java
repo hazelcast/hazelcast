@@ -19,11 +19,19 @@ package com.hazelcast.test;
 public final class TestEnvironment {
 
     public static final String HAZELCAST_TEST_USE_NETWORK = "hazelcast.test.use.network";
+    public static final String EXECUTE_COMPATIBILITY_TESTS = "hazelcast.test.compatibility";
 
     private TestEnvironment() {
     }
 
     public static boolean isMockNetwork() {
         return !Boolean.getBoolean(HAZELCAST_TEST_USE_NETWORK);
+    }
+
+    /**
+     * @return {@code true} when compatibility tests are to be executed on a mixed version cluster
+     */
+    public static boolean isRunningCompatibilityTest() {
+        return Boolean.getBoolean(EXECUTE_COMPATIBILITY_TESTS);
     }
 }

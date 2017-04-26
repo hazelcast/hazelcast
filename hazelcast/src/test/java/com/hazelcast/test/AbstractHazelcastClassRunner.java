@@ -21,6 +21,13 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.util.EmptyStatement;
+import net.bytebuddy.agent.ByteBuddyAgent;
+import net.bytebuddy.agent.builder.AgentBuilder;
+import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.dynamic.DynamicType;
+import net.bytebuddy.jar.asm.Opcodes;
+import net.bytebuddy.matcher.ElementMatcher;
+import net.bytebuddy.utility.JavaModule;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,6 +41,7 @@ import org.junit.runners.model.Statement;
 import org.junit.runners.model.TestClass;
 
 import java.lang.annotation.Annotation;
+import java.lang.instrument.Instrumentation;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
@@ -46,6 +54,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static java.lang.Integer.getInteger;
 
 /**
@@ -63,15 +72,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     private static final boolean THREAD_CONTENTION_INFO_AVAILABLE;
 
     static {
-        TestLoggingUtils.initializeLogging();
-        if (System.getProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK) == null) {
-            System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "false");
-        }
-        System.setProperty("hazelcast.phone.home.enabled", "false");
-        System.setProperty("hazelcast.mancenter.enabled", "false");
-        System.setProperty("hazelcast.wait.seconds.before.join", "1");
-        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
-        System.setProperty("java.net.preferIPv4Stack", "true");
+        initialize();
 
         final String threadDumpOnFailure = System.getProperty("hazelcast.test.threadDumpOnFailure");
         THREAD_DUMP_ON_FAILURE = threadDumpOnFailure != null
@@ -107,6 +108,51 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
             }
         }
         THREAD_CONTENTION_INFO_AVAILABLE = threadContentionInfoAvailable;
+    }
+
+    // initialize environment, logging and attach a final-modifier removing agent if required
+    private static void initialize() {
+        if (isRunningCompatibilityTest()) {
+            attachFinalRemovalAgent();
+            System.out.println("Running compatibility tests.");
+            // Mock network cannot be used for compatibility testing
+            System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "true");
+        } else {
+            TestLoggingUtils.initializeLogging();
+            if (System.getProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK) == null) {
+                System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "false");
+            }
+        }
+        System.setProperty("hazelcast.phone.home.enabled", "false");
+        System.setProperty("hazelcast.mancenter.enabled", "false");
+        System.setProperty("hazelcast.wait.seconds.before.join", "1");
+        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
+        System.setProperty("java.net.preferIPv4Stack", "true");
+    }
+
+    // When running a compatibility test, all com.hazelcast.* classes are transformed so that none are
+    // loaded with final modifier to allow subclass proxying.
+    private static void attachFinalRemovalAgent() {
+        Instrumentation instrumentation = ByteBuddyAgent.install();
+        new AgentBuilder.Default()
+                .type(new ElementMatcher<TypeDescription>() {
+                    @Override
+                    public boolean matches(TypeDescription target) {
+                        return target.getName().startsWith("com.hazelcast");
+                    }
+                })
+                .transform(new AgentBuilder.Transformer() {
+                    @Override
+                    public DynamicType.Builder<?> transform(DynamicType.Builder<?> builder,
+                                                            TypeDescription typeDescription,
+                                                            ClassLoader classLoader, JavaModule module) {
+                        int actualModifiers = typeDescription.getActualModifiers(false);
+                        // unset final modifier
+                        int nonFinalModifiers = actualModifiers & ~Opcodes.ACC_FINAL;
+                        return builder.modifiers(nonFinalModifiers);
+                    }
+                })
+                .installOn(instrumentation);
     }
 
     /**
