@@ -248,7 +248,7 @@ public final class ClassLoaderUtil {
         return false;
     }
 
-    public static Class<?>[] getAllInterfaces(Class<?> clazz) {
+    private static Class<?>[] getAllInterfaces(Class<?> clazz) {
         Collection<Class<?>> interfaces = new HashSet<Class<?>>();
         addOwnInterfaces(clazz, interfaces);
         addInterfacesOfSuperclasses(clazz, interfaces);

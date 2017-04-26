@@ -47,8 +47,6 @@ import static java.util.Collections.unmodifiableCollection;
 
 public class TestHazelcastInstanceFactory {
 
-    protected final TestNodeRegistry registry;
-
     private static final AtomicInteger PORTS = new AtomicInteger(5000);
 
     private final ConcurrentMap<Integer, Address> addressMap = new ConcurrentHashMap<Integer, Address>();
@@ -56,6 +54,7 @@ public class TestHazelcastInstanceFactory {
     private final AtomicInteger nodeIndex = new AtomicInteger();
 
     private final int count;
+    private final TestNodeRegistry registry;
 
     public TestHazelcastInstanceFactory() {
         this(0);
