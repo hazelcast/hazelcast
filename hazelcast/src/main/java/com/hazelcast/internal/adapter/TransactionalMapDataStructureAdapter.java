@@ -26,7 +26,6 @@ import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -142,23 +141,15 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
+    @MethodNotAvailable
     public Map<K, V> getAll(Set<K> keys) {
-        begin();
-        Map<K, V> result = new HashMap<K, V>(keys.size());
-        for (K key : keys) {
-            result.put(key, transactionalMap.get(key));
-        }
-        commit();
-        return result;
+        throw new MethodNotAvailableException();
     }
 
     @Override
+    @MethodNotAvailable
     public void putAll(Map<K, V> map) {
-        begin();
-        for (Map.Entry<K, V> entry : map.entrySet()) {
-            transactionalMap.put(entry.getKey(), entry.getValue());
-        }
-        commit();
+        throw new MethodNotAvailableException();
     }
 
     @Override

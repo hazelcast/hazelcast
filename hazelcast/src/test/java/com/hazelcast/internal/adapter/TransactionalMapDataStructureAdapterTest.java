@@ -187,31 +187,18 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
         adapter.loadAll(Collections.<Integer>emptySet(), true, null);
     }
 
-    @Test
+    @Test(expected = MethodNotAvailableException.class)
     public void testGetAll() {
-        map.put(23, "value-23");
-        map.put(42, "value-42");
-
-        Map<Integer, String> expectedResult = new HashMap<Integer, String>();
-        expectedResult.put(23, "value-23");
-        expectedResult.put(42, "value-42");
-
-        Map<Integer, String> result = adapter.getAll(expectedResult.keySet());
-        assertEquals(expectedResult, result);
+        adapter.getAll(singleton(23));
     }
 
-    @Test
+    @Test(expected = MethodNotAvailableException.class)
     public void testPutAll() {
         Map<Integer, String> expectedResult = new HashMap<Integer, String>();
         expectedResult.put(23, "value-23");
         expectedResult.put(42, "value-42");
 
         adapter.putAll(expectedResult);
-
-        assertEquals(expectedResult.size(), map.size());
-        for (Integer key : expectedResult.keySet()) {
-            assertTrue(map.containsKey(key));
-        }
     }
 
     @Test(expected = MethodNotAvailableException.class)
