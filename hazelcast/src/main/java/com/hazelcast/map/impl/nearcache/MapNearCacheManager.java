@@ -50,24 +50,25 @@ import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAG
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
 
 public class MapNearCacheManager extends DefaultNearCacheManager {
+
     /**
      * Filters out listeners other than invalidation related ones.
      */
     private static final InvalidationAcceptorFilter INVALIDATION_ACCEPTOR = new InvalidationAcceptorFilter();
 
-    protected final int partitionCount;
     protected final NodeEngine nodeEngine;
     protected final MapServiceContext mapServiceContext;
+    protected final MinimalPartitionService partitionService;
+    protected final int partitionCount;
     protected final Invalidator invalidator;
     protected final RepairingTask repairingTask;
-    protected final MinimalPartitionService partitionService;
 
     public MapNearCacheManager(MapServiceContext mapServiceContext) {
         super(mapServiceContext.getNodeEngine().getSerializationService(),
                 mapServiceContext.getNodeEngine().getExecutionService().getGlobalTaskScheduler(), null);
         this.nodeEngine = mapServiceContext.getNodeEngine();
-        this.partitionService = new MemberMinimalPartitionService(nodeEngine.getPartitionService());
         this.mapServiceContext = mapServiceContext;
+        this.partitionService = new MemberMinimalPartitionService(nodeEngine.getPartitionService());
         this.partitionCount = partitionService.getPartitionCount();
         this.invalidator = createInvalidator();
         this.repairingTask = createRepairingInvalidationTask();
@@ -95,16 +96,7 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
         @Override
         public Boolean apply(EventRegistration eventRegistration) {
             EventFilter filter = eventRegistration.getFilter();
-
-            if (!(filter instanceof EventListenerFilter)) {
-                return false;
-            }
-
-            if (!filter.eval(INVALIDATION.getType())) {
-                return false;
-            }
-
-            return true;
+            return filter instanceof EventListenerFilter && filter.eval(INVALIDATION.getType());
         }
     }
 
