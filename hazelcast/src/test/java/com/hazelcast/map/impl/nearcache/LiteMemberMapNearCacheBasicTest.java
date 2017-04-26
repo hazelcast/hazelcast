@@ -83,7 +83,7 @@ public class LiteMemberMapNearCacheBasicTest extends AbstractNearCacheBasicTest<
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean loaderEnabled) {
         IMapMapStore mapStore = loaderEnabled ? new IMapMapStore() : null;
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(createConfig(nearCacheConfig, mapStore, false));
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(createConfig(null, mapStore, false));
         HazelcastInstance liteMember = hazelcastFactory.newHazelcastInstance(createConfig(nearCacheConfig, mapStore, true));
 
         IMap<K, V> memberMap = member.getMap(DEFAULT_NEAR_CACHE_NAME);
@@ -110,7 +110,9 @@ public class LiteMemberMapNearCacheBasicTest extends AbstractNearCacheBasicTest<
                 .setLiteMember(liteMember);
 
         MapConfig mapConfig = config.getMapConfig(DEFAULT_NEAR_CACHE_NAME);
-        mapConfig.setNearCacheConfig(nearCacheConfig);
+        if (nearCacheConfig != null) {
+            mapConfig.setNearCacheConfig(nearCacheConfig);
+        }
         if (mapStore != null) {
             addMapStoreConfig(mapStore, mapConfig);
         }
