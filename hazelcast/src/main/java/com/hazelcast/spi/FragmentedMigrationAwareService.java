@@ -48,6 +48,14 @@ public interface FragmentedMigrationAwareService extends MigrationAwareService {
     Collection<ServiceNamespace> getAllServiceNamespaces(PartitionReplicationEvent event);
 
     /**
+     * Returns true if namespace is known by this service, false otherwise
+     *
+     * @param namespace namespace
+     * @return true if namespace is known by this service, false otherwise
+     */
+    boolean isKnownServiceNamespace(ServiceNamespace namespace);
+
+    /**
      * Returns an operation to replicate service data and/or state for a specific partition replica and namespaces
      * on another cluster member. This method is very similar to
      * {@link #prepareReplicationOperation(PartitionReplicationEvent)},

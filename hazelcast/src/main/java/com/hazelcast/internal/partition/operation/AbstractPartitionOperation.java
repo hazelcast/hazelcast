@@ -30,6 +30,7 @@ import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 
 abstract class AbstractPartitionOperation extends Operation implements IdentifiedDataSerializable {
@@ -68,15 +69,60 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         return operations;
     }
 
-    final Operation createFragmentReplicationOperation(PartitionReplicationEvent event, ServiceNamespace ns) {
+    final Collection<Operation> createFragmentReplicationOperations(PartitionReplicationEvent event, ServiceNamespace ns,
+            Collection<String> serviceNames) {
         assert !(ns instanceof NonFragmentedServiceNamespace) : ns + " should be used only for non-fragmented services!";
+
+        Collection<Operation> operations = emptySet();
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        FragmentedMigrationAwareService service = nodeEngine.getService(ns.getServiceName());
-        Operation op = service.prepareReplicationOperation(event, singleton(ns));
-        if (op != null) {
-            op.setServiceName(ns.getServiceName());
+        for (String serviceName : serviceNames) {
+            FragmentedMigrationAwareService service = nodeEngine.getService(serviceName);
+            assert service.isKnownServiceNamespace(ns) : ns + " should be known by " + service;
+
+            operations = prepareAndAppendReplicationOperation(event, ns, service, serviceName, operations);
         }
-        return op;
+
+        return operations;
+    }
+
+    final Collection<Operation> createFragmentReplicationOperations(PartitionReplicationEvent event, ServiceNamespace ns) {
+        assert !(ns instanceof NonFragmentedServiceNamespace) : ns + " should be used only for non-fragmented services!";
+
+        Collection<Operation> operations = emptySet();
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        Collection<ServiceInfo> services = nodeEngine.getServiceInfos(FragmentedMigrationAwareService.class);
+
+        for (ServiceInfo serviceInfo : services) {
+            FragmentedMigrationAwareService service = serviceInfo.getService();
+            if (!service.isKnownServiceNamespace(ns)) {
+                continue;
+            }
+
+            operations = prepareAndAppendReplicationOperation(event, ns, service, serviceInfo.getName(), operations);
+        }
+        return operations;
+    }
+
+    private Collection<Operation> prepareAndAppendReplicationOperation(PartitionReplicationEvent event, ServiceNamespace ns,
+            FragmentedMigrationAwareService service, String serviceName, Collection<Operation> operations) {
+
+        Operation op = service.prepareReplicationOperation(event, singleton(ns));
+        if (op == null) {
+            return operations;
+        }
+
+        op.setServiceName(serviceName);
+
+        if (operations.isEmpty()) {
+            // generally a namespace belongs to a single service only
+            operations = singleton(op);
+        } else if (operations.size() == 1) {
+            operations = new ArrayList<Operation>(operations);
+            operations.add(op);
+        } else {
+            operations.add(op);
+        }
+        return operations;
     }
 
     @Override

@@ -18,8 +18,8 @@ package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.ReplicaFragmentMigrationState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -61,7 +61,7 @@ import static java.util.Collections.singleton;
 public class MigrationRequestOperation extends BaseMigrationSourceOperation {
 
     private boolean fragmentedMigrationEnabled;
-    private transient Iterator<ServiceNamespace> namespaceIterator;
+    private transient ServiceNamespacesContext namespacesContext;
 
     public MigrationRequestOperation() {
     }
@@ -75,7 +75,7 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
     @Override
     public void run() {
         verifyMasterOnMigrationSource();
-        NodeEngine nodeEngine = getNodeEngine();
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
 
         Address source = migrationInfo.getSource();
         Address destination = migrationInfo.getDestination();
@@ -100,8 +100,10 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
 
         try {
             executeBeforeMigrations();
-            initializeFragmentedMigrationContext();
-            ReplicaFragmentMigrationState migrationState = createReplicaFragmentMigrationState();
+            namespacesContext = new ServiceNamespacesContext(nodeEngine, getPartitionReplicationEvent());
+            ReplicaFragmentMigrationState migrationState
+                    = fragmentedMigrationEnabled ? createNextReplicaFragmentMigrationState()
+                    : createAllReplicaFragmentsMigrationState();
             invokeMigrationOperation(destination, migrationState, true);
             returnResponse = false;
         } catch (Throwable e) {
@@ -118,7 +120,7 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
     private void invokeMigrationOperation(Address destination, ReplicaFragmentMigrationState migrationState,
                                           boolean firstFragment) throws IOException {
 
-        boolean lastFragment = !fragmentedMigrationEnabled || !namespaceIterator.hasNext();
+        boolean lastFragment = !fragmentedMigrationEnabled || !namespacesContext.hasNext();
         Operation operation = new MigrationOperation(migrationInfo, partitionStateVersion, migrationState,
                                                      firstFragment, lastFragment);
 
@@ -161,7 +163,7 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
                         + " is different than expected: " + migrationInfo);
             }
 
-            ReplicaFragmentMigrationState migrationState = createReplicaFragmentMigrationState();
+            ReplicaFragmentMigrationState migrationState = createNextReplicaFragmentMigrationState();
             if (migrationState != null) {
                 invokeMigrationOperation(destination, migrationState, false);
             } else {
@@ -174,29 +176,21 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
         }
     }
 
-    private void initializeFragmentedMigrationContext() {
-        if (!fragmentedMigrationEnabled) {
-            return;
+    private ReplicaFragmentMigrationState createNextReplicaFragmentMigrationState() {
+        assert fragmentedMigrationEnabled : "Fragmented migration should be enabled!";
+
+        if (!namespacesContext.hasNext()) {
+             return null;
         }
-        namespaceIterator = getAllServiceNamespaces().iterator();
+
+        ServiceNamespace namespace = namespacesContext.next();
+        if (namespace.equals(NonFragmentedServiceNamespace.INSTANCE)) {
+            return createNonFragmentedReplicaFragmentMigrationState();
+        }
+        return createReplicaFragmentMigrationStateFor(namespace);
     }
 
-    private ReplicaFragmentMigrationState createReplicaFragmentMigrationState() {
-        if (fragmentedMigrationEnabled) {
-            if (!namespaceIterator.hasNext()) {
-                 return null;
-            }
-            ServiceNamespace namespace = namespaceIterator.next();
-            if (namespace.equals(NonFragmentedServiceNamespace.INSTANCE)) {
-                return createInternalReplicaFragmentMigrationState();
-            }
-            return createReplicaFragmentMigrationStateFor(namespace);
-        } else {
-            return createAllReplicaFragmentsMigrationState();
-        }
-    }
-
-    private ReplicaFragmentMigrationState createInternalReplicaFragmentMigrationState() {
+    private ReplicaFragmentMigrationState createNonFragmentedReplicaFragmentMigrationState() {
         PartitionReplicationEvent event = getPartitionReplicationEvent();
         Collection<Operation> operations = createNonFragmentedReplicationOperations(event);
         Collection<ServiceNamespace> namespaces =
@@ -206,15 +200,16 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
 
     private ReplicaFragmentMigrationState createReplicaFragmentMigrationStateFor(ServiceNamespace ns) {
         PartitionReplicationEvent event = getPartitionReplicationEvent();
-        Operation operation = createFragmentReplicationOperation(event, ns);
-        Set<Operation> operations = operation != null ? singleton(operation) : Collections.<Operation>emptySet();
+        Collection<String> serviceNames = namespacesContext.getServiceNames(ns);
+
+        Collection<Operation> operations = createFragmentReplicationOperations(event, ns, serviceNames);
         return createReplicaFragmentMigrationState(singleton(ns), operations);
     }
 
     private ReplicaFragmentMigrationState createAllReplicaFragmentsMigrationState() {
         PartitionReplicationEvent event = getPartitionReplicationEvent();
         Collection<Operation> operations = createAllReplicationOperations(event);
-        return createReplicaFragmentMigrationState(getAllServiceNamespaces(), operations);
+        return createReplicaFragmentMigrationState(namespacesContext.allNamespaces, operations);
     }
 
     private ReplicaFragmentMigrationState createReplicaFragmentMigrationState(Collection<ServiceNamespace>
@@ -229,23 +224,6 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
         }
 
         return new ReplicaFragmentMigrationState(versions, operations);
-    }
-
-    private Collection<ServiceNamespace> getAllServiceNamespaces() {
-        Collection<ServiceNamespace> namespaces = new HashSet<ServiceNamespace>();
-
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        Collection<ServiceInfo> services = nodeEngine.getServiceInfos(FragmentedMigrationAwareService.class);
-        PartitionReplicationEvent replicationEvent = getPartitionReplicationEvent();
-
-        for (ServiceInfo serviceInfo : services) {
-            FragmentedMigrationAwareService service = serviceInfo.getService();
-            Collection<ServiceNamespace> serviceNamespaces = service.getAllServiceNamespaces(replicationEvent);
-            namespaces.addAll(serviceNamespaces);
-        }
-        namespaces.add(NonFragmentedServiceNamespace.INSTANCE);
-
-        return namespaces;
     }
 
     @Override
@@ -301,5 +279,57 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
             trySendNewFragment();
         }
 
+    }
+
+    private static class ServiceNamespacesContext {
+        final Collection<ServiceNamespace> allNamespaces = new HashSet<ServiceNamespace>();
+        final Map<ServiceNamespace, Collection<String>> namespaceToServices = new HashMap<ServiceNamespace, Collection<String>>();
+
+        final Iterator<ServiceNamespace> namespaceIterator;
+
+        ServiceNamespacesContext(NodeEngineImpl nodeEngine, PartitionReplicationEvent event) {
+            Collection<ServiceInfo> services = nodeEngine.getServiceInfos(FragmentedMigrationAwareService.class);
+            for (ServiceInfo serviceInfo : services) {
+                FragmentedMigrationAwareService service = serviceInfo.getService();
+                Collection<ServiceNamespace> namespaces = service.getAllServiceNamespaces(event);
+                if (namespaces != null) {
+                    String serviceName = serviceInfo.getName();
+                    allNamespaces.addAll(namespaces);
+
+                    addNamespaceToServiceMappings(namespaces, serviceName);
+                }
+            }
+
+            allNamespaces.add(NonFragmentedServiceNamespace.INSTANCE);
+            namespaceIterator = allNamespaces.iterator();
+        }
+
+        private void addNamespaceToServiceMappings(Collection<ServiceNamespace> namespaces, String serviceName) {
+            for (ServiceNamespace ns : namespaces) {
+                Collection<String> serviceNames = namespaceToServices.get(ns);
+                if (serviceNames == null) {
+                    // generally a namespace belongs to a single service only
+                    namespaceToServices.put(ns, singleton(serviceName));
+                } else if (serviceNames.size() == 1) {
+                    serviceNames = new HashSet<String>(serviceNames);
+                    serviceNames.add(serviceName);
+                    namespaceToServices.put(ns, serviceNames);
+                } else {
+                    serviceNames.add(serviceName);
+                }
+            }
+        }
+
+        boolean hasNext() {
+            return namespaceIterator.hasNext();
+        }
+
+        ServiceNamespace next() {
+            return namespaceIterator.next();
+        }
+
+        Collection<String> getServiceNames(ServiceNamespace ns) {
+            return namespaceToServices.get(ns);
+        }
     }
 }

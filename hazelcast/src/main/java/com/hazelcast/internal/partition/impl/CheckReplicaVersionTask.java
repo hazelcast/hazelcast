@@ -127,7 +127,9 @@ final class CheckReplicaVersionTask implements PartitionSpecificRunnable, Urgent
         Set<ServiceNamespace> namespaces = new HashSet<ServiceNamespace>();
         for (FragmentedMigrationAwareService service : services) {
             Collection<ServiceNamespace> serviceNamespaces = service.getAllServiceNamespaces(event);
-            namespaces.addAll(serviceNamespaces);
+            if (serviceNamespaces != null) {
+                namespaces.addAll(serviceNamespaces);
+            }
         }
         namespaces.add(NonFragmentedServiceNamespace.INSTANCE);
 
