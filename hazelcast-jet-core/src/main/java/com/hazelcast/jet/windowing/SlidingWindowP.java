@@ -33,13 +33,13 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.LongStream;
 
+import static com.hazelcast.jet.Distributed.Function.identity;
 import static java.lang.Math.min;
-import static java.util.function.Function.identity;
 
 /**
  * Sliding window processor. See {@link
- * WindowingProcessors#slidingWindow(WindowDefinition, WindowOperation, boolean)
- * slidingWindow(frameLength, framesPerWindow, windowToolkit)} for
+ * WindowingProcessors#slidingWindow(WindowDefinition, WindowOperation)
+ * slidingWindow(windowDef, windowOperation)} for
  * documentation.
  *
  * @param <K> type of the grouping key
@@ -47,6 +47,11 @@ import static java.util.function.Function.identity;
  * @param <R> type of the finished result
  */
 class SlidingWindowP<K, F, R> extends AbstractProcessor {
+
+    // package-visible for test
+    final NavigableMap<Long, Map<K, F>> seqToKeyToFrame = new TreeMap<>();
+    final Map<K, F> slidingWindow = new HashMap<>();
+
     private final WindowDefinition wDef;
     private final Supplier<F> createF;
     private final BinaryOperator<F> combineF;
@@ -55,12 +60,10 @@ class SlidingWindowP<K, F, R> extends AbstractProcessor {
 
     private final FlatMapper<Punctuation, Object> flatMapper;
     private final F emptyAcc;
-    private final NavigableMap<Long, Map<K, F>> seqToKeyToFrame = new TreeMap<>();
-    private final Map<K, F> slidingWindow = new HashMap<>();
 
     private long nextFrameSeqToEmit = Long.MIN_VALUE;
 
-    SlidingWindowP(WindowDefinition winDef, @Nonnull WindowOperation<K, F, R> winOp) {
+    SlidingWindowP(WindowDefinition winDef, @Nonnull WindowOperation<?, F, R> winOp) {
         this.wDef = winDef;
         this.createF = winOp.createAccumulatorF();
         this.combineF = winOp.combineAccumulatorsF();

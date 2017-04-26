@@ -105,8 +105,8 @@ public final class WindowOperations {
      *             function
      * @param combineF a function that combines a new item with the current result
      *                 and returns the new result
-     * @param deductF a function that deducts the contribution of an item from the
-     *                current result and returns the new result
+     * @param deductF an optional function that deducts the contribution of an
+     *                item from the current result and returns the new result
      * @param <T> type of the stream item
      * @param <U> type of the reduced result
      */

@@ -22,6 +22,8 @@ import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 
@@ -34,9 +36,17 @@ class StreamingTestSupport {
     }
 
     void assertOutbox(List<?> items) {
-        for (Object item : items) {
-            assertEquals(item, pollOutbox());
-        }
+        String expected = streamToString(items.stream());
+        String actual = streamToString(outbox.queueWithOrdinal(0).stream());
+        outbox.queueWithOrdinal(0).clear();
+
+        assertEquals(expected, actual);
+    }
+
+    public static String streamToString(Stream<?> stream) {
+        return stream
+                .map(String::valueOf)
+                .collect(Collectors.joining("\n"));
     }
 
     Object pollOutbox() {

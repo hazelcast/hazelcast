@@ -56,27 +56,28 @@ public final class WindowingProcessors {
      *
      * @param <T> item type
      * @param <K> type of key returned from {@code extractKeyF}
-     * @param <F> type of frame returned from {@code sc.supplier()}
+     * @param <F> type of accumulator returned from {@code windowOperation.
+     *            createAccumulatorF()}
      */
     public static <T, K, F> Distributed.Supplier<GroupByFrameP<T, K, F>> groupByFrame(
             Distributed.Function<? super T, K> extractKeyF,
             Distributed.ToLongFunction<? super T> extractTimestampF,
             WindowDefinition windowDef,
-            WindowOperation<T, F, ?> collector
+            WindowOperation<? super T, F, ?> windowOperation
     ) {
-        return () -> new GroupByFrameP<>(extractKeyF, extractTimestampF, windowDef, collector);
+        return () -> new GroupByFrameP<>(extractKeyF, extractTimestampF, windowDef, windowOperation);
     }
 
     /**
      * Convenience for {@link #groupByFrame(
      * Distributed.Function, Distributed.ToLongFunction, WindowDefinition, WindowOperation)
-     * groupByFrame(extractKeyF, extractTimeStampF, frameLength, frameOffset, collector)}
+     * groupByFrame(extractKeyF, extractTimestampF, windowDef, collector)}
      * which doesn't group by key.
      */
     public static <T, F> Distributed.Supplier<GroupByFrameP<T, String, F>> groupByFrame(
             Distributed.ToLongFunction<? super T> extractTimestampF,
             WindowDefinition windowDef,
-            WindowOperation<T, F, ?> collector
+            WindowOperation<? super T, F, ?> collector
     ) {
         return groupByFrame(t -> "global", extractTimestampF, windowDef, collector);
     }
@@ -88,14 +89,11 @@ public final class WindowingProcessors {
      * output.
      *
      * @param <K> type of the grouping key
-     * @param <F> type of the frame
+     * @param <F> type of accumulator
      * @param <R> type of the result derived from a frame
-     * @param emitPunctuation If {@code true}, punctuation will be emitted when window
-     *                        is closed. Enable, if downstream vertex needs to know,
-     *                        that it has received all keys for a particular window.
      */
     public static <K, F, R> Distributed.Supplier<SlidingWindowP<K, F, R>> slidingWindow(
-            WindowDefinition windowDef, WindowOperation<K, F, R> windowOperation, boolean emitPunctuation) {
+            WindowDefinition windowDef, WindowOperation<?, F, R> windowOperation) {
         return () -> new SlidingWindowP<>(windowDef, windowOperation);
     }
 

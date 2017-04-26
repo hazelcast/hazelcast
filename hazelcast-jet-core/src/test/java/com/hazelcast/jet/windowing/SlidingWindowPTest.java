@@ -17,43 +17,95 @@
 package com.hazelcast.jet.windowing;
 
 import com.hazelcast.jet.Processor.Context;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.MutableLong;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.LongStream;
 
+import static com.hazelcast.jet.Distributed.Function.identity;
 import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindow;
 import static java.util.Arrays.asList;
 import static java.util.Collections.shuffle;
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Category({QuickTest.class, ParallelTest.class})
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 public class SlidingWindowPTest extends StreamingTestSupport {
 
-    private SlidingWindowP<Object, Long, Long> processor;
+    @Parameter
+    public boolean hasDeduct;
+
+    @Parameter(1)
+    public boolean isMutableFrame;
+
+    @Parameters(name = "hasDeduct={0}, isMutableFrame={1}")
+    public static Collection<Object[]> parameters() {
+        return Arrays.asList(new Object[][]{
+                {true, true},
+                {true, false},
+                {false, true},
+                {false, false}
+        });
+    }
+
+    private SlidingWindowP<Object, ?, Long> processor;
 
     @Before
     public void before() {
         WindowDefinition windowDef = new WindowDefinition(1, 0, 4);
-        WindowOperation<Object, Long, Long> operation = WindowOperation.of(
-                () -> 0L,
-                (acc, val) -> {
-                    throw new UnsupportedOperationException();
-                },
-                (acc1, acc2) -> acc1 + acc2,
-                null,
-                acc -> acc);
-        processor = slidingWindow(windowDef, operation, true).get();
+        WindowOperation<Object, ?, Long> operation;
+
+        if (isMutableFrame) {
+            operation = WindowOperation.<Object, MutableLong, Long>of(
+                    MutableLong::new,
+                    (acc, val) -> {
+                        throw new UnsupportedOperationException();
+                    },
+                    (acc1, acc2) -> {
+                        acc1.value += acc2.value;
+                        return acc1;
+                    },
+                    hasDeduct ? (acc1, acc2) -> {
+                        acc1.value -= acc2.value;
+                        return acc1;
+                    } : null,
+                    acc -> acc.value);
+        } else {
+            operation = WindowOperation.of(
+                    () -> 0L,
+                    (acc, val) -> {
+                        throw new UnsupportedOperationException();
+                    },
+                    (acc1, acc2) -> acc1 + acc2,
+                    hasDeduct ? (acc1, acc2) -> (Long) acc1 - acc2 : null,
+                    identity());
+        }
+
+        processor = slidingWindow(windowDef, operation).get();
         processor.init(outbox, mock(Context.class));
+    }
+
+    @After
+    public void after() {
+        assertTrue("seqToKeyToFrame is not empty: " + processor.seqToKeyToFrame, processor.seqToKeyToFrame.isEmpty());
+        assertTrue("slidingWindow is not empty: " + processor.slidingWindow, processor.slidingWindow.isEmpty());
     }
 
     @Test
@@ -69,8 +121,7 @@ public class SlidingWindowPTest extends StreamingTestSupport {
 
         // Then
         assertOutbox(asList(
-                punc(1),
-                null
+                punc(1)
         ));
     }
 
@@ -87,7 +138,10 @@ public class SlidingWindowPTest extends StreamingTestSupport {
                 punc(2),
                 punc(3),
                 punc(4),
-                punc(5)
+                punc(5),
+                punc(6),
+                punc(7),
+                punc(8) // extra punc to trigger lazy clean-up
         ));
 
         // When
@@ -96,18 +150,22 @@ public class SlidingWindowPTest extends StreamingTestSupport {
 
         // Then
         assertOutbox(asList(
-                frame(0, 1),
-                frame(1, 2),
+                outboxFrame(0, 1),
+                outboxFrame(1, 2),
                 punc(1),
-                frame(2, 3),
+                outboxFrame(2, 3),
                 punc(2),
-                frame(3, 4),
+                outboxFrame(3, 4),
                 punc(3),
-                frame(4, 4),
+                outboxFrame(4, 4),
                 punc(4),
-                frame(5, 3),
+                outboxFrame(5, 3),
                 punc(5),
-                null
+                outboxFrame(6, 2),
+                punc(6),
+                outboxFrame(7, 1),
+                punc(7),
+                punc(8)
         ));
     }
 
@@ -124,7 +182,10 @@ public class SlidingWindowPTest extends StreamingTestSupport {
                 punc(2),
                 punc(3),
                 punc(4),
-                punc(5)
+                punc(5),
+                punc(6),
+                punc(7),
+                punc(8) // extra punc to trigger lazy clean-up
         ));
 
         // When
@@ -133,18 +194,22 @@ public class SlidingWindowPTest extends StreamingTestSupport {
 
         // Then
         assertOutbox(asList(
-                frame(0, 1),
-                frame(1, 2),
+                outboxFrame(0, 1),
+                outboxFrame(1, 2),
                 punc(1),
-                frame(2, 3),
+                outboxFrame(2, 3),
                 punc(2),
-                frame(3, 4),
+                outboxFrame(3, 4),
                 punc(3),
-                frame(4, 4),
+                outboxFrame(4, 4),
                 punc(4),
-                frame(5, 3),
+                outboxFrame(5, 3),
                 punc(5),
-                null
+                outboxFrame(6, 2),
+                punc(6),
+                outboxFrame(7, 1),
+                punc(7),
+                punc(8)
         ));
     }
 
@@ -165,32 +230,33 @@ public class SlidingWindowPTest extends StreamingTestSupport {
         assertTrue(inbox.isEmpty());
 
         // Then
-        assertOutbox(asList(
-                frame(0, 1),
-                frame(1, 2),
+        List<Object> expectedOutbox = new ArrayList<>();
+        expectedOutbox.addAll(Arrays.asList(
+                outboxFrame(0, 1),
+                outboxFrame(1, 2),
                 punc(1),
-                frame(2, 3),
+                outboxFrame(2, 3),
                 punc(2),
-                frame(3, 4),
+                outboxFrame(3, 4),
                 punc(3)
         ));
         for (long seq = 4; seq < 100; seq++) {
-            assertEquals(frame(seq, 4), pollOutbox());
-            assertEquals(punc(seq), pollOutbox());
+            expectedOutbox.add(outboxFrame(seq, 4));
+            expectedOutbox.add(punc(seq));
         }
-        assertOutbox(asList(
-                frame(100, 3),
+        expectedOutbox.addAll(Arrays.asList(
+                outboxFrame(100, 3),
                 punc(100),
-                frame(101, 2),
+                outboxFrame(101, 2),
                 punc(101),
-                frame(102, 1),
+                outboxFrame(102, 1),
                 punc(102),
                 punc(103),
                 punc(104),
-                punc(105),
-                null
+                punc(105)
         ));
-        assertEquals(null, pollOutbox());
+
+        assertOutbox(expectedOutbox);
     }
 
     @Test
@@ -200,9 +266,10 @@ public class SlidingWindowPTest extends StreamingTestSupport {
                 frame(0, 1),
                 frame(10, 1),
                 frame(11, 1),
-                punc(50),
-                frame(50, 3),
-                punc(51)
+                punc(15),
+                frame(16, 3),
+                punc(19),
+                punc(20) // extra punc to trigger lazy clean-up
         ));
 
         // When
@@ -211,21 +278,24 @@ public class SlidingWindowPTest extends StreamingTestSupport {
 
         // Then
         assertOutbox(asList(
-                frame(0, 1),
-                frame(1, 1),
-                frame(2, 1),
-                frame(3, 1),
+                outboxFrame(0, 1),
+                outboxFrame(1, 1),
+                outboxFrame(2, 1),
+                outboxFrame(3, 1),
 
-                frame(10, 1),
-                frame(11, 2),
-                frame(12, 2),
-                frame(13, 2),
-                frame(14, 1),
+                outboxFrame(10, 1),
+                outboxFrame(11, 2),
+                outboxFrame(12, 2),
+                outboxFrame(13, 2),
+                outboxFrame(14, 1),
 
-                punc(50),
-                frame(51, 3),
-                punc(51),
-                null
+                punc(15),
+                outboxFrame(16, 3),
+                outboxFrame(17, 3),
+                outboxFrame(18, 3),
+                outboxFrame(19, 3),
+                punc(19),
+                punc(20)
         ));
     }
 
@@ -241,7 +311,9 @@ public class SlidingWindowPTest extends StreamingTestSupport {
                 frame(3, 1),
                 frame(4, 1),
                 punc(4),
-                punc(12)
+                punc(12),
+                punc(15),
+                punc(16) // extra punc to trigger lazy clean-up
         ));
 
         // When
@@ -251,23 +323,31 @@ public class SlidingWindowPTest extends StreamingTestSupport {
         // Then
         assertOutbox(asList(
                 punc(1),
-                frame(2, 1),
-                frame(3, 2),
-                frame(4, 3),
+                outboxFrame(2, 1),
+                outboxFrame(3, 2),
+                outboxFrame(4, 3),
                 punc(4),
-                frame(5, 3),
-                frame(6, 2),
-                frame(7, 1),
-                frame(10, 1),
+                outboxFrame(5, 3),
+                outboxFrame(6, 2),
+                outboxFrame(7, 1),
+                outboxFrame(10, 1),
 
-                frame(11, 2),
-                frame(12, 3),
+                outboxFrame(11, 2),
+                outboxFrame(12, 3),
                 punc(12),
-                null
+                outboxFrame(13, 3),
+                outboxFrame(14, 2),
+                outboxFrame(15, 1),
+                punc(15),
+                punc(16)
         ));
     }
 
-    private static Frame<Long, Long> frame(long seq, long value) {
+    private Frame<Long, ?> frame(long seq, long value) {
+        return new Frame<>(seq, 77L, isMutableFrame ? MutableLong.valueOf(value) : value);
+    }
+
+    private Frame<Long, ?> outboxFrame(long seq, long value) {
         return new Frame<>(seq, 77L, value);
     }
 }
