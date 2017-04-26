@@ -94,7 +94,7 @@ public final class ProxyRegistry {
     public void getProxyInfos(Collection<ProxyInfo> result) {
         for (Map.Entry<String, DistributedObjectFuture> entry : proxies.entrySet()) {
             DistributedObjectFuture future = entry.getValue();
-            if (future.isSet()) {
+            if (future.isSetAndInitialized()) {
                 String proxyName = entry.getKey();
                 result.add(new ProxyInfo(serviceName, proxyName));
             }
@@ -256,7 +256,7 @@ public final class ProxyRegistry {
      */
     void destroy() {
         for (DistributedObjectFuture future : proxies.values()) {
-            if (!future.isSet()) {
+            if (!future.isSetAndInitialized()) {
                 continue;
             }
             DistributedObject distributedObject = future.get();

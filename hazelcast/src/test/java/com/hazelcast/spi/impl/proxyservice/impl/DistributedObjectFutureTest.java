@@ -41,25 +41,25 @@ public class DistributedObjectFutureTest {
 
     @Test
     public void isSet_returnsFalse_whenNotSet() throws Exception {
-        assertFalse(future.isSet());
+        assertFalse(future.isSetAndInitialized());
     }
 
     @Test
     public void isSet_returnsTrue_whenSet() throws Exception {
         future.set(object, true);
-        assertTrue(future.isSet());
+        assertTrue(future.isSetAndInitialized());
     }
 
     @Test
-    public void isSet_returnsTrue_whenSetUninitialized() throws Exception {
+    public void isSet_returnsFalse_whenSetUninitialized() throws Exception {
         future.set(object, false);
-        assertTrue(future.isSet());
+        assertFalse(future.isSetAndInitialized());
     }
 
     @Test
     public void isSet_returnsTrue_whenErrorSet() throws Exception {
         future.setError(new Throwable());
-        assertTrue(future.isSet());
+        assertTrue(future.isSetAndInitialized());
     }
 
     @Test
