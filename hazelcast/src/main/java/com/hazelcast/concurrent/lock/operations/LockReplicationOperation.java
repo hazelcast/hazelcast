@@ -24,7 +24,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ServiceNamespace;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -39,13 +41,23 @@ public class LockReplicationOperation extends Operation
     }
 
     public LockReplicationOperation(LockStoreContainer container, int partitionId, int replicaIndex) {
+        this(container, partitionId, replicaIndex, container.getAllNamespaces(replicaIndex));
+    }
+
+    public LockReplicationOperation(LockStoreContainer container, int partitionId, int replicaIndex,
+            Collection<ServiceNamespace> namespaces) {
+
         setPartitionId(partitionId).setReplicaIndex(replicaIndex);
 
-        Collection<LockStoreImpl> lockStores = container.getLockStores();
-        for (LockStoreImpl ls : lockStores) {
+        for (ServiceNamespace namespace : namespaces) {
+            LockStoreImpl ls = container.getLockStore((ObjectNamespace) namespace);
+            if (ls == null) {
+                continue;
+            }
             if (ls.getTotalBackupCount() < replicaIndex) {
                 continue;
             }
+
             locks.add(ls);
         }
     }
