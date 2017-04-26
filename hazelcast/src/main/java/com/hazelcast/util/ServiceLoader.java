@@ -356,6 +356,8 @@ public final class ServiceLoader {
      * Iterates over services. It skips services which implement an interface with the expected name,
      * but loaded by a different classloader.
      *
+     * It also de-duplicates service definition in the case 2 different definition loads the same class.
+     *
      * When a service does not implement an interface with expected name then it throws an exception
      *
      * @param <T>
@@ -365,10 +367,12 @@ public final class ServiceLoader {
         private final Iterator<ServiceDefinition> iterator;
         private final Class<T> expectedType;
         private Class<T> nextClass;
+        private Set<Class<?>> alreadyLoadedClasses;
 
         ClassIterator(Set<ServiceDefinition> serviceDefinitions, Class<T> expectedType) {
             iterator = serviceDefinitions.iterator();
             this.expectedType = expectedType;
+            this.alreadyLoadedClasses = new HashSet<Class<?>>(serviceDefinitions.size());
         }
 
         @Override
@@ -388,6 +392,9 @@ public final class ServiceLoader {
                 try {
                     Class<?> candidate = loadClass(className, classLoader);
                     if (expectedType.isAssignableFrom(candidate)) {
+                        if (isDuplicate(candidate)) {
+                            break;
+                        }
                         nextClass = (Class<T>) candidate;
                         return true;
                     } else {
@@ -398,6 +405,10 @@ public final class ServiceLoader {
                 }
             }
             return false;
+        }
+
+        private boolean isDuplicate(Class<?> clazz) {
+            return !alreadyLoadedClasses.add(clazz);
         }
 
         private Class<?> loadClass(String className, ClassLoader classLoader) throws ClassNotFoundException {
