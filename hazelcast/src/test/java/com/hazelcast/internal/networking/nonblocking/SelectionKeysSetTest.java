@@ -145,4 +145,25 @@ public class SelectionKeysSetTest extends HazelcastTestSupport {
 
         it.remove();
     }
+
+    // see https://github.com/hazelcast/hazelcast/issues/10436
+    @Test
+    public void remove_whenLastItemFromArray() {
+        for (int k = 0; k < SelectionKeys.INITIAL_CAPACITY; k++) {
+            selectionKeysSet.add(mock(SelectionKey.class));
+        }
+
+        IteratorImpl it = (IteratorImpl) selectionKeysSet.iterator();
+        // we now next/remove all items apart from the last one.
+        for (int k = 0; k < SelectionKeys.INITIAL_CAPACITY - 1; k++) {
+            it.next();
+            it.remove();
+        }
+
+        // last item we next
+        it.next();
+        // and we remove; with the bug we would get a IllegalStateException
+        it.remove();
+        assertFalse(it.hasNext());
+    }
 }
