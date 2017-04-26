@@ -178,6 +178,13 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
+    public void destroy() {
+        begin();
+        transactionalMap.destroy();
+        commit();
+    }
+
+    @Override
     @MethodNotAvailable
     public LocalMapStats getLocalMapStats() {
         throw new MethodNotAvailableException();

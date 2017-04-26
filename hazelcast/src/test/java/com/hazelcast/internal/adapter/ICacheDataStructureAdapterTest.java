@@ -315,6 +315,13 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
         assertEquals(0, cache.size());
     }
 
+    @Test
+    public void testDestroy() {
+        adapter.destroy();
+
+        assertTrue(cache.isDestroyed());
+    }
+
     @Test(expected = MethodNotAvailableException.class)
     public void testGetLocalMapStats() {
         adapter.getLocalMapStats();

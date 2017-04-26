@@ -161,6 +161,11 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     }
 
     @Override
+    public void destroy() {
+        cache.destroy();
+    }
+
+    @Override
     @MethodNotAvailable
     public LocalMapStats getLocalMapStats() {
         throw new MethodNotAvailableException();

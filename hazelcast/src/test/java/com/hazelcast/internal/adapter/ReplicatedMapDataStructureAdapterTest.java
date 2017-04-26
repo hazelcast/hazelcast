@@ -214,6 +214,15 @@ public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport 
         assertEquals(0, map.size());
     }
 
+    @Test
+    public void testDestroy() {
+        map.put(23, "foobar");
+
+        adapter.destroy();
+
+        assertTrue(map.isEmpty());
+    }
+
     @Test(expected = MethodNotAvailableException.class)
     public void testGetLocalMapStats() {
         adapter.getLocalMapStats();

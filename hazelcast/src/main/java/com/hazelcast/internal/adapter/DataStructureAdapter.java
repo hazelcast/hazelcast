@@ -81,6 +81,8 @@ public interface DataStructureAdapter<K, V> {
 
     void clear();
 
+    void destroy();
+
     LocalMapStats getLocalMapStats();
 
     /**
@@ -111,6 +113,7 @@ public interface DataStructureAdapter<K, V> {
         REMOVE_ALL_WITH_KEYS("removeAll", Set.class),
         INVOKE_ALL("invokeAll", Set.class, EntryProcessor.class, Object[].class),
         CLEAR("clear"),
+        DESTROY("destroy"),
         GET_LOCAL_MAP_STATS("getLocalMapStats");
 
         private final String methodName;

@@ -304,6 +304,15 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testDestroy() {
+        map.put(23, "foobar");
+
+        adapter.destroy();
+
+        assertTrue(map.isEmpty());
+    }
+
+    @Test
     public void testGetLocalMapStats() {
         assertNotNull(adapter.getLocalMapStats());
 

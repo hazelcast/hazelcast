@@ -222,6 +222,15 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
         adapter.clear();
     }
 
+    @Test
+    public void testDestroy() {
+        map.put(23, "foobar");
+
+        adapter.destroy();
+
+        assertTrue(map.isEmpty());
+    }
+
     @Test(expected = MethodNotAvailableException.class)
     public void testGetLocalMapStats() {
         adapter.getLocalMapStats();

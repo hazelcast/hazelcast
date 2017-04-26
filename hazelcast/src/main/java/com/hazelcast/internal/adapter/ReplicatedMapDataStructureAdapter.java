@@ -178,6 +178,11 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     }
 
     @Override
+    public void destroy() {
+        map.destroy();
+    }
+
+    @Override
     @MethodNotAvailable
     public LocalMapStats getLocalMapStats() {
         throw new MethodNotAvailableException();
