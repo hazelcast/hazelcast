@@ -21,6 +21,7 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
+import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
@@ -225,6 +226,7 @@ public class BatchInvalidator extends Invalidator {
         super.reset();
     }
 
+    @SerializableByConvention
     public static class InvalidationQueue extends ConcurrentLinkedQueue<Invalidation> {
         private final AtomicInteger elementCount = new AtomicInteger(0);
         private final AtomicBoolean flushingInProgress = new AtomicBoolean(false);

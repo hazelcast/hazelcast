@@ -18,6 +18,7 @@ package com.hazelcast.util;
 
 import com.hazelcast.internal.eviction.Expirable;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
+import com.hazelcast.nio.serialization.SerializableByConvention;
 
 import java.util.AbstractMap;
 import java.util.Collections;
@@ -33,6 +34,7 @@ import java.util.NoSuchElementException;
  * @param <K> Type of the key
  * @param <V> Type of the value
  */
+@SerializableByConvention
 public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMap<K, V> {
 
     private static final float LOAD_FACTOR = 0.91f;

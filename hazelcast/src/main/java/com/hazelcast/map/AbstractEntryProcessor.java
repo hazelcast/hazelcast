@@ -16,11 +16,13 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.util.Map;
+
+import static com.hazelcast.nio.serialization.SerializableByConvention.Reason.PUBLIC_API;
 
 /**
  * An abstract {@link EntryProcessor} that already has implemented the {@link #getBackupProcessor()}. In a most cases you
@@ -37,7 +39,6 @@ import java.util.Map;
  * @see com.hazelcast.map.EntryProcessor
  * @see com.hazelcast.map.EntryBackupProcessor
  */
-@BinaryInterface
 public abstract class AbstractEntryProcessor<K, V> implements EntryProcessor<K, V> {
 
     private final EntryBackupProcessor<K, V> entryBackupProcessor;
@@ -67,6 +68,7 @@ public abstract class AbstractEntryProcessor<K, V> implements EntryProcessor<K, 
         return entryBackupProcessor;
     }
 
+    @SerializableByConvention(PUBLIC_API)
     private class EntryBackupProcessorImpl implements EntryBackupProcessor<K, V>, HazelcastInstanceAware {
         // to fix https://github.com/hazelcast/hazelcast/issues/10083 we need to add the HazelcastInstanceAware
         // interface on the EntryBackupProcessorImpl. Unfortunately this changes the generated serialVersionUID

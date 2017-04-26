@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.discovery.multicast.impl;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
 import java.io.Serializable;
 

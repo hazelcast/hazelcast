@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains classes related to cluster quorum.
+ * Classes for replicated map.
  */
 package com.hazelcast.replicatedmap;

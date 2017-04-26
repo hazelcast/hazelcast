@@ -16,6 +16,7 @@
 
 package com.hazelcast.util.collection;
 
+import com.hazelcast.nio.serialization.SerializableByConvention;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.Serializable;
@@ -52,6 +53,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  *
  * @param <T> the type of elements maintained by this set
  */
+@SerializableByConvention
 public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Serializable, Cloneable {
 
     private static final long serialVersionUID = 0L;

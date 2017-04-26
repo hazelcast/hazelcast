@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.SampleableConcurrentHashMap;
 
@@ -26,6 +27,7 @@ import com.hazelcast.util.SampleableConcurrentHashMap;
  *
  * @param <R> Type of records in this CHM
  */
+@SerializableByConvention
 public class StorageSCHM<R extends Record> extends SampleableConcurrentHashMap<Data, R> {
 
     private static final int DEFAULT_INITIAL_CAPACITY = 256;

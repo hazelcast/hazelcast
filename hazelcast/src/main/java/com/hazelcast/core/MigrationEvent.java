@@ -19,11 +19,14 @@ package com.hazelcast.core;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.partition.PartitionEvent;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+
+import static com.hazelcast.nio.serialization.SerializableByConvention.Reason.PUBLIC_API;
 
 /**
  * An event fired when a partition migration starts, completes or fails.
@@ -32,6 +35,7 @@ import java.io.IOException;
  * @see PartitionService
  * @see MigrationListener
  */
+@SerializableByConvention(PUBLIC_API)
 public class MigrationEvent implements DataSerializable, PartitionEvent {
 
     private int partitionId;

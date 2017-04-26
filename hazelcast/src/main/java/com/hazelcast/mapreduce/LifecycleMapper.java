@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
 /**
  * <p>The LifecycleMapper interface is a more sophisticated version of {@link Mapper} normally used for more complex

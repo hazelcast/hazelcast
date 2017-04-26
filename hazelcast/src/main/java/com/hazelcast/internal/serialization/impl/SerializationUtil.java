@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.VersionedPortable;
@@ -34,11 +35,7 @@ import java.util.Set;
 
 public final class SerializationUtil {
 
-    static final PartitioningStrategy EMPTY_PARTITIONING_STRATEGY = new PartitioningStrategy() {
-        public Object getPartitionKey(Object key) {
-            return null;
-        }
-    };
+    static final PartitioningStrategy EMPTY_PARTITIONING_STRATEGY = new EmptyPartitioningStrategy();
 
     private SerializationUtil() {
     }
@@ -120,4 +117,10 @@ public final class SerializationUtil {
         return new ObjectDataInputStream(in, ss);
     }
 
+    @SerializableByConvention
+    private static class EmptyPartitioningStrategy implements PartitioningStrategy {
+        public Object getPartitionKey(Object key) {
+            return null;
+        }
+    }
 }

@@ -16,8 +16,11 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.nio.serialization.SerializableByConvention;
+
 import java.util.AbstractMap;
 
+@SerializableByConvention
 public class MapEntrySimple<K, V> extends AbstractMap.SimpleEntry<K, V> {
 
     private boolean modified;
