@@ -27,6 +27,8 @@ import com.hazelcast.query.impl.getters.Extractors;
  */
 public class LockAwareLazyMapEntry extends LazyMapEntry implements LockAware {
 
+    private static final long serialVersionUID = 0L;
+
     // not to be serialized, if serialized should return null
     private final transient Boolean locked;
 
