@@ -459,12 +459,5 @@
             <version>2.1.4</version>
             <scope>test</scope>
         </dependency>
-
-        <dependency>
-            <groupId>net.bytebuddy</groupId>
-            <artifactId>byte-buddy</artifactId>
-            <version>${bytebuddy.version}</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 </project>
