@@ -17,15 +17,19 @@
 package com.hazelcast.spi.impl.proxyservice.impl;
 
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.util.ExceptionUtil;
 
 public class DistributedObjectFuture {
 
-    volatile DistributedObject proxy;
-    volatile Throwable error;
+    private volatile DistributedObject proxy;
+    private volatile Throwable error;
+
+    // non-initialized distributed object
+    private volatile DistributedObject rawProxy;
 
     boolean isSet() {
-        return proxy != null;
+        return proxy != null || error != null || rawProxy != null;
     }
 
     public DistributedObject get() {
@@ -37,16 +41,7 @@ public class DistributedObjectFuture {
             throw ExceptionUtil.rethrow(error);
         }
 
-        boolean interrupted = false;
-        synchronized (this) {
-            while (proxy == null && error == null) {
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-                    interrupted = true;
-                }
-            }
-        }
+        boolean interrupted = waitUntilSetAndInitialized();
 
         if (interrupted) {
             Thread.currentThread().interrupt();
@@ -58,12 +53,47 @@ public class DistributedObjectFuture {
         throw ExceptionUtil.rethrow(error);
     }
 
-    void set(DistributedObject o) {
+    private boolean waitUntilSetAndInitialized() {
+        boolean interrupted = false;
+        synchronized (this) {
+            while (proxy == null && error == null) {
+                if (rawProxy != null) {
+                    initialize();
+                    break;
+                }
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                }
+            }
+        }
+        return interrupted;
+    }
+
+    private void initialize() {
+        synchronized (this) {
+            try {
+                InitializingObject o = (InitializingObject) rawProxy;
+                o.initialize();
+                proxy = rawProxy;
+            } catch (Throwable e) {
+                error = e;
+            }
+            notifyAll();
+        }
+    }
+
+    void set(DistributedObject o, boolean initialized) {
         if (o == null) {
             throw new IllegalArgumentException("Proxy should not be null!");
         }
         synchronized (this) {
-            proxy = o;
+            if (!initialized && o instanceof InitializingObject) {
+                rawProxy = o;
+            } else {
+                proxy = o;
+            }
             notifyAll();
         }
     }
