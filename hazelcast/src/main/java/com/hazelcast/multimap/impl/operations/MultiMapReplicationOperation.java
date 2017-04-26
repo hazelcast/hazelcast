@@ -35,14 +35,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class MultiMapMigrationOperation extends Operation implements IdentifiedDataSerializable {
+public class MultiMapReplicationOperation extends Operation implements IdentifiedDataSerializable {
 
-    Map<String, Map> map;
+    private Map<String, Map> map;
 
-    public MultiMapMigrationOperation() {
+    public MultiMapReplicationOperation() {
     }
 
-    public MultiMapMigrationOperation(Map<String, Map> map) {
+    public MultiMapReplicationOperation(Map<String, Map> map) {
         this.map = map;
     }
 
@@ -116,6 +116,6 @@ public class MultiMapMigrationOperation extends Operation implements IdentifiedD
 
     @Override
     public int getId() {
-        return MultiMapDataSerializerHook.MULTIMAP_MIGRATION_OPERATION;
+        return MultiMapDataSerializerHook.MULTIMAP_REPLICATION_OPERATION;
     }
 }
