@@ -25,8 +25,10 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.impl.LockAwareLazyMapEntry;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
@@ -226,7 +228,7 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
             @Override
             public void run() {
                 try {
-                    final Map.Entry entry = createMapEntry(dataKey, previousValue);
+                    final Map.Entry entry = createMapEntry(dataKey, previousValue, null);
                     final Data result = process(entry);
                     if (!noOp(entry, previousValue)) {
                         throwModificationInReadOnlyException();
@@ -270,7 +272,7 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
                 @Override
                 public void run() {
                     try {
-                        final Map.Entry entry = createMapEntry(dataKey, previousValue);
+                        final Map.Entry entry = createMapEntry(dataKey, previousValue, null);
                         final Data result = process(entry);
                         if (!noOp(entry, previousValue)) {
                             Data newValue = toData(entry.getValue());
@@ -427,8 +429,9 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
         SerializationService serializationService = getNodeEngine().getSerializationService();
         oldValue = recordStore.get(dataKey, false);
         Object value = shouldClone ? serializationService.toObject(serializationService.toData(oldValue)) : oldValue;
+        boolean locked = recordStore.isLocked(dataKey);
 
-        Map.Entry entry = createMapEntry(dataKey, value);
+        Map.Entry entry = createMapEntry(dataKey, value, locked);
 
         response = process(entry);
 
@@ -620,6 +623,12 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
                 mapEventPublisher.publishWanReplicationUpdate(name, entryView);
             }
         }
+    }
+
+    private Map.Entry createMapEntry(Data key, Object value, Boolean locked) {
+        InternalSerializationService serializationService
+                = ((InternalSerializationService) getNodeEngine().getSerializationService());
+        return new LockAwareLazyMapEntry(key, value, serializationService, mapContainer.getExtractors(), locked);
     }
 
     @Override

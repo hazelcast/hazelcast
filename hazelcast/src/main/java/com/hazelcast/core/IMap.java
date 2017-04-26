@@ -22,6 +22,7 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.LegacyAsyncMap;
+import com.hazelcast.map.LockAware;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.mapreduce.JobTracker;
@@ -72,6 +73,25 @@ import java.util.concurrent.TimeUnit;
  * </ul>
  * </p>
  * <p>This class does <em>not</em> allow <tt>null</tt> to be used as a key or value.</p>
+ *
+ * <p>Entry Processing</p>
+ * The following operations are lock-aware, since they operate on a single key only.
+ * If the key is locked the EntryProcessor will wait until it acquires the lock.
+ * <ul>
+ * <li> {@link IMap#executeOnKey(Object, EntryProcessor)} </li>
+ * <li> {@link IMap#submitToKey(Object, EntryProcessor)} </li>
+ * <li> {@link IMap#submitToKey(Object, EntryProcessor, ExecutionCallback)} </li>
+ * </ul>
+ * There are however following methods that run the EntryProcessor on more than one entry. These operations are not lock-aware.
+ * The EntryProcessor will process the entries no matter if they are locked or not.
+ * The user may however check if an entry is locked by casting the {@link java.util.Map.Entry} to ]
+ * {@link LockAware} and invoking the {@link LockAware#isLocked()} method.
+ * <ul>
+ * <li> {@link IMap#executeOnEntries(EntryProcessor)} </li>
+ * <li> {@link IMap#executeOnEntries(EntryProcessor, Predicate)} </li>
+ * <li> {@link IMap#executeOnKeys(Set, EntryProcessor)} </li>
+ * </ul>
+ * This applies to both EntryProcessor and backup EntryProcessor.
  *
  * @param <K> key
  * @param <V> value

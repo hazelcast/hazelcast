@@ -25,6 +25,7 @@ import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
+import com.hazelcast.map.impl.LockAwareLazyMapEntry;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
@@ -67,7 +68,8 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
     protected Map.Entry createMapEntry(Data key, Object value) {
         InternalSerializationService serializationService
                 = ((InternalSerializationService) getNodeEngine().getSerializationService());
-        return new LazyMapEntry(key, value, serializationService, mapContainer.getExtractors());
+        boolean locked = recordStore.isLocked(key);
+        return new LockAwareLazyMapEntry(key, value, serializationService, mapContainer.getExtractors(), locked);
     }
 
     protected boolean hasRegisteredListenerForThisMap() {
