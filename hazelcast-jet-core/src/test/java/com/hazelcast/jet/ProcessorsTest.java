@@ -41,6 +41,7 @@ import static com.hazelcast.jet.Util.entry;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -64,35 +65,19 @@ public class ProcessorsTest {
     public void mapProcessor() {
         // Given
         final Processor p = processorFrom(Processors.map(Object::toString));
-        p.init(outbox, context);
         inbox.add(1);
-        inbox.add(2);
 
         // When
         p.process(0, inbox);
+
         // Then
-        assertEquals(1, inbox.size());
-        assertEquals(1, bucket.size());
         assertEquals("1", bucket.remove());
-
-        // When
-        p.process(0, inbox);
-        // Then
-        assertTrue(inbox.isEmpty());
-        assertEquals(1, bucket.size());
-        assertEquals("2", bucket.remove());
-
-        // When
-        p.process(0, inbox);
-        // Then
-        assertTrue(bucket.isEmpty());
     }
 
     @Test
     public void filterProcessor() {
         // Given
         final Processor p = processorFrom(Processors.filter(o -> o.equals(1)));
-        p.init(outbox, context);
         inbox.add(1);
         inbox.add(2);
         inbox.add(1);
@@ -101,7 +86,6 @@ public class ProcessorsTest {
         // When
         p.process(0, inbox);
         // Then
-        assertEquals(2, inbox.size());
         assertEquals(1, bucket.remove());
 
         // When
@@ -109,60 +93,24 @@ public class ProcessorsTest {
         // Then
         assertTrue(inbox.isEmpty());
         assertEquals(1, bucket.remove());
-
-        // When
-        p.process(0, inbox);
-        // Then
-        assertTrue(bucket.isEmpty());
     }
 
     @Test
     public void flatMapProcessor() {
         // Given
         final Processor p = processorFrom(Processors.flatMap(o -> traverseIterable(asList(o + "a", o + "b"))));
-        p.init(outbox, context);
         inbox.add(1);
 
         // When
         p.process(0, inbox);
         // Then
-        assertEquals(1, inbox.size());
-        assertEquals(1, bucket.size());
         assertEquals("1a", bucket.remove());
 
         // When
         p.process(0, inbox);
         // Then
         assertTrue(inbox.isEmpty());
-        assertEquals(1, bucket.size());
         assertEquals("1b", bucket.remove());
-
-        // When
-        p.process(0, inbox);
-        // Then
-        assertTrue(bucket.isEmpty());
-    }
-
-    @Test
-    public void when_punctuation_then_passIt() {
-        // Given
-        final Processor p = processorFrom(Processors.filter(o -> false));
-        p.init(outbox, context);
-        inbox.add(1);
-        inbox.add(new Punctuation(1));
-        inbox.add(2);
-
-        // When
-        p.process(0, inbox);
-        // Then
-        assertTrue(inbox.isEmpty());
-        assertEquals(1, bucket.size());
-        assertEquals(new Punctuation(1), bucket.remove());
-
-        // When
-        p.process(0, inbox);
-        // Then
-        assertTrue(bucket.isEmpty());
     }
 
     @Test
@@ -295,7 +243,6 @@ public class ProcessorsTest {
 
     private <R> void testGroupAndAccumulate(Processor p, TwinConsumer<R> testComplete) {
         // Given
-        p.init(outbox, context);
         inbox.add(1);
         inbox.add(1);
         inbox.add(2);
@@ -306,14 +253,12 @@ public class ProcessorsTest {
         boolean done = p.complete();
         // Then
         assertFalse(done);
-        assertEquals(1, bucket.size());
         final R result1 = (R) bucket.remove();
 
         // When
         done = p.complete();
         // Then
         assertTrue(done);
-        assertEquals(1, bucket.size());
         final R result2 = (R) bucket.remove();
 
         // Finally
@@ -322,7 +267,6 @@ public class ProcessorsTest {
 
     private <R> void testAccumulate(Processor p, Consumer<R> testComplete) {
         // Given
-        p.init(outbox, context);
         inbox.add(1);
         inbox.add(1);
         inbox.add(2);
@@ -340,8 +284,11 @@ public class ProcessorsTest {
         testComplete.accept(result);
     }
 
-    private static Processor processorFrom(ProcessorSupplier supplier) {
-        return supplier.get(1).iterator().next();
+    private Processor processorFrom(ProcessorSupplier supplier) {
+        Processor p = supplier.get(1).iterator().next();
+        p.init(outbox, context);
+        return p;
+
     }
 
     private interface TwinConsumer<T> extends BiConsumer<T, T> { }

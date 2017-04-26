@@ -17,6 +17,7 @@
 package com.hazelcast.jet.windowing;
 
 import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.stream.DistributedCollector;
 
 import javax.annotation.Nonnull;
@@ -38,7 +39,7 @@ public final class WindowingProcessors {
      *
      * @param <T> the type of stream item
      */
-    public static <T> Distributed.Supplier<InsertPunctuationP<T>> insertPunctuation(
+    public static <T> Distributed.Supplier<Processor> insertPunctuation(
             @Nonnull Distributed.ToLongFunction<T> extractEventSeqF,
             @Nonnull Distributed.Supplier<PunctuationPolicy> newPuncPolicyF
     ) {
@@ -59,7 +60,7 @@ public final class WindowingProcessors {
      * @param <F> type of accumulator returned from {@code windowOperation.
      *            createAccumulatorF()}
      */
-    public static <T, K, F> Distributed.Supplier<GroupByFrameP<T, K, F>> groupByFrame(
+    public static <T, K, F> Distributed.Supplier<Processor> groupByFrame(
             Distributed.Function<? super T, K> extractKeyF,
             Distributed.ToLongFunction<? super T> extractTimestampF,
             WindowDefinition windowDef,
@@ -74,7 +75,7 @@ public final class WindowingProcessors {
      * groupByFrame(extractKeyF, extractTimestampF, windowDef, collector)}
      * which doesn't group by key.
      */
-    public static <T, F> Distributed.Supplier<GroupByFrameP<T, String, F>> groupByFrame(
+    public static <T, F> Distributed.Supplier<Processor> groupByFrame(
             Distributed.ToLongFunction<? super T> extractTimestampF,
             WindowDefinition windowDef,
             WindowOperation<? super T, F, ?> collector
@@ -88,11 +89,10 @@ public final class WindowingProcessors {
      * sliding windows. Applies the finisher function to produce its emitted
      * output.
      *
-     * @param <K> type of the grouping key
      * @param <F> type of accumulator
      * @param <R> type of the result derived from a frame
      */
-    public static <K, F, R> Distributed.Supplier<SlidingWindowP<K, F, R>> slidingWindow(
+    public static <F, R> Distributed.Supplier<Processor> slidingWindow(
             WindowDefinition windowDef, WindowOperation<?, F, R> windowOperation) {
         return () -> new SlidingWindowP<>(windowDef, windowOperation);
     }
@@ -120,7 +120,7 @@ public final class WindowingProcessors {
      * @param <A> type of the container of accumulated value
      * @param <R> type of the result value for a session window
      */
-    public static <T, K, A, R> Distributed.Supplier<SessionWindowP<T, K, A, R>> sessionWindow(
+    public static <T, K, A, R> Distributed.Supplier<Processor> sessionWindow(
             long maxSeqGap,
             Distributed.ToLongFunction<? super T> extractEventSeqF,
             Distributed.Function<? super T, K> extractKeyF,

@@ -37,9 +37,9 @@ import java.util.List;
 import java.util.stream.LongStream;
 
 import static com.hazelcast.jet.Distributed.Function.identity;
-import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindow;
 import static java.util.Arrays.asList;
 import static java.util.Collections.shuffle;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -98,7 +98,7 @@ public class SlidingWindowPTest extends StreamingTestSupport {
                     identity());
         }
 
-        processor = slidingWindow(windowDef, operation).get();
+        processor = new SlidingWindowP<>(windowDef, operation);
         processor.init(outbox, mock(Context.class));
     }
 
@@ -111,7 +111,7 @@ public class SlidingWindowPTest extends StreamingTestSupport {
     @Test
     public void when_noFramesReceived_then_onlyEmitPunc() {
         // Given
-        inbox.addAll(asList(
+        inbox.addAll(singletonList(
                 punc(1)
         ));
 
@@ -120,7 +120,7 @@ public class SlidingWindowPTest extends StreamingTestSupport {
         assertTrue(inbox.isEmpty());
 
         // Then
-        assertOutbox(asList(
+        assertOutbox(singletonList(
                 punc(1)
         ));
     }
@@ -141,7 +141,7 @@ public class SlidingWindowPTest extends StreamingTestSupport {
                 punc(5),
                 punc(6),
                 punc(7),
-                punc(8) // extra punc to trigger lazy clean-up
+                punc(8) // extra punc to evict the dangling frame
         ));
 
         // When
@@ -185,7 +185,7 @@ public class SlidingWindowPTest extends StreamingTestSupport {
                 punc(5),
                 punc(6),
                 punc(7),
-                punc(8) // extra punc to trigger lazy clean-up
+                punc(8) // extra punc to evict the dangling frame
         ));
 
         // When
@@ -347,7 +347,7 @@ public class SlidingWindowPTest extends StreamingTestSupport {
         return new Frame<>(seq, 77L, isMutableFrame ? MutableLong.valueOf(value) : value);
     }
 
-    private Frame<Long, ?> outboxFrame(long seq, long value) {
+    private static Frame<Long, ?> outboxFrame(long seq, long value) {
         return new Frame<>(seq, 77L, value);
     }
 }

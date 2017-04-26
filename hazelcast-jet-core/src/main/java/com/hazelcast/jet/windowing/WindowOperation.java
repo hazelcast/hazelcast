@@ -46,9 +46,9 @@ import java.util.Objects;
  *     accumulator's intermediate result into the final result
  * </li></ol>
  *
- * @param <T> the type of the stream item
- * @param <A> the type of the accumulator
- * @param <R> the type of the final result
+ * @param <T> the type of the stream item &mdash; contravariant
+ * @param <A> the type of the accumulator &mdash; invariant
+ * @param <R> the type of the final result &mdash; covariant
  */
 public interface WindowOperation<T, A, R> extends Serializable {
 

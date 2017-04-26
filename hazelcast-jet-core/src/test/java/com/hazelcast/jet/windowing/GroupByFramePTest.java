@@ -44,13 +44,14 @@ public class GroupByFramePTest extends StreamingTestSupport {
     private GroupByFrameP<Entry<Long, Long>, Long, ?> processor;
 
     @Before
+    @SuppressWarnings("unchecked")
     public void before() {
-        processor = WindowingProcessors.groupByFrame(
-                (Entry<Long, Long> x) -> KEY,
+        processor = new GroupByFrameP<>(
+                x -> KEY,
                 Entry::getKey,
                 new WindowDefinition(4, 0, 4),
                 WindowOperations.summingToLong((Entry<Long, Long> e) -> e.getValue())
-        ).get();
+        );
         processor.init(outbox, mock(Context.class));
     }
 

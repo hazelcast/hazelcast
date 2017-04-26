@@ -30,10 +30,14 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
 import javax.annotation.Nonnull;
-
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.Queue;
+import java.util.stream.Stream;
 
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
+import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -47,18 +51,29 @@ import static org.mockito.Mockito.mock;
 public class AbstractProcessorTest {
 
     private static final String MOCK_ITEM = "x";
-    private static final int OUTBOX_BUCKET_COUNT = 2;
+    private static final Punctuation MOCK_PUNC = new Punctuation(17);
+    private static final int OUTBOX_BUCKET_COUNT = 4;
+    private static final int ORDINAL_0 = 0;
+    private static final int ORDINAL_1 = 1;
+    private static final int ORDINAL_2 = 2;
+    private static final int ORDINAL_3 = 3;
+    private static final int ORDINAL_4 = 4;
+    private static final int ORDINAL_5 = 5;
+    private static final int[] ORDINALS_1_2 = {1, 2};
+    private static final int[] ALL_ORDINALS = range(0, OUTBOX_BUCKET_COUNT).toArray();
 
     private RegisteringMethodCallsP p;
     private SpecializedByOrdinalP tryProcessP;
 
     private ArrayDequeInbox inbox;
     private ArrayDequeOutbox outbox;
+    private NothingOverriddenP nothingOverriddenP;
 
     @Before
     public void before() {
         inbox = new ArrayDequeInbox();
         inbox.add(MOCK_ITEM);
+        inbox.add(MOCK_PUNC);
         int[] capacities = new int[OUTBOX_BUCKET_COUNT];
         Arrays.fill(capacities, 1);
         outbox = new ArrayDequeOutbox(capacities, new ProgressTracker());
@@ -69,6 +84,19 @@ public class AbstractProcessorTest {
         p.init(outbox, ctx);
         tryProcessP = new SpecializedByOrdinalP();
         tryProcessP.init(outbox, ctx);
+        nothingOverriddenP = new NothingOverriddenP();
+        nothingOverriddenP.init(outbox, ctx);
+    }
+
+    @Test
+    public void when_setCooperative_then_isCooperative() {
+        Stream.of(FALSE, TRUE).forEach(b -> {
+            // When
+            p.setCooperative(b);
+
+            // Then
+            assertEquals(b, p.isCooperative());
+        });
     }
 
     @Test
@@ -89,64 +117,64 @@ public class AbstractProcessorTest {
     public void when_customInitThrows_then_initRethrows() {
         new AbstractProcessor() {
             @Override
-            protected void init(@Nonnull Context context) throws Exception {
+            protected void init(@Nonnull Context context) throws UnknownHostException {
                 throw new UnknownHostException();
             }
         }.init(mock(Outbox.class), mock(Processor.Context.class));
     }
 
     @Test
-    public void when_process0_then_tryProcess0Called() {
+    public void when_processInbox0_then_tryProcess0Called() {
         // When
-        tryProcessP.process(0, inbox);
+        tryProcessP.process(ORDINAL_0, inbox);
 
         // Then
-        tryProcessP.validateReception(0, MOCK_ITEM);
+        tryProcessP.validateReceptionOfItem(ORDINAL_0, MOCK_ITEM);
     }
 
     @Test
-    public void when_process1_then_tryProcess1Called() {
+    public void when_processInbox1_then_tryProcess1Called() {
         // When
-        tryProcessP.process(1, inbox);
+        tryProcessP.process(ORDINAL_1, inbox);
 
         // Then
-        tryProcessP.validateReception(1, MOCK_ITEM);
+        tryProcessP.validateReceptionOfItem(ORDINAL_1, MOCK_ITEM);
     }
 
     @Test
-    public void when_process2_then_tryProcess2Called() {
+    public void when_processInbox2_then_tryProcess2Called() {
         // When
-        tryProcessP.process(2, inbox);
+        tryProcessP.process(ORDINAL_2, inbox);
 
         // Then
-        tryProcessP.validateReception(2, MOCK_ITEM);
+        tryProcessP.validateReceptionOfItem(ORDINAL_2, MOCK_ITEM);
     }
 
     @Test
-    public void when_process3_then_tryProcess3Called() {
+    public void when_processInbox3_then_tryProcess3Called() {
         // When
-        tryProcessP.process(3, inbox);
+        tryProcessP.process(ORDINAL_3, inbox);
 
         // Then
-        tryProcessP.validateReception(3, MOCK_ITEM);
+        tryProcessP.validateReceptionOfItem(ORDINAL_3, MOCK_ITEM);
     }
 
     @Test
-    public void when_process4_then_tryProcess4Called() {
+    public void when_processInbox4_then_tryProcess4Called() {
         // When
-        tryProcessP.process(4, inbox);
+        tryProcessP.process(ORDINAL_4, inbox);
 
         // Then
-        tryProcessP.validateReception(4, MOCK_ITEM);
+        tryProcessP.validateReceptionOfItem(ORDINAL_4, MOCK_ITEM);
     }
 
     @Test
-    public void when_process5_then_tryProcessCalled() {
+    public void when_processInbox5_then_tryProcessCalled() {
         // When
-        tryProcessP.process(5, inbox);
+        tryProcessP.process(ORDINAL_5, inbox);
 
         // Then
-        tryProcessP.validateReception(5, MOCK_ITEM);
+        tryProcessP.validateReceptionOfItem(ORDINAL_5, MOCK_ITEM);
     }
 
     @Test(expected = UnknownHostException.class)
@@ -154,124 +182,384 @@ public class AbstractProcessorTest {
         // Given
         AbstractProcessor p = new AbstractProcessor() {
             @Override
-            protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
+            protected boolean tryProcess(int ordinal, @Nonnull Object item) throws UnknownHostException {
                 throw new UnknownHostException();
             }
         };
         p.init(mock(Outbox.class), mock(Processor.Context.class));
 
         // When
-        p.process(0, inbox);
+        p.process(ORDINAL_0, inbox);
 
         // Then don't reach this line
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void when_tryProcessNotOverridden_then_unsupportedOperation() throws Exception {
-        new AbstractProcessor() {}.tryProcess(0, MOCK_ITEM);
+    public void when_tryProcess_then_unsupportedOperation() throws Exception {
+        nothingOverriddenP.tryProcess(ORDINAL_0, MOCK_ITEM);
     }
 
     @Test
-    public void when_tryProcess0NotOverridden_then_delegatesToTryProcess() throws Exception {
+    public void when_tryProcess0_then_delegatesToTryProcess() throws Exception {
         // When
-        p.tryProcess0(MOCK_ITEM);
+        boolean done = p.tryProcess0(MOCK_ITEM);
 
         // Then
-        assertEquals(MOCK_ITEM, p.resultOfTryProcessN[0]);
+        assertTrue(done);
+        p.validateReceptionOfItem(ORDINAL_0, MOCK_ITEM);
     }
 
     @Test
-    public void when_tryProcess1NotOverridden_then_delegatesToTryProcess() throws Exception {
-        p.tryProcess1(MOCK_ITEM);
-        assertEquals(MOCK_ITEM, p.resultOfTryProcessN[1]);
-    }
-
-    @Test
-    public void when_tryProcess2NotOverridden_then_delegatesToTryProcess() throws Exception {
-        p.tryProcess2(MOCK_ITEM);
-        assertEquals(MOCK_ITEM, p.resultOfTryProcessN[2]);
-    }
-
-    @Test
-    public void when_tryProcess3NotOverridden_then_delegatesToTryProcess() throws Exception {
-        p.tryProcess3(MOCK_ITEM);
-        assertEquals(MOCK_ITEM, p.resultOfTryProcessN[3]);
-    }
-
-    @Test
-    public void when_tryProcess4NotOverridden_then_delegatesToTryProcess() throws Exception {
-        p.tryProcess4(MOCK_ITEM);
-        assertEquals(MOCK_ITEM, p.resultOfTryProcessN[4]);
-    }
-
-    @Test
-    public void when_emit_then_outboxHasItemInAllBuckets() {
+    public void when_tryProcess1_then_delegatesToTryProcess() throws Exception {
         // When
-        p.tryEmit(MOCK_ITEM);
+        boolean done = p.tryProcess1(MOCK_ITEM);
 
         // Then
-        for (int i = 0; i < OUTBOX_BUCKET_COUNT; i++) {
-            assertEquals(MOCK_ITEM, outbox.queueWithOrdinal(i).remove());
-        }
+        assertTrue(done);
+        p.validateReceptionOfItem(ORDINAL_1, MOCK_ITEM);
     }
 
     @Test
-    public void when_emit1_then_outboxBucket1HasItem() {
-        final int ordinal = 1;
-
+    public void when_tryProcess2_then_delegatesToTryProcess() throws Exception {
         // When
-        p.tryEmit(ordinal, MOCK_ITEM);
+        boolean done = p.tryProcess2(MOCK_ITEM);
 
         // Then
-        for (int i = 0; i < OUTBOX_BUCKET_COUNT; i++) {
-            assertEquals(i == ordinal ? MOCK_ITEM : null, outbox.queueWithOrdinal(i).poll());
-        }
+        assertTrue(done);
+        p.validateReceptionOfItem(ORDINAL_2, MOCK_ITEM);
     }
 
     @Test
-    public void when_emitFromTraverser_then_outboxHasOneItem() {
-        final int ordinal = 1;
-
+    public void when_tryProcess3_then_delegatesToTryProcess() throws Exception {
         // When
-        p.emitFromTraverser(ordinal, () -> MOCK_ITEM);
+        boolean done = p.tryProcess3(MOCK_ITEM);
 
         // Then
-        for (int i = 0; i < OUTBOX_BUCKET_COUNT; i++) {
-            assertEquals(i == ordinal ? MOCK_ITEM : null, outbox.queueWithOrdinal(i).poll());
-        }
-        assertNull(outbox.queueWithOrdinal(ordinal).poll());
+        assertTrue(done);
+        p.validateReceptionOfItem(ORDINAL_3, MOCK_ITEM);
     }
 
     @Test
-    public void when_flatMapperTryProcess_then_outboxHasOneItem() {
+    public void when_tryProcess4_then_delegatesToTryProcess() throws Exception {
+        // When
+        boolean done = p.tryProcess4(MOCK_ITEM);
+
+        // Then
+        assertTrue(done);
+        p.validateReceptionOfItem(ORDINAL_4, MOCK_ITEM);
+    }
+
+    @Test
+    public void when_tryProcessPunc_then_passesOnPunc() {
+        // When
+        boolean done = nothingOverriddenP.tryProcessPunc(ORDINAL_0, MOCK_PUNC);
+
+        // Then
+        assertTrue(done);
+        validateReceptionAtOrdinals(MOCK_PUNC, ALL_ORDINALS);
+    }
+
+    @Test
+    public void when_tryProcessPunc0_then_delegatesToTryProcessPunc() throws Exception {
+        // When
+        boolean done = p.tryProcessPunc0(MOCK_PUNC);
+
+        // Then
+        assertTrue(done);
+        p.validateReceptionOfPunc(ORDINAL_0, MOCK_PUNC);
+    }
+
+    @Test
+    public void when_tryProcessPunc1_then_delegatesToTryProcessPunc() throws Exception {
+        // When
+        boolean done = p.tryProcessPunc1(MOCK_PUNC);
+
+        // Then
+        assertTrue(done);
+        p.validateReceptionOfPunc(ORDINAL_1, MOCK_PUNC);
+    }
+
+    @Test
+    public void when_tryProcessPunc2_then_delegatesToTryProcessPunc() throws Exception {
+        // When
+        boolean done = p.tryProcessPunc2(MOCK_PUNC);
+
+        // Then
+        assertTrue(done);
+        p.validateReceptionOfPunc(ORDINAL_2, MOCK_PUNC);
+    }
+
+    @Test
+    public void when_tryProcessPunc3_then_delegatesToTryProcessPunc() throws Exception {
+        // When
+        boolean done = p.tryProcessPunc3(MOCK_PUNC);
+
+        // Then
+        assertTrue(done);
+        p.validateReceptionOfPunc(ORDINAL_3, MOCK_PUNC);
+    }
+
+    @Test
+    public void when_tryProcessPunc4_then_delegatesToTryProcessPunc() throws Exception {
+        // When
+        boolean done = p.tryProcessPunc4(MOCK_PUNC);
+
+        // Then
+        assertTrue(done);
+        p.validateReceptionOfPunc(ORDINAL_4, MOCK_PUNC);
+    }
+
+    @Test
+    public void when_process0ButOutboxFull_then_itemNotRemoved() throws Exception {
+        // Given
+        resetInboxToTwoPuncs();
+
+        // When
+        nothingOverriddenP.process0(inbox);
+
+        // Then
+        assertEquals(MOCK_PUNC, inbox.poll());
+    }
+
+    @Test
+    public void when_process1ButOutboxFull_then_itemNotRemoved() throws Exception {
+        // Given
+        resetInboxToTwoPuncs();
+
+        // When
+        nothingOverriddenP.process1(inbox);
+
+        // Then
+        assertEquals(MOCK_PUNC, inbox.poll());
+    }
+
+    @Test
+    public void when_process2ButOutboxFull_then_itemNotRemoved() throws Exception {
+        // Given
+        resetInboxToTwoPuncs();
+
+        // When
+        nothingOverriddenP.process2(inbox);
+
+        // Then
+        assertEquals(MOCK_PUNC, inbox.poll());
+    }
+
+    @Test
+    public void when_process3ButOutboxFull_then_itemNotRemoved() throws Exception {
+        // Given
+        resetInboxToTwoPuncs();
+
+        // When
+        nothingOverriddenP.process3(inbox);
+
+        // Then
+        assertEquals(MOCK_PUNC, inbox.poll());
+    }
+
+    @Test
+    public void when_process4ButOutboxFull_then_itemNotRemoved() throws Exception {
+        // Given
+        resetInboxToTwoPuncs();
+
+        // When
+        nothingOverriddenP.process4(inbox);
+
+        // Then
+        assertEquals(MOCK_PUNC, inbox.poll());
+    }
+
+    @Test
+    public void when_processAnyButOutboxFull_then_itemNotRemoved() throws Exception {
+        // Given
+        resetInboxToTwoPuncs();
+
+        // When
+        nothingOverriddenP.processAny(5, inbox);
+
+        // Then
+        assertEquals(MOCK_PUNC, inbox.poll());
+    }
+
+    private void resetInboxToTwoPuncs() {
+        inbox.clear();
+        inbox.add(MOCK_PUNC);
+        inbox.add(MOCK_PUNC);
+    }
+
+    @Test
+    public void when_tryEmitToAll_then_emittedToAll() {
+        // When
+        boolean emitted = p.tryEmit(MOCK_ITEM);
+
+        // Then
+        assertTrue(emitted);
+        validateReceptionAtOrdinals(MOCK_ITEM, ALL_ORDINALS);
+    }
+
+    @Test
+    public void when_tryEmitTo1_then_emittedTo1() {
+        // When
+        boolean emitted = p.tryEmit(ORDINAL_1, MOCK_ITEM);
+
+        // Then
+        assertTrue(emitted);
+        validateReceptionAtOrdinals(MOCK_ITEM, ORDINAL_1);
+    }
+
+    @Test
+    public void when_tryEmitTo1And2_then_emittedTo1And2() {
+        // When
+        boolean emitted = p.tryEmit(ORDINALS_1_2, MOCK_ITEM);
+
+        // Then
+        assertTrue(emitted);
+        validateReceptionAtOrdinals(MOCK_ITEM, ORDINALS_1_2);
+    }
+
+    @Test
+    public void when_emitToAll_then_emittedToAll() {
+        // When
+        p.emit(MOCK_ITEM);
+
+        // Then
+        validateReceptionAtOrdinals(MOCK_ITEM, ALL_ORDINALS);
+    }
+
+    @Test
+    public void when_emitTo1_then_emittedTo1() {
+        // When
+        p.emit(ORDINAL_1, MOCK_ITEM);
+
+        // Then
+        validateReceptionAtOrdinals(MOCK_ITEM, ORDINAL_1);
+    }
+
+    @Test
+    public void when_emitTo1And2_then_emittedTo1And2() {
+        // When
+        p.emit(ORDINALS_1_2, MOCK_ITEM);
+
+        // Then
+        validateReceptionAtOrdinals(MOCK_ITEM, ORDINALS_1_2);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void when_emitToFullOutbox_then_exception() {
+        // Given -- fills outbox
+        p.emit(MOCK_ITEM);
+
+        // When
+        p.emit(MOCK_ITEM);
+
+        // Then don't reach this line
+    }
+
+    @Test
+    public void when_emitFromTraverserToAll_then_emittedToAll() {
+        // Given
+        Traverser<Object> trav = Traverser.over(MOCK_ITEM);
+
+        // When
+        boolean done = p.emitFromTraverser(trav);
+
+        // Then
+        assertTrue(done);
+        validateReceptionAtOrdinals(MOCK_ITEM, ALL_ORDINALS);
+    }
+
+    @Test
+    public void when_emitFromTraverserTo1_then_emittedTo1() {
+        // Given
+        Traverser<Object> trav = Traverser.over(MOCK_ITEM, MOCK_ITEM);
+
+        boolean done;
+        do {
+            // When
+            done = p.emitFromTraverser(ORDINAL_1, trav);
+            // Then
+            validateReceptionAtOrdinals(MOCK_ITEM, ORDINAL_1);
+        } while (!done);
+    }
+
+    @Test
+    public void when_emitFromTraverserTo1And2_then_emittedTo1And2() {
+        // Given
+        Traverser<Object> trav = Traverser.over(MOCK_ITEM, MOCK_ITEM);
+
+        boolean done;
+        do {
+            // When
+            done = p.emitFromTraverser(ORDINALS_1_2, trav);
+            // Then
+            validateReceptionAtOrdinals(MOCK_ITEM, ORDINALS_1_2);
+        } while (!done);
+    }
+
+    @Test
+    public void when_flatMapperTryProcessTo1And2_then_emittedTo1And2() {
         final Object item1 = 1;
         final Object item2 = 2;
-        final FlatMapper<String, Object> flatMapper = p.flatMapper(x -> Traverser.over(item1, item2));
+        final int[] ordinals = {1, 2};
+        final FlatMapper<String, Object> flatMapper = p.flatMapper(ordinals, x -> Traverser.over(item1, item2));
 
         // When
         boolean done = flatMapper.tryProcess(MOCK_ITEM);
 
         // Then
         assertFalse(done);
-        for (int i = 0; i < OUTBOX_BUCKET_COUNT; i++) {
-            assertEquals(item1, outbox.queueWithOrdinal(i).poll());
-            assertNull(outbox.queueWithOrdinal(i).poll());
-        }
+        validateReceptionAtOrdinals(item1, ordinals);
 
         // When
         done = flatMapper.tryProcess(MOCK_ITEM);
 
         // Then
         assertTrue(done);
-        for (int i = 0; i < OUTBOX_BUCKET_COUNT; i++) {
-            assertEquals(item2, outbox.queueWithOrdinal(i).poll());
-            assertNull(outbox.queueWithOrdinal(i).poll());
+        validateReceptionAtOrdinals(item2, ordinals);
+    }
+
+    @Test
+    public void when_flatMapperTo1_then_emittedTo1() {
+        // Given
+        Object output = 42;
+        FlatMapper<Object, Object> m = p.flatMapper(ORDINAL_1, x -> Traverser.over(output));
+
+        // When
+        boolean done = m.tryProcess(MOCK_ITEM);
+
+        // Then
+        assertTrue(done);
+        validateReceptionAtOrdinals(output, ORDINAL_1);
+    }
+
+    @Test
+    public void when_flatMapperToAll_then_emittedToAll() {
+        // Given
+        Object output = 42;
+        FlatMapper<Object, Object> m = p.flatMapper(x -> Traverser.over(output));
+
+        // When
+        boolean done = m.tryProcess(MOCK_ITEM);
+
+        // Then
+        assertTrue(done);
+        validateReceptionAtOrdinals(output, ALL_ORDINALS);
+    }
+
+    private void validateReceptionAtOrdinals(Object item, int... ordinals) {
+        for (int i : range(0, OUTBOX_BUCKET_COUNT).toArray()) {
+            Queue<Object> q = outbox.queueWithOrdinal(i);
+            if (Arrays.stream(ordinals).anyMatch(ord -> ord == i)) {
+                assertEquals(item, q.poll());
+            }
+            assertNull(q.poll());
         }
     }
 
     private static class RegisteringMethodCallsP extends AbstractProcessor {
         boolean initCalled;
-        Object[] resultOfTryProcessN = new Object[6];
+        Object[] receivedByTryProcessN = new Object[6];
+        Object[] receivedByTryProcessPuncN = new Object[6];
 
         @Override
         protected void init(@Nonnull Context context) {
@@ -280,13 +568,25 @@ public class AbstractProcessorTest {
 
         @Override
         protected boolean tryProcess(int ordinal, @Nonnull Object item) {
-            resultOfTryProcessN[ordinal] = item;
+            receivedByTryProcessN[ordinal] = item;
             return true;
         }
 
-        void validateReception(int ordinal, Object item) {
-            for (int i = 0; i < resultOfTryProcessN.length; i++) {
-                assertSame(i == ordinal ? item : null, resultOfTryProcessN[i]);
+        @Override
+        protected boolean tryProcessPunc(int ordinal, @Nonnull Punctuation punc) {
+            receivedByTryProcessPuncN[ordinal] = punc;
+            return true;
+        }
+
+        void validateReceptionOfItem(int ordinal, Object item) {
+            for (int i = 0; i < receivedByTryProcessN.length; i++) {
+                assertSame(i == ordinal ? item : null, receivedByTryProcessN[i]);
+            }
+        }
+
+        void validateReceptionOfPunc(int ordinal, Punctuation punc) {
+            for (int i = 0; i < receivedByTryProcessPuncN.length; i++) {
+                assertSame(i == ordinal ? punc : null, receivedByTryProcessPuncN[i]);
             }
         }
     }
@@ -301,32 +601,35 @@ public class AbstractProcessorTest {
 
         @Override
         protected boolean tryProcess0(@Nonnull Object item) {
-            resultOfTryProcessN[0] = item;
+            receivedByTryProcessN[0] = item;
             return true;
         }
 
         @Override
         protected boolean tryProcess1(@Nonnull Object item) {
-            resultOfTryProcessN[1] = item;
+            receivedByTryProcessN[1] = item;
             return true;
         }
 
         @Override
         protected boolean tryProcess2(@Nonnull Object item) {
-            resultOfTryProcessN[2] = item;
+            receivedByTryProcessN[2] = item;
             return true;
         }
 
         @Override
         protected boolean tryProcess3(@Nonnull Object item) {
-            resultOfTryProcessN[3] = item;
+            receivedByTryProcessN[3] = item;
             return true;
         }
 
         @Override
         protected boolean tryProcess4(@Nonnull Object item) {
-            resultOfTryProcessN[4] = item;
+            receivedByTryProcessN[4] = item;
             return true;
         }
+    }
+
+    private static class NothingOverriddenP extends AbstractProcessor {
     }
 }
