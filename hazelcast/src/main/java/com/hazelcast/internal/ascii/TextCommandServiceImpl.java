@@ -74,7 +74,7 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.TOUCH;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
-import static com.hazelcast.util.ThreadUtil.getThreadNamePrefix;
+import static com.hazelcast.util.ThreadUtil.createThreadName;
 
 public class TextCommandServiceImpl implements TextCommandService {
 
@@ -223,7 +223,7 @@ public class TextCommandServiceImpl implements TextCommandService {
             synchronized (mutex) {
                 if (responseThreadRunnable == null) {
                     responseThreadRunnable = new ResponseThreadRunnable();
-                    String threadNamePrefix = getThreadNamePrefix(hazelcast.getName(), "ascii.service.response");
+                    String threadNamePrefix = createThreadName(hazelcast.getName(), "ascii.service.response");
                     Thread thread = new Thread(responseThreadRunnable, threadNamePrefix);
                     thread.start();
                 }

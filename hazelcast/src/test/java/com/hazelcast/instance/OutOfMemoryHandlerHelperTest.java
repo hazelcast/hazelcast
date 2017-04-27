@@ -26,7 +26,6 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.instance.OutOfMemoryHandlerHelper.tryCloseConnections;
 import static com.hazelcast.instance.OutOfMemoryHandlerHelper.tryShutdown;
-import static com.hazelcast.instance.OutOfMemoryHandlerHelper.tryStopThreads;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -70,15 +69,5 @@ public class OutOfMemoryHandlerHelperTest extends AbstractOutOfMemoryHandlerTest
     @Test
     public void testTryShutdown_shouldDoNothingWhenThrowableIsThrown() {
         tryShutdown(hazelcastInstanceThrowsException);
-    }
-
-    @Test
-    public void testTryStopThreads() {
-        tryStopThreads(hazelcastInstance);
-    }
-
-    @Test
-    public void testTryStopThreads_shouldDoNothingWithNullInstance() {
-        tryStopThreads(null);
     }
 }

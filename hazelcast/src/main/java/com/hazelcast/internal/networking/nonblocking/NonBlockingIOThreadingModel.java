@@ -32,7 +32,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.HashUtil.hashToIndex;
-import static com.hazelcast.util.ThreadUtil.getThreadPoolNamePrefix;
+import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
@@ -146,7 +146,7 @@ public class NonBlockingIOThreadingModel
 
         for (int i = 0; i < inputThreads.length; i++) {
             NonBlockingIOThread thread = new NonBlockingIOThread(
-                    getThreadPoolNamePrefix(hzName, "IO") + "in-" + i,
+                    createThreadPoolName(hzName, "IO") + "in-" + i,
                     loggingService.getLogger(NonBlockingIOThread.class),
                     oomeHandler,
                     selectorMode);
@@ -159,7 +159,7 @@ public class NonBlockingIOThreadingModel
 
         for (int i = 0; i < outputThreads.length; i++) {
             NonBlockingIOThread thread = new NonBlockingIOThread(
-                    getThreadPoolNamePrefix(hzName, "IO") + "out-" + i,
+                    createThreadPoolName(hzName, "IO") + "out-" + i,
                     loggingService.getLogger(NonBlockingIOThread.class),
                     oomeHandler,
                     selectorMode);

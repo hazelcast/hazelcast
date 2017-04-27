@@ -17,6 +17,7 @@
 package com.hazelcast.internal.networking.spinning;
 
 import com.hazelcast.internal.networking.SocketConnection;
+import com.hazelcast.util.ThreadUtil;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
@@ -31,8 +32,8 @@ public class SpinningInputThread extends Thread {
 
     private volatile SocketReaders socketReaders;
 
-    public SpinningInputThread() {
-        super("in-thread");
+    public SpinningInputThread(String hzName) {
+        super(ThreadUtil.createThreadName(hzName, "in-thread"));
         this.socketReaders = new SocketReaders();
     }
 

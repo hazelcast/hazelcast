@@ -32,6 +32,7 @@ public class Spinning_IOThreadingModelFactory implements IOThreadingModelFactory
                 loggingService,
                 ioService.getIoOutOfMemoryHandler(),
                 new SocketWriterInitializerImpl(loggingService.getLogger(SocketWriterInitializerImpl.class)),
-                new SocketReaderInitializerImpl(loggingService.getLogger(SocketReaderInitializerImpl.class)));
+                new SocketReaderInitializerImpl(loggingService.getLogger(SocketReaderInitializerImpl.class))
+                , "hz");
     }
 }

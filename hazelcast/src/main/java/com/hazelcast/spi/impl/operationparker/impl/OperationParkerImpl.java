@@ -49,7 +49,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static com.hazelcast.util.ThreadUtil.getThreadNamePrefix;
+import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class OperationParkerImpl implements OperationParker, LiveOperationsTracker, MetricsProvider {
@@ -80,7 +80,7 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
 
         this.expirationExecutor = Executors.newSingleThreadExecutor(
                 new SingleExecutorThreadFactory(node.getConfigClassLoader(),
-                        getThreadNamePrefix(nodeEngine.getHazelcastInstance().getName(), "operation-parker")));
+                        createThreadName(nodeEngine.getHazelcastInstance().getName(), "operation-parker")));
 
         this.expirationTaskFuture = expirationExecutor.submit(new ExpirationTask());
     }

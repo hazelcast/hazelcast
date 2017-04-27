@@ -63,8 +63,4 @@ public final class OutOfMemoryHandlerHelper {
             EmptyStatement.ignore(ignored);
         }
     }
-
-    public static void tryStopThreads(HazelcastInstance hazelcastInstance) {
-        //TODO ??????
-    }
 }

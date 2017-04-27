@@ -75,16 +75,6 @@ public class OutOfMemoryHandlerTest extends AbstractOutOfMemoryHandlerTest {
         outOfMemoryHandler.shutdown(hazelcastInstanceThrowsException);
     }
 
-    @Test
-    public void testTryStopThreads() {
-        outOfMemoryHandler.stopThreads(hazelcastInstance);
-    }
-
-    @Test
-    public void testTryStopThreads_shouldDoNothingWithNullInstance() {
-        outOfMemoryHandler.stopThreads(null);
-    }
-
     static class TestOutOfMemoryHandler extends OutOfMemoryHandler {
 
         void closeConnections(HazelcastInstance hazelcastInstance) {
@@ -93,10 +83,6 @@ public class OutOfMemoryHandlerTest extends AbstractOutOfMemoryHandlerTest {
 
         void shutdown(HazelcastInstance hazelcastInstance) {
             tryShutdown(hazelcastInstance);
-        }
-
-        void stopThreads(HazelcastInstance hazelcastInstance) {
-            tryStopThreads(hazelcastInstance);
         }
 
         @Override

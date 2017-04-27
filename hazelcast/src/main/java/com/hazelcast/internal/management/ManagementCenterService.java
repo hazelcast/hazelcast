@@ -81,7 +81,7 @@ import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getObject;
-import static com.hazelcast.util.ThreadUtil.getThreadNamePrefix;
+import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.net.URLEncoder.encode;
 
 /**
@@ -284,7 +284,7 @@ public class ManagementCenterService {
         private final long updateIntervalMs;
 
         private PrepareStateThread() {
-            super(getThreadNamePrefix(instance.getName(), "MC.State.Sender"));
+            super(createThreadName(instance.getName(), "MC.State.Sender"));
             updateIntervalMs = calcUpdateInterval();
         }
 
@@ -322,7 +322,7 @@ public class ManagementCenterService {
         private final long updateIntervalMs;
 
         private StateSendThread() {
-            super(getThreadNamePrefix(instance.getName(), "MC.State.Sender"));
+            super(createThreadName(instance.getName(), "MC.State.Sender"));
             updateIntervalMs = calcUpdateInterval();
         }
 
@@ -424,7 +424,7 @@ public class ManagementCenterService {
         private final ExecutionService executionService = instance.node.getNodeEngine().getExecutionService();
 
         TaskPollThread() {
-            super(getThreadNamePrefix(instance.getName(), "MC.Task.Poller"));
+            super(createThreadName(instance.getName(), "MC.Task.Poller"));
             register(new ThreadDumpRequest());
             register(new ExecuteScriptRequest());
             register(new ConsoleCommandRequest());

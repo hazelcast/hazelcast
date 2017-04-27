@@ -74,7 +74,8 @@ public class DefaultNodeContext implements NodeContext {
                     loggingService,
                     ioService.getIoOutOfMemoryHandler(),
                     socketWriterInitializer,
-                    socketReaderInitializer);
+                    socketReaderInitializer,
+                    node.hazelcastInstance.getName());
         } else {
             return new NonBlockingIOThreadingModel(
                     loggingService,

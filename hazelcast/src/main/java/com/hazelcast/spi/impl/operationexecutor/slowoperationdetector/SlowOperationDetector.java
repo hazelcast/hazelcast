@@ -35,7 +35,7 @@ import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR
 import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
-import static com.hazelcast.util.ThreadUtil.getThreadNamePrefix;
+import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.lang.String.format;
 
 /**
@@ -133,7 +133,7 @@ public final class SlowOperationDetector {
         private volatile boolean running = true;
 
         private DetectorThread(String hzName) {
-            super(getThreadNamePrefix(hzName, "SlowOperationDetectorThread"));
+            super(createThreadName(hzName, "SlowOperationDetectorThread"));
         }
 
         @Override

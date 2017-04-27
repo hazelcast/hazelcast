@@ -38,7 +38,7 @@ import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
-import static com.hazelcast.util.ThreadUtil.getThreadNamePrefix;
+import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
@@ -127,7 +127,7 @@ public class AsyncInboundResponseHandler implements PacketHandler, MetricsProvid
         private ResponseThread(ClassLoader classLoader, String hzName,
                                PacketHandler responsePacketHandler,
                                HazelcastProperties properties) {
-            super(getThreadNamePrefix(hzName, "response"));
+            super(createThreadName(hzName, "response"));
             setContextClassLoader(classLoader);
             this.responsePacketHandler = responsePacketHandler;
             this.responseQueue = new MPSCQueue<Packet>(this, getIdleStrategy(properties, IDLE_STRATEGY));

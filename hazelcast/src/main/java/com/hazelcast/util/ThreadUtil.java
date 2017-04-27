@@ -59,27 +59,27 @@ public final class ThreadUtil {
 
 
     /**
-     * Gets the threadname prefix.
+     * Creates the threadname with prefix and notation.
      *
      * @param hzName the name of the hazelcast instance
      * @param name   the basic name of the thread
-     * @return the created threadname prefix.
+     * @return the threadname .
      * @throws java.lang.NullPointerException if name is null.
      */
-    public static String getThreadNamePrefix(String hzName, String name) {
+    public static String createThreadName(String hzName, String name) {
         checkNotNull(name, "name can't be null");
         return "hz." + hzName + "." + name;
     }
 
     /**
-     * Gets the threadpool prefix for a given poolname.
+     * Creates the threadpool name with prefix and notation.
      *
      * @param hzName   the name of the hazelcast instance
      * @param poolName the name of the pool.
-     * @return the threadpool prefix.
+     * @return the threadpool name.
      * @throws java.lang.NullPointerException if poolname is null.
      */
-    public static String getThreadPoolNamePrefix(String hzName, String poolName) {
-        return getThreadNamePrefix(hzName, poolName) + ".thread-";
+    public static String createThreadPoolName(String hzName, String poolName) {
+        return createThreadName(hzName, poolName) + ".thread-";
     }
 }

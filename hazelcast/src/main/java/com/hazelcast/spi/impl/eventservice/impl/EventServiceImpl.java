@@ -61,7 +61,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.util.ThreadUtil.getThreadNamePrefix;
+import static com.hazelcast.util.ThreadUtil.createThreadName;
 
 public class EventServiceImpl implements InternalEventService, MetricsProvider {
 
@@ -120,7 +120,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
 
         this.eventExecutor = new StripedExecutor(
                 nodeEngine.getNode().getLogger(EventServiceImpl.class),
-                getThreadNamePrefix(nodeEngine.getHazelcastInstance().getName(), "event"),
+                createThreadName(nodeEngine.getHazelcastInstance().getName(), "event"),
                 eventThreadCount,
                 eventQueueCapacity);
         this.registrationExceptionHandler

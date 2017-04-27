@@ -56,7 +56,7 @@ import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
-import static com.hazelcast.util.ThreadUtil.getThreadNamePrefix;
+import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINE;
@@ -471,7 +471,7 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
      */
     private static final class InvocationMonitorThread extends Thread implements OperationHostileThread {
         private InvocationMonitorThread(Runnable task, String hzName) {
-            super(task, getThreadNamePrefix(hzName, "InvocationMonitorThread"));
+            super(task, createThreadName(hzName, "InvocationMonitorThread"));
         }
     }
 }

@@ -24,7 +24,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import static com.hazelcast.util.ThreadUtil.getThreadNamePrefix;
+import static com.hazelcast.util.ThreadUtil.createThreadName;
 
 public class ShutdownNodeOperation extends AbstractClusterOperation implements AllowedDuringPassiveState {
 
@@ -48,7 +48,7 @@ public class ShutdownNodeOperation extends AbstractClusterOperation implements A
                         final Node node = nodeEngine.getNode();
                         node.hazelcastInstance.getLifecycleService().shutdown();
                     }
-                }, getThreadNamePrefix(nodeEngine.getHazelcastInstance().getName(), ".clusterShutdown")).start();
+                }, createThreadName(nodeEngine.getHazelcastInstance().getName(), ".clusterShutdown")).start();
             } else {
                 logger.info("Node is already shutting down. NodeState: " + nodeEngine.getNode().getState());
             }

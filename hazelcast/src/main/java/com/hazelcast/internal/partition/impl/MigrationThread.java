@@ -21,7 +21,7 @@ import com.hazelcast.logging.ILogger;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.ThreadUtil.getThreadNamePrefix;
+import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.lang.Math.max;
 
 /**
@@ -49,7 +49,7 @@ class MigrationThread extends Thread implements Runnable {
 
     MigrationThread(MigrationManager migrationManager, String hzName, ILogger logger,
                     MigrationQueue queue) {
-        super(getThreadNamePrefix(hzName, "migration"));
+        super(createThreadName(hzName, "migration"));
 
         this.migrationManager = migrationManager;
         this.queue = queue;

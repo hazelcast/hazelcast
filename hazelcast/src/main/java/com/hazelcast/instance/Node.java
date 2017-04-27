@@ -95,7 +95,7 @@ import static com.hazelcast.spi.properties.GroupProperty.LOGGING_TYPE;
 import static com.hazelcast.spi.properties.GroupProperty.MAX_JOIN_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_POLICY;
-import static com.hazelcast.util.ThreadUtil.getThreadNamePrefix;
+import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.security.AccessController.doPrivileged;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:visibilitymodifier", "checkstyle:classdataabstractioncoupling",
@@ -370,7 +370,7 @@ public class Node {
         connectionManager.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(multicastService,
-                    getThreadNamePrefix(hazelcastInstance.getName(), "MulticastThread"));
+                    createThreadName(hazelcastInstance.getName(), "MulticastThread"));
             multicastServiceThread.start();
         }
         if (properties.getBoolean(DISCOVERY_SPI_ENABLED)) {

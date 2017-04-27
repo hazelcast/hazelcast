@@ -46,7 +46,7 @@ import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.ThreadUtil.getThreadPoolNamePrefix;
+import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -150,7 +150,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
 
         PartitionOperationThread[] threads = new PartitionOperationThread[threadCount];
         for (int threadId = 0; threadId < threads.length; threadId++) {
-            String threadName = getThreadPoolNamePrefix(hzName, "partition-operation") + threadId;
+            String threadName = createThreadPoolName(hzName, "partition-operation") + threadId;
             // the normalQueue will be a blocking queue. We don't want to idle, because there are many operation threads.
             MPSCQueue<Object> normalQueue = new MPSCQueue<Object>(null);
             OperationQueue operationQueue = new DefaultOperationQueue(normalQueue, new ConcurrentLinkedQueue<Object>());
@@ -188,7 +188,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         for (int threadIndex = 0; threadIndex < threads.length; threadIndex++) {
             boolean priority = threadIndex < priorityThreadCount;
             String baseName = priority ? "priority-generic-operation" : "generic-operation";
-            String threadName = getThreadPoolNamePrefix(hzName, baseName) + threadId;
+            String threadName = createThreadPoolName(hzName, baseName) + threadId;
             OperationRunner operationRunner = genericOperationRunners[threadIndex];
 
             GenericOperationThread operationThread = new GenericOperationThread(

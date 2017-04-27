@@ -54,7 +54,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
-import static com.hazelcast.util.ThreadUtil.getThreadPoolNamePrefix;
+import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
 public final class ExecutionServiceImpl implements InternalExecutionService {
@@ -125,7 +125,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
 
         String hzName = nodeEngine.getHazelcastInstance().getName();
         ClassLoader configClassLoader = node.getConfigClassLoader();
-        ThreadFactory threadFactory = new PoolExecutorThreadFactory(getThreadPoolNamePrefix(hzName, "cached"),
+        ThreadFactory threadFactory = new PoolExecutorThreadFactory(createThreadPoolName(hzName, "cached"),
                 configClassLoader);
         this.cachedExecutorService = new ThreadPoolExecutor(
                 CORE_POOL_SIZE, Integer.MAX_VALUE, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
@@ -139,7 +139,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         );
 
         ThreadFactory singleExecutorThreadFactory = new SingleExecutorThreadFactory(configClassLoader,
-                getThreadPoolNamePrefix(hzName, "scheduled"));
+                createThreadPoolName(hzName, "scheduled"));
         this.scheduledExecutorService = new LoggingScheduledExecutor(logger, 1, singleExecutorThreadFactory);
         enableRemoveOnCancelIfAvailable();
 
@@ -202,7 +202,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
             ClassLoader classLoader = nodeEngine.getConfigClassLoader();
             String hzName = node.getNodeEngine().getHazelcastInstance().getName();
             String internalName = name.startsWith("hz:") ? name.substring(BEGIN_INDEX) : name;
-            String threadNamePrefix = getThreadPoolNamePrefix(hzName, internalName);
+            String threadNamePrefix = createThreadPoolName(hzName, internalName);
             PoolExecutorThreadFactory threadFactory = new PoolExecutorThreadFactory(threadNamePrefix, classLoader);
             NamedThreadPoolExecutor pool = new NamedThreadPoolExecutor(name, poolSize, poolSize,
                     KEEP_ALIVE_TIME, TimeUnit.SECONDS,

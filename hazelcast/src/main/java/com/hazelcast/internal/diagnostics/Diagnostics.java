@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.diagnostics.DiagnosticsPlugin.DISABLED;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.ThreadUtil.getThreadNamePrefix;
+import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.lang.System.arraycopy;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -246,7 +246,7 @@ public class Diagnostics {
 
         @Override
         public Thread newThread(Runnable target) {
-            return new Thread(target, getThreadNamePrefix(hzName, "DiagnosticsSchedulerThread"));
+            return new Thread(target, createThreadName(hzName, "DiagnosticsSchedulerThread"));
         }
     }
 }

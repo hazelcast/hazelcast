@@ -45,7 +45,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.ThreadUtil.getThreadNamePrefix;
+import static com.hazelcast.util.ThreadUtil.createThreadName;
 
 @PrivateApi
 public class NodeIOService implements IOService {
@@ -91,7 +91,7 @@ public class NodeIOService implements IOService {
     @Override
     public void onFatalError(Exception e) {
         String hzName = nodeEngine.getHazelcastInstance().getName();
-        Thread thread = new Thread(getThreadNamePrefix(hzName, "io.error.shutdown")) {
+        Thread thread = new Thread(createThreadName(hzName, "io.error.shutdown")) {
             public void run() {
                 node.shutdown(false);
             }

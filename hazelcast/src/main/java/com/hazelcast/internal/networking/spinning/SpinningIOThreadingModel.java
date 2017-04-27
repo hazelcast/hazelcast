@@ -54,12 +54,13 @@ public class SpinningIOThreadingModel implements IOThreadingModel {
     public SpinningIOThreadingModel(LoggingService loggingService,
                                     IOOutOfMemoryHandler oomeHandler,
                                     SocketWriterInitializer socketWriterInitializer,
-                                    SocketReaderInitializer socketReaderInitializer) {
+                                    SocketReaderInitializer socketReaderInitializer,
+                                    String hzName) {
         this.logger = loggingService.getLogger(SpinningIOThreadingModel.class);
         this.loggingService = loggingService;
         this.oomeHandler = oomeHandler;
-        this.inputThread = new SpinningInputThread();
-        this.outThread = new SpinningOutputThread();
+        this.inputThread = new SpinningInputThread(hzName);
+        this.outThread = new SpinningOutputThread(hzName);
         this.socketWriterInitializer = socketWriterInitializer;
         this.socketReaderInitializer = socketReaderInitializer;
     }

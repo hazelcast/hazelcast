@@ -62,7 +62,7 @@ import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.ThreadUtil.getThreadPoolNamePrefix;
+import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 
 public class TcpIpConnectionManager implements ConnectionManager, PacketHandler {
 
@@ -481,7 +481,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         }
 
         acceptorThread = new SocketAcceptorThread(
-                getThreadPoolNamePrefix(ioService.getHazelcastName(), "IO") + "Acceptor",
+                createThreadPoolName(ioService.getHazelcastName(), "IO") + "Acceptor",
                 serverSocketChannel,
                 this);
         acceptorThread.start();
