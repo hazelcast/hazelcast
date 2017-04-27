@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.windowing;
 
+import com.hazelcast.jet.Accumulators.MutableLong;
 import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.MutableLong;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,9 +34,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.stream.LongStream;
 
-import static com.hazelcast.jet.Distributed.Function.identity;
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindow;
 import static java.util.Arrays.asList;
 import static java.util.Collections.shuffle;
@@ -50,56 +51,65 @@ import static org.mockito.Mockito.mock;
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 public class SlidingWindowPTest extends StreamingTestSupport {
 
+    private static final Long KEY = 77L;
+
     @Parameter
     public boolean hasDeduct;
 
     @Parameter(1)
-    public boolean isMutableFrame;
+    public boolean mutateAccumulator;
 
-    @Parameters(name = "hasDeduct={0}, isMutableFrame={1}")
+    @Parameter(2)
+    public boolean oneStageProcessor;
+
+    @Parameters(name = "hasDeduct={0}, mutateAccumulator={1}, oneStageProcessor={2}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-                {true, true},
-                {true, false},
-                {false, true},
-                {false, false}
+                {true, true, true},
+                {true, false, true},
+                {false, true, true},
+                {false, false, true},
+                {true, true, false},
+                {true, false, false},
+                {false, true, false},
+                {false, false, false},
         });
     }
 
-    private WindowingProcessor<Frame<Object, ?>, ?, Long> processor;
+    private WindowingProcessor<?, ?, Long> processor;
 
     @Before
     public void before() {
         WindowDefinition windowDef = new WindowDefinition(1, 0, 4);
-        WindowOperation<Object, ?, Long> operation;
+        WindowOperation<Entry<?, Long>, MutableLong, Long> operation;
 
-        if (isMutableFrame) {
-            operation = WindowOperation.<Object, MutableLong, Long>of(
-                    MutableLong::new,
-                    (acc, val) -> {
-                        throw new UnsupportedOperationException();
-                    },
-                    (acc1, acc2) -> {
+        operation = WindowOperation.<Entry<?, Long>, MutableLong, Long>of(
+                MutableLong::new,
+                (acc, val) -> {
+                    acc.value += val.getValue();
+                },
+                (acc1, acc2) -> {
+                    if (mutateAccumulator) {
                         acc1.value += acc2.value;
                         return acc1;
-                    },
-                    hasDeduct ? (acc1, acc2) -> {
-                        acc1.value -= acc2.value;
-                        return acc1;
-                    } : null,
-                    acc -> acc.value);
-        } else {
-            operation = WindowOperation.of(
-                    () -> 0L,
-                    (acc, val) -> {
-                        throw new UnsupportedOperationException();
-                    },
-                    (acc1, acc2) -> acc1 + acc2,
-                    hasDeduct ? (acc1, acc2) -> (Long) acc1 - acc2 : null,
-                    identity());
-        }
+                    }
+                    else {
+                        return new MutableLong(acc1.value + acc2.value);
+                    }
+                },
+                hasDeduct ? (acc1, acc2) -> {
+                    acc1.value -= acc2.value;
+                    return acc1;
+                } : null,
+                acc -> acc.value);
 
-        processor = (WindowingProcessor<Frame<Object, ?>, ?, Long>) slidingWindow(windowDef, operation).get();
+
+        if (oneStageProcessor) {
+            processor = (WindowingProcessor<Entry<Long, Long>, ?, Long>) WindowingProcessors.
+                    oneStageSlidingWindow(t -> KEY, (Entry<Long, Long> e) -> e.getKey(), windowDef, operation).get();
+        } else {
+            processor = (WindowingProcessor<Frame<Object, ?>, ?, Long>) slidingWindow(windowDef, operation).get();
+        }
         processor.init(outbox, mock(Context.class));
     }
 
@@ -130,11 +140,11 @@ public class SlidingWindowPTest extends StreamingTestSupport {
     public void when_receiveAscendingSeqs_then_emitAscending() {
         // Given
         inbox.addAll(asList(
-                frame(0, 1),
-                frame(1, 1),
-                frame(2, 1),
-                frame(3, 1),
-                frame(4, 1),
+                event(0, 1),
+                event(1, 1),
+                event(2, 1),
+                event(3, 1),
+                event(4, 1),
                 punc(1),
                 punc(2),
                 punc(3),
@@ -172,11 +182,11 @@ public class SlidingWindowPTest extends StreamingTestSupport {
     public void when_receiveDescendingSeqs_then_emitAscending() {
         // Given
         inbox.addAll(asList(
-                frame(4, 1),
-                frame(3, 1),
-                frame(2, 1),
-                frame(1, 1),
-                frame(0, 1),
+                event(4, 1),
+                event(3, 1),
+                event(2, 1),
+                event(1, 1),
+                event(0, 1),
                 punc(1),
                 punc(2),
                 punc(3),
@@ -216,7 +226,7 @@ public class SlidingWindowPTest extends StreamingTestSupport {
         final List<Long> frameSeqsToAdd = LongStream.range(0, 100).boxed().collect(toList());
         shuffle(frameSeqsToAdd);
         for (long seq : frameSeqsToAdd) {
-            inbox.add(frame(seq, 1));
+            inbox.add(event(seq, 1));
         }
         for (long i = 1; i <= 105; i++) {
             inbox.add(punc(i));
@@ -260,11 +270,11 @@ public class SlidingWindowPTest extends StreamingTestSupport {
     public void when_receiveWithGaps_then_emitAscending() {
         // Given
         inbox.addAll(asList(
-                frame(0, 1),
-                frame(10, 1),
-                frame(11, 1),
+                event(0, 1),
+                event(10, 1),
+                event(11, 1),
                 punc(15),
-                frame(16, 3),
+                event(16, 3),
                 punc(19)
         ));
 
@@ -298,13 +308,13 @@ public class SlidingWindowPTest extends StreamingTestSupport {
     public void when_receiveWithGaps_then_doNotSkipFrames() {
         // Given
         inbox.addAll(asList(
-                frame(10, 1),
-                frame(11, 1),
-                frame(12, 1),
+                event(10, 1),
+                event(11, 1),
+                event(12, 1),
                 punc(1),
-                frame(2, 1),
-                frame(3, 1),
-                frame(4, 1),
+                event(2, 1),
+                event(3, 1),
+                event(4, 1),
                 punc(4),
                 punc(12),
                 punc(15)
@@ -336,11 +346,14 @@ public class SlidingWindowPTest extends StreamingTestSupport {
         ));
     }
 
-    private Frame<Long, ?> frame(long seq, long value) {
-        return new Frame<>(seq, 77L, isMutableFrame ? MutableLong.valueOf(value) : value);
+    private Entry<Long, ?> event(long seq, long value) {
+        return oneStageProcessor
+                // the -1 is due to discrepancy between eventSeq and frameSeq
+                ? entry(seq - 1, value)
+                : new Frame<>(seq, KEY, new MutableLong(value));
     }
 
     private static Frame<Long, ?> outboxFrame(long seq, long value) {
-        return new Frame<>(seq, 77L, value);
+        return new Frame<>(seq, KEY, value);
     }
 }

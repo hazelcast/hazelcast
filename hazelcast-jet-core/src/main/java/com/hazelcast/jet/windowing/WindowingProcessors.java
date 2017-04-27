@@ -43,6 +43,7 @@ public final class WindowingProcessors {
      *
      * @param <T> the type of stream item
      */
+    @Nonnull
     public static <T> Distributed.Supplier<Processor> insertPunctuation(
             @Nonnull Distributed.ToLongFunction<T> extractEventSeqF,
             @Nonnull Distributed.Supplier<PunctuationPolicy> newPuncPolicyF
@@ -64,11 +65,12 @@ public final class WindowingProcessors {
      * @param <A> type of accumulator returned from {@code windowOperation.
      *            createAccumulatorF()}
      */
+    @Nonnull
     public static <T, K, A> Distributed.Supplier<Processor> groupByFrame(
-            Distributed.Function<? super T, K> extractKeyF,
-            Distributed.ToLongFunction<? super T> extractEventSeqF,
-            WindowDefinition windowDef,
-            WindowOperation<? super T, A, ?> windowOperation
+            @Nonnull Distributed.Function<? super T, K> extractKeyF,
+            @Nonnull Distributed.ToLongFunction<? super T> extractEventSeqF,
+            @Nonnull WindowDefinition windowDef,
+            @Nonnull WindowOperation<? super T, A, ?> windowOperation
     ) {
         // we'll use window with 1 frames per window, as a subsequent processor will merge subsequent frames
         WindowDefinition tumblingWinDef = new WindowDefinition(
@@ -95,12 +97,13 @@ public final class WindowingProcessors {
      * groupByFrame(extractKeyF, extractEventSeqF, windowDef, windowOperation)}
      * which doesn't group by key.
      */
+    @Nonnull
     public static <T, A> Distributed.Supplier<Processor> groupByFrame(
-            Distributed.ToLongFunction<? super T> extractEventSeqF,
-            WindowDefinition windowDef,
-            WindowOperation<? super T, A, ?> collector
+            @Nonnull Distributed.ToLongFunction<? super T> extractEventSeqF,
+            @Nonnull WindowDefinition windowDef,
+            @Nonnull WindowOperation<? super T, A, ?> windowOperation
     ) {
-        return groupByFrame(t -> "global", extractEventSeqF, windowDef, collector);
+        return groupByFrame(t -> "global", extractEventSeqF, windowDef, windowOperation);
     }
 
     /**
@@ -113,8 +116,11 @@ public final class WindowingProcessors {
      * @param <A> type of accumulator
      * @param <R> type of the result derived from a frame
      */
+    @Nonnull
     public static <A, R> Distributed.Supplier<Processor> slidingWindow(
-            WindowDefinition windowDef, WindowOperation<?, A, R> windowOperation) {
+            @Nonnull WindowDefinition windowDef,
+            @Nonnull WindowOperation<?, A, R> windowOperation
+    ) {
         return () -> new WindowingProcessor<Frame<?, A>, A, R>(
                 windowDef,
                 windowOperation.createAccumulatorF(),
@@ -127,11 +133,12 @@ public final class WindowingProcessors {
         );
     }
 
-    public static <T, A, R> Distributed.Supplier<Processor> oneStepSlidingWindow(
-            Distributed.Function<? super T, ?> extractKeyF,
-            Distributed.ToLongFunction<? super T> extractEventSeqF,
-            WindowDefinition windowDef,
-            WindowOperation<T, A, R> windowOperation
+    @Nonnull
+    public static <T, A, R> Distributed.Supplier<Processor> oneStageSlidingWindow(
+            @Nonnull Distributed.Function<? super T, ?> extractKeyF,
+            @Nonnull Distributed.ToLongFunction<? super T> extractEventSeqF,
+            @Nonnull WindowDefinition windowDef,
+            @Nonnull WindowOperation<? super T, A, R> windowOperation
     ) {
         return () -> new WindowingProcessor<T, A, R>(
                 windowDef,
@@ -164,19 +171,20 @@ public final class WindowingProcessors {
      * @param maxSeqGap        maximum gap between consecutive events in the same session window
      * @param extractEventSeqF function to extract the event seq from the event item
      * @param extractKeyF      function to extract the grouping key from the event iem
-     * @param collector        contains aggregation logic
+     * @param windowOperation        contains aggregation logic
      *
      * @param <T> type of stream event
      * @param <K> type of event's grouping key
      * @param <A> type of the container of accumulated value
      * @param <R> type of the result value for a session window
      */
+    @Nonnull
     public static <T, K, A, R> Distributed.Supplier<Processor> sessionWindow(
             long maxSeqGap,
-            Distributed.ToLongFunction<? super T> extractEventSeqF,
-            Distributed.Function<? super T, K> extractKeyF,
-            DistributedCollector<? super T, A, R> collector
+            @Nonnull Distributed.ToLongFunction<? super T> extractEventSeqF,
+            @Nonnull Distributed.Function<? super T, K> extractKeyF,
+            @Nonnull DistributedCollector<? super T, A, R> windowOperation
     ) {
-        return () -> new SessionWindowP<>(maxSeqGap, extractEventSeqF, extractKeyF, collector);
+        return () -> new SessionWindowP<>(maxSeqGap, extractEventSeqF, extractKeyF, windowOperation);
     }
 }
