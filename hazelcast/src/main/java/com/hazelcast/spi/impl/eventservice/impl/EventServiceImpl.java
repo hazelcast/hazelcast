@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -62,6 +61,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.util.ThreadUtil.getThreadNamePrefix;
 
 public class EventServiceImpl implements InternalEventService, MetricsProvider {
 
@@ -118,11 +118,9 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         }
         this.eventSyncFrequency = eventSyncFrequency;
 
-        HazelcastThreadGroup threadGroup = nodeEngine.getNode().getHazelcastThreadGroup();
         this.eventExecutor = new StripedExecutor(
                 nodeEngine.getNode().getLogger(EventServiceImpl.class),
-                threadGroup.getThreadNamePrefix("event"),
-                threadGroup.getInternalThreadGroup(),
+                getThreadNamePrefix(nodeEngine.getHazelcastInstance().getName(), "event"),
                 eventThreadCount,
                 eventQueueCapacity);
         this.registrationExceptionHandler

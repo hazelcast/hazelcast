@@ -26,7 +26,6 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
 import com.hazelcast.internal.management.request.AsyncConsoleRequest;
@@ -82,6 +81,7 @@ import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getObject;
+import static com.hazelcast.util.ThreadUtil.getThreadNamePrefix;
 import static java.net.URLEncoder.encode;
 
 /**
@@ -105,7 +105,6 @@ public class ManagementCenterService {
     private final ManagementCenterIdentifier identifier;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final TimedMemberStateFactory timedMemberStateFactory;
-    private final HazelcastThreadGroup threadGroup;
 
     private volatile String managementCenterUrl;
     private volatile boolean urlChanged;
@@ -115,7 +114,6 @@ public class ManagementCenterService {
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
-        this.threadGroup = instance.node.getHazelcastThreadGroup();
         this.logger = instance.node.getLogger(ManagementCenterService.class);
         this.managementCenterConfig = getManagementCenterConfig();
         this.managementCenterUrl = getManagementCenterUrl();
@@ -286,7 +284,7 @@ public class ManagementCenterService {
         private final long updateIntervalMs;
 
         private PrepareStateThread() {
-            super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("MC.State.Sender"));
+            super(getThreadNamePrefix(instance.getName(), "MC.State.Sender"));
             updateIntervalMs = calcUpdateInterval();
         }
 
@@ -324,7 +322,7 @@ public class ManagementCenterService {
         private final long updateIntervalMs;
 
         private StateSendThread() {
-            super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("MC.State.Sender"));
+            super(getThreadNamePrefix(instance.getName(), "MC.State.Sender"));
             updateIntervalMs = calcUpdateInterval();
         }
 
@@ -426,7 +424,7 @@ public class ManagementCenterService {
         private final ExecutionService executionService = instance.node.getNodeEngine().getExecutionService();
 
         TaskPollThread() {
-            super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("MC.Task.Poller"));
+            super(getThreadNamePrefix(instance.getName(), "MC.Task.Poller"));
             register(new ThreadDumpRequest());
             register(new ExecuteScriptRequest());
             register(new ConsoleCommandRequest());

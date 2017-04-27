@@ -95,7 +95,6 @@ import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.diagnostics.ConfigPropertiesPlugin;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.diagnostics.MetricsPlugin;
@@ -169,7 +168,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final int id = CLIENT_ID.getAndIncrement();
     private final String instanceName;
     private final ClientConfig config;
-    private final ThreadGroup threadGroup;
     private final LifecycleServiceImpl lifecycleService;
     private final ClientConnectionManager connectionManager;
     private final ClientClusterServiceImpl clusterService;
@@ -213,7 +211,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clientExtension.beforeStart(this);
 
         credentials = initCredentials(config);
-        threadGroup = new ThreadGroup(instanceName);
         lifecycleService = new LifecycleServiceImpl(this);
         properties = new HazelcastProperties(config.getProperties());
 
@@ -235,7 +232,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         invocationService = initInvocationService();
         listenerService = initListenerService();
         userContext = new ConcurrentHashMap<String, Object>();
-        diagnostics = initDiagnostics(config);
+        diagnostics = initDiagnostics();
 
         hazelcastCacheManager = new ClientICacheManager(this);
 
@@ -244,11 +241,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clientExceptionFactory = initClientExceptionFactory();
     }
 
-    private Diagnostics initDiagnostics(ClientConfig config) {
+    private Diagnostics initDiagnostics() {
         String name = "diagnostics-client-" + id + "-" + currentTimeMillis();
         ILogger logger = loggingService.getLogger(Diagnostics.class);
-        HazelcastThreadGroup hzThreadGroup = new HazelcastThreadGroup(getName(), logger, config.getClassLoader());
-        return new Diagnostics(name, logger, hzThreadGroup, properties);
+        return new Diagnostics(name, logger, instanceName, properties);
     }
 
     private MetricsRegistryImpl initMetricsRegistry() {
@@ -383,7 +379,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     private ClientExecutionServiceImpl initExecutionService() {
-        return new ClientExecutionServiceImpl(instanceName, threadGroup,
+        return new ClientExecutionServiceImpl(instanceName,
                 config.getClassLoader(), properties, config.getExecutorPoolSize(), loggingService);
     }
 
@@ -697,10 +693,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public NearCacheManager getNearCacheManager() {
         return nearCacheManager;
-    }
-
-    public ThreadGroup getThreadGroup() {
-        return threadGroup;
     }
 
     public LoadBalancer getLoadBalancer() {

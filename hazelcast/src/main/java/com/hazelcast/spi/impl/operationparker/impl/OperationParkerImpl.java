@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.operationparker.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.MetricsProvider;
@@ -50,6 +49,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.util.ThreadUtil.getThreadNamePrefix;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class OperationParkerImpl implements OperationParker, LiveOperationsTracker, MetricsProvider {
@@ -78,11 +78,9 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
         Node node = nodeEngine.getNode();
         this.logger = node.getLogger(OperationParker.class.getName());
 
-        HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
         this.expirationExecutor = Executors.newSingleThreadExecutor(
-                new SingleExecutorThreadFactory(threadGroup.getInternalThreadGroup(),
-                        threadGroup.getClassLoader(),
-                        threadGroup.getThreadNamePrefix("operation-parker")));
+                new SingleExecutorThreadFactory(node.getConfigClassLoader(),
+                        getThreadNamePrefix(nodeEngine.getHazelcastInstance().getName(), "operation-parker")));
 
         this.expirationTaskFuture = expirationExecutor.submit(new ExpirationTask());
     }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -47,6 +46,7 @@ import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.ThreadUtil.getThreadPoolNamePrefix;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -97,19 +97,20 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
                                  LoggingService loggerService,
                                  Address thisAddress,
                                  OperationRunnerFactory runnerFactory,
-                                 HazelcastThreadGroup threadGroup,
-                                 NodeExtension nodeExtension) {
+                                 NodeExtension nodeExtension,
+                                 String hzName,
+                                 ClassLoader configClassLoader) {
         this.thisAddress = thisAddress;
         this.logger = loggerService.getLogger(OperationExecutorImpl.class);
 
         this.adHocOperationRunner = runnerFactory.createAdHocRunner();
 
         this.partitionOperationRunners = initPartitionOperationRunners(properties, runnerFactory);
-        this.partitionThreads = initPartitionThreads(properties, threadGroup, nodeExtension);
+        this.partitionThreads = initPartitionThreads(properties, hzName, nodeExtension, configClassLoader);
 
         this.priorityThreadCount = properties.getInteger(PRIORITY_GENERIC_OPERATION_THREAD_COUNT);
         this.genericOperationRunners = initGenericOperationRunners(properties, runnerFactory);
-        this.genericThreads = initGenericThreads(threadGroup, nodeExtension);
+        this.genericThreads = initGenericThreads(hzName, nodeExtension, configClassLoader);
     }
 
     private OperationRunner[] initPartitionOperationRunners(HazelcastProperties properties,
@@ -137,8 +138,8 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         return operationRunners;
     }
 
-    private PartitionOperationThread[] initPartitionThreads(HazelcastProperties properties, HazelcastThreadGroup threadGroup,
-                                                            NodeExtension nodeExtension) {
+    private PartitionOperationThread[] initPartitionThreads(HazelcastProperties properties, String hzName,
+                                                            NodeExtension nodeExtension, ClassLoader configClassLoader) {
 
         int threadCount = properties.getInteger(PARTITION_OPERATION_THREAD_COUNT);
         if (threadCount <= 0) {
@@ -149,13 +150,13 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
 
         PartitionOperationThread[] threads = new PartitionOperationThread[threadCount];
         for (int threadId = 0; threadId < threads.length; threadId++) {
-            String threadName = threadGroup.getThreadPoolNamePrefix("partition-operation") + threadId;
+            String threadName = getThreadPoolNamePrefix(hzName, "partition-operation") + threadId;
             // the normalQueue will be a blocking queue. We don't want to idle, because there are many operation threads.
             MPSCQueue<Object> normalQueue = new MPSCQueue<Object>(null);
             OperationQueue operationQueue = new DefaultOperationQueue(normalQueue, new ConcurrentLinkedQueue<Object>());
 
             PartitionOperationThread partitionThread = new PartitionOperationThread(threadName, threadId, operationQueue, logger,
-                    threadGroup, nodeExtension, partitionOperationRunners);
+                    nodeExtension, partitionOperationRunners, configClassLoader);
 
             threads[threadId] = partitionThread;
             normalQueue.setConsumerThread(partitionThread);
@@ -176,7 +177,8 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         return partitionId % partitionThreadCount;
     }
 
-    private GenericOperationThread[] initGenericThreads(HazelcastThreadGroup threadGroup, NodeExtension nodeExtension) {
+    private GenericOperationThread[] initGenericThreads(String hzName, NodeExtension nodeExtension,
+                                                        ClassLoader configClassLoader) {
         // we created as many generic operation handlers, as there are generic threads
         int threadCount = genericOperationRunners.length;
 
@@ -186,11 +188,11 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         for (int threadIndex = 0; threadIndex < threads.length; threadIndex++) {
             boolean priority = threadIndex < priorityThreadCount;
             String baseName = priority ? "priority-generic-operation" : "generic-operation";
-            String threadName = threadGroup.getThreadPoolNamePrefix(baseName) + threadId;
+            String threadName = getThreadPoolNamePrefix(hzName, baseName) + threadId;
             OperationRunner operationRunner = genericOperationRunners[threadIndex];
 
             GenericOperationThread operationThread = new GenericOperationThread(
-                    threadName, threadIndex, genericQueue, logger, threadGroup, nodeExtension, operationRunner, priority);
+                    threadName, threadIndex, genericQueue, logger, nodeExtension, operationRunner, priority, configClassLoader);
 
             threads[threadIndex] = operationThread;
             operationRunner.setCurrentThread(operationThread);

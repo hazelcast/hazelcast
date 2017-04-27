@@ -75,14 +75,7 @@ public class ClientOutOfMemoryHandler extends DefaultOutOfMemoryHandler {
         }
 
         public static void tryStopThreads(HazelcastClientInstanceImpl client) {
-            if (client == null) {
-                return;
-            }
-            try {
-                client.getThreadGroup().interrupt();
-            } catch (Throwable ignored) {
-                EmptyStatement.ignore(ignored);
-            }
+            //TODO ???
         }
 
     }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -194,13 +193,13 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
     }
 
     private PartitionOperationThread getPartitionOperationThread(OperationQueue queue) {
-        HazelcastThreadGroup threadGroup = new HazelcastThreadGroup("instanceName", LOGGER, getClass().getClassLoader());
         NodeExtension nodeExtension = mock(NodeExtension.class);
 
         OperationRunner operationRunner = mock(OperationRunner.class);
         OperationRunner[] operationRunners = new OperationRunner[]{operationRunner};
 
-        return new PartitionOperationThread("threadName", 0, queue, LOGGER, threadGroup, nodeExtension, operationRunners);
+        return new PartitionOperationThread("threadName", 0, queue, LOGGER, nodeExtension,
+                operationRunners, getClass().getClassLoader());
     }
 
     private static class TestMapInterceptor implements MapInterceptor {

@@ -16,11 +16,12 @@
 
 package com.hazelcast.internal.networking.nonblocking.iobalancer;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.EmptyStatement;
 
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.util.ThreadUtil.getThreadNamePrefix;
 
 class IOBalancerThread extends Thread {
     private static final String THREAD_NAME_PREFIX = "IOBalancerThread";
@@ -30,9 +31,8 @@ class IOBalancerThread extends Thread {
     private final int balancerIntervalSeconds;
     private volatile boolean shutdown;
 
-    IOBalancerThread(IOBalancer ioBalancer, int balancerIntervalSeconds,
-                     HazelcastThreadGroup threadGroup, ILogger log) {
-        super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix(THREAD_NAME_PREFIX));
+    IOBalancerThread(IOBalancer ioBalancer, int balancerIntervalSeconds, String hzName, ILogger log) {
+        super(getThreadNamePrefix(hzName, THREAD_NAME_PREFIX));
         this.ioBalancer = ioBalancer;
         this.log = log;
         this.balancerIntervalSeconds = balancerIntervalSeconds;

@@ -16,20 +16,13 @@
 
 package com.hazelcast.util.executor;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
-
 public final class SingleExecutorThreadFactory extends AbstractExecutorThreadFactory {
 
     private final String threadName;
 
-    public SingleExecutorThreadFactory(ThreadGroup threadGroup, ClassLoader classLoader, String threadName) {
-        super(threadGroup, classLoader);
+    public SingleExecutorThreadFactory(ClassLoader classLoader, String threadName) {
+        super(classLoader);
         this.threadName = threadName;
-    }
-
-    public SingleExecutorThreadFactory(HazelcastThreadGroup threadGroup, String threadName) {
-        super(threadGroup.getInternalThreadGroup(), threadGroup.getClassLoader());
-        this.threadName = threadGroup.getThreadNamePrefix(threadName);
     }
 
     @Override
@@ -40,7 +33,7 @@ public final class SingleExecutorThreadFactory extends AbstractExecutorThreadFac
     private class ManagedThread extends HazelcastManagedThread {
 
         public ManagedThread(Runnable target) {
-            super(threadGroup, target, threadName);
+            super(target, threadName);
         }
     }
 }

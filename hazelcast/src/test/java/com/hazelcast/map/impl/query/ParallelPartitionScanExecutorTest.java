@@ -16,8 +16,6 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
-import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
@@ -39,6 +37,7 @@ import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import static java.lang.Thread.currentThread;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyInt;
@@ -55,10 +54,7 @@ public class ParallelPartitionScanExecutorTest {
     public ExpectedException expected = ExpectedException.none();
 
     private ParallelPartitionScanExecutor executor(PartitionScanRunner runner) {
-        NoLogFactory factory = new NoLogFactory();
-        HazelcastThreadGroup group = new HazelcastThreadGroup(UUID.randomUUID().toString(),
-                factory.getLogger(ParallelPartitionScanExecutorTest.class.getName()), Thread.currentThread().getContextClassLoader());
-        PoolExecutorThreadFactory threadFactory = new PoolExecutorThreadFactory(group, UUID.randomUUID().toString());
+        PoolExecutorThreadFactory threadFactory = new PoolExecutorThreadFactory(UUID.randomUUID().toString(), currentThread().getContextClassLoader());
         NamedThreadPoolExecutor pool = new NamedThreadPoolExecutor(UUID.randomUUID().toString(), 1, 1,
                 100, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(100),

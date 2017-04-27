@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.MetricsProvider;
@@ -57,6 +56,7 @@ import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static com.hazelcast.util.ThreadUtil.getThreadNamePrefix;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINE;
@@ -107,7 +107,6 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
     //todo: we need to get rid of the nodeEngine dependency
     InvocationMonitor(NodeEngineImpl nodeEngine,
                       Address thisAddress,
-                      HazelcastThreadGroup threadGroup,
                       HazelcastProperties properties,
                       InvocationRegistry invocationRegistry,
                       ILogger logger,
@@ -122,7 +121,7 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
         this.backupTimeoutMillis = backupTimeoutMillis(properties);
         this.invocationTimeoutMillis = invocationTimeoutMillis(properties);
         this.heartbeatBroadcastPeriodMillis = heartbeatBroadcastPeriodMillis(properties);
-        this.scheduler = newScheduler(threadGroup);
+        this.scheduler = newScheduler(nodeEngine.getHazelcastInstance().getName());
     }
 
     @Override
@@ -130,12 +129,12 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
         registry.scanAndRegister(this, "operation.invocations");
     }
 
-    private static ScheduledExecutorService newScheduler(final HazelcastThreadGroup threadGroup) {
+    private static ScheduledExecutorService newScheduler(final String hzName) {
         // the scheduler is configured with a single thread; so prevent concurrency problems.
         return new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
-                return new InvocationMonitorThread(r, threadGroup);
+                return new InvocationMonitorThread(r, hzName);
             }
         });
     }
@@ -471,8 +470,8 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
      * is not going to schedule any operations on this thread due to retry.
      */
     private static final class InvocationMonitorThread extends Thread implements OperationHostileThread {
-        private InvocationMonitorThread(Runnable task, HazelcastThreadGroup hzThreadGroup) {
-            super(hzThreadGroup.getInternalThreadGroup(), task, hzThreadGroup.getThreadNamePrefix("InvocationMonitorThread"));
+        private InvocationMonitorThread(Runnable task, String hzName) {
+            super(task, getThreadNamePrefix(hzName, "InvocationMonitorThread"));
         }
     }
 }

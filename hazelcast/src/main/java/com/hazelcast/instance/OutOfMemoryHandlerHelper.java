@@ -65,15 +65,6 @@ public final class OutOfMemoryHandlerHelper {
     }
 
     public static void tryStopThreads(HazelcastInstance hazelcastInstance) {
-        if (hazelcastInstance == null) {
-            return;
-        }
-
-        HazelcastInstanceImpl factory = (HazelcastInstanceImpl) hazelcastInstance;
-        try {
-            factory.node.getHazelcastThreadGroup().destroy();
-        } catch (Throwable ignored) {
-            EmptyStatement.ignore(ignored);
-        }
+        //TODO ??????
     }
 }

@@ -86,28 +86,25 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     // set to true while testing
     private boolean selectorWorkaroundTest;
 
-    public NonBlockingIOThread(ThreadGroup threadGroup,
-                               String threadName,
+    public NonBlockingIOThread(String threadName,
                                ILogger logger,
                                IOOutOfMemoryHandler oomeHandler) {
-        this(threadGroup, threadName, logger, oomeHandler, SelectorMode.SELECT);
+        this(threadName, logger, oomeHandler, SelectorMode.SELECT);
     }
 
-    public NonBlockingIOThread(ThreadGroup threadGroup,
-                               String threadName,
+    public NonBlockingIOThread(String threadName,
                                ILogger logger,
                                IOOutOfMemoryHandler oomeHandler,
                                SelectorMode selectMode) {
-        this(threadGroup, threadName, logger, oomeHandler, selectMode, newSelector(logger));
+        this(threadName, logger, oomeHandler, selectMode, newSelector(logger));
     }
 
-    public NonBlockingIOThread(ThreadGroup threadGroup,
-                               String threadName,
+    public NonBlockingIOThread(String threadName,
                                ILogger logger,
                                IOOutOfMemoryHandler oomeHandler,
                                SelectorMode selectMode,
                                Selector selector) {
-        super(threadGroup, threadName);
+        super(threadName);
         this.logger = logger;
         this.selectMode = selectMode;
         this.oomeHandler = oomeHandler;

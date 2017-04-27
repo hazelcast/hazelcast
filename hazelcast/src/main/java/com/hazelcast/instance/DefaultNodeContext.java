@@ -72,7 +72,6 @@ public class DefaultNodeContext implements NodeContext {
         if (spinning) {
             return new SpinningIOThreadingModel(
                     loggingService,
-                    node.getHazelcastThreadGroup(),
                     ioService.getIoOutOfMemoryHandler(),
                     socketWriterInitializer,
                     socketReaderInitializer);
@@ -80,7 +79,7 @@ public class DefaultNodeContext implements NodeContext {
             return new NonBlockingIOThreadingModel(
                     loggingService,
                     node.nodeEngine.getMetricsRegistry(),
-                    node.getHazelcastThreadGroup(),
+                    node.hazelcastInstance.getName(),
                     ioService.getIoOutOfMemoryHandler(), ioService.getInputSelectorThreadCount(),
                     ioService.getOutputSelectorThreadCount(),
                     ioService.getBalancerIntervalSeconds(),

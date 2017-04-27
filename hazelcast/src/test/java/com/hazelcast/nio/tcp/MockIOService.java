@@ -21,7 +21,6 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.networking.ReadHandler;
@@ -56,17 +55,11 @@ public class MockIOService implements IOService {
     public final Address thisAddress;
     public final InternalSerializationService serializationService;
     public final LoggingServiceImpl loggingService;
-    public final HazelcastThreadGroup hazelcastThreadGroup;
     public final ConcurrentHashMap<Long, DummyPayload> payloads = new ConcurrentHashMap<Long, DummyPayload>();
     public volatile PacketHandler packetHandler;
 
     public MockIOService(int port) throws Exception {
-        loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo());
-        hazelcastThreadGroup = new HazelcastThreadGroup(
-                "hz",
-                loggingService.getLogger(HazelcastThreadGroup.class),
-                getClass().getClassLoader());
-
+        loggingService = new LoggingServiceImpl("somegroup", "log4j2",BuildInfoProvider.getBuildInfo());
         serverSocketChannel = ServerSocketChannel.open();
         ServerSocket serverSocket = serverSocketChannel.socket();
         serverSocket.setReuseAddress(true);
@@ -79,13 +72,13 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public boolean isActive() {
-        return true;
+    public String getHazelcastName() {
+        return "hz";
     }
 
     @Override
-    public HazelcastThreadGroup getHazelcastThreadGroup() {
-        return hazelcastThreadGroup;
+    public boolean isActive() {
+        return true;
     }
 
     @Override

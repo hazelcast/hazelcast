@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.networking.nonblocking;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.networking.IOThreadingModel;
@@ -33,6 +32,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.HashUtil.hashToIndex;
+import static com.hazelcast.util.ThreadUtil.getThreadPoolNamePrefix;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
@@ -54,7 +54,7 @@ public class NonBlockingIOThreadingModel
     private final ILogger logger;
     private final MetricsRegistry metricsRegistry;
     private final LoggingService loggingService;
-    private final HazelcastThreadGroup hazelcastThreadGroup;
+    private final String hzName;
     private final IOOutOfMemoryHandler oomeHandler;
     private final int balanceIntervalSeconds;
     private final SocketWriterInitializer socketWriterInitializer;
@@ -75,14 +75,14 @@ public class NonBlockingIOThreadingModel
     public NonBlockingIOThreadingModel(
             LoggingService loggingService,
             MetricsRegistry metricsRegistry,
-            HazelcastThreadGroup hazelcastThreadGroup,
+            String hzName,
             IOOutOfMemoryHandler oomeHandler,
             int inputThreadCount,
             int outputThreadCount,
             int balanceIntervalSeconds,
             SocketWriterInitializer socketWriterInitializer,
             SocketReaderInitializer socketReaderInitializer) {
-        this.hazelcastThreadGroup = hazelcastThreadGroup;
+        this.hzName = hzName;
         this.metricsRegistry = metricsRegistry;
         this.loggingService = loggingService;
         this.logger = loggingService.getLogger(NonBlockingIOThreadingModel.class);
@@ -146,8 +146,7 @@ public class NonBlockingIOThreadingModel
 
         for (int i = 0; i < inputThreads.length; i++) {
             NonBlockingIOThread thread = new NonBlockingIOThread(
-                    hazelcastThreadGroup.getInternalThreadGroup(),
-                    hazelcastThreadGroup.getThreadPoolNamePrefix("IO") + "in-" + i,
+                    getThreadPoolNamePrefix(hzName, "IO") + "in-" + i,
                     loggingService.getLogger(NonBlockingIOThread.class),
                     oomeHandler,
                     selectorMode);
@@ -160,8 +159,7 @@ public class NonBlockingIOThreadingModel
 
         for (int i = 0; i < outputThreads.length; i++) {
             NonBlockingIOThread thread = new NonBlockingIOThread(
-                    hazelcastThreadGroup.getInternalThreadGroup(),
-                    hazelcastThreadGroup.getThreadPoolNamePrefix("IO") + "out-" + i,
+                    getThreadPoolNamePrefix(hzName, "IO") + "out-" + i,
                     loggingService.getLogger(NonBlockingIOThread.class),
                     oomeHandler,
                     selectorMode);
@@ -189,8 +187,7 @@ public class NonBlockingIOThreadingModel
     }
 
     private void startIOBalancer() {
-        ioBalancer = new IOBalancer(inputThreads, outputThreads,
-                hazelcastThreadGroup, balanceIntervalSeconds, loggingService);
+        ioBalancer = new IOBalancer(inputThreads, outputThreads, hzName, balanceIntervalSeconds, loggingService);
         ioBalancer.start();
         metricsRegistry.scanAndRegister(ioBalancer, "tcp.balancer");
     }

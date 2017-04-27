@@ -16,6 +16,8 @@
 
 package com.hazelcast.util;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * Utility class to manipulate and query thread id
  */
@@ -53,5 +55,31 @@ public final class ThreadUtil {
      */
     public static void removeThreadId() {
         THREAD_LOCAL.remove();
+    }
+
+
+    /**
+     * Gets the threadname prefix.
+     *
+     * @param hzName the name of the hazelcast instance
+     * @param name   the basic name of the thread
+     * @return the created threadname prefix.
+     * @throws java.lang.NullPointerException if name is null.
+     */
+    public static String getThreadNamePrefix(String hzName, String name) {
+        checkNotNull(name, "name can't be null");
+        return "hz." + hzName + "." + name;
+    }
+
+    /**
+     * Gets the threadpool prefix for a given poolname.
+     *
+     * @param hzName   the name of the hazelcast instance
+     * @param poolName the name of the pool.
+     * @return the threadpool prefix.
+     * @throws java.lang.NullPointerException if poolname is null.
+     */
+    public static String getThreadPoolNamePrefix(String hzName, String poolName) {
+        return getThreadNamePrefix(hzName, poolName) + ".thread-";
     }
 }

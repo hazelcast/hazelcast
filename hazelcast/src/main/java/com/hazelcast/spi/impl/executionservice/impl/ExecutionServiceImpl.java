@@ -20,7 +20,6 @@ import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
@@ -55,6 +54,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.util.ThreadUtil.getThreadPoolNamePrefix;
 
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
 public final class ExecutionServiceImpl implements InternalExecutionService {
@@ -123,8 +123,10 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         Node node = nodeEngine.getNode();
         this.logger = node.getLogger(ExecutionService.class.getName());
 
-        HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
-        ThreadFactory threadFactory = new PoolExecutorThreadFactory(threadGroup, "cached");
+        String hzName = nodeEngine.getHazelcastInstance().getName();
+        ClassLoader configClassLoader = node.getConfigClassLoader();
+        ThreadFactory threadFactory = new PoolExecutorThreadFactory(getThreadPoolNamePrefix(hzName, "cached"),
+                configClassLoader);
         this.cachedExecutorService = new ThreadPoolExecutor(
                 CORE_POOL_SIZE, Integer.MAX_VALUE, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
                 new SynchronousQueue<Runnable>(), threadFactory, new RejectedExecutionHandler() {
@@ -136,7 +138,8 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         }
         );
 
-        ThreadFactory singleExecutorThreadFactory = new SingleExecutorThreadFactory(threadGroup, "scheduled");
+        ThreadFactory singleExecutorThreadFactory = new SingleExecutorThreadFactory(configClassLoader,
+                getThreadPoolNamePrefix(hzName, "scheduled"));
         this.scheduledExecutorService = new LoggingScheduledExecutor(logger, 1, singleExecutorThreadFactory);
         enableRemoveOnCancelIfAvailable();
 
@@ -196,9 +199,11 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
             executor = new CachedExecutorServiceDelegate(nodeEngine, name, cachedExecutorService, poolSize, queueCapacity);
         } else if (type == ExecutorType.CONCRETE) {
             Node node = nodeEngine.getNode();
+            ClassLoader classLoader = nodeEngine.getConfigClassLoader();
+            String hzName = node.getNodeEngine().getHazelcastInstance().getName();
             String internalName = name.startsWith("hz:") ? name.substring(BEGIN_INDEX) : name;
-            HazelcastThreadGroup hazelcastThreadGroup = node.getHazelcastThreadGroup();
-            PoolExecutorThreadFactory threadFactory = new PoolExecutorThreadFactory(hazelcastThreadGroup, internalName);
+            String threadNamePrefix = getThreadPoolNamePrefix(hzName, internalName);
+            PoolExecutorThreadFactory threadFactory = new PoolExecutorThreadFactory(threadNamePrefix, classLoader);
             NamedThreadPoolExecutor pool = new NamedThreadPoolExecutor(name, poolSize, poolSize,
                     KEEP_ALIVE_TIME, TimeUnit.SECONDS,
                     new LinkedBlockingQueue<Runnable>(queueCapacity),
@@ -291,7 +296,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
 
     @Override
     public ScheduledFuture<?> scheduleDurableWithRepetition(String name, Runnable command, long initialDelay,
-                                                     long period, TimeUnit unit) {
+                                                            long period, TimeUnit unit) {
         return getDurableTaskScheduler(name).scheduleWithRepetition(command, initialDelay, period, unit);
     }
 
