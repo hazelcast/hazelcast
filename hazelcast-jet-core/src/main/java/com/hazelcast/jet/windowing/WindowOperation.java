@@ -17,7 +17,6 @@
 package com.hazelcast.jet.windowing;
 
 import com.hazelcast.jet.Distributed;
-import com.hazelcast.jet.Distributed.BinaryOperator;
 import com.hazelcast.jet.stream.DistributedCollector;
 
 import javax.annotation.Nonnull;
@@ -98,7 +97,7 @@ public interface WindowOperation<T, A, R> extends Serializable {
      * difference.
      */
     @Nullable
-    BinaryOperator<A> deductAccumulatorF();
+    Distributed.BinaryOperator<A> deductAccumulatorF();
 
     /**
      * A function that finishes the accumulation process by transforming
