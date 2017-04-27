@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -193,7 +192,7 @@ public class NodeEngineImpl implements NodeEngine {
         return new Diagnostics(
                 name,
                 loggingService.getLogger(Diagnostics.class),
-                node.getHazelcastThreadGroup(),
+                getHazelcastInstance().getName(),
                 node.getProperties());
     }
 
@@ -208,10 +207,6 @@ public class NodeEngineImpl implements NodeEngine {
 
     public LoggingService getLoggingService() {
         return loggingService;
-    }
-
-    public HazelcastThreadGroup getHazelcastThreadGroup() {
-        return node.getHazelcastThreadGroup();
     }
 
     public MetricsRegistry getMetricsRegistry() {

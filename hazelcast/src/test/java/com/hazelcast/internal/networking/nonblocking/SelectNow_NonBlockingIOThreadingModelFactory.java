@@ -32,7 +32,7 @@ public class SelectNow_NonBlockingIOThreadingModelFactory implements IOThreading
         NonBlockingIOThreadingModel threadingModel = new NonBlockingIOThreadingModel(
                 loggingService,
                 metricsRegistry,
-                ioService.hazelcastThreadGroup,
+                ioService.getHazelcastName(),
                 ioService.getIoOutOfMemoryHandler(), ioService.getInputSelectorThreadCount(),
                 ioService.getOutputSelectorThreadCount(),
                 ioService.getBalancerIntervalSeconds(),

@@ -21,10 +21,8 @@ import java.util.concurrent.ThreadFactory;
 public abstract class AbstractExecutorThreadFactory implements ThreadFactory {
 
     protected final ClassLoader classLoader;
-    protected final ThreadGroup threadGroup;
 
-    public AbstractExecutorThreadFactory(ThreadGroup threadGroup, ClassLoader classLoader) {
-        this.threadGroup = threadGroup;
+    public AbstractExecutorThreadFactory(ClassLoader classLoader) {
         this.classLoader = classLoader;
     }
 

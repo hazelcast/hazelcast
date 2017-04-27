@@ -53,7 +53,7 @@ public class DiagnosticsTest extends HazelcastTestSupport {
         return new Diagnostics(
                 name,
                 Logger.getLogger(Diagnostics.class),
-                nodeEngineImpl.getNode().getHazelcastThreadGroup(),
+                "hz",
                 nodeEngineImpl.getNode().getProperties());
     }
 

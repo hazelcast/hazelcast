@@ -48,7 +48,6 @@ public class ClientOutOfMemoryHandler extends DefaultOutOfMemoryHandler {
 
         public static void cleanResources(HazelcastClientInstanceImpl client) {
             closeSockets(client);
-            tryStopThreads(client);
             tryShutdown(client);
         }
 
@@ -73,17 +72,5 @@ public class ClientOutOfMemoryHandler extends DefaultOutOfMemoryHandler {
                 EmptyStatement.ignore(ignored);
             }
         }
-
-        public static void tryStopThreads(HazelcastClientInstanceImpl client) {
-            if (client == null) {
-                return;
-            }
-            try {
-                client.getThreadGroup().interrupt();
-            } catch (Throwable ignored) {
-                EmptyStatement.ignore(ignored);
-            }
-        }
-
     }
 }

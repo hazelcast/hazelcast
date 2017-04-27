@@ -29,6 +29,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import static com.hazelcast.internal.diagnostics.HealthMonitorLevel.OFF;
 import static com.hazelcast.internal.diagnostics.HealthMonitorLevel.valueOf;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -113,8 +114,7 @@ public class HealthMonitor {
         private boolean performanceLogHint;
 
         private HealthMonitorThread(int delaySeconds) {
-            super(node.getHazelcastThreadGroup().getInternalThreadGroup(),
-                    node.getHazelcastThreadGroup().getThreadNamePrefix("HealthMonitor"));
+            super(createThreadName(node.hazelcastInstance.getName(), "HealthMonitor"));
             setDaemon(true);
             this.delaySeconds = delaySeconds;
             this.performanceLogHint = node.getProperties().getBoolean(Diagnostics.ENABLED);

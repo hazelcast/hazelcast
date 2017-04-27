@@ -88,8 +88,8 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         connectionManager = client.getConnectionManager();
         clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
         partitionService = client.getClientPartitionService();
-        responseThread = new ResponseThread(client.getThreadGroup(), client.getName() + ".response-",
-                client.getClientConfig().getClassLoader());
+        ClassLoader classLoader = client.getClientConfig().getClassLoader();
+        responseThread = new ResponseThread(client.getName() + ".response-", classLoader);
         responseThread.start();
         ClientExecutionService executionService = client.getClientExecutionService();
         executionService.scheduleWithRepetition(new CleanResourcesTask(), 1, 1, TimeUnit.SECONDS);
@@ -278,8 +278,8 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
         private final BlockingQueue<ClientPacket> responseQueue;
 
-        ResponseThread(ThreadGroup threadGroup, String name, ClassLoader classLoader) {
-            super(threadGroup, name);
+        ResponseThread(String name, ClassLoader classLoader) {
+            super(name);
             setContextClassLoader(classLoader);
 
             this.responseQueue = new MPSCQueue<ClientPacket>(this, getIdleStrategy(client.getProperties(), IDLE_STRATEGY));

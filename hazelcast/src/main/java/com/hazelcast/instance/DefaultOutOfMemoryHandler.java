@@ -83,7 +83,6 @@ public class DefaultOutOfMemoryHandler extends OutOfMemoryHandler {
         for (HazelcastInstance instance : hazelcastInstances) {
             if (instance instanceof HazelcastInstanceImpl) {
                 OutOfMemoryHandlerHelper.tryCloseConnections(instance);
-                OutOfMemoryHandlerHelper.tryStopThreads(instance);
                 OutOfMemoryHandlerHelper.tryShutdown(instance);
             }
         }

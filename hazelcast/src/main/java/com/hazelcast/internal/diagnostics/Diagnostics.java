@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -32,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.diagnostics.DiagnosticsPlugin.DISABLED;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.lang.System.arraycopy;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -114,17 +114,16 @@ public class Diagnostics {
 
     final ILogger logger;
     final String fileName;
-
+    private final String hzName;
     private final boolean enabled;
     private ScheduledExecutorService scheduler;
-    private final HazelcastThreadGroup hzThreadGroup;
     private final ConcurrentMap<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin> pluginsMap
             = new ConcurrentHashMap<Class<? extends DiagnosticsPlugin>, DiagnosticsPlugin>();
 
-    public Diagnostics(String fileName, ILogger logger, HazelcastThreadGroup hzThreadGroup, HazelcastProperties properties) {
+    public Diagnostics(String fileName, ILogger logger, String hzName, HazelcastProperties properties) {
         this.fileName = fileName;
-        this.hzThreadGroup = hzThreadGroup;
         this.logger = logger;
+        this.hzName = hzName;
         this.properties = properties;
         this.enabled = properties.getBoolean(ENABLED);
         this.directory = properties.getString(DIRECTORY);
@@ -247,10 +246,7 @@ public class Diagnostics {
 
         @Override
         public Thread newThread(Runnable target) {
-            return new Thread(
-                    hzThreadGroup.getInternalThreadGroup(),
-                    target,
-                    hzThreadGroup.getThreadNamePrefix("DiagnosticsSchedulerThread"));
+            return new Thread(target, createThreadName(hzName, "DiagnosticsSchedulerThread"));
         }
     }
 }

@@ -151,26 +151,28 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 node.getLogger(OperationServiceImpl.class), backpressureRegulator.newCallIdSequence());
 
         this.invocationMonitor = new InvocationMonitor(
-                nodeEngine, thisAddress, node.getHazelcastThreadGroup(), node.getProperties(), invocationRegistry,
+                nodeEngine, thisAddress, node.getProperties(), invocationRegistry,
                 node.getLogger(InvocationMonitor.class), serializationService, nodeEngine.getServiceManager());
 
         this.outboundOperationHandler = new OutboundOperationHandler(node, thisAddress, serializationService);
 
         this.backupHandler = new OperationBackupHandler(this, outboundOperationHandler);
 
+        String hzName = nodeEngine.getHazelcastInstance().getName();
         this.inboundResponseHandler = new InboundResponseHandler(
                 node.getLogger(InboundResponseHandler.class), node.getSerializationService(), invocationRegistry, nodeEngine);
-        this.asyncInboundResponseHandler = new AsyncInboundResponseHandler(
-                node.getHazelcastThreadGroup(), node.getLogger(AsyncInboundResponseHandler.class),
+        ClassLoader configClassLoader = node.getConfigClassLoader();
+        this.asyncInboundResponseHandler = new AsyncInboundResponseHandler(configClassLoader, hzName,
+                node.getLogger(AsyncInboundResponseHandler.class),
                 inboundResponseHandler, node.getProperties());
 
         this.operationExecutor = new OperationExecutorImpl(
                 node.getProperties(), node.loggingService, thisAddress, new OperationRunnerFactoryImpl(this),
-                node.getHazelcastThreadGroup(), node.getNodeExtension());
+                node.getNodeExtension(), hzName, configClassLoader);
 
         this.slowOperationDetector = new SlowOperationDetector(node.loggingService,
                 operationExecutor.getGenericOperationRunners(), operationExecutor.getPartitionOperationRunners(),
-                node.getProperties(), node.getHazelcastThreadGroup());
+                node.getProperties(), hzName);
     }
 
     public OutboundResponseHandler getOutboundResponseHandler() {

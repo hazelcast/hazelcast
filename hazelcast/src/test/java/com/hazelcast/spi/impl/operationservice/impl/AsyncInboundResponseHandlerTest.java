@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
@@ -54,9 +53,9 @@ public class AsyncInboundResponseHandlerTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         ILogger logger = Logger.getLogger(getClass());
-        HazelcastThreadGroup threadGroup = new HazelcastThreadGroup("test", logger, getClass().getClassLoader());
         responsePacketHandler = mock(PacketHandler.class);
-        asyncHandler = new AsyncInboundResponseHandler(threadGroup, logger, responsePacketHandler, new HazelcastProperties(new Config()));
+        asyncHandler = new AsyncInboundResponseHandler(getClass().getClassLoader(), "hz", logger,
+                responsePacketHandler, new HazelcastProperties(new Config()));
         asyncHandler.start();
         serializationService = new DefaultSerializationServiceBuilder().build();
     }

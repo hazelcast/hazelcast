@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
@@ -39,6 +38,7 @@ import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static com.hazelcast.util.concurrent.BackoffIdleStrategy.createBackoffIdleStrategy;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -68,12 +68,12 @@ public class AsyncInboundResponseHandler implements PacketHandler, MetricsProvid
     final ResponseThread responseThread;
     private final ILogger logger;
 
-    AsyncInboundResponseHandler(HazelcastThreadGroup threadGroup,
+    AsyncInboundResponseHandler(ClassLoader classLoader, String hzName,
                                 ILogger logger,
                                 PacketHandler responsePacketHandler,
                                 HazelcastProperties properties) {
         this.logger = logger;
-        this.responseThread = new ResponseThread(threadGroup, responsePacketHandler, properties);
+        this.responseThread = new ResponseThread(classLoader, hzName, responsePacketHandler, properties);
     }
 
     @Probe(name = "responseQueueSize", level = MANDATORY)
@@ -127,11 +127,11 @@ public class AsyncInboundResponseHandler implements PacketHandler, MetricsProvid
         private final PacketHandler responsePacketHandler;
         private volatile boolean shutdown;
 
-        private ResponseThread(HazelcastThreadGroup threadGroup,
+        private ResponseThread(ClassLoader classLoader, String hzName,
                                PacketHandler responsePacketHandler,
                                HazelcastProperties properties) {
-            super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("response"));
-            setContextClassLoader(threadGroup.getClassLoader());
+            super(createThreadName(hzName, "response"));
+            setContextClassLoader(classLoader);
             this.responsePacketHandler = responsePacketHandler;
             this.responseQueue = new MPSCQueue<Packet>(this, getIdleStrategy(properties, IDLE_STRATEGY));
         }

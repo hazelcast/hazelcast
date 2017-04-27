@@ -59,7 +59,6 @@ public abstract class OutOfMemoryHandler {
      * </p>
      *
      * @see OutOfMemoryHandler#tryCloseConnections(HazelcastInstance)
-     * @see OutOfMemoryHandler#tryStopThreads(HazelcastInstance)
      * @see OutOfMemoryHandler#tryShutdown(HazelcastInstance)
      *
      * @param oome OutOfMemoryError thrown by JVM
@@ -87,15 +86,6 @@ public abstract class OutOfMemoryHandler {
      */
     protected final void tryCloseConnections(HazelcastInstance hazelcastInstance) {
         OutOfMemoryHandlerHelper.tryCloseConnections(hazelcastInstance);
-    }
-
-    /**
-     * Tries to stop internal Hazelcast threads (such as service thread, IO threads, executor threads).
-     *
-     * @param hazelcastInstance the Hazelcast instance to stop internal threads
-     */
-    protected final void tryStopThreads(final HazelcastInstance hazelcastInstance) {
-        OutOfMemoryHandlerHelper.tryStopThreads(hazelcastInstance);
     }
 
     /**
