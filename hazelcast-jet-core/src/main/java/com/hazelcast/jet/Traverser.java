@@ -141,6 +141,27 @@ public interface Traverser<T> {
     }
 
     /**
+     * Returns a traverser that will emit the same items as this traverser and
+     * will additionally run the supplied action first time this traverser
+     * returns {@code null}.
+     */
+    @Nonnull
+    default Traverser<T> onFirstNull(@Nonnull Runnable action) {
+        return new Traverser<T>() {
+            private Runnable action2 = action;
+            @Override
+            public T next() {
+                T t = Traverser.this.next();
+                if (t == null && action2 != null) {
+                    action2.run();
+                    action2 = null;
+                }
+                return t;
+            }
+        };
+    }
+
+    /**
      * Returns a traverser over the supplied arguments (or item array).
      *
      * @param items the items to traverse over

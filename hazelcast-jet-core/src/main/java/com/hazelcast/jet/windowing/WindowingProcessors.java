@@ -17,10 +17,14 @@
 package com.hazelcast.jet.windowing;
 
 import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.Distributed.Function;
+import com.hazelcast.jet.Distributed.ToLongFunction;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.stream.DistributedCollector;
 
 import javax.annotation.Nonnull;
+
+import static com.hazelcast.jet.Distributed.Function.identity;
 
 /**
  * Contains factory methods for processors dealing with windowing operations.
@@ -57,16 +61,32 @@ public final class WindowingProcessors {
      *
      * @param <T> item type
      * @param <K> type of key returned from {@code extractKeyF}
-     * @param <F> type of accumulator returned from {@code windowOperation.
+     * @param <A> type of accumulator returned from {@code windowOperation.
      *            createAccumulatorF()}
      */
-    public static <T, K, F> Distributed.Supplier<Processor> groupByFrame(
+    public static <T, K, A> Distributed.Supplier<Processor> groupByFrame(
             Distributed.Function<? super T, K> extractKeyF,
             Distributed.ToLongFunction<? super T> extractEventSeqF,
             WindowDefinition windowDef,
-            WindowOperation<? super T, F, ?> windowOperation
+            WindowOperation<? super T, A, ?> windowOperation
     ) {
-        return () -> new GroupByFrameP<>(extractKeyF, extractEventSeqF, windowDef, windowOperation);
+        // we'll use window with 1 frames per window, as a subsequent processor will merge subsequent frames
+        WindowDefinition tumblingWinDef = new WindowDefinition(
+                windowDef.frameLength(), windowDef.frameOffset(), 1);
+
+        return () -> new WindowingProcessor<T, A, A>(
+                tumblingWinDef,
+                windowOperation.createAccumulatorF(),
+                item -> tumblingWinDef.higherFrameSeq(extractEventSeqF.applyAsLong(item)),
+                extractKeyF,
+                (acc, item) -> {
+                    windowOperation.accumulateItemF().accept(acc, item);
+                    return acc;
+                },
+                windowOperation.combineAccumulatorsF(),
+                null, // no need to have it, it's always 1 frame long
+                identity()
+        );
     }
 
     /**
@@ -75,31 +95,62 @@ public final class WindowingProcessors {
      * groupByFrame(extractKeyF, extractEventSeqF, windowDef, windowOperation)}
      * which doesn't group by key.
      */
-    public static <T, F> Distributed.Supplier<Processor> groupByFrame(
+    public static <T, A> Distributed.Supplier<Processor> groupByFrame(
             Distributed.ToLongFunction<? super T> extractEventSeqF,
             WindowDefinition windowDef,
-            WindowOperation<? super T, F, ?> collector
+            WindowOperation<? super T, A, ?> collector
     ) {
         return groupByFrame(t -> "global", extractEventSeqF, windowDef, collector);
     }
 
     /**
      * Combines frames received from several upstream instances of {@link
-     * GroupByFrameP} into finalized frames. Combines finalized frames into
+     * #groupByFrame(Function, ToLongFunction, WindowDefinition,
+     * WindowOperation)} into finalized frames. Combines finalized frames into
      * sliding windows. Applies the finisher function to produce its emitted
      * output.
      *
-     * @param <F> type of accumulator
+     * @param <A> type of accumulator
      * @param <R> type of the result derived from a frame
      */
-    public static <F, R> Distributed.Supplier<Processor> slidingWindow(
-            WindowDefinition windowDef, WindowOperation<?, F, R> windowOperation) {
-        return () -> new SlidingWindowP<>(windowDef, windowOperation);
+    public static <A, R> Distributed.Supplier<Processor> slidingWindow(
+            WindowDefinition windowDef, WindowOperation<?, A, R> windowOperation) {
+        return () -> new WindowingProcessor<Frame<?, A>, A, R>(
+                windowDef,
+                windowOperation.createAccumulatorF(),
+                Frame::getSeq,
+                Frame::getKey,
+                (acc, frame) -> windowOperation.combineAccumulatorsF().apply(acc, frame.getValue()),
+                windowOperation.combineAccumulatorsF(),
+                windowOperation.deductAccumulatorF(),
+                windowOperation.finishAccumulationF()
+        );
+    }
+
+    public static <T, A, R> Distributed.Supplier<Processor> oneStepSlidingWindow(
+            Distributed.Function<? super T, ?> extractKeyF,
+            Distributed.ToLongFunction<? super T> extractEventSeqF,
+            WindowDefinition windowDef,
+            WindowOperation<T, A, R> windowOperation
+    ) {
+        return () -> new WindowingProcessor<T, A, R>(
+                windowDef,
+                windowOperation.createAccumulatorF(),
+                item -> windowDef.higherFrameSeq(extractEventSeqF.applyAsLong(item)),
+                extractKeyF,
+                (acc, item) -> {
+                    windowOperation.accumulateItemF().accept(acc, item);
+                    return acc;
+                },
+                windowOperation.combineAccumulatorsF(),
+                windowOperation.deductAccumulatorF(),
+                windowOperation.finishAccumulationF()
+        );
     }
 
     /**
      * Aggregates events into session windows. Events and windows under
-     * different grouping keys behave independenly.
+     * different grouping keys behave independently.
      * <p>
      * The functioning of this processor is easiest to explain in terms of
      * the <em>event interval</em>: the range {@code [eventSeq, eventSeq +

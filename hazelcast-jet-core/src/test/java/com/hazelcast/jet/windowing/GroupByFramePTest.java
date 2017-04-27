@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.windowing.WindowOperations.summingToLong;
+import static com.hazelcast.jet.windowing.WindowingProcessors.groupByFrame;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -41,23 +43,24 @@ import static org.mockito.Mockito.mock;
 public class GroupByFramePTest extends StreamingTestSupport {
 
     private static final long KEY = 77L;
-    private GroupByFrameP<Entry<Long, Long>, Long, ?> processor;
+    private WindowingProcessor<Entry<Long, Long>, Long, ?> processor;
 
     @Before
     @SuppressWarnings("unchecked")
     public void before() {
-        processor = new GroupByFrameP<>(
+        processor = (WindowingProcessor<Entry<Long, Long>, Long, ?>) groupByFrame(
                 x -> KEY,
                 Entry::getKey,
                 new WindowDefinition(4, 0, 4),
-                WindowOperations.summingToLong((Entry<Long, Long> e) -> e.getValue())
-        );
+                summingToLong((Entry<Long, Long> e) -> e.getValue())
+        ).get();
         processor.init(outbox, mock(Context.class));
     }
 
     @After
     public void after() {
-        assertTrue("map not empty after emitting everything", processor.seqToKeyToFrame.isEmpty());
+        assertTrue("map not empty after emitting everything: " + processor.seqToKeyToFrame,
+                processor.seqToKeyToFrame.isEmpty());
     }
 
     @Test
@@ -68,7 +71,6 @@ public class GroupByFramePTest extends StreamingTestSupport {
                 entry(0L, 1L), // to frame 4
                 entry(1L, 1L), // to frame 4
                 punc(3), // does not close anything
-                entry(2L, 1L), // to frame 4, still accepted, even though it's late after punc(3)
                 punc(4), // closes frame 4
                 entry(4L, 1L), // to frame 8
                 entry(5L, 1L), // to frame 8
@@ -88,7 +90,7 @@ public class GroupByFramePTest extends StreamingTestSupport {
         // Then
         assertOutbox(asList(
                 punc(3),
-                frame(4, 3),
+                frame(4, 2),
                 punc(4),
                 punc(6),
                 punc(7),

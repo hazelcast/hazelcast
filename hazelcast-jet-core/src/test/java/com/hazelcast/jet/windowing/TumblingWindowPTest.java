@@ -28,6 +28,8 @@ import org.junit.runner.RunWith;
 
 import java.util.Map.Entry;
 
+import static com.hazelcast.jet.windowing.WindowDefinition.tumblingWindowDef;
+import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindow;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -37,13 +39,13 @@ import static org.mockito.Mockito.mock;
 public class TumblingWindowPTest extends StreamingTestSupport {
 
     private static final long KEY = 77L;
-    private TumblingWindowP<Object, ?, Long> processor;
+    private WindowingProcessor<Frame<Object, ?>, ?, Long> processor;
 
     @Before
     public void before() {
         WindowOperation<Entry<Long, Long>, ?, Long> operation = WindowOperations.summingToLong(Entry::getValue);
 
-        processor = new TumblingWindowP<>(WindowDefinition.tumblingWindowDef(1), operation);
+        processor = (WindowingProcessor<Frame<Object, ?>, ?, Long>) slidingWindow(tumblingWindowDef(1), operation).get();
         processor.init(outbox, mock(Context.class));
     }
 
