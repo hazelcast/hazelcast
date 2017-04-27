@@ -109,6 +109,9 @@ public final class ProxyRegistry {
     public void getDistributedObjects(Collection<DistributedObject> result) {
         Collection<DistributedObjectFuture> futures = proxies.values();
         for (DistributedObjectFuture future : futures) {
+            if (!future.isSetAndInitialized()) {
+                continue;
+            }
             try {
                 DistributedObject object = future.get();
                 result.add(object);
