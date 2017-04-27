@@ -22,7 +22,6 @@ import com.hazelcast.jet.Traverser;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -32,6 +31,7 @@ import java.util.function.Supplier;
 import java.util.function.ToLongFunction;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
+import static com.hazelcast.jet.Traversers.traverseIterableWithRemoval;
 
 /**
  * Group-by-frame processor. See {@link
@@ -85,24 +85,10 @@ final class GroupByFrameP<T, K, F> extends AbstractProcessor {
     }
 
     private Traverser<Object> closedFrameTraverser(Punctuation punc) {
-        return traverseWithRemoval(seqToKeyToFrame.headMap(punc.seq(), true).entrySet())
+        return traverseIterableWithRemoval(seqToKeyToFrame.headMap(punc.seq(), true).entrySet())
                 .<Object>flatMap(seqAndFrame ->
                         traverseIterable(seqAndFrame.getValue().entrySet())
                                 .map(e -> new Frame<>(seqAndFrame.getKey(), e.getKey(), e.getValue())))
                 .append(punc);
-    }
-
-    private static <T> Traverser<T> traverseWithRemoval(Iterable<T> iterable) {
-        Iterator<T> iterator = iterable.iterator();
-        return () -> {
-            if (!iterator.hasNext()) {
-                return null;
-            }
-            try {
-                return iterator.next();
-            } finally {
-                iterator.remove();
-            }
-        };
     }
 }

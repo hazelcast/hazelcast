@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.windowing;
 
-import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.Punctuation;
 import com.hazelcast.jet.Traverser;
@@ -26,12 +25,7 @@ import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NavigableMap;
-import java.util.TreeMap;
 import java.util.function.BinaryOperator;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.LongStream;
 
 import static com.hazelcast.jet.Distributed.Function.identity;
 import static java.lang.Math.min;
@@ -46,41 +40,19 @@ import static java.lang.Math.min;
  * @param <F> type of the frame accumulator object
  * @param <R> type of the finished result
  */
-class SlidingWindowP<K, F, R> extends AbstractProcessor {
+class SlidingWindowP<K, F, R> extends FrameCombinerBaseP<K, F, R> {
 
-    // package-visible for test
-    final NavigableMap<Long, Map<K, F>> seqToKeyToFrame = new TreeMap<>();
-    final Map<K, F> slidingWindow = new HashMap<>();
-
-    private final WindowDefinition wDef;
-    private final Supplier<F> createF;
-    private final BinaryOperator<F> combineF;
     private final Distributed.BinaryOperator<F> deductF;
-    private final Function<F, R> finishF;
-
-    private final FlatMapper<Punctuation, Object> flatMapper;
     private final F emptyAcc;
 
-    private long nextFrameSeqToEmit = Long.MIN_VALUE;
-
     SlidingWindowP(WindowDefinition winDef, @Nonnull WindowOperation<?, F, R> winOp) {
-        this.wDef = winDef;
-        this.createF = winOp.createAccumulatorF();
-        this.combineF = winOp.combineAccumulatorsF();
-        this.deductF = winOp.deductAccumulatorF();
-        this.finishF = winOp.finishAccumulationF();
-        this.flatMapper = flatMapper(this::slidingWindowTraverser);
-        this.emptyAcc = createF.get();
-    }
+        super(winDef, winOp);
+        assert !winDef.isTumbling() : SlidingWindowP.class.getSimpleName() + " used with tumbling window";
 
-    @Override
-    protected boolean tryProcess0(@Nonnull Object item) {
-        final Frame<K, F> e = (Frame) item;
-        final Long frameSeq = e.getSeq();
-        final F frame = e.getValue();
-        seqToKeyToFrame.computeIfAbsent(frameSeq, x -> new HashMap<>())
-                       .merge(e.getKey(), frame, combineF);
-        return true;
+        this.deductF = winOp.deductAccumulatorF();
+        this.emptyAcc = createF.get();
+
+        this.flatMapper = flatMapper(this::slidingWindowTraverser);
     }
 
     @Override
@@ -143,11 +115,5 @@ class SlidingWindowP<K, F, R> extends AbstractProcessor {
                 return result.equals(emptyAcc) ? null : result;
             });
         }
-    }
-
-    private static LongStream range(long start, long end, long step) {
-        return start >= end
-                ? LongStream.empty()
-                : LongStream.iterate(start, n -> n + step).limit(1 + (end - start - 1) / step);
     }
 }

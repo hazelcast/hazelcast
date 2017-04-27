@@ -62,25 +62,25 @@ public final class WindowingProcessors {
      */
     public static <T, K, F> Distributed.Supplier<Processor> groupByFrame(
             Distributed.Function<? super T, K> extractKeyF,
-            Distributed.ToLongFunction<? super T> extractTimestampF,
+            Distributed.ToLongFunction<? super T> extractEventSeqF,
             WindowDefinition windowDef,
             WindowOperation<? super T, F, ?> windowOperation
     ) {
-        return () -> new GroupByFrameP<>(extractKeyF, extractTimestampF, windowDef, windowOperation);
+        return () -> new GroupByFrameP<>(extractKeyF, extractEventSeqF, windowDef, windowOperation);
     }
 
     /**
      * Convenience for {@link #groupByFrame(
      * Distributed.Function, Distributed.ToLongFunction, WindowDefinition, WindowOperation)
-     * groupByFrame(extractKeyF, extractTimestampF, windowDef, collector)}
+     * groupByFrame(extractKeyF, extractEventSeqF, windowDef, windowOperation)}
      * which doesn't group by key.
      */
     public static <T, F> Distributed.Supplier<Processor> groupByFrame(
-            Distributed.ToLongFunction<? super T> extractTimestampF,
+            Distributed.ToLongFunction<? super T> extractEventSeqF,
             WindowDefinition windowDef,
             WindowOperation<? super T, F, ?> collector
     ) {
-        return groupByFrame(t -> "global", extractTimestampF, windowDef, collector);
+        return groupByFrame(t -> "global", extractEventSeqF, windowDef, collector);
     }
 
     /**
