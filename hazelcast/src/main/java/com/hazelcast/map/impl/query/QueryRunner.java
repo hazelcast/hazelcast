@@ -101,14 +101,14 @@ public class QueryRunner {
         }
     }
 
-    private Result populateTheResult(Query query, Collection<QueryableEntry> entries, Collection<Integer> initialPartitions) {
+    protected Result populateTheResult(Query query, Collection<QueryableEntry> entries, Collection<Integer> initialPartitions) {
         ResultProcessor processor = resultProcessorRegistry.get(query.getResultType());
         return processor.populateResult(query, queryResultSizeLimiter
                 .getNodeResultLimit(initialPartitions.size()), entries, initialPartitions
         );
     }
 
-    private Collection<QueryableEntry> runUsingIndexSafely(Predicate predicate, MapContainer mapContainer,
+    protected Collection<QueryableEntry> runUsingIndexSafely(Predicate predicate, MapContainer mapContainer,
                                                            int migrationStamp) {
 
         // If a migration is in progress or migration ownership changes,
@@ -164,7 +164,7 @@ public class QueryRunner {
         return populateTheResult(query, entries, Collections.singletonList(partitionId));
     }
 
-    private int getMigrationStamp() {
+    protected int getMigrationStamp() {
         return mapServiceContext.getService().getMigrationStamp();
     }
 
@@ -172,7 +172,7 @@ public class QueryRunner {
         return mapServiceContext.getService().validateMigrationStamp(migrationStamp);
     }
 
-    private void updateStatistics(MapContainer mapContainer) {
+    protected void updateStatistics(MapContainer mapContainer) {
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             LocalMapStatsImpl localStats = localMapStatsProvider.getLocalMapStatsImpl(mapContainer.getName());
             localStats.incrementOtherOperations();
