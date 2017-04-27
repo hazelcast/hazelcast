@@ -153,10 +153,10 @@ public interface Processor {
         ILogger logger();
 
         /**
-         * Returns the index of the current processor among all the processors
-         * created for this vertex on all nodes: an unique cluster-wide index.
+         * Returns the index of the processor among all the processors created for
+         * this vertex on all nodes: its unique cluster-wide index.
          */
-        int index();
+        int globalProcessorIndex();
 
         /***
          * Returns the name of the vertex associated with this processor.

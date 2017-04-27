@@ -58,7 +58,7 @@ public final class Contexts {
         }
 
         @Override
-        public int index() {
+        public int globalProcessorIndex() {
             return index;
         }
 

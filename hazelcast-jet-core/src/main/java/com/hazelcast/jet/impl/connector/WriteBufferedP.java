@@ -47,7 +47,7 @@ public final class WriteBufferedP<B, T> implements Processor {
 
     @Override
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
-        this.buffer = newBuffer.apply(context.index());
+        this.buffer = newBuffer.apply(context.globalProcessorIndex());
     }
 
     @Nonnull
