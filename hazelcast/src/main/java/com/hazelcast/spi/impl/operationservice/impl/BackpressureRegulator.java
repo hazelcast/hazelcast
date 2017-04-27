@@ -16,12 +16,13 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.internal.sequence.CallIdSequence;
+import com.hazelcast.internal.sequence.CallIdSequenceWithBackpressure;
+import com.hazelcast.internal.sequence.CallIdSequenceWithoutBackpressure;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
-import com.hazelcast.spi.impl.operationservice.impl.CallIdSequence.CallIdSequenceWithBackpressure;
-import com.hazelcast.spi.impl.operationservice.impl.CallIdSequence.CallIdSequenceWithoutBackpressure;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Random;

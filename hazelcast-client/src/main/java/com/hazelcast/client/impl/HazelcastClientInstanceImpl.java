@@ -43,8 +43,6 @@ import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientTransactionManagerService;
 import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.spi.impl.AwsAddressProvider;
-import com.hazelcast.client.spi.impl.CallIdSequence;
-import com.hazelcast.client.spi.impl.CallIdSequenceWithBackoff;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -112,6 +110,7 @@ import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet;
 import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
 import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.nearcache.NearCacheManager;
+import com.hazelcast.internal.sequence.CallIdSequenceWithoutBackpressure;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -134,6 +133,8 @@ import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
+import com.hazelcast.internal.sequence.CallIdSequence;
+import com.hazelcast.internal.sequence.CallIdSequenceWithBackpressure;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -233,7 +234,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
         int maxAllowedConcurrentInvocations = properties.getInteger(MAX_CONCURRENT_INVOCATIONS);
         long backofftimeoutMs = properties.getLong(INVOCATION_BACKOFF_TIMEOUT_MILLIS);
-        callIdSequence = new CallIdSequenceWithBackoff(maxAllowedConcurrentInvocations, backofftimeoutMs);
+        if (maxAllowedConcurrentInvocations == Integer.MAX_VALUE) {
+            callIdSequence = new CallIdSequenceWithoutBackpressure();
+        } else {
+            callIdSequence = new CallIdSequenceWithBackpressure(maxAllowedConcurrentInvocations, backofftimeoutMs);
+        }
 
         invocationService = initInvocationService();
         listenerService = initListenerService();

@@ -14,24 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.spi.impl;
-
-public abstract class CallIdSequence {
-
-    /**
-     * Creates the next call-id.
-     *
-     * @return the generated callId.
-     */
-    public abstract long next();
-
-    /**
-     * Creates the call id without applying any backpressure
-     *
-     * @return the generated call id.
-     */
-    public abstract long forceNext();
-
-    public abstract void complete();
-
-}
+/**
+ * Call ID sequence generators
+ *
+ */
+package com.hazelcast.internal.sequence;

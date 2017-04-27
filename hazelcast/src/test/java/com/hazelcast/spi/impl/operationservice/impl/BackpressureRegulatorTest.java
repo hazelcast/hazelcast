@@ -17,6 +17,9 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.internal.sequence.CallIdSequence;
+import com.hazelcast.internal.sequence.CallIdSequenceWithBackpressure;
+import com.hazelcast.internal.sequence.CallIdSequenceWithoutBackpressure;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
@@ -94,7 +97,7 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
 
         CallIdSequence callIdSequence = backpressureRegulator.newCallIdSequence();
 
-        assertInstanceOf(CallIdSequence.CallIdSequenceWithBackpressure.class, callIdSequence);
+        assertInstanceOf(CallIdSequenceWithBackpressure.class, callIdSequence);
         assertEquals(backpressureRegulator.getMaxConcurrentInvocations(), callIdSequence.getMaxConcurrentInvocations());
     }
 
@@ -107,7 +110,7 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
 
         CallIdSequence callIdSequence = backpressureRegulator.newCallIdSequence();
 
-        assertInstanceOf(CallIdSequence.CallIdSequenceWithoutBackpressure.class, callIdSequence);
+        assertInstanceOf(CallIdSequenceWithoutBackpressure.class, callIdSequence);
     }
 
     // ========================== isSyncForced =================
