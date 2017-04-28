@@ -76,10 +76,10 @@ public class WindowOperationsTest {
         // When
 
         A acc1 = op.createAccumulatorF().get();
-        op.accumulateItemF().accept(acc1, item);
+        acc1 = op.accumulateItemF().apply(acc1, item);
 
         A acc2 = op.createAccumulatorF().get();
-        op.accumulateItemF().accept(acc2, item);
+        acc2 = op.accumulateItemF().apply(acc2, item);
 
         // Checks must be made early because combine/deduct
         // are allowed to be destructive ops

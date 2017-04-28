@@ -86,7 +86,12 @@ public class SlidingWindowPTest extends StreamingTestSupport {
         operation = WindowOperation.<Entry<?, Long>, MutableLong, Long>of(
                 MutableLong::new,
                 (acc, val) -> {
-                    acc.value += val.getValue();
+                    if (mutateAccumulator) {
+                        acc.value += val.getValue();
+                        return acc;
+                    } else {
+                        return new MutableLong(acc.value + val.getValue());
+                    }
                 },
                 (acc1, acc2) -> {
                     if (mutateAccumulator) {
@@ -98,8 +103,13 @@ public class SlidingWindowPTest extends StreamingTestSupport {
                     }
                 },
                 hasDeduct ? (acc1, acc2) -> {
-                    acc1.value -= acc2.value;
-                    return acc1;
+                    if (mutateAccumulator) {
+                        acc1.value -= acc2.value;
+                        return acc1;
+                    }
+                    else {
+                        return new MutableLong(acc1.value - acc2.value);
+                    }
                 } : null,
                 acc -> acc.value);
 

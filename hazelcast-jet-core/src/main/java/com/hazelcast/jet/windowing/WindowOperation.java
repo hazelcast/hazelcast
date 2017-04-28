@@ -65,7 +65,7 @@ public interface WindowOperation<T, A, R> extends Serializable {
      * A function that updates the accumulated value to account for a new item.
      */
     @Nonnull
-    Distributed.BiConsumer<A, T> accumulateItemF();
+    Distributed.BiFunction<A, T, A> accumulateItemF();
 
     /**
      * A function that accepts two accumulators, merges their contents, and
@@ -109,20 +109,19 @@ public interface WindowOperation<T, A, R> extends Serializable {
     /**
      * Returns a new {@code WindowOperation} object composed from the provided
      * primitives.
-     *
+     *  @param <T> the type of the stream item
+     * @param <A> the type of the accumulator
+     * @param <R> the type of the final result
      * @param createAccumulatorF see {@link #createAccumulatorF()}()
      * @param accumulateItemF see {@link #accumulateItemF()}
      * @param combineAccumulatorsF see {@link #combineAccumulatorsF()}
      * @param deductAccumulatorF see {@link #deductAccumulatorF()}
      * @param finishAccumulationF see {@link #finishAccumulationF()}
-     *
-     * @param <T> the type of the stream item
-     * @param <A> the type of the accumulator
-     * @param <R> the type of the final result
+*
      */
     @Nonnull
     static <T, A, R> WindowOperation<T, A, R> of(Distributed.Supplier<A> createAccumulatorF,
-                                                 Distributed.BiConsumer<A, T> accumulateItemF,
+                                                 Distributed.BiFunction<A, T, A> accumulateItemF,
                                                  Distributed.BinaryOperator<A> combineAccumulatorsF,
                                                  Distributed.BinaryOperator<A> deductAccumulatorF,
                                                  Distributed.Function<A, R> finishAccumulationF
@@ -143,6 +142,11 @@ public interface WindowOperation<T, A, R> extends Serializable {
      */
     @Nonnull
     static <T, A, R> WindowOperation<T, A, R> fromCollector(DistributedCollector<T, A, R> c) {
-        return of(c.supplier(), c.accumulator(), c.combiner(), null, c.finisher());
+        return of(c.supplier(),
+                (a, v) -> {
+                    c.accumulator().accept(a, v);
+                    return a;
+                },
+                c.combiner(), null, c.finisher());
     }
 }
