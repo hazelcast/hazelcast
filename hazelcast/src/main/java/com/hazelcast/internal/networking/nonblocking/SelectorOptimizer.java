@@ -138,7 +138,7 @@ public final class SelectorOptimizer {
         }
     }
 
-     static final class SelectionKeys {
+    static final class SelectionKeys {
         static final int INITIAL_CAPACITY = 32;
 
         SelectionKey[] keys = new SelectionKey[INITIAL_CAPACITY];
@@ -197,7 +197,7 @@ public final class SelectorOptimizer {
 
         @Override
         public void remove() {
-            if (index == -1 || index >= keys.length - 1 || keys[index] == null) {
+            if (index == -1 || index >= keys.length || keys[index] == null) {
                 throw new IllegalStateException();
             }
 
