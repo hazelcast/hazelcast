@@ -17,9 +17,7 @@
 package com.hazelcast.jet.windowing;
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Distributed.BiFunction;
 import com.hazelcast.jet.Distributed.Comparator;
-import com.hazelcast.jet.Distributed.Supplier;
 import com.hazelcast.jet.Distributed.ToLongFunction;
 import com.hazelcast.jet.Punctuation;
 import com.hazelcast.jet.Traverser;
@@ -50,50 +48,27 @@ class WindowingProcessor<T, A, R> extends AbstractProcessor {
     final Map<Object, A> slidingWindow = new HashMap<>();
 
     private final WindowDefinition wDef;
-    private final Supplier<A> createAccF;
     private final ToLongFunction<? super T> extractFrameSeqF;
     private final Function<? super T, ?> extractKeyF;
-    private final BiFunction<A, ? super T, A> accumulateItemF;
-    private final BinaryOperator<A> combineAccF;
-    private final BinaryOperator<A> deductAccumulatorF;
-    private final Function<A, R> finishF;
+    private final WindowOperation<? super T, A, R> winOp;
 
     private final FlatMapper<Punctuation, Object> flatMapper;
 
     private long nextFrameSeqToEmit = Long.MIN_VALUE;
-    private A emptyAcc;
+    private final A emptyAcc;
 
-    /**
-     * @param createAccF supplier of empty accumulator
-     * @param extractFrameSeqF function to extract frameSeq from input item
-     * @param extractKeyF function to extract key from input item
-     * @param accumulateItemF function to accumulate item into currently
-     *                        accumulate value, allowed to mutate accumulator or return a
-     *                        new one
-     * @param combineAccF operator to combine two accumulators
-     * @param deductAccumulatorF operator to deduct two accumulators
-     * @param finishF operator to convert accumulator to final result
-     */
     WindowingProcessor(
             WindowDefinition winDef,
-            Supplier<A> createAccF,
             ToLongFunction<? super T> extractFrameSeqF,
             Function<? super T, ?> extractKeyF,
-            BiFunction<A, ? super T, A> accumulateItemF,
-            BinaryOperator<A> combineAccF,
-            BinaryOperator<A> deductAccumulatorF,
-            Function<A, R> finishF) {
+            WindowOperation<? super T, A, R> winOp) {
         this.wDef = winDef;
-        this.createAccF = createAccF;
         this.extractFrameSeqF = extractFrameSeqF;
         this.extractKeyF = extractKeyF;
-        this.accumulateItemF = accumulateItemF;
-        this.combineAccF = combineAccF;
-        this.deductAccumulatorF = deductAccumulatorF;
-        this.finishF = finishF;
+        this.winOp = winOp;
 
         this.flatMapper = flatMapper(this::slidingWindowTraverser);
-        this.emptyAcc = createAccF.get();
+        this.emptyAcc = winOp.createAccumulatorF().get();
     }
 
     @Override
@@ -102,7 +77,8 @@ class WindowingProcessor<T, A, R> extends AbstractProcessor {
         final Long frameSeq = extractFrameSeqF.applyAsLong(t);
         final Object key = extractKeyF.apply(t);
         seqToKeyToFrame.computeIfAbsent(frameSeq, x -> new HashMap<>())
-                .compute(key, (x, acc) -> accumulateItemF.apply(acc == null ? createAccF.get() : acc, t));
+                .compute(key, (x, acc) ->
+                        winOp.accumulateItemF().apply(acc == null ? winOp.createAccumulatorF().get() : acc, t));
         return true;
     }
 
@@ -131,17 +107,17 @@ class WindowingProcessor<T, A, R> extends AbstractProcessor {
         long rangeStart = nextFrameSeqToEmit;
         nextFrameSeqToEmit = wDef.higherFrameSeq(punc.seq());
         return Traversers.traverseStream(range(rangeStart, nextFrameSeqToEmit, wDef.frameLength()).boxed())
-                .flatMap(frameSeq -> Traversers.traverseIterable(computeWindow(frameSeq).entrySet())
-                        .map(e -> (Object) new Frame<>(frameSeq, e.getKey(), finishF.apply(e.getValue())))
+                .<Object>flatMap(frameSeq -> Traversers.traverseIterable(computeWindow(frameSeq).entrySet())
+                        .map(e -> new Frame<>(frameSeq, e.getKey(), winOp.finishAccumulationF().apply(e.getValue())))
                         .onFirstNull(() -> completeWindow(frameSeq)))
                 .append(punc);
     }
 
     private void completeWindow(long frameSeq) {
         Map<Object, A> evictedFrame = seqToKeyToFrame.remove(frameSeq - wDef.windowLength() + wDef.frameLength());
-        if (deductAccumulatorF != null) {
+        if (winOp.deductAccumulatorF() != null) {
             // deduct trailing-edge frame
-            patchSlidingWindow(deductAccumulatorF, evictedFrame);
+            patchSlidingWindow(winOp.deductAccumulatorF(), evictedFrame);
         }
     }
 
@@ -149,18 +125,17 @@ class WindowingProcessor<T, A, R> extends AbstractProcessor {
         if (wDef.isTumbling()) {
             return seqToKeyToFrame.getOrDefault(frameSeq, emptyMap());
         }
-        if (deductAccumulatorF != null) {
+        if (winOp.deductAccumulatorF() != null) {
             // add leading-edge frame
-            patchSlidingWindow(combineAccF, seqToKeyToFrame.get(frameSeq));
+            patchSlidingWindow(winOp.combineAccumulatorsF(), seqToKeyToFrame.get(frameSeq));
             return slidingWindow;
         }
         // without deductF we have to recompute the window from scratch
         Map<Object, A> window = new HashMap<>();
         for (long seq = frameSeq - wDef.windowLength() + wDef.frameLength(); seq <= frameSeq; seq += wDef.frameLength()) {
             seqToKeyToFrame.getOrDefault(seq, emptyMap())
-                    .forEach((key, currAcc) ->
-                            window.compute(key,
-                                    (x, acc) -> combineAccF.apply(acc != null ? acc : createAccF.get(), currAcc)));
+                    .forEach((key, currAcc) -> window.compute(key, (x, acc) -> winOp.combineAccumulatorsF().apply(
+                            acc != null ? acc : winOp.createAccumulatorF().get(), currAcc)));
         }
         return window;
     }
@@ -171,7 +146,7 @@ class WindowingProcessor<T, A, R> extends AbstractProcessor {
         }
         for (Entry<Object, A> e : patchingFrame.entrySet()) {
             slidingWindow.compute(e.getKey(), (k, acc) -> {
-                A result = patchOp.apply(acc != null ? acc : createAccF.get(), e.getValue());
+                A result = patchOp.apply(acc != null ? acc : winOp.createAccumulatorF().get(), e.getValue());
                 return result.equals(emptyAcc) ? null : result;
             });
         }

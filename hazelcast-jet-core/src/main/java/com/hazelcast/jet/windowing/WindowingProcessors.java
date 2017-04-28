@@ -17,7 +17,6 @@
 package com.hazelcast.jet.windowing;
 
 import com.hazelcast.jet.Distributed;
-import com.hazelcast.jet.Distributed.BinaryOperator;
 import com.hazelcast.jet.Distributed.Function;
 import com.hazelcast.jet.Distributed.ToLongFunction;
 import com.hazelcast.jet.Processor;
@@ -79,13 +78,15 @@ public final class WindowingProcessors {
 
         return () -> new WindowingProcessor<T, A, A>(
                 tumblingWinDef,
-                windowOperation.createAccumulatorF(),
                 item -> tumblingWinDef.higherFrameSeq(extractEventSeqF.applyAsLong(item)),
                 extractKeyF,
-                windowOperation.accumulateItemF(),
-                windowOperation.combineAccumulatorsF(),
-                null, // no need to have it, it's always 1 frame long
-                identity()
+                WindowOperation.of(
+                        windowOperation.createAccumulatorF(),
+                        windowOperation.accumulateItemF(),
+                        windowOperation.combineAccumulatorsF(),
+                        windowOperation.deductAccumulatorF(),
+                        identity()
+                )
         );
     }
 
@@ -119,30 +120,22 @@ public final class WindowingProcessors {
             @Nonnull WindowDefinition windowDef,
             @Nonnull WindowOperation<?, A, R> windowOperation
     ) {
-        BinaryOperator<A> combineAccumulatorsF = windowOperation.combineAccumulatorsF();
         return () -> new WindowingProcessor<Frame<?, A>, A, R>(
                 windowDef,
-                windowOperation.createAccumulatorF(),
                 Frame::getSeq,
                 Frame::getKey,
-                (acc, frame) -> combineAccumulatorsF.apply(acc, frame.getValue()),
-                combineAccumulatorsF,
-                windowOperation.deductAccumulatorF(),
-                windowOperation.finishAccumulationF()
+                WindowOperation.of(
+                        windowOperation.createAccumulatorF(),
+                        (acc, frame) -> windowOperation.combineAccumulatorsF().apply(acc, frame.getValue()),
+                        windowOperation.combineAccumulatorsF(),
+                        windowOperation.deductAccumulatorF(),
+                        windowOperation.finishAccumulationF()
+                )
         );
     }
 
     /**
      * TODO
-     *
-     * @param extractKeyF
-     * @param extractEventSeqF
-     * @param windowDef
-     * @param windowOperation
-     * @param <T>
-     * @param <A>
-     * @param <R>
-     * @return
      */
     @Nonnull
     public static <T, A, R> Distributed.Supplier<Processor> oneStageSlidingWindow(
@@ -153,13 +146,9 @@ public final class WindowingProcessors {
     ) {
         return () -> new WindowingProcessor<T, A, R>(
                 windowDef,
-                windowOperation.createAccumulatorF(),
                 item -> windowDef.higherFrameSeq(extractEventSeqF.applyAsLong(item)),
                 extractKeyF,
-                windowOperation.accumulateItemF(),
-                windowOperation.combineAccumulatorsF(),
-                windowOperation.deductAccumulatorF(),
-                windowOperation.finishAccumulationF()
+                windowOperation
         );
     }
 
