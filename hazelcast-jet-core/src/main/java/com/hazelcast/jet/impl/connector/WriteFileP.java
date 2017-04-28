@@ -53,8 +53,8 @@ public final class WriteFileP {
 
             return IntStream.range(0, count)
                     .mapToObj(localIndex -> new WriteBufferedP<>(
-                            globalIndex -> createBufferedWriter(directory.resolve(Integer.toString(globalIndex)),
-                                    charset, append),
+                            globalIndex -> createBufferedWriter(
+                                    directory.resolve(globalIndex + ".txt"), charset, append),
                             (writer, item) -> uncheckRun(() -> {
                                 writer.write(item.toString());
                                 writer.newLine();
