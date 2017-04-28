@@ -37,7 +37,7 @@ import static java.util.Collections.emptyMap;
 /**
  * See {@link WindowingProcessors}.
  *
- * @param <T> type of input item (stream item or frame, if 2nd step)
+ * @param <T> type of input item (stream item in 1st stage, Frame, if 2nd stage)
  * @param <A> type of the frame accumulator object
  * @param <R> type of the finished result
  */

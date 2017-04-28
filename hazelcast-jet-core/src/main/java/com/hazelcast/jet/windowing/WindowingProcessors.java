@@ -29,13 +29,13 @@ import static com.hazelcast.jet.Distributed.Function.identity;
 /**
  * Contains factory methods for processors dealing with windowing operations.
  *
- * <h1>Two-step aggregation</h1>
+ * <h1>Two-stage aggregation</h1>
  *
  * This way of processing aggregates events first on local member and
  * only pre-accumulated results are sent over the network. This greatly
  * reduces the amount of data sent over the network. The DAG is:
  *
- * <pre>{@code
+ * <pre>
  *          source
  *             |
  *             | (local, partitioned edge)
@@ -48,7 +48,7 @@ import static com.hazelcast.jet.Distributed.Function.identity;
  *             |
  *             | (resulting frames)
  *             V
- * }</pre>
+ * </pre>
  *
  * You should use the same {@link WindowDefinition} and {@link
  * WindowOperation} for both stages. Disadvantage of this setup is, that
@@ -58,7 +58,7 @@ import static com.hazelcast.jet.Distributed.Function.identity;
  * stage processor. Session windows are always processed in single stage.
  * The DAG:
  *
- * <pre>{@code
+ * <pre>
  *          source
  *             |
  *             | (distributed, partitioned edge)
@@ -68,9 +68,11 @@ import static com.hazelcast.jet.Distributed.Function.identity;
  *             |
  *             | (resulting frames)
  *             V
- * }</pre>
+ * </pre>
  */
 public final class WindowingProcessors {
+
+    private static final String GLOBAL_WINDOW_KEY = "ALL";
 
     private WindowingProcessors() {
     }
@@ -155,7 +157,7 @@ public final class WindowingProcessors {
             @Nonnull WindowDefinition windowDef,
             @Nonnull WindowOperation<? super T, A, ?> windowOperation
     ) {
-        return slidingWindowStage1(t -> "global", extractEventSeqF, windowDef, windowOperation);
+        return slidingWindowStage1(t -> GLOBAL_WINDOW_KEY, extractEventSeqF, windowDef, windowOperation);
     }
 
     /**
@@ -236,7 +238,7 @@ public final class WindowingProcessors {
             @Nonnull WindowDefinition windowDef,
             @Nonnull WindowOperation<? super T, A, R> windowOperation
     ) {
-        return slidingWindowSingleStage(t -> "global", extractEventSeqF, windowDef, windowOperation);
+        return slidingWindowSingleStage(t -> GLOBAL_WINDOW_KEY, extractEventSeqF, windowDef, windowOperation);
     }
 
     /**

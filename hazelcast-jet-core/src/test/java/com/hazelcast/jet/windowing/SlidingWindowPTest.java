@@ -65,7 +65,7 @@ public class SlidingWindowPTest extends StreamingTestSupport {
     @Parameter(2)
     public boolean singleStageProcessor;
 
-    @Parameters(name = "hasDeduct={0}, mutateAccumulator={1}, oneStageProcessor={2}")
+    @Parameters(name = "hasDeduct={0}, mutateAccumulator={1}, singleStageProcessor={2}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
                 {true, true, true},

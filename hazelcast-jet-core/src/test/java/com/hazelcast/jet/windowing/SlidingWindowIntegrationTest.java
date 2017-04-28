@@ -62,9 +62,9 @@ import static org.junit.Assert.assertTrue;
 public class SlidingWindowIntegrationTest extends JetTestSupport {
 
     @Parameter
-    public boolean oneStageProcessor;
+    public boolean singleStageProcessor;
 
-    @Parameters(name = "oneStageProcessor={0}")
+    @Parameters(name = "singleStageProcessor={0}")
     public static Collection<Object> parameters() {
         return Arrays.asList(true, false);
     }
@@ -99,7 +99,7 @@ public class SlidingWindowIntegrationTest extends JetTestSupport {
 
         dag.edge(between(source, insertPP).oneToMany());
 
-        if (oneStageProcessor) {
+        if (singleStageProcessor) {
             Vertex sliwp = dag.newVertex("sliwp", slidingWindowSingleStage(MockEvent::getKey, MockEvent::getEventSeq, wDef, wOperation));
             dag
                     .edge(between(insertPP, sliwp).partitioned(MockEvent::getKey).distributed())
