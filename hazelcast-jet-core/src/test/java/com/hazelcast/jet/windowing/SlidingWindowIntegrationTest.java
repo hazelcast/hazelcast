@@ -51,7 +51,7 @@ import static com.hazelcast.jet.windowing.StreamingTestSupport.streamToString;
 import static com.hazelcast.jet.windowing.WindowDefinition.slidingWindowDef;
 import static com.hazelcast.jet.windowing.WindowingProcessors.groupByFrame;
 import static com.hazelcast.jet.windowing.WindowingProcessors.insertPunctuation;
-import static com.hazelcast.jet.windowing.WindowingProcessors.oneStageSlidingWindow;
+import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindowSingleStage;
 import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindow;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -101,7 +101,7 @@ public class SlidingWindowIntegrationTest extends JetTestSupport {
         dag.edge(between(source, insertPP).oneToMany());
 
         if (oneStageProcessor) {
-            Vertex sliwp = dag.newVertex("sliwp", oneStageSlidingWindow(MockEvent::getKey, MockEvent::getEventSeq, wDef, wOperation));
+            Vertex sliwp = dag.newVertex("sliwp", slidingWindowSingleStage(MockEvent::getKey, MockEvent::getEventSeq, wDef, wOperation));
             dag
                     .edge(between(insertPP, sliwp).partitioned(MockEvent::getKey).distributed())
                     .edge(between(sliwp, sink).oneToMany());

@@ -139,7 +139,7 @@ public final class WindowingProcessors {
      * TODO
      */
     @Nonnull
-    public static <T, A, R> Distributed.Supplier<Processor> oneStageSlidingWindow(
+    public static <T, A, R> Distributed.Supplier<Processor> slidingWindowSingleStage(
             @Nonnull Distributed.Function<? super T, ?> extractKeyF,
             @Nonnull Distributed.ToLongFunction<? super T> extractEventSeqF,
             @Nonnull WindowDefinition windowDef,

@@ -17,6 +17,8 @@
 package com.hazelcast.jet.windowing;
 
 import com.hazelcast.jet.Accumulators.MutableLong;
+import com.hazelcast.jet.Distributed.Supplier;
+import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -39,6 +41,7 @@ import java.util.stream.LongStream;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindow;
+import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindowSingleStage;
 import static java.util.Arrays.asList;
 import static java.util.Collections.shuffle;
 import static java.util.Collections.singletonList;
@@ -60,7 +63,7 @@ public class SlidingWindowPTest extends StreamingTestSupport {
     public boolean mutateAccumulator;
 
     @Parameter(2)
-    public boolean oneStageProcessor;
+    public boolean singleStageProcessor;
 
     @Parameters(name = "hasDeduct={0}, mutateAccumulator={1}, oneStageProcessor={2}")
     public static Collection<Object[]> parameters() {
@@ -113,13 +116,10 @@ public class SlidingWindowPTest extends StreamingTestSupport {
                 } : null,
                 acc -> acc.value);
 
-
-        if (oneStageProcessor) {
-            processor = (WindowingProcessor<Entry<Long, Long>, ?, Long>) WindowingProcessors.
-                    oneStageSlidingWindow(t -> KEY, (Entry<Long, Long> e) -> e.getKey(), windowDef, operation).get();
-        } else {
-            processor = (WindowingProcessor<Frame<Object, ?>, ?, Long>) slidingWindow(windowDef, operation).get();
-        }
+        Supplier<Processor> procSupplier = singleStageProcessor
+                ? slidingWindowSingleStage(t -> KEY, (Entry<Long, Long> e) -> e.getKey(), windowDef, operation)
+                : slidingWindow(windowDef, operation);
+        processor = (WindowingProcessor<?, ?, Long>) procSupplier.get();
         processor.init(outbox, mock(Context.class));
     }
 
@@ -357,7 +357,7 @@ public class SlidingWindowPTest extends StreamingTestSupport {
     }
 
     private Entry<Long, ?> event(long seq, long value) {
-        return oneStageProcessor
+        return singleStageProcessor
                 // the -1 is due to discrepancy between eventSeq and frameSeq
                 ? entry(seq - 1, value)
                 : new Frame<>(seq, KEY, new MutableLong(value));
