@@ -50,7 +50,7 @@ import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class SessionWindowPTest extends StreamingTestSupport {
+public class WindowingProcessors_sessionWindowTest extends StreamingTestSupport {
 
     private static final int MAX_SEQ_GAP = 10;
     private SessionWindowP<Entry<String, Long>, String, MutableLong, Long> processor;
@@ -109,7 +109,7 @@ public class SessionWindowPTest extends StreamingTestSupport {
             inbox.add(ev);
             keys.add(ev.getKey());
         }
-        Set<Session> expectedSessions = keys.stream().flatMap(SessionWindowPTest::expectedSessions).collect(toSet());
+        Set<Session> expectedSessions = keys.stream().flatMap(WindowingProcessors_sessionWindowTest::expectedSessions).collect(toSet());
         inbox.add(new Punctuation(100));
 
         // When
@@ -133,7 +133,7 @@ public class SessionWindowPTest extends StreamingTestSupport {
 
     public static void main(String[] args) {
         for (int i = 0; i < 10; i++) {
-            SessionWindowPTest test = new SessionWindowPTest();
+            WindowingProcessors_sessionWindowTest test = new WindowingProcessors_sessionWindowTest();
             test.before();
             test.runBench();
         }

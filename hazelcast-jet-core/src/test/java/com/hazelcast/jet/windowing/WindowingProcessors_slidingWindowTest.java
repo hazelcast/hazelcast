@@ -17,7 +17,9 @@
 package com.hazelcast.jet.windowing;
 
 import com.hazelcast.jet.Accumulators.MutableLong;
+import com.hazelcast.jet.Distributed.Function;
 import com.hazelcast.jet.Distributed.Supplier;
+import com.hazelcast.jet.Distributed.ToLongFunction;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -40,8 +42,8 @@ import java.util.Map.Entry;
 import java.util.stream.LongStream;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindowStage2;
 import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindowSingleStage;
+import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindowStage2;
 import static java.util.Arrays.asList;
 import static java.util.Collections.shuffle;
 import static java.util.Collections.singletonList;
@@ -49,10 +51,17 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
+/**
+ * This one tests:<ul>
+ * <li>{@link WindowingProcessors#slidingWindowStage2( WindowDefinition, WindowOperation)}
+ * <li>{@link WindowingProcessors#slidingWindowSingleStage(Function, ToLongFunction,
+ *            WindowDefinition, WindowOperation)}
+ * </ul>
+ */
 @RunWith(Parameterized.class)
 @Category({QuickTest.class, ParallelTest.class})
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-public class SlidingWindowPTest extends StreamingTestSupport {
+public class WindowingProcessors_slidingWindowTest extends StreamingTestSupport {
 
     private static final Long KEY = 77L;
 

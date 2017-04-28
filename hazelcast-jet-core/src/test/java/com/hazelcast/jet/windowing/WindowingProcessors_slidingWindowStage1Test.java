@@ -39,7 +39,7 @@ import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class GroupByFramePTest extends StreamingTestSupport {
+public class WindowingProcessors_slidingWindowStage1Test extends StreamingTestSupport {
 
     private static final long KEY = 77L;
     private WindowingProcessor<Entry<Long, Long>, Long, ?> processor;

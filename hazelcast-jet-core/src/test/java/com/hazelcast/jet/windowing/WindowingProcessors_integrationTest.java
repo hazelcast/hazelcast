@@ -59,7 +59,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(Parameterized.class)
 @Category({QuickTest.class, ParallelTest.class})
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-public class SlidingWindowIntegrationTest extends JetTestSupport {
+public class WindowingProcessors_integrationTest extends JetTestSupport {
 
     @Parameter
     public boolean singleStageProcessor;
