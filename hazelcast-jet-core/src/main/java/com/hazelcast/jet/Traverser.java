@@ -148,13 +148,14 @@ public interface Traverser<T> {
     @Nonnull
     default Traverser<T> onFirstNull(@Nonnull Runnable action) {
         return new Traverser<T>() {
-            private Runnable action2 = action;
+            private boolean didRun;
+
             @Override
             public T next() {
                 T t = Traverser.this.next();
-                if (t == null && action2 != null) {
-                    action2.run();
-                    action2 = null;
+                if (t == null && !didRun) {
+                    action.run();
+                    didRun = true;
                 }
                 return t;
             }
