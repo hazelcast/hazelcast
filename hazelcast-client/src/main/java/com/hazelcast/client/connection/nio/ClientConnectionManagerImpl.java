@@ -538,17 +538,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private void authenticate(final Address target, final ClientConnection connection, final boolean asOwner,
                               final AuthenticationFuture callback) {
-        SerializationService ss = client.getSerializationService();
         final ClientClusterServiceImpl clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
         final ClientPrincipal principal = clusterService.getPrincipal();
-        byte serializationVersion = ((InternalSerializationService) client.getSerializationService()).getVersion();
-        String uuid = null;
-        String ownerUuid = null;
-        if (principal != null) {
-            uuid = principal.getUuid();
-            ownerUuid = principal.getOwnerUuid();
-        }
-        ClientMessage clientMessage = encodeAuthenticationRequest(asOwner, ss, serializationVersion, uuid, ownerUuid);
+        ClientMessage clientMessage = encodeAuthenticationRequest(asOwner, client.getSerializationService(), principal);
         ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, connection);
         ClientInvocationFuture future = clientInvocation.invokeUrgent();
         if (asOwner && clientInvocation.getSendConnection() != null) {
@@ -557,7 +549,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         future.andThen(new ExecutionCallback<ClientMessage>() {
             @Override
             public void onResponse(ClientMessage response) {
-                ClientAuthenticationCodec.ResponseParameters result = ClientAuthenticationCodec.decodeResponse(response);
+                ClientAuthenticationCodec.ResponseParameters result;
+                try {
+                    result = ClientAuthenticationCodec.decodeResponse(response);
+                } catch (HazelcastException e) {
+                    onFailure(e);
+                    return;
+                }
                 AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(result.status);
                 switch (authenticationStatus) {
                     case AUTHENTICATED:
@@ -596,8 +594,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         });
     }
 
-    private ClientMessage encodeAuthenticationRequest(boolean asOwner, SerializationService ss, byte serializationVersion,
-                                                      String uuid, String ownerUuid) {
+    private ClientMessage encodeAuthenticationRequest(boolean asOwner, SerializationService ss, ClientPrincipal principal) {
+        byte serializationVersion = ((InternalSerializationService) ss).getVersion();
+        String uuid = null;
+        String ownerUuid = null;
+        if (principal != null) {
+            uuid = principal.getUuid();
+            ownerUuid = principal.getOwnerUuid();
+        }
         ClientMessage clientMessage;
         if (credentials.getClass().equals(UsernamePasswordCredentials.class)) {
             UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
