@@ -65,7 +65,7 @@ public class WriteFilePTest extends JetTestSupport {
     public void setup() throws IOException {
         instance = createJetMember();
         directory = Files.createTempDirectory("write-file-p");
-        file = directory.resolve("0.txt");
+        file = directory.resolve("0");
         list = instance.getList("sourceList");
     }
 
