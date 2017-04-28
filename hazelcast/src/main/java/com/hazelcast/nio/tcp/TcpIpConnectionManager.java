@@ -67,6 +67,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     private static final int RETRY_NUMBER = 5;
     private static final int DELAY_FACTOR = 100;
+    private static final int SCHEDULER_CORE_POOL_SIZE = 4;
 
     final LoggingService loggingService;
 
@@ -130,8 +131,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     @Probe
     private final MwCounter closedCount = newMwCounter();
 
-    private final ScheduledExecutorService scheduler
-            = new ScheduledThreadPoolExecutor(4, new ThreadFactoryImpl("TcpIpConnectionManager-thread-"));
+    private final ScheduledExecutorService scheduler;
 
     public TcpIpConnectionManager(IOService ioService,
                                   ServerSocketChannel serverSocketChannel,
@@ -139,6 +139,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
                                   MetricsRegistry metricsRegistry,
                                   IOThreadingModel ioThreadingModel) {
         this.ioService = ioService;
+        this.scheduler =  new ScheduledThreadPoolExecutor(SCHEDULER_CORE_POOL_SIZE,
+                new ThreadFactoryImpl(ioService.getHazelcastThreadGroup(), "TcpIpConnectionManager-thread-"));
         this.ioThreadingModel = ioThreadingModel;
         this.serverSocketChannel = serverSocketChannel;
         this.loggingService = loggingService;

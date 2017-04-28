@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.ILogger;
@@ -33,6 +34,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -61,7 +63,8 @@ public class ProbeLevelTest extends HazelcastTestSupport {
     }
 
     public void assertProbeExist(ProbeLevel probeLevel, ProbeLevel minimumLevel) {
-        MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(logger, minimumLevel);
+        HazelcastThreadGroup hazelcastThreadGroup = new HazelcastThreadGroup("name", logger, null);
+        MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(logger, minimumLevel, hazelcastThreadGroup);
 
         metricsRegistry.register(this, "foo", probeLevel, new LongProbeFunction<ProbeLevelTest>() {
             @Override
@@ -75,7 +78,9 @@ public class ProbeLevelTest extends HazelcastTestSupport {
     }
 
     public void assertNotProbeExist(ProbeLevel probeLevel, ProbeLevel minimumLevel) {
-        MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(logger, minimumLevel);
+        ILogger logger = mock(ILogger.class);
+        HazelcastThreadGroup hazelcastThreadGroup = new HazelcastThreadGroup("name", logger, null);
+        MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(logger, minimumLevel, hazelcastThreadGroup);
 
         metricsRegistry.register(this, "foo", probeLevel, new LongProbeFunction<ProbeLevelTest>() {
             @Override

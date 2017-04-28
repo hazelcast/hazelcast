@@ -218,7 +218,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         lifecycleService = new LifecycleServiceImpl(this);
         properties = new HazelcastProperties(config.getProperties());
 
-        metricsRegistry = initMetricsRegistry();
+        ILogger logger = loggingService.getLogger(HazelcastThreadGroup.class);
+        HazelcastThreadGroup hzThreadGroup = new HazelcastThreadGroup(getName(), logger, config.getClassLoader());
+        metricsRegistry = initMetricsRegistry(hzThreadGroup);
         serializationService = clientExtension.createSerializationService((byte) -1);
         metricsRegistry.collectMetrics(clientExtension);
 
@@ -238,7 +240,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         invocationService = initInvocationService();
         listenerService = initListenerService();
         userContext = new ConcurrentHashMap<String, Object>();
-        diagnostics = initDiagnostics(config);
+        diagnostics = initDiagnostics(hzThreadGroup);
 
         hazelcastCacheManager = new ClientICacheManager(this);
 
@@ -247,17 +249,17 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clientExceptionFactory = initClientExceptionFactory();
     }
 
-    private Diagnostics initDiagnostics(ClientConfig config) {
+    private Diagnostics initDiagnostics(HazelcastThreadGroup hzThreadGroup) {
         String name = "diagnostics-client-" + id + "-" + currentTimeMillis();
         ILogger logger = loggingService.getLogger(Diagnostics.class);
-        HazelcastThreadGroup hzThreadGroup = new HazelcastThreadGroup(getName(), logger, config.getClassLoader());
         return new Diagnostics(name, logger, hzThreadGroup, properties);
     }
 
-    private MetricsRegistryImpl initMetricsRegistry() {
+    private MetricsRegistryImpl initMetricsRegistry(HazelcastThreadGroup hzThreadGroup) {
         ProbeLevel probeLevel = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
         ILogger logger = loggingService.getLogger(MetricsRegistryImpl.class);
-        MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(logger, probeLevel);
+        new HazelcastThreadGroup(getName(), logger, config.getClassLoader());
+        MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(logger, probeLevel, hzThreadGroup);
         RuntimeMetricSet.register(metricsRegistry);
         GarbageCollectionMetricSet.register(metricsRegistry);
         OperatingSystemMetricSet.register(metricsRegistry);

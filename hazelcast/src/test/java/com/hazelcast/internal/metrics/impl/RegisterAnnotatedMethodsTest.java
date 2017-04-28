@@ -16,10 +16,12 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -40,6 +42,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 //todo: testing of null return value
 //todo: testing of exception return value
@@ -51,7 +54,9 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
+        ILogger logger = mock(ILogger.class);
+        HazelcastThreadGroup hazelcastThreadGroup = new HazelcastThreadGroup("name", logger, null);
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO, hazelcastThreadGroup);
     }
 
     @Test(expected = IllegalArgumentException.class)
