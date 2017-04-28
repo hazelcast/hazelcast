@@ -34,24 +34,12 @@ public class HazelcastManagedThread extends Thread {
         super(target);
     }
 
-    public HazelcastManagedThread(ThreadGroup group, Runnable target) {
-        super(group, target);
-    }
-
     public HazelcastManagedThread(String name) {
         super(name);
     }
 
-    public HazelcastManagedThread(ThreadGroup group, String name) {
-        super(group, name);
-    }
-
     public HazelcastManagedThread(Runnable target, String name) {
         super(target, name);
-    }
-
-    public HazelcastManagedThread(ThreadGroup group, Runnable target, String name) {
-        super(group, target, name);
     }
 
     @Override

@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.DefaultNodeExtension;
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -65,7 +64,6 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
     LoggingServiceImpl loggingService;
     HazelcastProperties props;
     Address thisAddress;
-    HazelcastThreadGroup threadGroup;
     DefaultNodeExtension nodeExtension;
     OperationRunnerFactory handlerFactory;
     InternalSerializationService serializationService;
@@ -83,10 +81,6 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         config.setProperty(PARTITION_OPERATION_THREAD_COUNT.getName(), "10");
         config.setProperty(GENERIC_OPERATION_THREAD_COUNT.getName(), "10");
         thisAddress = new Address("localhost", 5701);
-        threadGroup = new HazelcastThreadGroup(
-                "foo",
-                loggingService.getLogger(HazelcastThreadGroup.class),
-                Thread.currentThread().getContextClassLoader());
         nodeExtension = new DefaultNodeExtension(Mockito.mock(Node.class));
         handlerFactory = new DummyOperationRunnerFactory();
 
@@ -96,8 +90,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
     protected OperationExecutorImpl initExecutor() {
         props = new HazelcastProperties(config);
         executor = new OperationExecutorImpl(
-                props, loggingService, thisAddress, handlerFactory,
-                threadGroup, nodeExtension);
+                props, loggingService, thisAddress, handlerFactory, nodeExtension, "hzName", Thread.currentThread().getContextClassLoader());
         executor.start();
         return executor;
     }

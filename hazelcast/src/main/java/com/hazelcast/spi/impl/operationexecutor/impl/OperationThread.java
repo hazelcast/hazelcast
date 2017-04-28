@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -69,11 +68,10 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
     private final NodeExtension nodeExtension;
     private final ILogger logger;
     private volatile boolean shutdown;
-
-    public OperationThread(String name, int threadId, OperationQueue queue, ILogger logger, HazelcastThreadGroup threadGroup,
-                           NodeExtension nodeExtension, boolean priority) {
-        super(threadGroup.getInternalThreadGroup(), name);
-        setContextClassLoader(threadGroup.getClassLoader());
+    public OperationThread(String name, int threadId, OperationQueue queue, ILogger logger,
+                           NodeExtension nodeExtension, boolean priority, ClassLoader configClassLoader) {
+        super(name);
+        setContextClassLoader(configClassLoader);
         this.queue = queue;
         this.threadId = threadId;
         this.logger = logger;

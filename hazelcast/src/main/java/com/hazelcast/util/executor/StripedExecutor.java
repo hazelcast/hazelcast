@@ -53,8 +53,7 @@ public final class StripedExecutor implements Executor {
 
     private volatile boolean live = true;
 
-    public StripedExecutor(ILogger logger, String threadNamePrefix, ThreadGroup threadGroup,
-                           int threadCount, int maximumQueueCapacity) {
+    public StripedExecutor(ILogger logger, String threadNamePrefix, int threadCount, int maximumQueueCapacity) {
         checkPositive(threadCount, "threadCount should be positive but found " + threadCount);
         checkPositive(maximumQueueCapacity, "maximumQueueCapacity should be positive but found " + maximumQueueCapacity);
 
@@ -67,7 +66,7 @@ public final class StripedExecutor implements Executor {
         // `maximumQueueCapacity`.
         final int perThreadMaxQueueCapacity = (int) ceil(1D * maximumQueueCapacity / threadCount);
         for (int i = 0; i < threadCount; i++) {
-            Worker worker = new Worker(threadGroup, threadNamePrefix, perThreadMaxQueueCapacity);
+            Worker worker = new Worker(threadNamePrefix, perThreadMaxQueueCapacity);
             worker.start();
             workers[i] = worker;
         }
@@ -161,11 +160,8 @@ public final class StripedExecutor implements Executor {
         private final SwCounter processed = SwCounter.newSwCounter();
         private final int queueCapacity;
 
-        private Worker(ThreadGroup threadGroup, String threadNamePrefix, int queueCapacity) {
-            super(threadGroup, threadNamePrefix
-                    + "-"
-                    + THREAD_ID_GENERATOR.incrementAndGet());
-
+        private Worker(String threadNamePrefix, int queueCapacity) {
+            super(threadNamePrefix + "-" + THREAD_ID_GENERATOR.incrementAndGet());
             this.workQueue = new LinkedBlockingQueue<Runnable>(queueCapacity);
             this.queueCapacity = queueCapacity;
         }
@@ -197,7 +193,7 @@ public final class StripedExecutor implements Executor {
 
         @Override
         public void run() {
-            for (;;) {
+            for (; ; ) {
                 try {
                     try {
                         Runnable task = workQueue.take();

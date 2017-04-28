@@ -95,6 +95,7 @@ import static com.hazelcast.spi.properties.GroupProperty.LOGGING_TYPE;
 import static com.hazelcast.spi.properties.GroupProperty.MAX_JOIN_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_POLICY;
+import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.security.AccessController.doPrivileged;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:visibilitymodifier", "checkstyle:classdataabstractioncoupling",
@@ -142,8 +143,6 @@ public class Node {
 
     private final HazelcastProperties properties;
     private final BuildInfo buildInfo;
-
-    private final HazelcastThreadGroup hazelcastThreadGroup;
 
     private final Joiner joiner;
 
@@ -193,7 +192,6 @@ public class Node {
                     hazelcastInstance, memberAttributes, liteMember);
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
-            hazelcastThreadGroup = new HazelcastThreadGroup(hazelcastInstance.getName(), logger, configClassLoader);
 
             nodeExtension.printNodeInfo();
             nodeExtension.beforeStart();
@@ -239,14 +237,9 @@ public class Node {
         return classLoader;
     }
 
-    public HazelcastThreadGroup getHazelcastThreadGroup() {
-        return hazelcastThreadGroup;
-    }
-
     private DiscoveryService createDiscoveryService(Config config) {
         JoinConfig joinConfig = config.getNetworkConfig().getJoin();
         DiscoveryConfig discoveryConfig = joinConfig.getDiscoveryConfig().getAsReadOnly();
-
         DiscoveryServiceProvider factory = discoveryConfig.getDiscoveryServiceProvider();
         if (factory == null) {
             factory = new DefaultDiscoveryServiceProvider();
@@ -376,9 +369,8 @@ public class Node {
         clusterService.sendLocalMembershipEvent();
         connectionManager.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
-            final Thread multicastServiceThread = new Thread(
-                    hazelcastThreadGroup.getInternalThreadGroup(), multicastService,
-                    hazelcastThreadGroup.getThreadNamePrefix("MulticastThread"));
+            final Thread multicastServiceThread = new Thread(multicastService,
+                    createThreadName(hazelcastInstance.getName(), "MulticastThread"));
             multicastServiceThread.start();
         }
         if (properties.getBoolean(DISCOVERY_SPI_ENABLED)) {
@@ -494,7 +486,6 @@ public class Node {
         logger.finest("Destroying serialization service...");
         serializationService.dispose();
 
-        hazelcastThreadGroup.destroy();
         nodeExtension.shutdown();
     }
 

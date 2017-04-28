@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
@@ -32,10 +31,9 @@ public final class PartitionOperationThread extends OperationThread {
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public PartitionOperationThread(String name, int threadId,
-                                    OperationQueue queue, ILogger logger,
-                                    HazelcastThreadGroup threadGroup, NodeExtension nodeExtension,
-                                    OperationRunner[] partitionOperationRunners) {
-        super(name, threadId, queue, logger, threadGroup, nodeExtension, false);
+                                    OperationQueue queue, ILogger logger, NodeExtension nodeExtension,
+                                    OperationRunner[] partitionOperationRunners, ClassLoader configClassLoader) {
+        super(name, threadId, queue, logger, nodeExtension, false, configClassLoader);
         this.partitionOperationRunners = partitionOperationRunners;
     }
 

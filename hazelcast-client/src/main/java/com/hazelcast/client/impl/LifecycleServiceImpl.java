@@ -62,8 +62,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
 
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
         executor = Executors.newSingleThreadExecutor(
-                new PoolExecutorThreadFactory(client.getThreadGroup(), client.getName() + ".lifecycle-",
-                        classLoader));
+                new PoolExecutorThreadFactory(client.getName() +  ".lifecycle-", classLoader));
 
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
@@ -171,6 +170,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
                 executor.shutdownNow();
             }
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             getLogger().warning("LifecycleService executor awaitTermination is interrupted. Terminating forcefully.", e);
             executor.shutdownNow();
         }

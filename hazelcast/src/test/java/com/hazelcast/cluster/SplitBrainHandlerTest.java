@@ -860,7 +860,6 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
             NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
             return new FirewallingTcpIpConnectionManager(
                     node.loggingService,
-                    node.getHazelcastThreadGroup(),
                     ioService,
                     node.nodeEngine.getMetricsRegistry(),
                     serverSocketChannel);

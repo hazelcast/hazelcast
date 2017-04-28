@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -36,6 +35,7 @@ import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR
 import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
+import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.lang.String.format;
 
 /**
@@ -76,7 +76,7 @@ public final class SlowOperationDetector {
                                  OperationRunner[] genericOperationRunners,
                                  OperationRunner[] partitionOperationRunners,
                                  HazelcastProperties hazelcastProperties,
-                                 HazelcastThreadGroup hazelcastThreadGroup) {
+                                 String hzName) {
 
         this.logger = loggingServices.getLogger(SlowOperationDetector.class);
 
@@ -91,7 +91,7 @@ public final class SlowOperationDetector {
         this.genericCurrentOperationData = initCurrentOperationData(genericOperationRunners);
         this.partitionCurrentOperationData = initCurrentOperationData(partitionOperationRunners);
         this.enabled = hazelcastProperties.getBoolean(SLOW_OPERATION_DETECTOR_ENABLED);
-        this.detectorThread = newDetectorThread(hazelcastThreadGroup);
+        this.detectorThread = newDetectorThread(hzName);
     }
 
     public List<SlowOperationDTO> getSlowOperationDTOs() {
@@ -123,8 +123,8 @@ public final class SlowOperationDetector {
         return currentOperationDataArray;
     }
 
-    private DetectorThread newDetectorThread(HazelcastThreadGroup hazelcastThreadGroup) {
-        DetectorThread thread = new DetectorThread(hazelcastThreadGroup);
+    private DetectorThread newDetectorThread(String hzName) {
+        DetectorThread thread = new DetectorThread(hzName);
         return thread;
     }
 
@@ -132,8 +132,8 @@ public final class SlowOperationDetector {
 
         private volatile boolean running = true;
 
-        private DetectorThread(HazelcastThreadGroup threadGroup) {
-            super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("SlowOperationDetectorThread"));
+        private DetectorThread(String hzName) {
+            super(createThreadName(hzName, "SlowOperationDetectorThread"));
         }
 
         @Override

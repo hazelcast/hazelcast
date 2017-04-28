@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThreadingModel;
 import com.hazelcast.logging.LoggingService;
@@ -34,7 +33,6 @@ public class FirewallingTcpIpConnectionManager extends TcpIpConnectionManager {
 
     public FirewallingTcpIpConnectionManager(
             LoggingService loggingService,
-            HazelcastThreadGroup threadGroup,
             NodeIOService ioService,
             MetricsRegistry metricsRegistry,
             ServerSocketChannel serverSocketChannel) {
@@ -45,7 +43,7 @@ public class FirewallingTcpIpConnectionManager extends TcpIpConnectionManager {
                 new NonBlockingIOThreadingModel(
                         loggingService,
                         metricsRegistry,
-                        threadGroup,
+                        "hz",
                         ioService.getIoOutOfMemoryHandler(),
                         ioService.getInputSelectorThreadCount(),
                         ioService.getOutputSelectorThreadCount(),
