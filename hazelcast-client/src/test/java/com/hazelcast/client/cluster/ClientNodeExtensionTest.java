@@ -22,6 +22,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.DefaultNodeExtension;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
@@ -98,7 +99,7 @@ public class ClientNodeExtensionTest
         factory.newHazelcastClient(clientConfig);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = OperationTimeoutException.class)
     public void test_canGetFromMap_whenNodeExtensionIsNotComplete() {
         IMap<Object, Object> map = null;
         ManagedExtensionNodeContext nodeContext = null;

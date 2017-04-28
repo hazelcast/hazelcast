@@ -17,9 +17,13 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IList;
+import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -27,6 +31,11 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.io.Serializable;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -61,9 +70,32 @@ public class ClientTimeoutTest {
 
     public void testConnectionTimeout(int timeoutInMillis) {
         //Should work without throwing exception.
-        final ClientConfig clientConfig = new ClientConfig();
+        ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setConnectionTimeout(timeoutInMillis);
         hazelcastFactory.newHazelcastInstance();
         hazelcastFactory.newHazelcastClient(clientConfig);
+    }
+
+    @Test(expected = OperationTimeoutException.class)
+    public void testInvocationTimeOut() throws Throwable {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "0");
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+        IExecutorService executorService = client.getExecutorService("test");
+        Future<Boolean> future = executorService.submit(new RetryableExceptionThrowingCallable());
+        try {
+            future.get();
+        } catch (InterruptedException e) {
+            //ignored
+        } catch (ExecutionException e) {
+            throw e.getCause();
+        }
+    }
+
+    public static class RetryableExceptionThrowingCallable implements Callable, Serializable {
+        public Object call() throws Exception {
+            throw new RetryableHazelcastException();
+        }
     }
 }
