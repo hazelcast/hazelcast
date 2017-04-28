@@ -133,6 +133,18 @@ public final class WindowingProcessors {
         );
     }
 
+    /**
+     * TODO
+     *
+     * @param extractKeyF
+     * @param extractEventSeqF
+     * @param windowDef
+     * @param windowOperation
+     * @param <T>
+     * @param <A>
+     * @param <R>
+     * @return
+     */
     @Nonnull
     public static <T, A, R> Distributed.Supplier<Processor> oneStageSlidingWindow(
             @Nonnull Distributed.Function<? super T, ?> extractKeyF,
