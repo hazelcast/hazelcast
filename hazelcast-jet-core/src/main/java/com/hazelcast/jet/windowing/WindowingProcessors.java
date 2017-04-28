@@ -28,6 +28,47 @@ import static com.hazelcast.jet.Distributed.Function.identity;
 
 /**
  * Contains factory methods for processors dealing with windowing operations.
+ *
+ * <h1>Two-step aggregation</h1>
+ *
+ * This way of processing aggregates events first on local member and
+ * only pre-accumulated results are sent over the network. This greatly
+ * reduces the amount of data sent over the network. The DAG is:
+ *
+ * <pre>{@code
+ *          source
+ *             |
+ *             | (local, partitioned edge)
+ *             V
+ *     slidingWindowStage1
+ *             |
+ *             | (distributed, partitioned edge)
+ *             V
+ *     slidingWindowStage2
+ *             |
+ *             | (resulting frames)
+ *             V
+ * }</pre>
+ *
+ * You should use the same {@link WindowDefinition} and {@link
+ * WindowOperation} for both stages. Disadvantage of this setup is, that
+ * you will process all keys on each node in the cluster.
+ * <p>
+ * If you have too many keys to fit one machine, you have to use a single
+ * stage processor. Session windows are always processed in single stage.
+ * The DAG:
+ *
+ * <pre>{@code
+ *          source
+ *             |
+ *             | (distributed, partitioned edge)
+ *             V
+ *   slidingWindowSingleStage
+ *     (or sessionWindow)
+ *             |
+ *             | (resulting frames)
+ *             V
+ * }</pre>
  */
 public final class WindowingProcessors {
 
@@ -52,13 +93,24 @@ public final class WindowingProcessors {
     }
 
     /**
-     * Groups items into frames. A frame is identified by its {@code
-     * long frameSeq} and {@link WindowDefinition#higherFrameSeq(long)} maps
-     * the item's {@code eventSeq} to its {@code frameSeq}. Within a frame
-     * items are further classified by a grouping key determined by the {@code
-     * extractKeyF} function. When the processor receives a punctuation with a
-     * given {@code puncSeq}, it emits the current state of all frames with
-     * {@code frameSeq <= puncSeq} and deletes these frames from its storage.
+     * A first stage processor in two-stage sliding window aggregation. See
+     * Two-stage aggregation {@link WindowingProcessors here}.
+     * <p>
+     * This vertex is supposed to be followed by {@link
+     * #slidingWindowStage2(WindowDefinition, WindowOperation)}.
+     *<p>
+     * Output if this vertex is {@link Frame Frame&lt;K, A>}, that is a frame
+     * with a key and accumulator from {@code windowOperation}.
+     *<p>
+     * A frame is identified by its {@code long frameSeq} and {@link
+     * WindowDefinition#higherFrameSeq(long)} maps the item's {@code
+     * eventSeq} to its {@code frameSeq}.
+     * <p>
+     * Within a frame items are further classified by a grouping key determined
+     * by the {@code extractKeyF} function. When the processor receives a
+     * punctuation with a given {@code puncSeq}, it emits the current state of
+     * all frames with {@code frameSeq <= puncSeq} and deletes these frames
+     * from its storage.
      *
      * @param <T> item type
      * @param <K> type of key returned from {@code extractKeyF}
@@ -66,7 +118,7 @@ public final class WindowingProcessors {
      *            createAccumulatorF()}
      */
     @Nonnull
-    public static <T, K, A> Distributed.Supplier<Processor> groupByFrame(
+    public static <T, K, A> Distributed.Supplier<Processor> slidingWindowStage1(
             @Nonnull Distributed.Function<? super T, K> extractKeyF,
             @Nonnull Distributed.ToLongFunction<? super T> extractEventSeqF,
             @Nonnull WindowDefinition windowDef,
@@ -92,32 +144,36 @@ public final class WindowingProcessors {
     }
 
     /**
-     * Convenience for {@link #groupByFrame(
+     * Convenience for {@link #slidingWindowStage1(
      * Distributed.Function, Distributed.ToLongFunction, WindowDefinition, WindowOperation)
-     * groupByFrame(extractKeyF, extractEventSeqF, windowDef, windowOperation)}
+     * slidingWindowStage1(extractKeyF, extractEventSeqF, windowDef, windowOperation)}
      * which doesn't group by key.
      */
     @Nonnull
-    public static <T, A> Distributed.Supplier<Processor> groupByFrame(
+    public static <T, A> Distributed.Supplier<Processor> slidingWindowStage1(
             @Nonnull Distributed.ToLongFunction<? super T> extractEventSeqF,
             @Nonnull WindowDefinition windowDef,
             @Nonnull WindowOperation<? super T, A, ?> windowOperation
     ) {
-        return groupByFrame(t -> "global", extractEventSeqF, windowDef, windowOperation);
+        return slidingWindowStage1(t -> "global", extractEventSeqF, windowDef, windowOperation);
     }
 
     /**
      * Combines frames received from several upstream instances of {@link
-     * #groupByFrame(Function, ToLongFunction, WindowDefinition,
+     * #slidingWindowStage1(Function, ToLongFunction, WindowDefinition,
      * WindowOperation)} into finalized frames. Combines finalized frames into
      * sliding windows. Applies the finisher function to produce its emitted
      * output.
+     * <p>
+     * Output if this vertex is {@link Frame Frame&lt;K, R>}, that is a frame
+     * with the key and result value from {@code windowOperation}. Frame's
+     * {@link Frame#getSeq() seq} value is the window end sequence (exclusive).
      *
      * @param <A> type of accumulator
      * @param <R> type of the result derived from a frame
      */
     @Nonnull
-    public static <A, R> Distributed.Supplier<Processor> slidingWindow(
+    public static <A, R> Distributed.Supplier<Processor> slidingWindowStage2(
             @Nonnull WindowDefinition windowDef,
             @Nonnull WindowOperation<?, A, R> windowOperation
     ) {
@@ -136,7 +192,22 @@ public final class WindowingProcessors {
     }
 
     /**
-     * TODO
+     * A single-stage processor to aggregate events into windows. See note on
+     * Two-stage aggregation {@link WindowingProcessors here}.
+     * <p>
+     * Output if this vertex is {@link Frame Frame&lt;K, R>}, that is a frame
+     * with the key and result value from {@code windowOperation}. Frame's
+     * {@link Frame#getSeq() seq} value is the window end sequence (exclusive).
+     * <p>
+     * A frame is identified by its {@code long frameSeq} and {@link
+     * WindowDefinition#higherFrameSeq(long)} maps the item's {@code
+     * eventSeq} to its {@code frameSeq}.
+     * <p>
+     * Within a frame items are further classified by a grouping key determined
+     * by the {@code extractKeyF} function. When the processor receives a
+     * punctuation with a given {@code puncSeq}, it emits the current state of
+     * all frames with {@code frameSeq <= puncSeq} and deletes these frames
+     * from its storage.
      */
     @Nonnull
     public static <T, A, R> Distributed.Supplier<Processor> slidingWindowSingleStage(
@@ -151,6 +222,21 @@ public final class WindowingProcessors {
                 extractKeyF,
                 windowOperation
         );
+    }
+
+    /**
+     * Convenience for {@link #slidingWindowSingleStage(Function,
+     * ToLongFunction, WindowDefinition, WindowOperation)
+     * slidingWindowSingleStage(extractKeyF, extractEventSeqF, windowDef,
+     * windowOperation} which doesn't group by key.
+     */
+    @Nonnull
+    public static <T, A, R> Distributed.Supplier<Processor> slidingWindowSingleStage(
+            @Nonnull Distributed.ToLongFunction<? super T> extractEventSeqF,
+            @Nonnull WindowDefinition windowDef,
+            @Nonnull WindowOperation<? super T, A, R> windowOperation
+    ) {
+        return slidingWindowSingleStage(t -> "global", extractEventSeqF, windowDef, windowOperation);
     }
 
     /**

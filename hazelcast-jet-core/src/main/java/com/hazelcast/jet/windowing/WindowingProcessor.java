@@ -35,8 +35,7 @@ import static java.lang.Math.min;
 import static java.util.Collections.emptyMap;
 
 /**
- * A processor that aggregate items into event time-based windows using the
- * supplied window operator.
+ * See {@link WindowingProcessors}.
  *
  * @param <T> type of input item (stream item or frame, if 2nd step)
  * @param <A> type of the frame accumulator object

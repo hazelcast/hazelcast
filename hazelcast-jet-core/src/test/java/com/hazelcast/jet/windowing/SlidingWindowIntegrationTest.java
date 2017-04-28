@@ -49,10 +49,9 @@ import static com.hazelcast.jet.Processors.writeList;
 import static com.hazelcast.jet.windowing.PunctuationPolicies.cappingEventSeqLagAndLull;
 import static com.hazelcast.jet.windowing.StreamingTestSupport.streamToString;
 import static com.hazelcast.jet.windowing.WindowDefinition.slidingWindowDef;
-import static com.hazelcast.jet.windowing.WindowingProcessors.groupByFrame;
 import static com.hazelcast.jet.windowing.WindowingProcessors.insertPunctuation;
 import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindowSingleStage;
-import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindow;
+import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindowStage2;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -107,8 +106,8 @@ public class SlidingWindowIntegrationTest extends JetTestSupport {
                     .edge(between(sliwp, sink).oneToMany());
 
         } else {
-            Vertex gbfp = dag.newVertex("gbfp", groupByFrame(MockEvent::getKey, MockEvent::getEventSeq, wDef, wOperation));
-            Vertex sliwp = dag.newVertex("sliwp", slidingWindow(wDef, wOperation));
+            Vertex gbfp = dag.newVertex("gbfp", WindowingProcessors.slidingWindowStage1(MockEvent::getKey, MockEvent::getEventSeq, wDef, wOperation));
+            Vertex sliwp = dag.newVertex("sliwp", slidingWindowStage2(wDef, wOperation));
             dag
                     .edge(between(insertPP, gbfp).partitioned(MockEvent::getKey))
                     .edge(between(gbfp, sliwp).partitioned((Function<Frame, Object>) Frame::getKey).distributed())

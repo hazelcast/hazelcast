@@ -33,7 +33,6 @@ import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.windowing.WindowOperations.summingToLong;
-import static com.hazelcast.jet.windowing.WindowingProcessors.groupByFrame;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -48,7 +47,7 @@ public class GroupByFramePTest extends StreamingTestSupport {
     @Before
     @SuppressWarnings("unchecked")
     public void before() {
-        processor = (WindowingProcessor<Entry<Long, Long>, Long, ?>) groupByFrame(
+        processor = (WindowingProcessor<Entry<Long, Long>, Long, ?>) WindowingProcessors.slidingWindowStage1(
                 x -> KEY,
                 Entry::getKey,
                 new WindowDefinition(4, 0, 4),
