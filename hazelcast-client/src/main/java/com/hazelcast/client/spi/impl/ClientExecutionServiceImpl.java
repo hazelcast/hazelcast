@@ -46,7 +46,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     private final ExecutorService userExecutor;
     private final ScheduledExecutorService internalExecutor;
 
-    public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader,
+    public ClientExecutionServiceImpl(String name, ClassLoader classLoader,
                                       HazelcastProperties properties, int poolSize, LoggingService loggingService) {
         int internalPoolSize = properties.getInteger(INTERNAL_EXECUTOR_POOL_SIZE);
         if (internalPoolSize <= 0) {
@@ -58,7 +58,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
         }
         logger = loggingService.getLogger(ClientExecutionService.class);
         internalExecutor = new LoggingScheduledExecutor(logger, internalPoolSize,
-                new PoolExecutorThreadFactory(threadGroup, name + ".internal-", classLoader),
+                new PoolExecutorThreadFactory(name + ".internal-", classLoader),
                 new RejectedExecutionHandler() {
                     public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
                         String message = "Internal executor rejected task: " + r + ", because client is shutting down...";
@@ -68,7 +68,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                 });
         userExecutor = new ThreadPoolExecutor(executorPoolSize, executorPoolSize, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(),
-                new PoolExecutorThreadFactory(threadGroup, name + ".user-", classLoader),
+                new PoolExecutorThreadFactory(name + ".user-", classLoader),
                 new RejectedExecutionHandler() {
                     public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
                         String message = "User executor rejected task: " + r + ", because client is shutting down...";

@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
@@ -29,9 +28,9 @@ public final class GenericOperationThread extends OperationThread {
     private final OperationRunner operationRunner;
 
     public GenericOperationThread(String name, int threadId, OperationQueue queue, ILogger logger,
-                                  HazelcastThreadGroup threadGroup, NodeExtension nodeExtension,
-                                  OperationRunner operationRunner, boolean priority) {
-        super(name, threadId, queue, logger, threadGroup, nodeExtension, priority);
+                                  NodeExtension nodeExtension, OperationRunner operationRunner,
+                                  boolean priority, ClassLoader configClassLoader) {
+        super(name, threadId, queue, logger, nodeExtension, priority, configClassLoader);
         this.operationRunner = operationRunner;
     }
 

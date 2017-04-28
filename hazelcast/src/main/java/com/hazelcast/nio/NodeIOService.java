@@ -21,7 +21,6 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
@@ -47,6 +46,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.util.ThreadUtil.createThreadName;
+
 @PrivateApi
 public class NodeIOService implements IOService {
 
@@ -59,8 +60,8 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public HazelcastThreadGroup getHazelcastThreadGroup() {
-        return nodeEngine.getHazelcastThreadGroup();
+    public String getHazelcastName() {
+        return node.hazelcastInstance.getName();
     }
 
     @Override
@@ -90,8 +91,8 @@ public class NodeIOService implements IOService {
 
     @Override
     public void onFatalError(Exception e) {
-        HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
-        Thread thread = new Thread(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("io.error.shutdown")) {
+        String hzName = nodeEngine.getHazelcastInstance().getName();
+        Thread thread = new Thread(createThreadName(hzName, "io.error.shutdown")) {
             public void run() {
                 node.shutdown(false);
             }

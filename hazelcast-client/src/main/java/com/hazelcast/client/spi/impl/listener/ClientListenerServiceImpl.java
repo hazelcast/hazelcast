@@ -59,13 +59,11 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
         this.client = client;
         serializationService = client.getSerializationService();
         logger = client.getLoggingService().getLogger(ClientListenerService.class);
-        ThreadGroup threadGroup = client.getThreadGroup();
         String name = client.getName();
-        eventExecutor = new StripedExecutor(logger, name + ".event",
-                threadGroup, eventThreadCount, eventQueueCapacity);
+        eventExecutor = new StripedExecutor(logger, name + ".event", eventThreadCount, eventQueueCapacity);
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
 
-        ThreadFactory threadFactory = new SingleExecutorThreadFactory(threadGroup, classLoader, name + ".eventRegistration-");
+        ThreadFactory threadFactory = new SingleExecutorThreadFactory(classLoader, name + ".eventRegistration-");
         registrationExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
     }
 

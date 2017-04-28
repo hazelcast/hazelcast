@@ -47,12 +47,11 @@ public class ClientExecutionServiceImplTest {
     @BeforeClass
     public static void setUp() {
         String name = "ClientExecutionServiceImplTest";
-        ThreadGroup threadGroup = new ThreadGroup(name);
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         HazelcastProperties properties = new HazelcastProperties(new Config());
         ClientLoggingService loggingService = new ClientLoggingService(name, "jdk", BuildInfoProvider.BUILD_INFO, name);
 
-        executionService = new ClientExecutionServiceImpl(name, threadGroup, classLoader, properties, 1, loggingService);
+        executionService = new ClientExecutionServiceImpl(name, classLoader, properties, 1, loggingService);
     }
 
     @AfterClass

@@ -142,7 +142,8 @@ public class MigrationManager {
         partitionStateManager = partitionService.getPartitionStateManager();
 
         ILogger migrationThreadLogger = node.getLogger(MigrationThread.class);
-        migrationThread = new MigrationThread(this, node.getHazelcastThreadGroup(), migrationThreadLogger, migrationQueue);
+        String hzName = nodeEngine.getHazelcastInstance().getName();
+        migrationThread = new MigrationThread(this, hzName, migrationThreadLogger, migrationQueue);
 
         long migrationPauseDelayMs = TimeUnit.SECONDS.toMillis(MIGRATION_PAUSE_DURATION_SECONDS_ON_MIGRATION_FAILURE);
         ExecutionService executionService = nodeEngine.getExecutionService();

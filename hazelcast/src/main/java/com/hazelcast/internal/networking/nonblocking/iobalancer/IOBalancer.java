@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.networking.nonblocking.iobalancer;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.nonblocking.MigratableHandler;
 import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThread;
@@ -63,8 +62,7 @@ public class IOBalancer {
 
     private final LoadTracker inLoadTracker;
     private final LoadTracker outLoadTracker;
-
-    private final HazelcastThreadGroup threadGroup;
+    private final String hzName;
     private volatile boolean enabled;
     private IOBalancerThread ioBalancerThread;
 
@@ -78,13 +76,13 @@ public class IOBalancer {
 
     public IOBalancer(NonBlockingIOThread[] inputThreads,
                       NonBlockingIOThread[] outputThreads,
-                      HazelcastThreadGroup threadGroup,
+                      String hzName,
                       int balancerIntervalSeconds, LoggingService loggingService) {
         this.logger = loggingService.getLogger(IOBalancer.class);
         this.balancerIntervalSeconds = balancerIntervalSeconds;
 
         this.strategy = createMigrationStrategy();
-        this.threadGroup = threadGroup;
+        this.hzName = hzName;
 
         this.inLoadTracker = new LoadTracker(inputThreads, logger);
         this.outLoadTracker = new LoadTracker(outputThreads, logger);
@@ -114,7 +112,7 @@ public class IOBalancer {
 
     public void start() {
         if (enabled) {
-            ioBalancerThread = new IOBalancerThread(this, balancerIntervalSeconds, threadGroup, logger);
+            ioBalancerThread = new IOBalancerThread(this, balancerIntervalSeconds, hzName, logger);
             ioBalancerThread.start();
         }
     }

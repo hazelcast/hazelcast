@@ -45,7 +45,6 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.networking.SocketChannelWrapper;
 import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
@@ -188,7 +187,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         ioThreadingModel = new NonBlockingIOThreadingModel(
                 client.getLoggingService(),
                 client.getMetricsRegistry(),
-                new HazelcastThreadGroup(client.getName(), logger, client.getClientConfig().getClassLoader()),
+                client.getName(),
                 outOfMemoryHandler,
                 inputThreads,
                 outputThreads,

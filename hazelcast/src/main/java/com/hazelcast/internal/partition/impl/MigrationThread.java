@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.partition.impl.MigrationManager.MigrateTask;
 import com.hazelcast.logging.ILogger;
@@ -24,6 +23,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.lang.Math.max;
 
 /**
@@ -37,17 +37,21 @@ class MigrationThread extends Thread implements Runnable {
     private final MigrationManager migrationManager;
     private final MigrationQueue queue;
     private final ILogger logger;
-    /** Time in milliseconds to sleep after {@link MigrateTask} */
+    /**
+     * Time in milliseconds to sleep after {@link MigrateTask}
+     */
     private final long partitionMigrationInterval;
-    /** Time in milliseconds to sleep when the migration queue is empty or migrations are not allowed */
+    /**
+     * Time in milliseconds to sleep when the migration queue is empty or migrations are not allowed
+     */
     private final long sleepTime;
 
     private volatile MigrationRunnable activeTask;
     private volatile boolean running = true;
 
-    MigrationThread(MigrationManager migrationManager, HazelcastThreadGroup hazelcastThreadGroup, ILogger logger,
+    MigrationThread(MigrationManager migrationManager, String hzName, ILogger logger,
                     MigrationQueue queue) {
-        super(hazelcastThreadGroup.getInternalThreadGroup(), hazelcastThreadGroup.getThreadNamePrefix("migration"));
+        super(createThreadName(hzName, "migration"));
 
         this.migrationManager = migrationManager;
         this.queue = queue;

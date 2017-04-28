@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.networking.spinning;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.networking.SocketConnection;
+import com.hazelcast.util.ThreadUtil;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
@@ -32,8 +32,8 @@ public class SpinningOutputThread extends Thread {
 
     private volatile SocketWriters socketWriters;
 
-    public SpinningOutputThread(HazelcastThreadGroup threadGroup) {
-        super(threadGroup.getInternalThreadGroup(), "out-thread");
+    public SpinningOutputThread(String hzName) {
+        super(ThreadUtil.createThreadName(hzName, "out-thread"));
         this.socketWriters = new SocketWriters();
     }
 

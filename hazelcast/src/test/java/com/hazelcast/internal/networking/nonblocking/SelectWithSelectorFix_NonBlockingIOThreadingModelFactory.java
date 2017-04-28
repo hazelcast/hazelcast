@@ -33,7 +33,7 @@ public class SelectWithSelectorFix_NonBlockingIOThreadingModelFactory
         NonBlockingIOThreadingModel threadingModel = new NonBlockingIOThreadingModel(
                 loggingService,
                 metricsRegistry,
-                ioService.hazelcastThreadGroup,
+                "hzName",
                 ioService.getIoOutOfMemoryHandler(), ioService.getInputSelectorThreadCount(),
                 ioService.getOutputSelectorThreadCount(),
                 ioService.getBalancerIntervalSeconds(),

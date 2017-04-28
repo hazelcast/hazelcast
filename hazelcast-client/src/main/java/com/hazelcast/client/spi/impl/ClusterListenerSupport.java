@@ -74,10 +74,10 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     }
 
     private ExecutorService createSingleThreadExecutorService(HazelcastClientInstanceImpl client) {
-        ThreadGroup threadGroup = client.getThreadGroup();
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
         SingleExecutorThreadFactory threadFactory =
-                new SingleExecutorThreadFactory(threadGroup, classLoader, client.getName() + ".cluster-");
+                new SingleExecutorThreadFactory(classLoader, client.getName() + ".cluster-");
+
         return Executors.newSingleThreadExecutor(threadFactory);
     }
 

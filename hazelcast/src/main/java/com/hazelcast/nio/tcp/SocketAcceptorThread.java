@@ -67,11 +67,10 @@ public class SocketAcceptorThread extends Thread {
     private SelectionKey selectionKey;
 
     public SocketAcceptorThread(
-            ThreadGroup threadGroup,
             String name,
             ServerSocketChannel serverSocketChannel,
             TcpIpConnectionManager connectionManager) {
-        super(threadGroup, name);
+        super(name);
         this.serverSocketChannel = serverSocketChannel;
         this.connectionManager = connectionManager;
         this.ioService = connectionManager.getIoService();

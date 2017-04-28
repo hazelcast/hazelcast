@@ -18,7 +18,6 @@ package com.hazelcast.internal.ascii;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.ascii.memcache.BulkGetCommandProcessor;
@@ -75,6 +74,7 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.TOUCH;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
+import static com.hazelcast.util.ThreadUtil.createThreadName;
 
 public class TextCommandServiceImpl implements TextCommandService {
 
@@ -223,10 +223,8 @@ public class TextCommandServiceImpl implements TextCommandService {
             synchronized (mutex) {
                 if (responseThreadRunnable == null) {
                     responseThreadRunnable = new ResponseThreadRunnable();
-                    HazelcastThreadGroup hazelcastThreadGroup = node.getHazelcastThreadGroup();
-                    String threadNamePrefix = hazelcastThreadGroup.getThreadNamePrefix("ascii.service.response");
-                    Thread thread = new Thread(
-                            hazelcastThreadGroup.getInternalThreadGroup(), responseThreadRunnable, threadNamePrefix);
+                    String threadNamePrefix = createThreadName(hazelcast.getName(), "ascii.service.response");
+                    Thread thread = new Thread(responseThreadRunnable, threadNamePrefix);
                     thread.start();
                 }
             }
