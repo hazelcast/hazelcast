@@ -29,9 +29,9 @@ import static java.lang.String.format;
 
 /**
  * Handler used on Near Cache side. Observes local and remote invalidations and registers relevant
- * data to {@link MetaDataContainer}s
+ * data to {@link MetaDataContainer}s.
  *
- * Used to repair Near Cache in the event of invalidation-event-miss or partition uuid changes.
+ * Used to repair Near Cache in the event of missed invalidation events or partition uuid changes.
  * Here repairing is done by making relevant Near Cache data unreachable.
  * To make stale data unreachable {@link StaleReadDetectorImpl} is used.
  *
@@ -39,23 +39,22 @@ import static java.lang.String.format;
  *
  * @see StaleReadDetectorImpl
  */
-@SuppressWarnings({"checkstyle:nestedifdepth", "checkstyle:npathcomplexity"})
 public final class RepairingHandler {
 
-    private final int partitionCount;
-    private final String name;
-    private final String localUuid;
-    private final NearCache nearCache;
     private final ILogger logger;
+    private final String localUuid;
+    private final String name;
+    private final NearCache nearCache;
     private final MinimalPartitionService partitionService;
+    private final int partitionCount;
     private final MetaDataContainer[] metaDataContainers;
 
-    public RepairingHandler(String name, NearCache nearCache, MinimalPartitionService partitionService,
-                            String localUuid, ILogger logger) {
-        this.name = name;
-        this.localUuid = localUuid;
-        this.nearCache = nearCache;
+    public RepairingHandler(ILogger logger, String localUuid, String name, NearCache nearCache,
+                            MinimalPartitionService partitionService) {
         this.logger = logger;
+        this.localUuid = localUuid;
+        this.name = name;
+        this.nearCache = nearCache;
         this.partitionService = partitionService;
         this.partitionCount = partitionService.getPartitionCount();
         this.metaDataContainers = createMetadataContainers(partitionCount);
@@ -86,7 +85,7 @@ public final class RepairingHandler {
         // apply invalidation if it's not originated by local member/client (because local
         // Near Caches are invalidated immediately there is no need to invalidate them twice)
         if (!localUuid.equals(sourceUuid)) {
-            // sourceUuid is allowed to be null.
+            // sourceUuid is allowed to be `null`
             if (key == null) {
                 nearCache.clear();
             } else {
@@ -101,8 +100,8 @@ public final class RepairingHandler {
 
     private int getPartitionIdOrDefault(Data key) {
         if (key == null) {
-            // `name` is used to determine partition-id of map-wide events like clear.
-            // since key is null, we are using `name` to find partition-id
+            // `name` is used to determine partition-id of map-wide events like clear()
+            // since key is `null`, we are using `name` to find the partition-id
             return partitionService.getPartitionId(name);
         }
         return partitionService.getPartitionId(key);
@@ -118,26 +117,20 @@ public final class RepairingHandler {
         Iterator<UUID> partitionUuidIterator = partitionUuids.iterator();
         Iterator<String> sourceUuidsIterator = sourceUuids.iterator();
 
-        do {
-            if (!(keyIterator.hasNext() && sequenceIterator.hasNext()
-                    && partitionUuidIterator.hasNext() && sourceUuidsIterator.hasNext())) {
-                break;
-            }
-
+        while (keyIterator.hasNext() && sourceUuidsIterator.hasNext()
+                && partitionUuidIterator.hasNext() && sequenceIterator.hasNext()) {
             handle(keyIterator.next(), sourceUuidsIterator.next(), partitionUuidIterator.next(), sequenceIterator.next());
-
-        } while (true);
+        }
     }
 
     public String getName() {
         return name;
     }
 
-    // TODO really need to pass partition-id?
+    // TODO: really need to pass partition-id?
     public void updateLastKnownStaleSequence(MetaDataContainer metaData, int partition) {
         long lastReceivedSequence;
         long lastKnownStaleSequence;
-
         do {
             lastReceivedSequence = metaData.getSequence();
             lastKnownStaleSequence = metaData.getStaleSequence();
@@ -145,60 +138,49 @@ public final class RepairingHandler {
             if (lastKnownStaleSequence >= lastReceivedSequence) {
                 break;
             }
-
         } while (!metaData.casStaleSequence(lastKnownStaleSequence, lastReceivedSequence));
-
 
         if (logger.isFinestEnabled()) {
             logger.finest(format("%s:[map=%s,partition=%d,lowerSequencesStaleThan=%d,lastReceivedSequence=%d]",
                     "Stale sequences updated", name, partition, metaData.getStaleSequence(), metaData.getSequence()));
         }
-
     }
 
-    // more than one thread can concurrently call this method: one is anti-entropy, other one is event service thread
+    // multiple threads can concurrently call this method: one is anti-entropy, other one is event service thread
     public void checkOrRepairUuid(final int partition, final UUID newUuid) {
         assert newUuid != null;
 
         MetaDataContainer metaData = getMetaDataContainer(partition);
-
-        do {
+        while (true) {
             UUID prevUuid = metaData.getUuid();
             if (prevUuid != null && prevUuid.equals(newUuid)) {
                 break;
             }
-
             if (metaData.casUuid(prevUuid, newUuid)) {
                 metaData.resetSequence();
                 metaData.resetStaleSequence();
-
                 if (logger.isFinestEnabled()) {
                     logger.finest(format("%s:[name=%s,partition=%d,prevUuid=%s,newUuid=%s]",
-                            "Invalid uuid, lost remote partition data unexpectedly",
-                            name, partition, prevUuid, newUuid));
+                            "Invalid uuid, lost remote partition data unexpectedly", name, partition, prevUuid, newUuid));
                 }
-
                 break;
             }
-        } while (true);
-
+        }
     }
 
     /**
      * Checks {@code nextSequence} against current one. And updates current sequence if next one is bigger.
      */
-    // more than one thread can concurrently call this method: one is anti-entropy, other one is event service thread
+    // multiple threads can concurrently call this method: one is anti-entropy, other one is event service thread
     public void checkOrRepairSequence(final int partition, final long nextSequence, final boolean viaAntiEntropy) {
         assert nextSequence > 0;
 
         MetaDataContainer metaData = getMetaDataContainer(partition);
-
-        do {
+        while (true) {
             final long currentSequence = metaData.getSequence();
             if (currentSequence >= nextSequence) {
                 break;
             }
-
             if (metaData.casSequence(currentSequence, nextSequence)) {
                 final long sequenceDiff = nextSequence - currentSequence;
                 if (viaAntiEntropy || sequenceDiff > 1L) {
@@ -213,12 +195,10 @@ public final class RepairingHandler {
                         logger.finest(format("%s:[map=%s,partition=%d,currentSequence=%d,nextSequence=%d,totalMissCount=%d]",
                                 "Invalid sequence", name, partition, currentSequence, nextSequence, totalMissCount));
                     }
-
                 }
-
                 break;
             }
-        } while (true);
+        }
     }
 
     @Override

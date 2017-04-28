@@ -43,50 +43,61 @@ import static org.mockito.Mockito.mock;
 public class RepairingTaskTest extends HazelcastTestSupport {
 
     @Test
-    public void uses_configured_toleratedMissCount() throws Exception {
-        int givenMaxToleratedMissCount = 123;
-        Config config = new Config().setProperty(MAX_TOLERATED_MISS_COUNT.getName(), Integer.toString(givenMaxToleratedMissCount));
+    public void whenToleratedMissCountIsConfigured_thenItShouldBeUsed() {
+        int maxToleratedMissCount = 123;
+        Config config = getConfigWithMaxToleratedMissCount(maxToleratedMissCount);
         RepairingTask repairingTask = newRepairingTask(config);
 
-        assertEquals(givenMaxToleratedMissCount, repairingTask.maxToleratedMissCount);
+        assertEquals(maxToleratedMissCount, repairingTask.maxToleratedMissCount);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void throws_illegalArgumentException_when_toleratedMissCount_is_negative() throws Exception {
-        Config config = new Config().setProperty(MAX_TOLERATED_MISS_COUNT.getName(), "-1");
+    public void whenToleratedMissCountIsNegative_thenThrowException() {
+        Config config = getConfigWithMaxToleratedMissCount(-1);
         newRepairingTask(config);
     }
 
     @Test
-    public void uses_configured_reconciliationIntervalSeconds() throws Exception {
-        int givenReconciliationIntervalSeconds = 91;
-        Config config = new Config().setProperty(RECONCILIATION_INTERVAL_SECONDS.getName(), Integer.toString(givenReconciliationIntervalSeconds));
+    public void whenReconciliationIntervalSecondsIsConfigured_thenItShouldBeUsed() {
+        int reconciliationIntervalSeconds = 91;
+        Config config = getConfigWithReconciliationInterval(reconciliationIntervalSeconds);
         RepairingTask repairingTask = newRepairingTask(config);
 
-        assertEquals(givenReconciliationIntervalSeconds, NANOSECONDS.toSeconds(repairingTask.reconciliationIntervalNanos));
+        assertEquals(reconciliationIntervalSeconds, NANOSECONDS.toSeconds(repairingTask.reconciliationIntervalNanos));
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void throws_illegalArgumentException_when_reconciliationIntervalSeconds_is_negative() throws Exception {
-        Config config = new Config().setProperty(RECONCILIATION_INTERVAL_SECONDS.getName(), "-1");
+    public void whenReconciliationIntervalSecondsIsNegative_thenThrowException() {
+        Config config = getConfigWithReconciliationInterval(-1);
         newRepairingTask(config);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void throws_illegalArgumentException_when_reconciliationIntervalSeconds_is_not_zero_but_smaller_than_threshold_value() throws Exception {
+    public void whenReconciliationIntervalSecondsIsNotZeroButSmallerThanThresholdValue_thenThrowException() {
         int thresholdValue = (int) MIN_RECONCILIATION_INTERVAL_SECONDS;
-        Config config = new Config().setProperty(RECONCILIATION_INTERVAL_SECONDS.getName(), Integer.toString(getInt(1, thresholdValue)));
+        Config config = getConfigWithReconciliationInterval(getInt(1, thresholdValue));
         newRepairingTask(config);
     }
 
-    private RepairingTask newRepairingTask(Config config) {
+    private static Config getConfigWithMaxToleratedMissCount(int maxToleratedMissCount) {
+        return new Config()
+                .setProperty(MAX_TOLERATED_MISS_COUNT.getName(), Integer.toString(maxToleratedMissCount));
+    }
+
+    private static Config getConfigWithReconciliationInterval(int reconciliationIntervalSeconds) {
+        return new Config()
+                .setProperty(RECONCILIATION_INTERVAL_SECONDS.getName(), Integer.toString(reconciliationIntervalSeconds));
+    }
+
+    private static RepairingTask newRepairingTask(Config config) {
+        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
         MetaDataFetcher metaDataFetcher = mock(MetaDataFetcher.class);
         ExecutionService executionService = mock(ExecutionService.class);
         MinimalPartitionService minimalPartitionService = mock(MinimalPartitionService.class);
         String uuid = UuidUtil.newUnsecureUUID().toString();
         ILogger logger = Logger.getLogger(RepairingTask.class);
-        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
-        return new RepairingTask(metaDataFetcher, executionService.getGlobalTaskScheduler(),
-                minimalPartitionService, hazelcastProperties, uuid, logger);
+
+        return new RepairingTask(hazelcastProperties, metaDataFetcher, executionService.getGlobalTaskScheduler(),
+                 minimalPartitionService, uuid, logger);
     }
 }

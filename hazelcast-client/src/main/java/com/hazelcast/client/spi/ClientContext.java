@@ -99,7 +99,7 @@ public final class ClientContext {
     private RepairingTask newRepairingTask(String serviceName) {
         MetaDataFetcher metaDataFetcher = newMetaDataFetcher(serviceName);
         ILogger logger = loggingService.getLogger(RepairingTask.class);
-        return new RepairingTask(metaDataFetcher, executionService, minimalPartitionService, properties, localUuid, logger);
+        return new RepairingTask(properties, metaDataFetcher, executionService, minimalPartitionService, localUuid, logger);
     }
 
     private MetaDataFetcher newMetaDataFetcher(String serviceName) {

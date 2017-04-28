@@ -59,36 +59,38 @@ public final class RepairingTask implements Runnable {
     static final HazelcastProperty RECONCILIATION_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.invalidation.reconciliation.interval.seconds", 60, SECONDS);
 
+    static final long MIN_RECONCILIATION_INTERVAL_SECONDS = 30;
     static final long GET_UUID_TASK_SCHEDULE_MILLIS = 500;
     static final long HALF_MINUTE_MILLIS = SECONDS.toMillis(30);
-    static final long MIN_RECONCILIATION_INTERVAL_SECONDS = 30;
 
-    final int maxToleratedMissCount;
     final long reconciliationIntervalNanos;
-    private final int partitionCount;
-    private final String localUuid;
-    private final ILogger logger;
-    private final TaskScheduler scheduler;
-    private final AtomicReferenceArray<UUID> partitionUuids;
-    private final MinimalPartitionService partitionService;
-    private final MetaDataFetcher metaDataFetcher;
+    final int maxToleratedMissCount;
+
     private final ConcurrentMap<String, RepairingHandler> handlers = new ConcurrentHashMap<String, RepairingHandler>();
     private final AtomicBoolean running = new AtomicBoolean(false);
 
+    private final MetaDataFetcher metaDataFetcher;
+    private final TaskScheduler scheduler;
+    private final MinimalPartitionService partitionService;
+    private final int partitionCount;
+    private final AtomicReferenceArray<UUID> partitionUuids;
+    private final String localUuid;
+    private final ILogger logger;
+
     private volatile long lastAntiEntropyRunNanos;
 
-    public RepairingTask(MetaDataFetcher metaDataFetcher, TaskScheduler scheduler,
-                         MinimalPartitionService partitionService, HazelcastProperties properties,
-                         String localUuid, ILogger logger) {
-        this.logger = logger;
+    public RepairingTask(HazelcastProperties properties, MetaDataFetcher metaDataFetcher, TaskScheduler scheduler,
+                         MinimalPartitionService partitionService, String localUuid, ILogger logger) {
         this.reconciliationIntervalNanos = SECONDS.toNanos(checkAndGetReconciliationIntervalSeconds(properties));
-        this.partitionCount = partitionService.getPartitionCount();
         this.maxToleratedMissCount = checkMaxToleratedMissCount(properties);
+
         this.metaDataFetcher = metaDataFetcher;
         this.scheduler = scheduler;
         this.partitionService = partitionService;
+        this.partitionCount = partitionService.getPartitionCount();
         this.partitionUuids = new AtomicReferenceArray<UUID>(partitionCount);
         this.localUuid = localUuid;
+        this.logger = logger;
     }
 
     private int checkMaxToleratedMissCount(HazelcastProperties properties) {
@@ -167,7 +169,7 @@ public final class RepairingTask implements Runnable {
 
         RepairingHandler repairingHandler = handlers.get(name);
         if (repairingHandler == null) {
-            repairingHandler = new RepairingHandler(name, nearCache, partitionService, localUuid, logger);
+            repairingHandler = new RepairingHandler(logger, localUuid, name, nearCache, partitionService);
             repairingHandler.initUnknownUuids(partitionUuids);
 
             StaleReadDetector staleReadDetector = new StaleReadDetectorImpl(repairingHandler, partitionService);
