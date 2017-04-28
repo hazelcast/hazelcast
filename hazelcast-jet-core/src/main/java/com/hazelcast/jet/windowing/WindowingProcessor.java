@@ -17,7 +17,6 @@
 package com.hazelcast.jet.windowing;
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Distributed.Comparator;
 import com.hazelcast.jet.Distributed.ToLongFunction;
 import com.hazelcast.jet.Punctuation;
 import com.hazelcast.jet.Traverser;
@@ -31,11 +30,13 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.LongStream;
 
+import static com.hazelcast.jet.Distributed.Comparator.naturalOrder;
 import static java.lang.Math.min;
 import static java.util.Collections.emptyMap;
 
 /**
- * A processor to aggregate input events into windows using window operator.
+ * A processor that aggregate items into event time-based windows using the
+ * supplied window operator.
  *
  * @param <T> type of input item (stream item or frame, if 2nd step)
  * @param <A> type of the frame accumulator object
@@ -43,7 +44,7 @@ import static java.util.Collections.emptyMap;
  */
 class WindowingProcessor<T, A, R> extends AbstractProcessor {
 
-    // package-visible for test
+    // package-visible for testing
     final Map<Long, Map<Object, A>> seqToKeyToFrame = new HashMap<>();
     final Map<Object, A> slidingWindow = new HashMap<>();
 
@@ -67,7 +68,7 @@ class WindowingProcessor<T, A, R> extends AbstractProcessor {
         this.extractKeyF = extractKeyF;
         this.winOp = winOp;
 
-        this.flatMapper = flatMapper(this::slidingWindowTraverser);
+        this.flatMapper = flatMapper(this::windowTraverser);
         this.emptyAcc = winOp.createAccumulatorF().get();
     }
 
@@ -96,14 +97,16 @@ class WindowingProcessor<T, A, R> extends AbstractProcessor {
             // initialized using the "add leading/deduct trailing" approach because we
             // start from a window that covers at most one existing frame -- the lowest
             // one on record.
-            //noinspection ConstantConditions
-            long firstKey = seqToKeyToFrame.keySet().stream().min(Comparator.naturalOrder()).get();
+            long firstKey = seqToKeyToFrame
+                    .keySet().stream()
+                    .min(naturalOrder())
+                    .orElseThrow(() -> new AssertionError("Failed to find the min key in a non-empty map"));
             nextFrameSeqToEmit = min(firstKey, punc.seq());
         }
         return flatMapper.tryProcess(punc);
     }
 
-    private Traverser<Object> slidingWindowTraverser(Punctuation punc) {
+    private Traverser<Object> windowTraverser(Punctuation punc) {
         long rangeStart = nextFrameSeqToEmit;
         nextFrameSeqToEmit = wDef.higherFrameSeq(punc.seq());
         return Traversers.traverseStream(range(rangeStart, nextFrameSeqToEmit, wDef.frameLength()).boxed())
@@ -111,14 +114,6 @@ class WindowingProcessor<T, A, R> extends AbstractProcessor {
                         .map(e -> new Frame<>(frameSeq, e.getKey(), winOp.finishAccumulationF().apply(e.getValue())))
                         .onFirstNull(() -> completeWindow(frameSeq)))
                 .append(punc);
-    }
-
-    private void completeWindow(long frameSeq) {
-        Map<Object, A> evictedFrame = seqToKeyToFrame.remove(frameSeq - wDef.windowLength() + wDef.frameLength());
-        if (winOp.deductAccumulatorF() != null) {
-            // deduct trailing-edge frame
-            patchSlidingWindow(winOp.deductAccumulatorF(), evictedFrame);
-        }
     }
 
     private Map<Object, A> computeWindow(long frameSeq) {
@@ -138,6 +133,14 @@ class WindowingProcessor<T, A, R> extends AbstractProcessor {
                             acc != null ? acc : winOp.createAccumulatorF().get(), currAcc)));
         }
         return window;
+    }
+
+    private void completeWindow(long frameSeq) {
+        Map<Object, A> evictedFrame = seqToKeyToFrame.remove(frameSeq - wDef.windowLength() + wDef.frameLength());
+        if (winOp.deductAccumulatorF() != null) {
+            // deduct trailing-edge frame
+            patchSlidingWindow(winOp.deductAccumulatorF(), evictedFrame);
+        }
     }
 
     private void patchSlidingWindow(BinaryOperator<A> patchOp, Map<Object, A> patchingFrame) {

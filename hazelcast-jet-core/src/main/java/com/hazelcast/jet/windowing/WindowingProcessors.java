@@ -72,7 +72,8 @@ public final class WindowingProcessors {
             @Nonnull WindowDefinition windowDef,
             @Nonnull WindowOperation<? super T, A, ?> windowOperation
     ) {
-        // we'll use window with 1 frames per window, as a subsequent processor will merge subsequent frames
+        // use a single-frame window in this stage; the downstream processor
+        // combines the frames into a window with the user-requested size
         WindowDefinition tumblingWinDef = new WindowDefinition(
                 windowDef.frameLength(), windowDef.frameOffset(), 1);
 
