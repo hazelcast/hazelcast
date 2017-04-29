@@ -185,17 +185,19 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
     static class ICountdownLatchRunnableTask
             implements Runnable, Serializable, HazelcastInstanceAware {
 
-        final String runsCountlatchName;
+        final String[] runsCounterlatchNames;
 
         transient HazelcastInstance instance;
 
-        ICountdownLatchRunnableTask(String runsCountlatchName) {
-            this.runsCountlatchName = runsCountlatchName;
+        ICountdownLatchRunnableTask(String... runsCounterlatchNames) {
+            this.runsCounterlatchNames = runsCounterlatchNames;
         }
 
         @Override
         public void run() {
-            instance.getCountDownLatch(runsCountlatchName).countDown();
+            for (String runsCounterLatchName : runsCounterlatchNames) {
+                instance.getCountDownLatch(runsCounterLatchName).countDown();
+            }
         }
 
         @Override

@@ -103,23 +103,26 @@ public class ScheduledExecutorServiceSlowTest
 
         String key = generateKeyOwnedBy(instances[1]);
 
-        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
-        latch.trySetCount(6);
+        ICountDownLatch firstLatch = instances[0].getCountDownLatch("firstLatch");
+        firstLatch.trySetCount(2);
+
+        ICountDownLatch lastLatch = instances[0].getCountDownLatch("lastLatch");
+        lastLatch.trySetCount(6);
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         IScheduledFuture future = executorService.scheduleOnKeyOwnerAtFixedRate(
-                new ICountdownLatchRunnableTask("latch"), key, 0, 10, SECONDS);
+                new ICountdownLatchRunnableTask("firstLatch", "lastLatch"), key, 0, 10, SECONDS);
 
-        Thread.sleep(12000);
+        firstLatch.await(12, SECONDS);
 
         instances[1].getLifecycleService().shutdown();
 
-        latch.await(70, SECONDS);
+        lastLatch.await(70, SECONDS);
         sleepSeconds(4); // Wait for run-cycle to finish before cancelling, in order for stats to get updated.
         future.cancel(false);
 
         ScheduledTaskStatistics stats = future.getStats();
-        assertEquals(6, stats.getTotalRuns());
+        assertEquals(6, stats.getTotalRuns(), 1);
     }
 
     @Test
