@@ -207,7 +207,7 @@ public class TextReadHandler implements ReadHandler {
         if (!connectionTypeSet) {
             if (command instanceof HttpCommand) {
                 String uri = ((HttpCommand) command).getURI();
-                boolean isMancenterRequest = uri.startsWith(HttpCommandProcessor.URI_MANCENTER_CHANGE_URL);
+                boolean isMancenterRequest = uri.startsWith(HttpCommandProcessor.URI_MANCENTER_BASE_URL);
                 boolean isClusterManagementRequest = uri.startsWith(HttpCommandProcessor.URI_CLUSTER_MANAGEMENT_BASE_URL);
                 boolean isHealthCheck = healthcheckEnabled && uri.startsWith(HttpCommandProcessor.URI_HEALTH_URL);
                 boolean forceRequestHandling = isClusterManagementRequest || isMancenterRequest || isHealthCheck;
