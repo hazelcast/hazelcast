@@ -35,6 +35,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
@@ -284,8 +285,8 @@ public class ProcessorsTest {
         testComplete.accept(result);
     }
 
-    private Processor processorFrom(ProcessorSupplier supplier) {
-        Processor p = supplier.get(1).iterator().next();
+    private Processor processorFrom(Supplier<Processor> supplier) {
+        Processor p = supplier.get();
         p.init(outbox, context);
         return p;
 

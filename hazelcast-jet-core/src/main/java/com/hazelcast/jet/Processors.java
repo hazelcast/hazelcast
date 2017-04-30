@@ -17,6 +17,8 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.jet.Distributed.Consumer;
+import com.hazelcast.jet.Distributed.IntFunction;
 import com.hazelcast.jet.Traversers.ResettableSingletonTraverser;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
@@ -209,17 +211,18 @@ public final class Processors {
      *
      * Useful for implementing sinks where the data should only be flushed
      * after the inbox has been drained.
-     *
+     *  @param <B> type of buffer
+     * @param <T> type of received item
      * @param newBuffer supplies the buffer. Supplier argument is the global processor index
      * @param addToBuffer adds item to buffer
      * @param flushBuffer flushes the buffer
-     * @param <B> type of buffer
-     * @param <T> type of received item
      */
     @Nonnull
-    public static <B, T> ProcessorSupplier writeBuffered(@Nonnull Distributed.IntFunction<B> newBuffer,
-                                                         @Nonnull Distributed.BiConsumer<B, T> addToBuffer,
-                                                         @Nonnull Distributed.Consumer<B> flushBuffer) {
+    public static <B, T> Distributed.Supplier<Processor> writeBuffered(
+            @Nonnull IntFunction<B> newBuffer,
+            @Nonnull Distributed.BiConsumer<B, T> addToBuffer,
+            @Nonnull Consumer<B> flushBuffer
+    ) {
         return WriteBufferedP.writeBuffered(newBuffer, addToBuffer, flushBuffer, noopConsumer());
     }
 
@@ -231,26 +234,27 @@ public final class Processors {
      * is completed
      * Useful for implementing sinks where the data should only be flushed
      * after the inbox has been drained.
-     *
+     *  @param <B> type of buffer
+     * @param <T> type of received item
      * @param newBuffer supplies the buffer. Supplier argument is the global processor index
      * @param addToBuffer adds item to buffer
      * @param flushBuffer flushes the buffer
      * @param disposeBuffer disposes of the buffer
-     * @param <B> type of buffer
-     * @param <T> type of received item
      */
     @Nonnull
-    public static <B, T> ProcessorSupplier writeBuffered(@Nonnull Distributed.IntFunction<B> newBuffer,
-                                                         @Nonnull Distributed.BiConsumer<B, T> addToBuffer,
-                                                         @Nonnull Distributed.Consumer<B> flushBuffer,
-                                                         @Nonnull Distributed.Consumer<B> disposeBuffer) {
+    public static <B, T> Distributed.Supplier<Processor> writeBuffered(
+            @Nonnull IntFunction<B> newBuffer,
+            @Nonnull Distributed.BiConsumer<B, T> addToBuffer,
+            @Nonnull Consumer<B> flushBuffer,
+            @Nonnull Consumer<B> disposeBuffer
+    ) {
         return WriteBufferedP.writeBuffered(newBuffer, addToBuffer, flushBuffer, disposeBuffer);
     }
 
     /**
      * Returns a supplier of processors that connect to specified socket and write the items as text
      */
-    public static ProcessorSupplier writeSocket(@Nonnull String host, int port) {
+    public static Distributed.Supplier<Processor> writeSocket(@Nonnull String host, int port) {
         return writeBuffered(
                 index -> createBufferedWriter(host, port),
                 (bufferedWriter, item) -> uncheckRun(() -> bufferedWriter.write(item.toString())),
@@ -421,14 +425,16 @@ public final class Processors {
      * @param <R> type of emitted item
      */
     @Nonnull
-    public static <T, R> ProcessorSupplier map(@Nonnull Distributed.Function<? super T, ? extends R> mapper) {
-        return ProcessorSupplier.of(() -> {
+    public static <T, R> Distributed.Supplier<Processor> map(
+            @Nonnull Distributed.Function<? super T, ? extends R> mapper
+    ) {
+        return () -> {
             final ResettableSingletonTraverser<R> trav = new ResettableSingletonTraverser<>();
             return new TransformP<T, R>(item -> {
                 trav.item = mapper.apply(item);
                 return trav;
             });
-        });
+        };
     }
 
     /**
@@ -439,14 +445,14 @@ public final class Processors {
      * @param <T> type of received item
      */
     @Nonnull
-    public static <T> ProcessorSupplier filter(@Nonnull Distributed.Predicate<? super T> predicate) {
-        return ProcessorSupplier.of(() -> {
+    public static <T> Distributed.Supplier<Processor> filter(@Nonnull Distributed.Predicate<? super T> predicate) {
+        return () -> {
             final ResettableSingletonTraverser<T> trav = new ResettableSingletonTraverser<>();
             return new TransformP<T, T>(item -> {
                 trav.item = predicate.test(item) ? item : null;
                 return trav;
             });
-        });
+        };
     }
 
     /**
@@ -458,10 +464,10 @@ public final class Processors {
      * @param <R> emitted item type
      */
     @Nonnull
-    public static <T, R> ProcessorSupplier flatMap(
+    public static <T, R> Distributed.Supplier<Processor> flatMap(
             @Nonnull Distributed.Function<? super T, ? extends Traverser<? extends R>> mapper
     ) {
-        return ProcessorSupplier.of(() -> new TransformP<T, R>(mapper));
+        return () -> new TransformP<T, R>(mapper);
     }
 
     /**
@@ -491,13 +497,13 @@ public final class Processors {
      * @param <R> type of emitted item
      */
     @Nonnull
-    public static <T, K, A, R> ProcessorSupplier groupAndAccumulate(
+    public static <T, K, A, R> Distributed.Supplier<Processor> groupAndAccumulate(
             @Nonnull Distributed.Function<? super T, ? extends K> keyExtractor,
             @Nonnull Distributed.Supplier<? extends A> supplier,
             @Nonnull Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator,
             @Nonnull Distributed.BiFunction<? super K, ? super A, ? extends R> finisher
     ) {
-        return ProcessorSupplier.of(() -> new GroupAndAccumulateP<>(keyExtractor, supplier, accumulator, finisher));
+        return () -> new GroupAndAccumulateP<>(keyExtractor, supplier, accumulator, finisher);
     }
 
     /**
@@ -517,7 +523,7 @@ public final class Processors {
      * @param <A> type of accumulated value
      */
     @Nonnull
-    public static <T, A> ProcessorSupplier groupAndAccumulate(
+    public static <T, A> Distributed.Supplier<Processor> groupAndAccumulate(
             @Nonnull Distributed.Function<? super T, ?> keyExtractor,
             @Nonnull Distributed.Supplier<? extends A> supplier,
             @Nonnull Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator
@@ -539,7 +545,7 @@ public final class Processors {
      * @param <A> type of accumulated value
      */
     @Nonnull
-    public static <T, A> ProcessorSupplier groupAndAccumulate(
+    public static <T, A> Distributed.Supplier<Processor> groupAndAccumulate(
             @Nonnull Distributed.Supplier<? extends A> supplier,
             @Nonnull Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator
     ) {
@@ -576,13 +582,13 @@ public final class Processors {
      * @param <R> type of emitted item
      */
     @Nonnull
-    public static <T, K, A, R> ProcessorSupplier groupAndCollect(
+    public static <T, K, A, R> Distributed.Supplier<Processor> groupAndCollect(
             @Nonnull Distributed.Function<? super T, ? extends K> keyExtractor,
             @Nonnull Distributed.Supplier<? extends A> supplier,
             @Nonnull Distributed.BiConsumer<? super A, ? super T> collector,
             @Nonnull Distributed.BiFunction<? super K, ? super A, ? extends R> finisher
     ) {
-        return ProcessorSupplier.of(() -> new GroupAndCollectP<>(keyExtractor, supplier, collector, finisher));
+        return () -> new GroupAndCollectP<>(keyExtractor, supplier, collector, finisher);
     }
 
     /**
@@ -603,7 +609,7 @@ public final class Processors {
      * @param <A> type of result container
      */
     @Nonnull
-    public static <T, A> ProcessorSupplier groupAndCollect(
+    public static <T, A> Distributed.Supplier<Processor> groupAndCollect(
             @Nonnull Distributed.Function<? super T, ?> keyExtractor,
             @Nonnull Distributed.Supplier<? extends A> supplier,
             @Nonnull Distributed.BiConsumer<? super A, ? super T> collector
@@ -626,7 +632,7 @@ public final class Processors {
      * @param <A> type of accumulated value
      */
     @Nonnull
-    public static <T, A> ProcessorSupplier groupAndCollect(
+    public static <T, A> Distributed.Supplier<Processor> groupAndCollect(
             @Nonnull Distributed.Supplier<? extends A> supplier,
             @Nonnull Distributed.BiConsumer<? super A, ? super T> collector
     ) {
@@ -656,7 +662,7 @@ public final class Processors {
      * @param <R> type of emitted item
      */
     @Nonnull
-    public static <T, A, R> ProcessorSupplier accumulate(
+    public static <T, A, R> Distributed.Supplier<Processor> accumulate(
             @Nonnull Distributed.Supplier<? extends A> supplier,
             @Nonnull Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator,
             @Nonnull Distributed.Function<? super A, ? extends R> finisher
@@ -676,7 +682,7 @@ public final class Processors {
      * @param <A> type of accumulated value
      */
     @Nonnull
-    public static <T, A> ProcessorSupplier accumulate(
+    public static <T, A> Distributed.Supplier<Processor> accumulate(
             @Nonnull Distributed.Supplier<? extends A> supplier,
             @Nonnull Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator
     ) {
@@ -707,7 +713,7 @@ public final class Processors {
      * @param <R> type of emitted item
      */
     @Nonnull
-    public static <T, A, R> ProcessorSupplier collect(
+    public static <T, A, R> Distributed.Supplier<Processor> collect(
             @Nonnull Distributed.Supplier<? extends A> supplier,
             @Nonnull Distributed.BiConsumer<? super A, ? super T> collector,
             @Nonnull Distributed.Function<? super A, ? extends R> finisher
@@ -728,7 +734,7 @@ public final class Processors {
      * @param <A> type of result container
      */
     @Nonnull
-    public static <T, A> ProcessorSupplier collect(
+    public static <T, A> Distributed.Supplier<Processor> collect(
             @Nonnull Distributed.Supplier<? extends A> supplier,
             @Nonnull Distributed.BiConsumer<? super A, ? super T> collector
     ) {
@@ -743,8 +749,8 @@ public final class Processors {
      * @param <K> key type
      */
     @Nonnull
-    public static <T, K> ProcessorSupplier countDistinct(@Nonnull Distributed.Function<T, K> keyExtractor) {
-        return ProcessorSupplier.of(() -> new CountDistinctP<>(keyExtractor));
+    public static <T, K> Distributed.Supplier<Processor> countDistinct(@Nonnull Distributed.Function<T, K> keyExtractor) {
+        return () -> new CountDistinctP<>(keyExtractor);
     }
 
     /**
@@ -753,8 +759,8 @@ public final class Processors {
      * of distinct items it has seen in the input.
      */
     @Nonnull
-    public static ProcessorSupplier countDistinct() {
-        return ProcessorSupplier.of(() -> new CountDistinctP<>(x -> x));
+    public static Distributed.Supplier<Processor> countDistinct() {
+        return () -> new CountDistinctP<>(x -> x);
     }
 
     /**
@@ -768,6 +774,20 @@ public final class Processors {
             final Collection<? extends Processor> ps = wrapped.get(count);
             ps.forEach(p -> ((AbstractProcessor) p).setCooperative(false));
             return ps;
+        };
+    }
+
+    /**
+     * Decorates a {@code Supplier<Processor>} into one that will declare
+     * its processors non-cooperative. The wrapped supplier must return
+     * processors that are {@code instanceof} {@link AbstractProcessor}.
+     */
+    @Nonnull
+    public static Distributed.Supplier<Processor> nonCooperative(Distributed.Supplier<Processor> wrapped) {
+        return () -> {
+            final Processor p = wrapped.get();
+            ((AbstractProcessor) p).setCooperative(false);
+            return p;
         };
     }
 

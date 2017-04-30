@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.Distributed.BiConsumer;
 import com.hazelcast.jet.Distributed.Consumer;
 import com.hazelcast.jet.Distributed.IntFunction;
 import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Punctuation;
 
 import javax.annotation.Nonnull;
@@ -51,11 +51,13 @@ public final class WriteBufferedP<B, T> implements Processor {
     }
 
     @Nonnull
-    public static <B, T> ProcessorSupplier writeBuffered(IntFunction<B> newBuffer,
-                                                         BiConsumer<B, T> addToBuffer,
-                                                         Consumer<B> consumeBuffer,
-                                                         Consumer<B> closeBuffer) {
-        return ProcessorSupplier.of(() -> new WriteBufferedP<>(newBuffer, addToBuffer, consumeBuffer, closeBuffer));
+    public static <B, T> Distributed.Supplier<Processor> writeBuffered(
+            IntFunction<B> newBuffer,
+            BiConsumer<B, T> addToBuffer,
+            Consumer<B> consumeBuffer,
+            Consumer<B> closeBuffer
+    ) {
+        return () -> new WriteBufferedP<>(newBuffer, addToBuffer, consumeBuffer, closeBuffer);
     }
 
     @Override
