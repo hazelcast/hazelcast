@@ -49,16 +49,16 @@ public final class ExceptionUtil {
      * @param t Throwable to peel
      * @see #peeledAndUnchecked(Throwable)
      */
-    @Nullable
     public static Throwable peel(@Nullable Throwable t) {
-        if (t instanceof CompletionException
-                || t instanceof ExecutionException
-                || t instanceof InvocationTargetException
+        Throwable peeled = t;
+        while ((peeled instanceof CompletionException
+                || peeled instanceof ExecutionException
+                || peeled instanceof InvocationTargetException)
+                && peeled.getCause() != null
         ) {
-            Throwable cause = t.getCause();
-            return cause != null ? peel(cause) : t;
+            peeled = t.getCause();
         }
-        return t;
+        return peeled;
     }
 
     /**

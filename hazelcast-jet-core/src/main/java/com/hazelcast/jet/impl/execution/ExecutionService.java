@@ -54,15 +54,17 @@ public class ExecutionService {
             new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(1), MILLISECONDS.toNanos(1));
 
     private final ExecutorService blockingTaskletExecutor = newCachedThreadPool(new BlockingTaskThreadFactory());
-    private final CooperativeWorker[] workers;
-    private final Thread[] threads;
+    private final CooperativeWorker[] cooperativeWorkers;
+    private final Thread[] cooperativeThreadPool;
     private final String hzInstanceName;
     private final ILogger logger;
 
+    private volatile boolean isShutdown;
+
     public ExecutionService(HazelcastInstance hz, int threadCount) {
         this.hzInstanceName = hz.getName();
-        this.workers = new CooperativeWorker[threadCount];
-        this.threads = new Thread[threadCount];
+        this.cooperativeWorkers = new CooperativeWorker[threadCount];
+        this.cooperativeThreadPool = new Thread[threadCount];
         this.logger = hz.getLoggingService().getLogger(ExecutionService.class);
     }
 
@@ -89,19 +91,13 @@ public class ExecutionService {
     }
 
     public void shutdown() {
-        blockingTaskletExecutor.shutdown();
-        synchronized (this) {
-            for (CooperativeWorker worker : workers) {
-                if (worker != null) {
-                    worker.isShutdown = true;
-                }
-            }
-        }
+        isShutdown = true;
+        blockingTaskletExecutor.shutdownNow();
     }
 
     private void ensureStillRunning() {
-        if (blockingTaskletExecutor.isShutdown()) {
-            throw new IllegalStateException("Execution service was ordered to shut down");
+        if (isShutdown) {
+            throw new IllegalStateException("Execution service was already ordered to shut down");
         }
     }
 
@@ -115,7 +111,7 @@ public class ExecutionService {
 
     private void submitCooperativeTasklets(JobFuture jobFuture, ClassLoader jobClassLoader, List<Tasklet> tasklets) {
         ensureThreadsStarted();
-        final List<TaskletTracker>[] trackersByThread = new List[workers.length];
+        final List<TaskletTracker>[] trackersByThread = new List[cooperativeWorkers.length];
         Arrays.setAll(trackersByThread, i -> new ArrayList());
         int i = 0;
         for (Tasklet t : tasklets) {
@@ -123,23 +119,23 @@ public class ExecutionService {
             trackersByThread[i++ % trackersByThread.length].add(new TaskletTracker(t, jobFuture, jobClassLoader));
         }
         for (i = 0; i < trackersByThread.length; i++) {
-            workers[i].trackers.addAll(trackersByThread[i]);
+            cooperativeWorkers[i].trackers.addAll(trackersByThread[i]);
         }
-        Arrays.stream(threads).forEach(LockSupport::unpark);
+        Arrays.stream(cooperativeThreadPool).forEach(LockSupport::unpark);
     }
 
     private synchronized void ensureThreadsStarted() {
-        if (workers[0] != null) {
+        if (cooperativeWorkers[0] != null) {
             return;
         }
-        Arrays.setAll(workers, i -> new CooperativeWorker(workers));
-        Arrays.setAll(threads, i -> new Thread(workers[i],
+        Arrays.setAll(cooperativeWorkers, i -> new CooperativeWorker(cooperativeWorkers));
+        Arrays.setAll(cooperativeThreadPool, i -> new Thread(cooperativeWorkers[i],
                 String.format("hz.%s.jet.cooperative.thread-%d", hzInstanceName, i)));
-        Arrays.stream(threads).forEach(Thread::start);
+        Arrays.stream(cooperativeThreadPool).forEach(Thread::start);
     }
 
     private String trackersToString() {
-        return Arrays.stream(workers)
+        return Arrays.stream(cooperativeWorkers)
                      .flatMap(w -> w.trackers.stream())
                      .map(Object::toString)
                      .sorted()
@@ -163,8 +159,8 @@ public class ExecutionService {
                 t.init(tracker.jobFuture);
                 long idleCount = 0;
                 for (ProgressState result;
-                     !(result = t.call()).isDone() && !tracker.jobFuture.isCompletedExceptionally();
-                ) {
+                     !(result = t.call()).isDone() && !tracker.jobFuture.isDone() && !isShutdown;
+                 ) {
                     if (result.isMadeProgress()) {
                         idleCount = 0;
                     } else {
@@ -181,10 +177,9 @@ public class ExecutionService {
         }
     }
 
-    private class CooperativeWorker implements Runnable {
+    private final class CooperativeWorker implements Runnable {
         private final List<TaskletTracker> trackers;
         private final CooperativeWorker[] colleagues;
-        private volatile boolean isShutdown;
 
         CooperativeWorker(CooperativeWorker[] colleagues) {
             this.colleagues = colleagues;

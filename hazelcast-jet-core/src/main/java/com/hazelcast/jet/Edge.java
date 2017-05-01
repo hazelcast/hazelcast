@@ -36,18 +36,20 @@ import static com.hazelcast.jet.Partitioner.defaultPartitioner;
  * Conceptually, data travels over the edge from the source vertex to the
  * destination vertex. Practically, since the vertex is distributed across
  * the cluster and across threads in each cluster member, the edge is
- * implemented by a number of concurrent queues and network sender/receiver pairs.
+ * implemented by a number of concurrent queues and network sender/receiver
+ * pairs.
  * <p>
- * It is often desirable to arrange that all items belonging to the same collation
- * key are received by the same processing unit (instance of {@link Processor}).
- * This is achieved by configuring an appropriate {@link Partitioner} on the edge.
- * The partitioner will determine the partition ID of each item and all items with
- * the same partition ID will be routed to the same {@code Processor} instance.
- * Depending on the value of edge's <em>distributed</em> property, the processor
- * will be unique cluster-wide, or only within each member.
+ * It is often desirable to arrange that all items belonging to the same
+ * collation key are received by the same processing unit (instance of
+ * {@link Processor}). This is achieved by configuring an appropriate
+ * {@link Partitioner} on the edge. The partitioner will determine the
+ * partition ID of each item and all items with the same partition ID will
+ * be routed to the same {@code Processor} instance. Depending on the value
+ * of edge's <em>distributed</em> property, the processor will be unique
+ * cluster-wide, or only within each member.
  * <p>
- * A newly instantiated Edge is non-distributed with a
- * {@link ForwardingPattern#VARIABLE_UNICAST VARIABLE_UNICAST} forwarding pattern.
+ * A newly instantiated Edge is non-distributed with a {@link
+ * ForwardingPattern#VARIABLE_UNICAST VARIABLE_UNICAST} forwarding pattern.
  */
 public class Edge implements IdentifiedDataSerializable {
 
@@ -174,9 +176,9 @@ public class Edge implements IdentifiedDataSerializable {
      * Sets the priority of the edge. A lower number means higher priority
      * and the default is 0.
      * <p>
-     * Example: there two incoming edges on a vertex, with priorities 1 and 2. The
-     * data from the edge with priority 1 will be processed in full before accepting
-     * any data from the edge with priority 2.
+     * Example: there two incoming edges on a vertex, with priorities 1 and 2.
+     * The data from the edge with priority 1 will be processed in full before
+     * accepting any data from the edge with priority 2.
      */
     public Edge priority(int priority) {
         this.priority = priority;
@@ -192,16 +194,17 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
-     * Activates unbounded buffering on this edge. Normally this should be avoided,
-     * but at some points the logic of the DAG requires it. This is one scenario:
-     * a vertex sends output to two edges, creating a fork in the DAG. The branches
-     * later rejoin at a downstream vertex which assigns different priorities to its
-     * two inbound edges. The one with the lower priority won't be consumed until the
-     * higher-priority one is consumed in full. However, since the data for both edges
-     * is generated simultaneously, and since the lower-priority input will apply
-     * backpressure while waiting for the higher-priority input to be consumed, this
-     * will result in a deadlock. The deadlock is resolved by activating unbounded
-     * buffering on the lower-priority edge.
+     * Activates unbounded buffering on this edge. Normally this should be
+     * avoided, but at some points the logic of the DAG requires it. This is
+     * one scenario: a vertex sends output to two edges, creating a fork in the
+     * DAG. The branches later rejoin at a downstream vertex which assigns
+     * different priorities to its two inbound edges. The one with the lower
+     * priority won't be consumed until the higher-priority one is consumed in
+     * full. However, since the data for both edges is generated simultaneously,
+     * and since the lower-priority input will apply backpressure while waiting
+     * for the higher-priority input to be consumed, this will result in a
+     * deadlock. The deadlock is resolved by activating unbounded buffering on
+     * the lower-priority edge.
      * <p>
      * <strong>NOTE:</strong> when this feature is activated, the
      * {@link EdgeConfig#setOutboxCapacity(int) outbox capacity} property of
@@ -213,7 +216,8 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
-     * Returns whether {@link #buffered() unbounded buffering} is activated for this edge.
+     * Returns whether {@link #buffered() unbounded buffering} is activated for
+     * this edge.
      */
     public boolean isBuffered() {
         return isBuffered;
@@ -242,9 +246,10 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
-     * Activates a special-cased {@link ForwardingPattern#PARTITIONED PARTITIONED}
-     * forwarding pattern where all items will be assigned the same, randomly chosen
-     * partition ID. Therefore all items will be directed to the same processor.
+     * Activates a special-cased {@link ForwardingPattern#PARTITIONED
+     * PARTITIONED} forwarding pattern where all items will be assigned the
+     * same, randomly chosen partition ID. Therefore all items will be directed
+     * to the same processor.
      */
     public Edge allToOne() {
         return partitioned(wholeItem(), new Single());
@@ -260,13 +265,16 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
-     * Activates {@link ForwardingPattern#ONE_TO_MANY ONE_TO_MANY} forwarding pattern where
-     * Each downstream processor consumes items always from the same upstream processor and
-     * never any items from any of the other upstream processors.
-     *
-     * Requires downstream parallelism to be greater than or equal to upstream parallelism.
-     *
-     * This pattern is only available for local edges.
+     * Activates the {@link ForwardingPattern#ONE_TO_MANY ONE_TO_MANY} with
+     * fixed paths from upstream to downstream processors. Each downstream
+     * processor is assigned exactly one upstream processor that will feed it,
+     * and each upstream processor is assigned a fixed subset of downstream
+     * processors. This creates isolated groups of processors (one upstream
+     * processor + all the downstream processors it feeds) that can be driven
+     * on a single thread, thus eliminating the overhead of concurrent queues.
+     * <p>
+     * This pattern requires the downstream parallelism to be greater than or
+     * equal to upstream parallelism. It can only be applied to local edges.
      */
     public Edge oneToMany() {
         forwardingPattern = ForwardingPattern.ONE_TO_MANY;
@@ -289,17 +297,19 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
-     * Declares that the edge is distributed. A non-distributed edge only transfers
-     * data within the same member. If the data source running on local member is
-     * distributed (produces only a slice of all the data on any given member), the
-     * local processors will not observe all the data. The same holds true when the data
-     * originates from an upstream distributed edge.
+     * Declares that the edge is distributed. A non-distributed edge only
+     * transfers data within the same member. If the data source running on
+     * local member is distributed (produces only a slice of all the data on
+     * any given member), the local processors will not observe all the data.
+     * The same holds true when the data originates from an upstream
+     * distributed edge.
      * <p>
-     * A <em>distributed</em> edge allows all the data to be observed by all the processors
-     * (using the {@link ForwardingPattern#BROADCAST BROADCAST} forwarding pattern) and,
-     * more attractively, all the data with a given partition ID to be observed by the same
-     * unique processor, regardless of whether it is running on the local or a remote member
-     * (using the {@link ForwardingPattern#PARTITIONED PARTITIONED} forwarding pattern).
+     * A <em>distributed</em> edge allows all the data to be observed by all
+     * the processors (using the {@link ForwardingPattern#BROADCAST BROADCAST}
+     * forwarding pattern) and, more attractively, all the data with a given
+     * partition ID to be observed by the same unique processor, regardless of
+     * whether it is running on the local or a remote member (using the {@link
+     * ForwardingPattern#PARTITIONED PARTITIONED} forwarding pattern).
      */
     public Edge distributed() {
         isDistributed = true;

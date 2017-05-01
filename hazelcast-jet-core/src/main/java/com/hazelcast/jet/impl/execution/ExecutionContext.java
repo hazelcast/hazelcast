@@ -49,7 +49,7 @@ public class ExecutionContext {
     private List<ProcessorSupplier> procSuppliers = emptyList();
     private Set<Address> participatingMembers = emptySet();
     private List<Tasklet> tasklets;
-    private CompletionStage<Void> executionCompletionStage;
+    private CompletionStage<Void> jobFuture;
 
     private final long executionId;
     private final NodeEngine nodeEngine;
@@ -61,16 +61,28 @@ public class ExecutionContext {
         this.nodeEngine = nodeEngine;
     }
 
+    public ExecutionContext initialize(ExecutionPlan plan) {
+        this.participatingMembers = unmodifiableSet(new HashSet<>(getRemoteMembers(nodeEngine)));
+        // Must be populated early, so all processor suppliers are
+        // available to be completed in the case of init failure
+        procSuppliers = unmodifiableList(plan.getProcessorSuppliers());
+        plan.initialize(nodeEngine, executionId);
+        receiverMap = unmodifiableMap(plan.getReceiverMap());
+        senderMap = unmodifiableMap(plan.getSenderMap());
+        tasklets = plan.getTasklets();
+        return this;
+    }
+
     public CompletionStage<Void> execute(Consumer<CompletionStage<Void>> doneCallback) {
         JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
         ClassLoader cl = service.getClassLoader(executionId);
-        executionCompletionStage = execService.execute(tasklets, doneCallback, cl);
-        executionCompletionStage.whenComplete((r, e) -> tasklets.clear());
-        return executionCompletionStage;
+        jobFuture = execService.execute(tasklets, doneCallback, cl);
+        jobFuture.whenComplete((r, e) -> tasklets.clear());
+        return jobFuture;
     }
 
-    public CompletionStage<Void> getExecutionCompletionStage() {
-        return executionCompletionStage;
+    public CompletionStage<Void> getJobFuture() {
+        return jobFuture;
     }
 
     public Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap() {
@@ -94,17 +106,5 @@ public class ExecutionContext {
 
     public boolean isParticipating(Address member) {
         return participatingMembers != null && participatingMembers.contains(member);
-    }
-
-    public ExecutionContext initialize(ExecutionPlan plan) {
-        this.participatingMembers = unmodifiableSet(new HashSet<>(getRemoteMembers(nodeEngine)));
-        // Must be populated early, so all processor suppliers are
-        // available to be completed in the case of init failure
-        procSuppliers = unmodifiableList(plan.getProcessorSuppliers());
-        plan.initialize(nodeEngine, executionId);
-        receiverMap = unmodifiableMap(plan.getReceiverMap());
-        senderMap = unmodifiableMap(plan.getSenderMap());
-        tasklets = plan.getTasklets();
-        return this;
     }
 }

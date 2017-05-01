@@ -46,10 +46,6 @@ public class JetInstanceImpl extends AbstractJetInstance {
     private final JetConfig config;
     private final ILogger logger;
 
-    public JetInstanceImpl(HazelcastInstanceImpl hazelcastInstance) {
-        this(hazelcastInstance, new JetConfig());
-    }
-
     public JetInstanceImpl(HazelcastInstanceImpl hazelcastInstance, JetConfig config) {
         super(hazelcastInstance);
         this.nodeEngine = hazelcastInstance.node.getNodeEngine();
@@ -77,11 +73,11 @@ public class JetInstanceImpl extends AbstractJetInstance {
         private final DAG dag;
         private final JobConfig config;
 
-        protected JobImpl(DAG dag) {
+        JobImpl(DAG dag) {
             this(dag, new JobConfig());
         }
 
-        protected JobImpl(DAG dag, JobConfig config) {
+        JobImpl(DAG dag, JobConfig config) {
             this.dag = dag;
             this.config = config;
         }
@@ -122,7 +118,5 @@ public class JetInstanceImpl extends AbstractJetInstance {
                           .map(f -> uncheckCall(f::get))
                           .collect(toList());
         }
-
-
     }
 }

@@ -74,14 +74,14 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
         // Future that is completed on the real completion of all Execute operations
         CompletableFuture<Void> executionDone = new CompletableFuture<>();
         CompletableFuture<Throwable> execution =
-                // ExecuteOperation should only be run if InitOperation succeeded
+                // ExecuteOperation should only run if InitOperation succeeded
                 init.thenCompose(x -> executionInvocationFuture = invokeOnCluster(executionPlanMap,
                         plan -> new ExecuteOperation(executionId), executionDone, true, DEFAULT_TRY_COUNT))
                     .handle((v, e) -> e != null ? peel(e) : null);
 
-        // CompleteOperation is fired regardless of success of previous operations
-        // It must be fired _after_ all Execute operation are done, or in case of failure during Init phase,
-        // after all Init operations are finished.
+        // CompleteOperation is fired regardless of success of previous operations.
+        // It must be fired _after_ all Execute operation are done, or in case of
+        // failure during Init phase, after all Init operations are finished.
         CompletableFuture<Throwable> completion =
                 CompletableFuture.anyOf(initFailed, executionDone)
                                  .thenCombine(execution, (r, e) -> e)
@@ -100,27 +100,30 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
                 });
     }
 
-    private Throwable topologyChangeOrIdentity(Throwable e) {
+    private static Throwable topologyChangeOrIdentity(Throwable e) {
         if (e instanceof MemberLeftException) {
             return new TopologyChangedException("Topology has been changed", e);
         }
         return e;
     }
 
-    private <E> CompletableFuture<Object> invokeOnCluster(Map<Member, E> memberMap, Function<E, Operation> func,
-                                                          int tryCount) {
-        return invokeOnCluster(memberMap, func, new CompletableFuture<>(), false, tryCount);
+    private CompletableFuture<Object> invokeOnCluster(
+            Map<Member, ExecutionPlan> memberMap, Function<ExecutionPlan, Operation> getOperationF,
+            int tryCount
+    ) {
+        return invokeOnCluster(memberMap, getOperationF, new CompletableFuture<>(), false, tryCount);
     }
 
-    private <E> CompletableFuture<Object> invokeOnCluster(Map<Member, E> memberMap, Function<E, Operation> func,
-                                                          CompletableFuture<Void> doneFuture, boolean propagateError,
-                                                          int tryCount) {
+    private CompletableFuture<Object> invokeOnCluster(
+            Map<Member, ExecutionPlan> memberMap, Function<ExecutionPlan, Operation> getOperationF,
+            CompletableFuture<Void> doneFuture, boolean propagateError, int tryCount
+    ) {
         AtomicInteger doneLatch = new AtomicInteger(memberMap.size());
         final Stream<ICompletableFuture> futures =
                 memberMap.entrySet().stream().map(e -> getNodeEngine()
                         .getOperationService()
                         .createInvocationBuilder(JetService.SERVICE_NAME,
-                                func.apply(e.getValue()), e.getKey().getAddress())
+                                getOperationF.apply(e.getValue()), e.getKey().getAddress())
                         .setDoneCallback(() -> {
                             if (doneLatch.decrementAndGet() == 0) {
                                 doneFuture.complete(null);
@@ -151,9 +154,13 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
         dag = in.readObject();
     }
 
-    // Combines several invocation futures into one. Completes only when all of the sub-futures have completed or
-    // when the composite future is cancelled from outside
-    private static CompletableFuture<Object> allOf(final Collection<ICompletableFuture> futures, boolean propagateError) {
+
+    /**
+     * Combines several invocation futures into one. Completes only when all of
+     * the sub-futures have completed or when the composite future is cancelled
+     * from outside.
+     */
+    private static CompletableFuture<Object> allOf(Collection<ICompletableFuture> futures, boolean propagateError) {
         final CompletableFuture<Object> compositeFuture = new CompletableFuture<>();
         compositeFuture.whenComplete((r, e) -> {
             if (e instanceof CancellationException) {
@@ -186,13 +193,13 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
     }
 
     /**
-     * Returns a new {@link CompletableFuture}, that will complete normally, when {@code stage} completes exceptionally,
-     * with the Throwable as a value.
-     * <p>However, if {@code stage} completes normally, the returned stage will never complete.
+     * Returns a {@code CompletableFuture} wrapper that will complete normally
+     * with the cause of the wrapped future's exceptional completion. Normal
+     * completion of the wrapped future has no effect on the returned future.
      */
-    private static <T> CompletableFuture<Throwable> onException(CompletableFuture<T> stage) {
+    private static <T> CompletableFuture<Throwable> onException(CompletableFuture<T> future) {
         CompletableFuture<Throwable> f = new CompletableFuture<>();
-        stage.whenComplete((r, e) -> {
+        future.whenComplete((r, e) -> {
             if (e != null) {
                 f.complete(e);
             }

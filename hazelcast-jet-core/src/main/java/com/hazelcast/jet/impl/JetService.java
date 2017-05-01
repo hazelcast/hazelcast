@@ -65,8 +65,9 @@ public class JetService
     private final ClientInvocationRegistry clientInvocationRegistry;
     private final LiveOperationRegistry liveOperationRegistry;
 
-    // The type of these variables is CHM and not ConcurrentMap because we rely on specific semantics of
-    // computeIfAbsent. ConcurrentMap.computeIfAbsent does not guarantee at most one computation per key.
+    // The type of these variables is CHM and not ConcurrentMap because we
+    // rely on specific semantics of computeIfAbsent. ConcurrentMap.computeIfAbsent
+    // does not guarantee at most one computation per key.
     private final ConcurrentHashMap<Long, ExecutionContext> executionContexts = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Long, ResourceStore> resourceStores = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Long, ClassLoader> classLoaders = new ConcurrentHashMap<>();
@@ -122,6 +123,7 @@ public class JetService
     public void shutdown(boolean terminate) {
         networking.destroy();
         executionService.shutdown();
+        executionContexts.forEach((jobId, exeCtx) -> exeCtx.getJobFuture().toCompletableFuture().cancel(true));
     }
 
     @Override
@@ -219,7 +221,7 @@ public class JetService
                 .flatMap(e -> e.getValue().values().stream())
                 .forEach(op ->
                         Optional.ofNullable(executionContexts.get(op.getExecutionId()))
-                                .map(ExecutionContext::getExecutionCompletionStage)
+                                .map(ExecutionContext::getJobFuture)
                                 .ifPresent(stage -> stage.whenComplete((aVoid, throwable) ->
                                         completeExecution(op.getExecutionId(),
                                                 new TopologyChangedException("Topology has been changed")))));

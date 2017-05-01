@@ -76,7 +76,7 @@ public class BlockingProcessorTasklet extends ProcessorTaskletBase {
                 processor.process(currInstream.ordinal(), inbox());
             }
             return progTracker.toProgressState();
-        } catch (JobFutureCompletedExceptionally e) {
+        } catch (JobFutureCompleted e) {
             return ProgressState.DONE;
         }
     }
@@ -138,8 +138,8 @@ public class BlockingProcessorTasklet extends ProcessorTaskletBase {
                 if (result.isDone()) {
                     return;
                 }
-                if (jobFuture.isCompletedExceptionally()) {
-                    throw new JobFutureCompletedExceptionally();
+                if (jobFuture.isDone()) {
+                    throw new JobFutureCompleted();
                 }
                 if (result.isMadeProgress()) {
                     idleCount = 0;
@@ -150,6 +150,6 @@ public class BlockingProcessorTasklet extends ProcessorTaskletBase {
         }
     }
 
-    private static class JobFutureCompletedExceptionally extends RuntimeException {
+    private static class JobFutureCompleted extends RuntimeException {
     }
 }
