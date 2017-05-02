@@ -22,7 +22,7 @@ import com.hazelcast.nio.IOService;
 
 import static java.lang.System.currentTimeMillis;
 
-public class TcpIpConnectionMonitor {
+public class TcpIpConnectionErrorHandler {
 
     private final ILogger logger;
     private final IOService ioService;
@@ -32,7 +32,7 @@ public class TcpIpConnectionMonitor {
     private int faults;
     private long lastFaultTime;
 
-    public TcpIpConnectionMonitor(TcpIpConnectionManager connectionManager, Address endPoint) {
+    public TcpIpConnectionErrorHandler(TcpIpConnectionManager connectionManager, Address endPoint) {
         this.endPoint = endPoint;
         this.ioService = connectionManager.getIoService();
         this.minInterval = ioService.getConnectionMonitorInterval();
