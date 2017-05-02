@@ -202,6 +202,11 @@ public class NodeIOService implements IOService {
     }
 
     @Override
+    public boolean isSocketAllowAnyPublicAddress() {
+        return node.getProperties().getBoolean(GroupProperty.SOCKET_ALLOW_ANY_PUBLIC_ADDRESS);
+    }
+
+    @Override
     public int getSocketReceiveBufferSize() {
         return node.getProperties().getInteger(GroupProperty.SOCKET_RECEIVE_BUFFER_SIZE);
     }

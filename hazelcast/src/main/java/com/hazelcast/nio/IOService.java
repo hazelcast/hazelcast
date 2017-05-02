@@ -78,6 +78,8 @@ public interface IOService {
 
     boolean isSocketBindAny();
 
+    boolean isSocketAllowAnyPublicAddress();
+
     int getSocketReceiveBufferSize();
 
     int getSocketSendBufferSize();

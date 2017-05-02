@@ -171,6 +171,11 @@ public class MockIOService implements IOService {
     }
 
     @Override
+    public boolean isSocketAllowAnyPublicAddress() {
+        return true;
+    }
+
+    @Override
     public int getSocketReceiveBufferSize() {
         return 32;
     }

@@ -27,14 +27,16 @@ public class BindMessage implements IdentifiedDataSerializable {
 
     private Address localAddress;
     private Address targetAddress;
+    private Address translatedAddress;
     private boolean reply;
 
     public BindMessage() {
     }
 
-    public BindMessage(Address localAddress, Address targetAddress, boolean reply) {
+    public BindMessage(Address localAddress, Address targetAddress, Address translatedAddress, boolean reply) {
         this.localAddress = localAddress;
         this.targetAddress = targetAddress;
+        this.translatedAddress = translatedAddress;
         this.reply = reply;
     }
 
@@ -44,6 +46,10 @@ public class BindMessage implements IdentifiedDataSerializable {
 
     public Address getTargetAddress() {
         return targetAddress;
+    }
+
+    public Address getTranslatedAddress() {
+        return translatedAddress;
     }
 
     public boolean shouldReply() {
@@ -70,6 +76,11 @@ public class BindMessage implements IdentifiedDataSerializable {
             targetAddress.readData(in);
         }
         reply = in.readBoolean();
+        boolean hasTranslatedAddress = in.readBoolean();
+        if (hasTranslatedAddress) {
+            translatedAddress = new Address();
+            translatedAddress.readData(in);
+        }
     }
 
     @Override
@@ -81,6 +92,11 @@ public class BindMessage implements IdentifiedDataSerializable {
             targetAddress.writeData(out);
         }
         out.writeBoolean(reply);
+        boolean hasTranslatedAddress =  translatedAddress != null;
+        out.writeBoolean(hasTranslatedAddress);
+        if (hasTranslatedAddress) {
+            translatedAddress.writeData(out);
+        }
     }
 
     @Override
