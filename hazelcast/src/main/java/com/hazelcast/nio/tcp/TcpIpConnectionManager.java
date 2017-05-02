@@ -54,7 +54,6 @@ import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 
 public class TcpIpConnectionManager implements ConnectionManager, PacketHandler {
 
@@ -416,21 +415,17 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         logger.finest("Starting ConnectionManager and IO selectors.");
 
         eventLoopGroup.start();
-        startAcceptorThread();
+        startAcceptor();
     }
 
-    private void startAcceptorThread() {
+    private void startAcceptor() {
         if (acceptor != null) {
-            logger.warning("SocketAcceptor thread is already live! Shutting down old acceptor...");
-            shutdownAcceptorThread();
+            logger.warning("TcpIpAcceptor already is running! Shutting down old acceptor...");
+            shutdownAcceptor();
         }
 
-        acceptor = new TcpIpAcceptor(
-                createThreadPoolName(ioService.getHazelcastName(), "IO") + "Acceptor",
-                serverSocketChannel,
-                this);
-        acceptor.start();
-        metricsRegistry.scanAndRegister(acceptor, "tcp." + acceptor.getName());
+        acceptor = new TcpIpAcceptor(serverSocketChannel, this).start();
+        metricsRegistry.collectMetrics(acceptor);
     }
 
     @Override
@@ -441,7 +436,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         live = false;
         logger.finest("Stopping ConnectionManager");
 
-        shutdownAcceptorThread();
+        shutdownAcceptor();
 
         for (Channel socketChannel : acceptedSockets) {
             closeResource(socketChannel);
@@ -474,14 +469,14 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     @Override
     public synchronized void shutdown() {
-        shutdownAcceptorThread();
+        shutdownAcceptor();
         closeServerSocket();
         stop();
         scheduler.shutdownNow();
         connectionListeners.clear();
     }
 
-    private void shutdownAcceptorThread() {
+    private void shutdownAcceptor() {
         if (acceptor != null) {
             acceptor.shutdown();
             metricsRegistry.deregister(acceptor);

@@ -17,6 +17,8 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.nio.SelectorMode;
@@ -32,10 +34,13 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 
+import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_WITH_FIX;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
+import static java.nio.channels.SelectionKey.OP_ACCEPT;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -45,7 +50,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * of the 'client' side of a connection and the {@link TcpIpAcceptor} is the 'server' side of a connection (each connection
  * has a client and server-side
  */
-public class TcpIpAcceptor extends Thread {
+public class TcpIpAcceptor implements MetricsProvider {
     private static final long SHUTDOWN_TIMEOUT_MILLIS = SECONDS.toMillis(10);
     private static final long SELECT_TIMEOUT_MILLIS = SECONDS.toMillis(60);
     private static final int SELECT_IDLE_COUNT_THRESHOLD = 10;
@@ -61,27 +66,25 @@ public class TcpIpAcceptor extends Thread {
     // count number of times the selector was recreated (if selectWorkaround is enabled)
     @Probe
     private final SwCounter selectorRecreateCount = newSwCounter();
+    private final AcceptorIOThread acceptorThread;
     // last time select returned
     private volatile long lastSelectTimeMs;
 
     // When true, enables workaround for bug occuring when SelectorImpl.select returns immediately
     // with no channels selected, resulting in 100% CPU usage while doing no progress.
     // See issue: https://github.com/hazelcast/hazelcast/issues/7943
-    private final boolean selectorWorkaround = (SelectorMode.getConfiguredValue() == SelectorMode.SELECT_WITH_FIX);
+    private final boolean selectorWorkaround = (SelectorMode.getConfiguredValue() == SELECT_WITH_FIX);
 
-    private volatile boolean live = true;
+    private volatile boolean stop;
     private volatile Selector selector;
     private SelectionKey selectionKey;
 
-    public TcpIpAcceptor(
-            String name,
-            ServerSocketChannel serverSocketChannel,
-            TcpIpConnectionManager connectionManager) {
-        super(name);
+    public TcpIpAcceptor(ServerSocketChannel serverSocketChannel, TcpIpConnectionManager connectionManager) {
         this.serverSocketChannel = serverSocketChannel;
         this.connectionManager = connectionManager;
         this.ioService = connectionManager.getIoService();
         this.logger = ioService.getLoggingService().getLogger(getClass());
+        this.acceptorThread = new AcceptorIOThread();
     }
 
     /**
@@ -95,180 +98,198 @@ public class TcpIpAcceptor extends Thread {
     }
 
     @Override
-    public void run() {
-        if (logger.isFinestEnabled()) {
-            logger.finest("Starting SocketAcceptor on " + serverSocketChannel);
-        }
-
-        try {
-            selector = Selector.open();
-            serverSocketChannel.configureBlocking(false);
-            selectionKey = serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-            if (selectorWorkaround) {
-                acceptLoopWithSelectorFix();
-            } else {
-                acceptLoop();
-            }
-        } catch (OutOfMemoryError e) {
-            OutOfMemoryErrorDispatcher.onOutOfMemory(e);
-        } catch (IOException e) {
-            logger.severe(e.getClass().getName() + ": " + e.getMessage(), e);
-        } finally {
-            closeSelector();
-        }
+    public void provideMetrics(MetricsRegistry registry) {
+        registry.scanAndRegister(this, "tcp." + acceptorThread.getName());
     }
 
-    private void acceptLoop() throws IOException {
-        while (live) {
-            // block until new connection or interruption.
-            int keyCount = selector.select();
-            if (isInterrupted()) {
-                break;
-            }
-            if (keyCount == 0) {
-                continue;
-            }
-            Iterator<SelectionKey> it = selector.selectedKeys().iterator();
-            handleSelectionKeys(it);
-        }
-    }
-
-    private void acceptLoopWithSelectorFix() throws IOException {
-        int idleCount = 0;
-        while (live) {
-            // block with a timeout until new connection or interruption.
-            long before = currentTimeMillis();
-            int keyCount = selector.select(SELECT_TIMEOUT_MILLIS);
-            if (isInterrupted()) {
-                break;
-            }
-            if (keyCount == 0) {
-                long selectTimeTaken = currentTimeMillis() - before;
-                idleCount = selectTimeTaken < SELECT_TIMEOUT_MILLIS ? idleCount + 1 : 0;
-                // select unblocked before timing out with no keys selected --> bug detected
-                if (idleCount > SELECT_IDLE_COUNT_THRESHOLD) {
-                    // rebuild the selector
-                    rebuildSelector();
-                    idleCount = 0;
-                }
-                continue;
-            }
-            idleCount = 0;
-            Iterator<SelectionKey> it = selector.selectedKeys().iterator();
-            handleSelectionKeys(it);
-        }
-    }
-
-    private void rebuildSelector() throws IOException {
-        selectorRecreateCount.inc();
-        // cancel existing selection key, register new one on the new selector
-        selectionKey.cancel();
-        closeSelector();
-        Selector newSelector = Selector.open();
-        selector = newSelector;
-        selectionKey = serverSocketChannel.register(newSelector, SelectionKey.OP_ACCEPT);
-    }
-
-    private void handleSelectionKeys(Iterator<SelectionKey> it) {
-        lastSelectTimeMs = currentTimeMillis();
-        while (it.hasNext()) {
-            SelectionKey sk = it.next();
-            it.remove();
-            // of course it is acceptable!
-            if (sk.isValid() && sk.isAcceptable()) {
-                eventCount.inc();
-                acceptSocket();
-            }
-        }
-    }
-
-    private void closeSelector() {
-        if (selector == null) {
-            return;
-        }
-
-        if (logger.isFinestEnabled()) {
-            logger.finest("Closing selector " + Thread.currentThread().getName());
-        }
-
-        try {
-            selector.close();
-        } catch (Exception e) {
-            logger.finest("Exception while closing selector", e);
-        }
-    }
-
-    private void acceptSocket() {
-        Channel channel = null;
-        try {
-            final SocketChannel socketChannel = serverSocketChannel.accept();
-            if (socketChannel != null) {
-                channel = connectionManager.wrapSocketChannel(socketChannel, false);
-            }
-        } catch (Exception e) {
-            exceptionCount.inc();
-
-            if (e instanceof ClosedChannelException && !connectionManager.isLive()) {
-                // ClosedChannelException
-                // or AsynchronousCloseException
-                // or ClosedByInterruptException
-                logger.finest("Terminating socket acceptor thread...", e);
-            } else {
-                logger.severe("Unexpected error while accepting connection! "
-                        + e.getClass().getName() + ": " + e.getMessage());
-                try {
-                    serverSocketChannel.close();
-                } catch (Exception ex) {
-                    logger.finest("Closing server socket failed", ex);
-                }
-                ioService.onFatalError(e);
-            }
-        }
-
-        if (channel != null) {
-            final Channel socketChannel = channel;
-            logger.info("Accepting socket connection from " + socketChannel.getRemoteSocketAddress());
-            if (ioService.isSocketInterceptorEnabled()) {
-                configureAndAssignSocket(socketChannel);
-            } else {
-                ioService.executeAsync(new Runnable() {
-                    @Override
-                    public void run() {
-                        configureAndAssignSocket(socketChannel);
-                    }
-                });
-            }
-        }
-    }
-
-    private void configureAndAssignSocket(Channel socketChannel) {
-        try {
-            ioService.configureSocket(socketChannel.socket());
-            ioService.interceptSocket(socketChannel.socket(), true);
-            socketChannel.configureBlocking(connectionManager.getEventLoopGroup().isBlocking());
-            connectionManager.newConnection(socketChannel, null);
-        } catch (Exception e) {
-            exceptionCount.inc();
-            logger.warning(e.getClass().getName() + ": " + e.getMessage(), e);
-            closeResource(socketChannel);
-        }
+    public TcpIpAcceptor start() {
+        acceptorThread.start();
+        return this;
     }
 
     public synchronized void shutdown() {
-        if (!live) {
+        if (stop) {
             return;
         }
 
         logger.finest("Shutting down SocketAcceptor thread.");
-        live = false;
+        stop = true;
         Selector sel = selector;
         if (sel != null) {
             sel.wakeup();
         }
+
         try {
-            join(SHUTDOWN_TIMEOUT_MILLIS);
+            acceptorThread.join(SHUTDOWN_TIMEOUT_MILLIS);
         } catch (InterruptedException e) {
             logger.finest(e);
+        }
+    }
+
+    private final class AcceptorIOThread extends Thread {
+
+        private AcceptorIOThread() {
+            super(createThreadPoolName(ioService.getHazelcastName(), "IO") + "Acceptor");
+        }
+
+        @Override
+        public void run() {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Starting TcpIpAcceptor on " + serverSocketChannel);
+            }
+
+            try {
+                selector = Selector.open();
+                serverSocketChannel.configureBlocking(false);
+                selectionKey = serverSocketChannel.register(selector, OP_ACCEPT);
+                if (selectorWorkaround) {
+                    acceptLoopWithSelectorFix();
+                } else {
+                    acceptLoop();
+                }
+            } catch (OutOfMemoryError e) {
+                OutOfMemoryErrorDispatcher.onOutOfMemory(e);
+            } catch (Throwable e) {
+                logger.severe(e.getClass().getName() + ": " + e.getMessage(), e);
+            } finally {
+                closeSelector();
+            }
+        }
+
+        private void acceptLoop() throws IOException {
+            while (!stop) {
+                // block until new connection or interruption.
+                int keyCount = selector.select();
+                if (isInterrupted()) {
+                    break;
+                }
+                if (keyCount == 0) {
+                    continue;
+                }
+                Iterator<SelectionKey> it = selector.selectedKeys().iterator();
+                handleSelectionKeys(it);
+            }
+        }
+
+        private void acceptLoopWithSelectorFix() throws IOException {
+            int idleCount = 0;
+            while (!stop) {
+                // block with a timeout until new connection or interruption.
+                long before = currentTimeMillis();
+                int keyCount = selector.select(SELECT_TIMEOUT_MILLIS);
+                if (isInterrupted()) {
+                    break;
+                }
+                if (keyCount == 0) {
+                    long selectTimeTaken = currentTimeMillis() - before;
+                    idleCount = selectTimeTaken < SELECT_TIMEOUT_MILLIS ? idleCount + 1 : 0;
+                    // select unblocked before timing out with no keys selected --> bug detected
+                    if (idleCount > SELECT_IDLE_COUNT_THRESHOLD) {
+                        // rebuild the selector
+                        rebuildSelector();
+                        idleCount = 0;
+                    }
+                    continue;
+                }
+                idleCount = 0;
+                Iterator<SelectionKey> it = selector.selectedKeys().iterator();
+                handleSelectionKeys(it);
+            }
+        }
+
+        private void rebuildSelector() throws IOException {
+            selectorRecreateCount.inc();
+            // cancel existing selection key, register new one on the new selector
+            selectionKey.cancel();
+            closeSelector();
+            Selector newSelector = Selector.open();
+            selector = newSelector;
+            selectionKey = serverSocketChannel.register(newSelector, OP_ACCEPT);
+        }
+
+        private void handleSelectionKeys(Iterator<SelectionKey> it) {
+            lastSelectTimeMs = currentTimeMillis();
+            while (it.hasNext()) {
+                SelectionKey sk = it.next();
+                it.remove();
+                // of course it is acceptable!
+                if (sk.isValid() && sk.isAcceptable()) {
+                    eventCount.inc();
+                    acceptSocket();
+                }
+            }
+        }
+
+        private void closeSelector() {
+            if (selector == null) {
+                return;
+            }
+
+            if (logger.isFinestEnabled()) {
+                logger.finest("Closing selector " + Thread.currentThread().getName());
+            }
+
+            try {
+                selector.close();
+            } catch (Exception e) {
+                logger.finest("Exception while closing selector", e);
+            }
+        }
+
+        private void acceptSocket() {
+            Channel channel = null;
+            try {
+                SocketChannel socketChannel = serverSocketChannel.accept();
+                if (socketChannel != null) {
+                    channel = connectionManager.wrapSocketChannel(socketChannel, false);
+                }
+            } catch (Exception e) {
+                exceptionCount.inc();
+
+                if (e instanceof ClosedChannelException && !connectionManager.isLive()) {
+                    // ClosedChannelException
+                    // or AsynchronousCloseException
+                    // or ClosedByInterruptException
+                    logger.finest("Terminating socket acceptor thread...", e);
+                } else {
+                    logger.severe("Unexpected error while accepting connection! "
+                            + e.getClass().getName() + ": " + e.getMessage());
+                    try {
+                        serverSocketChannel.close();
+                    } catch (Exception ex) {
+                        logger.finest("Closing server socket failed", ex);
+                    }
+                    ioService.onFatalError(e);
+                }
+            }
+
+            if (channel != null) {
+                final Channel theChannel = channel;
+                logger.info("Accepting socket connection from " + theChannel.socket().getRemoteSocketAddress());
+                if (ioService.isSocketInterceptorEnabled()) {
+                    configureAndAssignSocket(theChannel);
+                } else {
+                    ioService.executeAsync(new Runnable() {
+                        @Override
+                        public void run() {
+                            configureAndAssignSocket(theChannel);
+                        }
+                    });
+                }
+            }
+        }
+
+        private void configureAndAssignSocket(Channel channel) {
+            try {
+                ioService.configureSocket(channel.socket());
+                ioService.interceptSocket(channel.socket(), true);
+                channel.configureBlocking(connectionManager.getEventLoopGroup().isBlocking());
+                connectionManager.newConnection(channel, null);
+            } catch (Exception e) {
+                exceptionCount.inc();
+                logger.warning(e.getClass().getName() + ": " + e.getMessage(), e);
+                closeResource(channel);
+            }
         }
     }
 }
