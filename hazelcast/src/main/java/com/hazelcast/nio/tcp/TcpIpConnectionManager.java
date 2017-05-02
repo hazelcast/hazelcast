@@ -118,7 +118,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
 
     // accessed only in synchronized block
-    private volatile SocketAcceptorThread acceptorThread;
+    private volatile TcpIpAcceptor acceptor;
 
     @Probe
     private final MwCounter openedCount = newMwCounter();
@@ -432,17 +432,17 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     }
 
     private void startAcceptorThread() {
-        if (acceptorThread != null) {
+        if (acceptor != null) {
             logger.warning("SocketAcceptor thread is already live! Shutting down old acceptor...");
             shutdownAcceptorThread();
         }
 
-        acceptorThread = new SocketAcceptorThread(
+        acceptor = new TcpIpAcceptor(
                 createThreadPoolName(ioService.getHazelcastName(), "IO") + "Acceptor",
                 serverSocketChannel,
                 this);
-        acceptorThread.start();
-        metricsRegistry.scanAndRegister(acceptorThread, "tcp." + acceptorThread.getName());
+        acceptor.start();
+        metricsRegistry.scanAndRegister(acceptor, "tcp." + acceptor.getName());
     }
 
     @Override
@@ -494,10 +494,10 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     }
 
     private void shutdownAcceptorThread() {
-        if (acceptorThread != null) {
-            acceptorThread.shutdown();
-            metricsRegistry.deregister(acceptorThread);
-            acceptorThread = null;
+        if (acceptor != null) {
+            acceptor.shutdown();
+            metricsRegistry.deregister(acceptor);
+            acceptor = null;
         }
     }
 
