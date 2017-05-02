@@ -36,7 +36,7 @@ import java.util.Collection;
 import java.util.logging.Level;
 
 /**
- * A Task that initiates a TcpConnection to be build. It does this be connecting the serverport and once completed,
+ * A Task that initiates a TcpConnection to be build. It does this by connecting the remote serverport and once completed,
  * it will send the protocol and a bind-message.
  */
 public class InitConnectionTask implements Runnable {
@@ -144,7 +144,7 @@ public class InitConnectionTask implements Runnable {
                 logger.finest("Successfully connected to: " + address + " using socket " + socketChannel.socket());
             }
             SocketChannelWrapper socketChannelWrapper = connectionManager.wrapSocketChannel(socketChannel, true);
-            connectionManager.interceptSocket(socketChannel.socket(), false);
+            ioService.interceptSocket(socketChannel.socket(), false);
 
             socketChannelWrapper.configureBlocking(false);
             TcpIpConnection connection = connectionManager.newConnection(socketChannelWrapper, address);

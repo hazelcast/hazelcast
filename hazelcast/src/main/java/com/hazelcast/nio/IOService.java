@@ -18,7 +18,6 @@ package com.hazelcast.nio;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.SSLConfig;
-import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
@@ -31,6 +30,7 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.annotation.PrivateApi;
 
+import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Collection;
@@ -51,8 +51,6 @@ public interface IOService {
     Address getThisAddress();
 
     void onFatalError(Exception e);
-
-    SocketInterceptorConfig getSocketInterceptorConfig();
 
     SymmetricEncryptionConfig getSymmetricEncryptionConfig();
 
@@ -101,6 +99,10 @@ public interface IOService {
     int getSocketClientSendBufferSize();
 
     void configureSocket(Socket socket) throws SocketException;
+
+    void interceptSocket(Socket socket, boolean onAccept) throws IOException;
+
+    boolean isSocketInterceptorEnabled();
 
     int getSocketConnectTimeoutSeconds();
 

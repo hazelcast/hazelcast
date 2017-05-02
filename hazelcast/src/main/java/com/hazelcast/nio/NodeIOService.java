@@ -40,6 +40,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 
+import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Collection;
@@ -102,7 +103,6 @@ public class NodeIOService implements IOService {
         thread.start();
     }
 
-    @Override
     public SocketInterceptorConfig getSocketInterceptorConfig() {
         return node.getConfig().getNetworkConfig().getSocketInterceptorConfig();
     }
@@ -237,6 +237,30 @@ public class NodeIOService implements IOService {
         socket.setTcpNoDelay(getSocketNoDelay());
         socket.setReceiveBufferSize(getSocketReceiveBufferSize() * KILO_BYTE);
         socket.setSendBufferSize(getSocketSendBufferSize() * KILO_BYTE);
+    }
+
+    @Override
+    public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
+        if (!isSocketInterceptorEnabled()) {
+            return;
+        }
+
+        MemberSocketInterceptor memberSocketInterceptor = getMemberSocketInterceptor();
+        if (memberSocketInterceptor == null) {
+            return;
+        }
+
+        if (onAccept) {
+            memberSocketInterceptor.onAccept(socket);
+        } else {
+            memberSocketInterceptor.onConnect(socket);
+        }
+    }
+
+    @Override
+    public boolean isSocketInterceptorEnabled() {
+        final SocketInterceptorConfig socketInterceptorConfig = getSocketInterceptorConfig();
+        return socketInterceptorConfig != null && socketInterceptorConfig.isEnabled();
     }
 
     private int getSocketLingerSeconds() {

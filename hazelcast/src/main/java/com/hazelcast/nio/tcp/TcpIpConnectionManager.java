@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
@@ -34,7 +33,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -43,7 +41,6 @@ import com.hazelcast.util.executor.StripedRunnable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
-import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
@@ -157,26 +154,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     public IOThreadingModel getIoThreadingModel() {
         return ioThreadingModel;
-    }
-
-    public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
-        if (!isSocketInterceptorEnabled()) {
-            return;
-        }
-        final MemberSocketInterceptor memberSocketInterceptor = ioService.getMemberSocketInterceptor();
-        if (memberSocketInterceptor == null) {
-            return;
-        }
-        if (onAccept) {
-            memberSocketInterceptor.onAccept(socket);
-        } else {
-            memberSocketInterceptor.onConnect(socket);
-        }
-    }
-
-    public boolean isSocketInterceptorEnabled() {
-        final SocketInterceptorConfig socketInterceptorConfig = ioService.getSocketInterceptorConfig();
-        return socketInterceptorConfig != null && socketInterceptorConfig.isEnabled();
     }
 
     // just for testing
