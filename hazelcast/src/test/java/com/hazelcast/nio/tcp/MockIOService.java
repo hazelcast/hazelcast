@@ -42,6 +42,7 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -104,11 +105,6 @@ public class MockIOService implements IOService {
 
     @Override
     public void onFatalError(Exception e) {
-    }
-
-    @Override
-    public SocketInterceptorConfig getSocketInterceptorConfig() {
-        return null;
     }
 
     @Override
@@ -201,6 +197,15 @@ public class MockIOService implements IOService {
 
     @Override
     public void configureSocket(Socket socket) throws SocketException {
+    }
+
+    @Override
+    public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
+    }
+
+    @Override
+    public boolean isSocketInterceptorEnabled() {
+        return false;
     }
 
     @Override

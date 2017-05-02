@@ -221,7 +221,7 @@ public class SocketAcceptorThread extends Thread {
         if (socketChannelWrapper != null) {
             final SocketChannelWrapper socketChannel = socketChannelWrapper;
             logger.info("Accepting socket connection from " + socketChannel.socket().getRemoteSocketAddress());
-            if (connectionManager.isSocketInterceptorEnabled()) {
+            if (ioService.isSocketInterceptorEnabled()) {
                 configureAndAssignSocket(socketChannel);
             } else {
                 ioService.executeAsync(new Runnable() {
@@ -237,7 +237,7 @@ public class SocketAcceptorThread extends Thread {
     private void configureAndAssignSocket(SocketChannelWrapper socketChannel) {
         try {
             ioService.configureSocket(socketChannel.socket());
-            connectionManager.interceptSocket(socketChannel.socket(), true);
+            ioService.interceptSocket(socketChannel.socket(), true);
             socketChannel.configureBlocking(connectionManager.getIoThreadingModel().isBlocking());
             connectionManager.newConnection(socketChannel, null);
         } catch (Exception e) {
