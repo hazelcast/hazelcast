@@ -40,6 +40,10 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Contains the logic for accepting TcpIpConnections.
+ *
+ * The {@link TcpIpAcceptor} and {@link TcpIpConnector} are 2 sides of the same coin. The {@link TcpIpConnector} take care
+ * of the 'client' side of a connection and the {@link TcpIpAcceptor} is the 'server' side of a connection (each connection
+ * has a client and server-side
  */
 public class TcpIpAcceptor extends Thread {
     private static final long SHUTDOWN_TIMEOUT_MILLIS = SECONDS.toMillis(10);
