@@ -38,7 +38,10 @@ import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class SocketAcceptorThread extends Thread {
+/**
+ * Contains the logic for accepting TcpIpConnections.
+ */
+public class TcpIpAcceptor extends Thread {
     private static final long SHUTDOWN_TIMEOUT_MILLIS = SECONDS.toMillis(10);
     private static final long SELECT_TIMEOUT_MILLIS = SECONDS.toMillis(60);
     private static final int SELECT_IDLE_COUNT_THRESHOLD = 10;
@@ -66,7 +69,7 @@ public class SocketAcceptorThread extends Thread {
     private volatile Selector selector;
     private SelectionKey selectionKey;
 
-    public SocketAcceptorThread(
+    public TcpIpAcceptor(
             String name,
             ServerSocketChannel serverSocketChannel,
             TcpIpConnectionManager connectionManager) {
@@ -78,7 +81,7 @@ public class SocketAcceptorThread extends Thread {
     }
 
     /**
-     * A probe that measure how long this {@link SocketAcceptorThread} has not received any events.
+     * A probe that measure how long this {@link TcpIpAcceptor} has not received any events.
      *
      * @return the idle time in ms.
      */
