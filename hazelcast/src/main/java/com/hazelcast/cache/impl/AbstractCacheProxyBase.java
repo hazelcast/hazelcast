@@ -19,7 +19,6 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.PrefixedDistributedObject;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -58,7 +57,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
  */
 abstract class AbstractCacheProxyBase<K, V>
         extends AbstractDistributedObject<ICacheService>
-        implements ICacheInternal<K, V>, PrefixedDistributedObject {
+        implements ICacheInternal<K, V> {
 
     private static final int TIMEOUT = 10;
 
