@@ -94,7 +94,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -111,7 +110,9 @@ import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
 import static java.lang.Math.min;
 
-abstract class MapProxySupport extends AbstractDistributedObject<MapService> implements InitializingObject {
+abstract class MapProxySupport<K, V>
+        extends AbstractDistributedObject<MapService>
+        implements IMap<K, V>, InitializingObject {
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
@@ -209,28 +210,20 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     @Override
+    public final String getName() {
+        return name;
+    }
+
+    @Override
+    public final String getServiceName() {
+        return SERVICE_NAME;
+    }
+
+    @Override
     public void initialize() {
         initializeListeners();
         initializeIndexes();
         initializeMapStoreLoad();
-    }
-
-    private void initializeMapStoreLoad() {
-        MapStoreConfig mapStoreConfig = getMapConfig().getMapStoreConfig();
-        if (mapStoreConfig != null && mapStoreConfig.isEnabled()) {
-            MapStoreConfig.InitialLoadMode initialLoadMode = mapStoreConfig.getInitialLoadMode();
-            if (MapStoreConfig.InitialLoadMode.EAGER.equals(initialLoadMode)) {
-                waitUntilLoaded();
-            }
-        }
-    }
-
-    private void initializeIndexes() {
-        for (MapIndexConfig index : getMapConfig().getMapIndexConfigs()) {
-            if (index.getAttribute() != null) {
-                addIndex(index.getAttribute(), index.isOrdered());
-            }
-        }
     }
 
     private void initializeListeners() {
@@ -292,8 +285,26 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return null;
     }
 
+    private void initializeIndexes() {
+        for (MapIndexConfig index : getMapConfig().getMapIndexConfigs()) {
+            if (index.getAttribute() != null) {
+                addIndex(index.getAttribute(), index.isOrdered());
+            }
+        }
+    }
+
+    private void initializeMapStoreLoad() {
+        MapStoreConfig mapStoreConfig = getMapConfig().getMapStoreConfig();
+        if (mapStoreConfig != null && mapStoreConfig.isEnabled()) {
+            MapStoreConfig.InitialLoadMode initialLoadMode = mapStoreConfig.getInitialLoadMode();
+            if (MapStoreConfig.InitialLoadMode.EAGER.equals(initialLoadMode)) {
+                waitUntilLoaded();
+            }
+        }
+    }
+
     protected Object getInternal(Data key) {
-        // todo action for read-backup true is not well tested.
+        // TODO: action for read-backup true is not well tested
         if (getMapConfig().isReadBackupData()) {
             Object fromBackup = readBackupDataOrNull(key);
             if (fromBackup != null) {
@@ -423,8 +434,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return (Data) invokeOperation(key, operation);
     }
 
-    //warning: When UpdateEvent is fired it does *NOT* contain oldValue.
-    //see this: https://github.com/hazelcast/hazelcast/pull/6088#issuecomment-136025968
+    // WARNING: when UpdateEvent is fired it does *NOT* contain the oldValue
+    // see this: https://github.com/hazelcast/hazelcast/pull/6088#issuecomment-136025968
     protected void setInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
         MapOperation operation = operationProvider.createSetOperation(name, key, value, timeunit.toMillis(ttl));
         invokeOperation(key, operation);
@@ -492,8 +503,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         waitUntilLoaded();
     }
 
-    protected <K> Iterable<Data> convertToData(Iterable<K> keys) {
-        return IterableUtil.map(nullToEmpty(keys), new KeyToData<K>());
+    protected Iterable<Data> convertToData(Iterable<K> keys) {
+        return IterableUtil.map(nullToEmpty(keys), new KeyToData());
     }
 
     private Operation createLoadAllOperation(List<Data> keys, boolean replaceExistingValues) {
@@ -565,7 +576,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         try {
             int mapNamePartition = partitionService.getPartitionId(name);
             // first we have to check if key-load finished - otherwise the loading on other partitions might not have started.
-            // In this case we can't invoke IsPartitionLoadedOperation -> they will return "true", but it won't be correct.
+            // In this case we can't invoke IsPartitionLoadedOperation -> they will return "true", but it won't be correct
 
             int sleepDurationMillis = INITIAL_WAIT_LOAD_SLEEP_MILLIS;
             while (true) {
@@ -621,6 +632,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
+    @Override
     public int size() {
         try {
             OperationFactory sizeOperationFactory = operationProvider.createMapSizeOperationFactory(name);
@@ -652,6 +664,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
+    @Override
     public boolean isEmpty() {
         try {
             // TODO: we don't need to wait for all futures to complete, we can stop on the first returned false
@@ -866,8 +879,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         localMapStats.incrementPuts(size, System.currentTimeMillis() - time);
     }
 
-    // TODO: add a feature to mancenter to sync cache to db completely
+    @Override
     public void flush() {
+        // TODO: add a feature to mancenter to sync cache to db completely
         try {
             MapOperation mapFlushOperation = operationProvider.createMapFlushOperation(name);
             BinaryOperationFactory operationFactory = new BinaryOperationFactory(mapFlushOperation, getNodeEngine());
@@ -886,7 +900,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             for (Future future : futures) {
                 future.get();
             }
-
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -1089,6 +1102,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return serializationService.toData(object, partitioningStrategy);
     }
 
+    @Override
     public void addIndex(String attribute, boolean ordered) {
         validateIndexAttribute(attribute);
         try {
@@ -1099,6 +1113,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
+    @Override
     public LocalMapStats getLocalMapStats() {
         if (!mapConfig.isStatisticsEnabled()) {
             return EMPTY_LOCAL_MAP_STATS;
@@ -1130,16 +1145,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected MapConfig getMapConfig() {
         return mapConfig;
-    }
-
-    @Override
-    public final String getName() {
-        return name;
-    }
-
-    @Override
-    public final String getServiceName() {
-        return SERVICE_NAME;
     }
 
     public PartitioningStrategy getPartitionStrategy() {
@@ -1198,7 +1203,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     @SerializableByConvention
-    private class KeyToData<K> implements IFunction<K, Data> {
+    private class KeyToData implements IFunction<K, Data> {
+
+        @Override
         public Data apply(K key) {
             return toData(key);
         }
