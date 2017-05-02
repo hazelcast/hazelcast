@@ -21,6 +21,8 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.internal.ascii.HTTPCommunicator;
+import com.hazelcast.internal.networking.IOThreadingModel;
+import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThreadingModel;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
@@ -38,6 +40,8 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.net.Socket;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
@@ -62,14 +66,14 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
         for (int i = 0; i < 100; i++) {
             communicator.getClusterInfo();
         }
-        final IOBalancer ioBalancer = connectionManager.getIoBalancer();
+        final IOBalancer ioBalancer = getIoBalancer(connectionManager);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 int inHandlerSize = ioBalancer.getInLoadTracker().getHandlers().size();
                 int outHandlerSize = ioBalancer.getOutLoadTracker().getHandlers().size();
-                Assert.assertEquals(0, inHandlerSize);
-                Assert.assertEquals(0, outHandlerSize);
+                assertEquals(0, inHandlerSize);
+                assertEquals(0, outHandlerSize);
             }
         });
     }
@@ -87,7 +91,7 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
         Runnable runnable = new Runnable() {
             public void run() {
                 for (int i = 0; i < connectionCountPerThread; i++) {
-                    Socket socket = null;
+                    Socket socket;
                     try {
                         socket = new Socket(address.getHost(), address.getPort());
                         socket.getOutputStream().write(Protocols.CLUSTER.getBytes());
@@ -109,7 +113,7 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
         assertJoinable(threads);
 
         TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) getConnectionManager(instance);
-        final IOBalancer ioBalancer = connectionManager.getIoBalancer();
+        final IOBalancer ioBalancer = getIoBalancer(connectionManager);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -121,13 +125,18 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
                 int outHandlerEventsCount = outLoadTracker.getHandlerEventsCounter().keySet().size();
                 int inLastEventsCount = inLoadTracker.getLastEventCounter().keySet().size();
                 int outLastEventsCount = outLoadTracker.getLastEventCounter().keySet().size();
-                Assert.assertEquals(0, inHandlerSize);
-                Assert.assertEquals(0, outHandlerSize);
-                Assert.assertEquals(0, inHandlerEventsCount);
-                Assert.assertEquals(0, outHandlerEventsCount);
-                Assert.assertEquals(0, inLastEventsCount);
-                Assert.assertEquals(0, outLastEventsCount);
+                assertEquals(0, inHandlerSize);
+                assertEquals(0, outHandlerSize);
+                assertEquals(0, inHandlerEventsCount);
+                assertEquals(0, outHandlerEventsCount);
+                assertEquals(0, inLastEventsCount);
+                assertEquals(0, outLastEventsCount);
             }
         });
+    }
+
+    private static IOBalancer getIoBalancer(TcpIpConnectionManager connectionManager) {
+        NonBlockingIOThreadingModel threadingModel = (NonBlockingIOThreadingModel)connectionManager.getIoThreadingModel();
+        return threadingModel.getIOBalancer();
     }
 }

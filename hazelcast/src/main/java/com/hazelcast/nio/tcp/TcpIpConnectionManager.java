@@ -23,8 +23,6 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.IOThreadingModel;
 import com.hazelcast.internal.networking.SocketChannelWrapper;
 import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
-import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThreadingModel;
-import com.hazelcast.internal.networking.nonblocking.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
@@ -182,14 +180,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     // just for testing
     public Set<TcpIpConnection> getActiveConnections() {
         return activeConnections;
-    }
-
-    // just for testing
-    public IOBalancer getIoBalancer() {
-        if (ioThreadingModel instanceof NonBlockingIOThreadingModel) {
-            return ((NonBlockingIOThreadingModel) ioThreadingModel).getIOBalancer();
-        }
-        return null;
     }
 
     @Override
