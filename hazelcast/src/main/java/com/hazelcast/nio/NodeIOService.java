@@ -40,6 +40,8 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 
+import java.net.Socket;
+import java.net.SocketException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -227,7 +229,17 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public int getSocketLingerSeconds() {
+    public void configureSocket(Socket socket) throws SocketException {
+        if (getSocketLingerSeconds() > 0) {
+            socket.setSoLinger(true, getSocketLingerSeconds());
+        }
+        socket.setKeepAlive(getSocketKeepAlive());
+        socket.setTcpNoDelay(getSocketNoDelay());
+        socket.setReceiveBufferSize(getSocketReceiveBufferSize() * KILO_BYTE);
+        socket.setSendBufferSize(getSocketSendBufferSize() * KILO_BYTE);
+    }
+
+    private int getSocketLingerSeconds() {
         return node.getProperties().getSeconds(GroupProperty.SOCKET_LINGER_SECONDS);
     }
 
@@ -236,13 +248,11 @@ public class NodeIOService implements IOService {
         return node.getProperties().getSeconds(GroupProperty.SOCKET_CONNECT_TIMEOUT_SECONDS);
     }
 
-    @Override
-    public boolean getSocketKeepAlive() {
+    private boolean getSocketKeepAlive() {
         return node.getProperties().getBoolean(GroupProperty.SOCKET_KEEP_ALIVE);
     }
 
-    @Override
-    public boolean getSocketNoDelay() {
+    private boolean getSocketNoDelay() {
         return node.getProperties().getBoolean(GroupProperty.SOCKET_NO_DELAY);
     }
 

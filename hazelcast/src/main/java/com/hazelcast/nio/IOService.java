@@ -31,6 +31,8 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.annotation.PrivateApi;
 
+import java.net.Socket;
+import java.net.SocketException;
 import java.util.Collection;
 
 @PrivateApi
@@ -98,13 +100,9 @@ public interface IOService {
      */
     int getSocketClientSendBufferSize();
 
-    int getSocketLingerSeconds();
+    void configureSocket(Socket socket) throws SocketException;
 
     int getSocketConnectTimeoutSeconds();
-
-    boolean getSocketKeepAlive();
-
-    boolean getSocketNoDelay();
 
     int getInputSelectorThreadCount();
 

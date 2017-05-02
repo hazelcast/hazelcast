@@ -44,6 +44,8 @@ import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Collection;
 import java.util.Collections;
@@ -198,23 +200,12 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public int getSocketLingerSeconds() {
-        return 0;
+    public void configureSocket(Socket socket) throws SocketException {
     }
 
     @Override
     public int getSocketConnectTimeoutSeconds() {
         return 0;
-    }
-
-    @Override
-    public boolean getSocketKeepAlive() {
-        return true;
-    }
-
-    @Override
-    public boolean getSocketNoDelay() {
-        return true;
     }
 
     @Override
