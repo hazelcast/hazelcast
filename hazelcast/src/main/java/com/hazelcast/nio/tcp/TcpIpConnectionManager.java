@@ -41,9 +41,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -112,11 +110,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
 
-    private final int outboundPortCount;
-
-    // accessed only in synchronized block
-    private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
-
     // accessed only in synchronized block
     private volatile SocketAcceptorThread acceptorThread;
 
@@ -128,6 +121,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     private final ScheduledExecutorService scheduler
             = new ScheduledThreadPoolExecutor(4, new ThreadFactoryImpl("TcpIpConnectionManager-thread-"));
 
+    private TcpIpConnector tcpIpConnector;
+
     public TcpIpConnectionManager(IOService ioService,
                                   ServerSocketChannel serverSocketChannel,
                                   LoggingService loggingService,
@@ -138,11 +133,9 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         this.serverSocketChannel = serverSocketChannel;
         this.loggingService = loggingService;
         this.logger = loggingService.getLogger(TcpIpConnectionManager.class);
-        final Collection<Integer> ports = ioService.getOutboundPorts();
-        this.outboundPortCount = ports.size();
-        this.outboundPorts.addAll(ports);
         this.socketChannelWrapperFactory = ioService.getSocketChannelWrapperFactory();
         this.metricsRegistry = metricsRegistry;
+        this.tcpIpConnector = new TcpIpConnector(this);
         metricsRegistry.scanAndRegister(this, "tcp.connection");
     }
 
@@ -357,8 +350,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         Connection connection = connectionsMap.get(address);
         if (connection == null && live) {
             if (connectionsInProgress.add(address)) {
-                ioService.shouldConnectTo(address);
-                ioService.executeAsync(new InitConnectionTask(this, address, silent));
+                tcpIpConnector.asyncConnect(address, silent);
             }
         }
         return connection;
@@ -528,24 +520,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         return live;
     }
 
-    boolean useAnyOutboundPort() {
-        return outboundPortCount == 0;
-    }
-
-    int getOutboundPortCount() {
-        return outboundPortCount;
-    }
-
-    int acquireOutboundPort() {
-        if (useAnyOutboundPort()) {
-            return 0;
-        }
-        synchronized (outboundPorts) {
-            final Integer port = outboundPorts.removeFirst();
-            outboundPorts.addLast(port);
-            return port;
-        }
-    }
 
     @Override
     public boolean transmit(Packet packet, Connection connection) {
