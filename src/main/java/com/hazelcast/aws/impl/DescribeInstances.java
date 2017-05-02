@@ -244,6 +244,8 @@ public class DescribeInstances {
             } else {
                 filter.addFilter("tag-key", awsConfig.getTagKey());
             }
+        } else if (!isNullOrEmpty(awsConfig.getTagValue())) {
+            filter.addFilter("tag-value", awsConfig.getTagValue());
         }
 
         if (!isNullOrEmpty(awsConfig.getSecurityGroupName())) {
