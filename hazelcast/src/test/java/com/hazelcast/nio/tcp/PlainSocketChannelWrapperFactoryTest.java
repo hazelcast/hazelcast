@@ -32,13 +32,13 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class DefaultSocketChannelWrapperFactoryTest extends HazelcastTestSupport {
+public class PlainSocketChannelWrapperFactoryTest extends HazelcastTestSupport {
 
-    private DefaultSocketChannelWrapperFactory factory;
+    private PlainSocketChannelWrapperFactory factory;
 
     @Before
     public void setup() {
-        factory = new DefaultSocketChannelWrapperFactory();
+        factory = new PlainSocketChannelWrapperFactory();
     }
 
     @Test
@@ -46,12 +46,6 @@ public class DefaultSocketChannelWrapperFactoryTest extends HazelcastTestSupport
         SocketChannel socketChannel = mock(SocketChannel.class);
         SocketChannelWrapper wrapper = factory.wrapSocketChannel(socketChannel, false);
 
-        assertInstanceOf(DefaultSocketChannelWrapper.class, wrapper);
-    }
-
-    @Test
-    public void isSSlEnabled() {
-        boolean result = factory.isSSlEnabled();
-        assertFalse(result);
+        assertInstanceOf(PlainSocketChannelWrapper.class, wrapper);
     }
 }

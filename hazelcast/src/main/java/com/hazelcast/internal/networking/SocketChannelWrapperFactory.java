@@ -24,6 +24,4 @@ import java.nio.channels.SocketChannel;
 public interface SocketChannelWrapperFactory {
 
     SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception;
-
-    boolean isSSlEnabled();
 }

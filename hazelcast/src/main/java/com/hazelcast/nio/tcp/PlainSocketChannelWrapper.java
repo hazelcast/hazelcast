@@ -28,11 +28,11 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
-public class DefaultSocketChannelWrapper implements SocketChannelWrapper {
+public class PlainSocketChannelWrapper implements SocketChannelWrapper {
 
     protected final SocketChannel socketChannel;
 
-    public DefaultSocketChannelWrapper(SocketChannel socketChannel) {
+    public PlainSocketChannelWrapper(SocketChannel socketChannel) {
         this.socketChannel = socketChannel;
     }
 
@@ -101,6 +101,6 @@ public class DefaultSocketChannelWrapper implements SocketChannelWrapper {
 
     @Override
     public String toString() {
-        return "DefaultSocketChannelWrapper{socketChannel=" + socketChannel + '}';
+        return "PlainSocketChannelWrapper{socketChannel=" + socketChannel + '}';
     }
 }

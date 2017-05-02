@@ -352,7 +352,7 @@ public class MockIOService implements IOService {
 
     @Override
     public SocketChannelWrapperFactory getSocketChannelWrapperFactory() {
-        return new DefaultSocketChannelWrapperFactory();
+        return new PlainSocketChannelWrapperFactory();
     }
 
     @Override

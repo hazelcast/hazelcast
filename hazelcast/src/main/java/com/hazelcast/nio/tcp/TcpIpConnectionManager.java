@@ -206,10 +206,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         return connectionsMap.size();
     }
 
-    public boolean isSSLEnabled() {
-        return socketChannelWrapperFactory.isSSlEnabled();
-    }
-
     public void incrementTextConnections() {
         allTextConnections.incrementAndGet();
     }
