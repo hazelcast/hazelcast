@@ -236,7 +236,7 @@ public class SocketAcceptorThread extends Thread {
 
     private void configureAndAssignSocket(SocketChannelWrapper socketChannel) {
         try {
-            connectionManager.initSocket(socketChannel.socket());
+            ioService.configureSocket(socketChannel.socket());
             connectionManager.interceptSocket(socketChannel.socket(), true);
             socketChannel.configureBlocking(connectionManager.getIoThreadingModel().isBlocking());
             connectionManager.newConnection(socketChannel, null);

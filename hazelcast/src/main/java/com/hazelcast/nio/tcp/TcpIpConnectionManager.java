@@ -59,7 +59,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
-import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
@@ -447,16 +446,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
                 }
             });
         }
-    }
-
-    protected void initSocket(Socket socket) throws Exception {
-        if (ioService.getSocketLingerSeconds() > 0) {
-            socket.setSoLinger(true, ioService.getSocketLingerSeconds());
-        }
-        socket.setKeepAlive(ioService.getSocketKeepAlive());
-        socket.setTcpNoDelay(ioService.getSocketNoDelay());
-        socket.setReceiveBufferSize(ioService.getSocketReceiveBufferSize() * KILO_BYTE);
-        socket.setSendBufferSize(ioService.getSocketSendBufferSize() * KILO_BYTE);
     }
 
     @Override
