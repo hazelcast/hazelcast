@@ -285,14 +285,14 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         return false;
     }
 
-    void sendBindRequest(TcpIpConnection connection, Address remoteEndPoint, boolean replyBack) {
+    void sendBindRequest(TcpIpConnection connection, Address remoteEndPoint, boolean reply) {
         connection.setEndPoint(remoteEndPoint);
         ioService.onSuccessfulConnection(remoteEndPoint);
         //make sure bind packet is the first packet sent to the end point.
         if (logger.isFinestEnabled()) {
             logger.finest("Sending bind packet to " + remoteEndPoint);
         }
-        BindMessage bind = new BindMessage(ioService.getThisAddress(), remoteEndPoint, replyBack);
+        BindMessage bind = new BindMessage(ioService.getThisAddress(), remoteEndPoint, reply);
         byte[] bytes = ioService.getSerializationService().toBytes(bind);
         Packet packet = new Packet(bytes).setPacketType(Packet.Type.BIND);
         connection.write(packet);
