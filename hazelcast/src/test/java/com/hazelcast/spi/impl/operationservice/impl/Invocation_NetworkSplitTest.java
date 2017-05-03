@@ -224,10 +224,10 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
         @Override
         public void run(final Node node1, final Node node2, final Node node3) {
             // Artificially create a network-split
-            node1.clusterService.suspectMember(node3.getLocalMember(), null, true);
+            suspectMember(node1, node3);
 
-            node3.clusterService.suspectMember(node1.getLocalMember(), null, true);
-            node3.clusterService.suspectMember(node2.getLocalMember(), null, true);
+            suspectMember(node3, node1);
+            suspectMember(node3, node2);
 
             assertTrueEventually(new AssertTask() {
                 @Override
@@ -247,8 +247,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
             // Artificially create a partial network-split;
             // node1 and node2 will be split from node3
             // but node 3 will not be able to detect that.
-            node1.clusterService.suspectMember(node3.getLocalMember(), null, true);
-
+            suspectMember(node1, node3);
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() throws Exception {

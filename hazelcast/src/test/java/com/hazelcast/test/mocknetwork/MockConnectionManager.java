@@ -19,7 +19,6 @@ package com.hazelcast.test.mocknetwork;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -38,6 +37,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.test.HazelcastTestSupport.suspectMember;
+
 
 public class MockConnectionManager implements ConnectionManager {
 
@@ -147,8 +149,7 @@ public class MockConnectionManager implements ConnectionManager {
             if (otherNode != null && otherNode.getState() != NodeState.SHUT_DOWN) {
                 logger.fine(otherNode.getThisAddress() + " is instructed to suspect from " + thisAddress);
                 try {
-                    ClusterServiceImpl clusterService = otherNode.getClusterService();
-                    clusterService.suspectMember(localMember, "Connection manager is stopped on " + localMember, true);
+                    suspectMember(otherNode, node, "Connection manager is stopped on " + localMember);
                 } catch (Throwable e) {
                     ILogger otherLogger = otherNode.getLogger(MockConnectionManager.class);
                     otherLogger.warning("While removing " + thisAddress, e);

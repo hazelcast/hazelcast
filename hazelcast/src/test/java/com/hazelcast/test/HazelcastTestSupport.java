@@ -504,10 +504,21 @@ public abstract class HazelcastTestSupport {
         }
         Node n1 = TestUtil.getNode(h1);
         Node n2 = TestUtil.getNode(h2);
-        if (n1 != null && n2 != null) {
-            n1.clusterService.suspectMember(n2.getLocalMember(), null, true);
-            n2.clusterService.suspectMember(n1.getLocalMember(), null, true);
+        suspectMember(n1, n2);
+        suspectMember(n2, n1);
+    }
+
+    public static void suspectMember(Node suspectingNode, Node suspectedNode, String reason) {
+        if (suspectingNode != null && suspectedNode != null) {
+            Member suspectedMember = suspectingNode.getClusterService().getMember(suspectedNode.getLocalMember().getAddress());
+            if (suspectedMember != null) {
+                suspectingNode.clusterService.suspectMember(suspectedMember, reason, true);
+            }
         }
+    }
+
+    public static void suspectMember(Node suspectingNode, Node suspectedNode) {
+        suspectMember(suspectingNode, suspectedNode, null);
     }
 
     private static void checkMemberCount(boolean generateOwnedKey, Cluster cluster) {

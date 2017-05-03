@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.core.Member;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -833,9 +832,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
     }
 
     static void suspectMember(HazelcastInstance suspectingInstance, HazelcastInstance suspectedInstance) {
-        ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(suspectingInstance);
-        Member suspectedMember = suspectedInstance.getCluster().getLocalMember();
-        clusterService.suspectMember(suspectedMember, "test", false);
+        suspectMember(getNode(suspectingInstance), getNode(suspectedInstance));
     }
 
 }
