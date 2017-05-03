@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.AbstractInvocationFuture;
-import com.hazelcast.internal.sequence.CallIdSequence;
+import com.hazelcast.spi.impl.sequence.CallIdSequence;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;

@@ -33,7 +33,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.internal.sequence.CallIdSequence;
+import com.hazelcast.spi.impl.sequence.CallIdSequence;
 
 import java.io.IOException;
 import java.util.concurrent.Executor;

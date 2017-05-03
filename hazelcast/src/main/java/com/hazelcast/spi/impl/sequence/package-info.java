@@ -18,4 +18,4 @@
  * Call ID sequence generators
  *
  */
-package com.hazelcast.internal.sequence;
+package com.hazelcast.spi.impl.sequence;

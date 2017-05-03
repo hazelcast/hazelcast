@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.sequence;
+package com.hazelcast.spi.impl.sequence;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
