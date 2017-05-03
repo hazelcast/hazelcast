@@ -49,6 +49,7 @@
         <maven.sonar.plugin.version>2.6</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.7.4.201502262128</maven.jacoco.plugin.version>
         <jsr107.api.version>1.0.0</jsr107.api.version>
+        <bytebuddy.version>1.6.12</bytebuddy.version>
     </properties>
     <licenses>
         <license>
@@ -258,6 +259,18 @@
             <version>${log4j.version}</version>
             <scope>test</scope>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+            <version>${bytebuddy.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy-agent</artifactId>
+            <version>${bytebuddy.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <profiles>
