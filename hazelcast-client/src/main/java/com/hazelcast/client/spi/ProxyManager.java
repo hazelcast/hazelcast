@@ -87,7 +87,6 @@ import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -101,6 +100,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ServiceLoader.classIterator;
 
 /**
@@ -203,7 +203,7 @@ public final class ProxyManager {
                 }
                 register(proxyFactoryConfig.getService(), clientProxyFactory);
             } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
+                throw rethrow(e);
             }
         }
 
@@ -227,7 +227,7 @@ public final class ProxyManager {
                 }
             }
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -292,7 +292,7 @@ public final class ProxyManager {
         } catch (Throwable e) {
             proxies.remove(ns);
             proxyFuture.set(e);
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
         proxyFuture.set(clientProxy);
         return clientProxy;
@@ -453,7 +453,7 @@ public final class ProxyManager {
                 }
             }
             if (proxy instanceof Throwable) {
-                throw ExceptionUtil.rethrow((Throwable) proxy);
+                throw rethrow((Throwable) proxy);
             }
             return (ClientProxy) proxy;
         }
@@ -475,7 +475,7 @@ public final class ProxyManager {
             return constructor.newInstance(serviceName, id);
 
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 }
