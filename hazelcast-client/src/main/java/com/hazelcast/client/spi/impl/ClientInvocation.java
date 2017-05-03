@@ -122,7 +122,7 @@ public class ClientInvocation implements Runnable {
         try {
             clientMessage.setCorrelationId(callIdSequence.next());
         } catch (TimeoutException e) {
-            throw new HazelcastOverloadException("Timed out trying to acquire another call ID.");
+            throw new HazelcastOverloadException("Timed out trying to acquire another call ID.", e);
         }
         invokeOnSelection();
         return clientInvocationFuture;
