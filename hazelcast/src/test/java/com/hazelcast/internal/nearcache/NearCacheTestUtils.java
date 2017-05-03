@@ -31,6 +31,7 @@ import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -319,7 +320,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     public static void assertNearCacheStats(NearCacheTestContext<?, ?, ?, ?> context,
                                             long expectedOwnedEntryCount, long expectedHits, long expectedMisses,
                                             long expectedEvictions, long expectedExpirations) {
-        NearCacheStats stats = context.stats;
+        NearCacheStats stats = new NearCacheStatsImpl(context.stats);
 
         assertEqualsFormat("Near Cache entry count should be %d, but was %d (%s)",
                 expectedOwnedEntryCount, stats.getOwnedEntryCount(), stats);

@@ -78,6 +78,13 @@ public class NearCacheStatsImplTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testCopyConstructor() {
+        NearCacheStatsImpl copy = new NearCacheStatsImpl(nearCacheStats);
+
+        assertNearCacheStats(copy, 1, 200, 300, 400, false);
+    }
+
+    @Test
     public void testSerialization() {
         NearCacheStatsImpl deserialized = serializeAndDeserializeNearCacheStats(nearCacheStats);
 
