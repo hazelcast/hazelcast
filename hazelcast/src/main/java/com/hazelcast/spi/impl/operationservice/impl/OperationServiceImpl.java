@@ -260,7 +260,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
-        checkNotNegative(partitionId, "Partition id cannot be negative!");
+        checkNotNegative(partitionId, "Partition ID cannot be negative!");
         return new InvocationBuilderImpl(invocationContext, serviceName, op, partitionId);
     }
 

@@ -37,7 +37,7 @@ public interface JobProcessInformation {
      * and the processing owner of this partition.<br/>
      * The index of the {@link com.hazelcast.mapreduce.JobPartitionState} inside of the
      * array is the number of the processed partition if the {@link com.hazelcast.mapreduce.KeyValueSource}
-     * is {@link com.hazelcast.mapreduce.PartitionIdAware} or a randomly assigned id for
+     * is {@link com.hazelcast.mapreduce.PartitionIdAware} or a randomly assigned ID for
      * the different members of the cluster.
      *
      * @return partition state array with actual state information

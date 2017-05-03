@@ -43,7 +43,7 @@ public class PostJoinOp
     public PostJoinOp(final Operation... ops) {
         for (Operation op : ops) {
             checkNotNull(op, "op can't be null");
-            checkNegative(op.getPartitionId(), "Post join operation can not have a partition-id!");
+            checkNegative(op.getPartitionId(), "Post join operation can not have a partition ID!");
         }
         // we may need to do array copy!
         operations = ops;

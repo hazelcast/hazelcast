@@ -58,17 +58,17 @@ public class MapPortableHook implements PortableHook {
     private static class MapPortableFactory implements PortableFactory {
 
         /**
-         * Creates a Portable instance using given class id.
+         * Creates a Portable instance using given class ID.
          *
-         * @param classId portable class id
-         * @return portable instance or null if class id is not known by this factory
+         * @param classId portable class ID
+         * @return portable instance or null if class ID is not known by this factory
          */
         @Override
         public Portable create(int classId) {
             if (classId == CREATE_ACCUMULATOR_INFO) {
                 return new AccumulatorInfo();
             }
-            throw new IndexOutOfBoundsException("No registered constructor exists with class id: " + classId);
+            throw new IndexOutOfBoundsException("No registered constructor exists with class ID: " + classId);
         }
     }
 }

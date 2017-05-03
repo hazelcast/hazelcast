@@ -29,8 +29,8 @@ import java.util.Map;
 /**
  * Abstract map data store contains common functionality of map data stores.
  *
- * @param <K> key type for map data store.
- * @param <V> value type for map data store.
+ * @param <K> key type for map data store
+ * @param <V> value type for map data store
  */
 public abstract class AbstractMapDataStore<K, V> implements MapDataStore<K, V> {
 

@@ -28,46 +28,46 @@ import java.util.Set;
 /**
  * Hazelcast cluster interface. It provides access to the members in the cluster and one can register for changes in the
  * cluster members.
- * <p/>
+ * <p>
  * All the methods on the Cluster are thread-safe.
  */
 public interface Cluster {
 
     /**
      * Adds MembershipListener to listen for membership updates.
-     * <p/>
-     * The addMembershipListener method returns a register-id. This id is needed to remove the MembershipListener using the
+     * <p>
+     * The addMembershipListener method returns a register ID. This ID is needed to remove the MembershipListener using the
      * {@link #removeMembershipListener(String)} method.
-     * <p/>
+     * <p>
      * If the MembershipListener implements the {@link InitialMembershipListener} interface, it will also receive
      * the {@link InitialMembershipEvent}.
-     * <p/>
+     * <p>
      * There is no check for duplicate registrations, so if you register the listener twice, it will get events twice.
      *
      * @param listener membership listener
-     * @return the registration id.
-     * @throws java.lang.NullPointerException if listener is null.
+     * @return the registration ID
+     * @throws java.lang.NullPointerException if listener is null
      * @see #removeMembershipListener(String)
      */
     String addMembershipListener(MembershipListener listener);
 
     /**
      * Removes the specified MembershipListener.
-     * <p/>
+     * <p>
      * If the same MembershipListener is registered multiple times, it needs to be removed multiple times.
      *
-     * This method can safely be called multiple times for the same registration-id; subsequent calls are ignored.
+     * This method can safely be called multiple times for the same registration ID; subsequent calls are ignored.
      *
-     * @param registrationId the registrationId of MembershipListener to remove.
-     * @return true if the registration is removed, false otherwise.
-     * @throws java.lang.NullPointerException if the registration id is null.
+     * @param registrationId the registrationId of MembershipListener to remove
+     * @return true if the registration is removed, false otherwise
+     * @throws java.lang.NullPointerException if the registration ID is null
      * @see #addMembershipListener(MembershipListener)
      */
     boolean removeMembershipListener(String registrationId);
 
     /**
      * Set of the current members in the cluster. The returned set is an immutable set; it can't be modified.
-     * <p/>
+     * <p>
      * The returned set is backed by an ordered set. Every member in the cluster returns the 'members' in the same order.
      * To obtain the oldest member (the master) in the cluster, you can retrieve the first item in the set using
      * 'getMembers().iterator().next()'.
@@ -94,16 +94,15 @@ public interface Cluster {
      * reflects the promotion.
      *
      * @throws IllegalStateException when member is not a lite member or mastership claim in progress
-     *                              or local member cannot be identified as a member of the cluster
-     *                              or cluster state doesn't allow migrations/repartitioning
-     *
+     *                               or local member cannot be identified as a member of the cluster
+     *                               or cluster state doesn't allow migrations/repartitioning
      * @since 3.9
      */
     void promoteLocalLiteMember();
 
     /**
      * Returns the cluster-wide time in milliseconds.
-     * <p/>
+     * <p>
      * Cluster tries to keep a cluster-wide time which might be different than the member's own system time.
      * Cluster-wide time is -almost- the same on all members of the cluster.
      *
@@ -113,9 +112,9 @@ public interface Cluster {
 
     /**
      * Returns the state of the cluster.
-     * <p/>
+     * <p>
      * If cluster state change is in process, {@link ClusterState#IN_TRANSITION} will be returned.
-     * <p/>
+     * <p>
      * This is a local operation, state will be read directly from local member.
      *
      * @return state of the cluster
@@ -127,20 +126,20 @@ public interface Cluster {
      * Changes state of the cluster to the given state transactionally. Transaction will be
      * {@code TWO_PHASE} and will have 1 durability by default. If you want to override
      * transaction options, use {@link #changeClusterState(ClusterState, TransactionOptions)}.
-     * <p/>
+     * <p>
      * If the given state is already same as
      * current state of the cluster, then this method will have no effect.
-     * <p/>
+     * <p>
      * If there's an ongoing state change transaction in the cluster, this method will fail
      * immediately with a {@code TransactionException}.
-     * <p/>
+     * <p>
      * If a membership change occurs in the cluster during state change, a new member joins or
      * an existing member leaves, then this method will fail with an {@code IllegalStateException}.
-     * <p/>
+     * <p>
      * If there are ongoing/pending migration/replication operations, because of re-balancing due to
      * member join or leave, then trying to change from {@code ACTIVE} to {@code FROZEN}
      * or {@code PASSIVE} will fail with an {@code IllegalStateException}.
-     * <p/>
+     * <p>
      * If transaction timeouts during state change, then this method will fail with a {@code TransactionException}.
      *
      * @param newState new state of the cluster
@@ -158,20 +157,20 @@ public interface Cluster {
     /**
      * Changes state of the cluster to the given state transactionally. Transaction must be a
      * {@code TWO_PHASE} transaction.
-     * <p/>
+     * <p>
      * If the given state is already same as
      * current state of the cluster, then this method will have no effect.
-     * <p/>
+     * <p>
      * If there's an ongoing state change transaction in the cluster, this method will fail
      * immediately with a {@code TransactionException}.
-     * <p/>
+     * <p>
      * If a membership change occurs in the cluster during state change, a new member joins or
      * an existing member leaves, then this method will fail with an {@code IllegalStateException}.
-     * <p/>
+     * <p>
      * If there are ongoing/pending migration/replication operations, because of re-balancing due to
      * member join or leave, then trying to change from {@code ACTIVE} to {@code FROZEN}
      * or {@code PASSIVE} will fail with an {@code IllegalStateException}.
-     * <p/>
+     * <p>
      * If transaction timeouts during state change, then this method will fail with a {@code TransactionException}.
      *
      * @param newState           new state of the cluster
@@ -224,10 +223,10 @@ public interface Cluster {
      * then triggers the shutdown process on each node. Transaction will be {@code TWO_PHASE}
      * and will have 1 durability by default. If you want to override transaction options,
      * use {@link #shutdown(TransactionOptions)}.
-     * <p/>
+     * <p>
      * If the cluster is already in {@link ClusterState#PASSIVE}, shutdown process begins immediately.
      * All the node join / leave rules described in {@link ClusterState#PASSIVE} state also applies here.
-     * <p/>
+     * <p>
      * Any node can start the shutdown process. A shutdown command is sent to other nodes periodically until
      * either all other nodes leave the cluster or a configurable timeout occurs. If some of the nodes do not
      * shutdown before the timeout duration, shutdown can be also invoked on them.
@@ -247,10 +246,10 @@ public interface Cluster {
     /**
      * Changes state of the cluster to the {@link ClusterState#PASSIVE} transactionally, then
      * triggers the shutdown process on each node. Transaction must be a {@code TWO_PHASE} transaction.
-     * <p/>
+     * <p>
      * If the cluster is already in {@link ClusterState#PASSIVE}, shutdown process begins immediately.
      * All the node join / leave rules described in {@link ClusterState#PASSIVE} state also applies here.
-     * <p/>
+     * <p>
      * Any node can start the shutdown process. A shutdown command is sent to other nodes periodically until
      * either all other nodes leave the cluster or a configurable timeout occurs. If some of the nodes do not
      * shutdown before the timeout duration, shutdown can be also invoked on them.
@@ -272,19 +271,19 @@ public interface Cluster {
      * Changes the cluster version transactionally. Internally this method uses the same transaction infrastructure as
      * {@link #changeClusterState(ClusterState)} and the transaction defaults are the same in this case as well
      * ({@code TWO_PHASE} transaction with durability 1 by default).
-     * <p/>
+     * <p>
      * If the requested cluster version is same as the current one, nothing happens.
-     * <p/>
+     * <p>
      * If a member of the cluster is not compatible with the given cluster {@code version}, as implemented by
      * {@link com.hazelcast.instance.NodeExtension#isNodeVersionCompatibleWith(Version)}, then a
      * {@link com.hazelcast.internal.cluster.impl.VersionMismatchException} is thrown.
-     * <p/>
+     * <p>
      * If an invalid version transition is requested, for example changing to a different major version, an
      * {@link IllegalArgumentException} is thrown.
-     * <p/>
+     * <p>
      * If a membership change occurs in the cluster during locking phase, a new member joins or
      * an existing member leaves, then this method will fail with an {@code IllegalStateException}.
-     * <p/>
+     * <p>
      * Likewise, once locking phase is completed successfully, {@link Cluster#getClusterState()}
      * will report being {@link ClusterState#IN_TRANSITION}, disallowing membership changes until the new cluster version is
      * committed.
@@ -298,19 +297,19 @@ public interface Cluster {
      * Changes the cluster version transactionally, with the transaction options provided. Internally this method uses the same
      * transaction infrastructure as {@link #changeClusterState(ClusterState, TransactionOptions)}. The transaction
      * options must specify a {@code TWO_PHASE} transaction.
-     * <p/>
+     * <p>
      * If the requested cluster version is same as the current one, nothing happens.
-     * <p/>
+     * <p>
      * If a member of the cluster is not compatible with the given cluster {@code version}, as implemented by
      * {@link com.hazelcast.instance.NodeExtension#isNodeVersionCompatibleWith(Version)}, then a
      * {@link com.hazelcast.internal.cluster.impl.VersionMismatchException} is thrown.
-     * <p/>
+     * <p>
      * If an invalid version transition is requested, for example changing to a different major version, an
      * {@link IllegalArgumentException} is thrown.
-     * <p/>
+     * <p>
      * If a membership change occurs in the cluster during locking phase, a new member joins or
      * an existing member leaves, then this method will fail with an {@code IllegalStateException}.
-     * <p/>
+     * <p>
      * Likewise, once locking phase is completed successfully, {@link Cluster#getClusterState()}
      * will report being {@link ClusterState#IN_TRANSITION}, disallowing membership changes until the new cluster version is
      * committed.

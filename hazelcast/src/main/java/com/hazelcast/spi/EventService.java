@@ -89,11 +89,11 @@ public interface EventService {
     EventRegistration registerListener(String serviceName, String topic, EventFilter filter, Object listener);
 
     /**
-     * Deregisters a listener with the given registration id.
+     * Deregisters a listener with the given registration ID.
      *
      * @param serviceName service name
      * @param topic       topic name
-     * @param id          registration id
+     * @param id          registration ID
      * @return true if listener is deregistered successfully, false otherwise
      * @see EventRegistration#getId()
      * @see #registerListener(String, String, Object)

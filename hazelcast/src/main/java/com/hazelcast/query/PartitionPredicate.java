@@ -18,8 +18,8 @@ package com.hazelcast.query;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 
 import java.io.IOException;
@@ -52,7 +52,7 @@ public class PartitionPredicate<K, V> implements Predicate<K, V>, IdentifiedData
      *
      * @param partitionKey the partition key
      * @param target       the target {@link Predicate}
-     * @throws IllegalArgumentException if partitionId smaller than zero
+     * @throws IllegalArgumentException if partition ID smaller than zero
      * @throws NullPointerException     if target Predicate is {@code null}
      */
     public PartitionPredicate(Object partitionKey, Predicate<K, V> target) {
@@ -63,7 +63,7 @@ public class PartitionPredicate<K, V> implements Predicate<K, V>, IdentifiedData
     /**
      * Returns the partition key that determines the partition the target {@link Predicate} is going to execute on.
      *
-     * @return the partition id
+     * @return the partition ID
      */
     public Object getPartitionKey() {
         return partitionKey;

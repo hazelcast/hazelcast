@@ -44,7 +44,7 @@ import java.util.concurrent.ConcurrentMap;
 public interface HazelcastInstance {
 
     /**
-     * Returns the name of this Hazelcast instance
+     * Returns the name of this Hazelcast instance.
      *
      * @return name of this Hazelcast instance
      */
@@ -177,26 +177,23 @@ public interface HazelcastInstance {
 
     /**
      * Returns the local Endpoint which this HazelcastInstance belongs to.
-     * <p/>
-     *
+     * <p>
      * Returned endpoint will be a {@link Member} instance for cluster nodes
      * and a {@link Client} instance for clients.
      *
+     * @return the local {@link Endpoint} which this HazelcastInstance belongs to
      * @see Member
      * @see Client
-     *
-     * @return the local {@link Endpoint} which this HazelcastInstance belongs to
      */
     Endpoint getLocalEndpoint();
 
     /**
-     * Returns the distributed executor service for the given
-     * name.
+     * Returns the distributed executor service for the given name.
      * Executor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
      * on the Hazelcast cluster.
-     * <p/>
-     * <p><b>Note:</b> Note that it don't support invokeAll/Any
-     * and don't have standard shutdown behavior</p>
+     * <p>
+     * <b>Note:</b> Note that it don't support invokeAll/Any
+     * and don't have standard shutdown behavior
      *
      * @param name name of the executor service
      * @return the distributed executor service for the given name
@@ -204,8 +201,7 @@ public interface HazelcastInstance {
     IExecutorService getExecutorService(String name);
 
     /**
-     * Returns the durable executor service for the given
-     * name.
+     * Returns the durable executor service for the given name.
      * DurableExecutor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
      * on the Hazelcast cluster.
      * <p/>
@@ -222,9 +218,8 @@ public interface HazelcastInstance {
      * and returns the result of the task.
      *
      * @param task the transactional task to be executed
-     * @param <T> return type of task
+     * @param <T>  return type of task
      * @return result of the transactional task
-     *
      * @throws TransactionException if an error occurs during transaction.
      */
     <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException;
@@ -234,10 +229,9 @@ public interface HazelcastInstance {
      * and returns the result of the task.
      *
      * @param options options for this transactional task
-     * @param task task to be executed
-     * @param <T> return type of task
+     * @param task    task to be executed
+     * @param <T>     return type of task
      * @return result of the transactional task
-     *
      * @throws TransactionException if an error occurs during transaction.
      */
     <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException;
@@ -259,8 +253,8 @@ public interface HazelcastInstance {
 
     /**
      * Creates cluster-wide unique IDs. Generated IDs are long type primitive values
-     * between <tt>0</tt> and <tt>Long.MAX_VALUE</tt> . Id generation occurs almost at the speed of
-     * <tt>AtomicLong.incrementAndGet()</tt> . Generated IDs are unique during the life
+     * between <tt>0</tt> and <tt>Long.MAX_VALUE</tt>. ID generation occurs almost at the speed of
+     * <tt>AtomicLong.incrementAndGet()</tt>. Generated IDs are unique during the life
      * cycle of the cluster. If the entire cluster is restarted, IDs start from <tt>0</tt> again.
      *
      * @param name name of the {@link IdGenerator}
@@ -316,7 +310,7 @@ public interface HazelcastInstance {
      * new {@link DistributedObject} will be created or destroyed.
      *
      * @param distributedObjectListener instance listener
-     * @return returns registration id.
+     * @return returns registration ID
      */
     String addDistributedObjectListener(DistributedObjectListener distributedObjectListener);
 
@@ -324,8 +318,8 @@ public interface HazelcastInstance {
      * Removes the specified Distributed Object listener. Returns silently
      * if the specified instance listener does not exist.
      *
-     * @param registrationId Id of listener registration.
-     * @return true if registration is removed, false otherwise
+     * @param registrationId ID of listener registration
+     * @return {@code true} if registration is removed, {@code false} otherwise
      */
     boolean removeDistributedObjectListener(String registrationId);
 
@@ -347,7 +341,7 @@ public interface HazelcastInstance {
 
     /**
      * Returns the quorum service of this Hazelcast instance.
-     * <p/>
+     * <p>
      * Quorum service can be used to retrieve quorum callbacks which let you to notify quorum results of your own to
      * the cluster quorum service.
      *
@@ -365,28 +359,27 @@ public interface HazelcastInstance {
 
     /**
      * Returns the logging service of this Hazelcast instance.
-     * LoggingService allows you to listen for LogEvents
-     * generated by Hazelcast runtime. You can log the events somewhere
-     * or take action based on the message.
+     * <p>
+     * LoggingService allows you to listen for LogEvents generated by Hazelcast runtime.
+     * You can log the events somewhere or take action based on the message.
      *
      * @return the logging service of this Hazelcast instance
      */
     LoggingService getLoggingService();
 
     /**
-     * Returns the lifecycle service for this instance. LifecycleService allows you
-     * to shutdown this HazelcastInstance and listen for
-     * the lifecycle events.
+     * Returns the lifecycle service for this instance.
+     * <p>
+     * LifecycleService allows you to shutdown this HazelcastInstance and listen for the lifecycle events.
      *
      * @return the lifecycle service for this instance
      */
     LifecycleService getLifecycleService();
 
     /**
-     *
      * @param serviceName name of the service
-     * @param name name of the object
-     * @param <T> type of the DistributedObject
+     * @param name        name of the object
+     * @param <T>         type of the DistributedObject
      * @return DistributedObject created by the service
      */
     <T extends DistributedObject> T getDistributedObject(String serviceName, String name);
@@ -397,7 +390,7 @@ public interface HazelcastInstance {
      * obtained by implementing a {@link HazelcastInstanceAware} interface when submitting a Runnable/Callable to
      * Hazelcast ExecutorService. By storing the dependencies in the user-context, they can be retrieved as soon
      * as you have a reference to the HazelcastInstance.
-     * <p/>
+     * <p>
      * This structure is purely local and Hazelcast remains agnostic abouts its content.
      *
      * @return a ConcurrentMap that can be used to add user-context to the HazelcastInstance.
@@ -407,25 +400,27 @@ public interface HazelcastInstance {
     /**
      * Gets xaResource which will participate in XATransaction.
      *
-     * @return the xaResource.
+     * @return the xaResource
      */
     HazelcastXAResource getXAResource();
 
     /**
      * Obtain the {@link ICacheManager} that provides access to JSR-107 (JCache) caches configured on a Hazelcast cluster.
-     * <p>Note that this method does not return a JCache {@code CacheManager}; to obtain a JCache
-     * {@link javax.cache.CacheManager} use JCache standard API.</p>
+     * <p>
+     * Note that this method does not return a JCache {@code CacheManager}; to obtain a JCache
+     * {@link javax.cache.CacheManager} use JCache standard API.
      *
-     * @see ICacheManager
      * @return the Hazelcast {@link ICacheManager}
+     * @see ICacheManager
      */
     ICacheManager getCacheManager();
 
     /**
      * Obtain a {@link CardinalityEstimator} with the given name.
+     * <p>
      * The estimator can be used to efficiently estimate the cardinality of <strong>unique</strong> entities
      * in big data sets, without the need of storing them.
-     *
+     * <p>
      * The estimator is based on a HyperLogLog++ data-structure.
      *
      * @param name the name of the estimator

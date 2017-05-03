@@ -40,14 +40,13 @@ public interface LockStore {
     /**
      * Lock a specific key on a local partition only. Does not observe LOCK_MAX_LEASE_TIME_SECONDS
      *
-     * @see com.hazelcast.spi.properties.GroupProperty#LOCK_MAX_LEASE_TIME_SECONDS
-     *
      * @param key         the key to lock
      * @param caller      the identifier for the caller
      * @param threadId    the identifier for the thread on the caller
      * @param referenceId the identifier for the invocation of the caller (e.g. operation call ID)
      * @param leaseTime   the lease duration in milliseconds
      * @return if the lock was successfully acquired
+     * @see com.hazelcast.spi.properties.GroupProperty#LOCK_MAX_LEASE_TIME_SECONDS
      */
     boolean localLock(Data key, String caller, long threadId, long referenceId, long leaseTime);
 
@@ -87,7 +86,7 @@ public interface LockStore {
     boolean unlock(Data key, String caller, long threadId, long referenceId);
 
     /**
-     * Check if a key is locked by any caller and thread id.
+     * Check if a key is locked by any caller and thread ID.
      *
      * @param key the key
      * @return if the key is locked
@@ -95,7 +94,7 @@ public interface LockStore {
     boolean isLocked(Data key);
 
     /**
-     * Check if a key is locked by a specific caller and thread id.
+     * Check if a key is locked by a specific caller and thread ID.
      *
      * @param key      the locked key
      * @param caller   the identifier for the caller

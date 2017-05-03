@@ -208,14 +208,14 @@ public class MapKeyLoader {
 
             keyLoadFinished = new LoadFinishedFuture();
 
-            // side effect -> just trigger load on SENDER_BACKUP id SENDER died
+            // side effect -> just trigger load on SENDER_BACKUP ID SENDER died
             execService.execute(MAP_LOAD_ALL_KEYS_EXECUTOR, new Runnable() {
                 @Override
                 public void run() {
                     // checks if loading has finished and triggers loading in case SENDER died and SENDER_BACKUP took over.
                     Operation op = new TriggerLoadIfNeededOperation(mapName);
                     opService.<Boolean>invokeOnPartition(SERVICE_NAME, op, mapNamePartition)
-                            // required since loading may be triggerd after migration
+                            // required since loading may be triggered after migration
                             // and in this case the callback is the only way to get to know if the key load finished or not.
                             .andThen(loadingFinishedCallback());
                 }

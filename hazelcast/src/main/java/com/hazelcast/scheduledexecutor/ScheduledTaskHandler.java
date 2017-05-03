@@ -30,66 +30,67 @@ import com.hazelcast.spi.annotation.Beta;
  * see {@link IScheduledExecutorService#getScheduledFuture(ScheduledTaskHandler)}
  */
 @Beta
-public abstract class ScheduledTaskHandler
-        implements IdentifiedDataSerializable {
+public abstract class ScheduledTaskHandler implements IdentifiedDataSerializable {
 
     /**
-     * Return the address of the member the task is associated with.
-     * Address will be null, if the task was scheduled to particular partition.
+     * Returns the address of the member the task is associated with.
+     * <p>
+     * The address will be {@code null}, if the task was scheduled to particular partition.
      *
-     * @return The address of the member.
+     * @return The address of the member
      */
     public abstract Address getAddress();
 
     /**
-     * Return the partition id the task is associated with.
-     * If the task was scheduled to a particular member, then the partition id will have the value of -1.
+     * Returns the partition ID the task is associated with.
+     * <p>
+     * If the task was scheduled to a particular member, then the partition ID will have the value of -1.
      *
-     * @return The partition id.
+     * @return The partition ID
      */
     public abstract int getPartitionId();
 
     /**
      * Return the name of the ScheduledExecutor this tasks is running on.
      *
-     * @return the name of the scheduler.
+     * @return the name of the scheduler
      */
     public abstract String getSchedulerName();
 
     /**
-     * Return the name of the task.
+     * Returns the name of the task.
      *
-     * @return The task name.
+     * @return the task name
      */
     public abstract String getTaskName();
 
     /**
-     * @return True when the associated task was scheduled on a specific partition.
+     * @return {@code true} when the associated task was scheduled on a specific partition
      */
     public abstract boolean isAssignedToPartition();
 
     /**
-     * @return True when the associated task was scheduled on a specific member in the cluster.
+     * @return {@code true} when the associated task was scheduled on a specific member in the cluster
      */
     public abstract boolean isAssignedToMember();
 
     /**
-     * Return the String represantion of the handler.
+     * Returns the String representation of the handler.
+     * <p>
      * Useful for persisting and/or communicating this info. A {@link ScheduledTaskHandler} can be constructed
      * again from the Urn String using {@link #of(String)}
      *
-     * @return URN representing the handler in a String format.
+     * @return URN representing the handler in a String format
      */
     public abstract String toUrn();
 
     /**
-     * Reconstruct a {@link ScheduledTaskHandler} from a URN String.
+     * Reconstructs a {@link ScheduledTaskHandler} from a URN String.
      *
-     * @param urn The URN of the handler as retrieved from {@link #toUrn()}.
-     * @return A {@link ScheduledTaskHandler} instance that can be used to access the scheduled task.
+     * @param urn The URN of the handler as retrieved from {@link #toUrn()}
+     * @return A {@link ScheduledTaskHandler} instance that can be used to access the scheduled task
      */
     public static ScheduledTaskHandler of(String urn) {
         return ScheduledTaskHandlerImpl.of(urn);
     }
-
 }

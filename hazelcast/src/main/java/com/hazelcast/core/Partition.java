@@ -26,10 +26,10 @@ package com.hazelcast.core;
 public interface Partition {
 
     /**
-     * Returns the id of the partition. This value will never change and will always be greater to  or equal to 0 and smaller
+     * Returns the ID of the partition. This value will never change and will always be greater to  or equal to 0 and smaller
      * than the partition-count.
      *
-     * @return the id of the partition
+     * @return the ID of the partition
      */
     int getPartitionId();
 

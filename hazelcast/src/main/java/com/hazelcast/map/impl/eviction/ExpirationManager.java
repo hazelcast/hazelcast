@@ -178,7 +178,7 @@ public final class ExpirationManager {
     }
 
     /**
-     * Periodically clears expired entries.(ttl & idle)
+     * Periodically clears expired entries (TTL & idle).
      * This task provides per partition expiration operation logic. (not per map, not per record store).
      * Fires cleanup operations at most partition operation thread count or some factor of it in one round.
      */

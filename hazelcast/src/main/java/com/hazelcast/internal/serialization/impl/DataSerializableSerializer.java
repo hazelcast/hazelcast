@@ -141,7 +141,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
                     ds = dsf.create(id);
                     if (ds == null) {
                         throw new HazelcastSerializationException(dsf
-                                + " is not be able to create an instance for id: " + id + " on factoryId: " + factoryId);
+                                + " is not be able to create an instance for ID: " + id + " on factory ID: " + factoryId);
                     }
                 }
             } else {
@@ -175,7 +175,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
         }
         throw new HazelcastSerializationException("Problem while reading DataSerializable, namespace: "
                 + factoryId
-                + ", id: " + id
+                + ", ID: " + id
                 + ", class: '" + className + "'"
                 + ", exception: " + e.getMessage(), e);
     }

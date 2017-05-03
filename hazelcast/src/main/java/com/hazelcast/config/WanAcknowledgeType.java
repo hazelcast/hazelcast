@@ -17,12 +17,12 @@
 package com.hazelcast.config;
 
 /**
- * Determines acknowledge waiting type of wan replication operation invocation
+ * Determines acknowledge waiting type of wan replication operation invocation.
  */
 public enum WanAcknowledgeType {
 
     /**
-     * ACK after WAN operation is received by the target cluster (without waiting the result of actual operation invocation.)
+     * ACK after WAN operation is received by the target cluster (without waiting the result of actual operation invocation).
      */
     ACK_ON_RECEIPT(0),
 
@@ -39,7 +39,7 @@ public enum WanAcknowledgeType {
 
     /**
      * Gets the ID for the given {@link WanAcknowledgeType}.
-     *
+     * <p>
      * This reason this ID is used instead of an the ordinal value is that the ordinal value is more prone to changes due to
      * reordering.
      *

@@ -175,7 +175,7 @@ class DefaultAddressPicker implements AddressPicker {
             addressDef = pickInterfaceAddressDef();
         }
         if (addressDef != null) {
-            // check if scope id is set correctly
+            // check if scope ID is set correctly
             addressDef.inetAddress = fixScopeIdAndGetInetAddress(addressDef.inetAddress);
         }
         if (addressDef == null) {

@@ -145,7 +145,7 @@ public interface OperationExecutor extends PacketHandler {
      * be executed on another thread, but that one is going to block for completion using the future.get/join etc.
      * Blocking for completion can cause problems, e.g. when you hog a partition thread or deadlocks.
      *
-     * @param op the {@link Operation} to check
+     * @param op      the {@link Operation} to check
      * @param isAsync is the invocation async, if false invocation does not return a future to block on
      * @return true if allowed, false otherwise.
      */
@@ -159,10 +159,10 @@ public interface OperationExecutor extends PacketHandler {
     boolean isOperationThread();
 
     /**
-     * Returns the id of the partitionThread assigned to handle partition with given partitionId
+     * Returns the ID of the partitionThread assigned to handle partition with given partitionId
      *
      * @param partitionId given partitionId
-     * @return id of the partitionThread assigned to handle partition with given partitionId
+     * @return ID of the partitionThread assigned to handle partition with given partitionId
      */
     int getPartitionThreadId(int partitionId);
 
@@ -180,5 +180,4 @@ public interface OperationExecutor extends PacketHandler {
      * Shuts down this OperationExecutor. Any pending tasks are discarded.
      */
     void shutdown();
-
 }

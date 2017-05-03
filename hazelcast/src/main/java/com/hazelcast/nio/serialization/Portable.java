@@ -44,14 +44,14 @@ import java.io.IOException;
 public interface Portable {
 
     /**
-     * Returns PortableFactory id for this portable class
-     * @return factory id
+     * Returns PortableFactory ID for this portable class
+     * @return factory ID
      */
     int getFactoryId();
 
     /**
-     * Returns class identifier for this portable class. Class id should be unique per PortableFactory.
-     * @return class id
+     * Returns class identifier for this portable class. Class ID should be unique per PortableFactory.
+     * @return class ID
      */
     int getClassId();
 

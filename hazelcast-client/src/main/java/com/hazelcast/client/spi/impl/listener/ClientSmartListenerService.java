@@ -169,7 +169,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
             } catch (Exception e) {
                 if (subscriber.isAlive()) {
                     successful = false;
-                    logger.warning("Deregistration of listener with id " + userRegistrationId
+                    logger.warning("Deregistration of listener with ID " + userRegistrationId
                             + " has failed to address " + subscriber.getEndPoint(), e);
                 }
             }

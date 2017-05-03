@@ -28,8 +28,8 @@ public interface PartitionAwareService {
 
     /**
      * Invoked when a partition lost is detected
-     * @param event The event object that contains the partition id and the number of replicas that is lost
+     *
+     * @param event The event object that contains the partition ID and the number of replicas that is lost
      */
     void onPartitionLost(IPartitionLostEvent event);
-
 }

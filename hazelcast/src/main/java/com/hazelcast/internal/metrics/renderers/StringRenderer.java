@@ -20,7 +20,7 @@ public interface StringRenderer {
     /**
      * The interface is used to fill a StringBuilder buffer with the current value of a probe.
      *
-     * @param buffer The string buffer to be filled.
+     * @param stringBuilder the string builder to be filled
      */
-    void render(StringBuilder buffer);
+    void render(StringBuilder stringBuilder);
 }

@@ -97,7 +97,7 @@ public interface ClientClusterService {
 
     /**
      * @param listener The listener to be registered.
-     * @return The registration id.
+     * @return The registration ID
      */
     String addMembershipListener(MembershipListener listener);
 

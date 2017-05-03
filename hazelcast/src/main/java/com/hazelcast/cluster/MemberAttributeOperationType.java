@@ -17,7 +17,7 @@
 package com.hazelcast.cluster;
 
 /**
- * Used to identify the type of member attribute change, either PUT or REMOVED
+ * Used to identify the type of member attribute change, either PUT or REMOVED.
  *
  * @since 3.2.RC-2
  */
@@ -40,20 +40,20 @@ public enum MemberAttributeOperationType {
     }
 
     /**
-     * Gets the id of the MemberAttributeOperationType.
+     * Gets the ID of the MemberAttributeOperationType.
      *
-     * @return the id.
+     * @return the ID
      */
     public int getId() {
         return id;
     }
 
     /**
-     * Gets the MemberAttributeOperationType by id.
+     * Gets the MemberAttributeOperationType by ID.
      *
-     * @param id the id of the MemberAttributeOperationType.
+     * @param id the ID of the MemberAttributeOperationType
      * @return the found MemberAttributeOperationType
-     * @throws IllegalArgumentException if no MemberAttributeOperationType with the given id is found.
+     * @throws IllegalArgumentException if no MemberAttributeOperationType with the given ID is found
      */
     public static MemberAttributeOperationType getValue(int id) {
         for (MemberAttributeOperationType operationType : values()) {
@@ -61,6 +61,6 @@ public enum MemberAttributeOperationType {
                 return operationType;
             }
         }
-        throw new IllegalArgumentException("No OperationType for id: " + id);
+        throw new IllegalArgumentException("No OperationType for ID: " + id);
     }
 }

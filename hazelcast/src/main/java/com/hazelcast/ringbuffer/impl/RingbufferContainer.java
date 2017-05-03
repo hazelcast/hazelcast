@@ -214,7 +214,7 @@ public class RingbufferContainer implements IdentifiedDataSerializable {
      * in the data store if one is configured.
      *
      * @param item item to be stored in the ring buffer and data store
-     * @return the sequence id of the item stored in the ring buffer
+     * @return the sequence ID of the item stored in the ring buffer
      * @throws HazelcastException                                              if there was any exception thrown by the data store
      * @throws com.hazelcast.nio.serialization.HazelcastSerializationException if the ring buffer is configured to keep items
      *                                                                         in object format and the item could not be
@@ -237,7 +237,7 @@ public class RingbufferContainer implements IdentifiedDataSerializable {
      * in the data store if one is configured.
      *
      * @param items items to be stored in the ring buffer and data store
-     * @return the sequence id of the last item stored in the ring buffer
+     * @return the sequence ID of the last item stored in the ring buffer
      * @throws HazelcastException                                              if there was any exception thrown by the data store
      * @throws com.hazelcast.nio.serialization.HazelcastSerializationException if the ring buffer is configured to keep items
      *                                                                         in object format and the item could not be

@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * Runs on Near Cache side, an instance of this task is responsible for fetching of all Near Caches' remote metadata like last
- * sequence numbers and partition-uuids. To see usage of this metadata visit: {@link MetaDataGenerator}.
+ * sequence numbers and partition UUIDs. To see usage of this metadata visit: {@link MetaDataGenerator}.
  *
  * This class is abstract to provide different implementations on client and member sides.
  */
@@ -45,12 +45,12 @@ public abstract class MetaDataFetcher {
     protected abstract void process(InternalCompletableFuture future, ConcurrentMap<String, RepairingHandler> handlers);
 
     /**
-     * Gets or assigns partition-uuids before start of {@link RepairingTask} and returns a list of partition-id,
-     * partition-uuid pairs.
+     * Gets or assigns partition UUIDs before start of {@link RepairingTask} and returns a list of partition ID,
+     * partition UUID pairs.
      * <p>
      * This method is likely to be called only one time during the life-cycle of a client.
      *
-     * @return list of partition-id, partition-uuid pairs for initialization
+     * @return list of partition ID, partition UUID pairs for initialization
      * @throws Exception possible exceptions raised by remote calls
      */
     protected abstract Collection<Map.Entry<Integer, UUID>> assignAndGetUuids() throws Exception;

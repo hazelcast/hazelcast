@@ -24,7 +24,7 @@ package com.hazelcast.client.spi;
 public interface ClientProxyFactory {
 
     /**
-     * Creates a new client proxy with the given id.
+     * Creates a new client proxy with the given ID
      *
      * @param id the ID of the client proxy
      * @return the client proxy

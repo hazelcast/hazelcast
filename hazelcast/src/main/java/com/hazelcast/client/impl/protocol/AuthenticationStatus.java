@@ -41,6 +41,6 @@ public enum AuthenticationStatus {
                 return as;
             }
         }
-        throw new IllegalArgumentException("Unsupported id value");
+        throw new IllegalArgumentException("Unsupported ID value");
     }
 }

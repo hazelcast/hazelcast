@@ -82,13 +82,12 @@ public interface JobTracker
     //<K, V> ProcessJob<K, V> newProcessJob(KeyValueSource<K, V> source);
 
     /**
-     * Returns an implementation of {@link TrackableJob}, or null if the job id is not available
+     * Returns an implementation of {@link TrackableJob}, or null if the job ID is not available
      * or the job is already finished.
      *
-     * @param jobId job id to search the TrackableJob for
+     * @param jobId job ID to search the TrackableJob for
      * @param <V>   type of the resulting value
-     * @return a trackable job for given job id or null if the job id is not available
+     * @return a trackable job for given job ID or null if the job ID is not available
      */
     <V> TrackableJob<V> getTrackableJob(String jobId);
-
 }

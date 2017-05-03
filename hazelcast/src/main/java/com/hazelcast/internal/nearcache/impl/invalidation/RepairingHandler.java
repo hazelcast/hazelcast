@@ -105,8 +105,8 @@ public final class RepairingHandler {
 
     private int getPartitionIdOrDefault(Data key) {
         if (key == null) {
-            // `name` is used to determine partition-id of map-wide events like clear()
-            // since key is `null`, we are using `name` to find the partition-id
+            // `name` is used to determine partition ID of map-wide events like clear()
+            // since key is `null`, we are using `name` to find the partition ID
             return partitionService.getPartitionId(name);
         }
         return partitionService.getPartitionId(key);
@@ -132,7 +132,7 @@ public final class RepairingHandler {
         return name;
     }
 
-    // TODO: really need to pass partition-id?
+    // TODO: really need to pass partition ID?
     public void updateLastKnownStaleSequence(MetaDataContainer metaData, int partition) {
         long lastReceivedSequence;
         long lastKnownStaleSequence;

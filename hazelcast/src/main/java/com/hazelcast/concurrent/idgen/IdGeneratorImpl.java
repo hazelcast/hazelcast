@@ -23,8 +23,9 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 /**
- * Generates blocks with the help of an {@link IAtomicLong}
- * For each block, id generation is simply a volatile increment
+ * Generates blocks with the help of an {@link IAtomicLong}.
+ * <p>
+ * For each block, ID generation is simply a volatile increment.
  */
 public class IdGeneratorImpl implements IdGenerator {
 

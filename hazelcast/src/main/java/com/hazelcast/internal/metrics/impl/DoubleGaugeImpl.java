@@ -61,7 +61,7 @@ class DoubleGaugeImpl extends AbstractGauge implements DoubleGauge {
     }
 
     @Override
-    public void render(StringBuilder buffer) {
-        buffer.append(read());
+    public void render(StringBuilder stringBuilder) {
+        stringBuilder.append(read());
     }
 }

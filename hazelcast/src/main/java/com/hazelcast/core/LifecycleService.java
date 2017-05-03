@@ -17,13 +17,14 @@
 package com.hazelcast.core;
 
 /**
- * LifecycleService allows you to shutdown, terminate, and listen to {@link LifecycleEvent}'s
+ * LifecycleService allows you to shutdown, terminate, and listen to {@link LifecycleEvent}s
  * on HazelcastInstance.
  */
 public interface LifecycleService {
 
     /**
      * checks whether or not the instance is running
+     *
      * @return true if instance is active and running, false otherwise
      */
     boolean isRunning();
@@ -41,16 +42,17 @@ public interface LifecycleService {
 
     /**
      * Add a listener object to listen for lifecycle events.
+     *
      * @param lifecycleListener the listener object
-     * @return the listener id
+     * @return the listener ID
      */
     String addLifecycleListener(LifecycleListener lifecycleListener);
 
     /**
      * Removes a lifecycle listener
-     * @param registrationId The listener id returned by {@link #addLifecycleListener(LifecycleListener)}
+     *
+     * @param registrationId the listener ID returned by {@link #addLifecycleListener(LifecycleListener)}
      * @return true if the listener is removed successfully, false otherwise
      */
     boolean removeLifecycleListener(String registrationId);
-
 }

@@ -53,9 +53,9 @@ public class PartitionMigrationEvent extends EventObject {
     }
 
     /**
-     * Gets the partition id.
+     * Gets the partition ID.
      *
-     * @return the partition id
+     * @return the partition ID
      */
     public int getPartitionId() {
         return partitionId;

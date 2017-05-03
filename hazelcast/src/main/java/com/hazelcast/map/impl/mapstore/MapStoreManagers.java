@@ -23,6 +23,7 @@ import com.hazelcast.map.impl.mapstore.writethrough.WriteThroughManager;
  * Static factory class for various map store managers.
  */
 public final class MapStoreManagers {
+
     private MapStoreManagers() {
     }
 
@@ -58,5 +59,4 @@ public final class MapStoreManagers {
             }
         };
     }
-
 }

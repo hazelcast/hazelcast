@@ -37,12 +37,12 @@ public interface FieldDefinition {
     int getIndex();
 
     /**
-     * @return class id of this field's class
+     * @return class ID of this field's class
      */
     int getClassId();
 
     /**
-     * @return factory id of this field's class
+     * @return factory ID of this field's class
      */
     int getFactoryId();
 

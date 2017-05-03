@@ -28,7 +28,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * This class stores items' id when DrainOperation run.
+ * This class stores items' ID when DrainOperation run.
  */
 public class DrainBackupOperation extends QueueOperation implements BackupOperation, MutatingOperation {
 

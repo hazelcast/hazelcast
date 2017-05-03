@@ -166,7 +166,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     /**
-     * Check if record is reachable according to ttl or idle times.
+     * Check if record is reachable according to TTL or idle times.
      * If not reachable return null.
      *
      * @param record {@link com.hazelcast.map.impl.record.Record}

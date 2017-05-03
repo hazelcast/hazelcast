@@ -37,13 +37,12 @@ import com.hazelcast.version.Version;
 public interface VersionedDataSerializableFactory extends DataSerializableFactory {
 
     /**
-     * Creates an IdentifiedDataSerializable instance using given type id and object version
+     * Creates an IdentifiedDataSerializable instance using given type ID and object version
      *
-     * @param typeId  IdentifiedDataSerializable type id
+     * @param typeId  IdentifiedDataSerializable type ID
      * @param version version of the IdentifiedDataSerializable to create
-     * @return IdentifiedDataSerializable instance or null if type id is not known by this factory
+     * @return IdentifiedDataSerializable instance or null if type ID is not known by this factory
      * @see MemberVersion
      */
     IdentifiedDataSerializable create(int typeId, Version version);
-
 }

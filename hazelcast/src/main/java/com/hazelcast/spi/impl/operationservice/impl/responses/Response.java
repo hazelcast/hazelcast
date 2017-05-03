@@ -30,12 +30,9 @@ import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
  * A {@link Response} is a result of an {@link com.hazelcast.spi.Operation} being executed.
  * There are different types of responses:
  * <ol>
- * <li>
- * {@link NormalResponse} the result of a regular Operation result, e.g. Map.put
- * </li>
- * <li>
- * {@link BackupAckResponse} the result of a completed {@link com.hazelcast.spi.impl.operationservice.impl.operations.Backup}.
- * </li>
+ * <li>{@link NormalResponse} the result of a regular Operation result, e.g. Map.put()</li>
+ * <li>{@link BackupAckResponse} the result of a completed
+ * {@link com.hazelcast.spi.impl.operationservice.impl.operations.Backup}</li>
  * </ol>
  */
 public abstract class Response implements IdentifiedDataSerializable {
@@ -62,16 +59,16 @@ public abstract class Response implements IdentifiedDataSerializable {
     /**
      * Check if this Response is an urgent response.
      *
-     * @return true if urgent, false otherwise.
+     * @return {@code true} if urgent, {@code false} otherwise
      */
     public boolean isUrgent() {
         return urgent;
     }
 
     /**
-     * Returns the call id of the operation this response belongs to.
+     * Returns the call ID of the operation this response belongs to.
      *
-     * @return the call id.
+     * @return the call ID
      */
     public long getCallId() {
         return callId;

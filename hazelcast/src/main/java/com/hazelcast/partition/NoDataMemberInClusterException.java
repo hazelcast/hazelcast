@@ -19,13 +19,11 @@ package com.hazelcast.partition;
 import com.hazelcast.core.HazelcastException;
 
 /**
- * Thrown when there is no data member in the cluster to assign partitions
+ * Thrown when there is no data member in the cluster to assign partitions.
  */
-public class NoDataMemberInClusterException
-        extends HazelcastException {
+public class NoDataMemberInClusterException extends HazelcastException {
 
     public NoDataMemberInClusterException(String message) {
         super(message);
     }
-
 }

@@ -56,7 +56,7 @@ public class LocalLockCleanupOperation extends UnlockOperation implements Notifi
             ILogger logger = getLogger();
             if (logger.isFinestEnabled()) {
                 logger.finest(
-                        "Unlocking lock owned by uuid: " + uuid + ", thread-id: " + lock.getThreadId() + ", count: "
+                        "Unlocking lock owned by UUID: " + uuid + ", thread ID: " + lock.getThreadId() + ", count: "
                                 + lock.getLockCount());
             }
             response = lockStore.forceUnlock(key);

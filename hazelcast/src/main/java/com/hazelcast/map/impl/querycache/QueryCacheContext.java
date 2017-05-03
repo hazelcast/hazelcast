@@ -116,10 +116,10 @@ public interface QueryCacheContext {
     Address getThisNodesAddress();
 
     /**
-     * Returns partition id of the supplied object.
+     * Returns partition ID of the supplied object.
      *
      * @param object supplied object.
-     * @return partition id
+     * @return partition ID
      */
     int getPartitionId(Object object);
 

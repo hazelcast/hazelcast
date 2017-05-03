@@ -215,9 +215,9 @@ public final class Packet extends HeapData implements OutboundFrame {
     }
 
     /**
-     * Returns the partition id of this packet. If this packet is not for a particular partition, -1 is returned.
+     * Returns the partition ID of this packet. If this packet is not for a particular partition, -1 is returned.
      *
-     * @return the partition id.
+     * @return the partition ID.
      */
     public int getPartitionId() {
         return partitionId;

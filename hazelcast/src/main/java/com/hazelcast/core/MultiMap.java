@@ -264,7 +264,7 @@ public interface MultiMap<K, V>
      * other nodes for load balancing and/or membership change.
      *
      * @param listener entry listener for this multimap
-     * @return returns registration id for the entry listener
+     * @return returns registration ID for the entry listener
      * @see #localKeySet()
      */
     String addLocalEntryListener(EntryListener<K, V> listener);
@@ -276,7 +276,7 @@ public interface MultiMap<K, V>
      * @param listener     entry listener for this multimap
      * @param includeValue true if <tt>EntryEvent</tt> should
      *                     contain the value, false otherwise
-     * @return returns registration id for the entry listener
+     * @return returns registration ID for the entry listener
      */
     String addEntryListener(EntryListener<K, V> listener, boolean includeValue);
 
@@ -284,7 +284,7 @@ public interface MultiMap<K, V>
      * Removes the specified entry listener.
      * Returns silently if no such listener was added before.
      *
-     * @param registrationId  registration id of listener
+     * @param registrationId registration ID of listener
      * @return true if registration is removed, false otherwise
      */
     boolean removeEntryListener(String registrationId);
@@ -305,7 +305,7 @@ public interface MultiMap<K, V>
      * @param key          the key to listen to
      * @param includeValue true if <tt>EntryEvent</tt> should
      *                     contain the value, false otherwise
-     * @return returns registration id.
+     * @return returns registration ID
      */
     String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue);
 
@@ -430,11 +430,11 @@ public interface MultiMap<K, V>
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in the <tt>key</tt>'s class.
      *
-     * @param key      key to lock in this map.
-     * @param time     maximum time to wait for the lock.
-     * @param timeunit time unit of the <tt>time</tt> argument.
-     * @param leaseTime time to wait before releasing the lock.
-     * @param leaseTimeunit  unit of time to specify lease time.
+     * @param key           key to lock in this map.
+     * @param time          maximum time to wait for the lock.
+     * @param timeunit      time unit of the <tt>time</tt> argument.
+     * @param leaseTime     time to wait before releasing the lock.
+     * @param leaseTimeunit unit of time to specify lease time.
      * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
      * if the waiting time elapsed before the lock was acquired.
      * @throws NullPointerException if the specified key is null.

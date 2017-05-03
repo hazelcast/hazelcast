@@ -52,7 +52,7 @@ final class PortableSerializer implements StreamSerializer<Portable> {
             throw new IllegalArgumentException("ObjectDataOutput must be instance of BufferObjectDataOutput!");
         }
         if (p.getClassId() == 0) {
-            throw new IllegalArgumentException("Portable class id cannot be zero!");
+            throw new IllegalArgumentException("Portable class ID cannot be zero!");
         }
 
         out.writeInt(p.getFactoryId());

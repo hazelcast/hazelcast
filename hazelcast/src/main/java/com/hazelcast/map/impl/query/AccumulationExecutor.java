@@ -23,18 +23,17 @@ import java.util.Collection;
 
 /**
  * Executes the accumulation phase of the Aggregator.
- * All entries are accumulates by the result aggregator
- * returned in the AggregationResult
+ * <p>
+ * All entries are accumulates by the result aggregator returned in the AggregationResult.
  */
 public interface AccumulationExecutor {
 
     /**
-     * @param aggregator   Instance of aggregator using which the entries should be accumulated. It will not be modified.
+     * @param aggregator   Instance of aggregator using which the entries should be accumulated (it will not be modified)
      * @param entries      Entries to be accumulated
-     * @param partitionIds Ids of the partitions where the entries reside.
-     * @return AggregationResult encompassing the result aggregator.
+     * @param partitionIds IDs of the partitions where the entries reside
+     * @return AggregationResult encompassing the result aggregator
      */
     AggregationResult execute(Aggregator aggregator, Collection<QueryableEntry> entries,
                               Collection<Integer> partitionIds);
-
 }

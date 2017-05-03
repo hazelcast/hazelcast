@@ -77,7 +77,7 @@ public enum CacheEventType {
     }
 
     /**
-     * @return unique id of the event type.
+     * @return unique ID of the event type.
      */
     public int getType() {
         return type;

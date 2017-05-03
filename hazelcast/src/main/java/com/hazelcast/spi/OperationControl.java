@@ -25,12 +25,12 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 
 /**
- * Contents of an Operation Control packet:
+ * Content of an Operation Control packet:
  * <ol>
- *     <li>a list of operations the remote member started on this member which are still running;</li>
- *     <li>a list of operations this member wants to cancel on the remote member.</li>
+ * <li>a list of operations the remote member started on this member which are still running;</li>
+ * <li>a list of operations this member wants to cancel on the remote member.</li>
  * </ol>
- * Operations are identified by their Call ID.
+ * Operations are identified by their call ID.
  */
 @SuppressFBWarnings(value = "EI", justification =
         "The priority is minimizing garbage. The caller guarantees not to mutate the long[] arrays.")
@@ -57,8 +57,6 @@ public final class OperationControl implements IdentifiedDataSerializable {
     public long[] operationsToCancel() {
         return operationsToCancel;
     }
-
-    // IdentifiedDataSerializable contract
 
     @Override
     public int getFactoryId() {

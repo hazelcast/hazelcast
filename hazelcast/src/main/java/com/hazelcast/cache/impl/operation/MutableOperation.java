@@ -19,11 +19,10 @@ package com.hazelcast.cache.impl.operation;
 public interface MutableOperation {
 
     /**
-     * Completion Id to be ignored.
+     * Completion ID to be ignored.
      */
     int IGNORE_COMPLETION = -1;
 
     int getCompletionId();
     void setCompletionId(int completionId);
-
 }

@@ -89,12 +89,12 @@ public interface Ringbuffer<T> {
      * <p>
      * The returned value is the sequence of the added item. Using this sequence you can read the added item.
      * <p>
-     * <h3>Using the sequence as id</h3>
-     * This sequence will always be unique for this Ringbuffer instance so it can be used as a unique id generator if you are
-     * publishing items on this Ringbuffer. However you need to take care of correctly determining an initial id when any node
+     * <h3>Using the sequence as ID</h3>
+     * This sequence will always be unique for this Ringbuffer instance so it can be used as a unique ID generator if you are
+     * publishing items on this Ringbuffer. However you need to take care of correctly determining an initial ID when any node
      * uses the ringbuffer for the first time. The most reliable way to do that is to write a dummy item into the ringbuffer and
-     * use the returned sequence as initial id. On the reading side, this dummy item should be discard. Please keep in mind that
-     * this id is not the sequence of the item you are about to publish but from a previously published item. So it can't be used
+     * use the returned sequence as initial ID. On the reading side, this dummy item should be discard. Please keep in mind that
+     * this ID is not the sequence of the item you are about to publish but from a previously published item. So it can't be used
      * to find that item.
      *
      * @param item the item to add.

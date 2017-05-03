@@ -49,7 +49,7 @@ public abstract class AbstractHandler
     private final int initialOps;
     private final IOBalancer ioBalancer;
 
-    // shows the id of the ioThread that is currently owning the handler
+    // shows the ID of the ioThread that is currently owning the handler
     @Probe
     private volatile int ioThreadId;
 

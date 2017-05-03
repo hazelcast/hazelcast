@@ -70,7 +70,7 @@ public class InterceptorRegistry {
      * This method is called by {@link com.hazelcast.spi.impl.operationexecutor.impl.GenericOperationThread}
      * when registering via {@link com.hazelcast.map.impl.operation.AddInterceptorOperation}
      *
-     * @param id          id of the interceptor
+     * @param id          ID of the interceptor
      * @param interceptor supplied {@link MapInterceptor}
      */
     public synchronized void register(String id, MapInterceptor interceptor) {
@@ -97,7 +97,7 @@ public class InterceptorRegistry {
      * This method is called by {@link com.hazelcast.spi.impl.operationexecutor.impl.GenericOperationThread}
      * when de-registering via {@link com.hazelcast.map.impl.operation.RemoveInterceptorOperation}
      *
-     * @param id id of the interceptor
+     * @param id ID of the interceptor
      */
     public synchronized void deregister(String id) {
         assert !(Thread.currentThread() instanceof PartitionOperationThread);

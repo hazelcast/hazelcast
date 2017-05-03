@@ -24,11 +24,12 @@ import com.hazelcast.topic.TopicOverloadException;
  * which is also known as a publish/subscribe (pub/sub) messaging model. Publish and subscriptions are cluster-wide.
  * When a member subscribes for a topic, it is actually registering for messages published by any member in the cluster,
  * including the new members joined after you added the listener.
- * <p/>Messages are ordered, meaning that listeners(subscribers)
+ * <p>
+ * Messages are ordered, meaning that listeners(subscribers)
  * will process the messages in the order they are actually published. If cluster member M publishes messages
  * m1, m2, m3...mn to a topic T, then Hazelcast makes sure that all of the subscribers of topic T will receive
  * and process m1, m2, m3...mn in order.
- *
+ * <p>
  * Since Hazelcast 3.5 it is possible to have reliable topics. Normally all topics rely on the a shared eventing system and
  * shared threads. With Hazelcast 3.5 it is possible to configure a topic to be reliable and to gets its own
  * {@link com.hazelcast.ringbuffer.Ringbuffer} to store events and to gets its own executor to process events. The events
@@ -37,18 +38,17 @@ import com.hazelcast.topic.TopicOverloadException;
 public interface ITopic<E> extends DistributedObject {
 
     /**
-     * Returns the name of this ITopic instance
+     * Returns the name of this ITopic instance.
      *
      * @return name of this ITopic instance
      */
     String getName();
 
     /**
-     * Publishes the message to all subscribers of this topic
+     * Publishes the message to all subscribers of this topic.
      *
      * @param message the message to publish to all subscribers of this topic
-     * @throws TopicOverloadException if the consumer is too slow. Only works in combination with
-     *                                                   reliable topic.
+     * @throws TopicOverloadException if the consumer is too slow (only works in combination with reliable topic)
      */
     void publish(E message);
 
@@ -57,25 +57,23 @@ public interface ITopic<E> extends DistributedObject {
      * onMessage() function of the given MessageListener is called. More than one message listener can be
      * added on one instance.
      *
-     * @param listener the MessageListener to add.
-     *
-     * @return returns the registration id.
-     * @throws java.lang.NullPointerException if listener is null.
+     * @param listener the MessageListener to add
+     * @return returns the registration ID
+     * @throws java.lang.NullPointerException if listener is {@code null}
      */
     String addMessageListener(MessageListener<E> listener);
 
     /**
-     * Stops receiving messages for the given message listener. If the given listener already removed,
-     * this method does nothing.
+     * Stops receiving messages for the given message listener.
+     * If the given listener already removed, this method does nothing.
      *
-     * @param registrationId Id of listener registration.
-     *
-     * @return true if registration is removed, false otherwise
+     * @param registrationId ID of listener registration
+     * @return {@code true} if registration is removed, {@code false} otherwise
      */
     boolean removeMessageListener(String registrationId);
 
     /**
-     * Returns statistics about this topic, like total number of publishes/receives
+     * Returns statistics about this topic, like total number of publishes/receives.
      *
      * @return statistics about this topic
      */

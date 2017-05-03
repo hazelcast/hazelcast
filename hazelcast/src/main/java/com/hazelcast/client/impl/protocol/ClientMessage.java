@@ -223,19 +223,19 @@ public class ClientMessage
     }
 
     /**
-     * Returns the correlation id field.
+     * Returns the correlation ID field.
      *
-     * @return The correlation id field.
+     * @return The correlation ID field.
      */
     public long getCorrelationId() {
         return int64Get(CORRELATION_ID_FIELD_OFFSET);
     }
 
     /**
-     * Sets the correlation id field.
+     * Sets the correlation ID field.
      *
-     * @param correlationId The value to set in the correlation id field.
-     * @return The ClientMessage with the new correlation id field value.
+     * @param correlationId The value to set in the correlation ID field.
+     * @return The ClientMessage with the new correlation ID field value.
      */
     public ClientMessage setCorrelationId(final long correlationId) {
         int64Set(CORRELATION_ID_FIELD_OFFSET, correlationId);
@@ -243,19 +243,19 @@ public class ClientMessage
     }
 
     /**
-     * Returns the partition id field.
+     * Returns the partition ID field.
      *
-     * @return The partition id field.
+     * @return The partition ID field.
      */
     public int getPartitionId() {
         return int32Get(PARTITION_ID_FIELD_OFFSET);
     }
 
     /**
-     * Sets the partition id field.
+     * Sets the partition ID field.
      *
-     * @param partitionId The value to set in the partitions id field.
-     * @return The ClientMessage with the new partitions id field value.
+     * @param partitionId The value to set in the partitions ID field.
+     * @return The ClientMessage with the new partitions ID field value.
      */
     public ClientMessage setPartitionId(final int partitionId) {
         int32Set(PARTITION_ID_FIELD_OFFSET, partitionId);

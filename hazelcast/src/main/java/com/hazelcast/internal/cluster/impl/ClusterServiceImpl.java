@@ -850,7 +850,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     // called under cluster service lock
     void setClusterId(String newClusterId) {
         assert lock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
-        assert clusterId == null : "Cluster id should be null: " + clusterId;
+        assert clusterId == null : "Cluster ID should be null: " + clusterId;
         clusterId = newClusterId;
     }
 

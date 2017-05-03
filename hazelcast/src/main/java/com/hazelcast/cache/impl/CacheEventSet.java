@@ -75,7 +75,7 @@ public class CacheEventSet
     }
 
     /**
-     * @return completion id for sync listeners
+     * @return completion ID for sync listeners
      */
     public int getCompletionId() {
         return completionId;

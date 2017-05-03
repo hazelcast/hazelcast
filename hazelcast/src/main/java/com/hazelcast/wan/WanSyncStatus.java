@@ -34,7 +34,7 @@ public enum WanSyncStatus {
     IN_PROGRESS(1),
 
     /**
-     * Indicates sync operation is unsuccessfull.
+     * Indicates sync operation is unsuccessful.
      */
     FAILED(2);
 
@@ -45,7 +45,7 @@ public enum WanSyncStatus {
     }
 
     /**
-     * @return unique id of the event type.
+     * @return unique ID of the event type
      */
     public int getStatus() {
         return status;

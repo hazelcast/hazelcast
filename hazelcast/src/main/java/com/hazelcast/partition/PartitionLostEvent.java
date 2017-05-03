@@ -37,8 +37,7 @@ import static com.hazelcast.nio.serialization.SerializableByConvention.Reason.PU
  * @see PartitionLostListener
  */
 @SerializableByConvention(PUBLIC_API)
-public class PartitionLostEvent
-        implements DataSerializable, PartitionEvent {
+public class PartitionLostEvent implements DataSerializable, PartitionEvent {
 
     private int partitionId;
 
@@ -56,9 +55,9 @@ public class PartitionLostEvent
     }
 
     /**
-     * Returns the lost partition id.
+     * Returns the lost partition ID.
      *
-     * @return the lost partition id.
+     * @return the lost partition ID.
      */
     @Override
     public int getPartitionId() {
@@ -86,16 +85,14 @@ public class PartitionLostEvent
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(partitionId);
         out.writeInt(lostBackupCount);
         out.writeObject(eventSource);
     }
 
     @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         partitionId = in.readInt();
         lostBackupCount = in.readInt();
         eventSource = in.readObject();

@@ -55,13 +55,13 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * A {@link com.hazelcast.spi.impl.operationexecutor.OperationExecutor} that schedules:
  * <ol>
- * <li>partition specific operations to a specific partition-operation-thread (using a mod on the partition-id)</li>
+ * <li>partition specific operations to a specific partition-operation-thread (using a mod on the partition ID)</li>
  * <li>non specific operations to generic-operation-threads</li>
  * </ol>
  * The {@link #execute(Object, int, boolean)} accepts an Object instead of a runnable to prevent needing to
  * create wrapper runnables around tasks. This is done to reduce the amount of object litter and therefor
- * reduce pressure on the gc.
- *
+ * reduce pressure on the GC.
+ * <p>
  * There are 2 category of operation threads:
  * <ol>
  * <li>partition specific operation threads: these threads are responsible for executing e.g. a map.put.
@@ -69,9 +69,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </li>
  * <li>
  * generic operation threads: these threads are responsible for executing operations that are not
- * specific to a partition. E.g. a heart beat.
+ * specific to a partition, e.g. a heart beat.
  * </li>
- *
  * </ol>
  */
 @SuppressWarnings("checkstyle:methodcount")
@@ -410,7 +409,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         checkNotNull(operation, "operation can't be null");
 
         if (operation.getPartitionId() >= 0) {
-            // retrieving an OperationRunner for a partition specific operation is easy; we can just use the partition id.
+            // retrieving an OperationRunner for a partition specific operation is easy; we can just use the partition ID.
             return partitionOperationRunners[operation.getPartitionId()];
         }
 

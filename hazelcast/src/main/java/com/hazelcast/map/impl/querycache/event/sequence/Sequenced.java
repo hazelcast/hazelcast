@@ -29,9 +29,9 @@ public interface Sequenced {
     long getSequence();
 
     /**
-     * Returns partition id which this sequence belongs to.
+     * Returns partition ID which this sequence belongs to.
      *
-     * @return partition id which this sequence belongs to.
+     * @return partition ID which this sequence belongs to.
      */
     int getPartitionId();
 

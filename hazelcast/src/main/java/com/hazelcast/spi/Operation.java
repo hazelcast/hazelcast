@@ -45,7 +45,9 @@ import static com.hazelcast.util.StringUtil.timeToString;
  */
 public abstract class Operation implements DataSerializable {
 
-    /** Marks an {@link Operation} as non-partition-specific. */
+    /**
+     * Marks an {@link Operation} as non-partition-specific.
+     */
     public static final int GENERIC_PARTITION_ID = -1;
 
     static final int BITMASK_VALIDATE_TARGET = 1;
@@ -133,18 +135,18 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * Returns the id of the partition that this Operation will be executed upon.
+     * Returns the ID of the partition that this Operation will be executed upon.
      *
      * If the partitionId is equal or larger than 0, it means that it is tied to a specific partition: for example,
      * a map.get('foo'). If it is smaller than 0, than it means that it isn't bound to a particular partition.
      *
      * The partitionId should never be equal or larger than the total number of partitions. For example, if there are 271
-     * partitions, the maximum partitionId is 270.
+     * partitions, the maximum partition ID is 270.
      *
      * The partitionId is used by the OperationService to figure out which member owns a specific partition, and to send
      * the operation to that member.
      *
-     * @return the id of the partition.
+     * @return the ID of the partition.
      * @see #setPartitionId(int)
      */
     public final int getPartitionId() {
@@ -152,9 +154,9 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * Sets the partition id.
+     * Sets the partition ID.
      *
-     * @param partitionId the id of the partition.
+     * @param partitionId the ID of the partition.
      * @return the updated Operation.
      * @see #getPartitionId()
      */
@@ -183,12 +185,13 @@ public abstract class Operation implements DataSerializable {
      * Gets the call ID of this operation. The call ID is used to associate the invocation of an operation
      * on a remote system with the response from the execution of that operation.
      * <ul>
-     *     <li>Initially the call ID is zero.</li>
-     *     <li>When an Invocation of the operation is created, call ID is assigned a positive value.</li>
-     *     <li>When the invocation ends, the operation is {@link #deactivate()}d, but the call ID is preserved.</li>
-     *     <li>The same operation may be involved in a further invocation (retrying); this will assign a
-     *     new call ID and reactivate the operation.</li>
+     * <li>Initially the call ID is zero.</li>
+     * <li>When an Invocation of the operation is created, call ID is assigned a positive value.</li>
+     * <li>When the invocation ends, the operation is {@link #deactivate()}d, but the call ID is preserved.</li>
+     * <li>The same operation may be involved in a further invocation (retrying); this will assign a
+     * new call ID and reactivate the operation.</li>
      * </ul>
+     *
      * @return the call ID
      */
     public final long getCallId() {
@@ -229,7 +232,7 @@ public abstract class Operation implements DataSerializable {
      *
      * @param newId the requested call ID, must be positive
      * @throws IllegalArgumentException if the supplied call ID is non-positive
-     * @throws IllegalStateException if the operation already has an ongoing invocation
+     * @throws IllegalStateException    if the operation already has an ongoing invocation
      */
     // Accessed using OperationAccessor
     final void setCallId(long newId) {
@@ -397,9 +400,9 @@ public abstract class Operation implements DataSerializable {
      *
      * Examples:
      * <ol>
-     *     <li>in case of ILock.tryLock(10, ms), the wait timeout is 10 ms</li>
-     *     <li>in case of ILock.lock(), the wait timeout is -1</li>
-     *     <li>in case of ILock.tryLock(), the wait timeout is 0.</li>
+     * <li>in case of ILock.tryLock(10, ms), the wait timeout is 10 ms</li>
+     * <li>in case of ILock.lock(), the wait timeout is -1</li>
+     * <li>in case of ILock.tryLock(), the wait timeout is 0.</li>
      * </ol>
      *
      * The waitTimeout only has meaning for blocking operations. For non blocking operations the value is undefined.

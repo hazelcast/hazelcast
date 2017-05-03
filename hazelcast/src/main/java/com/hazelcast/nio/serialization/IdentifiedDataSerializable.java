@@ -30,15 +30,16 @@ package com.hazelcast.nio.serialization;
 public interface IdentifiedDataSerializable extends DataSerializable {
 
     /**
-     * Returns DataSerializableFactory factory id for this class.
-     * @return factory id
+     * Returns DataSerializableFactory factory ID for this class.
+     *
+     * @return factory ID
      */
     int getFactoryId();
 
     /**
-     * Returns type identifier for this class. Id should be unique per DataSerializableFactory.
-     * @return type id
+     * Returns type identifier for this class. It should be unique per DataSerializableFactory.
+     *
+     * @return type ID
      */
     int getId();
-
 }

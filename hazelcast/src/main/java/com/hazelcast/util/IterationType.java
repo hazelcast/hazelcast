@@ -17,8 +17,7 @@
 package com.hazelcast.util;
 
 /**
- * To differentiate users selection on result collection on map-wide operations
- * like values, keySet, query etc.
+ * To differentiate users selection on result collection on map-wide operations like values, keySet, query etc.
  */
 public enum IterationType {
 
@@ -42,22 +41,22 @@ public enum IterationType {
     }
 
     /**
-     * Gets the id for the given IterationType.
+     * Gets the ID for the given IterationType.
      *
-     * This reason this id is used instead of an the ordinal value is that the ordinal value is more prone to changes due to
+     * This reason this ID is used instead of an the ordinal value is that the ordinal value is more prone to changes due to
      * reordering.
      *
-     * @return the id.
+     * @return the ID
      */
     public byte getId() {
         return id;
     }
 
     /**
-     * Returns the IterationType for the given id.
+     * Returns the IterationType for the given ID.
      *
-     * @return the IterationType for the given id.
-     * @throws IllegalArgumentException if no IterationType was found.
+     * @return the IterationType for the given ID
+     * @throws IllegalArgumentException if no IterationType was found
      */
     public static IterationType getById(byte id) {
         for (IterationType type : values()) {

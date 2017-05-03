@@ -439,7 +439,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
     @Override
     public boolean removeEntryListener(String id) {
-        checkNotNull(id, "listener id cannot be null");
+        checkNotNull(id, "listener ID cannot be null");
 
         QueryCacheEventService eventService = getEventService();
         return eventService.removeListener(mapName, cacheName, id);

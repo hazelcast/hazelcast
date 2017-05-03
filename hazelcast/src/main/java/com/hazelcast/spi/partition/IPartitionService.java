@@ -48,7 +48,7 @@ public interface IPartitionService extends CoreService {
     /**
      * Gets the owner of the partition. If none is set, it will wait till the owner is set.
      *
-     * @param partitionId  the partitionId
+     * @param partitionId the partitionId
      * @return owner of partition
      * @throws InterruptedException
      * @throws NoDataMemberInClusterException if all nodes are lite members and partitions can't be assigned
@@ -73,26 +73,26 @@ public interface IPartitionService extends CoreService {
      * <p/>
      * The IPartition for a given partitionId will never change, so it can be cached safely.
      *
-     * @param partitionId the partitionId
+     * @param partitionId            the partitionId
      * @param triggerOwnerAssignment flag to trigger partition assignment
      * @return the IPartition.
      */
     IPartition getPartition(int partitionId, boolean triggerOwnerAssignment);
 
     /**
-     * Returns the partition id for a Data key.
+     * Returns the partition ID for a Data key.
      *
      * @param key the Data key.
-     * @return the partition id.
+     * @return the partition ID.
      * @throws NullPointerException if key is null.
      */
     int getPartitionId(Data key);
 
     /**
-     * Returns the partition id for a given object.
+     * Returns the partition ID for a given object.
      *
      * @param key the object key.
-     * @return the partition id.
+     * @return the partition ID.
      */
     int getPartitionId(Object key);
 
@@ -104,16 +104,17 @@ public interface IPartitionService extends CoreService {
     int getPartitionCount();
 
     /**
-     * Returns partition id list assigned to given target.
+     * Returns partition ID list assigned to given target.
      * Triggers partition assignment if partitions are not assigned yet.
      *
-     * @return partition id list assigned to given target
+     * @return partition ID list assigned to given target
      */
     List<Integer> getMemberPartitions(Address target);
 
     /**
      * Gets member partition IDs. Blocks until partitions are assigned.
-     * @return map of member address to partition Ids
+     *
+     * @return map of member address to partition IDs
      **/
     Map<Address, List<Integer>> getMemberPartitionsMap();
 
@@ -165,6 +166,7 @@ public interface IPartitionService extends CoreService {
 
     /**
      * Check if this node is the owner of a partition
+     *
      * @param partitionId
      * @return true if it owns the partition. false if it doesn't or the partition hasn't been assigned yet.
      */

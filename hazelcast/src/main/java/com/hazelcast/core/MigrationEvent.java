@@ -54,9 +54,9 @@ public class MigrationEvent implements DataSerializable, PartitionEvent {
     }
 
     /**
-     * Returns the id of the partition which is (or is being) migrated
+     * Returns the ID of the partition which is (or is being) migrated
      *
-     * @return the id of the partition which is (or is being) migrated
+     * @return the ID of the partition which is (or is being) migrated
      */
     public int getPartitionId() {
         return partitionId;

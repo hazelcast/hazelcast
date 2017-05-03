@@ -24,10 +24,10 @@ package com.hazelcast.nio.serialization;
 public interface DataSerializableFactory {
 
     /**
-     * Creates an IdentifiedDataSerializable instance using given type id
-     * @param typeId IdentifiedDataSerializable type id
-     * @return IdentifiedDataSerializable instance or null if type id is not known by this factory
+     * Creates an IdentifiedDataSerializable instance using given type ID
+     *
+     * @param typeId IdentifiedDataSerializable type ID
+     * @return IdentifiedDataSerializable instance or {@code null} if type ID is not known by this factory
      */
     IdentifiedDataSerializable create(int typeId);
-
 }

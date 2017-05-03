@@ -348,7 +348,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
         if (lock == null) {
             return "<not-locked>";
         } else {
-            return "Owner: " + lock.getOwner() + ", thread-id: " + lock.getThreadId();
+            return "Owner: " + lock.getOwner() + ", thread ID: " + lock.getThreadId();
         }
     }
 

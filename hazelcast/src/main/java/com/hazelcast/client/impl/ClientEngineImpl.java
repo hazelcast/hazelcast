@@ -117,9 +117,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     private final Executor queryExecutor;
 
     private final SerializationService serializationService;
-    // client uuid -> member uuid
+    // client UUID -> member UUID
     private final ConcurrentMap<String, String> ownershipMappings = new ConcurrentHashMap<String, String>();
-    //// client uuid -> last authentication correlation id
+    // client UUID -> last authentication correlation ID
     private final ConcurrentMap<String, AtomicLong> lastAuthenticationCorrelationIds
             = new ConcurrentHashMap<String, AtomicLong>();
 

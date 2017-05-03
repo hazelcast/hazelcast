@@ -32,7 +32,7 @@ import static com.hazelcast.ringbuffer.OverflowPolicy.FAIL;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.ADD_OPERATION;
 
 /**
- * Adds a new ring buffer item. The master node will add the item into the ring buffer, generating a new sequence id while
+ * Adds a new ring buffer item. The master node will add the item into the ring buffer, generating a new sequence ID while
  * the backup operation will put the item under the sequence ID that the master generated. This is to avoid differences
  * in ring buffer data structures.
  */
