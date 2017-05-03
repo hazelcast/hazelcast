@@ -72,7 +72,7 @@ public final class TcpIpConnection implements SocketConnection, MetricsProvider,
 
     private Address endPoint;
 
-    private TcpIpConnectionMonitor monitor;
+    private TcpIpConnectionErrorHandler errorHandler;
 
     private volatile ConnectionType type = ConnectionType.NONE;
 
@@ -183,12 +183,12 @@ public final class TcpIpConnection implements SocketConnection, MetricsProvider,
         this.endPoint = endPoint;
     }
 
-    public void setMonitor(TcpIpConnectionMonitor monitor) {
-        this.monitor = monitor;
+    public void setErrorHandler(TcpIpConnectionErrorHandler errorHandler) {
+        this.errorHandler = errorHandler;
     }
 
-    public TcpIpConnectionMonitor getMonitor() {
-        return monitor;
+    public TcpIpConnectionErrorHandler getErrorHandler() {
+        return errorHandler;
     }
 
     public int getConnectionId() {
@@ -272,8 +272,8 @@ public final class TcpIpConnection implements SocketConnection, MetricsProvider,
 
         connectionManager.onConnectionClose(this);
         ioService.onDisconnect(endPoint, cause);
-        if (cause != null && monitor != null) {
-            monitor.onError(cause);
+        if (cause != null && errorHandler != null) {
+            errorHandler.onError(cause);
         }
     }
 

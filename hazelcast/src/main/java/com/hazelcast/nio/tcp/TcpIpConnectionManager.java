@@ -70,10 +70,10 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     private final IOService ioService;
 
-    private final ConstructorFunction<Address, TcpIpConnectionMonitor> monitorConstructor
-            = new ConstructorFunction<Address, TcpIpConnectionMonitor>() {
-        public TcpIpConnectionMonitor createNew(Address endpoint) {
-            return new TcpIpConnectionMonitor(TcpIpConnectionManager.this, endpoint);
+    private final ConstructorFunction<Address, TcpIpConnectionErrorHandler> monitorConstructor
+            = new ConstructorFunction<Address, TcpIpConnectionErrorHandler>() {
+        public TcpIpConnectionErrorHandler createNew(Address endpoint) {
+            return new TcpIpConnectionErrorHandler(TcpIpConnectionManager.this, endpoint);
         }
     };
 
@@ -83,8 +83,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     private final ConcurrentHashMap<Address, Connection> connectionsMap = new ConcurrentHashMap<Address, Connection>(100);
 
     @Probe(name = "monitorCount")
-    private final ConcurrentHashMap<Address, TcpIpConnectionMonitor> monitors =
-            new ConcurrentHashMap<Address, TcpIpConnectionMonitor>(100);
+    private final ConcurrentHashMap<Address, TcpIpConnectionErrorHandler> monitors =
+            new ConcurrentHashMap<Address, TcpIpConnectionErrorHandler>(100);
 
     @Probe(name = "inProgressCount")
     private final Set<Address> connectionsInProgress =
@@ -245,8 +245,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
                 tcpConnection.setEndPoint(remoteEndPoint);
 
                 if (!connection.isClient()) {
-                    TcpIpConnectionMonitor connectionMonitor = getConnectionMonitor(remoteEndPoint, true);
-                    tcpConnection.setMonitor(connectionMonitor);
+                    TcpIpConnectionErrorHandler connectionMonitor = getErrorHandler(remoteEndPoint, true);
+                    tcpConnection.setErrorHandler(connectionMonitor);
                 }
             }
             connectionsMap.put(remoteEndPoint, connection);
@@ -338,7 +338,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         connectionsInProgress.remove(address);
         ioService.onFailedConnection(address);
         if (!silent) {
-            getConnectionMonitor(address, false).onError(t);
+            getErrorHandler(address, false).onError(t);
         }
     }
 
@@ -364,8 +364,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         return connection;
     }
 
-    private TcpIpConnectionMonitor getConnectionMonitor(Address endpoint, boolean reset) {
-        TcpIpConnectionMonitor monitor = ConcurrencyUtil.getOrPutIfAbsent(monitors, endpoint, monitorConstructor);
+    private TcpIpConnectionErrorHandler getErrorHandler(Address endpoint, boolean reset) {
+        TcpIpConnectionErrorHandler monitor = ConcurrencyUtil.getOrPutIfAbsent(monitors, endpoint, monitorConstructor);
         if (reset) {
             monitor.reset();
         }
