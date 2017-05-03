@@ -420,6 +420,7 @@ public class MembershipManager {
 
     void suspectMember(MemberImpl suspectedMember, String reason, boolean shouldCloseConn) {
         assert !suspectedMember.equals(clusterService.getLocalMember()) : "Cannot suspect from myself!";
+        assert !suspectedMember.localMember() : "Cannot be local member";
 
         final MembersView localMemberView;
         final Set<Member> membersToAsk;

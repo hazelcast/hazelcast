@@ -53,7 +53,6 @@ import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.HEAR
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.PROMOTE_LITE_MEMBER;
 import static com.hazelcast.internal.cluster.impl.MembershipFailureTest.assertMaster;
-import static com.hazelcast.internal.cluster.impl.MembershipFailureTest.suspectMember;
 import static com.hazelcast.internal.cluster.impl.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.internal.cluster.impl.PacketFiltersUtil.dropOperationsFrom;
 import static com.hazelcast.internal.cluster.impl.PacketFiltersUtil.resetPacketFiltersFrom;
@@ -310,8 +309,8 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
 
         assertPromotionInvocationStarted(hz3);
 
-        suspectMember(hz3, hz1);
-        suspectMember(hz2, hz1);
+        suspectMember(getNode(hz3), getNode(hz1));
+        suspectMember(getNode(hz2), getNode(hz1));
 
         assertTrueEventually(new AssertTask() {
             @Override

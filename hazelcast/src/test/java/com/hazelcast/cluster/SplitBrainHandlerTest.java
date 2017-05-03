@@ -482,8 +482,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         cm1.block(n3.address);
 
         // remove and block n1 on n2 & n3
-        n2.clusterService.suspectMember(n1.getLocalMember(), null, true);
-        n3.clusterService.suspectMember(n1.getLocalMember(), null, true);
+        suspectMember(n2, n1);
+        suspectMember(n3, n1);
         cm2.block(n1.address);
         cm3.block(n1.address);
 
@@ -665,7 +665,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     }
 
     private void disconnect(final HazelcastInstance source, final HazelcastInstance target) {
-        getNode(source).clusterService.suspectMember(getNode(target).getLocalMember(), null, true);
+        suspectMember(getNode(source), getNode(target));
     }
 
 
@@ -733,8 +733,9 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         cm3.block(n1.address);
         cm3.block(n2.address);
 
-        n1.clusterService.suspectMember(n3.getLocalMember(), null, true);
-        n2.clusterService.suspectMember(n3.getLocalMember(), null, true);
+        suspectMember(n1, n3);
+        suspectMember(n2, n3);
+
         cm1.block(n3.address);
         cm2.block(n3.address);
 
@@ -821,8 +822,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         cm1.block(n2.address);
         cm1.block(n3.address);
 
-        n2.clusterService.suspectMember(n1.getLocalMember(), null, true);
-        n3.clusterService.suspectMember(n1.getLocalMember(), null, true);
+        suspectMember(n2, n1);
+        suspectMember(n3, n1);
         cm2.block(n1.address);
         cm3.block(n1.address);
 

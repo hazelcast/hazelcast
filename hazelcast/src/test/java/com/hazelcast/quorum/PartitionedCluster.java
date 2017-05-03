@@ -39,6 +39,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.generateRandomString;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
 
+import static com.hazelcast.test.HazelcastTestSupport.suspectMember;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -200,21 +201,21 @@ public class PartitionedCluster {
         cm5.block(n2.address);
         cm5.block(n3.address);
 
-        n4.clusterService.suspectMember(n1.getLocalMember(), null, true);
-        n4.clusterService.suspectMember(n2.getLocalMember(), null, true);
-        n4.clusterService.suspectMember(n3.getLocalMember(), null, true);
+        suspectMember(n4, n1);
+        suspectMember(n4, n2);
+        suspectMember(n4, n3);
 
-        n5.clusterService.suspectMember(n1.getLocalMember(), null, true);
-        n5.clusterService.suspectMember(n2.getLocalMember(), null, true);
-        n5.clusterService.suspectMember(n3.getLocalMember(), null, true);
+        suspectMember(n5, n1);
+        suspectMember(n5, n2);
+        suspectMember(n5, n3);
 
-        n1.clusterService.suspectMember(n4.getLocalMember(), null, true);
-        n2.clusterService.suspectMember(n4.getLocalMember(), null, true);
-        n3.clusterService.suspectMember(n4.getLocalMember(), null, true);
+        suspectMember(n1, n4);
+        suspectMember(n2, n4);
+        suspectMember(n3, n4);
 
-        n1.clusterService.suspectMember(n5.getLocalMember(), null, true);
-        n2.clusterService.suspectMember(n5.getLocalMember(), null, true);
-        n3.clusterService.suspectMember(n5.getLocalMember(), null, true);
+        suspectMember(n1, n5);
+        suspectMember(n2, n5);
+        suspectMember(n3, n5);
     }
 
     private static FirewallingConnectionManager getConnectionManager(Node node) {
