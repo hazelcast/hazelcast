@@ -96,7 +96,7 @@ public final class ClientProperty {
      * When set to -1 then <code>HazelcastOverloadException</code> is thrown immediately without any waiting.
      * </p>
      */
-    public static final HazelcastProperty INVOCATION_BACKOFF_TIMEOUT_MILLIS
+    public static final HazelcastProperty BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS
             = new HazelcastProperty("hazelcast.client.invocation.backoff.timeout.millis", -1, MILLISECONDS);
 
     /**

@@ -158,7 +158,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_BACKOFF_TIMEOUT_MILLIS;
+import static com.hazelcast.client.spi.properties.ClientProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
 import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.System.currentTimeMillis;
@@ -233,7 +233,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clusterService = new ClientClusterServiceImpl(this, addressProviders);
 
         int maxAllowedConcurrentInvocations = properties.getInteger(MAX_CONCURRENT_INVOCATIONS);
-        long backofftimeoutMs = properties.getLong(INVOCATION_BACKOFF_TIMEOUT_MILLIS);
+        long backofftimeoutMs = properties.getLong(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS);
         if (maxAllowedConcurrentInvocations == Integer.MAX_VALUE) {
             callIdSequence = new CallIdSequenceWithoutBackpressure();
         } else {

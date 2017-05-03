@@ -43,7 +43,7 @@ import java.lang.reflect.Field;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_BACKOFF_TIMEOUT_MILLIS;
+import static com.hazelcast.client.spi.properties.ClientProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
 import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static java.lang.Math.max;
 import static java.lang.String.valueOf;
@@ -79,7 +79,7 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
             .driverFactory(new MultiSocketClientDriverFactory(
                     new ClientConfig()
                             .setProperty(MAX_CONCURRENT_INVOCATIONS.getName(), valueOf(MAX_CONCURRENT_INVOCATION_CONFIG))
-                            .setProperty(INVOCATION_BACKOFF_TIMEOUT_MILLIS.getName(), valueOf(backoff))))
+                            .setProperty(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS.getName(), valueOf(backoff))))
             .build();
 
     @After
