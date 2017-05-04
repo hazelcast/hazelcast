@@ -18,7 +18,6 @@ package com.hazelcast.aws.impl;
 
 import com.hazelcast.aws.utility.Environment;
 import com.hazelcast.config.AwsConfig;
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,8 +27,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.Map;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -195,5 +198,56 @@ public class DescribeInstancesTest {
         Assert.assertEquals("Could not parse access key from IAM task role", accessKeyId, awsConfig.getAccessKey());
         Assert.assertEquals("Could not parse secret key from IAM task role", secretAccessKey, awsConfig.getSecretKey());
 
+    }
+
+    @Test
+    public void test_DescribeInstances_SecurityGroup()
+            throws Exception {
+        AwsConfig awsConfig = new AwsConfig();
+        awsConfig.setEnabled(true).setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
+                 .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY")).setSecurityGroupName("launch-wizard-147");
+
+        getInstancesAndVerify(awsConfig);
+    }
+
+    @Test
+    public void test_DescribeInstances_when_Tag_and_Value_Set()
+            throws Exception {
+        AwsConfig awsConfig = new AwsConfig();
+        awsConfig.setEnabled(true).setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
+                 .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY")).setTagKey("aws-test-tag").setTagValue("aws-tag-value-1");
+
+        getInstancesAndVerify(awsConfig);
+    }
+
+    @Test
+    public void test_DescribeInstances_when_Only_TagKey_Set()
+            throws Exception {
+        AwsConfig awsConfig = new AwsConfig();
+        awsConfig.setEnabled(true).setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
+                 .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY")).setTagKey("aws-test-tag");
+
+        getInstancesAndVerify(awsConfig);
+    }
+
+    @Test
+    public void test_DescribeInstances_when_Only_TagValue_Set()
+            throws Exception {
+        AwsConfig awsConfig = new AwsConfig();
+        awsConfig.setEnabled(true).setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
+                 .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY")).setTagValue("aws-tag-value-1");
+
+        getInstancesAndVerify(awsConfig);
+    }
+
+    private void getInstancesAndVerify(AwsConfig awsConfig)
+            throws Exception {
+        DescribeInstances describeInstances = new DescribeInstances(awsConfig, awsConfig.getHostHeader());
+        Map<String, String> result = describeInstances.execute();
+        Assert.assertNotNull(result);
+        Assert.assertEquals(1, result.size());
+        String expectedPrivateIp = System.getenv("HZ_TEST_AWS_INSTANCE_PRIVATE_IP");
+        Assert.assertNotNull(expectedPrivateIp);
+        Assert.assertNotNull(result.get(expectedPrivateIp));
     }
 }
