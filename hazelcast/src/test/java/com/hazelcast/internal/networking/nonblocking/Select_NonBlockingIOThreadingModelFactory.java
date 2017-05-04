@@ -20,8 +20,8 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.IOThreadingModelFactory;
 import com.hazelcast.nio.tcp.MockIOService;
-import com.hazelcast.nio.tcp.SocketReaderInitializerImpl;
-import com.hazelcast.nio.tcp.SocketWriterInitializerImpl;
+import com.hazelcast.nio.tcp.MemberSocketReaderInitializer;
+import com.hazelcast.nio.tcp.MemberSocketWriterInitializer;
 
 public class Select_NonBlockingIOThreadingModelFactory implements IOThreadingModelFactory {
 
@@ -35,8 +35,8 @@ public class Select_NonBlockingIOThreadingModelFactory implements IOThreadingMod
                 ioService.getIoOutOfMemoryHandler(), ioService.getInputSelectorThreadCount(),
                 ioService.getOutputSelectorThreadCount(),
                 ioService.getBalancerIntervalSeconds(),
-                new SocketWriterInitializerImpl(loggingService.getLogger(SocketWriterInitializerImpl.class)),
-                new SocketReaderInitializerImpl(loggingService.getLogger(SocketReaderInitializerImpl.class))
+                new MemberSocketWriterInitializer(loggingService.getLogger(MemberSocketWriterInitializer.class)),
+                new MemberSocketReaderInitializer(loggingService.getLogger(MemberSocketReaderInitializer.class))
         );
         threadingModel.setSelectorMode(SelectorMode.SELECT);
         return threadingModel;

@@ -39,11 +39,11 @@ import static com.hazelcast.nio.Protocols.CLUSTER;
 import static com.hazelcast.nio.Protocols.TEXT;
 import static com.hazelcast.util.StringUtil.bytesToString;
 
-public class SocketReaderInitializerImpl implements SocketReaderInitializer<TcpIpConnection> {
+public class MemberSocketReaderInitializer implements SocketReaderInitializer<TcpIpConnection> {
 
     private final ILogger logger;
 
-    public SocketReaderInitializerImpl(ILogger logger) {
+    public MemberSocketReaderInitializer(ILogger logger) {
         this.logger = logger;
     }
 
