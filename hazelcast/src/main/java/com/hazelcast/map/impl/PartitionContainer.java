@@ -19,7 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
@@ -171,7 +171,7 @@ public class PartitionContainer {
         final NodeEngine nodeEngine = mapService.getMapServiceContext().getNodeEngine();
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
-            final DefaultObjectNamespace namespace = new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
+            final DistributedObjectNamespace namespace = new DistributedObjectNamespace(MapService.SERVICE_NAME, name);
             lockService.clearLockStore(partitionId, namespace);
         }
     }

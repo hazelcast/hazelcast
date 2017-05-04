@@ -18,7 +18,7 @@ package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
+import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -34,7 +34,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
@@ -63,13 +63,13 @@ public class ReplicaSyncResponse extends AbstractPartitionOperation
         implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation, AllowedDuringPassiveState {
 
     private Collection<Operation> operations;
-    private ReplicaFragmentNamespace namespace;
+    private ServiceNamespace namespace;
     private long[] versions;
 
     public ReplicaSyncResponse() {
     }
 
-    public ReplicaSyncResponse(Collection<Operation> operations, ReplicaFragmentNamespace namespace, long[] versions) {
+    public ReplicaSyncResponse(Collection<Operation> operations, ServiceNamespace namespace, long[] versions) {
         this.operations = operations;
         this.namespace = namespace;
         this.versions = versions;
@@ -243,7 +243,7 @@ public class ReplicaSyncResponse extends AbstractPartitionOperation
         if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
             out.writeObject(namespace);
         } else {
-            assert namespace.equals(InternalReplicaFragmentNamespace.INSTANCE)
+            assert namespace.equals(NonFragmentedServiceNamespace.INSTANCE)
                     : "Only internal namespace is allowed before V3.9: " + namespace;
         }
         out.writeLongArray(versions);
@@ -262,7 +262,7 @@ public class ReplicaSyncResponse extends AbstractPartitionOperation
         if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
             namespace = in.readObject();
         } else {
-            namespace = InternalReplicaFragmentNamespace.INSTANCE;
+            namespace = NonFragmentedServiceNamespace.INSTANCE;
         }
         versions = in.readLongArray();
 

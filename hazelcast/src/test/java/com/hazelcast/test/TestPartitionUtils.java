@@ -18,7 +18,7 @@ package com.hazelcast.test;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
+import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -26,7 +26,7 @@ import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.partition.impl.ReplicaFragmentSyncInfo;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.util.scheduler.ScheduledEntry;
@@ -94,7 +94,7 @@ public class TestPartitionUtils {
 
     // TODO: returning only default replica versions
     public static long[] getDefaultReplicaVersions(Node node, int partitionId) throws InterruptedException {
-        return getPartitionReplicaVersionsView(node, partitionId).getVersions().get(InternalReplicaFragmentNamespace.INSTANCE);
+        return getPartitionReplicaVersionsView(node, partitionId).getVersions().get(NonFragmentedServiceNamespace.INSTANCE);
     }
 
     public static PartitionReplicaVersionsView getPartitionReplicaVersionsView(Node node, int partitionId)
@@ -190,10 +190,10 @@ public class TestPartitionUtils {
             PartitionReplicaManager replicaManager =
                     (PartitionReplicaManager) partitionService.getPartitionReplicaVersionManager();
 
-            Collection<ReplicaFragmentNamespace> namespaces = replicaManager.getNamespaces(partitionId);
-            Map<ReplicaFragmentNamespace, long[]> versionMap = new HashMap<ReplicaFragmentNamespace, long[]>(namespaces.size());
-            Set<ReplicaFragmentNamespace> dirty = new HashSet<ReplicaFragmentNamespace>();
-            for (ReplicaFragmentNamespace ns : namespaces) {
+            Collection<ServiceNamespace> namespaces = replicaManager.getNamespaces(partitionId);
+            Map<ServiceNamespace, long[]> versionMap = new HashMap<ServiceNamespace, long[]>(namespaces.size());
+            Set<ServiceNamespace> dirty = new HashSet<ServiceNamespace>();
+            for (ServiceNamespace ns : namespaces) {
                 long[] originalVersions = replicaManager.getPartitionReplicaVersions(partitionId, ns);
                 long[] versions = Arrays.copyOf(originalVersions, originalVersions.length);
                 versionMap.put(ns, versions);
@@ -218,19 +218,19 @@ public class TestPartitionUtils {
     }
 
     public static class PartitionReplicaVersionsView {
-        private final Map<ReplicaFragmentNamespace, long[]> versions;
-        private final Set<ReplicaFragmentNamespace> dirty;
+        private final Map<ServiceNamespace, long[]> versions;
+        private final Set<ServiceNamespace> dirty;
 
-        PartitionReplicaVersionsView(Map<ReplicaFragmentNamespace, long[]> replicaVersions, Set<ReplicaFragmentNamespace> dirty) {
+        PartitionReplicaVersionsView(Map<ServiceNamespace, long[]> replicaVersions, Set<ServiceNamespace> dirty) {
             this.versions = replicaVersions;
             this.dirty = dirty;
         }
 
-        public Map<ReplicaFragmentNamespace, long[]> getVersions() {
+        public Map<ServiceNamespace, long[]> getVersions() {
             return versions;
         }
 
-        public boolean isDirty(ReplicaFragmentNamespace ns) {
+        public boolean isDirty(ServiceNamespace ns) {
             return dirty.contains(ns);
         }
     }

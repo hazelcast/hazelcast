@@ -20,7 +20,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
+import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.operation.ReplicaSyncRequest;
 import com.hazelcast.internal.util.counters.MwCounter;
@@ -28,8 +28,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReplicaFragmentAware;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespaceAware;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -132,7 +132,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
      * @param replicaIndex the index of the replica which is being synchronized
      * @throws IllegalArgumentException if the replica index is not between 0 and {@link InternalPartition#MAX_REPLICA_COUNT}
      */
-    public void triggerPartitionReplicaSync(int partitionId, Collection<ReplicaFragmentNamespace> namespaces, int replicaIndex) {
+    public void triggerPartitionReplicaSync(int partitionId, Collection<ServiceNamespace> namespaces, int replicaIndex) {
         assert replicaIndex >= 0 && replicaIndex < InternalPartition.MAX_REPLICA_COUNT
                 : "Invalid replica index! partitionId=" + partitionId + ", replicaIndex=" + replicaIndex;
 
@@ -192,7 +192,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
      * was not removed while the cluster was not active. Also cancel any currently scheduled sync requests for the given
      * partition and schedule a new sync request that is to be run in the case of timeout
      */
-    private void sendSyncReplicaRequest(int partitionId, Collection<ReplicaFragmentNamespace> syncNamespaces,
+    private void sendSyncReplicaRequest(int partitionId, Collection<ServiceNamespace> syncNamespaces,
             int replicaIndex, Address target) {
         if (node.clusterService.isMemberRemovedInNotJoinableState(target)) {
             return;
@@ -206,7 +206,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
             return;
         }
 
-        Collection<ReplicaFragmentNamespace> namespaces = registerSyncInfoFor(partitionId, syncNamespaces, replicaIndex, target);
+        Collection<ServiceNamespace> namespaces = registerSyncInfoFor(partitionId, syncNamespaces, replicaIndex, target);
         if (namespaces.isEmpty()) {
             releaseReplicaSyncPermit();
             return;
@@ -228,14 +228,14 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         nodeEngine.getOperationService().send(syncRequest, target);
     }
 
-    private Collection<ReplicaFragmentNamespace> registerSyncInfoFor(int partitionId,
-            Collection<ReplicaFragmentNamespace> requestedNamespaces, int replicaIndex, Address target) {
+    private Collection<ServiceNamespace> registerSyncInfoFor(int partitionId,
+            Collection<ServiceNamespace> requestedNamespaces, int replicaIndex, Address target) {
 
         // namespaces arg may not support removal
-        Collection<ReplicaFragmentNamespace> namespaces = new ArrayList<ReplicaFragmentNamespace>(requestedNamespaces);
-        Iterator<ReplicaFragmentNamespace> iter = namespaces.iterator();
+        Collection<ServiceNamespace> namespaces = new ArrayList<ServiceNamespace>(requestedNamespaces);
+        Iterator<ServiceNamespace> iter = namespaces.iterator();
         while (iter.hasNext()) {
-            ReplicaFragmentNamespace namespace = iter.next();
+            ServiceNamespace namespace = iter.next();
             ReplicaFragmentSyncInfo syncInfo = new ReplicaFragmentSyncInfo(partitionId, namespace, replicaIndex, target);
             if (!replicaSyncRequests.add(syncInfo)) {
                 logger.finest("Cannot send sync replica request for " + syncInfo + ". Sync is already in progress!");
@@ -249,22 +249,22 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     }
 
     @Override
-    public ReplicaFragmentNamespace getReplicaFragmentNamespace(Operation operation) {
-        if (operation instanceof ReplicaFragmentAware && clusterVersion.isGreaterOrEqual(Versions.V3_9)) {
-            return ((ReplicaFragmentAware) operation).getReplicaFragmentNamespace();
+    public ServiceNamespace getServiceNamespace(Operation operation) {
+        if (operation instanceof ServiceNamespaceAware && clusterVersion.isGreaterOrEqual(Versions.V3_9)) {
+            return ((ServiceNamespaceAware) operation).getServiceNamespace();
         }
-        return InternalReplicaFragmentNamespace.INSTANCE;
+        return NonFragmentedServiceNamespace.INSTANCE;
     }
 
     @Override
     // Caution: Returning version array without copying for performance reasons. Callers must not modify this array!
-    public long[] incrementPartitionReplicaVersions(int partitionId, ReplicaFragmentNamespace namespace, int backupCount) {
+    public long[] incrementPartitionReplicaVersions(int partitionId, ServiceNamespace namespace, int backupCount) {
         PartitionReplicaVersions replicaVersion = replicaVersions[partitionId];
         return replicaVersion.incrementAndGet(namespace, backupCount);
     }
 
     @Override
-    public void updatePartitionReplicaVersions(int partitionId, ReplicaFragmentNamespace namespace,
+    public void updatePartitionReplicaVersions(int partitionId, ServiceNamespace namespace,
                                                long[] versions, int replicaIndex) {
         PartitionReplicaVersions partitionVersion = replicaVersions[partitionId];
         if (!partitionVersion.update(namespace, versions, replicaIndex)) {
@@ -274,30 +274,30 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     }
 
     @Override
-    public boolean isPartitionReplicaVersionStale(int partitionId, ReplicaFragmentNamespace namespace,
+    public boolean isPartitionReplicaVersionStale(int partitionId, ServiceNamespace namespace,
                                                   long[] versions, int replicaIndex) {
         return replicaVersions[partitionId].isStale(namespace, versions, replicaIndex);
     }
 
     // called in operation threads
-    public boolean isPartitionReplicaVersionDirty(int partitionId, ReplicaFragmentNamespace namespace) {
+    public boolean isPartitionReplicaVersionDirty(int partitionId, ServiceNamespace namespace) {
         return replicaVersions[partitionId].isDirty(namespace);
     }
 
     @Override
     // Caution: Returning version array without copying for performance reasons. Callers must not modify this array!
-    public long[] getPartitionReplicaVersions(int partitionId, ReplicaFragmentNamespace namespace) {
+    public long[] getPartitionReplicaVersions(int partitionId, ServiceNamespace namespace) {
         return replicaVersions[partitionId].get(namespace);
     }
 
     // called in operation threads
-    public void setPartitionReplicaVersions(int partitionId, ReplicaFragmentNamespace namespace,
+    public void setPartitionReplicaVersions(int partitionId, ServiceNamespace namespace,
                                             long[] versions, int replicaOffset) {
         replicaVersions[partitionId].set(namespace, versions, replicaOffset);
     }
 
     // called in operation threads
-    public void clearPartitionReplicaVersions(int partitionId, ReplicaFragmentNamespace namespace) {
+    public void clearPartitionReplicaVersions(int partitionId, ServiceNamespace namespace) {
         replicaVersions[partitionId].clear(namespace);
     }
 
@@ -310,7 +310,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
      * @param versions the new replica versions for the partition
      */
     // called in operation threads
-    public void finalizeReplicaSync(int partitionId, int replicaIndex, ReplicaFragmentNamespace namespace, long[] versions) {
+    public void finalizeReplicaSync(int partitionId, int replicaIndex, ServiceNamespace namespace, long[] versions) {
         PartitionReplicaVersions replicaVersion = replicaVersions[partitionId];
         replicaVersion.clear(namespace);
         replicaVersion.set(namespace, versions, replicaIndex);
@@ -326,7 +326,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
      * @param replicaIndex the index of the replica being synchronized
      */
     // called in operation threads
-    public void clearReplicaSyncRequest(int partitionId, ReplicaFragmentNamespace namespace, int replicaIndex) {
+    public void clearReplicaSyncRequest(int partitionId, ServiceNamespace namespace, int replicaIndex) {
         ReplicaFragmentSyncInfo syncInfo = new ReplicaFragmentSyncInfo(partitionId, namespace, replicaIndex, null);
         if (!replicaSyncRequests.remove(syncInfo)) {
             return;
@@ -412,11 +412,11 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     }
 
     @Override
-    public Collection<ReplicaFragmentNamespace> getNamespaces(int partitionId) {
+    public Collection<ServiceNamespace> getNamespaces(int partitionId) {
         return replicaVersions[partitionId].getNamespaces();
     }
 
-    public void retainNamespaces(int partitionId, Set<ReplicaFragmentNamespace> namespaces) {
+    public void retainNamespaces(int partitionId, Set<ServiceNamespace> namespaces) {
         PartitionReplicaVersions versions = replicaVersions[partitionId];
         versions.retainNamespaces(namespaces);
     }

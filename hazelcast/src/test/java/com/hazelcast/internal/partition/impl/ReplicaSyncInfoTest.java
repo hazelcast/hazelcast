@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
+import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -48,12 +48,12 @@ public class ReplicaSyncInfoTest {
         Address target = new Address("127.0.0.1", 5701);
         Address otherTarget = new Address("127.0.0.1", 5702);
 
-        replicaSyncInfo = new ReplicaFragmentSyncInfo(partitionId, InternalReplicaFragmentNamespace.INSTANCE, replicaIndex, target);
-        replicaSyncInfoSameAttributes = new ReplicaFragmentSyncInfo(partitionId, InternalReplicaFragmentNamespace.INSTANCE, replicaIndex, target);
+        replicaSyncInfo = new ReplicaFragmentSyncInfo(partitionId, NonFragmentedServiceNamespace.INSTANCE, replicaIndex, target);
+        replicaSyncInfoSameAttributes = new ReplicaFragmentSyncInfo(partitionId, NonFragmentedServiceNamespace.INSTANCE, replicaIndex, target);
 
-        replicaSyncInfoOtherTarget = new ReplicaFragmentSyncInfo(partitionId, InternalReplicaFragmentNamespace.INSTANCE, replicaIndex, otherTarget);
-        replicaSyncInfoOtherPartitionId = new ReplicaFragmentSyncInfo(24, InternalReplicaFragmentNamespace.INSTANCE, replicaIndex, target);
-        replicaSyncInfoOtherReplicaIndex = new ReplicaFragmentSyncInfo(partitionId, InternalReplicaFragmentNamespace.INSTANCE, 43, target);
+        replicaSyncInfoOtherTarget = new ReplicaFragmentSyncInfo(partitionId, NonFragmentedServiceNamespace.INSTANCE, replicaIndex, otherTarget);
+        replicaSyncInfoOtherPartitionId = new ReplicaFragmentSyncInfo(24, NonFragmentedServiceNamespace.INSTANCE, replicaIndex, target);
+        replicaSyncInfoOtherReplicaIndex = new ReplicaFragmentSyncInfo(partitionId, NonFragmentedServiceNamespace.INSTANCE, 43, target);
     }
 
     @Test

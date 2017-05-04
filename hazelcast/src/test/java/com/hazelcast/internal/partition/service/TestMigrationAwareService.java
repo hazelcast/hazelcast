@@ -17,12 +17,11 @@
 package com.hazelcast.internal.partition.service;
 
 import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
+import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 
 import java.util.Collection;
@@ -65,7 +64,7 @@ public class TestMigrationAwareService extends TestAbstractMigrationAwareService
             return null;
         }
         if (!data.containsKey(event.getPartitionId())) {
-            throw new HazelcastException("No data found for " + event);
+            return null;
         }
         return new TestReplicationOperation(data.get(event.getPartitionId()));
     }
@@ -135,7 +134,7 @@ public class TestMigrationAwareService extends TestAbstractMigrationAwareService
     }
 
     @Override
-    public ReplicaFragmentNamespace getNamespace(Void name) {
-        return InternalReplicaFragmentNamespace.INSTANCE;
+    public ServiceNamespace getNamespace(Void name) {
+        return NonFragmentedServiceNamespace.INSTANCE;
     }
 }

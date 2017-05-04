@@ -17,7 +17,7 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 
 import java.util.Arrays;
 
@@ -26,7 +26,7 @@ import static java.lang.System.arraycopy;
 // read and updated only by partition threads
 final class PartitionReplicaFragmentVersions {
     private final int partitionId;
-    private final ReplicaFragmentNamespace namespace;
+    private final ServiceNamespace namespace;
     private final long[] versions = new long[InternalPartition.MAX_BACKUP_COUNT];
     /**
      * Shows whether partition has missing backups somewhere between the last applied backup
@@ -34,7 +34,7 @@ final class PartitionReplicaFragmentVersions {
      */
     private boolean dirty;
 
-    PartitionReplicaFragmentVersions(int partitionId, ReplicaFragmentNamespace namespace) {
+    PartitionReplicaFragmentVersions(int partitionId, ServiceNamespace namespace) {
         this.partitionId = partitionId;
         this.namespace = namespace;
     }

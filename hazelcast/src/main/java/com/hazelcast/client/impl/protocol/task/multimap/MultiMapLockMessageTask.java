@@ -26,7 +26,7 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
-import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
@@ -45,12 +45,12 @@ public class MultiMapLockMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        DefaultObjectNamespace namespace = getNamespace();
+        DistributedObjectNamespace namespace = getNamespace();
         return new LockOperation(namespace, parameters.key, parameters.threadId, parameters.ttl, -1, parameters.referenceId);
     }
 
-    private DefaultObjectNamespace getNamespace() {
-        return new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, parameters.name);
+    private DistributedObjectNamespace getNamespace() {
+        return new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, parameters.name);
     }
 
     @Override

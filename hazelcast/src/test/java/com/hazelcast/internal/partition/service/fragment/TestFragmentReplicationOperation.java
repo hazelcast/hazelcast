@@ -19,7 +19,6 @@ package com.hazelcast.internal.partition.service.fragment;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -27,12 +26,12 @@ import java.util.Map;
 
 public class TestFragmentReplicationOperation extends Operation {
 
-    private Map<TestReplicaFragmentNamespace, Integer> values;
+    private Map<TestServiceNamespace, Integer> values;
 
     public TestFragmentReplicationOperation() {
     }
 
-    public TestFragmentReplicationOperation(Map<TestReplicaFragmentNamespace, Integer> values) {
+    public TestFragmentReplicationOperation(Map<TestServiceNamespace, Integer> values) {
         this.values = values;
     }
 
@@ -40,7 +39,7 @@ public class TestFragmentReplicationOperation extends Operation {
     @Override
     public void run() throws Exception {
         TestFragmentedMigrationAwareService service = getService();
-        for (Map.Entry<TestReplicaFragmentNamespace, Integer> entry : values.entrySet()) {
+        for (Map.Entry<TestServiceNamespace, Integer> entry : values.entrySet()) {
             service.put(entry.getKey().name, getPartitionId(), entry.getValue());
         }
     }
@@ -50,7 +49,7 @@ public class TestFragmentReplicationOperation extends Operation {
         super.writeInternal(out);
 
         out.writeInt(values.size());
-        for (Map.Entry<TestReplicaFragmentNamespace, Integer> entry : values.entrySet()) {
+        for (Map.Entry<TestServiceNamespace, Integer> entry : values.entrySet()) {
             out.writeObject(entry.getKey());
             out.writeInt(entry.getValue());
         }
@@ -61,9 +60,9 @@ public class TestFragmentReplicationOperation extends Operation {
         super.readInternal(in);
 
         int len = in.readInt();
-        values = new HashMap<TestReplicaFragmentNamespace, Integer>(len);
+        values = new HashMap<TestServiceNamespace, Integer>(len);
         for (int i = 0; i < len; i++) {
-            TestReplicaFragmentNamespace ns = in.readObject();
+            TestServiceNamespace ns = in.readObject();
             int value = in.readInt();
             values.put(ns, value);
         }

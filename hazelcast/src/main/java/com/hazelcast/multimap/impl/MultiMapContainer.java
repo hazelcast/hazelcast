@@ -19,7 +19,7 @@ package com.hazelcast.multimap.impl;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.DistributedObjectNamespace;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -38,7 +38,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
 
     private static final int ID_PROMOTION_OFFSET = 100000;
 
-    private final DefaultObjectNamespace lockNamespace;
+    private final DistributedObjectNamespace lockNamespace;
 
     private final LockStore lockStore;
 
@@ -55,7 +55,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     public MultiMapContainer(String name, MultiMapService service, int partitionId) {
         super(name, service.getNodeEngine());
         this.partitionId = partitionId;
-        this.lockNamespace = new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, name);
+        this.lockNamespace = new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name);
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null : lockService.createLockStore(partitionId, lockNamespace);
         this.creationTime = currentTimeMillis();

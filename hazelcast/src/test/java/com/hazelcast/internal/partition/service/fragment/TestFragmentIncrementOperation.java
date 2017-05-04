@@ -18,9 +18,9 @@ package com.hazelcast.internal.partition.service.fragment;
 
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReplicaFragmentAware;
+import com.hazelcast.spi.ServiceNamespaceAware;
 
-public class TestFragmentIncrementOperation extends TestAbstractFragmentOperation implements BackupAwareOperation, ReplicaFragmentAware {
+public class TestFragmentIncrementOperation extends TestAbstractFragmentOperation implements BackupAwareOperation, ServiceNamespaceAware {
 
     private transient int value;
 

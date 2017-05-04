@@ -19,7 +19,7 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -35,7 +35,7 @@ import org.junit.runner.RunWith;
 import java.util.Collections;
 import java.util.Set;
 
-import static com.hazelcast.internal.partition.InternalReplicaFragmentNamespace.INSTANCE;
+import static com.hazelcast.internal.partition.NonFragmentedServiceNamespace.INSTANCE;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -68,13 +68,13 @@ public class PartitionReplicaManagerTest extends HazelcastTestSupport {
 
     @Test(expected = AssertionError.class)
     public void testTriggerPartitionReplicaSync_whenReplicaIndexNegative_thenThrowException() {
-        Set<ReplicaFragmentNamespace> namespaces = Collections.<ReplicaFragmentNamespace>singleton(INSTANCE);
+        Set<ServiceNamespace> namespaces = Collections.<ServiceNamespace>singleton(INSTANCE);
         manager.triggerPartitionReplicaSync(PARTITION_ID, namespaces, -1);
     }
 
     @Test(expected = AssertionError.class)
     public void testTriggerPartitionReplicaSync_whenReplicaIndexTooLarge_thenThrowException() {
-        Set<ReplicaFragmentNamespace> namespaces = Collections.<ReplicaFragmentNamespace>singleton(INSTANCE);
+        Set<ServiceNamespace> namespaces = Collections.<ServiceNamespace>singleton(INSTANCE);
         manager.triggerPartitionReplicaSync(PARTITION_ID, namespaces, InternalPartition.MAX_REPLICA_COUNT + 1);
     }
 

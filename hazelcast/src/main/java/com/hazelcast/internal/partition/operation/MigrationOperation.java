@@ -26,7 +26,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -119,9 +119,9 @@ public class MigrationOperation extends BaseMigrationDestinationOperation {
             int destinationNewReplicaIndex = migrationInfo.getDestinationNewReplicaIndex();
             int replicaOffset = destinationNewReplicaIndex <= 1 ? 1 : destinationNewReplicaIndex;
 
-            Map<ReplicaFragmentNamespace, long[]> namespaceVersions = fragmentMigrationState.getNamespaceVersionMap();
-            for (Entry<ReplicaFragmentNamespace, long[]> e  : namespaceVersions.entrySet()) {
-                ReplicaFragmentNamespace namespace = e.getKey();
+            Map<ServiceNamespace, long[]> namespaceVersions = fragmentMigrationState.getNamespaceVersionMap();
+            for (Entry<ServiceNamespace, long[]> e  : namespaceVersions.entrySet()) {
+                ServiceNamespace namespace = e.getKey();
                 long[] replicaVersions = e.getValue();
                 replicaManager.setPartitionReplicaVersions(migrationInfo.getPartitionId(), namespace,
                                                            replicaVersions, replicaOffset);

@@ -64,7 +64,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -194,7 +194,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 mapConfig.getPartitioningStrategyConfig());
         this.localMapStats = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         this.partitionService = getNodeEngine().getPartitionService();
-        this.lockSupport = new LockProxySupport(new DefaultObjectNamespace(SERVICE_NAME, name),
+        this.lockSupport = new LockProxySupport(new DistributedObjectNamespace(SERVICE_NAME, name),
                 LockServiceImpl.getMaxLeaseTimeInMillis(properties));
         this.operationProvider = mapServiceContext.getMapOperationProvider(mapConfig);
         this.operationService = nodeEngine.getOperationService();

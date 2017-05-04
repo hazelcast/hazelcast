@@ -24,7 +24,7 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.util.Collection;
@@ -57,7 +57,7 @@ public class GetAllOperation extends MultiMapKeyBasedOperation implements Blocki
 
     @Override
     public WaitNotifyKey getWaitKey() {
-        return new LockWaitNotifyKey(new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, name), dataKey);
+        return new LockWaitNotifyKey(new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name), dataKey);
     }
 
     @Override

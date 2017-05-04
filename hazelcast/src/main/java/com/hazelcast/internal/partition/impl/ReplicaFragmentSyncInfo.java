@@ -17,7 +17,7 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 
 /**
  * The information for a replica synchronization - which partition and replica index needs synchronization and what is
@@ -27,11 +27,11 @@ import com.hazelcast.spi.ReplicaFragmentNamespace;
 public final class ReplicaFragmentSyncInfo {
 
     final int partitionId;
-    final ReplicaFragmentNamespace namespace;
+    final ServiceNamespace namespace;
     final int replicaIndex;
     final Address target;
 
-    ReplicaFragmentSyncInfo(int partitionId, ReplicaFragmentNamespace namespace, int replicaIndex,
+    ReplicaFragmentSyncInfo(int partitionId, ServiceNamespace namespace, int replicaIndex,
             Address target) {
         this.partitionId = partitionId;
         this.namespace = namespace;

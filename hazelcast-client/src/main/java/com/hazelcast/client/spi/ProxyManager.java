@@ -80,7 +80,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
-import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.topic.impl.TopicService;
@@ -272,7 +272,7 @@ public final class ProxyManager {
     }
 
     public ClientProxy getOrCreateProxy(String service, String id) {
-        final ObjectNamespace ns = new DefaultObjectNamespace(service, id);
+        final ObjectNamespace ns = new DistributedObjectNamespace(service, id);
         ClientProxyFuture proxyFuture = proxies.get(ns);
         if (proxyFuture != null) {
             return proxyFuture.get();
@@ -299,7 +299,7 @@ public final class ProxyManager {
     }
 
     public void removeProxy(String service, String id) {
-        final ObjectNamespace ns = new DefaultObjectNamespace(service, id);
+        final ObjectNamespace ns = new DistributedObjectNamespace(service, id);
         proxies.remove(ns);
     }
 
@@ -406,7 +406,7 @@ public final class ProxyManager {
 
         @Override
         public void handle(String name, String serviceName, String eventTypeName) {
-            final ObjectNamespace ns = new DefaultObjectNamespace(serviceName, name);
+            final ObjectNamespace ns = new DistributedObjectNamespace(serviceName, name);
             ClientProxyFuture future = proxies.get(ns);
             ClientProxy proxy = future == null ? null : future.get();
             DistributedObjectEvent.EventType eventType = DistributedObjectEvent.EventType.valueOf(eventTypeName);

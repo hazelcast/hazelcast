@@ -27,7 +27,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 
@@ -135,7 +135,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
                 logger.finest("Replica versions are cleared in source after migration. partitionId=" + partitionId);
             }
         } else if (migrationInfo.getSourceCurrentReplicaIndex() != sourceNewReplicaIndex && sourceNewReplicaIndex > 1) {
-            for (ReplicaFragmentNamespace namespace : replicaManager.getNamespaces(partitionId)) {
+            for (ServiceNamespace namespace : replicaManager.getNamespaces(partitionId)) {
                 long[] versions = updatePartitionReplicaVersions(replicaManager, partitionId,
                                                                  namespace, sourceNewReplicaIndex - 1);
                 if (logger.isFinestEnabled()) {
@@ -150,7 +150,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
         InternalPartitionServiceImpl partitionService = getService();
         PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
 
-        for (ReplicaFragmentNamespace namespace : replicaManager.getNamespaces(partitionId)) {
+        for (ServiceNamespace namespace : replicaManager.getNamespaces(partitionId)) {
             replicaManager.clearPartitionReplicaVersions(partitionId, namespace);
         }
     }
@@ -173,7 +173,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
             int replicaOffset = migrationInfo.getDestinationCurrentReplicaIndex() <= 1 ? 1 : migrationInfo
                     .getDestinationCurrentReplicaIndex();
 
-            for (ReplicaFragmentNamespace namespace : replicaManager.getNamespaces(partitionId)) {
+            for (ServiceNamespace namespace : replicaManager.getNamespaces(partitionId)) {
                 long[] versions = updatePartitionReplicaVersions(replicaManager, partitionId, namespace, replicaOffset - 1);
 
                 if (logger.isFinestEnabled()) {
@@ -186,7 +186,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
 
     /** Sets all replica versions to {@code 0} up to the {@code replicaIndex}. */
     private long[] updatePartitionReplicaVersions(PartitionReplicaManager replicaManager, int partitionId,
-                                                  ReplicaFragmentNamespace namespace, int replicaIndex) {
+                                                  ServiceNamespace namespace, int replicaIndex) {
         long[] versions = replicaManager.getPartitionReplicaVersions(partitionId, namespace);
         // No need to set versions back right now. actual version array is modified directly.
         Arrays.fill(versions, 0, replicaIndex, 0);

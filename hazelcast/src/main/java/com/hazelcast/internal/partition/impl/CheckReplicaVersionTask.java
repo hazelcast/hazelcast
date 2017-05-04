@@ -19,13 +19,13 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
+import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.operation.CheckReplicaVersion;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.FragmentedMigrationAwareService;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
@@ -81,11 +81,11 @@ final class CheckReplicaVersionTask implements PartitionSpecificRunnable, Urgent
     }
 
     private void invokeCheckReplicaVersion(Address target) {
-        Collection<ReplicaFragmentNamespace> namespaces = retainAndGetNamespaces();
+        Collection<ServiceNamespace> namespaces = retainAndGetNamespaces();
 
         PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
-        Map<ReplicaFragmentNamespace, Long> versionMap = new HashMap<ReplicaFragmentNamespace, Long>();
-        for (ReplicaFragmentNamespace ns : namespaces) {
+        Map<ServiceNamespace, Long> versionMap = new HashMap<ServiceNamespace, Long>();
+        for (ServiceNamespace ns : namespaces) {
             long[] versions = replicaManager.getPartitionReplicaVersions(partitionId, ns);
             long currentReplicaVersion = versions[replicaIndex - 1];
 
@@ -120,16 +120,16 @@ final class CheckReplicaVersionTask implements PartitionSpecificRunnable, Urgent
     }
 
     // works only on primary. backups are retained when CheckReplicaVersion is executed.
-    private Collection<ReplicaFragmentNamespace> retainAndGetNamespaces() {
+    private Collection<ServiceNamespace> retainAndGetNamespaces() {
         PartitionReplicationEvent event = new PartitionReplicationEvent(partitionId, 0);
         Collection<FragmentedMigrationAwareService> services = nodeEngine.getServices(FragmentedMigrationAwareService.class);
 
-        Set<ReplicaFragmentNamespace> namespaces = new HashSet<ReplicaFragmentNamespace>();
+        Set<ServiceNamespace> namespaces = new HashSet<ServiceNamespace>();
         for (FragmentedMigrationAwareService service : services) {
-            Collection<ReplicaFragmentNamespace> serviceNamespaces = service.getAllFragmentNamespaces(event);
+            Collection<ServiceNamespace> serviceNamespaces = service.getAllServiceNamespaces(event);
             namespaces.addAll(serviceNamespaces);
         }
-        namespaces.add(InternalReplicaFragmentNamespace.INSTANCE);
+        namespaces.add(NonFragmentedServiceNamespace.INSTANCE);
 
         PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
         replicaManager.retainNamespaces(partitionId, namespaces);

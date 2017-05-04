@@ -20,23 +20,24 @@ import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 
 import java.io.IOException;
 
 /**
- * Internal {@link ReplicaFragmentNamespace} implementation used by partitioning system to identify
+ * Internal {@link ServiceNamespace} implementation used by partitioning system to identify
  * non-fragmented service structures. All partition replica data belonging to service which do not implement
- * {@link com.hazelcast.spi.FragmentedMigrationAwareService} will be registered with {@code InternalReplicaFragmentNamespace}.
+ * {@link com.hazelcast.spi.FragmentedMigrationAwareService} will be registered with
+ * {@code NonFragmentedServiceNamespace}.
  *
  * @see com.hazelcast.spi.FragmentedMigrationAwareService
  * @since 3.9
  */
-public final class InternalReplicaFragmentNamespace implements ReplicaFragmentNamespace, IdentifiedDataSerializable {
+public final class NonFragmentedServiceNamespace implements ServiceNamespace, IdentifiedDataSerializable {
 
-    public static final InternalReplicaFragmentNamespace INSTANCE = new InternalReplicaFragmentNamespace();
+    public static final NonFragmentedServiceNamespace INSTANCE = new NonFragmentedServiceNamespace();
 
-    private InternalReplicaFragmentNamespace() {
+    private NonFragmentedServiceNamespace() {
     }
 
     @Override
@@ -64,7 +65,7 @@ public final class InternalReplicaFragmentNamespace implements ReplicaFragmentNa
 
     @Override
     public String toString() {
-        return "InternalReplicaFragmentNamespace";
+        return "NonFragmentedServiceNamespace";
     }
 
     @Override
@@ -74,6 +75,6 @@ public final class InternalReplicaFragmentNamespace implements ReplicaFragmentNa
 
     @Override
     public int getId() {
-        return PartitionDataSerializerHook.INTERNAL_FRAGMENT_NAMESPACE;
+        return PartitionDataSerializerHook.NONFRAGMENTED_SERVICE_NAMESPACE;
     }
 }

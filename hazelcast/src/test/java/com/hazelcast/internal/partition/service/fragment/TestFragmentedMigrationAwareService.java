@@ -22,7 +22,7 @@ import com.hazelcast.spi.FragmentedMigrationAwareService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 
 import java.util.Collection;
@@ -70,32 +70,34 @@ public class TestFragmentedMigrationAwareService extends TestAbstractMigrationAw
     }
 
     @Override
-    public Collection<ReplicaFragmentNamespace> getAllFragmentNamespaces(PartitionReplicationEvent event) {
+    public Collection<ServiceNamespace> getAllServiceNamespaces(PartitionReplicationEvent event) {
         if (event.getReplicaIndex() > backupCount) {
             return Collections.emptySet();
         }
 
-        Set<ReplicaFragmentNamespace> knownNamespaces = new HashSet<ReplicaFragmentNamespace>();
+        Set<ServiceNamespace> knownNamespaces = new HashSet<ServiceNamespace>();
         for (Key key : data.keySet()) {
-            knownNamespaces.add(new TestReplicaFragmentNamespace(key.name));
+            knownNamespaces.add(new TestServiceNamespace(key.name));
         }
         return Collections.unmodifiableCollection(knownNamespaces);
     }
 
     @Override
-    public Operation prepareReplicationOperation(PartitionReplicationEvent event, Collection<ReplicaFragmentNamespace> namespaces) {
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event, Collection<ServiceNamespace> namespaces) {
         if (event.getReplicaIndex() > backupCount || namespaces.isEmpty()) {
             return null;
         }
 
-        Collection<ReplicaFragmentNamespace> knownNamespaces = getAllFragmentNamespaces(event);
-        Map<TestReplicaFragmentNamespace, Integer> values = new HashMap<TestReplicaFragmentNamespace, Integer>(namespaces.size());
-        for (ReplicaFragmentNamespace ns : namespaces) {
+        Collection<ServiceNamespace> knownNamespaces = getAllServiceNamespaces(event);
+        Map<TestServiceNamespace, Integer> values = new HashMap<TestServiceNamespace, Integer>(namespaces.size());
+        for (ServiceNamespace ns : namespaces) {
             assertThat(ns, isIn(knownNamespaces));
 
-            TestReplicaFragmentNamespace testNs = (TestReplicaFragmentNamespace) ns;
-            int value = get(testNs.name, event.getPartitionId());
-            values.put(testNs, value);
+            TestServiceNamespace testNs = (TestServiceNamespace) ns;
+            Integer value = get(testNs.name, event.getPartitionId());
+            if (value != null) {
+                values.put(testNs, value);
+            }
         }
 
         return values.isEmpty() ? null : new TestFragmentReplicationOperation(values);
@@ -174,13 +176,13 @@ public class TestFragmentedMigrationAwareService extends TestAbstractMigrationAw
     }
 
     @Override
-    public ReplicaFragmentNamespace getNamespace(String name) {
-        return new TestReplicaFragmentNamespace(name);
+    public ServiceNamespace getNamespace(String name) {
+        return new TestServiceNamespace(name);
     }
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        return prepareReplicationOperation(event, getAllFragmentNamespaces(event));
+        return prepareReplicationOperation(event, getAllServiceNamespaces(event));
     }
 
     private static class Key {

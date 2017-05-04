@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -39,8 +40,10 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.concurrent.lock.LockDataSerializerHook.F_ID;
 import static com.hazelcast.concurrent.lock.LockDataSerializerHook.LOCK_STORE;
+import static com.hazelcast.concurrent.lock.ObjectNamespaceSerializationHelper.readNamespaceCompatibly;
+import static com.hazelcast.concurrent.lock.ObjectNamespaceSerializationHelper.writeNamespaceCompatibly;
 
-public final class LockStoreImpl implements IdentifiedDataSerializable, LockStore {
+public final class LockStoreImpl implements IdentifiedDataSerializable, LockStore, Versioned {
 
     private final transient ConstructorFunction<Data, LockResourceImpl> lockConstructor =
             new ConstructorFunction<Data, LockResourceImpl>() {
@@ -361,7 +364,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(namespace);
+        writeNamespaceCompatibly(namespace, out);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
         int len = 0;
@@ -382,7 +385,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        namespace = in.readObject();
+        namespace = readNamespaceCompatibly(in);
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         int len = in.readInt();

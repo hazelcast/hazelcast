@@ -25,8 +25,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.FragmentedMigrationAwareService;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReplicaFragmentAware;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespaceAware;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 
@@ -86,7 +86,7 @@ final class OperationBackupHandler {
 
         Operation op = (Operation) backupAwareOp;
         PartitionReplicaVersionManager versionManager = node.getPartitionService().getPartitionReplicaVersionManager();
-        ReplicaFragmentNamespace namespace = versionManager.getReplicaFragmentNamespace(op);
+        ServiceNamespace namespace = versionManager.getServiceNamespace(op);
         long[] replicaVersions = versionManager.incrementPartitionReplicaVersions(op.getPartitionId(), namespace,
                 requestedTotalBackups);
 
@@ -257,7 +257,7 @@ final class OperationBackupHandler {
             throw new IllegalArgumentException("Backup operation should not be null! " + backupAwareOp);
         }
         if (ASSERTION_ENABLED) {
-            checkReplicaFragmentNamespaces(backupAwareOp, backupOp);
+            checkServiceNamespaces(backupAwareOp, backupOp);
         }
 
         Operation op = (Operation) backupAwareOp;
@@ -268,7 +268,7 @@ final class OperationBackupHandler {
         return backupOp;
     }
 
-    private void checkReplicaFragmentNamespaces(BackupAwareOperation backupAwareOp, Operation backupOp) {
+    private void checkServiceNamespaces(BackupAwareOperation backupAwareOp, Operation backupOp) {
         Operation op = (Operation) backupAwareOp;
         Object service;
         try {
@@ -279,19 +279,19 @@ final class OperationBackupHandler {
         }
 
         if (service instanceof FragmentedMigrationAwareService) {
-            assert backupAwareOp instanceof ReplicaFragmentAware
+            assert backupAwareOp instanceof ServiceNamespaceAware
                     : service + " is instance of FragmentedMigrationAwareService, "
                     + backupAwareOp + " should implement ReplicaFragmentAware!";
 
-            assert backupOp instanceof ReplicaFragmentAware
+            assert backupOp instanceof ServiceNamespaceAware
                     : service + " is instance of FragmentedMigrationAwareService, "
                     + backupOp + " should implement ReplicaFragmentAware!";
         } else {
-            assert !(backupAwareOp instanceof ReplicaFragmentAware)
+            assert !(backupAwareOp instanceof ServiceNamespaceAware)
                     : service + " is NOT instance of FragmentedMigrationAwareService, "
                     + backupAwareOp + " should NOT implement ReplicaFragmentAware!";
 
-            assert !(backupOp instanceof ReplicaFragmentAware)
+            assert !(backupOp instanceof ServiceNamespaceAware)
                     : service + " is NOT instance of FragmentedMigrationAwareService, "
                     + backupOp + " should NOT implement ReplicaFragmentAware!";
         }

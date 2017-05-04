@@ -18,24 +18,29 @@ package com.hazelcast.internal.partition.service.fragment;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
-public class TestReplicaFragmentNamespace implements ReplicaFragmentNamespace {
+public class TestServiceNamespace implements ObjectNamespace {
 
     String name;
 
-    public TestReplicaFragmentNamespace() {
+    public TestServiceNamespace() {
     }
 
-    public TestReplicaFragmentNamespace(String name) {
+    public TestServiceNamespace(String name) {
         this.name = name;
     }
 
     @Override
     public String getServiceName() {
         return TestFragmentedMigrationAwareService.SERVICE_NAME;
+    }
+
+    @Override
+    public String getObjectName() {
+        return name;
     }
 
     @Override
@@ -53,7 +58,7 @@ public class TestReplicaFragmentNamespace implements ReplicaFragmentNamespace {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        TestReplicaFragmentNamespace that = (TestReplicaFragmentNamespace) o;
+        TestServiceNamespace that = (TestServiceNamespace) o;
         return name.equals(that.name);
     }
 
@@ -64,7 +69,6 @@ public class TestReplicaFragmentNamespace implements ReplicaFragmentNamespace {
 
     @Override
     public String toString() {
-        return "TestReplicaFragmentNamespace{" + "name='" + name + '\'' + '}';
+        return "TestServiceNamespace{" + "name='" + name + '\'' + '}';
     }
-
 }

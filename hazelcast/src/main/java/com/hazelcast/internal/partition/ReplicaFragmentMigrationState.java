@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ReplicaFragmentNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,20 +36,20 @@ import java.util.Map;
  */
 public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable {
 
-    private Map<ReplicaFragmentNamespace, long[]> namespaces;
+    private Map<ServiceNamespace, long[]> namespaces;
 
     private Collection<Operation> migrationOperations;
 
     public ReplicaFragmentMigrationState() {
     }
 
-    public ReplicaFragmentMigrationState(Map<ReplicaFragmentNamespace, long[]> namespaces,
+    public ReplicaFragmentMigrationState(Map<ServiceNamespace, long[]> namespaces,
             Collection<Operation> migrationOperations) {
         this.namespaces = namespaces;
         this.migrationOperations = migrationOperations;
     }
 
-    public Map<ReplicaFragmentNamespace, long[]> getNamespaceVersionMap() {
+    public Map<ServiceNamespace, long[]> getNamespaceVersionMap() {
         return namespaces;
     }
 
@@ -70,7 +70,7 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(namespaces.size());
-        for (Map.Entry<ReplicaFragmentNamespace, long[]> e : namespaces.entrySet()) {
+        for (Map.Entry<ServiceNamespace, long[]> e : namespaces.entrySet()) {
             out.writeObject(e.getKey());
             out.writeLongArray(e.getValue());
         }
@@ -83,9 +83,9 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int namespaceSize = in.readInt();
-        namespaces = new HashMap<ReplicaFragmentNamespace, long[]>(namespaceSize);
+        namespaces = new HashMap<ServiceNamespace, long[]>(namespaceSize);
         for (int i = 0; i < namespaceSize; i++) {
-            ReplicaFragmentNamespace namespace = in.readObject();
+            ServiceNamespace namespace = in.readObject();
             long[] replicaVersions = in.readLongArray();
             namespaces.put(namespace, replicaVersions);
         }

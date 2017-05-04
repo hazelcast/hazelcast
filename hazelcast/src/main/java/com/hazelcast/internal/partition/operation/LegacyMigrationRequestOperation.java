@@ -18,7 +18,7 @@ package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
+import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
@@ -79,7 +79,7 @@ public final class LegacyMigrationRequestOperation extends BaseMigrationSourceOp
             Collection<Operation> tasks = prepareMigrationOperations();
             InternalPartitionServiceImpl partitionService = getService();
             long[] replicaVersions = partitionService.getPartitionReplicaVersionManager()
-                    .getPartitionReplicaVersions(migrationInfo.getPartitionId(), InternalReplicaFragmentNamespace.INSTANCE);
+                    .getPartitionReplicaVersions(migrationInfo.getPartitionId(), NonFragmentedServiceNamespace.INSTANCE);
             invokeMigrationOperation(destination, replicaVersions, tasks);
             returnResponse = false;
         } catch (Throwable e) {

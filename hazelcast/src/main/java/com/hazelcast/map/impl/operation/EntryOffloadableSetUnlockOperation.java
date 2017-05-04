@@ -31,7 +31,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
@@ -224,7 +224,7 @@ public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOpera
 
     @Override
     public WaitNotifyKey getNotifiedKey() {
-        return new LockWaitNotifyKey(new DefaultObjectNamespace(MapService.SERVICE_NAME, name), dataKey);
+        return new LockWaitNotifyKey(new DistributedObjectNamespace(MapService.SERVICE_NAME, name), dataKey);
     }
 
     @Override
