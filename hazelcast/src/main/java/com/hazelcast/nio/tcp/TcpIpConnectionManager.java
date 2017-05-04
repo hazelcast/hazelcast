@@ -104,7 +104,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     private final IOThreadingModel ioThreadingModel;
     private final MetricsRegistry metricsRegistry;
 
-
     private final ServerSocketChannel serverSocketChannel;
 
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
