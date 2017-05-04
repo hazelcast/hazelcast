@@ -176,7 +176,8 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
                 .setStoreIntervalSeconds(1)
                 .setDirectory(directory);
 
-        expectedException.expectMessage("Cannot create lock file " + directory + getStoreFile().getName());
+        File lockFile = new File(directory, getStoreFile().getName());
+        expectedException.expectMessage("Cannot create lock file " + lockFile.getAbsolutePath());
         expectedException.expect(HazelcastException.class);
 
         createContext(true);
