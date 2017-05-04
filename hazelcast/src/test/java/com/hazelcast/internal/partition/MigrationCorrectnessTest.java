@@ -32,12 +32,14 @@ import java.util.Collection;
 // related issue https://github.com/hazelcast/hazelcast/issues/5444
 public class MigrationCorrectnessTest extends AbstractMigrationCorrectnessTest {
 
-    @Parameterized.Parameters(name = "backups:{0},nodes:{1}")
+    @Parameterized.Parameters(name = "backups:{0},nodes:{1},fragmented:{2}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-                {1, 2},
-                {2, 3},
-                {3, 4},
+                {1, 2, true},
+                {1, 2, false},
+                {2, 3, true},
+                {3, 4, true},
+                {3, 4, false}
         });
     }
 }

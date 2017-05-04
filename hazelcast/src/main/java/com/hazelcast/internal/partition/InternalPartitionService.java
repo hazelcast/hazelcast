@@ -110,21 +110,7 @@ public interface InternalPartitionService extends IPartitionService {
      */
     PartitionRuntimeState createPartitionState();
 
-    boolean isPartitionReplicaVersionStale(int partitionId, long[] versions, int replicaIndex);
-
-    long[] getPartitionReplicaVersions(int partitionId);
-
-    /**
-     * Updates the partition replica version and triggers replica sync if the replica is dirty (e.g. the
-     * received version is not expected and this node might have missed an update)
-     *
-     * @param partitionId     the id of the partition for which we received a new version
-     * @param replicaVersions the received replica versions
-     * @param replicaIndex    the index of this replica
-     */
-    void updatePartitionReplicaVersions(int partitionId, long[] replicaVersions, int replicaIndex);
-
-    long[] incrementPartitionReplicaVersions(int partitionId, int totalBackupCount);
+    PartitionReplicaVersionManager getPartitionReplicaVersionManager();
 
     PartitionTableView createPartitionTableView();
 

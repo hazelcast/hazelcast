@@ -16,14 +16,18 @@
 
 package com.hazelcast.internal.partition.impl;
 
+import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
+import com.hazelcast.internal.partition.ReplicaFragmentMigrationState;
 import com.hazelcast.internal.partition.operation.AssignPartitions;
 import com.hazelcast.internal.partition.operation.CheckReplicaVersion;
 import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
-import com.hazelcast.internal.partition.operation.HasOngoingMigration;
-import com.hazelcast.internal.partition.operation.MigrationCommitOperation;
 import com.hazelcast.internal.partition.operation.MigrationOperation;
 import com.hazelcast.internal.partition.operation.MigrationRequestOperation;
+import com.hazelcast.internal.partition.operation.HasOngoingMigration;
+import com.hazelcast.internal.partition.operation.MigrationCommitOperation;
+import com.hazelcast.internal.partition.operation.LegacyMigrationOperation;
+import com.hazelcast.internal.partition.operation.LegacyMigrationRequestOperation;
 import com.hazelcast.internal.partition.operation.PartitionStateOperation;
 import com.hazelcast.internal.partition.operation.PromotionCommitOperation;
 import com.hazelcast.internal.partition.operation.ReplicaSyncRequest;
@@ -52,8 +56,8 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
     public static final int FETCH_PARTITION_STATE = 4;
     public static final int HAS_ONGOING_MIGRATION = 5;
     public static final int MIGRATION_COMMIT = 6;
-    public static final int MIGRATION = 7;
-    public static final int MIGRATION_REQUEST = 8;
+    public static final int LEGACY_MIGRATION = 7;
+    public static final int LEGACY_MIGRATION_REQUEST = 8;
     public static final int PARTITION_STATE_OP = 9;
     public static final int PROMOTION_COMMIT = 10;
     public static final int REPLICA_SYNC_REQUEST = 11;
@@ -62,8 +66,12 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
     public static final int SAFE_STATE_CHECK = 14;
     public static final int SHUTDOWN_REQUEST = 15;
     public static final int SHUTDOWN_RESPONSE = 16;
+    public static final int REPLICA_FRAGMENT_MIGRATION_STATE = 17;
+    public static final int MIGRATION = 18;
+    public static final int MIGRATION_REQUEST = 19;
+    public static final int INTERNAL_FRAGMENT_NAMESPACE = 20;
 
-    private static final int LEN = SHUTDOWN_RESPONSE + 1;
+    private static final int LEN = INTERNAL_FRAGMENT_NAMESPACE + 1;
 
     @Override
     public int getFactoryId() {
@@ -104,14 +112,14 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
                 return new MigrationCommitOperation();
             }
         };
-        constructors[MIGRATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[LEGACY_MIGRATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MigrationOperation();
+                return new LegacyMigrationOperation();
             }
         };
-        constructors[MIGRATION_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[LEGACY_MIGRATION_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MigrationRequestOperation();
+                return new LegacyMigrationRequestOperation();
             }
         };
         constructors[PARTITION_STATE_OP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -154,7 +162,29 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
                 return new ShutdownResponseOperation();
             }
         };
-
+        constructors[REPLICA_FRAGMENT_MIGRATION_STATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ReplicaFragmentMigrationState();
+            }
+        };
+        constructors[MIGRATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MigrationOperation();
+            }
+        };
+        constructors[MIGRATION_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MigrationRequestOperation();
+            }
+        };
+        constructors[INTERNAL_FRAGMENT_NAMESPACE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return InternalReplicaFragmentNamespace.INSTANCE;
+            }
+        };
         return new ArrayDataSerializableFactory(constructors);
     }
 }

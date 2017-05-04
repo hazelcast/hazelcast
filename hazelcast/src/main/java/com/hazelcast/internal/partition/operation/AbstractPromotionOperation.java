@@ -20,15 +20,14 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.MigrationEvent.MigrationStatus;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
+import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -42,10 +41,10 @@ abstract class AbstractPromotionOperation extends AbstractPartitionOperation
         implements PartitionAwareOperation, MigrationCycleOperation {
 
     // this is the replica index of the partition owner before the promotion.
-    final int currentReplicaIndex;
+    protected final MigrationInfo migrationInfo;
 
-    AbstractPromotionOperation(int currentReplicaIndex) {
-        this.currentReplicaIndex = currentReplicaIndex;
+    AbstractPromotionOperation(MigrationInfo migrationInfo) {
+        this.migrationInfo = migrationInfo;
     }
 
     /** Sends a {@link MigrationEvent} to registered listeners with status {@code status}. */
@@ -60,13 +59,8 @@ abstract class AbstractPromotionOperation extends AbstractPartitionOperation
         eventService.publishEvent(SERVICE_NAME, registrations, event, partitionId);
     }
 
-    Collection<MigrationAwareService> getMigrationAwareServices() {
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        return nodeEngine.getServices(MigrationAwareService.class);
-    }
-
     PartitionMigrationEvent getPartitionMigrationEvent() {
-        return new PartitionMigrationEvent(DESTINATION, getPartitionId(), currentReplicaIndex, 0);
+        return new PartitionMigrationEvent(DESTINATION, getPartitionId(), migrationInfo.getDestinationCurrentReplicaIndex(), 0);
     }
 
     @Override

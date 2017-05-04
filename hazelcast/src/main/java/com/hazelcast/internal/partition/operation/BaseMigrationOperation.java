@@ -133,6 +133,11 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         MigrationManager migrationManager = partitionService.getMigrationManager();
         MigrationInfo currentActiveMigration = migrationManager.setActiveMigration(migrationInfo);
         if (currentActiveMigration != null) {
+            if (migrationInfo.equals(currentActiveMigration)) {
+                migrationInfo = currentActiveMigration;
+                return;
+            }
+
             throw new RetryableHazelcastException("Cannot set active migration to " + migrationInfo
                     + ". Current active migration is " + currentActiveMigration);
         }
@@ -158,11 +163,10 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
 
     /** Notifies all {@link MigrationAwareService}s that the migration is starting. */
     void executeBeforeMigrations() throws Exception {
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         PartitionMigrationEvent event = getMigrationEvent();
 
         Throwable t = null;
-        for (MigrationAwareService service : nodeEngine.getServices(MigrationAwareService.class)) {
+        for (MigrationAwareService service : getMigrationAwareServices()) {
             // we need to make sure all beforeMigration() methods are executed
             try {
                 service.beforeMigration(event);
@@ -227,12 +231,14 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
         migrationInfo.writeData(out);
         out.writeInt(partitionStateVersion);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
         migrationInfo = new MigrationInfo();
         migrationInfo.readData(in);
         partitionStateVersion = in.readInt();

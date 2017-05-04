@@ -52,7 +52,5 @@ public interface BackupAwareOperation extends PartitionAwareOperation {
      *
      * @return the created {@link com.hazelcast.spi.BackupOperation} responsible for making the backup.
      */
-
-    //todo: should this not return a BackupOperation?
     Operation getBackupOperation();
 }

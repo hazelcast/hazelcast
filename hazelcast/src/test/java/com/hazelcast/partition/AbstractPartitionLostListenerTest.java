@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.internal.partition.impl.ReplicaSyncInfo;
+import com.hazelcast.internal.partition.impl.ReplicaFragmentSyncInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -191,17 +191,17 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
 
         for (HazelcastInstance instance : instances) {
             Address address = getNode(instance).getThisAddress();
-            for (Entry<Integer, long[]> entry : getOwnedReplicaVersions(instance).entrySet()) {
+            for (Entry<Integer, long[]> entry : getOwnedReplicaVersions(getNode(instance)).entrySet()) {
                 System.out.println("ReplicaVersions >> " + address + " - partitionId=" + entry.getKey()
                         + " replicaVersions=" + Arrays.toString(entry.getValue()));
             }
 
-            for (ReplicaSyncInfo replicaSyncInfo : getOngoingReplicaSyncRequests(instance)) {
+            for (ReplicaFragmentSyncInfo replicaSyncInfo : getOngoingReplicaSyncRequests(instance)) {
                 System.out.println("OngoingReplicaSync >> " + address + " - " + replicaSyncInfo);
             }
 
-            for (ScheduledEntry<Integer, ReplicaSyncInfo> entry : getScheduledReplicaSyncRequests(instance)) {
-                System.out.println("ScheduledReplicaSync >> " + address + " - " + entry);
+            for (ScheduledEntry<ReplicaFragmentSyncInfo, Void> entry : getScheduledReplicaSyncRequests(instance)) {
+                System.out.println("ScheduledReplicaSync >> " + address + " - " + entry.getKey());
             }
         }
     }

@@ -430,6 +430,8 @@ public final class GroupProperty {
     /** Timeout in seconds for all migration operations. */
     public static final HazelcastProperty PARTITION_MIGRATION_TIMEOUT
             = new HazelcastProperty("hazelcast.partition.migration.timeout", 300, SECONDS);
+    public static final HazelcastProperty PARTITION_FRAGMENTED_MIGRATION_ENABLED
+            = new HazelcastProperty("hazelcast.partition.migration.fragments.enabled", true);
     public static final HazelcastProperty DISABLE_STALE_READ_ON_PARTITION_MIGRATION
             = new HazelcastProperty("hazelcast.partition.migration.stale.read.disabled", false);
 

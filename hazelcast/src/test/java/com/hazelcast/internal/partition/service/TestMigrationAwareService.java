@@ -18,31 +18,22 @@ package com.hazelcast.internal.partition.service;
 
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.ReplicaFragmentNamespace;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static org.junit.Assert.assertNull;
 
-/**
- */
-public class TestMigrationAwareService implements ManagedService, MigrationAwareService {
+public class TestMigrationAwareService extends TestAbstractMigrationAwareService<Void> {
 
-    public static final String SERVICE_NAME = MigrationAwareService.class.getSimpleName();
-
-    private static final String BACKUP_COUNT_PROP = "backups.count";
+    public static final String SERVICE_NAME = TestMigrationAwareService.class.getSimpleName();
 
     public static ServiceConfig createServiceConfig(int backupCount) {
         return new ServiceConfig()
@@ -52,30 +43,6 @@ public class TestMigrationAwareService implements ManagedService, MigrationAware
     }
 
     private final ConcurrentMap<Integer, Integer> data = new ConcurrentHashMap<Integer, Integer>();
-
-    private final List<PartitionMigrationEvent> beforeEvents = new ArrayList<PartitionMigrationEvent>();
-
-    private final List<PartitionMigrationEvent> commitEvents = new ArrayList<PartitionMigrationEvent>();
-
-    private final List<PartitionMigrationEvent> rollbackEvents = new ArrayList<PartitionMigrationEvent>();
-
-    volatile int backupCount;
-
-    private volatile ILogger logger;
-
-    @Override
-    public void init(NodeEngine nodeEngine, Properties properties) {
-        backupCount = Integer.parseInt(properties.getProperty(BACKUP_COUNT_PROP, "1"));
-        logger = nodeEngine.getLogger(getClass());
-    }
-
-    @Override
-    public void reset() {
-    }
-
-    @Override
-    public void shutdown(boolean terminate) {
-    }
 
     int inc(int partitionId) {
         Integer count = data.get(partitionId);
@@ -93,13 +60,6 @@ public class TestMigrationAwareService implements ManagedService, MigrationAware
     }
 
     @Override
-    public void beforeMigration(PartitionMigrationEvent event) {
-        synchronized (beforeEvents) {
-            beforeEvents.add(event);
-        }
-    }
-
-    @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         if (event.getReplicaIndex() > backupCount) {
             return null;
@@ -111,11 +71,7 @@ public class TestMigrationAwareService implements ManagedService, MigrationAware
     }
 
     @Override
-    public void commitMigration(PartitionMigrationEvent event) {
-        synchronized (commitEvents) {
-            commitEvents.add(event);
-        }
-
+    protected void onCommitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             if (event.getNewReplicaIndex() == -1 || event.getNewReplicaIndex() > backupCount) {
                 data.remove(event.getPartitionId());
@@ -129,11 +85,7 @@ public class TestMigrationAwareService implements ManagedService, MigrationAware
     }
 
     @Override
-    public void rollbackMigration(PartitionMigrationEvent event) {
-        synchronized (rollbackEvents) {
-            rollbackEvents.add(event);
-        }
-
+    protected void onRollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             if (event.getCurrentReplicaIndex() == -1 || event.getCurrentReplicaIndex() > backupCount) {
                 data.remove(event.getPartitionId());
@@ -145,36 +97,6 @@ public class TestMigrationAwareService implements ManagedService, MigrationAware
         data.remove(partitionId);
     }
 
-    public List<PartitionMigrationEvent> getBeforeEvents() {
-        synchronized (beforeEvents) {
-            return new ArrayList<PartitionMigrationEvent>(beforeEvents);
-        }
-    }
-
-    public List<PartitionMigrationEvent> getCommitEvents() {
-        synchronized (commitEvents) {
-            return new ArrayList<PartitionMigrationEvent>(commitEvents);
-        }
-    }
-
-    public List<PartitionMigrationEvent> getRollbackEvents() {
-        synchronized (rollbackEvents) {
-            return new ArrayList<PartitionMigrationEvent>(rollbackEvents);
-        }
-    }
-
-    public void clearEvents() {
-        synchronized (beforeEvents) {
-            beforeEvents.clear();
-        }
-        synchronized (commitEvents) {
-            commitEvents.clear();
-        }
-        synchronized (rollbackEvents) {
-            rollbackEvents.clear();
-        }
-    }
-
     public int size() {
         return data.size();
     }
@@ -183,11 +105,37 @@ public class TestMigrationAwareService implements ManagedService, MigrationAware
         return data.get(id);
     }
 
-    public boolean contains(int id) {
-        return data.containsKey(id);
+    @Override
+    public int size(Void name) {
+        return data.size();
     }
 
-    public Collection<Integer> keys() {
+    @Override
+    public Integer get(Void name, int id) {
+        return data.get(id);
+    }
+
+    @Override
+    public Collection<Integer> keys(Void name) {
         return data.keySet();
+    }
+
+    public boolean contains(int partitionId) {
+        return data.containsKey(partitionId);
+    }
+
+    @Override
+    public boolean contains(Void name, int partitionId) {
+        return data.containsKey(partitionId);
+    }
+
+    @Override
+    public String getServiceName() {
+        return SERVICE_NAME;
+    }
+
+    @Override
+    public ReplicaFragmentNamespace getNamespace(Void name) {
+        return InternalReplicaFragmentNamespace.INSTANCE;
     }
 }

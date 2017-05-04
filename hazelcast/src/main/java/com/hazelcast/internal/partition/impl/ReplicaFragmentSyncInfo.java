@@ -17,20 +17,24 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.ReplicaFragmentNamespace;
 
 /**
  * The information for a replica synchronization - which partition and replica index needs synchronization and what is
  * the target (the owner of the partition).
- * The target is ignored when comparing if two {@link ReplicaSyncInfo} instances are the same.
+ * The target is ignored when comparing if two {@link ReplicaFragmentSyncInfo} instances are the same.
  */
-public final class ReplicaSyncInfo {
+public final class ReplicaFragmentSyncInfo {
 
     final int partitionId;
+    final ReplicaFragmentNamespace namespace;
     final int replicaIndex;
     final Address target;
 
-    ReplicaSyncInfo(int partitionId, int replicaIndex, Address target) {
+    ReplicaFragmentSyncInfo(int partitionId, ReplicaFragmentNamespace namespace, int replicaIndex,
+            Address target) {
         this.partitionId = partitionId;
+        this.namespace = namespace;
         this.replicaIndex = replicaIndex;
         this.target = target;
     }
@@ -44,27 +48,21 @@ public final class ReplicaSyncInfo {
             return false;
         }
 
-        ReplicaSyncInfo that = (ReplicaSyncInfo) o;
-        if (partitionId != that.partitionId) {
-            return false;
-        }
-        if (replicaIndex != that.replicaIndex) {
-            return false;
-        }
-
-        return true;
+        ReplicaFragmentSyncInfo that = (ReplicaFragmentSyncInfo) o;
+        return partitionId == that.partitionId && replicaIndex == that.replicaIndex && namespace.equals(that.namespace);
     }
 
     @Override
     public int hashCode() {
         int result = partitionId;
+        result = 31 * result + namespace.hashCode();
         result = 31 * result + replicaIndex;
         return result;
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{partitionId=" + partitionId + ", replicaIndex=" + replicaIndex + ", target="
-                + target + '}';
+        return "ReplicaFragmentSyncInfo{" + "partitionId=" + partitionId + ", namespace=" + namespace
+                + ", replicaIndex=" + replicaIndex + ", target=" + target + '}';
     }
 }

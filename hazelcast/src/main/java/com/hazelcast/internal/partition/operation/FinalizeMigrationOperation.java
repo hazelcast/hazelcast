@@ -27,6 +27,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.ReplicaFragmentNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 
@@ -92,7 +93,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
     private void notifyServices(NodeEngineImpl nodeEngine) {
         PartitionMigrationEvent event = getPartitionMigrationEvent();
 
-        Collection<MigrationAwareService> migrationAwareServices = nodeEngine.getServices(MigrationAwareService.class);
+        Collection<MigrationAwareService> migrationAwareServices = getMigrationAwareServices();
 
         // Old backup owner is not notified about migration until migration
         // is committed on destination. This is the only place on backup owner
@@ -129,17 +130,28 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
 
         int sourceNewReplicaIndex = migrationInfo.getSourceNewReplicaIndex();
         if (sourceNewReplicaIndex < 0) {
-            replicaManager.clearPartitionReplicaVersions(partitionId);
+            clearPartitionReplicaVersions(partitionId);
             if (logger.isFinestEnabled()) {
                 logger.finest("Replica versions are cleared in source after migration. partitionId=" + partitionId);
             }
         } else if (migrationInfo.getSourceCurrentReplicaIndex() != sourceNewReplicaIndex && sourceNewReplicaIndex > 1) {
-            long[] versions = updatePartitionReplicaVersions(replicaManager, partitionId, sourceNewReplicaIndex - 1);
-
-            if (logger.isFinestEnabled()) {
-                logger.finest("Replica versions are set after SHIFT DOWN migration. partitionId="
-                        + partitionId + " replica versions=" + Arrays.toString(versions));
+            for (ReplicaFragmentNamespace namespace : replicaManager.getNamespaces(partitionId)) {
+                long[] versions = updatePartitionReplicaVersions(replicaManager, partitionId,
+                                                                 namespace, sourceNewReplicaIndex - 1);
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Replica versions are set after SHIFT DOWN migration. partitionId="
+                            + partitionId + " namespace: " + namespace + " replica versions=" + Arrays.toString(versions));
+                }
             }
+        }
+    }
+
+    private void clearPartitionReplicaVersions(int partitionId) {
+        InternalPartitionServiceImpl partitionService = getService();
+        PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
+
+        for (ReplicaFragmentNamespace namespace : replicaManager.getNamespaces(partitionId)) {
+            replicaManager.clearPartitionReplicaVersions(partitionId, namespace);
         }
     }
 
@@ -152,7 +164,7 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
 
         int destinationCurrentReplicaIndex = migrationInfo.getDestinationCurrentReplicaIndex();
         if (destinationCurrentReplicaIndex == -1) {
-            replicaManager.clearPartitionReplicaVersions(partitionId);
+            clearPartitionReplicaVersions(partitionId);
             if (logger.isFinestEnabled()) {
                 logger.finest("Replica versions are cleared in destination after failed migration. partitionId="
                         + partitionId);
@@ -160,18 +172,22 @@ public final class FinalizeMigrationOperation extends AbstractPartitionOperation
         } else {
             int replicaOffset = migrationInfo.getDestinationCurrentReplicaIndex() <= 1 ? 1 : migrationInfo
                     .getDestinationCurrentReplicaIndex();
-            long[] versions = updatePartitionReplicaVersions(replicaManager, partitionId, replicaOffset - 1);
 
-            if (logger.isFinestEnabled()) {
-                logger.finest("Replica versions are rolled back in destination after failed migration. partitionId="
-                        + partitionId + " replica versions=" + Arrays.toString(versions));
+            for (ReplicaFragmentNamespace namespace : replicaManager.getNamespaces(partitionId)) {
+                long[] versions = updatePartitionReplicaVersions(replicaManager, partitionId, namespace, replicaOffset - 1);
+
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Replica versions are rolled back in destination after failed migration. partitionId="
+                            + partitionId + " namespace: " + namespace + " replica versions=" + Arrays.toString(versions));
+                }
             }
         }
     }
 
     /** Sets all replica versions to {@code 0} up to the {@code replicaIndex}. */
-    private long[] updatePartitionReplicaVersions(PartitionReplicaManager replicaManager, int partitionId, int replicaIndex) {
-        long[] versions = replicaManager.getPartitionReplicaVersions(partitionId);
+    private long[] updatePartitionReplicaVersions(PartitionReplicaManager replicaManager, int partitionId,
+                                                  ReplicaFragmentNamespace namespace, int replicaIndex) {
+        long[] versions = replicaManager.getPartitionReplicaVersions(partitionId, namespace);
         // No need to set versions back right now. actual version array is modified directly.
         Arrays.fill(versions, 0, replicaIndex, 0);
 

@@ -39,8 +39,8 @@ public final class ServiceInfo {
         return name;
     }
 
-    public Object getService() {
-        return service;
+    public <T> T getService() {
+        return (T) service;
     }
 
     public boolean isCoreService() {
