@@ -36,7 +36,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.SocketException;
 import java.nio.channels.CancelledKeyException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -187,28 +186,15 @@ public final class TcpIpConnection implements SocketConnection, MetricsProvider,
         this.errorHandler = errorHandler;
     }
 
-    public TcpIpConnectionErrorHandler getErrorHandler() {
-        return errorHandler;
-    }
-
     public int getConnectionId() {
         return connectionId;
-    }
-
-    public void setSendBufferSize(int size) throws SocketException {
-        socketChannel.socket().setSendBufferSize(size);
-    }
-
-    public void setReceiveBufferSize(int size) throws SocketException {
-        socketChannel.socket().setReceiveBufferSize(size);
     }
 
     @Override
     public boolean isClient() {
         ConnectionType t = type;
-        return (t != null) && t != ConnectionType.NONE && t.isClient();
+        return t != null && t != ConnectionType.NONE && t.isClient();
     }
-
 
     /**
      * Starts this connection.

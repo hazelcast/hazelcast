@@ -77,7 +77,7 @@ public class MemberSocketWriterInitializer implements SocketWriterInitializer<Tc
         writer.initOutputBuffer(outputBuffer);
 
         try {
-            connection.setSendBufferSize(size);
+            connection.getSocketChannel().socket().setSendBufferSize(size);
         } catch (SocketException e) {
             logger.finest("Failed to adjust TCP send buffer of " + connection + " to " + size + " B.", e);
         }
