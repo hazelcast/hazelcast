@@ -291,11 +291,6 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public boolean isClient() {
-        return false;
-    }
-
-    @Override
     public long getConnectionMonitorInterval() {
         return node.getProperties().getMillis(GroupProperty.CONNECTION_MONITOR_INTERVAL);
     }

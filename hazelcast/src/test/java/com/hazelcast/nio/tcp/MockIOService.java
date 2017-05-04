@@ -243,11 +243,6 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public boolean isClient() {
-        return false;
-    }
-
-    @Override
     public void executeAsync(final Runnable runnable) {
         new Thread() {
             public void run() {
