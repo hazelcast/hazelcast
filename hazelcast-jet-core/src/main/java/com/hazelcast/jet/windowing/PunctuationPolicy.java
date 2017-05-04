@@ -84,10 +84,8 @@ public interface PunctuationPolicy {
      * Returns a new punctuation policy that throttles this policy's output by
      * adjusting it to its {@link WindowDefinition#floorFrameSeq(long)
      * floorFrameSeq} as returned from the supplied {@code WindowDefinition}.
-     * This throttling policy should be employed to drive a downstream {@link
-     * WindowingProcessors#groupByFrame(com.hazelcast.jet.Distributed.Function,
-     * com.hazelcast.jet.Distributed.ToLongFunction, WindowDefinition,
-     * WindowOperation) groupByFrame} processor.
+     * This throttling policy should be employed to drive a downstream
+     * {@link WindowingProcessors sliding window processor}.
      */
     default PunctuationPolicy throttleByFrame(WindowDefinition winDef) {
         return new PunctuationPolicy() {

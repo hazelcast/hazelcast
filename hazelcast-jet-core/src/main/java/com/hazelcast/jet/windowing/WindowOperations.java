@@ -38,7 +38,10 @@ public final class WindowOperations {
     public static WindowOperation<Object, MutableLong, Long> counting() {
         return WindowOperation.of(
                 MutableLong::new,
-                (a, i) -> a.value++,
+                (a, i) -> {
+                    a.value++;
+                    return a;
+                },
                 (a1, a2) -> {
                     a1.value = Math.addExact(a1.value, a2.value);
                     return a1;
@@ -67,7 +70,10 @@ public final class WindowOperations {
     ) {
         return WindowOperation.of(
                 MutableLong::new,
-                (a, value) -> a.value = Math.addExact(a.value, mapper.applyAsLong(value)),
+                (a, value) -> {
+                    a.value = Math.addExact(a.value, mapper.applyAsLong(value));
+                    return a;
+                },
                 (a1, a2) -> {
                     a1.value = Math.addExact(a1.value, a2.value);
                     return a1;
@@ -118,7 +124,10 @@ public final class WindowOperations {
     ) {
         return new WindowOperationImpl<>(
                 () -> new MutableReference<>(identity),
-                (a, t) -> a.value = combineF.apply(a.value, mapF.apply(t)),
+                (a, t) -> {
+                    a.value = combineF.apply(a.value, mapF.apply(t));
+                    return a;
+                },
                 (a, b) -> {
                     a.value = combineF.apply(a.value, b.value);
                     return a;

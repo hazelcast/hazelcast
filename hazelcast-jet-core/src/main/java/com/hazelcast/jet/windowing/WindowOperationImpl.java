@@ -17,26 +17,23 @@
 package com.hazelcast.jet.windowing;
 
 import com.hazelcast.jet.Distributed;
-import com.hazelcast.jet.Distributed.BiConsumer;
 import com.hazelcast.jet.Distributed.BinaryOperator;
-import com.hazelcast.jet.Distributed.Function;
-import com.hazelcast.jet.Distributed.Supplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 class WindowOperationImpl<T, A, R> implements WindowOperation<T, A, R> {
     private final Distributed.Supplier<A> createAccumulatorF;
-    private final Distributed.BiConsumer<A, T> accumulateItemF;
+    private final Distributed.BiFunction<A, T, A> accumulateItemF;
     private final Distributed.BinaryOperator<A> combineAccumulatorsF;
     private final Distributed.BinaryOperator<A> deductAccumulatorF;
     private final Distributed.Function<A, R> finishAccumulationF;
 
-    WindowOperationImpl(Supplier<A> createAccumulatorF,
-                        BiConsumer<A, T> accumulateItemF,
-                        BinaryOperator<A> combineAccumulatorsF,
-                        BinaryOperator<A> deductAccumulatorF,
-                        Function<A, R> finishAccumulationF
+    WindowOperationImpl(Distributed.Supplier<A> createAccumulatorF,
+                        Distributed.BiFunction<A, T, A> accumulateItemF,
+                        Distributed.BinaryOperator<A> combineAccumulatorsF,
+                        Distributed.BinaryOperator<A> deductAccumulatorF,
+                        Distributed.Function<A, R> finishAccumulationF
     ) {
         this.createAccumulatorF = createAccumulatorF;
         this.accumulateItemF = accumulateItemF;
@@ -51,7 +48,7 @@ class WindowOperationImpl<T, A, R> implements WindowOperation<T, A, R> {
     }
 
     @Override @Nonnull
-    public Distributed.BiConsumer<A, T> accumulateItemF() {
+    public Distributed.BiFunction<A, T, A> accumulateItemF() {
         return accumulateItemF;
     }
 
