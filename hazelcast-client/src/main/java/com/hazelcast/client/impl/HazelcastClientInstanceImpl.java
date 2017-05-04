@@ -44,6 +44,7 @@ import com.hazelcast.client.spi.ClientTransactionManagerService;
 import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.spi.impl.AwsAddressProvider;
 import com.hazelcast.client.spi.impl.CallIdSequence;
+import com.hazelcast.client.spi.impl.ClientClassLoadSupplyService;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -112,6 +113,7 @@ import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
 import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
@@ -147,6 +149,7 @@ import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
 
+import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -159,6 +162,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static java.lang.System.currentTimeMillis;
+import static java.security.AccessController.doPrivileged;
 
 public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
 
@@ -189,6 +193,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final Diagnostics diagnostics;
     private final SerializationService serializationService;
     private final ClientICacheManager hazelcastCacheManager;
+    private final ClientClassLoadSupplyService clientClassLoadSupplyService;
 
     private final ClientLockReferenceIdGenerator lockReferenceIdGenerator;
     private final ClientExceptionFactory clientExceptionFactory;
@@ -242,6 +247,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         lockReferenceIdGenerator = new ClientLockReferenceIdGenerator();
         nearCacheManager = clientExtension.createNearCacheManager();
         clientExceptionFactory = initClientExceptionFactory();
+        clientClassLoadSupplyService = new ClientClassLoadSupplyService(this);
     }
 
     private Diagnostics initDiagnostics() {
@@ -341,6 +347,23 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return c;
     }
 
+    public ClassLoader getConfigClassloader(ClientConfig config) {
+        ClassLoader classLoader;
+        if (config.isUserCodeDeploymentEnabled()) {
+            ClassLoader parent = config.getClassLoader();
+            final ClassLoader theParent = parent == null ? HazelcastClient.class.getClassLoader() : parent; //TODO ask jaromir is HazelcastClient.class.getClassLoader()
+            classLoader = doPrivileged(new PrivilegedAction<UserCodeDeploymentClassLoader>() {
+                @Override
+                public UserCodeDeploymentClassLoader run() {
+                    return new UserCodeDeploymentClassLoader(theParent);
+                }
+            });
+        } else {
+            classLoader = config.getClassLoader();
+        }
+        return classLoader;
+    }
+
     private ClientInvocationService initInvocationService() {
         final ClientNetworkConfig networkConfig = config.getNetworkConfig();
         if (networkConfig.isSmartRouting()) {
@@ -420,6 +443,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         listenerService.start();
         loadBalancer.init(getCluster(), config);
         partitionService.start();
+        clientClassLoadSupplyService.start();
         clientExtension.afterStart(this);
     }
 
