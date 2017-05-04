@@ -23,8 +23,8 @@ import com.hazelcast.internal.networking.spinning.SpinningIOThreadingModel;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.NodeIOService;
-import com.hazelcast.nio.tcp.SocketReaderInitializerImpl;
-import com.hazelcast.nio.tcp.SocketWriterInitializerImpl;
+import com.hazelcast.nio.tcp.MemberSocketReaderInitializer;
+import com.hazelcast.nio.tcp.MemberSocketWriterInitializer;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.spi.annotation.PrivateApi;
 
@@ -65,10 +65,10 @@ public class DefaultNodeContext implements NodeContext {
         boolean spinning = Boolean.getBoolean("hazelcast.io.spinning");
         LoggingServiceImpl loggingService = node.loggingService;
 
-        SocketWriterInitializerImpl socketWriterInitializer
-                = new SocketWriterInitializerImpl(loggingService.getLogger(SocketWriterInitializerImpl.class));
-        SocketReaderInitializerImpl socketReaderInitializer
-                = new SocketReaderInitializerImpl(loggingService.getLogger(SocketReaderInitializerImpl.class));
+        MemberSocketWriterInitializer socketWriterInitializer
+                = new MemberSocketWriterInitializer(loggingService.getLogger(MemberSocketWriterInitializer.class));
+        MemberSocketReaderInitializer socketReaderInitializer
+                = new MemberSocketReaderInitializer(loggingService.getLogger(MemberSocketReaderInitializer.class));
         if (spinning) {
             return new SpinningIOThreadingModel(
                     loggingService,

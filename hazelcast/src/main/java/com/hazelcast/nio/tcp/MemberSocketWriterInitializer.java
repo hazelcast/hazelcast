@@ -33,11 +33,11 @@ import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
-public class SocketWriterInitializerImpl implements SocketWriterInitializer<TcpIpConnection> {
+public class MemberSocketWriterInitializer implements SocketWriterInitializer<TcpIpConnection> {
 
     private final ILogger logger;
 
-    public SocketWriterInitializerImpl(ILogger logger) {
+    public MemberSocketWriterInitializer(ILogger logger) {
         this.logger = logger;
     }
 
