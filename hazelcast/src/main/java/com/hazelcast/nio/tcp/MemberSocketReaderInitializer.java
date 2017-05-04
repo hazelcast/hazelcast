@@ -99,7 +99,7 @@ public class MemberSocketReaderInitializer implements SocketReaderInitializer<Tc
     }
 
     private ByteBuffer initInputBuffer(TcpIpConnection connection, SocketReader reader, int sizeKb) {
-        boolean directBuffer = connection.getConnectionManager().getIoService().isSocketBufferDirect();
+        boolean directBuffer = connection.getConnectionManager().getIoService().useDirectSocketBuffer();
         int sizeBytes = sizeKb * KILO_BYTE;
 
         ByteBuffer inputBuffer = newByteBuffer(sizeBytes, directBuffer);

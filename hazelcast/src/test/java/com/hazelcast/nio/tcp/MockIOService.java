@@ -191,7 +191,7 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public boolean isSocketBufferDirect() {
+    public boolean useDirectSocketBuffer() {
         return false;
     }
 

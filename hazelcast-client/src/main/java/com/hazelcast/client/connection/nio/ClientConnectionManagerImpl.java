@@ -392,8 +392,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             socket.setReceiveBufferSize(bufferSize);
             InetSocketAddress inetSocketAddress = address.getInetSocketAddress();
             socketChannel.socket().connect(inetSocketAddress, connectionTimeout);
+
+            HazelcastProperties properties = client.getProperties();
+            boolean directBuffer = properties.getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
+
             SocketChannelWrapper socketChannelWrapper =
-                    socketChannelWrapperFactory.wrapSocketChannel(socketChannel, true);
+                    socketChannelWrapperFactory.wrapSocketChannel(socketChannel, true, directBuffer);
 
             final ClientConnection clientConnection = new ClientConnection(
                     client, ioThreadingModel, connectionIdGen.incrementAndGet(), socketChannelWrapper);
@@ -415,10 +419,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private int getBufferSize() {
         int bufferSize = socketOptions.getBufferSize() * KILO_BYTE;
-        if (bufferSize <= 0) {
-            bufferSize = DEFAULT_BUFFER_SIZE_BYTE;
-        }
-        return bufferSize;
+        return bufferSize <= 0 ? DEFAULT_BUFFER_SIZE_BYTE : bufferSize;
     }
 
     void onClose(Connection connection) {

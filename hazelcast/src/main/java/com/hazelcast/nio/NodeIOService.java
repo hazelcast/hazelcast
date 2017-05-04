@@ -212,7 +212,7 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public boolean isSocketBufferDirect() {
+    public boolean useDirectSocketBuffer() {
         return node.getProperties().getBoolean(GroupProperty.SOCKET_BUFFER_DIRECT);
     }
 

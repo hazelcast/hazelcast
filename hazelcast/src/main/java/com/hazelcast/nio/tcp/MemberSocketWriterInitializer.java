@@ -69,7 +69,7 @@ public class MemberSocketWriterInitializer implements SocketWriterInitializer<Tc
                 : ioService.getSocketClientSendBufferSize();
         int size = KILO_BYTE * sizeKb;
 
-        ByteBuffer outputBuffer = newByteBuffer(size, ioService.isSocketBufferDirect());
+        ByteBuffer outputBuffer = newByteBuffer(size, ioService.useDirectSocketBuffer());
         if (CLUSTER.equals(protocol)) {
             outputBuffer.put(stringToBytes(CLUSTER));
         }
