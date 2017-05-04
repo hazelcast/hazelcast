@@ -50,6 +50,7 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
     protected Predicate predicate;
     protected boolean includeValue;
     protected InternalQueryCache queryCache;
+    protected String publisherListenerId;
 
     public AbstractQueryCacheEndToEndConstructor(QueryCacheRequest request) {
         this.request = request;
@@ -62,7 +63,7 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
     public final void createSubscriberAccumulator(AccumulatorInfo info) {
         QueryCacheEventService eventService = context.getQueryCacheEventService();
         ListenerAdapter listener = new SubscriberListener(context, info);
-        eventService.listenPublisher(info.getMapName(), info.getCacheName(), listener);
+        publisherListenerId = eventService.listenPublisher(info.getMapName(), info.getCacheName(), listener);
     }
 
     /**
@@ -87,6 +88,8 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
 
             createSubscriberAccumulator(info);
             createPublisherAccumulator(info);
+
+            queryCache.setPublisherListenerId(publisherListenerId);
 
         } catch (Throwable throwable) {
             removeQueryCacheConfig(mapName, request.getUserGivenCacheName());

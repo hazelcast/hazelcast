@@ -228,4 +228,12 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         sb.append("\n}\n");
         return sb.toString();
     }
+
+    @Override
+    public String toString() {
+        return "ClientMembershipListener{"
+                + ", members=" + members
+                + ", client=" + client
+                + '}';
+    }
 }

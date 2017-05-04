@@ -66,6 +66,11 @@ public final class NullQueryCache implements InternalQueryCache {
     }
 
     @Override
+    public void setPublisherListenerId(String publisherListenerId) {
+
+    }
+
+    @Override
     public Object get(Object key) {
         return null;
     }
