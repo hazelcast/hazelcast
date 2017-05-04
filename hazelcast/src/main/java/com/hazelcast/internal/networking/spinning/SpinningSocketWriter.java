@@ -192,22 +192,24 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         shutdownTask.awaitCompletion();
     }
 
-    public void write() throws Exception {
+    public int write() throws Exception {
         if (!connection.isAlive()) {
-            return;
+            return 0;
         }
 
         if (writeHandler == null) {
             logger.warning("SocketWriter is not set, creating SocketWriter with CLUSTER protocol!");
             initializer.init(connection, this, CLUSTER);
-            return;
+       //     return 0;
         }
 
         fillOutputBuffer();
 
-        if (dirtyOutputBuffer()) {
-            writeOutputBufferToSocket();
+        if (!dirtyOutputBuffer()) {
+            return 0;
         }
+
+        return writeOutputBufferToSocket();
     }
 
     /**
@@ -260,7 +262,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
      *
      * @throws Exception
      */
-    private void writeOutputBufferToSocket() throws Exception {
+    private int writeOutputBufferToSocket() throws Exception {
         // So there is data for writing, so lets prepare the buffer for writing and then write it to the socketChannel.
         outputBuffer.flip();
         int result = socketChannel.write(outputBuffer);
@@ -274,6 +276,8 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         } else {
             outputBuffer.clear();
         }
+
+        return result;
     }
 
     private static final class TaskFrame implements OutboundFrame {

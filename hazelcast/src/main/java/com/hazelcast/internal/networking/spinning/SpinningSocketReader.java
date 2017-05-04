@@ -99,26 +99,27 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
         //no-op
     }
 
-    public void read() throws Exception {
+    public int read() throws Exception {
         if (!connection.isAlive()) {
             socketChannel.closeInbound();
-            return;
+            return 0;
         }
 
         if (readHandler == null) {
             initializer.init(connection, this);
             if (readHandler == null) {
                 // when using SSL, we can read 0 bytes since data read from socket can be handshake frames.
-                return;
+                return 0;
             }
         }
+
 
         int readBytes = socketChannel.read(inputBuffer);
         if (readBytes <= 0) {
             if (readBytes == -1) {
-                throw new EOFException("Remote socket closed!");
+                throw new EOFException("Remote socket closed! after readHandler is set.");
             }
-            return;
+            return 0;
         }
 
         lastReadTime = currentTimeMillis();
@@ -130,5 +131,7 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
         } else {
             inputBuffer.clear();
         }
+
+        return readBytes;
     }
 }

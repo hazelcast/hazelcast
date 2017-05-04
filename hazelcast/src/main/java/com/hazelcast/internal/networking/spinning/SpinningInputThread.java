@@ -104,12 +104,20 @@ public class SpinningInputThread extends Thread {
                 return;
             }
 
+            boolean idle = true;
             for (SpinningSocketReader reader : handlers.readers) {
                 try {
-                    reader.read();
+
+                    if (reader.read() > 0) {
+                        idle = false;
+                    }
                 } catch (Throwable t) {
                     reader.onFailure(t);
                 }
+            }
+
+            if (idle) {
+                Thread.yield();
             }
         }
     }

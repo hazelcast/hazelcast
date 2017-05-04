@@ -105,12 +105,18 @@ public class SpinningOutputThread extends Thread {
                 return;
             }
 
+            boolean idle = true;
             for (SpinningSocketWriter writer : handlers.writers) {
                 try {
-                    writer.write();
+                    if (writer.write() > 0) {
+                        idle = false;
+                    }
                 } catch (Throwable t) {
                     writer.onFailure(t);
                 }
+            }
+            if (idle) {
+                Thread.yield();
             }
         }
     }
