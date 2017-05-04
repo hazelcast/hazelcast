@@ -121,8 +121,6 @@ public interface IOService {
 
     void onDisconnect(Address endpoint, Throwable cause);
 
-    boolean isClient();
-
     void executeAsync(Runnable runnable);
 
     EventService getEventService();
