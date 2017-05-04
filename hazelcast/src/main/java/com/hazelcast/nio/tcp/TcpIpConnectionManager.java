@@ -517,7 +517,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         return live;
     }
 
-
     @Override
     public boolean transmit(Packet packet, Connection connection) {
         checkNotNull(packet, "Packet can't be null");
