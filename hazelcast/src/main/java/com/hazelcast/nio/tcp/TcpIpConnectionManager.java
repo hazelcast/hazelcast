@@ -123,7 +123,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     private TcpIpConnector connector;
 
-
     public TcpIpConnectionManager(IOService ioService,
                                   ServerSocketChannel serverSocketChannel,
                                   LoggingService loggingService,
