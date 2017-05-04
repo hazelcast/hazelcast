@@ -199,7 +199,9 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
     private ReplicaFragmentMigrationState createInternalReplicaFragmentMigrationState() {
         PartitionReplicationEvent event = getPartitionReplicationEvent();
         Collection<Operation> operations = createNonFragmentedReplicationOperations(event);
-        return createReplicaFragmentMigrationState(singleton(InternalReplicaFragmentNamespace.INSTANCE), operations);
+        Collection<ReplicaFragmentNamespace> namespaces =
+                Collections.<ReplicaFragmentNamespace>singleton(InternalReplicaFragmentNamespace.INSTANCE);
+        return createReplicaFragmentMigrationState(namespaces, operations);
     }
 
     private ReplicaFragmentMigrationState createReplicaFragmentMigrationStateFor(ReplicaFragmentNamespace ns) {

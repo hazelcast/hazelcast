@@ -182,7 +182,7 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
         };
         constructors[INTERNAL_FRAGMENT_NAMESPACE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new InternalReplicaFragmentNamespace();
+                return InternalReplicaFragmentNamespace.INSTANCE;
             }
         };
         return new ArrayDataSerializableFactory(constructors);

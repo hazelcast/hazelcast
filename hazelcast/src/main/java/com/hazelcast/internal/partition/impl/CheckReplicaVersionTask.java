@@ -84,7 +84,7 @@ final class CheckReplicaVersionTask implements PartitionSpecificRunnable, Urgent
         Collection<ReplicaFragmentNamespace> namespaces = retainAndGetNamespaces();
 
         PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
-        Map<ReplicaFragmentNamespace, Long> versionMap = new HashMap<ReplicaFragmentNamespace, Long>(namespaces.size());
+        Map<ReplicaFragmentNamespace, Long> versionMap = new HashMap<ReplicaFragmentNamespace, Long>();
         for (ReplicaFragmentNamespace ns : namespaces) {
             long[] versions = replicaManager.getPartitionReplicaVersions(partitionId, ns);
             long currentReplicaVersion = versions[replicaIndex - 1];

@@ -25,8 +25,8 @@ import java.util.Collection;
  * Each replica fragment is distinguished by a {@link ReplicaFragmentNamespace}, all replica data belonging to
  * a specific namespace will be transferred in the same packet.
  * <p>
- * Backup operations created by {@code FragmentedMigrationAwareService} must implement {@link ReplicaFragmentAware} interface
- * and must know their related {@link ReplicaFragmentNamespace}s.
+ * Both backup and backup aware operations created by {@code FragmentedMigrationAwareService} must implement
+ * {@link ReplicaFragmentAware} interface and must know their related {@link ReplicaFragmentNamespace}s.
  * <p>
  * Fragmented migration can be enabled/disabled using configuration property
  * {@link com.hazelcast.spi.properties.GroupProperty#PARTITION_FRAGMENTED_MIGRATION_ENABLED}. Anti-entropy system which

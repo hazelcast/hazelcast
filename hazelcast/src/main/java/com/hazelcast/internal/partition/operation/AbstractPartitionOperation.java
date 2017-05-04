@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.internal.partition.InternalReplicaFragmentNamespace;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.FragmentedMigrationAwareService;
@@ -68,6 +69,7 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
     }
 
     final Operation createFragmentReplicationOperation(PartitionReplicationEvent event, ReplicaFragmentNamespace ns) {
+        assert !(ns instanceof InternalReplicaFragmentNamespace) : ns + " should be used only for non-fragmented services!";
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         FragmentedMigrationAwareService service = nodeEngine.getService(ns.getServiceName());
         Operation op = service.prepareReplicationOperation(event, singleton(ns));

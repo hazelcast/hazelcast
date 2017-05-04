@@ -82,15 +82,15 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        namespaces = new HashMap<ReplicaFragmentNamespace, long[]>();
         int namespaceSize = in.readInt();
+        namespaces = new HashMap<ReplicaFragmentNamespace, long[]>(namespaceSize);
         for (int i = 0; i < namespaceSize; i++) {
             ReplicaFragmentNamespace namespace = in.readObject();
             long[] replicaVersions = in.readLongArray();
             namespaces.put(namespace, replicaVersions);
         }
-        migrationOperations = new ArrayList<Operation>();
         int migrationOperationSize = in.readInt();
+        migrationOperations = new ArrayList<Operation>(migrationOperationSize);
         for (int i = 0; i < migrationOperationSize; i++) {
             Operation migrationOperation = in.readObject();
             migrationOperations.add(migrationOperation);
