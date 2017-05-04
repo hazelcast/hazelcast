@@ -23,5 +23,5 @@ import java.nio.channels.SocketChannel;
  */
 public interface SocketChannelWrapperFactory {
 
-    SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception;
+    SocketChannelWrapper wrapSocketChannel(SocketChannel channel, boolean client) throws Exception;
 }
