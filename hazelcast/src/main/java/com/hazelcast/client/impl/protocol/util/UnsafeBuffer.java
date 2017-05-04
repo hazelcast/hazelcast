@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.util;
 import com.hazelcast.nio.Bits;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
@@ -183,6 +184,17 @@ public class UnsafeBuffer implements ClientProtocolBuffer {
         boundsCheck(src, offset, length);
 
         MEM.copyMemory(src, ARRAY_BASE_OFFSET + offset, byteArray, addressOffset + index, length);
+    }
+
+    @Override
+    public void putBytes(int index, ByteBuffer src, int length) {
+        if (src.isDirect()) {
+            src.get(byteArray, index, length);
+        } else {
+            // to prevent causing any regressions, in case of a heap buffer, we leave the original copy logic in place.
+            putBytes(index, src.array(), src.position(), length);
+            src.position(src.position() + length);
+        }
     }
 
     @Override

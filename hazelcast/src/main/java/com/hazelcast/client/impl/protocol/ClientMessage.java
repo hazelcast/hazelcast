@@ -328,7 +328,9 @@ public class ClientMessage
                 // we don't have even the frame length ready
                 return false;
             }
-            frameLength = Bits.readIntL(src.array(), src.position());
+            frameLength = Bits.readIntL(src);
+            // we need to restore the position; as if we didn't read the frame-length
+            src.position(src.position() - Bits.INT_SIZE_IN_BYTES);
             if (frameLength < HEADER_SIZE) {
                 throw new IllegalArgumentException("Client message frame length cannot be smaller than header size.");
             }
@@ -343,12 +345,11 @@ public class ClientMessage
         return isComplete();
     }
 
-    private int accumulate(ByteBuffer byteBuffer, int length) {
-        final int remaining = byteBuffer.remaining();
-        final int readLength = remaining < length ? remaining : length;
+    private int accumulate(ByteBuffer src, int length) {
+        int remaining = src.remaining();
+        int readLength = remaining < length ? remaining : length;
         if (readLength > 0) {
-            buffer.putBytes(index(), byteBuffer.array(), byteBuffer.position(), readLength);
-            byteBuffer.position(byteBuffer.position() + readLength);
+            buffer.putBytes(index(), src, readLength);
             index(index() + readLength);
             return readLength;
         }
