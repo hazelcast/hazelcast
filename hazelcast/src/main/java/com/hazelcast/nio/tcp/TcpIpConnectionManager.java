@@ -104,15 +104,10 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     private final IOThreadingModel ioThreadingModel;
     private final MetricsRegistry metricsRegistry;
 
-    private volatile boolean live;
 
     private final ServerSocketChannel serverSocketChannel;
 
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
-
-    // accessed only in synchronized block
-    private volatile TcpIpAcceptor acceptor;
-
     @Probe
     private final MwCounter openedCount = newMwCounter();
     @Probe
@@ -121,7 +116,13 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     private final ScheduledExecutorService scheduler
             = new ScheduledThreadPoolExecutor(4, new ThreadFactoryImpl("TcpIpConnectionManager-thread-"));
 
-    private TcpIpConnector tcpIpConnector;
+    // accessed only in synchronized block
+    private volatile TcpIpAcceptor acceptor;
+
+    private volatile boolean live;
+
+    private TcpIpConnector connector;
+
 
     public TcpIpConnectionManager(IOService ioService,
                                   ServerSocketChannel serverSocketChannel,
@@ -135,7 +136,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         this.logger = loggingService.getLogger(TcpIpConnectionManager.class);
         this.socketChannelWrapperFactory = ioService.getSocketChannelWrapperFactory();
         this.metricsRegistry = metricsRegistry;
-        this.tcpIpConnector = new TcpIpConnector(this);
+        this.connector = new TcpIpConnector(this);
         metricsRegistry.scanAndRegister(this, "tcp.connection");
     }
 
@@ -346,7 +347,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         Connection connection = connectionsMap.get(address);
         if (connection == null && live) {
             if (connectionsInProgress.add(address)) {
-                tcpIpConnector.asyncConnect(address, silent);
+                connector.asyncConnect(address, silent);
             }
         }
         return connection;
