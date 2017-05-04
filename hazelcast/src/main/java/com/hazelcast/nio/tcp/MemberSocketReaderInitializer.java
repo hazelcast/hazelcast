@@ -106,7 +106,7 @@ public class MemberSocketReaderInitializer implements SocketReaderInitializer<Tc
         reader.initInputBuffer(inputBuffer);
 
         try {
-            connection.setReceiveBufferSize(sizeBytes);
+            connection.getSocketChannel().socket().setReceiveBufferSize(sizeBytes);
         } catch (SocketException e) {
             logger.finest("Failed to adjust TCP receive buffer of " + connection + " to " + sizeBytes + " B.", e);
         }
