@@ -196,8 +196,12 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
                 invokerWrapper.invokeOnTarget(removePublisher, address);
             }
         } else {
-            Object removePublisher = subscriberContextSupport.createDestroyQueryCacheOperation(mapName, userGivenCacheName);
-            invokerWrapper.invoke(removePublisher);
+            try {
+                subscriberContext.getEventService().removePublisherListener(mapName, publisherListenerId);
+            } finally {
+                Object removePublisher = subscriberContextSupport.createDestroyQueryCacheOperation(mapName, userGivenCacheName);
+                invokerWrapper.invoke(removePublisher);
+            }
         }
     }
 
@@ -435,12 +439,16 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
     @Override
     public boolean removeEntryListener(String id) {
+        checkNotNull(id, "listener id cannot be null");
+
         QueryCacheEventService eventService = getEventService();
         return eventService.removeListener(mapName, cacheName, id);
     }
 
     @Override
     public void addIndex(String attribute, boolean ordered) {
+        checkNotNull(attribute, "attribute cannot be null");
+
         getIndexes().addOrGetIndex(attribute, ordered);
 
         InternalSerializationService serializationService = context.getSerializationService();

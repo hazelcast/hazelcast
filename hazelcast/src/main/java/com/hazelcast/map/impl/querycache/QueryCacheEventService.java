@@ -52,6 +52,15 @@ public interface QueryCacheEventService<E> {
     String listenPublisher(String mapName, String cacheName, ListenerAdapter listenerAdapter);
 
     /**
+     * Removes listener from underlying IMap
+     *
+     * @param mapName    underlying map name which query cache listens.
+     * @param listenerId id of registered listener
+     * @return {@code true} if listener is de-registered, {@code false} otherwise.
+     */
+    boolean removePublisherListener(String mapName, String listenerId);
+
+    /**
      * Adds a user-defined listener to a query-cache. This listener is registered as a local listener
      * on subscriber side.
      *
