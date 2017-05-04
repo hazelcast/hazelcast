@@ -20,6 +20,8 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MaxSizeConfig.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -141,6 +143,20 @@ public final class ConfigValidator {
                             "Only one of the `eviction policy` and `comparator` can be configured!");
                 }
             }
+        }
+    }
+
+    public static void checkMaxSizeEvictionConfig(MapConfig mapConfig, int partitionCount) {
+        MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
+        int userConfiguredMaxSize = maxSizeConfig.getSize();
+        MaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
+        if (mapConfig.getEvictionPolicy() != NONE && userConfiguredMaxSize < partitionCount &&
+                maxSizePolicy == MaxSizePolicy.PER_NODE) {
+            LOGGER.warning(format("Invalid configuration: an eviction policy is configured and max size %1$d is "
+                    + "less than partition count %2$d, so entries will be evicted as soon as they are put in the IMap. "
+                    + "Max size has been reset to %2$d. Please correct the configured max size value, future Hazelcast "
+                    + "versions may refuse operation with invalid configuration.", userConfiguredMaxSize, partitionCount));
+            maxSizeConfig.setSize(partitionCount);
         }
     }
 
