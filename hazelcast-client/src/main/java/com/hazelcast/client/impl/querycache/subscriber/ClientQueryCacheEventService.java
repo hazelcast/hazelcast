@@ -139,6 +139,11 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
         return listenerService.registerListener(createPublisherListenerCodec(listenerName), handler);
     }
 
+    @Override
+    public boolean removePublisherListener(String mapName, String listenerId) {
+        return listenerService.deregisterListener(listenerId);
+    }
+
     private ListenerMessageCodec createPublisherListenerCodec(final String listenerName) {
         return new ListenerMessageCodec() {
             @Override

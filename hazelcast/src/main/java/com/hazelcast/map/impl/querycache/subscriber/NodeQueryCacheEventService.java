@@ -83,6 +83,11 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
     }
 
     @Override
+    public boolean removePublisherListener(String mapName, String listenerId) {
+        return mapServiceContext.removeEventListener(mapName, listenerId);
+    }
+
+    @Override
     public String addListener(String mapName, String cacheName, MapListener listener, EventFilter filter) {
         checkHasText(mapName, "mapName");
         checkHasText(cacheName, "cacheName");

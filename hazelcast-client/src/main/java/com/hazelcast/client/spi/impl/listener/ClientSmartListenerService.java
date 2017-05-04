@@ -297,4 +297,8 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
         }
     }
 
+    // used in tests
+    public Map<ClientRegistrationKey, Map<Connection, ClientEventRegistration>> getRegistrations() {
+        return registrations;
+    }
 }
