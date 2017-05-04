@@ -56,10 +56,12 @@ public class NodeIOService implements IOService {
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
+    private final SocketChannelWrapperFactory socketChannelWrapperFactory;
 
     public NodeIOService(Node node, NodeEngineImpl nodeEngine) {
         this.node = node;
         this.nodeEngine = nodeEngine;
+        this.socketChannelWrapperFactory = node.getNodeExtension().getSocketChannelWrapperFactory();
     }
 
     @Override
@@ -327,7 +329,7 @@ public class NodeIOService implements IOService {
 
     @Override
     public SocketChannelWrapperFactory getSocketChannelWrapperFactory() {
-        return node.getNodeExtension().getSocketChannelWrapperFactory();
+        return socketChannelWrapperFactory;
     }
 
     @Override

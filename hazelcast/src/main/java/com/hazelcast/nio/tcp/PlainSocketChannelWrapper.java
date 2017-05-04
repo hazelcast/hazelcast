@@ -28,6 +28,9 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
+/**
+ * A {@link SocketChannelWrapper} that sends data plain (unecrypted) over the wire.
+ */
 public class PlainSocketChannelWrapper implements SocketChannelWrapper {
 
     protected final SocketChannel socketChannel;
