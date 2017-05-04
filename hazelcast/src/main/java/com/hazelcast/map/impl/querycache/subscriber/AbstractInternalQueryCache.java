@@ -57,6 +57,11 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     protected final InternalSerializationService serializationService;
     protected final PartitioningStrategy partitioningStrategy;
 
+    /**
+     * Id of registered listener on publisher side.
+     */
+    protected String publisherListenerId;
+
     public AbstractInternalQueryCache(String cacheName, String userGivenCacheName, IMap delegate, QueryCacheContext context) {
         this.cacheName = cacheName;
         this.userGivenCacheName = userGivenCacheName;
@@ -69,6 +74,11 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         this.partitioningStrategy = getPartitioningStrategy();
         this.recordStore = new DefaultQueryCacheRecordStore(serializationService, indexes, getQueryCacheConfig(),
                 getEvictionListener());
+    }
+
+    @Override
+    public void setPublisherListenerId(String publisherListenerId) {
+        this.publisherListenerId = publisherListenerId;
     }
 
     protected Predicate getPredicate() {

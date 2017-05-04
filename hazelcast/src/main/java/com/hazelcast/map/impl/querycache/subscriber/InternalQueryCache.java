@@ -40,4 +40,6 @@ public interface InternalQueryCache<K, V> extends QueryCache<K, V> {
     Indexes getIndexes();
 
     void clear();
+
+    void setPublisherListenerId(String publisherListenerId);
 }
