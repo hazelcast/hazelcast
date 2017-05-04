@@ -83,6 +83,11 @@ public class TestFragmentedMigrationAwareService extends TestAbstractMigrationAw
     }
 
     @Override
+    public boolean isKnownServiceNamespace(ServiceNamespace namespace) {
+        return namespace instanceof TestServiceNamespace;
+    }
+
+    @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event, Collection<ServiceNamespace> namespaces) {
         if (event.getReplicaIndex() > backupCount || namespaces.isEmpty()) {
             return null;

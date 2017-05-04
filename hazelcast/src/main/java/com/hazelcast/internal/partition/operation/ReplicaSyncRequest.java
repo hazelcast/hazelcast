@@ -19,8 +19,8 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
+import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
@@ -44,8 +44,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-
-import static java.util.Collections.singleton;
 
 /**
  * The request sent from a replica to the partition owner to synchronize the replica data. The partition owner can send a
@@ -114,8 +112,8 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
                 }
 
                 for (ServiceNamespace namespace : allNamespaces) {
-                    Operation operation = createFragmentReplicationOperation(event, namespace);
-                    sendOperations(singleton(operation), namespace);
+                    Collection<Operation> operations = createFragmentReplicationOperations(event, namespace);
+                    sendOperations(operations, namespace);
                 }
             }
         } finally {
