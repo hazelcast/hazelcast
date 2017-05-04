@@ -188,6 +188,7 @@ public class NearCachePreloader<K> {
             }
 
             fos.flush();
+            closeResource(fos);
             rename(tmpStoreFile, storeFile);
 
             updatePersistenceStats(startedNanos);
@@ -196,8 +197,8 @@ public class NearCachePreloader<K> {
 
             nearCacheStats.addPersistenceFailure(e);
         } finally {
-            deleteQuietly(tmpStoreFile);
             closeResource(fos);
+            deleteQuietly(tmpStoreFile);
         }
     }
 
