@@ -45,7 +45,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
-import com.hazelcast.nio.tcp.DefaultSocketChannelWrapperFactory;
+import com.hazelcast.nio.tcp.PlainSocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.MemberReadHandler;
 import com.hazelcast.nio.tcp.MemberWriteHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -195,7 +195,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public SocketChannelWrapperFactory getSocketChannelWrapperFactory() {
-        return new DefaultSocketChannelWrapperFactory();
+        return new PlainSocketChannelWrapperFactory();
     }
 
     @Override

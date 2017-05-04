@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.internal.networking.ReadHandler;
 import com.hazelcast.internal.networking.SocketChannelWrapper;
 import com.hazelcast.internal.networking.SocketReader;
@@ -60,8 +61,8 @@ public class SocketReaderInitializerImpl implements SocketReaderInitializer<TcpI
             throw new EOFException("Could not read protocol type!");
         }
 
-        if (readBytes == 0 && connectionManager.isSSLEnabled()) {
-            // when using SSL, we can read 0 bytes since data read from socket can be handshake frames.
+        if (readBytes == 0 && isSslEnabled(ioService)) {
+            // when using SSL, we can read 0 bytes since data read from socket can be handshake data.
             return;
         }
 
@@ -111,5 +112,10 @@ public class SocketReaderInitializerImpl implements SocketReaderInitializer<TcpI
         }
 
         return inputBuffer;
+    }
+
+    private static boolean isSslEnabled(IOService ioService) {
+        SSLConfig config = ioService.getSSLConfig();
+        return config != null && config.isEnabled();
     }
 }

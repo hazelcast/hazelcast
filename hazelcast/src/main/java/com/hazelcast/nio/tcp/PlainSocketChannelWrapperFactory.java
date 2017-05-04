@@ -21,14 +21,10 @@ import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
 
 import java.nio.channels.SocketChannel;
 
-public class DefaultSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
-    @Override
-    public SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
-        return new DefaultSocketChannelWrapper(socketChannel);
-    }
+public class PlainSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
 
     @Override
-    public boolean isSSlEnabled() {
-        return false;
+    public SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
+        return new PlainSocketChannelWrapper(socketChannel);
     }
 }
