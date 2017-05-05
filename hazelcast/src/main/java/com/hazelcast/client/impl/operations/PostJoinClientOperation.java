@@ -18,12 +18,15 @@ package com.hazelcast.client.impl.operations;
 
 import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class PostJoinClientOperation extends AbstractClientOperation {
 
@@ -43,8 +46,17 @@ public class PostJoinClientOperation extends AbstractClientOperation {
         }
 
         ClientEngineImpl engine = getService();
+        Set<Member> members = getNodeEngine().getClusterService().getMembers();
+        HashSet<String> uuids = new HashSet<String>();
+        for (Member member : members) {
+            uuids.add(member.getUuid());
+        }
+
         for (Map.Entry<String, String> entry : mappings.entrySet()) {
-            engine.addOwnershipMapping(entry.getKey(), entry.getValue());
+            String ownerMemberUuid = entry.getValue();
+            if (uuids.contains(ownerMemberUuid)) {
+                engine.addOwnershipMapping(entry.getKey(), ownerMemberUuid);
+            }
         }
     }
 
