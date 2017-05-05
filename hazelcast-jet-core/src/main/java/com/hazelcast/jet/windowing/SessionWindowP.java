@@ -45,7 +45,7 @@ import static java.lang.System.arraycopy;
 /**
  * Session window processor. See {@link
  * WindowingProcessors#sessionWindow(long, ToLongFunction, Function,
- * DistributedCollector) sessionWindow(maxSeqGap, extractEventSeqF,
+ * DistributedCollector) sessionWindow(sessionTimeout, extractTimestampF,
  * extractKeyF, collector)} for documentation.
  *
  * @param <T> type of the stream item
@@ -59,8 +59,8 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
     final Map<K, Windows> keyToWindows = new HashMap<>();
     SortedMap<Long, Set<K>> deadlineToKeys = new TreeMap<>();
 
-    private final long maxSeqGap;
-    private final ToLongFunction<? super T> extractEventSeqF;
+    private final long sessionTimeout;
+    private final ToLongFunction<? super T> extractTimestampF;
     private final Function<? super T, K> extractKeyF;
     private final Supplier<A> newAccumulatorF;
     private final BiConsumer<? super A, ? super T> accumulateF;
@@ -68,53 +68,46 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
     private final BinaryOperator<A> combineAccF;
     private final FlatMapper<Punctuation, Session<K, R>> expiredSesFlatmapper;
 
-    private long puncSeq;
-
     SessionWindowP(
-            long maxSeqGap,
-            ToLongFunction<? super T> extractEventSeqF,
+            long sessionTimeout,
+            ToLongFunction<? super T> extractTimestampF,
             Function<? super T, K> extractKeyF,
             DistributedCollector<? super T, A, R> collector
     ) {
-        this.extractEventSeqF = extractEventSeqF;
+        this.extractTimestampF = extractTimestampF;
         this.extractKeyF = extractKeyF;
         this.newAccumulatorF = collector.supplier();
         this.accumulateF = collector.accumulator();
         this.combineAccF = collector.combiner();
         this.finishAccumulationF = collector.finisher();
-        this.maxSeqGap = maxSeqGap;
-        this.expiredSesFlatmapper = flatMapper(this::closedWindowTraverser);
+        this.sessionTimeout = sessionTimeout;
+        this.expiredSesFlatmapper = flatMapper(this::expiredSesTraverser);
     }
 
     @Override
     protected boolean tryProcess0(@Nonnull Object item) {
         final T event = (T) item;
-        final long eventSeq = extractEventSeqF.applyAsLong(event);
-        if (eventSeq < puncSeq) {
-            // drop late event
-            return true;
-        }
+        final long timestamp = extractTimestampF.applyAsLong(event);
         K key = extractKeyF.apply(event);
         keyToWindows.computeIfAbsent(key, k -> new Windows())
-                    .addEvent(key, eventSeq, event);
+                    .addEvent(key, timestamp, event);
         return true;
     }
 
     @Override
     protected boolean tryProcessPunc0(@Nonnull Punctuation punc) {
-        puncSeq = punc.seq();
         return expiredSesFlatmapper.tryProcess(punc);
     }
 
-    private Traverser<Session<K, R>> closedWindowTraverser(Punctuation punc) {
+    private Traverser<Session<K, R>> expiredSesTraverser(Punctuation punc) {
         Stream<Session<K, R>> sessions = deadlineToKeys
-                .headMap(punc.seq())
+                .headMap(punc.timestamp())
                 .values().stream()
                 .flatMap(Set::stream)
                 .distinct()
-                .map(key -> keyToWindows.get(key).closeWindows(key, punc.seq()))
+                .map(key -> keyToWindows.get(key).closeWindows(key, punc.timestamp()))
                 .flatMap(List::stream);
-        deadlineToKeys = deadlineToKeys.tailMap(punc.seq());
+        deadlineToKeys = deadlineToKeys.tailMap(punc.timestamp());
         return traverseStream(sessions);
     }
 
@@ -136,14 +129,14 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
         private long[] ends = new long[2];
         private A[] accs = (A[]) new Object[2];
 
-        void addEvent(K key, long eventSeq, T event) {
-            accumulateF.accept(resolveAcc(key, eventSeq), event);
+        void addEvent(K key, long timestamp, T event) {
+            accumulateF.accept(resolveAcc(key, timestamp), event);
         }
 
-        List<Session<K, R>> closeWindows(K key, long puncSeq) {
+        List<Session<K, R>> closeWindows(K key, long punc) {
             List<Session<K, R>> sessions = new ArrayList<>();
             int i = 0;
-            for (; i < size && ends[i] < puncSeq; i++) {
+            for (; i < size && ends[i] < punc; i++) {
                 sessions.add(new Session<>(key, starts[i], ends[i], finishAccumulationF.apply(accs[i])));
             }
             if (i != size) {
@@ -154,17 +147,17 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
             return sessions;
         }
 
-        private A resolveAcc(K key, long eventSeq) {
-            long eventEnd = eventSeq + maxSeqGap;
+        private A resolveAcc(K key, long timestamp) {
+            long eventEnd = timestamp + sessionTimeout;
             int i = 0;
             for (; i < size && starts[i] <= eventEnd; i++) {
                 // the window `i` is not after the event interval
 
-                if (ends[i] < eventSeq) {
+                if (ends[i] < timestamp) {
                     // the window `i` is before the event interval
                     continue;
                 }
-                if (starts[i] <= eventSeq && ends[i] >= eventEnd) {
+                if (starts[i] <= timestamp && ends[i] >= eventEnd) {
                     // the window `i` fully covers the event interval
                     return accs[i];
                 }
@@ -172,7 +165,7 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
 
                 if (i + 1 == size || starts[i + 1] > eventEnd) {
                     // the window `i + 1` doesn't overlap the event interval
-                    starts[i] = min(starts[i], eventSeq);
+                    starts[i] = min(starts[i], timestamp);
                     if (ends[i] < eventEnd) {
                         removeFromDeadlines(key, ends[i]);
                         ends[i] = eventEnd;
@@ -188,15 +181,15 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
                 return accs[i];
             }
             addToDeadlines(key, eventEnd);
-            return insertWindow(i, eventSeq, eventEnd);
+            return insertWindow(i, timestamp, eventEnd);
         }
 
-        private A insertWindow(int idx, long eventSeq, long eventEnd) {
+        private A insertWindow(int idx, long windowStart, long windowEnd) {
             expandIfNeeded();
             copy(idx, idx + 1, size - idx);
             size++;
-            starts[idx] = eventSeq;
-            ends[idx] = eventEnd;
+            starts[idx] = windowStart;
+            ends[idx] = windowEnd;
             accs[idx] = newAccumulatorF.get();
             return accs[idx];
         }

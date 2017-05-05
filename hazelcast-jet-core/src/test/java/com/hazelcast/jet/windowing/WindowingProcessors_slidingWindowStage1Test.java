@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.windowing;
 
-import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.jet.Punctuation;
+import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -51,15 +51,15 @@ public class WindowingProcessors_slidingWindowStage1Test extends StreamingTestSu
                 x -> KEY,
                 Entry::getKey,
                 new WindowDefinition(4, 0, 4),
-                summingToLong((Entry<Long, Long> e) -> e.getValue())
+                summingToLong(Entry<Long, Long>::getValue)
         ).get();
         processor.init(outbox, mock(Context.class));
     }
 
     @After
     public void after() {
-        assertTrue("map not empty after emitting everything: " + processor.seqToKeyToFrame,
-                processor.seqToKeyToFrame.isEmpty());
+        assertTrue("map not empty after emitting everything: " + processor.tsToKeyToFrame,
+                processor.tsToKeyToFrame.isEmpty());
     }
 
     @Test

@@ -38,85 +38,85 @@ public class WindowDefinitionTest {
     @Test
     public void when_noOffset() throws Exception {
         definition = new WindowDefinition(4, 0, 10);
-        assertSeq(-5, -8, -4);
-        assertSeq(-4, -4, 0);
-        assertSeq(-3, -4, 0);
-        assertSeq(-2, -4, 0);
-        assertSeq(-1, -4, 0);
-        assertSeq(0, 0, 4);
-        assertSeq(1, 0, 4);
-        assertSeq(2, 0, 4);
-        assertSeq(3, 0, 4);
-        assertSeq(4, 4, 8);
-        assertSeq(5, 4, 8);
-        assertSeq(6, 4, 8);
-        assertSeq(7, 4, 8);
-        assertSeq(8, 8, 12);
+        assertFrameTs(-5, -8, -4);
+        assertFrameTs(-4, -4, 0);
+        assertFrameTs(-3, -4, 0);
+        assertFrameTs(-2, -4, 0);
+        assertFrameTs(-1, -4, 0);
+        assertFrameTs(0, 0, 4);
+        assertFrameTs(1, 0, 4);
+        assertFrameTs(2, 0, 4);
+        assertFrameTs(3, 0, 4);
+        assertFrameTs(4, 4, 8);
+        assertFrameTs(5, 4, 8);
+        assertFrameTs(6, 4, 8);
+        assertFrameTs(7, 4, 8);
+        assertFrameTs(8, 8, 12);
     }
 
     @Test
     public void when_offset1() throws Exception {
         definition = new WindowDefinition(4, 1, 10);
 
-        assertSeq(-4, -7, -3);
-        assertSeq(-3, -3, 1);
-        assertSeq(-2, -3, 1);
-        assertSeq(-1, -3, 1);
-        assertSeq(0, -3, 1);
-        assertSeq(1, 1, 5);
-        assertSeq(2, 1, 5);
-        assertSeq(3, 1, 5);
-        assertSeq(4, 1, 5);
-        assertSeq(5, 5, 9);
-        assertSeq(6, 5, 9);
-        assertSeq(7, 5, 9);
-        assertSeq(8, 5, 9);
-        assertSeq(9, 9, 13);
+        assertFrameTs(-4, -7, -3);
+        assertFrameTs(-3, -3, 1);
+        assertFrameTs(-2, -3, 1);
+        assertFrameTs(-1, -3, 1);
+        assertFrameTs(0, -3, 1);
+        assertFrameTs(1, 1, 5);
+        assertFrameTs(2, 1, 5);
+        assertFrameTs(3, 1, 5);
+        assertFrameTs(4, 1, 5);
+        assertFrameTs(5, 5, 9);
+        assertFrameTs(6, 5, 9);
+        assertFrameTs(7, 5, 9);
+        assertFrameTs(8, 5, 9);
+        assertFrameTs(9, 9, 13);
     }
 
     @Test
     public void when_offset2() throws Exception {
         definition = new WindowDefinition(4, 2, 10);
 
-        assertSeq(-4, -6, -2);
-        assertSeq(-3, -6, -2);
-        assertSeq(-2, -2, 2);
-        assertSeq(-1, -2, 2);
-        assertSeq(0, -2, 2);
-        assertSeq(1, -2, 2);
-        assertSeq(2, 2, 6);
-        assertSeq(3, 2, 6);
-        assertSeq(4, 2, 6);
-        assertSeq(5, 2, 6);
-        assertSeq(6, 6, 10);
-        assertSeq(7, 6, 10);
-        assertSeq(8, 6, 10);
-        assertSeq(9, 6, 10);
+        assertFrameTs(-4, -6, -2);
+        assertFrameTs(-3, -6, -2);
+        assertFrameTs(-2, -2, 2);
+        assertFrameTs(-1, -2, 2);
+        assertFrameTs(0, -2, 2);
+        assertFrameTs(1, -2, 2);
+        assertFrameTs(2, 2, 6);
+        assertFrameTs(3, 2, 6);
+        assertFrameTs(4, 2, 6);
+        assertFrameTs(5, 2, 6);
+        assertFrameTs(6, 6, 10);
+        assertFrameTs(7, 6, 10);
+        assertFrameTs(8, 6, 10);
+        assertFrameTs(9, 6, 10);
     }
 
     @Test
     public void when_frameLength3() {
         definition = new WindowDefinition(3, 0, 10);
-        assertEquals(Long.MIN_VALUE, definition.floorFrameSeq(Long.MIN_VALUE));
+        assertEquals(Long.MIN_VALUE, definition.floorFrameTs(Long.MIN_VALUE));
     }
 
     @Test
     public void when_floorOutOfRange_then_minValue() {
         definition = new WindowDefinition(4, 3, 10);
-        assertEquals(Long.MIN_VALUE, definition.floorFrameSeq(Long.MIN_VALUE + 2));
-        assertEquals(Long.MAX_VALUE, definition.floorFrameSeq(Long.MAX_VALUE));
+        assertEquals(Long.MIN_VALUE, definition.floorFrameTs(Long.MIN_VALUE + 2));
+        assertEquals(Long.MAX_VALUE, definition.floorFrameTs(Long.MAX_VALUE));
     }
 
     @Test
     public void when_higherOutOfRange_then_maxValue() {
         definition = new WindowDefinition(4, 2, 10);
-        assertEquals(Long.MAX_VALUE, definition.higherFrameSeq(Long.MAX_VALUE - 1));
-        assertEquals(Long.MIN_VALUE + 2, definition.higherFrameSeq(Long.MIN_VALUE));
+        assertEquals(Long.MAX_VALUE, definition.higherFrameTs(Long.MAX_VALUE - 1));
+        assertEquals(Long.MIN_VALUE + 2, definition.higherFrameTs(Long.MIN_VALUE));
     }
 
-    private void assertSeq(long seq, long floor, long higher) {
-        assertEquals(floor, definition.floorFrameSeq(seq));
-        assertEquals(higher, definition.higherFrameSeq(seq));
+    private void assertFrameTs(long timestamp, long expectedFloor, long expectedHigher) {
+        assertEquals(expectedFloor, definition.floorFrameTs(timestamp));
+        assertEquals(expectedHigher, definition.higherFrameTs(timestamp));
     }
 
 }

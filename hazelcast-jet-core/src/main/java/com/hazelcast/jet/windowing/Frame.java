@@ -17,11 +17,10 @@
 package com.hazelcast.jet.windowing;
 
 import javax.annotation.Nonnull;
-import java.util.Arrays;
 import java.util.Map;
 
 /**
- * Container of items from a fixed-length {@code eventSeq} interval. Holds
+ * Container of items from a fixed-length timestamp interval. Holds
  * intermediate computation results before the final step of forming the
  * user-visible window.
  *
@@ -29,37 +28,36 @@ import java.util.Map;
  * @param <V> type of the stream item
  */
 public final class Frame<K, V> implements Map.Entry<K, V> {
-    private final long seq;
+    private final long timestamp;
     private final K key;
     private final V value;
 
     /**
      * Constructs a frame with the supplied field values.
-     * @param seq {@link #getSeq()}
+     * @param timestamp {@link #getTimestamp()}
      * @param key {@link #getKey()}
      * @param value {@link #getValue()}
      */
-    public Frame(long seq, @Nonnull K key, @Nonnull V value) {
-        this.seq = seq;
+    public Frame(long timestamp, @Nonnull K key, @Nonnull V value) {
+        this.timestamp = timestamp;
         this.key = key;
         this.value = value;
     }
 
     /**
-     * Returns the {@code seq} number of this frame.
+     * Returns the timestamp label of this frame (the lowest timestamp
+     * not belonging to it).
      */
-    public long getSeq() {
-        return seq;
+    public long getTimestamp() {
+        return timestamp;
     }
 
-    @Override
-    @Nonnull
+    @Override @Nonnull
     public K getKey() {
         return key;
     }
 
-    @Override
-    @Nonnull
+    @Override @Nonnull
     public V getValue() {
         return value;
     }
@@ -72,7 +70,7 @@ public final class Frame<K, V> implements Map.Entry<K, V> {
     @Override
     public int hashCode() {
         int hc = 17;
-        hc = 73 * hc + Long.hashCode(seq);
+        hc = 73 * hc + Long.hashCode(timestamp);
         hc = 73 * hc + key.hashCode();
         hc = 73 * hc + value.hashCode();
         return hc;
@@ -83,19 +81,13 @@ public final class Frame<K, V> implements Map.Entry<K, V> {
         final Frame that;
         return this == obj
                 || obj instanceof Frame
-                && this.seq == (that = (Frame) obj).seq
+                && this.timestamp == (that = (Frame) obj).timestamp
                 && this.key.equals(that.key)
                 && this.value.equals(that.value);
     }
 
     @Override
     public String toString() {
-        // Here's some hacky code that special-cases some types of value
-        // which lack a proper toString implementation
-        String valueStr =
-                value instanceof long[] ? Arrays.toString((long[]) value)
-              : value instanceof Object[] ? Arrays.toString((Object[]) value)
-              : value.toString();
-        return "Frame{seq=" + seq + ", key=" + key + ", value=" + valueStr + '}';
+        return "Frame{timestamp=" + timestamp + ", key=" + key + ", value=" + value + '}';
     }
 }

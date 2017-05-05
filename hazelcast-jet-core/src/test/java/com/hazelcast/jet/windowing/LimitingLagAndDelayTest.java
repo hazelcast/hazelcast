@@ -22,18 +22,18 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.windowing.PunctuationPolicies.limitingLagAndDelay;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class CappingEventSeqLagAndRetentionTest {
+public class LimitingLagAndDelayTest {
 
     private static final int MAX_RETAIN_MS = 8;
-    private static final int EVENT_SEQ_LAG = 8;
+    private static final int TIMESTAMP_LAG = 8;
 
     private long time;
-    private PunctuationPolicy p = PunctuationPolicies.cappingEventSeqLagAndRetention(EVENT_SEQ_LAG,
-            MAX_RETAIN_MS, 8, () -> time);
+    private PunctuationPolicy p = limitingLagAndDelay(TIMESTAMP_LAG, MAX_RETAIN_MS, 8, () -> time);
 
     @Test
     public void when_outOfOrderEvents_then_monotonicPunct() {
@@ -65,8 +65,8 @@ public class CappingEventSeqLagAndRetentionTest {
         assertEquals(13, p.getCurrentPunctuation());
     }
 
-    private void assertPunc(long expected, long eventSeq) {
-        assertEquals(expected, p.reportEvent(eventSeq));
+    private void assertPunc(long expected, long timestamp) {
+        assertEquals(expected, p.reportEvent(timestamp));
         assertEquals(expected, p.getCurrentPunctuation());
     }
 }

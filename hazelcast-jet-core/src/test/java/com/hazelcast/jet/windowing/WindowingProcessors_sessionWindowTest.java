@@ -52,13 +52,13 @@ import static org.mockito.Mockito.mock;
 @RunWith(HazelcastParallelClassRunner.class)
 public class WindowingProcessors_sessionWindowTest extends StreamingTestSupport {
 
-    private static final int MAX_SEQ_GAP = 10;
+    private static final int SESSION_TIMEOUT = 10;
     private SessionWindowP<Entry<String, Long>, String, MutableLong, Long> processor;
 
     @Before
     public void before() {
         processor = new SessionWindowP<>(
-                MAX_SEQ_GAP,
+                SESSION_TIMEOUT,
                 Entry::getValue,
                 entryKey(),
                 DistributedCollector.of(
@@ -146,18 +146,18 @@ public class WindowingProcessors_sessionWindowTest extends StreamingTestSupport 
         long keyCount = 2000;
         long eventsPerKey = eventCount / keyCount;
         int spread = 4000;
-        int eventSeqStep = 20;
+        int timestampStep = 20;
         int puncLag = 2000;
         long puncInterval = 100;
         System.out.format("keyCount %,d eventsPerKey %,d puncInterval %,d%n", keyCount, eventsPerKey, puncInterval);
         for (long idx = 0; idx < eventsPerKey; idx++) {
-            long eventSeqBase = idx * eventSeqStep;
-            for (long key = (eventSeqBase / MAX_SEQ_GAP) % 2; key < keyCount; key += 2) {
-                while (!processor.tryProcess0(entry(key, eventSeqBase + rnd.nextInt(spread))));
-                while (!processor.tryProcess0(entry(key, eventSeqBase + rnd.nextInt(spread))));
+            long timestampBase = idx * timestampStep;
+            for (long key = (timestampBase / SESSION_TIMEOUT) % 2; key < keyCount; key += 2) {
+                while (!processor.tryProcess0(entry(key, timestampBase + rnd.nextInt(spread))));
+                while (!processor.tryProcess0(entry(key, timestampBase + rnd.nextInt(spread))));
             }
             if (idx % puncInterval == 0) {
-                Punctuation punc = new Punctuation(eventSeqBase - puncLag);
+                Punctuation punc = new Punctuation(timestampBase - puncLag);
                 int winCount = 0;
                 while (!processor.tryProcessPunc0(punc)) {
                     while (pollOutbox() != null) winCount++;

@@ -18,7 +18,7 @@ package com.hazelcast.jet.windowing;
 
 /**
  * A policy object that decides on the punctuation in a single data
- * (sub)stream. The event seq of every observed item should be reported
+ * (sub)stream. The timestamp of every observed item should be reported
  * to this object and it will respond with the current value of the
  * punctuation. Punctuation may also advance in the absence of observed
  * events; {@link #getCurrentPunctuation()} can be called at any
@@ -27,16 +27,16 @@ package com.hazelcast.jet.windowing;
 public interface PunctuationPolicy {
 
     /**
-     * Called to report the observation of an event with the given {@code
-     * eventSeq}. Returns the punctuation that should be (or have been) emitted
-     * before the event.
+     * Called to report the observation of an event with the given timestamp.
+     * Returns the punctuation that should be (or have been) emitted before
+     * the event.
      *
-     * @param eventSeq event's sequence value
-     * @return the punctuation sequence. May be {@code Long.MIN_VALUE} if there is
+     * @param timestamp event's timestamp
+     * @return the punctuation value. May be {@code Long.MIN_VALUE} if there is
      *         insufficient information to determine any punctuation (e.g., no events
      *         observed)
      */
-    long reportEvent(long eventSeq);
+    long reportEvent(long timestamp);
 
     /**
      * Called to get the current punctuation in the absence of an observed
@@ -58,8 +58,8 @@ public interface PunctuationPolicy {
             private long currPunc = Long.MIN_VALUE;
 
             @Override
-            public long reportEvent(long eventSeq) {
-                long newPunc = PunctuationPolicy.this.reportEvent(eventSeq);
+            public long reportEvent(long timestamp) {
+                long newPunc = PunctuationPolicy.this.reportEvent(timestamp);
                 return advanceThrottled(newPunc);
             }
 
@@ -82,18 +82,24 @@ public interface PunctuationPolicy {
 
     /**
      * Returns a new punctuation policy that throttles this policy's output by
-     * adjusting it to its {@link WindowDefinition#floorFrameSeq(long)
-     * floorFrameSeq} as returned from the supplied {@code WindowDefinition}.
+     * adjusting it to its {@link WindowDefinition#floorFrameTs(long)
+     * floorFrameTs} as returned from the supplied {@code WindowDefinition}.
      * This throttling policy should be employed to drive a downstream
-     * {@link WindowingProcessors sliding window processor}.
+     * processor that computes a sliding/tumbling window
+     * ({@link WindowingProcessors#slidingWindowStage1(com.hazelcast.jet.Distributed.Function,
+     * com.hazelcast.jet.Distributed.ToLongFunction, WindowDefinition, WindowOperation)
+     * slidingWindowStage1}
+     * or {@link WindowingProcessors#slidingWindowSingleStage(com.hazelcast.jet.Distributed.Function,
+     * com.hazelcast.jet.Distributed.ToLongFunction, WindowDefinition, WindowOperation)
+     * slidingWindowSingleStage}).
      */
     default PunctuationPolicy throttleByFrame(WindowDefinition winDef) {
         return new PunctuationPolicy() {
             private long lastPunc = Long.MIN_VALUE;
 
             @Override
-            public long reportEvent(long eventSeq) {
-                return advanceThrottled(PunctuationPolicy.this.reportEvent(eventSeq));
+            public long reportEvent(long timestamp) {
+                return advanceThrottled(PunctuationPolicy.this.reportEvent(timestamp));
             }
 
             @Override
@@ -104,7 +110,7 @@ public interface PunctuationPolicy {
             private long advanceThrottled(long proposedPunc) {
                 return proposedPunc == lastPunc
                         ? lastPunc
-                        : (lastPunc = winDef.floorFrameSeq(proposedPunc));
+                        : (lastPunc = winDef.floorFrameTs(proposedPunc));
             }
         };
     }

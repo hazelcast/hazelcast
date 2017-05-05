@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 import static com.hazelcast.jet.Util.entry;
@@ -52,10 +53,12 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 /**
- * This one tests:<ul>
- * <li>{@link WindowingProcessors#slidingWindowStage2( WindowDefinition, WindowOperation)}
- * <li>{@link WindowingProcessors#slidingWindowSingleStage(Function, ToLongFunction,
- *            WindowDefinition, WindowOperation)}
+ * This one tests:
+ * <ul><li>
+ *     {@link WindowingProcessors#slidingWindowStage2(WindowDefinition, WindowOperation)}
+ * </li><li>
+ *     {@link WindowingProcessors#slidingWindowSingleStage(Function, ToLongFunction,
+ *     WindowDefinition, WindowOperation)}
  * </ul>
  */
 @RunWith(Parameterized.class)
@@ -76,16 +79,9 @@ public class WindowingProcessors_slidingWindowTest extends StreamingTestSupport 
 
     @Parameters(name = "hasDeduct={0}, mutateAccumulator={1}, singleStageProcessor={2}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
-                {true, true, true},
-                {true, false, true},
-                {false, true, true},
-                {false, false, true},
-                {true, true, false},
-                {true, false, false},
-                {false, true, false},
-                {false, false, false},
-        });
+        return IntStream.range(0, 8)
+                        .mapToObj(i -> new Boolean[]{(i & 4) == 4, (i & 2) == 2, (i & 1) == 1})
+                        .collect(toList());
     }
 
     private WindowingProcessor<?, ?, Long> processor;
@@ -118,7 +114,7 @@ public class WindowingProcessors_slidingWindowTest extends StreamingTestSupport 
 
     @After
     public void after() {
-        assertTrue("seqToKeyToFrame is not empty: " + processor.seqToKeyToFrame, processor.seqToKeyToFrame.isEmpty());
+        assertTrue("tsToKeyToFrame is not empty: " + processor.tsToKeyToFrame, processor.tsToKeyToFrame.isEmpty());
         assertTrue("slidingWindow is not empty: " + processor.slidingWindow, processor.slidingWindow.isEmpty());
     }
 
@@ -140,7 +136,7 @@ public class WindowingProcessors_slidingWindowTest extends StreamingTestSupport 
     }
 
     @Test
-    public void when_receiveAscendingSeqs_then_emitAscending() {
+    public void when_receiveAscendingTimestamps_then_emitAscending() {
         // Given
         inbox.addAll(asList(
                 event(0, 1),
@@ -182,7 +178,7 @@ public class WindowingProcessors_slidingWindowTest extends StreamingTestSupport 
     }
 
     @Test
-    public void when_receiveDescendingSeqs_then_emitAscending() {
+    public void when_receiveDescendingTimestamps_then_emitAscending() {
         // Given
         inbox.addAll(asList(
                 event(4, 1),
@@ -224,12 +220,12 @@ public class WindowingProcessors_slidingWindowTest extends StreamingTestSupport 
     }
 
     @Test
-    public void when_receiveRandomSeqs_then_emitAscending() {
+    public void when_receiveRandomTimestamps_then_emitAscending() {
         // Given
-        final List<Long> frameSeqsToAdd = LongStream.range(0, 100).boxed().collect(toList());
-        shuffle(frameSeqsToAdd);
-        for (long seq : frameSeqsToAdd) {
-            inbox.add(event(seq, 1));
+        final List<Long> timestampsToAdd = LongStream.range(0, 100).boxed().collect(toList());
+        shuffle(timestampsToAdd);
+        for (long ts : timestampsToAdd) {
+            inbox.add(event(ts, 1));
         }
         for (long i = 1; i <= 105; i++) {
             inbox.add(punc(i));
@@ -250,9 +246,9 @@ public class WindowingProcessors_slidingWindowTest extends StreamingTestSupport 
                 outboxFrame(3, 4),
                 punc(3)
         ));
-        for (long seq = 4; seq < 100; seq++) {
-            expectedOutbox.add(outboxFrame(seq, 4));
-            expectedOutbox.add(punc(seq));
+        for (long ts = 4; ts < 100; ts++) {
+            expectedOutbox.add(outboxFrame(ts, 4));
+            expectedOutbox.add(punc(ts));
         }
         expectedOutbox.addAll(Arrays.asList(
                 outboxFrame(100, 3),
@@ -349,14 +345,15 @@ public class WindowingProcessors_slidingWindowTest extends StreamingTestSupport 
         ));
     }
 
-    private Entry<Long, ?> event(long seq, long value) {
+    private Entry<Long, ?> event(long frameTs, long value) {
         return singleStageProcessor
-                // the -1 is due to discrepancy between eventSeq and frameSeq
-                ? entry(seq - 1, value)
-                : new Frame<>(seq, KEY, new LongAccumulator(value));
+                // frameTs is higher than any event timestamp in that frame;
+                // therefore we generate an event with frameTs - 1
+                ? entry(frameTs - 1, value)
+                : new Frame<>(frameTs, KEY, new LongAccumulator(value));
     }
 
-    private static Frame<Long, ?> outboxFrame(long seq, long value) {
-        return new Frame<>(seq, KEY, value);
+    private static Frame<Long, ?> outboxFrame(long ts, long value) {
+        return new Frame<>(ts, KEY, value);
     }
 }

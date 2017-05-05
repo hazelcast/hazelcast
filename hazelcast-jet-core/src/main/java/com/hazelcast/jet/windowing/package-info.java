@@ -16,16 +16,12 @@
 
 /**
  * Contains code that processes an infinite stream by grouping items into
- * event time-based windows. Jet uses the term <strong>{@code eventSeq}
- * </strong> for a {@code long} value that determines the position of a
- * stream item on the event time axis. This is commonly referred to as the
- * <em>timestamp</em> of the event represented by the item; Jet uses this
- * term to avoid the confusion between the notions of wall-clock time (aka.
- * system time, processing time) and event time. The {@code eventSeq} value
- * is dimensionless and isn't required to have any correlation with the
- * actual notion of time except for a loose tendency to increase as the
- * position of an item in the stream increases. This way Jet can process
- * events that arrive out of order with respect to the time of their
- * occurrence, and can support timestamps in any time unit.
+ * event time-based windows. Jet requires the user to provide a function
+ * that will extract a {@code long timestamp} from each stream item. It will
+ * treat it as a dimensionless value that isn't required to have any
+ * correlation with the actual notion of time except for a loose tendency to
+ * increase as the position of an item in the stream increases. This way Jet
+ * can process events that arrive out of order with respect to the time of
+ * their occurrence, and can support timestamps in any time unit.
  */
 package com.hazelcast.jet.windowing;

@@ -33,7 +33,7 @@ public class PunctuationPolicyTest {
     private PunctuationPolicy p = new PunctuationPolicy() {
 
         @Override
-        public long reportEvent(long eventSeq) {
+        public long reportEvent(long timestamp) {
             return punc;
         }
 

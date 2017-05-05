@@ -27,47 +27,65 @@ import javax.annotation.Nonnull;
 import static com.hazelcast.jet.Distributed.Function.identity;
 
 /**
- * Contains factory methods for processors dealing with windowing operations.
+ * Contains factory methods for processors dealing with windowing
+ * operations.
  *
  * <h1>Two-stage aggregation</h1>
  *
- * This way of processing aggregates events first on local member and
- * only pre-accumulated results are sent over the network. This greatly
- * reduces the amount of data sent over the network. The DAG is:
+ * This setup first aggregates events on the local member and then sends
+ * just the per-key aggregation state over the distributed edge. Compared
+ * to the single-stage setup this can dramatically reduce network traffic,
+ * but it will have to keep track of all keys on each cluster member. The
+ * complete DAG should look like the following:
  *
  * <pre>
- *          source
+ *  -------------------------
+ * | source with punctuation |
+ *  -------------------------
  *             |
- *             | (local, partitioned edge)
+ *             | (local partitioned edge)
  *             V
- *     slidingWindowStage1
+ *    ---------------------
+ *   | slidingWindowStage1 |
+ *    ---------------------
  *             |
- *             | (distributed, partitioned edge)
+ *             | (distributed partitioned edge)
  *             V
- *     slidingWindowStage2
+ *    ---------------------
+ *   | slidingWindowStage2 |
+ *    ---------------------
  *             |
- *             | (resulting frames)
+ *             | (local edge)
  *             V
+ *  sink or further processing
  * </pre>
  *
- * You should use the same {@link WindowDefinition} and {@link
- * WindowOperation} for both stages. Disadvantage of this setup is, that
- * you will process all keys on each node in the cluster.
- * <p>
- * If you have too many keys to fit one machine, you have to use a single
- * stage processor. Session windows are always processed in single stage.
- * The DAG:
+ * To get consistent results, the same {@link WindowDefinition} and {@link
+ * WindowOperation} must be used for both stages.
  *
+ * <h1>Single-stage aggregation</h1>
+ *
+ * In this setup there is only one processing stage, so its input must be
+ * properly partitioned and distributed. If the source is already
+ * partitioned by the grouping key, this setup is the best choice. Another
+ * reason may be memory constraints because with this setup, each member
+ * keeps track only of the keys belonging to its own partitions. This is the
+ * expected DAG:
  * <pre>
- *          source
- *             |
- *             | (distributed, partitioned edge)
- *             V
- *   slidingWindowSingleStage
- *     (or sessionWindow)
- *             |
- *             | (resulting frames)
- *             V
+ *     -------------------------
+ *    | source with punctuation |
+ *     -------------------------
+ *                |
+ *                | (partitioned edge, distributed as needed)
+ *                V
+ *    --------------------------
+ *   | slidingWindowSingleStage |
+ *   |   (or sessionWindow)     |
+ *    --------------------------
+ *                |
+ *                | (local edge)
+ *                V
+ *     sink or further processing
  * </pre>
  */
 public final class WindowingProcessors {
@@ -78,43 +96,38 @@ public final class WindowingProcessors {
     }
 
     /**
-     * A processor that inserts punctuation into a data stream. A punctuation
-     * item contains a {@code puncSeq} value with this meaning: "there will be
-     * no more items in this stream with {@code eventSeq < puncSeq}". The value
-     * of punctuation is determined by a separate policy object of type
-     * {@link PunctuationPolicy}.
+     * A processor that inserts {@link com.hazelcast.jet.Punctuation
+     * punctuation} into a data (sub)stream. The value of the punctuation is
+     * determined by a separate policy object of type {@link
+     * PunctuationPolicy}.
      *
      * @param <T> the type of stream item
      */
     @Nonnull
     public static <T> Distributed.Supplier<Processor> insertPunctuation(
-            @Nonnull Distributed.ToLongFunction<T> extractEventSeqF,
+            @Nonnull Distributed.ToLongFunction<T> extractTimestampF,
             @Nonnull Distributed.Supplier<PunctuationPolicy> newPuncPolicyF
     ) {
-        return () -> new InsertPunctuationP<>(extractEventSeqF, newPuncPolicyF.get());
+        return () -> new InsertPunctuationP<>(extractTimestampF, newPuncPolicyF.get());
     }
 
     /**
-     * A first stage processor in two-stage sliding window aggregation. See
-     * Two-stage aggregation {@link WindowingProcessors here}.
+     * The first-stage processor in a two-stage sliding window aggregation
+     * setup (see the {@link WindowingProcessors class Javadoc} for an
+     * overview). The processor groups items by the grouping key (as obtained
+     * from the given key extractor) and by <em>frame</em>, which is a range
+     * of timestamps equal to the sliding step. The frame is identified by its
+     * timestamp, which is the upper exclusive bound of its timestamp range.
+     * {@link WindowDefinition#higherFrameTs(long)} maps an item's timestamp to
+     * the timestamp of the frame it belongs to.
      * <p>
-     * This vertex is supposed to be followed by {@link
-     * #slidingWindowStage2(WindowDefinition, WindowOperation)}.
-     *<p>
-     * Output if this vertex is {@link Frame Frame&lt;K, A>}, that is a frame
-     * with a key and accumulator from {@code windowOperation}.
-     *<p>
-     * A frame is identified by its {@code long frameSeq} and {@link
-     * WindowDefinition#higherFrameSeq(long)} maps the item's {@code
-     * eventSeq} to its {@code frameSeq}.
-     * <p>
-     * Within a frame items are further classified by a grouping key determined
-     * by the {@code extractKeyF} function. When the processor receives a
-     * punctuation with a given {@code puncSeq}, it emits the current state of
-     * all frames with {@code frameSeq <= puncSeq} and deletes these frames
-     * from its storage.
+     * When the processor receives a punctuation with a given {@code puncVal},
+     * it emits the current accumulated state of all frames with {@code
+     * timestamp <= puncVal} and deletes these frames from its storage.
+     * The type of emitted items is {@link Frame Frame&lt;K, A>}, so there is
+     * one item per key per frame.
      *
-     * @param <T> item type
+     * @param <T> input item type
      * @param <K> type of key returned from {@code extractKeyF}
      * @param <A> type of accumulator returned from {@code windowOperation.
      *            createAccumulatorF()}
@@ -122,7 +135,7 @@ public final class WindowingProcessors {
     @Nonnull
     public static <T, K, A> Distributed.Supplier<Processor> slidingWindowStage1(
             @Nonnull Distributed.Function<? super T, K> extractKeyF,
-            @Nonnull Distributed.ToLongFunction<? super T> extractEventSeqF,
+            @Nonnull Distributed.ToLongFunction<? super T> extractTimestampF,
             @Nonnull WindowDefinition windowDef,
             @Nonnull WindowOperation<? super T, A, ?> windowOperation
     ) {
@@ -133,7 +146,7 @@ public final class WindowingProcessors {
 
         return () -> new WindowingProcessor<T, A, A>(
                 tumblingWinDef,
-                item -> tumblingWinDef.higherFrameSeq(extractEventSeqF.applyAsLong(item)),
+                item -> tumblingWinDef.higherFrameTs(extractTimestampF.applyAsLong(item)),
                 extractKeyF,
                 WindowOperation.of(
                         windowOperation.createAccumulatorF(),
@@ -146,33 +159,34 @@ public final class WindowingProcessors {
     }
 
     /**
-     * Convenience for {@link #slidingWindowStage1(
-     * Distributed.Function, Distributed.ToLongFunction, WindowDefinition, WindowOperation)
-     * slidingWindowStage1(extractKeyF, extractEventSeqF, windowDef, windowOperation)}
-     * which doesn't group by key.
+     * Convenience for {@link #slidingWindowStage1(Distributed.Function,
+     * Distributed.ToLongFunction, WindowDefinition, WindowOperation)
+     * slidingWindowStage1(extractKeyF, extractTimestampF, windowDef,
+     * windowOperation)} which doesn't group by key.
      */
     @Nonnull
     public static <T, A> Distributed.Supplier<Processor> slidingWindowStage1(
-            @Nonnull Distributed.ToLongFunction<? super T> extractEventSeqF,
+            @Nonnull Distributed.ToLongFunction<? super T> extractTimestampF,
             @Nonnull WindowDefinition windowDef,
             @Nonnull WindowOperation<? super T, A, ?> windowOperation
     ) {
-        return slidingWindowStage1(t -> GLOBAL_WINDOW_KEY, extractEventSeqF, windowDef, windowOperation);
+        return slidingWindowStage1(t -> GLOBAL_WINDOW_KEY, extractTimestampF, windowDef, windowOperation);
     }
 
     /**
      * Combines frames received from several upstream instances of {@link
      * #slidingWindowStage1(Function, ToLongFunction, WindowDefinition,
      * WindowOperation)} into finalized frames. Combines finalized frames into
-     * sliding windows. Applies the finisher function to produce its emitted
-     * output.
+     * sliding windows. Applies the {@code windowOperation}'s finishing function
+     * to produce its emitted output.
      * <p>
-     * Output if this vertex is {@link Frame Frame&lt;K, R>}, that is a frame
-     * with the key and result value from {@code windowOperation}. Frame's
-     * {@link Frame#getSeq() seq} value is the window end sequence (exclusive).
+     * The type of emitted items is {@link Frame Frame&lt;K, R>}
+     * with the grouping key and the result of the finishing function.
+     * The item's timestamp is the upper exclusive bound of the timestamp range
+     * covered by the window.
      *
-     * @param <A> type of accumulator
-     * @param <R> type of the result derived from a frame
+     * @param <A> type of the accumulator
+     * @param <R> type of the finishing function's result
      */
     @Nonnull
     public static <A, R> Distributed.Supplier<Processor> slidingWindowStage2(
@@ -181,7 +195,7 @@ public final class WindowingProcessors {
     ) {
         return () -> new WindowingProcessor<Frame<?, A>, A, R>(
                 windowDef,
-                Frame::getSeq,
+                Frame::getTimestamp,
                 Frame::getKey,
                 WindowOperation.of(
                         windowOperation.createAccumulatorF(),
@@ -194,33 +208,30 @@ public final class WindowingProcessors {
     }
 
     /**
-     * A single-stage processor to aggregate events into windows. See note on
-     * Two-stage aggregation {@link WindowingProcessors here}.
+     * A single-stage processor that aggregates events into a sliding window
+     * (see the {@link WindowingProcessors class Javadoc} for an overview). The
+     * processor groups items by the grouping key (as obtained from the given
+     * key extractor) and by <em>frame</em>, which is a range of timestamps
+     * equal to the sliding step. When it receives a punctuation, it emits the
+     * aggregated results for all the windows that end before the punctuation.
+     * To calculate the finalized window result, it combines the accumulated
+     * value of all its constituent frames and then applies the finishing
+     * function.
      * <p>
-     * Output if this vertex is {@link Frame Frame&lt;K, R>}, that is a frame
-     * with the key and result value from {@code windowOperation}. Frame's
-     * {@link Frame#getSeq() seq} value is the window end sequence (exclusive).
-     * <p>
-     * A frame is identified by its {@code long frameSeq} and {@link
-     * WindowDefinition#higherFrameSeq(long)} maps the item's {@code
-     * eventSeq} to its {@code frameSeq}.
-     * <p>
-     * Within a frame items are further classified by a grouping key determined
-     * by the {@code extractKeyF} function. When the processor receives a
-     * punctuation with a given {@code puncSeq}, it emits the current state of
-     * all frames with {@code frameSeq <= puncSeq} and deletes these frames
-     * from its storage.
+     * The type of emitted items is {@link Frame Frame&lt;K, A>}, so there is
+     * one item per key per window. The item's timestamp is the upper exclusive
+     * bound of the timestamp range covered by the window.
      */
     @Nonnull
     public static <T, A, R> Distributed.Supplier<Processor> slidingWindowSingleStage(
             @Nonnull Distributed.Function<? super T, ?> extractKeyF,
-            @Nonnull Distributed.ToLongFunction<? super T> extractEventSeqF,
+            @Nonnull Distributed.ToLongFunction<? super T> extractTimestampF,
             @Nonnull WindowDefinition windowDef,
             @Nonnull WindowOperation<? super T, A, R> windowOperation
     ) {
         return () -> new WindowingProcessor<T, A, R>(
                 windowDef,
-                item -> windowDef.higherFrameSeq(extractEventSeqF.applyAsLong(item)),
+                item -> windowDef.higherFrameTs(extractTimestampF.applyAsLong(item)),
                 extractKeyF,
                 windowOperation
         );
@@ -229,48 +240,48 @@ public final class WindowingProcessors {
     /**
      * Convenience for {@link #slidingWindowSingleStage(Function,
      * ToLongFunction, WindowDefinition, WindowOperation)
-     * slidingWindowSingleStage(extractKeyF, extractEventSeqF, windowDef,
+     * slidingWindowSingleStage(extractKeyF, extractTimestampF, windowDef,
      * windowOperation} which doesn't group by key.
      */
     @Nonnull
     public static <T, A, R> Distributed.Supplier<Processor> slidingWindowSingleStage(
-            @Nonnull Distributed.ToLongFunction<? super T> extractEventSeqF,
+            @Nonnull Distributed.ToLongFunction<? super T> extractTimestampF,
             @Nonnull WindowDefinition windowDef,
             @Nonnull WindowOperation<? super T, A, R> windowOperation
     ) {
-        return slidingWindowSingleStage(t -> GLOBAL_WINDOW_KEY, extractEventSeqF, windowDef, windowOperation);
+        return slidingWindowSingleStage(t -> GLOBAL_WINDOW_KEY, extractTimestampF, windowDef, windowOperation);
     }
 
     /**
      * Aggregates events into session windows. Events and windows under
-     * different grouping keys behave independently.
+     * different grouping keys are treated independently.
      * <p>
      * The functioning of this processor is easiest to explain in terms of
-     * the <em>event interval</em>: the range {@code [eventSeq, eventSeq +
-     * maxSeqGap]}. Initially an event causes a new session window to be
+     * the <em>event interval</em>: the range {@code [timestamp, timestamp +
+     * sessionTimeout]}. Initially an event causes a new session window to be
      * created, covering exactly the event interval. A following event under
      * the same key belongs to this window iff its interval overlaps it. The
      * window is extended to cover the entire interval of the new event. The
      * event may happen to belong to two existing windows if its interval
      * bridges the gap between them; in that case they are combined into one.
      *
-     * @param maxSeqGap        maximum gap between consecutive events in the same session window
-     * @param extractEventSeqF function to extract the event seq from the event item
-     * @param extractKeyF      function to extract the grouping key from the event iem
-     * @param windowOperation        contains aggregation logic
+     * @param sessionTimeout    maximum gap between consecutive events in the same session window
+     * @param extractTimestampF function to extract the timestamp from the item
+     * @param extractKeyF       function to extract the grouping key from the item
+     * @param windowOperation   contains aggregation logic
      *
-     * @param <T> type of stream event
-     * @param <K> type of event's grouping key
-     * @param <A> type of the container of accumulated value
-     * @param <R> type of the result value for a session window
+     * @param <T> type of the stream event
+     * @param <K> type of the item's grouping key
+     * @param <A> type of the container of the accumulated value
+     * @param <R> type of the session window's result value
      */
     @Nonnull
     public static <T, K, A, R> Distributed.Supplier<Processor> sessionWindow(
-            long maxSeqGap,
-            @Nonnull Distributed.ToLongFunction<? super T> extractEventSeqF,
+            long sessionTimeout,
+            @Nonnull Distributed.ToLongFunction<? super T> extractTimestampF,
             @Nonnull Distributed.Function<? super T, K> extractKeyF,
             @Nonnull DistributedCollector<? super T, A, R> windowOperation
     ) {
-        return () -> new SessionWindowP<>(maxSeqGap, extractEventSeqF, extractKeyF, windowOperation);
+        return () -> new SessionWindowP<>(sessionTimeout, extractTimestampF, extractKeyF, windowOperation);
     }
 }

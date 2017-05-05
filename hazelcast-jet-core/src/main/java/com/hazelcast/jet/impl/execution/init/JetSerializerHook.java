@@ -162,17 +162,17 @@ public final class JetSerializerHook {
             return new StreamSerializer<Frame>() {
                 @Override
                 public void write(ObjectDataOutput out, Frame object) throws IOException {
-                    out.writeLong(object.getSeq());
+                    out.writeLong(object.getTimestamp());
                     out.writeObject(object.getKey());
                     out.writeObject(object.getValue());
                 }
 
                 @Override
                 public Frame read(ObjectDataInput in) throws IOException {
-                    long seq = in.readLong();
+                    long timestamp = in.readLong();
                     Object key = in.readObject();
                     Object value = in.readObject();
-                    return new Frame<>(seq, key, value);
+                    return new Frame<>(timestamp, key, value);
                 }
 
                 @Override

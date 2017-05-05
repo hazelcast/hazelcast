@@ -27,13 +27,13 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class EventSeqHistoryTest {
+public class TimestampHistoryTest {
 
-    private EventSeqHistory histo;
+    private TimestampHistory histo;
 
     @Before
     public void setup() {
-        histo = new EventSeqHistory(6, 3);
+        histo = new TimestampHistory(6, 3);
     }
 
     @Test
@@ -138,7 +138,7 @@ public class EventSeqHistoryTest {
 
     @Test
     public void when_historySize1() {
-        histo = new EventSeqHistory(3, 1);
+        histo = new TimestampHistory(3, 1);
         validateSample(0, 0, Long.MIN_VALUE);
         validateSample(1, 1, Long.MIN_VALUE);
         validateSample(2, 2, Long.MIN_VALUE);

@@ -17,7 +17,7 @@
 package com.hazelcast.jet.windowing;
 
 import com.hazelcast.jet.Distributed.LongSupplier;
-import com.hazelcast.jet.impl.util.EventSeqHistory;
+import com.hazelcast.jet.impl.util.TimestampHistory;
 
 import javax.annotation.Nonnull;
 
@@ -57,56 +57,56 @@ public final class PunctuationPolicies {
     }
 
     /**
-     * Maintains punctuation that lags behind the top observed event seq by the
+     * Maintains punctuation that lags behind the top observed timestamp by the
      * given amount. In the case of a stream lull the punctuation does not
-     * advance towards the top observed event seq and the lag remains
+     * advance towards the top observed timestamp and remains behind it
      * indefinitely.
      *
-     * @param eventSeqLag the desired difference between the top observed event seq
-     *                    and the punctuation
+     * @param lag the desired difference between the top observed timestamp
+     *            and the punctuation
      */
     @Nonnull
-    public static PunctuationPolicy cappingEventSeqLag(long eventSeqLag) {
-        checkNotNegative(eventSeqLag, "eventSeqLag must not be negative");
+    public static PunctuationPolicy withFixedLag(long lag) {
+        checkNotNegative(lag, "lag must not be negative");
 
         return new PunctuationPolicyBase() {
             @Override
-            public long reportEvent(long eventSeq) {
-                return makePuncAtLeast(eventSeq - eventSeqLag);
+            public long reportEvent(long timestamp) {
+                return makePuncAtLeast(timestamp - lag);
             }
         };
     }
 
     /**
-     * Maintains punctuation that lags behind the top observed event seq by the
-     * given amount and is additionally guaranteed to reach the {@code
-     * eventSeq} of any given event within {@code maxRetainMs} after observing
+     * Maintains punctuation that lags behind the top observed timestamp by at
+     * most the given amount and is additionally guaranteed to reach the
+     * timestamp of any given event within {@code maxDelayMs} after observing
      * it.
      *
-     * @param eventSeqLag the desired difference between the top observed event seq
-     *                    and the punctuation
-     * @param maxRetainMs upper bound (in milliseconds) on how long it can take for the
-     *                    punctuation to reach any observed event's {@code eventSeq}
+     * @param lag upper bound on the difference between the top observed timestamp and the
+     *               punctuation
+     * @param maxDelayMs upper bound (in milliseconds) on how long it can take for the
+     *                   punctuation to reach any observed event's timestamp
      */
     @Nonnull
-    public static PunctuationPolicy cappingEventSeqLagAndRetention(long eventSeqLag, long maxRetainMs) {
-        return cappingEventSeqLagAndRetention(
-                eventSeqLag, MILLISECONDS.toNanos(maxRetainMs), DEFAULT_NUM_STORED_SAMPLES, System::nanoTime);
+    public static PunctuationPolicy limitingLagAndDelay(long lag, long maxDelayMs) {
+        return limitingLagAndDelay(
+                lag, MILLISECONDS.toNanos(maxDelayMs), DEFAULT_NUM_STORED_SAMPLES, System::nanoTime);
     }
 
     @Nonnull
-    static PunctuationPolicy cappingEventSeqLagAndRetention(
-            long eventSeqLag, long maxRetainNanos, int numStoredSamples, LongSupplier nanoClock
+    static PunctuationPolicy limitingLagAndDelay(
+            long maxLag, long maxRetainNanos, int numStoredSamples, LongSupplier nanoClock
     ) {
         return new PunctuationPolicyBase() {
 
-            private long topSeq = Long.MIN_VALUE;
-            private final EventSeqHistory history = new EventSeqHistory(maxRetainNanos, numStoredSamples);
+            private long topTs = Long.MIN_VALUE;
+            private final TimestampHistory history = new TimestampHistory(maxRetainNanos, numStoredSamples);
 
             @Override
-            public long reportEvent(long eventSeq) {
-                topSeq = Math.max(eventSeq, topSeq);
-                return applyMaxRetain(eventSeq - eventSeqLag);
+            public long reportEvent(long timestamp) {
+                topTs = Math.max(timestamp, topTs);
+                return applyMaxRetain(timestamp - maxLag);
             }
 
             @Override
@@ -115,41 +115,40 @@ public final class PunctuationPolicies {
             }
 
             private long applyMaxRetain(long punc) {
-                return makePuncAtLeast(Math.max(punc, history.sample(nanoClock.getAsLong(), topSeq)));
+                return makePuncAtLeast(Math.max(punc, history.sample(nanoClock.getAsLong(), topTs)));
             }
         };
     }
 
     /**
-     * Maintains punctuation that lags behind the top event seq by at most
-     * {@code eventSeqLag} and behind wall-clock time by at most
-     * {@code wallClockLag}. It assumes that {@code eventSeq} is the timestamp
-     * of the event in milliseconds since Unix epoch and will use that fact to
-     * correlate {@code eventSeq} with wall-clock time acquired from the
-     * underlying OS. Note that wall-clock time is non-monotonic and sudden
-     * jumps that may occur in it will cause temporary disruptions in the
-     * functioning of this policy.
+     * Maintains punctuation that lags behind the top timestamp by at most
+     * {@code timestampLag} and behind wall-clock time by at most {@code
+     * wallClockLag}. It assumes that the event timestamp is in milliseconds
+     * since Unix epoch and will use that fact to correlate it with wall-clock
+     * time acquired from the underlying OS. Note that wall-clock time is
+     * non-monotonic and sudden jumps that may occur in it will cause temporary
+     * disruptions in the functioning of this policy.
      * <p>
-     * In most cases the {@link #cappingEventSeqLagAndLull(long, long)
-     * cappingEventSeqLagAndLull} policy should be preferred; this is a
+     * In most cases the {@link #limitingLagAndLull(long, long)
+     * cappingTimestampLagAndLull} policy should be preferred; this is a
      * backup option for cases where some substreams may never see an event.
      *
-     * @param eventSeqLag maximum difference between the top observed event seq
-     *                    and the punctuation
+     * @param timestampLag maximum difference between the top observed timestamp
+     *                     and the punctuation
      * @param wallClockLag maximum difference between the current value of
      *                     {@code System.currentTimeMillis} and the punctuation
      */
     @Nonnull
-    public static PunctuationPolicy cappingEventSeqAndWallClockLag(long eventSeqLag, long wallClockLag) {
-        checkNotNegative(eventSeqLag, "eventSeqLag must not be negative");
+    public static PunctuationPolicy limitingTimestampAndWallClockLag(long timestampLag, long wallClockLag) {
+        checkNotNegative(timestampLag, "timestampLag must not be negative");
         checkNotNegative(wallClockLag, "wallClockLag must not be negative");
 
         return new PunctuationPolicyBase() {
 
             @Override
-            public long reportEvent(long eventSeq) {
+            public long reportEvent(long timestamp) {
                 updateFromWallClock();
-                return makePuncAtLeast(eventSeq - eventSeqLag);
+                return makePuncAtLeast(timestamp - timestampLag);
             }
 
             @Override
@@ -164,13 +163,12 @@ public final class PunctuationPolicies {
     }
 
     /**
-     * Maintains punctuation that lags behind the top event seq by the amount
-     * specified with {@code eventSeqLag}. Assumes that event seq corresponds
-     * to the timestamp of the event given in milliseconds and will use that
-     * fact to correlate the event seq with the passage of system time. There
-     * is no requirement on any specific point of origin for the event time,
-     * i.e., the zero value can denote any point in time as long as it is
-     * fixed.
+     * Maintains punctuation that lags behind the top timestamp by the amount
+     * specified with {@code lag}. Assumes that the event timestamp is given
+     * in milliseconds and will use that fact to correlate it with the passage
+     * of system time. There is no requirement on any specific point of origin
+     * for the timestamp, i.e., the zero value can denote any point in time as
+     * long as it is fixed.
      * <p>
      * When the defined {@code maxLullMs} period elapses without observing more
      * events, punctuation will start advancing in lockstep with system time
@@ -179,24 +177,23 @@ public final class PunctuationPolicies {
      * If no event is ever observed, punctuation will advance from the initial
      * value of {@code Long.MIN_VALUE}. Therefore this policy can be used only
      * when there is a guarantee that each substream will emit at least one
-     * event that will initialize the {@code eventSeq}. Otherwise the empty
-     * substream will hold back the processing of all other substreams by
-     * keeping the punctuation below any realistic value.
+     * event that will initialize the timestamp. Otherwise the empty substream
+     * will hold back the processing of all other substreams by keeping the
+     * punctuation below any realistic value.
      *
-     * @param eventSeqLag the desired difference between the top observed event seq
-     *                    and the punctuation
+     * @param lag the desired difference between the top observed timestamp
+     *               and the punctuation
      * @param maxLullMs maximum duration of a lull period before starting to
      *                  advance punctuation with system time
      */
     @Nonnull
-    public static PunctuationPolicy cappingEventSeqLagAndLull(long eventSeqLag, long maxLullMs) {
-        return cappingEventSeqLagAndLull(eventSeqLag, maxLullMs, System::nanoTime);
+    public static PunctuationPolicy limitingLagAndLull(long lag, long maxLullMs) {
+        return limitingLagAndLull(lag, maxLullMs, System::nanoTime);
     }
 
-
     @Nonnull
-    static PunctuationPolicy cappingEventSeqLagAndLull(long eventSeqLag, long maxLullMs, LongSupplier nanoClock) {
-        checkNotNegative(eventSeqLag, "eventSeqLag must not be negative");
+    static PunctuationPolicy limitingLagAndLull(long lag, long maxLullMs, LongSupplier nanoClock) {
+        checkNotNegative(lag, "lag must not be negative");
         checkNotNegative(maxLullMs, "maxLullMs must not be negative");
 
         return new PunctuationPolicyBase() {
@@ -204,9 +201,9 @@ public final class PunctuationPolicies {
             private long maxLullAt = Long.MIN_VALUE;
 
             @Override
-            public long reportEvent(long eventSeq) {
+            public long reportEvent(long timestamp) {
                 maxLullAt = monotonicTimeMillis() + maxLullMs;
-                return makePuncAtLeast(eventSeq - eventSeqLag);
+                return makePuncAtLeast(timestamp - lag);
             }
 
             @Override

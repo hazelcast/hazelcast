@@ -46,11 +46,13 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.Processors.writeList;
-import static com.hazelcast.jet.windowing.PunctuationPolicies.cappingEventSeqLagAndLull;
+import static com.hazelcast.jet.windowing.PunctuationPolicies.limitingLagAndLull;
 import static com.hazelcast.jet.windowing.StreamingTestSupport.streamToString;
 import static com.hazelcast.jet.windowing.WindowDefinition.slidingWindowDef;
+import static com.hazelcast.jet.windowing.WindowOperations.counting;
 import static com.hazelcast.jet.windowing.WindowingProcessors.insertPunctuation;
 import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindowSingleStage;
+import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindowStage1;
 import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindowStage2;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -88,26 +90,27 @@ public class WindowingProcessors_integrationTest extends JetTestSupport {
         JetInstance instance = super.createJetMember();
 
         WindowDefinition wDef = slidingWindowDef(2000, 1000);
-        WindowOperation<Object, ?, Long> wOperation = WindowOperations.counting();
+        WindowOperation<Object, ?, Long> counting = counting();
 
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", streamList(sourceEvents)).localParallelism(1);
-        Vertex insertPP = dag.newVertex("insertPP", insertPunctuation(MockEvent::getEventSeq,
-                () -> cappingEventSeqLagAndLull(500, 1000).throttleByFrame(wDef)))
+        Vertex insertPP = dag.newVertex("insertPP", insertPunctuation(MockEvent::getTimestamp,
+                () -> limitingLagAndLull(500, 1000).throttleByFrame(wDef)))
                 .localParallelism(1);
         Vertex sink = dag.newVertex("sink", writeList("sink"));
 
         dag.edge(between(source, insertPP).oneToMany());
 
         if (singleStageProcessor) {
-            Vertex sliwp = dag.newVertex("sliwp", slidingWindowSingleStage(MockEvent::getKey, MockEvent::getEventSeq, wDef, wOperation));
+            Vertex sliwp = dag.newVertex("sliwp", slidingWindowSingleStage(
+                    MockEvent::getKey, MockEvent::getTimestamp, wDef, counting));
             dag
                     .edge(between(insertPP, sliwp).partitioned(MockEvent::getKey).distributed())
                     .edge(between(sliwp, sink).oneToMany());
 
         } else {
-            Vertex gbfp = dag.newVertex("gbfp", WindowingProcessors.slidingWindowStage1(MockEvent::getKey, MockEvent::getEventSeq, wDef, wOperation));
-            Vertex sliwp = dag.newVertex("sliwp", slidingWindowStage2(wDef, wOperation));
+            Vertex gbfp = dag.newVertex("gbfp", slidingWindowStage1(MockEvent::getKey, MockEvent::getTimestamp, wDef, counting));
+            Vertex sliwp = dag.newVertex("sliwp", slidingWindowStage2(wDef, counting));
             dag
                     .edge(between(insertPP, gbfp).partitioned(MockEvent::getKey))
                     .edge(between(gbfp, sliwp).partitioned((Function<Frame, Object>) Frame::getKey).distributed())
@@ -140,32 +143,32 @@ public class WindowingProcessors_integrationTest extends JetTestSupport {
 
     private static class MockEvent implements Serializable {
         private final String key;
-        private final long eventSeq;
+        private final long timestamp;
         private final long value;
 
-        private MockEvent(String key, long eventSeq, long value) {
+        private MockEvent(String key, long timestamp, long value) {
             this.key = key;
-            this.eventSeq = eventSeq;
+            this.timestamp = timestamp;
             this.value = value;
         }
 
-        public String getKey() {
+        String getKey() {
             return key;
         }
 
-        public long getEventSeq() {
-            return eventSeq;
+        long getTimestamp() {
+            return timestamp;
         }
 
-        public long getValue() {
+        long getValue() {
             return value;
         }
     }
 
-    private class StreamListP extends AbstractProcessor {
+    private static class StreamListP extends AbstractProcessor {
         private final List<?> list;
 
-        public StreamListP(List<?> list) {
+        StreamListP(List<?> list) {
             this.list = list;
         }
 
@@ -174,10 +177,10 @@ public class WindowingProcessors_integrationTest extends JetTestSupport {
             for (Object o : list) {
                 emit(o);
             }
-            // sleep forever
             try {
                 Thread.sleep(Long.MAX_VALUE);
-            } catch (InterruptedException ignored) {
+            } catch (InterruptedException e) {
+                // fall through to returning true
             }
             return true;
         }

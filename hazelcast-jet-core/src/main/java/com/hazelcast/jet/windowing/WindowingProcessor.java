@@ -44,26 +44,26 @@ import static java.util.Collections.emptyMap;
 class WindowingProcessor<T, A, R> extends AbstractProcessor {
 
     // package-visible for testing
-    final Map<Long, Map<Object, A>> seqToKeyToFrame = new HashMap<>();
+    final Map<Long, Map<Object, A>> tsToKeyToFrame = new HashMap<>();
     final Map<Object, A> slidingWindow = new HashMap<>();
 
     private final WindowDefinition wDef;
-    private final ToLongFunction<? super T> extractFrameSeqF;
+    private final ToLongFunction<? super T> extractFrameTimestampF;
     private final Function<? super T, ?> extractKeyF;
     private final WindowOperation<? super T, A, R> winOp;
 
     private final FlatMapper<Punctuation, Object> flatMapper;
 
-    private long nextFrameSeqToEmit = Long.MIN_VALUE;
+    private long nextFrameTsToEmit = Long.MIN_VALUE;
     private final A emptyAcc;
 
     WindowingProcessor(
             WindowDefinition winDef,
-            ToLongFunction<? super T> extractFrameSeqF,
+            ToLongFunction<? super T> extractFrameTimestampF,
             Function<? super T, ?> extractKeyF,
             WindowOperation<? super T, A, R> winOp) {
         this.wDef = winDef;
-        this.extractFrameSeqF = extractFrameSeqF;
+        this.extractFrameTimestampF = extractFrameTimestampF;
         this.extractKeyF = extractKeyF;
         this.winOp = winOp;
 
@@ -74,68 +74,68 @@ class WindowingProcessor<T, A, R> extends AbstractProcessor {
     @Override
     protected boolean tryProcess0(@Nonnull Object item) {
         T t = (T) item;
-        final Long frameSeq = extractFrameSeqF.applyAsLong(t);
+        final Long frameTimestamp = extractFrameTimestampF.applyAsLong(t);
         final Object key = extractKeyF.apply(t);
-        seqToKeyToFrame.computeIfAbsent(frameSeq, x -> new HashMap<>())
-                .compute(key, (x, acc) ->
+        tsToKeyToFrame.computeIfAbsent(frameTimestamp, x -> new HashMap<>())
+                      .compute(key, (x, acc) ->
                         winOp.accumulateItemF().apply(acc == null ? winOp.createAccumulatorF().get() : acc, t));
         return true;
     }
 
     @Override
     protected boolean tryProcessPunc0(@Nonnull Punctuation punc) {
-        if (nextFrameSeqToEmit == Long.MIN_VALUE) {
-            if (seqToKeyToFrame.isEmpty()) {
-                // We have no data, just forward the punctuation.
+        if (nextFrameTsToEmit == Long.MIN_VALUE) {
+            if (tsToKeyToFrame.isEmpty()) {
+                // There are no frames on record; just forward the punctuation.
                 return tryEmit(punc);
             }
-            // This is the first punctuation we are acting upon. Find the lowest
-            // frameSeq that can be emitted: at most the top existing frameSeq lower
-            // than punc seq, but even lower than that if there are older frames on
-            // record. The above guarantees that the sliding window can be correctly
+            // This is the first punctuation we are acting upon. Find the lowest frame
+            // timestamp that can be emitted: at most the top existing timestamp lower
+            // than punc, but even lower than that if there are older frames on record.
+            // The above guarantees that the sliding window can be correctly
             // initialized using the "add leading/deduct trailing" approach because we
             // start from a window that covers at most one existing frame -- the lowest
             // one on record.
-            long firstKey = seqToKeyToFrame
+            long bottomTs = tsToKeyToFrame
                     .keySet().stream()
                     .min(naturalOrder())
                     .orElseThrow(() -> new AssertionError("Failed to find the min key in a non-empty map"));
-            nextFrameSeqToEmit = min(firstKey, punc.seq());
+            nextFrameTsToEmit = min(bottomTs, wDef.floorFrameTs(punc.timestamp()));
         }
         return flatMapper.tryProcess(punc);
     }
 
     private Traverser<Object> windowTraverser(Punctuation punc) {
-        long rangeStart = nextFrameSeqToEmit;
-        nextFrameSeqToEmit = wDef.higherFrameSeq(punc.seq());
-        return Traversers.traverseStream(range(rangeStart, nextFrameSeqToEmit, wDef.frameLength()).boxed())
-                .<Object>flatMap(frameSeq -> Traversers.traverseIterable(computeWindow(frameSeq).entrySet())
-                        .map(e -> new Frame<>(frameSeq, e.getKey(), winOp.finishAccumulationF().apply(e.getValue())))
-                        .onFirstNull(() -> completeWindow(frameSeq)))
+        long rangeStart = nextFrameTsToEmit;
+        nextFrameTsToEmit = wDef.higherFrameTs(punc.timestamp());
+        return Traversers.traverseStream(range(rangeStart, nextFrameTsToEmit, wDef.frameLength()).boxed())
+                .<Object>flatMap(frameTs -> Traversers.traverseIterable(computeWindow(frameTs).entrySet())
+                        .map(e -> new Frame<>(frameTs, e.getKey(), winOp.finishAccumulationF().apply(e.getValue())))
+                        .onFirstNull(() -> completeWindow(frameTs)))
                 .append(punc);
     }
 
-    private Map<Object, A> computeWindow(long frameSeq) {
+    private Map<Object, A> computeWindow(long frameTs) {
         if (wDef.isTumbling()) {
-            return seqToKeyToFrame.getOrDefault(frameSeq, emptyMap());
+            return tsToKeyToFrame.getOrDefault(frameTs, emptyMap());
         }
         if (winOp.deductAccumulatorF() != null) {
             // add leading-edge frame
-            patchSlidingWindow(winOp.combineAccumulatorsF(), seqToKeyToFrame.get(frameSeq));
+            patchSlidingWindow(winOp.combineAccumulatorsF(), tsToKeyToFrame.get(frameTs));
             return slidingWindow;
         }
         // without deductF we have to recompute the window from scratch
         Map<Object, A> window = new HashMap<>();
-        for (long seq = frameSeq - wDef.windowLength() + wDef.frameLength(); seq <= frameSeq; seq += wDef.frameLength()) {
-            seqToKeyToFrame.getOrDefault(seq, emptyMap())
-                    .forEach((key, currAcc) -> window.compute(key, (x, acc) -> winOp.combineAccumulatorsF().apply(
+        for (long ts = frameTs - wDef.windowLength() + wDef.frameLength(); ts <= frameTs; ts += wDef.frameLength()) {
+            tsToKeyToFrame.getOrDefault(ts, emptyMap())
+                          .forEach((key, currAcc) -> window.compute(key, (x, acc) -> winOp.combineAccumulatorsF().apply(
                             acc != null ? acc : winOp.createAccumulatorF().get(), currAcc)));
         }
         return window;
     }
 
-    private void completeWindow(long frameSeq) {
-        Map<Object, A> evictedFrame = seqToKeyToFrame.remove(frameSeq - wDef.windowLength() + wDef.frameLength());
+    private void completeWindow(long frameTs) {
+        Map<Object, A> evictedFrame = tsToKeyToFrame.remove(frameTs - wDef.windowLength() + wDef.frameLength());
         if (winOp.deductAccumulatorF() != null) {
             // deduct trailing-edge frame
             patchSlidingWindow(winOp.deductAccumulatorF(), evictedFrame);

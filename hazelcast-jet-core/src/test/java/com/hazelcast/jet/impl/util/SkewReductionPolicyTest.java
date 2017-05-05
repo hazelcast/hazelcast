@@ -71,13 +71,13 @@ public class SkewReductionPolicyTest {
         // Given
         long maxSkew = Long.MAX_VALUE;
         srp = new SkewReductionPolicy(2, maxSkew, 10, true);
-        long[] puncSeqs = srp.queuePuncSeqs;
+        long[] puncs = srp.queuePuncs;
 
         // When
         srp.observePunc(0, 10);
 
         // Then
-        assertEquals(maxSkew, puncSeqs[0] - puncSeqs[1]);
+        assertEquals(maxSkew, puncs[0] - puncs[1]);
         assertFalse(srp.shouldStopDraining(0, false));
     }
 
@@ -85,13 +85,13 @@ public class SkewReductionPolicyTest {
     public void when_maxSkewIsMaxVal_and_notForceAdvancing_then_correctnessMaintained() {
         // Given
         srp = new SkewReductionPolicy(2, Long.MAX_VALUE, 10, false);
-        long[] puncSeqs = srp.queuePuncSeqs;
+        long[] puncs = srp.queuePuncs;
 
         // When
         srp.observePunc(0, 10);
 
         // Then
-        assertEquals(Long.MIN_VALUE, puncSeqs[1]);
+        assertEquals(Long.MIN_VALUE, puncs[1]);
         assertFalse(srp.shouldStopDraining(0, false));
     }
 
@@ -99,13 +99,13 @@ public class SkewReductionPolicyTest {
     public void when_maxSkewAlmostMaxVal_and_notForceAdvancing_then_correctnessMaintained() {
         // Given
         srp = new SkewReductionPolicy(2, Long.MAX_VALUE - 1, 10, false);
-        long[] puncSeqs = srp.queuePuncSeqs;
+        long[] puncs = srp.queuePuncs;
 
         // When
         srp.observePunc(0, 10);
 
         // Then
-        assertEquals(Long.MIN_VALUE, puncSeqs[1]);
+        assertEquals(Long.MIN_VALUE, puncs[1]);
         assertTrue(srp.shouldStopDraining(0, false));
     }
 
@@ -114,13 +114,13 @@ public class SkewReductionPolicyTest {
         // Given
         long maxSkew = Long.MAX_VALUE - 1;
         srp = new SkewReductionPolicy(2, maxSkew, 10, true);
-        long[] puncSeqs = srp.queuePuncSeqs;
+        long[] puncs = srp.queuePuncs;
 
         // When
         srp.observePunc(0, 10);
 
         // Then
-        assertEquals(maxSkew, puncSeqs[0] - puncSeqs[1]);
+        assertEquals(maxSkew, puncs[0] - puncs[1]);
         assertFalse(srp.shouldStopDraining(0, false));
     }
 
@@ -128,13 +128,13 @@ public class SkewReductionPolicyTest {
     public void when_priorityThresholdIsMaxVal_then_correctnessMaintained() {
         // Given
         srp = new SkewReductionPolicy(2, Long.MAX_VALUE, Long.MAX_VALUE, false);
-        long[] puncSeqs = srp.queuePuncSeqs;
+        long[] puncs = srp.queuePuncs;
 
         // When
         srp.observePunc(0, 10);
 
         // Then
-        assertEquals(Long.MIN_VALUE, puncSeqs[1]);
+        assertEquals(Long.MIN_VALUE, puncs[1]);
         assertFalse(srp.shouldStopDraining(0, true));
     }
 
@@ -142,23 +142,23 @@ public class SkewReductionPolicyTest {
     public void when_skewBeyondMaxVal_then_correctnessMaintained() {
         // Given
         srp = new SkewReductionPolicy(2, 20, 10, false);
-        long[] puncSeqs = srp.queuePuncSeqs;
+        long[] puncs = srp.queuePuncs;
 
         // When
         srp.observePunc(0, 10);
 
         // Then
-        assertEquals(Long.MIN_VALUE, puncSeqs[1]);
+        assertEquals(Long.MIN_VALUE, puncs[1]);
         assertTrue(srp.shouldStopDraining(0, true));
     }
 
 
     private void assertQueuesOrdered() {
         long lastValue = Long.MIN_VALUE;
-        for (int i = 1; i < srp.queuePuncSeqs.length; i++) {
-            long thisValue = srp.queuePuncSeqs[srp.drainOrderToQIdx[i]];
+        for (int i = 1; i < srp.queuePuncs.length; i++) {
+            long thisValue = srp.queuePuncs[srp.drainOrderToQIdx[i]];
             assertTrue("Queues not ordered"
-                            + "\nobservedPuncSeqs=" + Arrays.toString(srp.queuePuncSeqs)
+                            + "\nobservedPuncSeqs=" + Arrays.toString(srp.queuePuncs)
                             + "\norderedQueues=" + Arrays.toString(srp.drainOrderToQIdx),
                     lastValue <= thisValue);
             lastValue = thisValue;

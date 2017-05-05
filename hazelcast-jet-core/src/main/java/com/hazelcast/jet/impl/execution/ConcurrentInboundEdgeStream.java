@@ -83,7 +83,7 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
                 conveyor.removeQueue(queueIndex);
                 continue;
             }
-            if (punc != null && skewReductionPolicy.observePunc(queueIndex, punc.seq())) {
+            if (punc != null && skewReductionPolicy.observePunc(queueIndex, punc.timestamp())) {
                 break;
             }
         }

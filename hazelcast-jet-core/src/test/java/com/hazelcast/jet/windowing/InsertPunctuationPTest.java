@@ -47,7 +47,7 @@ public class InsertPunctuationPTest {
 
     public void setUp(int outboxCapacity) {
         clock = new MockClock(100);
-        p = new InsertPunctuationP<>(Item::getTime, PunctuationPolicies.cappingEventSeqLag(LAG));
+        p = new InsertPunctuationP<>(Item::getTimestamp, PunctuationPolicies.withFixedLag(LAG));
 
         outbox = new ArrayDequeOutbox(new int[]{outboxCapacity}, new ProgressTracker());
         Context context = mock(Context.class);
@@ -61,7 +61,7 @@ public class InsertPunctuationPTest {
     }
 
     @Test
-    public void smoteTest_outboxLargeEnough() throws Exception {
+    public void smokeTest_outboxLargeEnough() throws Exception {
         smokeTest(1024);
     }
 
@@ -74,21 +74,21 @@ public class InsertPunctuationPTest {
         String[] expected = {
                 "-- at 100",
                 "initialItem",
-                "Punctuation{seq=7}",
-                "Item{time=10}",
-                "Item{time=8}",
+                "Punctuation{timestamp=7}",
+                "Item{timestamp=10}",
+                "Item{timestamp=8}",
                 "-- at 101",
-                "Punctuation{seq=8}",
-                "Item{time=11}",
-                "Item{time=9}",
+                "Punctuation{timestamp=8}",
+                "Item{timestamp=11}",
+                "Item{timestamp=9}",
                 "-- at 102",
-                "Punctuation{seq=9}",
-                "Item{time=12}",
-                "Item{time=10}",
+                "Punctuation{timestamp=9}",
+                "Item{timestamp=12}",
+                "Item{timestamp=10}",
                 "-- at 103",
-                "Punctuation{seq=10}",
-                "Item{time=13}",
-                "Item{time=11}",
+                "Punctuation{timestamp=10}",
+                "Item{timestamp=13}",
+                "Item{timestamp=11}",
                 "-- at 104",
                 "-- at 105",
                 "-- at 106",
@@ -96,13 +96,13 @@ public class InsertPunctuationPTest {
                 "-- at 108",
                 "-- at 109",
                 "-- at 110",
-                "Punctuation{seq=17}",
-                "Item{time=20}",
-                "Item{time=18}",
+                "Punctuation{timestamp=17}",
+                "Item{timestamp=20}",
+                "Item{timestamp=18}",
                 "-- at 111",
-                "Punctuation{seq=18}",
-                "Item{time=21}",
-                "Item{time=19}",
+                "Punctuation{timestamp=18}",
+                "Item{timestamp=21}",
+                "Item{timestamp=19}",
                 "-- at 112",
                 "-- at 113",
                 "-- at 114",
@@ -114,7 +114,7 @@ public class InsertPunctuationPTest {
         };
 
         for (int eventTime = 10; eventTime < 30; eventTime++) {
-            resultToCheck.add("-- at " + clock.time());
+            resultToCheck.add("-- at " + clock.now());
             if (eventTime < 14 || eventTime >= 20 && eventTime <= 21) {
                 Item item = new Item(eventTime);
                 Item oldItem = new Item(eventTime - 2);
@@ -147,45 +147,45 @@ public class InsertPunctuationPTest {
     }
 
     private static class Item {
-        final long time;
+        final long timestamp;
 
-        Item(long time) {
-            this.time = time;
+        Item(long timestamp) {
+            this.timestamp = timestamp;
         }
 
-        public long getTime() {
-            return time;
+        public long getTimestamp() {
+            return timestamp;
         }
 
         @Override
         public String toString() {
-            return "Item{time=" + time + '}';
+            return "Item{timestamp=" + timestamp + '}';
         }
 
         @Override
         public boolean equals(Object o) {
-            return this == o || o instanceof Item && this.time == ((Item) o).time;
+            return this == o || o instanceof Item && this.timestamp == ((Item) o).timestamp;
         }
 
         @Override
         public int hashCode() {
-            return (int) (time ^ (time >>> 32));
+            return (int) (timestamp ^ (timestamp >>> 32));
         }
     }
 
     private static class MockClock {
-        long time;
+        long now;
 
-        MockClock(long time) {
-            this.time = time;
+        MockClock(long now) {
+            this.now = now;
         }
 
-        long time() {
-            return time;
+        long now() {
+            return now;
         }
 
         void advance() {
-            time++;
+            now++;
         }
     }
 }

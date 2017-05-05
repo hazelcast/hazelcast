@@ -68,7 +68,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  *     #shouldStopDraining(int, boolean) shouldStopDraining(drainOrder,
  *     madeProgress)} to see whether to exit the loop.
  * </li><li>
- *     Call {@link #observePunc(int, long) observePunc(queueIndex, puncSeq)}
+ *     Call {@link #observePunc(int, long) observePunc(queueIndex, puncValue)}
  *     for every punctuation item received from any queue. If this method
  *     returns {@code true}, it means that the draining order was changed and
  *     the draining loop should exit.
@@ -77,7 +77,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
 public class SkewReductionPolicy {
 
     // package-visible for tests
-    final long[] queuePuncSeqs;
+    final long[] queuePuncs;
     final int[] drainOrderToQIdx;
 
     private final long maxSkew;
@@ -93,8 +93,8 @@ public class SkewReductionPolicy {
         this.priorityDrainingThreshold = priorityDrainingThreshold;
         this.forceAdvancePunc = forceAdvancePunc;
 
-        queuePuncSeqs = new long[numQueues];
-        Arrays.fill(queuePuncSeqs, Long.MIN_VALUE);
+        queuePuncs = new long[numQueues];
+        Arrays.fill(queuePuncs, Long.MIN_VALUE);
 
         drainOrderToQIdx = new int[numQueues];
         Arrays.setAll(drainOrderToQIdx, i -> i);
@@ -116,17 +116,17 @@ public class SkewReductionPolicy {
      *
      * @return {@code true} if the queues were reordered by this punctuation
      */
-    public boolean observePunc(int queueIndex, final long puncSeq) {
-        if (queuePuncSeqs[queueIndex] >= puncSeq) {
+    public boolean observePunc(int queueIndex, final long puncValue) {
+        if (queuePuncs[queueIndex] >= puncValue) {
             // this is possible if force-advancing the punctuation because we increase
-            // the queuePuncSeq without receiving punctuation from that queue
+            // the queuePuncValue without receiving punctuation from that queue
             if (!forceAdvancePunc) {
                 throw new AssertionError("Punctuations not monotonically increasing on queue");
             }
             return false;
         }
-        boolean didReorder = adjustDrainingOrder(queueIndex, puncSeq);
-        queuePuncSeqs[queueIndex] = puncSeq;
+        boolean didReorder = adjustDrainingOrder(queueIndex, puncValue);
+        queuePuncs[queueIndex] = puncValue;
         forceAdvancePuncIfConfigured();
         return didReorder;
     }
@@ -136,8 +136,8 @@ public class SkewReductionPolicy {
             return;
         }
         long newBottomPunc = subtractClamped(topObservedPunc(), maxSkew);
-        for (int i = 0; i < drainOrderToQIdx.length && queuePuncSeqs[drainOrderToQIdx[i]] < newBottomPunc; i++) {
-            queuePuncSeqs[drainOrderToQIdx[i]] = newBottomPunc;
+        for (int i = 0; i < drainOrderToQIdx.length && queuePuncs[drainOrderToQIdx[i]] < newBottomPunc; i++) {
+            queuePuncs[drainOrderToQIdx[i]] = newBottomPunc;
         }
     }
 
@@ -161,16 +161,16 @@ public class SkewReductionPolicy {
      * @return {@code false} if the draining should now stop; {@code true} otherwise
      */
     public boolean shouldStopDraining(int queueIndex, boolean madeProgress) {
-        long skew = subtractClamped(queuePuncSeqs[queueIndex], queuePuncSeqs[drainOrderToQIdx[0]]);
+        long skew = subtractClamped(queuePuncs[queueIndex], queuePuncs[drainOrderToQIdx[0]]);
         return (madeProgress && skew > priorityDrainingThreshold) || (!forceAdvancePunc && skew > maxSkew);
     }
 
     public long bottomObservedPunc() {
-        return queuePuncSeqs[drainOrderToQIdx[0]];
+        return queuePuncs[drainOrderToQIdx[0]];
     }
 
     private long topObservedPunc() {
-        return queuePuncSeqs[drainOrderToQIdx[drainOrderToQIdx.length - 1]];
+        return queuePuncs[drainOrderToQIdx[drainOrderToQIdx.length - 1]];
     }
 
     /**
@@ -180,9 +180,9 @@ public class SkewReductionPolicy {
      *
      * @return whether the queue had to be repositioned
      */
-    private boolean adjustDrainingOrder(int queueIndex, long puncSeq) {
+    private boolean adjustDrainingOrder(int queueIndex, long puncValue) {
         int currPos = findCurrentDrainPos(queueIndex);
-        int newPos = findNewDrainPos(currPos, puncSeq);
+        int newPos = findNewDrainPos(currPos, puncValue);
         if (newPos == currPos) {
             return false;
         }
@@ -205,7 +205,7 @@ public class SkewReductionPolicy {
     private int findNewDrainPos(int currPos, long queuePunc) {
         int i = currPos + 1;
         for (; i < drainOrderToQIdx.length; i++) {
-            if (queuePuncSeqs[drainOrderToQIdx[i]] >= queuePunc) {
+            if (queuePuncs[drainOrderToQIdx[i]] >= queuePunc) {
                 break;
             }
         }

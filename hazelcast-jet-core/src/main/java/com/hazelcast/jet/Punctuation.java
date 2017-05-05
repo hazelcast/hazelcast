@@ -19,43 +19,45 @@ package com.hazelcast.jet;
 import java.io.Serializable;
 
 /**
- * A stream item that carries a sequence value denoting the barrier between
- * "on time" and "late" items.
- * <pre>{@code
- *   boolean itemIsLate = itemSeq < punc.seq();
- *   boolean itemIsOnTime = itemSeq >= punc.seq();
- * }</pre>
+ * Punctuation is an item occasionally inserted into a disordered
+ * (sub)stream of timestamped items. The punctuation's timestamp value has
+ * the meaning "no items will follow with timestamp less than this." The
+ * value of the punctuation is always monotonically increasing in the
+ * (sub)stream, with the effect of superimposing an ordered timestamp
+ * sequence over the original disordered one. Punctuation items are used by
+ * windowing processors as anchoring points where the processor knows which
+ * windows it can close and emit their aggregated results.
  */
 public final class Punctuation implements Serializable {
 
-    private final long seq;
+    private final long timestamp;
 
     /**
      * Constructs a new punctuation item.
      */
-    public Punctuation(long seq) {
-        this.seq = seq;
+    public Punctuation(long timestamp) {
+        this.timestamp = timestamp;
     }
 
     /**
-     * Returns the sequence number of this punctuation.
+     * Returns the timestamp of this punctuation item.
      */
-    public long seq() {
-        return seq;
+    public long timestamp() {
+        return timestamp;
     }
 
     @Override
     public boolean equals(Object o) {
-        return this == o || o instanceof Punctuation && this.seq == ((Punctuation) o).seq;
+        return this == o || o instanceof Punctuation && this.timestamp == ((Punctuation) o).timestamp;
     }
 
     @Override
     public int hashCode() {
-        return Long.hashCode(seq);
+        return Long.hashCode(timestamp);
     }
 
     @Override
     public String toString() {
-        return "Punctuation{seq=" + seq + '}';
+        return "Punctuation{timestamp=" + timestamp + '}';
     }
 }

@@ -32,18 +32,17 @@ import static java.lang.Math.floorMod;
  * Contains parameters that define a sliding/tumbling window over which Jet
  * will apply an aggregate function. Internally, Jet computes the window
  * by maintaining <em>frames</em> of size equal to the sliding step. It
- * treats the frame as a "unit range" of event seqs which cannot be further
- * divided and immediately applies the aggregate function to the items
+ * treats the frame as a "unit range" of timestamps which cannot be further
+ * divided and immediately applies the accumulating function to the items
  * belonging to the same frame. This allows Jet to let go of the individual
  * items' data, saving memory. The user-visible consequences of this are
  * that the configured window length must be an integer multiple of the
  * sliding step and that the memory requirements scale with the ratio
  * between window size and the sliding step.
  * <p>
- * A frame is labelled with its {@code frameSeq}, which is the first
- * {@code eventSeq} beyond the range covered by the frame. In other words,
- * it is the starting {@code eventSeq} of the next frame, or, in event-time
- * language, the "closing time" of the frame.
+ * A frame is labelled with its timestamp, which is the first timestamp
+ * value beyond the range covered by the frame. In other words, it is the
+ * starting timestamp of the next frame or the "closing time" of the frame.
  */
 public class WindowDefinition implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -71,23 +70,25 @@ public class WindowDefinition implements Serializable {
     }
 
     /**
-     * Returns the frame offset. For example, if {@code frameLength = 10} and
-     * {@code frameOffset = 5}, then frames will start at 5, 15, 25...
+     * Returns the frame offset. For example, with {@code frameLength = 10} and
+     * {@code frameOffset = 5} the frames will start at 5, 15, 25...
      */
     public long frameOffset() {
         return frameOffset;
     }
 
     /**
-     * Returns the length of the window in terms of {@code eventSeq}. It is an
-     * integer multiple of {@link #frameLength()}.
+     * Returns the length of the window (the size of the timestamp range it covers).
+     * It is an integer multiple of {@link #frameLength()}.
      */
     public long windowLength() {
         return windowLength;
     }
 
     /**
-     * Returns {@code true}, if this is a tumbling window.
+     * Tells whether this definition describes a tumbling window. Tumbling
+     * window is a special case of sliding window whose sliding step is equal
+     * to its size.
      */
     public boolean isTumbling() {
         return windowLength == frameLength;
@@ -96,45 +97,45 @@ public class WindowDefinition implements Serializable {
     /**
      * Returns a new window definition where all the frames are shifted by the
      * given offset. More formally, it specifies the value of the lowest
-     * non-negative {@code frameSeq}.
+     * non-negative frame timestamp.
      * <p>
      * Given a tumbling window of {@code windowLength = 4}, with no offset the
-     * windows would cover the event seqs {@code ..., [-4, 0), [0..4), ...}
-     * With {@code offset = 2} they will cover the seqs {@code ..., [-2, 2),
-     * [2..6), ...}
+     * windows would cover the timestamps {@code ..., [-4, 0), [0..4), ...}
+     * With {@code offset = 2} they will cover {@code ..., [-2, 2), [2..6),
+     * ...}
      */
     public WindowDefinition withOffset(long offset) {
         return new WindowDefinition(frameLength, offset, windowLength / frameLength);
     }
 
     /**
-     * Returns the highest {@code frameSeq} less than or equal to the given
-     * {@code eventSeq}. If there is no such {@code long} value, returns {@code
+     * Returns the highest frame timestamp less than or equal to the given
+     * timestamp. If there is no such {@code long} value, returns {@code
      * Long.MIN_VALUE}.
      */
-    long floorFrameSeq(long eventSeq) {
-        return subtractClamped(eventSeq, floorMod(
-                (eventSeq >= Long.MIN_VALUE + frameOffset ? eventSeq : eventSeq + frameLength) - frameOffset,
+    long floorFrameTs(long timestamp) {
+        return subtractClamped(timestamp, floorMod(
+                (timestamp >= Long.MIN_VALUE + frameOffset ? timestamp : timestamp + frameLength) - frameOffset,
                 frameLength
         ));
     }
 
     /**
-     * Returns the lowest {@code frameSeq} greater than the given {@code
-     * eventSeq}. If there is no such value, returns {@code Long.MAX_VALUE}.
+     * Returns the lowest frame timestamp greater than the given timestamp. If
+     * there is no such {@code long} value, returns {@code Long.MAX_VALUE}.
      */
-    long higherFrameSeq(long eventSeq) {
-        long seqPlusFrame = eventSeq + frameLength;
-        return sumHadOverflow(eventSeq, frameLength, seqPlusFrame)
-                ? addClamped(floorFrameSeq(eventSeq), frameLength)
-                : floorFrameSeq(seqPlusFrame);
+    long higherFrameTs(long timestamp) {
+        long tsPlusFrame = timestamp + frameLength;
+        return sumHadOverflow(timestamp, frameLength, tsPlusFrame)
+                ? addClamped(floorFrameTs(timestamp), frameLength)
+                : floorFrameTs(tsPlusFrame);
     }
 
     /**
      * Returns the definition of a sliding window of length {@code
      * windowLength} that slides by {@code slideBy}. Given {@code
      * windowLength = 4} and {@code slideBy = 2}, the generated windows would
-     * cover event seqs {@code ..., [-2, 2), [0..4), [2..6), [4..8), [6..10),
+     * cover timestamps {@code ..., [-2, 2), [0..4), [2..6), [4..8), [6..10),
      * ...}
      * <p>
      * Since the window will be computed internally by maintaining {@link
@@ -154,7 +155,7 @@ public class WindowDefinition implements Serializable {
      * Returns a new tumbling window of length {@code windowLength}. The
      * tumbling window is a special case of the sliding window with {@code
      * slideBy = windowLength}. Given {@code windowLength = 4}, the generated
-     * windows would cover event seqs {@code ..., [-4, 0), [0..4), [4..8), ...}
+     * windows would cover timestamps {@code ..., [-4, 0), [0..4), [4..8), ...}
      */
     public static WindowDefinition tumblingWindowDef(long windowLength) {
         return slidingWindowDef(windowLength, windowLength);

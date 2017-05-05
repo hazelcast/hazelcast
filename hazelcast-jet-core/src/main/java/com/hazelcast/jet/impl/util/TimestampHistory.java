@@ -21,42 +21,44 @@ import java.util.Arrays;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
- * Helper class to implement the logic needed to enforce the maximum
- * retention time of events in a windowing stream processor. To use this
- * class, call {@link #sample(long, long) sample(now, currValue)}
- * at regular intervals with the current system time and the top observed
- * {@code eventSeq} so far, and interpret the returned value as the minimum
- * value of punctuation that should be/have been emitted. The current time
- * should be obtained from {@code System.nanoTime()} because, unlike
- * {@code System.currentTimeMillis()}, its source is a monotonic clock.
+ * Helper class to implement the logic needed to enforce a punctuation policy
+ * that limits the delay between observing an item and advancing the
+ * punctuation to that item's timestamp. To use this class, call {@link
+ * #sample(long, long) sample(now, currValue)} at regular intervals with the
+ * current system time and the top event timestamp observed so far, and
+ * interpret the returned value as the minimum value of punctuation that
+ * should be/have been emitted. The current time should be obtained from
+ * {@code System.nanoTime()} because, unlike {@code
+ * System.currentTimeMillis()}, its source is a monotonic clock.
  * <p>
  * This class maintains a circular FIFO buffer of samples acquired over the
- * period starting at {@code maxRetain} time units ago and extending to the
- * present. The period is divided into {@code numStoredSamples} equally-sized
- * intervals and each such interval is mapped to a slot in the buffer.
- * A given {@code sample()} call maps the supplied timestamp to a slot in
- * the buffer, possibly remapping the slots to more recent intervals
- * (thereby automatically discarding the old intervals), updates that slot,
- * and returns the value of the oldest ("head") slot after remapping. This
- * slot will contain a sample acquired at most {@code maxRetain} time units
- * ago.
+ * period starting at {@code maxDelay} time units ago and extending to the
+ * present. The period is divided into {@code numStoredSamples}
+ * equally-sized intervals and each such interval is mapped to a slot in
+ * the buffer. A given {@code sample()} call maps the supplied current time
+ * to a slot in the buffer, possibly remapping the slots to more recent
+ * intervals (thereby automatically discarding the old intervals), updates
+ * that slot, and returns the value of the oldest ("head") slot after
+ * remapping. This slot will contain a sample acquired at most {@code
+ * maxDelay} time units ago.
  * <p>
  * <strong>NOTE:</strong> this class is implemented in terms of some
  * assumptions on the mode of usage:
  * <ol><li>
- *     {@code maxRetain} is expected to be much larger than {@code
+ *     {@code maxDelay} is expected to be much larger than {@code
  *     numStoredSamples} and uses an integer size of the sample interval.
- *     Therefore the supplied {@code maxRetain} is rounded down to the nearest
+ *     Therefore the supplied {@code maxDelay} is rounded down to the nearest
  *     multiple of {@code numStoredSamples}.
  * </li><li>
  *     {@link #sample(long, long) sample()} method is expected to be called
- *     with monotonically increasing timestamps and samples and therefore
- *     {@code sample()} always updates the "tail" slot, corresponding to the
- *     most recent time interval. If called with a timestamp less than the
- *     highest timestamp used so far, it will still update the tail slot.
+ *     with monotonically increasing current time reports and event timestamps
+ *     and therefore {@code sample()} always updates the "tail" slot,
+ *     corresponding to the most recent time interval. If called with current
+ *     time less than the latest time used so far, it will still update the
+ *     tail slot.
  * </li></ol>
  */
-public class EventSeqHistory {
+public class TimestampHistory {
 
     private final long[] samples;
     private final long sampleInterval;
@@ -65,22 +67,22 @@ public class EventSeqHistory {
     private long advanceAt = Long.MIN_VALUE;
 
     /**
-     * @param maxRetain the length of the period over which to keep the {@code sample} history
+     * @param maxDelay the length of the period over which to keep the {@code sample} history
      * @param numStoredSamples the number of remembered historical {@code sample} values
      */
-    public EventSeqHistory(long maxRetain, int numStoredSamples) {
+    public TimestampHistory(long maxDelay, int numStoredSamples) {
         checkPositive(numStoredSamples, "numStoredSamples must be at least one");
         samples = new long[numStoredSamples + 1];
-        sampleInterval = maxRetain / numStoredSamples;
-        checkPositive(sampleInterval, "maxRetain must be at least as much as numStoredSamples");
+        sampleInterval = maxDelay / numStoredSamples;
+        checkPositive(sampleInterval, "maxDelay must be at least as much as numStoredSamples");
         Arrays.fill(samples, Long.MIN_VALUE);
     }
 
     /**
      * Called to report a new sample along with the timestamp when it was taken.
-     * Returns the sample that best matches the point in time {@code maxRetain}
+     * Returns the sample that best matches the point in time {@code maxDelay}
      * units ago, or {@link Long#MIN_VALUE} if sampling started less than
-     * {@code maxRetain} time units ago.
+     * {@code maxDelay} time units ago.
      *
      * @param now current system time; must not be less than the time used in the previous
      *            call
