@@ -17,11 +17,11 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.config.SSLConfig;
+import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
-import com.hazelcast.internal.networking.SocketChannelWrapper;
-import com.hazelcast.internal.networking.SocketReader;
-import com.hazelcast.internal.networking.SocketReaderInitializer;
-import com.hazelcast.internal.networking.SocketWriter;
+import com.hazelcast.internal.networking.ChannelReader;
+import com.hazelcast.internal.networking.ChannelReaderInitializer;
+import com.hazelcast.internal.networking.ChannelWriter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.ascii.TextChannelInboundHandler;
@@ -39,21 +39,21 @@ import static com.hazelcast.nio.Protocols.CLUSTER;
 import static com.hazelcast.nio.Protocols.TEXT;
 import static com.hazelcast.util.StringUtil.bytesToString;
 
-public class MemberSocketReaderInitializer implements SocketReaderInitializer<TcpIpConnection> {
+public class MemberChannelReaderInitializer implements ChannelReaderInitializer<TcpIpConnection> {
 
     private final ILogger logger;
 
-    public MemberSocketReaderInitializer(ILogger logger) {
+    public MemberChannelReaderInitializer(ILogger logger) {
         this.logger = logger;
     }
 
     @Override
-    public void init(TcpIpConnection connection, SocketReader reader) throws IOException {
+    public void init(TcpIpConnection connection, ChannelReader reader) throws IOException {
         TcpIpConnectionManager connectionManager = connection.getConnectionManager();
         IOService ioService = connectionManager.getIoService();
 
         ByteBuffer protocolBuffer = reader.getProtocolBuffer();
-        SocketChannelWrapper socketChannel = reader.getSocketChannel();
+        Channel socketChannel = reader.getChannel();
 
         int readBytes = socketChannel.read(protocolBuffer);
 
@@ -73,19 +73,19 @@ public class MemberSocketReaderInitializer implements SocketReaderInitializer<Tc
 
         ChannelInboundHandler inboundHandler;
         String protocol = bytesToString(protocolBuffer.array());
-        SocketWriter socketWriter = connection.getSocketWriter();
+        ChannelWriter channelWriter = connection.getChannelWriter();
         if (CLUSTER.equals(protocol)) {
             initInputBuffer(connection, reader, ioService.getSocketReceiveBufferSize());
             connection.setType(MEMBER);
-            socketWriter.setProtocol(CLUSTER);
+            channelWriter.setProtocol(CLUSTER);
             inboundHandler = ioService.createReadHandler(connection);
         } else if (CLIENT_BINARY_NEW.equals(protocol)) {
             initInputBuffer(connection, reader, ioService.getSocketClientReceiveBufferSize());
-            socketWriter.setProtocol(CLIENT_BINARY_NEW);
+            channelWriter.setProtocol(CLIENT_BINARY_NEW);
             inboundHandler = new ClientChannelInboundHandler(reader.getNormalFramesReadCounter(), connection, ioService);
         } else {
             ByteBuffer inputBuffer = initInputBuffer(connection, reader, ioService.getSocketReceiveBufferSize());
-            socketWriter.setProtocol(TEXT);
+            channelWriter.setProtocol(TEXT);
             inputBuffer.put(protocolBuffer.array());
             inboundHandler = new TextChannelInboundHandler(connection);
             connectionManager.incrementTextConnections();
@@ -98,7 +98,7 @@ public class MemberSocketReaderInitializer implements SocketReaderInitializer<Tc
         reader.setInboundHandler(inboundHandler);
     }
 
-    private ByteBuffer initInputBuffer(TcpIpConnection connection, SocketReader reader, int sizeKb) {
+    private ByteBuffer initInputBuffer(TcpIpConnection connection, ChannelReader reader, int sizeKb) {
         boolean directBuffer = connection.getConnectionManager().getIoService().useDirectSocketBuffer();
         int sizeBytes = sizeKb * KILO_BYTE;
 
@@ -106,7 +106,7 @@ public class MemberSocketReaderInitializer implements SocketReaderInitializer<Tc
         reader.initInputBuffer(inputBuffer);
 
         try {
-            connection.getSocketChannel().socket().setReceiveBufferSize(sizeBytes);
+            connection.getChannel().socket().setReceiveBufferSize(sizeBytes);
         } catch (SocketException e) {
             logger.finest("Failed to adjust TCP receive buffer of " + connection + " to " + sizeBytes + " B.", e);
         }

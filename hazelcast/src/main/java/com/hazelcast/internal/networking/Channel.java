@@ -38,7 +38,7 @@ import java.nio.channels.SocketChannel;
  * In the future we should get rid of this class and rely on {@link ChannelInboundHandler}/{@link ChannelOutboundHandler}
  * chaining to add encryption. This will remove more artifacts from the architecture that can't carry their weight.
  */
-public interface SocketChannelWrapper extends Closeable {
+public interface Channel extends Closeable {
 
     /**
      * @see java.nio.channels.SocketChannel#isOpen()

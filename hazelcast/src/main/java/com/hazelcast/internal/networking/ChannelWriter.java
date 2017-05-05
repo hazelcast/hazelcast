@@ -23,18 +23,18 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
 import java.nio.ByteBuffer;
 
 /**
- * Each {@link TcpIpConnection} has a {@link SocketWriter} and it writes {@link OutboundFrame} instances to the socket. Copying
+ * Each {@link TcpIpConnection} has a {@link ChannelWriter} and it writes {@link OutboundFrame} instances to the socket. Copying
  * the Frame instances to the byte-buffer is done using the {@link ChannelOutboundHandler}.
  *
- * Each {@link TcpIpConnection} has its own {@link SocketWriter} instance.
+ * Each {@link TcpIpConnection} has its own {@link ChannelWriter} instance.
  *
  * Before Hazelcast 3.6 the name of this interface was ChannelOutboundHandler.
  *
- * @see SocketReader
+ * @see ChannelReader
  * @see ChannelInboundHandler
  * @see EventLoopGroup
  */
-public interface SocketWriter {
+public interface ChannelWriter {
 
     /**
      * Returns the total number of packets (urgent and non normal priority) pending to be written to the socket.
@@ -63,7 +63,7 @@ public interface SocketWriter {
     void write(OutboundFrame frame);
 
     /**
-     * Gets the {@link ChannelOutboundHandler} that belongs to this SocketWriter.
+     * Gets the {@link ChannelOutboundHandler} that belongs to this ChannelWriter.
      *
      * This method exists for the {@link TextChannelInboundHandler}, but probably should be deleted.
      *
@@ -72,7 +72,7 @@ public interface SocketWriter {
     ChannelOutboundHandler getOutboundHandler();
 
     /**
-     * Sets the protocol this SocketWriter should use.
+     * Sets the protocol this ChannelWriter should use.
      *
      * This should be called only once at the beginning of the connection.
      *
@@ -83,7 +83,7 @@ public interface SocketWriter {
     void setProtocol(String protocol);
 
     /**
-     * Closes this SocketWriter.
+     * Closes this ChannelWriter.
      *
      * This method can be called from an arbitrary thread, and should only be called once. This should be coordinated
      * through the {@link TcpIpConnection#close(String, Throwable)} method.
