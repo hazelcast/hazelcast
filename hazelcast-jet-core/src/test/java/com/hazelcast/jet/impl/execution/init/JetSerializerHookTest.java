@@ -17,10 +17,10 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.jet.Accumulators.MutableDouble;
-import com.hazelcast.jet.Accumulators.MutableInteger;
-import com.hazelcast.jet.Accumulators.MutableLong;
-import com.hazelcast.jet.Accumulators.MutableReference;
+import com.hazelcast.jet.accumulator.DoubleAccumulator;
+import com.hazelcast.jet.accumulator.LinTrendAccumulator;
+import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.accumulator.MutableReference;
 import com.hazelcast.jet.windowing.Frame;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -35,6 +35,7 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 import java.io.Serializable;
+import java.math.BigInteger;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
 import java.util.Collection;
@@ -58,11 +59,12 @@ public class JetSerializerHookTest {
         return Arrays.asList(
                 new Object[]{new String[]{"a", "b", "c"}},
                 new SimpleImmutableEntry<>("key", "value"),
-                new Frame(1, "key", "value"),
-                new MutableInteger(1),
-                new MutableLong(2),
-                new MutableDouble(3),
-                new MutableReference("foo")
+                new Frame<>(1, "key", "value"),
+                new LongAccumulator(2),
+                new DoubleAccumulator(3),
+                new MutableReference<>("foo"),
+                new LinTrendAccumulator(7,
+                        BigInteger.valueOf(9), BigInteger.valueOf(11), BigInteger.valueOf(13), BigInteger.valueOf(15))
         );
     }
 

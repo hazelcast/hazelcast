@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.windowing;
 
-import com.hazelcast.jet.Accumulators.MutableLong;
-import com.hazelcast.jet.Accumulators.MutableReference;
 import com.hazelcast.jet.Distributed;
-import com.hazelcast.jet.Distributed.BinaryOperator;
+import com.hazelcast.jet.accumulator.LinTrendAccumulator;
+import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.accumulator.MutableReference;
 
 import javax.annotation.Nonnull;
 
@@ -33,56 +33,59 @@ public final class WindowOperations {
     }
 
     /**
-     * Returns an operation that counts the items in the window.
+     * Returns an operation that tracks the count of items in the window.
      */
-    public static WindowOperation<Object, MutableLong, Long> counting() {
+    public static WindowOperation<Object, LongAccumulator, Long> counting() {
         return WindowOperation.of(
-                MutableLong::new,
-                (a, i) -> {
-                    a.value++;
-                    return a;
-                },
-                (a1, a2) -> {
-                    a1.value = Math.addExact(a1.value, a2.value);
-                    return a1;
-                },
-                (a1, a2) -> {
-                    // with counting, value should never go below 0, so no need for subtractExact
-                    a1.value -= a2.value;
-                    return a1;
-                },
-                a -> a.value
+                LongAccumulator::new,
+                (a, item) -> a.addExact(1),
+                LongAccumulator::addExact,
+                LongAccumulator::subtract,
+                LongAccumulator::get
         );
     }
 
     /**
-     * Returns an operation that sums the items in the window.
+     * Returns an operation that tracks the sum of {@code Long}-typed items in
+     * the window.
      */
-    public static WindowOperation<Long, MutableLong, Long> summingToLong() {
+    public static WindowOperation<Long, LongAccumulator, Long> summingToLong() {
         return WindowOperations.summingToLong(Long::longValue);
     }
 
     /**
-     * Returns an operation that counts the items in the window.
+     * Returns an operation that tracks the sum of the quantity returned by
+     * {@code getValueF} applied to each item in the window.
      */
-    public static <T> WindowOperation<T, MutableLong, Long> summingToLong(
-            @Nonnull Distributed.ToLongFunction<T> mapper
+    public static <T> WindowOperation<T, LongAccumulator, Long> summingToLong(
+            @Nonnull Distributed.ToLongFunction<T> getValueF
     ) {
         return WindowOperation.of(
-                MutableLong::new,
-                (a, value) -> {
-                    a.value = Math.addExact(a.value, mapper.applyAsLong(value));
-                    return a;
-                },
-                (a1, a2) -> {
-                    a1.value = Math.addExact(a1.value, a2.value);
-                    return a1;
-                },
-                (a1, a2) -> {
-                    a1.value = Math.subtractExact(a1.value, a2.value);
-                    return a1;
-                },
-                MutableLong::getValue
+                LongAccumulator::new,
+                (a, item) -> a.addExact(getValueF.applyAsLong(item)),
+                LongAccumulator::addExact,
+                LongAccumulator::subtractExact,
+                LongAccumulator::get
+        );
+    }
+
+    /**
+     * Returns an operation that computes the linear regression on the items
+     * in the window. The operation will produce a {@code double}-valued
+     * coefficient that approximates the rate of change of {@code y} as a
+     * function of {@code x}, where {@code x} and {@code y} are {@code long}
+     * quantities extracted from each item by the two provided functions.
+     */
+    public static <T> WindowOperation<T, LinTrendAccumulator, Double> linearTrend(
+            @Nonnull Distributed.ToLongFunction<T> getX,
+            @Nonnull Distributed.ToLongFunction<T> getY
+    ) {
+        return WindowOperation.of(
+                LinTrendAccumulator::new,
+                (a, item) -> a.accumulate(getX.applyAsLong(item), getY.applyAsLong(item)),
+                LinTrendAccumulator::combine,
+                LinTrendAccumulator::deduct,
+                LinTrendAccumulator::finish
         );
     }
 
@@ -95,9 +98,10 @@ public final class WindowOperations {
      * stream items is unspecified, the combining function must be commutative
      * and associative to produce meaningful results.
      * <p>
-     * To support O(1) maintenance of a sliding window, a <em>deducting</em> function
-     * should be supplied whose effect is the opposite of the combining function,
-     * removing the contribution of an item to the reduced result:
+     * To support O(1) maintenance of a sliding window, a <em>deducting</em>
+     * function should be supplied whose effect is the opposite of the
+     * combining function, removing the contribution of an item to the reduced
+     * result:
      * <pre>
      *     U acc = ... // any possible value
      *     U val = mapF.apply(item);
@@ -124,20 +128,9 @@ public final class WindowOperations {
     ) {
         return new WindowOperationImpl<>(
                 () -> new MutableReference<>(identity),
-                (a, t) -> {
-                    a.value = combineF.apply(a.value, mapF.apply(t));
-                    return a;
-                },
-                (a, b) -> {
-                    a.value = combineF.apply(a.value, b.value);
-                    return a;
-                },
-                deductF != null
-                        ? (BinaryOperator<MutableReference<U>>) (a, b) -> {
-                            a.value = deductF.apply(a.value, b.value);
-                            return a;
-                        }
-                        : null,
-                MutableReference::getValue);
+                (a, t) -> a.set(combineF.apply(a.get(), mapF.apply(t))),
+                (a, b) -> a.set(combineF.apply(a.get(), b.get())),
+                deductF != null ? (a, b) -> a.set(deductF.apply(a.get(), b.get())) : null,
+                MutableReference::get);
     }
 }

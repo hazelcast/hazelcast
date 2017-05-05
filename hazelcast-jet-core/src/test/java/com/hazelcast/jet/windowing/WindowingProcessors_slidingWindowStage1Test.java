@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.windowing;
 
-import com.hazelcast.jet.Accumulators.MutableLong;
+import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.jet.Punctuation;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
@@ -122,7 +122,7 @@ public class WindowingProcessors_slidingWindowStage1Test extends StreamingTestSu
         assertOutbox(somePuncs);
     }
 
-    private static Frame<Long, MutableLong> frame(long seq, long value) {
-        return new Frame<>(seq, KEY, new MutableLong(value));
+    private static Frame<Long, LongAccumulator> frame(long seq, long value) {
+        return new Frame<>(seq, KEY, new LongAccumulator(value));
     }
 }

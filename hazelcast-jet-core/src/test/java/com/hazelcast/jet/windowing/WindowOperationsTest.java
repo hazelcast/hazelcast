@@ -16,18 +16,26 @@
 
 package com.hazelcast.jet.windowing;
 
-import com.hazelcast.jet.Accumulators.MutableLong;
-import com.hazelcast.jet.Accumulators.MutableReference;
+import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.accumulator.MutableReference;
+import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.Distributed.BiConsumer;
 import com.hazelcast.jet.Distributed.BinaryOperator;
+import com.hazelcast.jet.Distributed.Supplier;
+import com.hazelcast.jet.accumulator.LinTrendAccumulator;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Map.Entry;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.windowing.WindowOperations.counting;
+import static com.hazelcast.jet.windowing.WindowOperations.linearTrend;
 import static com.hazelcast.jet.windowing.WindowOperations.reducing;
 import static com.hazelcast.jet.windowing.WindowOperations.summingToLong;
 import static org.junit.Assert.assertEquals;
@@ -38,26 +46,60 @@ import static org.junit.Assert.assertNotNull;
 public class WindowOperationsTest {
     @Test
     public void when_counting() {
-        validateOp(counting(), MutableLong::getValue,
+        validateOp(counting(), LongAccumulator::get,
                 new Object(), 1L, 2L, 1L);
     }
 
     @Test
     public void when_summingToLong() {
-        validateOp(summingToLong(), MutableLong::getValue,
+        validateOp(summingToLong(), LongAccumulator::get,
                 1L, 1L, 2L, 1L);
     }
 
     @Test
     public void when_summingToLongWithMapper() {
-        validateOp(summingToLong(x -> 1L), MutableLong::getValue,
+        validateOp(summingToLong(x -> 1L), LongAccumulator::get,
                 new Object(), 1L, 2L, 1L);
+    }
+
+    @Test
+    public void when_linearTrend() {
+        // Given
+
+        WindowOperation<Entry<Long, Long>, LinTrendAccumulator, Double> op = linearTrend(Entry::getKey, Entry::getValue);
+        Supplier<LinTrendAccumulator> newF = op.createAccumulatorF();
+        BiFunction<LinTrendAccumulator, Entry<Long, Long>, LinTrendAccumulator> accF = op.accumulateItemF();
+        BinaryOperator<LinTrendAccumulator> combineF = op.combineAccumulatorsF();
+        BinaryOperator<LinTrendAccumulator> deductF = op.deductAccumulatorF();
+        Distributed.Function<LinTrendAccumulator, Double> finishF = op.finishAccumulationF();
+        assertNotNull(deductF);
+
+        // When
+
+        LinTrendAccumulator a1 = newF.get();
+        accF.apply(a1, entry(1L, 2L));
+        accF.apply(a1, entry(2L, 4L));
+        assertEquals(a1.finish(), 2.0, Double.MIN_VALUE);
+
+        LinTrendAccumulator a2 = newF.get();
+        accF.apply(a2, entry(4L, 8L));
+        accF.apply(a2, entry(5L, 10L));
+        assertEquals(a2.finish(), 2.0, Double.MIN_VALUE);
+
+        LinTrendAccumulator combined = combineF.apply(a1, a2);
+        assertEquals(combined.finish(), 2.0, Double.MIN_VALUE);
+
+        LinTrendAccumulator deducted = deductF.apply(combined, a2);
+        assertEquals(deducted.finish(), 2.0, Double.MIN_VALUE);
+
+        Double result = finishF.apply(deducted);
+        assertEquals(result, Double.valueOf(2));
     }
 
     @Test
     public void when_reducing() {
         validateOp(reducing(0, Integer::valueOf, Integer::sum, (x, y) -> x - y),
-                MutableReference::getValue,
+                MutableReference::get,
                 "1", 1, 2, 1);
     }
 

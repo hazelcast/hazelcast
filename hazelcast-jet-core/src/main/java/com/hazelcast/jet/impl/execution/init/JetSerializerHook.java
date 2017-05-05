@@ -17,10 +17,10 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
-import com.hazelcast.jet.Accumulators.MutableDouble;
-import com.hazelcast.jet.Accumulators.MutableInteger;
-import com.hazelcast.jet.Accumulators.MutableLong;
-import com.hazelcast.jet.Accumulators.MutableReference;
+import com.hazelcast.jet.accumulator.DoubleAccumulator;
+import com.hazelcast.jet.accumulator.LinTrendAccumulator;
+import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.accumulator.MutableReference;
 import com.hazelcast.jet.windowing.Frame;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -29,6 +29,7 @@ import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -47,12 +48,12 @@ public final class JetSerializerHook {
     public static final int CUSTOM_CLASS_LOADED_OBJECT = -301;
     public static final int OBJECT_ARRAY = -302;
     public static final int FRAME = -303;
-    public static final int MUTABLE_INTEGER = -304;
-    public static final int MUTABLE_LONG = -305;
-    public static final int MUTABLE_DOUBLE = -306;
-    public static final int MUTABLE_REFERENCE = -307;
+    public static final int MUTABLE_LONG = -304;
+    public static final int MUTABLE_DOUBLE = -305;
+    public static final int MUTABLE_REFERENCE = -306;
+    public static final int LIN_REG_ACC = -307;
 
-    // reserved for hadoop module -380 to -390
+    // reserved for hadoop module: -380 to -390
 
     /**
      * End of reserved space for Jet-specific serializers.
@@ -190,54 +191,16 @@ public final class JetSerializerHook {
         }
     }
 
-    public static final class MutableIntegerSerializer implements SerializerHook<MutableInteger> {
+    public static final class LongAccSerializer implements SerializerHook<LongAccumulator> {
 
         @Override
-        public Class<MutableInteger> getSerializationType() {
-            return MutableInteger.class;
+        public Class<LongAccumulator> getSerializationType() {
+            return LongAccumulator.class;
         }
 
         @Override
         public Serializer createSerializer() {
-            return new StreamSerializer<MutableInteger>() {
-                @Override
-                public int getTypeId() {
-                    return MUTABLE_INTEGER;
-                }
-
-                @Override
-                public void destroy() {
-
-                }
-
-                @Override
-                public void write(ObjectDataOutput out, MutableInteger object) throws IOException {
-                    out.writeInt(object.value);
-                }
-
-                @Override
-                public MutableInteger read(ObjectDataInput in) throws IOException {
-                    return new MutableInteger(in.readInt());
-                }
-            };
-        }
-
-        @Override
-        public boolean isOverwritable() {
-            return true;
-        }
-    }
-
-    public static final class MutableLongSerializer implements SerializerHook<MutableLong> {
-
-        @Override
-        public Class<MutableLong> getSerializationType() {
-            return MutableLong.class;
-        }
-
-        @Override
-        public Serializer createSerializer() {
-            return new StreamSerializer<MutableLong>() {
+            return new StreamSerializer<LongAccumulator>() {
                 @Override
                 public int getTypeId() {
                     return MUTABLE_LONG;
@@ -249,13 +212,13 @@ public final class JetSerializerHook {
                 }
 
                 @Override
-                public void write(ObjectDataOutput out, MutableLong object) throws IOException {
-                    out.writeLong(object.value);
+                public void write(ObjectDataOutput out, LongAccumulator object) throws IOException {
+                    out.writeLong(object.get());
                 }
 
                 @Override
-                public MutableLong read(ObjectDataInput in) throws IOException {
-                    return new MutableLong(in.readLong());
+                public LongAccumulator read(ObjectDataInput in) throws IOException {
+                    return new LongAccumulator(in.readLong());
                 }
             };
         }
@@ -266,16 +229,16 @@ public final class JetSerializerHook {
         }
     }
 
-    public static final class MutableDoubleSerializer implements SerializerHook<MutableDouble> {
+    public static final class DoubleAccSerializer implements SerializerHook<DoubleAccumulator> {
 
         @Override
-        public Class<MutableDouble> getSerializationType() {
-            return MutableDouble.class;
+        public Class<DoubleAccumulator> getSerializationType() {
+            return DoubleAccumulator.class;
         }
 
         @Override
         public Serializer createSerializer() {
-            return new StreamSerializer<MutableDouble>() {
+            return new StreamSerializer<DoubleAccumulator>() {
                 @Override
                 public int getTypeId() {
                     return MUTABLE_DOUBLE;
@@ -287,13 +250,13 @@ public final class JetSerializerHook {
                 }
 
                 @Override
-                public void write(ObjectDataOutput out, MutableDouble object) throws IOException {
-                    out.writeDouble(object.value);
+                public void write(ObjectDataOutput out, DoubleAccumulator object) throws IOException {
+                    out.writeDouble(object.get());
                 }
 
                 @Override
-                public MutableDouble read(ObjectDataInput in) throws IOException {
-                    return new MutableDouble(in.readDouble());
+                public DoubleAccumulator read(ObjectDataInput in) throws IOException {
+                    return new DoubleAccumulator(in.readDouble());
                 }
             };
         }
@@ -304,7 +267,7 @@ public final class JetSerializerHook {
         }
     }
 
-    public static final class MutableObjectSerializer implements SerializerHook<MutableReference> {
+    public static final class MutableReferenceSerializer implements SerializerHook<MutableReference> {
 
         @Override
         public Class<MutableReference> getSerializationType() {
@@ -326,12 +289,12 @@ public final class JetSerializerHook {
 
                 @Override
                 public void write(ObjectDataOutput out, MutableReference object) throws IOException {
-                    out.writeObject(object.value);
+                    out.writeObject(object.get());
                 }
 
                 @Override
                 public MutableReference read(ObjectDataInput in) throws IOException {
-                    return new MutableReference(in.readObject());
+                    return new MutableReference<>(in.readObject());
                 }
             };
         }
@@ -342,4 +305,49 @@ public final class JetSerializerHook {
         }
     }
 
+    public static final class LinRegAccSerializer implements SerializerHook<LinTrendAccumulator> {
+
+        @Override
+        public Class<LinTrendAccumulator> getSerializationType() {
+            return LinTrendAccumulator.class;
+        }
+
+        @Override
+        public Serializer createSerializer() {
+            return new StreamSerializer<LinTrendAccumulator>() {
+                @Override
+                public int getTypeId() {
+                    return LIN_REG_ACC;
+                }
+
+                @Override
+                public void destroy() {
+                }
+
+                @Override
+                public void write(ObjectDataOutput out, LinTrendAccumulator object) throws IOException {
+                    object.writeObject(out);
+                }
+
+                @Override
+                public LinTrendAccumulator read(ObjectDataInput in) throws IOException {
+                    return new LinTrendAccumulator(
+                            in.readLong(), readBigInt(in), readBigInt(in), readBigInt(in), readBigInt(in));
+                }
+
+                private BigInteger readBigInt(ObjectDataInput in) throws IOException {
+                    byte[] bytes = new byte[in.readUnsignedByte()];
+                    for (int i = 0; i < bytes.length; i++) {
+                        bytes[i] = in.readByte();
+                    }
+                    return new BigInteger(bytes);
+                }
+            };
+        }
+
+        @Override
+        public boolean isOverwritable() {
+            return true;
+        }
+    }
 }

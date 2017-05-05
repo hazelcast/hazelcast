@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.windowing;
 
-import com.hazelcast.jet.Accumulators.MutableLong;
+import com.hazelcast.jet.Accumulators.LongAccumulator;
 import com.hazelcast.jet.Distributed.Function;
 import com.hazelcast.jet.Distributed.Supplier;
 import com.hazelcast.jet.Distributed.ToLongFunction;
@@ -93,40 +93,24 @@ public class WindowingProcessors_slidingWindowTest extends StreamingTestSupport 
     @Before
     public void before() {
         WindowDefinition windowDef = new WindowDefinition(1, 0, 4);
-        WindowOperation<Entry<?, Long>, MutableLong, Long> operation;
+        WindowOperation<Entry<?, Long>, LongAccumulator, Long> operation;
 
-        operation = WindowOperation.<Entry<?, Long>, MutableLong, Long>of(
-                MutableLong::new,
-                (acc, val) -> {
-                    if (mutateAccumulator) {
-                        acc.value += val.getValue();
-                        return acc;
-                    } else {
-                        return new MutableLong(acc.value + val.getValue());
-                    }
-                },
-                (acc1, acc2) -> {
-                    if (mutateAccumulator) {
-                        acc1.value += acc2.value;
-                        return acc1;
-                    }
-                    else {
-                        return new MutableLong(acc1.value + acc2.value);
-                    }
-                },
-                hasDeduct ? (acc1, acc2) -> {
-                    if (mutateAccumulator) {
-                        acc1.value -= acc2.value;
-                        return acc1;
-                    }
-                    else {
-                        return new MutableLong(acc1.value - acc2.value);
-                    }
-                } : null,
-                acc -> acc.value);
+        operation = mutateAccumulator
+                ? WindowOperation.of(
+                    LongAccumulator::new,
+                    (acc, item) -> acc.addExact(item.getValue()),
+                    LongAccumulator::addExact,
+                    hasDeduct ? LongAccumulator::subtractExact : null,
+                    LongAccumulator::get)
+                : WindowOperation.of(
+                    LongAccumulator::new,
+                    (acc, item) -> new LongAccumulator(acc.get() + item.getValue()),
+                    (acc1, acc2) -> new LongAccumulator(acc1.get() + acc2.get()),
+                    hasDeduct ? (acc1, acc2) -> new LongAccumulator(acc1.get() - acc2.get()) : null,
+                    LongAccumulator::get);
 
         Supplier<Processor> procSupplier = singleStageProcessor
-                ? slidingWindowSingleStage(t -> KEY, (Entry<Long, Long> e) -> e.getKey(), windowDef, operation)
+                ? slidingWindowSingleStage(t -> KEY, Entry<Long, Long>::getKey, windowDef, operation)
                 : slidingWindowStage2(windowDef, operation);
         processor = (WindowingProcessor<?, ?, Long>) procSupplier.get();
         processor.init(outbox, mock(Context.class));
@@ -369,7 +353,7 @@ public class WindowingProcessors_slidingWindowTest extends StreamingTestSupport 
         return singleStageProcessor
                 // the -1 is due to discrepancy between eventSeq and frameSeq
                 ? entry(seq - 1, value)
-                : new Frame<>(seq, KEY, new MutableLong(value));
+                : new Frame<>(seq, KEY, new LongAccumulator(value));
     }
 
     private static Frame<Long, ?> outboxFrame(long seq, long value) {
