@@ -107,6 +107,17 @@
                         <hz:action>poll</hz:action>
                     </hz:actions>
                 </hz:queue-permission>
+                <hz:cache-permission name="test-cache" principal="dev">
+                    <hz:endpoints>
+                        <hz:endpoint>127.0.0.1</hz:endpoint>
+                    </hz:endpoints>
+                    <hz:actions>
+                        <hz:action>create</hz:action>
+                        <hz:action>add</hz:action>
+                        <hz:action>read</hz:action>
+                        <hz:action>destroy</hz:action>
+                    </hz:actions>
+                </hz:cache-permission>
             </hz:client-permissions>
             <hz:security-interceptors>
                 <hz:interceptor class-name="com.hazelcast.spring.security.DummySecurityInterceptor"

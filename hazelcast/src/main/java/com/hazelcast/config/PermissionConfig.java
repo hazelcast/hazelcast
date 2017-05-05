@@ -106,7 +106,10 @@ public class PermissionConfig {
          * Scheduled executor service
          */
         SCHEDULED_EXECUTOR("scheduled-executor-permission"),
-
+        /**
+         * JCache/ICache
+         */
+        CACHE("cache-permission"),
         /**
          * All
          */
