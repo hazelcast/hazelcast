@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.internal.networking.SocketChannelWrapper;
+import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,20 +32,20 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class PlainSocketChannelWrapperFactoryTest extends HazelcastTestSupport {
+public class PlainChannelFactoryTest extends HazelcastTestSupport {
 
-    private PlainSocketChannelWrapperFactory factory;
+    private PlainChannelFactory factory;
 
     @Before
     public void setup() {
-        factory = new PlainSocketChannelWrapperFactory();
+        factory = new PlainChannelFactory();
     }
 
     @Test
     public void wrapSocketChannel() throws Exception {
         SocketChannel socketChannel = mock(SocketChannel.class);
-        SocketChannelWrapper wrapper = factory.wrapSocketChannel(socketChannel, false);
+        Channel wrapper = factory.create(socketChannel, false);
 
-        assertInstanceOf(PlainSocketChannelWrapper.class, wrapper);
+        assertInstanceOf(PlainChannel.class, wrapper);
     }
 }

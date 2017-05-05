@@ -24,5 +24,5 @@ public interface SocketConnection extends Connection {
 
     SocketWriter getSocketWriter();
 
-    SocketChannelWrapper getSocketChannel();
+    Channel getSocketChannel();
 }

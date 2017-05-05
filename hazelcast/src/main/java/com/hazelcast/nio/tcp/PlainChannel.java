@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.internal.networking.SocketChannelWrapper;
+import com.hazelcast.internal.networking.Channel;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -28,11 +28,11 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
-public class PlainSocketChannelWrapper implements SocketChannelWrapper {
+public class PlainChannel implements Channel {
 
     protected final SocketChannel socketChannel;
 
-    public PlainSocketChannelWrapper(SocketChannel socketChannel) {
+    public PlainChannel(SocketChannel socketChannel) {
         this.socketChannel = socketChannel;
     }
 
@@ -101,6 +101,6 @@ public class PlainSocketChannelWrapper implements SocketChannelWrapper {
 
     @Override
     public String toString() {
-        return "PlainSocketChannelWrapper{socketChannel=" + socketChannel + '}';
+        return "PlainChannel{socketChannel=" + socketChannel + '}';
     }
 }

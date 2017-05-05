@@ -86,7 +86,7 @@ public interface SocketReader {
 
     void initReadHandler(ChannelInboundHandler inboundHandler);
 
-    SocketChannelWrapper getSocketChannel();
+    Channel getSocketChannel();
 
     ByteBuffer getProtocolBuffer();
 }

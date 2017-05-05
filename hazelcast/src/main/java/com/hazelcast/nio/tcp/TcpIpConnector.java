@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.internal.networking.SocketChannelWrapper;
+import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOService;
@@ -180,11 +180,11 @@ public class TcpIpConnector {
                 if (logger.isFinestEnabled()) {
                     logger.finest("Successfully connected to: " + address + " using socket " + socketChannel.socket());
                 }
-                SocketChannelWrapper socketChannelWrapper = connectionManager.wrapSocketChannel(socketChannel, true);
+                Channel channel = connectionManager.wrapSocketChannel(socketChannel, true);
                 ioService.interceptSocket(socketChannel.socket(), false);
 
-                socketChannelWrapper.configureBlocking(false);
-                TcpIpConnection connection = connectionManager.newConnection(socketChannelWrapper, address);
+                channel.configureBlocking(false);
+                TcpIpConnection connection = connectionManager.newConnection(channel, address);
                 connection.getSocketWriter().setProtocol(Protocols.CLUSTER);
                 connectionManager.sendBindRequest(connection, address, true);
             } catch (Exception e) {

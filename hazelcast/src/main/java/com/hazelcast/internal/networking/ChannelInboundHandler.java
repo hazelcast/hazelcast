@@ -36,7 +36,7 @@ import java.nio.ByteBuffer;
  * that reads out any Packet from the decrypted ByteBuffer. Using this approach encryption can easily be added to any type of
  * communication, not only member 2 member communication.
  *
- * Currently security is added by using a {@link SocketChannelWrapper}, but this is not needed if the handlers form a pipeline.
+ * Currently security is added by using a {@link Channel}, but this is not needed if the handlers form a pipeline.
  * Netty follows a similar approach with pipelining and adding encryption.
  *
  * There is no explicit support for setting up a 'pipeline' of ChannelInboundHandler/WriterHandlers but t can easily be realized by setting

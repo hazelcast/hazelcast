@@ -19,9 +19,9 @@ package com.hazelcast.internal.networking;
 import java.nio.channels.SocketChannel;
 
 /**
- * A factory for creating {@link SocketChannelWrapper} instances.
+ * A factory for creating {@link Channel} instances.
  */
-public interface SocketChannelWrapperFactory {
+public interface ChannelFactory {
 
-    SocketChannelWrapper wrapSocketChannel(SocketChannel channel, boolean client) throws Exception;
+    Channel create(SocketChannel channel, boolean client) throws Exception;
 }

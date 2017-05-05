@@ -29,7 +29,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCacheManager;
-import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
+import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -38,7 +38,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.SocketInterceptor;
-import com.hazelcast.nio.tcp.PlainSocketChannelWrapperFactory;
+import com.hazelcast.nio.tcp.PlainChannelFactory;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -105,8 +105,8 @@ public class DefaultClientExtension implements ClientExtension {
     }
 
     @Override
-    public SocketChannelWrapperFactory createSocketChannelWrapperFactory() {
-        return new PlainSocketChannelWrapperFactory();
+    public ChannelFactory createSocketChannelWrapperFactory() {
+        return new PlainChannelFactory();
     }
 
     @Override

@@ -16,15 +16,15 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.internal.networking.SocketChannelWrapper;
-import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelFactory;
 
 import java.nio.channels.SocketChannel;
 
-public class PlainSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
+public class PlainChannelFactory implements ChannelFactory {
 
     @Override
-    public SocketChannelWrapper wrapSocketChannel(SocketChannel channel, boolean client) throws Exception {
-        return new PlainSocketChannelWrapper(channel);
+    public Channel create(SocketChannel channel, boolean client) throws Exception {
+        return new PlainChannel(channel);
     }
 }

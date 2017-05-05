@@ -33,7 +33,7 @@ import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
-import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
+import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -46,7 +46,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.tcp.MemberChannelOutboundHandler;
-import com.hazelcast.nio.tcp.PlainSocketChannelWrapperFactory;
+import com.hazelcast.nio.tcp.PlainChannelFactory;
 import com.hazelcast.nio.tcp.MemberChannelInboundHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
@@ -194,8 +194,8 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public SocketChannelWrapperFactory getSocketChannelWrapperFactory() {
-        return new PlainSocketChannelWrapperFactory();
+    public ChannelFactory getSocketChannelWrapperFactory() {
+        return new PlainChannelFactory();
     }
 
     @Override

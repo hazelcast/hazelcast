@@ -45,9 +45,9 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
-import com.hazelcast.internal.networking.SocketChannelWrapper;
-import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
+import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
@@ -110,7 +110,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final HazelcastClientInstanceImpl client;
     private final SocketInterceptor socketInterceptor;
     private final SocketOptions socketOptions;
-    private final SocketChannelWrapperFactory socketChannelWrapperFactory;
+    private final ChannelFactory channelFactory;
 
     private final ClientExecutionServiceImpl executionService;
     private final AddressTranslator addressTranslator;
@@ -150,7 +150,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         initEventLoopGroup(client);
 
         ClientExtension clientExtension = client.getClientExtension();
-        this.socketChannelWrapperFactory = clientExtension.createSocketChannelWrapperFactory();
+        this.channelFactory = clientExtension.createSocketChannelWrapperFactory();
         this.socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
 
         this.credentials = client.getCredentials();
@@ -392,11 +392,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             socket.setReceiveBufferSize(bufferSize);
             InetSocketAddress inetSocketAddress = address.getInetSocketAddress();
             socketChannel.socket().connect(inetSocketAddress, connectionTimeout);
-            SocketChannelWrapper socketChannelWrapper =
-                    socketChannelWrapperFactory.wrapSocketChannel(socketChannel, true);
+            Channel channel =
+                    channelFactory.create(socketChannel, true);
 
             final ClientConnection clientConnection = new ClientConnection(
-                    client, eventLoopGroup, connectionIdGen.incrementAndGet(), socketChannelWrapper);
+                    client, eventLoopGroup, connectionIdGen.incrementAndGet(), channel);
             socketChannel.configureBlocking(true);
             if (socketInterceptor != null) {
                 socketInterceptor.onConnect(socket);

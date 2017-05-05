@@ -18,7 +18,7 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
-import com.hazelcast.internal.networking.SocketChannelWrapper;
+import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.SocketReader;
 import com.hazelcast.internal.networking.SocketReaderInitializer;
 import com.hazelcast.internal.networking.SocketWriter;
@@ -53,7 +53,7 @@ public class MemberSocketReaderInitializer implements SocketReaderInitializer<Tc
         IOService ioService = connectionManager.getIoService();
 
         ByteBuffer protocolBuffer = reader.getProtocolBuffer();
-        SocketChannelWrapper socketChannel = reader.getSocketChannel();
+        Channel socketChannel = reader.getSocketChannel();
 
         int readBytes = socketChannel.read(protocolBuffer);
 

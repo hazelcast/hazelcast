@@ -20,8 +20,8 @@ import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.EventLoopGroup;
-import com.hazelcast.internal.networking.SocketChannelWrapper;
 import com.hazelcast.internal.networking.SocketConnection;
 import com.hazelcast.internal.networking.SocketReader;
 import com.hazelcast.internal.networking.SocketWriter;
@@ -53,7 +53,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @SuppressWarnings("checkstyle:methodcount")
 public final class TcpIpConnection implements SocketConnection, MetricsProvider, DiscardableMetricsProvider {
 
-    private final SocketChannelWrapper socketChannel;
+    private final Channel socketChannel;
 
     private final SocketReader socketReader;
 
@@ -81,7 +81,7 @@ public final class TcpIpConnection implements SocketConnection, MetricsProvider,
 
     public TcpIpConnection(TcpIpConnectionManager connectionManager,
                            int connectionId,
-                           SocketChannelWrapper socketChannel,
+                           Channel socketChannel,
                            EventLoopGroup eventLoopGroup) {
         this.connectionId = connectionId;
         this.connectionManager = connectionManager;
@@ -117,7 +117,7 @@ public final class TcpIpConnection implements SocketConnection, MetricsProvider,
     }
 
     @Override
-    public SocketChannelWrapper getSocketChannel() {
+    public Channel getSocketChannel() {
         return socketChannel;
     }
 

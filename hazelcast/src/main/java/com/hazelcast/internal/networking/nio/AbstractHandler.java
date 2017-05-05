@@ -17,7 +17,7 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.networking.SocketChannelWrapper;
+import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.SocketConnection;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
@@ -39,7 +39,7 @@ public abstract class AbstractHandler
     @Probe(name = "handleCount")
     protected final SwCounter handleCount = newSwCounter();
     protected final ILogger logger;
-    protected final SocketChannelWrapper socketChannel;
+    protected final Channel socketChannel;
     protected final SocketConnection connection;
     protected NioThread ioThread;
     protected SelectionKey selectionKey;
@@ -68,7 +68,7 @@ public abstract class AbstractHandler
         this.ioBalancer = ioBalancer;
     }
 
-    public SocketChannelWrapper getSocketChannel() {
+    public Channel getSocketChannel() {
         return socketChannel;
     }
 
