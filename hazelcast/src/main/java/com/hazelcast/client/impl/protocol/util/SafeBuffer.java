@@ -66,6 +66,21 @@ public class SafeBuffer implements ClientProtocolBuffer {
     }
 
     @Override
+    public void putBytes(int index, ByteBuffer src, int length) {
+        byteBuffer.position(index);
+        if (src.isDirect()) {
+            int oldLimit = src.limit();
+            src.limit(src.position() + length);
+            byteBuffer.put(src);
+            src.limit(oldLimit);
+        } else {
+            // to prevent causing any regressions for heap buffer, we leave the original copy logic in place.
+            byteBuffer.put(src.array(), src.position(), length);
+            src.position(src.position() + length);
+        }
+    }
+
+    @Override
     public int putStringUtf8(int index, String value) {
         return putStringUtf8(index, value, Integer.MAX_VALUE);
     }
@@ -101,7 +116,6 @@ public class SafeBuffer implements ClientProtocolBuffer {
 
     @Override
     public long getLong(int index) {
-
         return byteBuffer.getLong(index);
     }
 

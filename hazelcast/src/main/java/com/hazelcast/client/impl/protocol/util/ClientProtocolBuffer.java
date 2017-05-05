@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.impl.protocol.util;
 
+import java.nio.ByteBuffer;
+
 /**
  * Interface for buffer to be used in client protocol.
  * Implemented by {@link SafeBuffer} and {@link UnsafeBuffer}
@@ -151,6 +153,8 @@ public interface ClientProtocolBuffer {
      * @param length The length of the supplied buffer to copy.
      */
     void putBytes(int index, byte[] src, int offset, int length);
+
+    void putBytes(int index, ByteBuffer src, int length);
 
     /**
      * Encode a String as UTF-8 bytes to the buffer with a length prefix.

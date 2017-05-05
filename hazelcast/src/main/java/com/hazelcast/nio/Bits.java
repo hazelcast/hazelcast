@@ -21,6 +21,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 import static com.hazelcast.internal.memory.impl.EndiannessUtil.BYTE_ARRAY_ACCESS;
@@ -143,6 +144,14 @@ public final class Bits {
 
     public static int readIntL(byte[] buffer, int pos) {
         return EndiannessUtil.readIntL(BYTE_ARRAY_ACCESS, buffer, pos);
+    }
+
+    public static int readIntL(ByteBuffer buffer) {
+        int byte3 = buffer.get() & 0xFF;
+        int byte2 = (buffer.get() & 0xFF) << 8;
+        int byte1 = (buffer.get() & 0xFF) << 16;
+        int byte0 = (buffer.get() & 0xFF) << 24;
+        return byte3 | byte2 | byte1 | byte0;
     }
 
     public static void writeInt(byte[] buffer, int pos, int v, boolean useBigEndian) {
