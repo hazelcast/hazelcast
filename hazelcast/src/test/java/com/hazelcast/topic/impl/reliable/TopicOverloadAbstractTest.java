@@ -144,8 +144,5 @@ public abstract class TopicOverloadAbstractTest extends HazelcastTestSupport {
                 assertEquals(head, ringbuffer.headSequence());
             }
         }, 5);
-
-        // assert that message is published eventually
-        assertCompletesEventually(f);
     }
 }

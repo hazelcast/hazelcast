@@ -38,7 +38,7 @@ public class TopicOverloadDistributedTest extends TopicOverloadAbstractTest {
     public void setupCluster() {
         Config config = new Config();
         config.addRingBufferConfig(new RingbufferConfig("when*")
-                .setCapacity(100).setTimeToLiveSeconds(30));
+                .setCapacity(100).setTimeToLiveSeconds(Integer.MAX_VALUE));
         config.addReliableTopicConfig(new ReliableTopicConfig("whenError_*")
                 .setTopicOverloadPolicy(TopicOverloadPolicy.ERROR));
         config.addReliableTopicConfig(new ReliableTopicConfig("whenDiscardOldest_*")
