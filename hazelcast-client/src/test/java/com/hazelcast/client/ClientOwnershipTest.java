@@ -190,4 +190,39 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
             }
         });
     }
+
+    @Test
+    public void test_ownerShip_whenSmartClientAndOwnerDiesTogether() {
+        test_ownerShip_whenClientAndOwnerDiesTogether(true);
+    }
+
+    @Test
+    public void test_ownerShip_whenNonSmartClientAndOwnerDiesTogether() {
+        test_ownerShip_whenClientAndOwnerDiesTogether(false);
+    }
+
+    private void test_ownerShip_whenClientAndOwnerDiesTogether(boolean smart) {
+        final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        ClientConfig config = new ClientConfig();
+        config.getNetworkConfig().setSmartRouting(smart);
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
+        final String clientUuid = client.getLocalEndpoint().getUuid();
+        final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
+
+        client.getLifecycleService().terminate();
+        instance.getLifecycleService().terminate();
+
+        HazelcastInstance instance3 = hazelcastFactory.newHazelcastInstance();
+
+        final ClientEngineImpl clientEngine3 = getClientEngineImpl(instance3);
+        final ClientEngineImpl clientEngine2 = getClientEngineImpl(instance2);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(null, clientEngine2.getOwnerUuid(clientUuid));
+                assertEquals(null, clientEngine3.getOwnerUuid(clientUuid));
+            }
+        });
+    }
 }
