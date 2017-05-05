@@ -20,9 +20,11 @@ import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.client.proxy.NearCachedClientMapProxy;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.ClientProxyFactory;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
+import com.hazelcast.client.spi.impl.ClientProxyFactoryWithContext;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -119,15 +121,15 @@ public class DefaultClientExtension implements ClientExtension {
     }
 
     private ClientProxyFactory createClientMapProxyFactory() {
-        return new ClientProxyFactory() {
+        return new ClientProxyFactoryWithContext() {
             @Override
-            public ClientProxy create(String id) {
+            public ClientProxy create(String id, ClientContext context) {
                 NearCacheConfig nearCacheConfig = client.getClientConfig().getNearCacheConfig(id);
                 if (nearCacheConfig != null) {
                     checkNearCacheConfig(id, nearCacheConfig, true);
-                    return new NearCachedClientMapProxy(MapService.SERVICE_NAME, id);
+                    return new NearCachedClientMapProxy(MapService.SERVICE_NAME, id, context);
                 } else {
-                    return new ClientMapProxy(MapService.SERVICE_NAME, id);
+                    return new ClientMapProxy(MapService.SERVICE_NAME, id, context);
                 }
             }
         };

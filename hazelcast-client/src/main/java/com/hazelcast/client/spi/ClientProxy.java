@@ -40,32 +40,52 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 public abstract class ClientProxy implements DistributedObject {
 
     protected final String name;
-    private final String serviceName;
-    private volatile ClientContext context;
 
+    private final String serviceName;
+    private final ClientContext context;
+    private final SerializationService serializationService;
+
+    private volatile ClientContext lazyContext;
+    private volatile SerializationService lazySerializationService;
+
+    /**
+     * @deprecated since 3.9, please use {@link #ClientProxy(String, String, ClientContext)}
+     */
+    @Deprecated
     protected ClientProxy(String serviceName, String name) {
+        this(serviceName, name, null);
+    }
+
+    protected ClientProxy(String serviceName, String name, ClientContext context) {
         this.serviceName = serviceName;
         this.name = name;
+        this.context = context;
+        this.serializationService = context == null ? null : context.getSerializationService();
     }
 
     protected final String registerListener(ListenerMessageCodec codec, EventHandler handler) {
-        return context.getListenerService().registerListener(codec, handler);
+        return getContext().getListenerService().registerListener(codec, handler);
     }
 
     protected final boolean deregisterListener(String registrationId) {
-        return context.getListenerService().deregisterListener(registrationId);
+        return getContext().getListenerService().deregisterListener(registrationId);
     }
 
     protected final ClientContext getContext() {
-        return context;
+        return context != null ? context : lazyContext;
     }
 
-    protected final void setContext(ClientContext context) {
-        this.context = context;
+    protected final ClientProxy setContext(ClientContext context) {
+        if (this.context != null) {
+            throw new IllegalStateException("The context has already been initialized!");
+        }
+        this.lazyContext = context;
+        this.lazySerializationService = context.getSerializationService();
+        return this;
     }
 
     protected final HazelcastClientInstanceImpl getClient() {
-        return (HazelcastClientInstanceImpl) context.getHazelcastInstance();
+        return (HazelcastClientInstanceImpl) getContext().getHazelcastInstance();
     }
 
     @Deprecated
@@ -96,9 +116,8 @@ public abstract class ClientProxy implements DistributedObject {
     public final void destroy() {
         if (preDestroy()) {
             onDestroy();
-            ClientMessage clientMessage =
-                    ClientDestroyProxyCodec.encodeRequest(getDistributedObjectName(), getServiceName());
-            context.removeProxy(this);
+            ClientMessage clientMessage = ClientDestroyProxyCodec.encodeRequest(getDistributedObjectName(), getServiceName());
+            getContext().removeProxy(this);
             try {
                 new ClientInvocation(getClient(), clientMessage).invoke().get();
                 postDestroy();
@@ -146,7 +165,7 @@ public abstract class ClientProxy implements DistributedObject {
     }
 
     protected <T> T invoke(ClientMessage clientMessage, Object key) {
-        final int partitionId = context.getPartitionService().getPartitionId(key);
+        final int partitionId = getContext().getPartitionService().getPartitionId(key);
         return invokeOnPartition(clientMessage, partitionId);
     }
 
@@ -178,19 +197,19 @@ public abstract class ClientProxy implements DistributedObject {
     }
 
     protected Data toData(Object o) {
-        return getContext().getSerializationService().toData(o);
-    }
-
-    protected SerializationService getSerializationService() {
-        return getContext().getSerializationService();
+        return getSerializationService().toData(o);
     }
 
     protected <T> T toObject(Object data) {
-        return getContext().getSerializationService().toObject(data);
+        return getSerializationService().toObject(data);
+    }
+
+    protected SerializationService getSerializationService() {
+        return serializationService != null ? serializationService : lazySerializationService;
     }
 
     private String getInstanceName() {
-        ClientContext ctx = context;
+        ClientContext ctx = getContext();
         if (ctx != null) {
             HazelcastInstance instance = ctx.getHazelcastInstance();
             return instance.getName();

@@ -32,6 +32,7 @@ import com.hazelcast.client.impl.protocol.codec.SetRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.SetRemoveListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.SetSizeCodec;
 import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
@@ -57,8 +58,8 @@ import java.util.List;
  */
 public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements ISet<E> {
 
-    public ClientSetProxy(String serviceName, String name) {
-        super(serviceName, name);
+    public ClientSetProxy(String serviceName, String name, ClientContext context) {
+        super(serviceName, name, context);
     }
 
     @Override

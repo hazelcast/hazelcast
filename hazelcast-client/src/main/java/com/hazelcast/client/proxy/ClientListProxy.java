@@ -41,6 +41,7 @@ import com.hazelcast.client.impl.protocol.codec.ListSetCodec;
 import com.hazelcast.client.impl.protocol.codec.ListSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.ListSubCodec;
 import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
@@ -67,8 +68,8 @@ import java.util.ListIterator;
  */
 public class ClientListProxy<E> extends PartitionSpecificClientProxy implements IList<E> {
 
-    public ClientListProxy(String serviceName, String name) {
-        super(serviceName, name);
+    public ClientListProxy(String serviceName, String name, ClientContext context) {
+        super(serviceName, name, context);
     }
 
     @Override

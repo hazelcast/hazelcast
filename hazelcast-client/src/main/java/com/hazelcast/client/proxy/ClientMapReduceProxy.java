@@ -25,6 +25,7 @@ import com.hazelcast.client.impl.protocol.codec.MapReduceForMapCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReduceForMultiMapCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReduceForSetCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReduceJobProcessInformationCodec;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
@@ -74,8 +75,8 @@ public class ClientMapReduceProxy
 
     private final ConcurrentMap<String, ClientTrackableJob> trackableJobs = new ConcurrentHashMap<String, ClientTrackableJob>();
 
-    public ClientMapReduceProxy(String serviceName, String objectName) {
-        super(serviceName, objectName);
+    public ClientMapReduceProxy(String serviceName, String objectName, ClientContext context) {
+        super(serviceName, objectName, context);
     }
 
     @Override

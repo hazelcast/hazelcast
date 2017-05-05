@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.concurrent.idgen.IdGeneratorImpl;
 import com.hazelcast.core.IAtomicLong;
@@ -28,9 +29,8 @@ public class ClientIdGeneratorProxy extends ClientProxy implements IdGenerator {
 
     private final IdGeneratorImpl idGeneratorImpl;
 
-
-    public ClientIdGeneratorProxy(String serviceName, String objectId, IAtomicLong blockGenerator) {
-        super(serviceName, objectId);
+    public ClientIdGeneratorProxy(String serviceName, String objectId, ClientContext context, IAtomicLong blockGenerator) {
+        super(serviceName, objectId, context);
         this.idGeneratorImpl = new IdGeneratorImpl(blockGenerator);
     }
 

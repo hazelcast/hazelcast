@@ -93,8 +93,8 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     private NearCache<Data, Object> nearCache;
     private String nearCacheMembershipRegistrationId;
 
-    NearCachedClientCacheProxy(CacheConfig<K, V> cacheConfig) {
-        super(cacheConfig);
+    NearCachedClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext context) {
+        super(cacheConfig, context);
     }
 
     // for testing only

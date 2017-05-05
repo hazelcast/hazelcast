@@ -26,6 +26,7 @@ import com.hazelcast.client.impl.protocol.codec.LockIsLockedCodec;
 import com.hazelcast.client.impl.protocol.codec.LockLockCodec;
 import com.hazelcast.client.impl.protocol.codec.LockTryLockCodec;
 import com.hazelcast.client.impl.protocol.codec.LockUnlockCodec;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
 import com.hazelcast.util.ThreadUtil;
@@ -43,8 +44,8 @@ public class ClientLockProxy extends PartitionSpecificClientProxy implements ILo
 
     private ClientLockReferenceIdGenerator referenceIdGenerator;
 
-    public ClientLockProxy(String serviceName, String objectId) {
-        super(serviceName, objectId);
+    public ClientLockProxy(String serviceName, String objectId, ClientContext context) {
+        super(serviceName, objectId, context);
     }
 
     @Deprecated

@@ -30,6 +30,7 @@ import com.hazelcast.client.impl.protocol.codec.AtomicReferenceGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicReferenceIsNullCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicReferenceSetAndGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicReferenceSetCodec;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -120,8 +121,8 @@ public class ClientAtomicReferenceProxy<E> extends PartitionSpecificClientProxy 
         }
     };
 
-    public ClientAtomicReferenceProxy(String serviceName, String objectId) {
-        super(serviceName, objectId);
+    public ClientAtomicReferenceProxy(String serviceName, String objectId, ClientContext context) {
+        super(serviceName, objectId, context);
     }
 
     @Override

@@ -19,6 +19,7 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -77,8 +78,8 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     private final Executor executor;
     private final TopicOverloadPolicy overloadPolicy;
 
-    public ClientReliableTopicProxy(String objectId, HazelcastClientInstanceImpl client) {
-        super(SERVICE_NAME, objectId);
+    public ClientReliableTopicProxy(String objectId, ClientContext context, HazelcastClientInstanceImpl client) {
+        super(SERVICE_NAME, objectId, context);
         this.ringbuffer = client.getRingbuffer(TOPIC_RB_PREFIX + objectId);
         this.serializationService = client.getSerializationService();
         this.config = client.getClientConfig().getReliableTopicConfig(objectId);

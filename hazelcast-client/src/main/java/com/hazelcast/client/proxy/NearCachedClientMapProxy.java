@@ -87,8 +87,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     private volatile String invalidationListenerId;
 
-    public NearCachedClientMapProxy(String serviceName, String name) {
-        super(serviceName, name);
+    public NearCachedClientMapProxy(String serviceName, String name, ClientContext context) {
+        super(serviceName, name, context);
     }
 
     @Override

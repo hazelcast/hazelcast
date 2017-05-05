@@ -31,6 +31,7 @@ import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndSetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongIncrementAndGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongSetCodec;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -134,8 +135,8 @@ public class ClientAtomicLongProxy extends PartitionSpecificClientProxy implemen
         }
     };
 
-    public ClientAtomicLongProxy(String serviceName, String objectId) {
-        super(serviceName, objectId);
+    public ClientAtomicLongProxy(String serviceName, String objectId, ClientContext context) {
+        super(serviceName, objectId, context);
     }
 
     @Override

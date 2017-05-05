@@ -18,6 +18,7 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
@@ -33,8 +34,8 @@ abstract class PartitionSpecificClientProxy extends ClientProxy {
 
     private int partitionId;
 
-    protected PartitionSpecificClientProxy(String serviceName, String objectName) {
-        super(serviceName, objectName);
+    protected PartitionSpecificClientProxy(String serviceName, String objectName, ClientContext context) {
+        super(serviceName, objectName, context);
     }
 
     @Override
