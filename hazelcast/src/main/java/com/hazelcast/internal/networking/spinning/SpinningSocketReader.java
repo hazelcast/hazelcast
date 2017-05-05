@@ -17,8 +17,8 @@
 package com.hazelcast.internal.networking.spinning;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
-import com.hazelcast.internal.networking.ReadHandler;
 import com.hazelcast.internal.networking.SocketConnection;
 import com.hazelcast.internal.networking.SocketReader;
 import com.hazelcast.internal.networking.SocketReaderInitializer;
@@ -42,7 +42,7 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
     private final SwCounter priorityFramesRead = newSwCounter();
     private final SocketReaderInitializer initializer;
     private volatile long lastReadTime;
-    private ReadHandler readHandler;
+    private ChannelInboundHandler inboundHandler;
     private ByteBuffer inputBuffer;
     private final ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
 
@@ -65,8 +65,8 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
     }
 
     @Override
-    public void initReadHandler(ReadHandler readHandler) {
-        this.readHandler = readHandler;
+    public void setInboundHandler(ChannelInboundHandler inboundHandler) {
+        this.inboundHandler = inboundHandler;
     }
 
     @Override
@@ -105,9 +105,9 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
             return;
         }
 
-        if (readHandler == null) {
+        if (inboundHandler == null) {
             initializer.init(connection, this);
-            if (readHandler == null) {
+            if (inboundHandler == null) {
                 // when using SSL, we can read 0 bytes since data read from socket can be handshake frames.
                 return;
             }
@@ -124,7 +124,7 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
         lastReadTime = currentTimeMillis();
         bytesRead.inc(readBytes);
         inputBuffer.flip();
-        readHandler.onRead(inputBuffer);
+        inboundHandler.onRead(inputBuffer);
         if (inputBuffer.hasRemaining()) {
             inputBuffer.compact();
         } else {

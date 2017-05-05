@@ -17,8 +17,8 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.util.ClientMessageReadHandler;
-import com.hazelcast.internal.networking.ReadHandler;
+import com.hazelcast.client.impl.protocol.util.ClientMessageChannelInboundHandler;
+import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOService;
@@ -27,26 +27,26 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
- * A {@link ReadHandler} for the new-client. It passes the ByteBuffer to the ClientMessageReadHandler. For each
- * constructed ClientMessage, the {@link #handleMessage(ClientMessage)} is called; which passes the message
+ * A {@link ChannelInboundHandler} for the new-client. It passes the ByteBuffer to the ClientMessageChannelInboundHandler. For
+ * each constructed ClientMessage, the {@link #handleMessage(ClientMessage)} is called; which passes the message
  * to the {@link IOService#handleClientMessage(ClientMessage, Connection)}.
  *
  * Probably the design can be simplified if the IOService would expose a method getMessageHandler; so we
- * don't need to let the ClientReadHandler act like the MessageHandler, but directly send to the right
+ * don't need to let the ClientChannelInboundHandler act like the MessageHandler, but directly send to the right
  * data-structure.
  *
- * @see ClientWriteHandler
+ * @see ClientChannelOutboundHandler
  */
-public class ClientReadHandler implements ReadHandler, ClientMessageReadHandler.MessageHandler {
+public class ClientChannelInboundHandler implements ChannelInboundHandler, ClientMessageChannelInboundHandler.MessageHandler {
 
-    private final ClientMessageReadHandler readHandler;
+    private final ClientMessageChannelInboundHandler readHandler;
     private final Connection connection;
     private final IOService ioService;
 
-    public ClientReadHandler(SwCounter messageCounter, Connection connection, IOService ioService) throws IOException {
+    public ClientChannelInboundHandler(SwCounter messageCounter, Connection connection, IOService ioService) throws IOException {
         this.connection = connection;
         this.ioService = ioService;
-        this.readHandler = new ClientMessageReadHandler(messageCounter, this);
+        this.readHandler = new ClientMessageChannelInboundHandler(messageCounter, this);
     }
 
     @Override

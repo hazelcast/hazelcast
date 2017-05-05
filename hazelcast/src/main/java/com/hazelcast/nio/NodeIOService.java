@@ -28,9 +28,9 @@ import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
-import com.hazelcast.internal.networking.ReadHandler;
+import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
-import com.hazelcast.internal.networking.WriteHandler;
+import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -331,13 +331,13 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public ReadHandler createReadHandler(TcpIpConnection connection) {
-        return node.getNodeExtension().createReadHandler(connection, this);
+    public ChannelInboundHandler createReadHandler(TcpIpConnection connection) {
+        return node.getNodeExtension().createInboundHandler(connection, this);
     }
 
     @Override
-    public WriteHandler createWriteHandler(TcpIpConnection connection) {
-        return node.getNodeExtension().createWriteHandler(connection, this);
+    public ChannelOutboundHandler createWriteHandler(TcpIpConnection connection) {
+        return node.getNodeExtension().createOutboundHandler(connection, this);
     }
 
     @Override

@@ -19,7 +19,7 @@ package com.hazelcast.internal.ascii.memcache;
 import com.hazelcast.internal.ascii.TextCommand;
 import com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType;
 import com.hazelcast.internal.ascii.TypeAwareCommandParser;
-import com.hazelcast.nio.ascii.TextReadHandler;
+import com.hazelcast.nio.ascii.TextChannelInboundHandler;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.QUIT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.STATS;
@@ -33,7 +33,7 @@ public class SimpleCommandParser extends TypeAwareCommandParser {
     }
 
     @Override
-    public TextCommand parser(TextReadHandler readHandler, String cmd, int space) {
+    public TextCommand parser(TextChannelInboundHandler readHandler, String cmd, int space) {
         if (type == QUIT) {
             return new SimpleCommand(type);
         } else if (type == STATS) {

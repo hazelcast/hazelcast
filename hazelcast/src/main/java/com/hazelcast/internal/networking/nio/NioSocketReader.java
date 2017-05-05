@@ -17,7 +17,7 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.networking.ReadHandler;
+import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.SocketConnection;
 import com.hazelcast.internal.networking.SocketReader;
 import com.hazelcast.internal.networking.SocketReaderInitializer;
@@ -38,7 +38,7 @@ import static java.nio.channels.SelectionKey.OP_READ;
  *
  * When the {@link NioThread} receives a read event from the {@link java.nio.channels.Selector}, then the
  * {@link #handle()} is called to read out the data from the socket into a bytebuffer and hand it over to the
- * {@link ReadHandler} to get processed.
+ * {@link ChannelInboundHandler} to get processed.
  */
 public final class NioSocketReader
         extends AbstractHandler
@@ -54,7 +54,7 @@ public final class NioSocketReader
     private final SwCounter priorityFramesRead = newSwCounter();
     private final SocketReaderInitializer initializer;
     private final ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
-    private ReadHandler readHandler;
+    private ChannelInboundHandler inboundHandler;
     private volatile long lastReadTime;
 
     private long bytesReadLastPublish;
@@ -97,8 +97,8 @@ public final class NioSocketReader
     }
 
     @Override
-    public void initReadHandler(ReadHandler readHandler) {
-        this.readHandler = readHandler;
+    public void setInboundHandler(ChannelInboundHandler inboundHandler) {
+        this.inboundHandler = inboundHandler;
     }
 
     @Probe(name = "idleTimeMs")
@@ -157,9 +157,9 @@ public final class NioSocketReader
         // the connection is going to be closed anyway.
         lastReadTime = currentTimeMillis();
 
-        if (readHandler == null) {
+        if (inboundHandler == null) {
             initializer.init(connection, this);
-            if (readHandler == null) {
+            if (inboundHandler == null) {
                 // when using SSL, we can read 0 bytes since data read from socket can be handshake frames.
                 return;
             }
@@ -176,7 +176,7 @@ public final class NioSocketReader
         bytesRead.inc(readBytes);
 
         inputBuffer.flip();
-        readHandler.onRead(inputBuffer);
+        inboundHandler.onRead(inputBuffer);
         if (inputBuffer.hasRemaining()) {
             inputBuffer.compact();
         } else {

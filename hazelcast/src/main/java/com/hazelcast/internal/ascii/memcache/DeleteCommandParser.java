@@ -18,13 +18,13 @@ package com.hazelcast.internal.ascii.memcache;
 
 import com.hazelcast.internal.ascii.CommandParser;
 import com.hazelcast.internal.ascii.TextCommand;
-import com.hazelcast.nio.ascii.TextReadHandler;
+import com.hazelcast.nio.ascii.TextChannelInboundHandler;
 
 import java.util.StringTokenizer;
 
 public class DeleteCommandParser implements CommandParser {
     @Override
-    public TextCommand parser(TextReadHandler readHandler, String cmd, int space) {
+    public TextCommand parser(TextChannelInboundHandler readHandler, String cmd, int space) {
         StringTokenizer st = new StringTokenizer(cmd);
         st.nextToken();
         String key = null;

@@ -21,9 +21,9 @@ import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
-import com.hazelcast.internal.networking.ReadHandler;
+import com.hazelcast.internal.networking.ChannelInboundHandler;
+import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
-import com.hazelcast.internal.networking.WriteHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.Address;
@@ -129,22 +129,22 @@ public interface NodeExtension {
     SocketChannelWrapperFactory getSocketChannelWrapperFactory();
 
     /**
-     * Creates a <tt>ReadHandler</tt> for given <tt>Connection</tt> instance.
+     * Creates a <tt>ChannelInboundHandler</tt> for given <tt>Connection</tt> instance.
      *
      * @param connection tcp-ip connection
      * @param ioService  IOService
-     * @return the created ReadHandler.
+     * @return the created ChannelInboundHandler.
      */
-    ReadHandler createReadHandler(TcpIpConnection connection, IOService ioService);
+    ChannelInboundHandler createInboundHandler(TcpIpConnection connection, IOService ioService);
 
     /**
-     * Creates a <tt>WriteHandler</tt> for given <tt>Connection</tt> instance.
+     * Creates a <tt>ChannelOutboundHandler</tt> for given <tt>Connection</tt> instance.
      *
      * @param connection tcp-ip connection
      * @param ioService  IOService
-     * @return the created WriteHandler
+     * @return the created ChannelOutboundHandler
      */
-    WriteHandler createWriteHandler(TcpIpConnection connection, IOService ioService);
+    ChannelOutboundHandler createOutboundHandler(TcpIpConnection connection, IOService ioService);
 
     /**
      * Called on thread start to inject/intercept extension specific logic,

@@ -17,10 +17,9 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.internal.util.counters.SwCounter;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.IOService;
+import com.hazelcast.client.impl.protocol.util.SafeBuffer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -28,45 +27,36 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientReadHandlerTest {
+public class ClientChannelOutboundHandlerTest extends HazelcastTestSupport {
 
-    private ClientReadHandler readHandler;
-    private IOService ioService;
-    private Connection connection;
-    private SwCounter counter;
+    private ClientChannelOutboundHandler writeHandler;
 
     @Before
-    public void setup() throws IOException {
-        ioService = mock(IOService.class);
-        connection = mock(Connection.class);
-        counter = SwCounter.newSwCounter();
-        readHandler = new ClientReadHandler(counter, connection, ioService);
+    public void setup() {
+        writeHandler = new ClientChannelOutboundHandler();
     }
 
     @Test
     public void test() throws Exception {
         ClientMessage message = ClientMessage.createForEncode(1000)
                 .setPartitionId(10)
-                .setMessageType(1)
-                .setCorrelationId(1)
-                .addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
+                .setMessageType(1);
 
         ByteBuffer bb = ByteBuffer.allocate(1000);
-        message.writeTo(bb);
+        boolean result = writeHandler.onWrite(message, bb);
+
+        assertTrue(result);
         bb.flip();
+        ClientMessage clone = ClientMessage.createForDecode(new SafeBuffer(bb.array()), 0);
 
-        readHandler.onRead(bb);
-
-        verify(ioService).handleClientMessage(any(ClientMessage.class), eq(connection));
+        assertEquals(message.getPartitionId(), clone.getPartitionId());
+        assertEquals(message.getMessageType(), clone.getMessageType());
     }
 }

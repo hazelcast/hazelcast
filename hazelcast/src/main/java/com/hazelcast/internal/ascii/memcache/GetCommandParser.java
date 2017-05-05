@@ -18,7 +18,7 @@ package com.hazelcast.internal.ascii.memcache;
 
 import com.hazelcast.internal.ascii.CommandParser;
 import com.hazelcast.internal.ascii.TextCommand;
-import com.hazelcast.nio.ascii.TextReadHandler;
+import com.hazelcast.nio.ascii.TextChannelInboundHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +27,7 @@ import java.util.StringTokenizer;
 public class GetCommandParser implements CommandParser {
 
     @Override
-    public TextCommand parser(TextReadHandler readHandler, String cmd, int space) {
+    public TextCommand parser(TextChannelInboundHandler readHandler, String cmd, int space) {
         String key = cmd.substring(space + 1);
         if (key.indexOf(' ') == -1) {
             GetCommand r = new GetCommand(key);
