@@ -632,6 +632,17 @@
                 </actions>
             </queue-permission>
             <transaction-permission/>
+            <cache-permission name="/hz/cachemanager1/cache1" principal="dev">
+                <endpoints>
+                    <endpoint>127.0.0.1</endpoint>
+                </endpoints>
+                <actions>
+                    <action>create</action>
+                    <action>destroy</action>
+                    <action>add</action>
+                    <action>remove</action>
+                </actions>
+            </cache-permission>
         </client-permissions>
     </security>
 

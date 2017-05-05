@@ -37,9 +37,12 @@ import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -150,6 +153,16 @@ public class TestSecureApplicationContext {
                     assertEquals("dev", permConfig.getPrincipal());
                     assertEquals(1, permConfig.getEndpoints().size());
                     assertEquals("127.0.0.1", permConfig.getEndpoints().iterator().next());
+                    break;
+                case CACHE:
+                    assertEquals("test-cache", permConfig.getName());
+                    assertEquals("dev", permConfig.getPrincipal());
+                    assertEquals(1, permConfig.getEndpoints().size());
+                    assertEquals("127.0.0.1", permConfig.getEndpoints().iterator().next());
+                    assertEquals(4, permConfig.getActions().size());
+                    String[] expectedActions = new String[] {"create", "add", "read", "destroy"};
+                    String[] actualActions = permConfig.getActions().toArray(new String[0]);
+                    assertArrayEquals(expectedActions, actualActions);
                     break;
             }
         }
