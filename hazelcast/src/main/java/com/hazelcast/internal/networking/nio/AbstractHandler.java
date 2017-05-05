@@ -17,8 +17,8 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.networking.SocketChannelWrapper;
-import com.hazelcast.internal.networking.SocketConnection;
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelConnection;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -39,8 +39,8 @@ public abstract class AbstractHandler
     @Probe(name = "handleCount")
     protected final SwCounter handleCount = newSwCounter();
     protected final ILogger logger;
-    protected final SocketChannelWrapper socketChannel;
-    protected final SocketConnection connection;
+    protected final Channel channel;
+    protected final ChannelConnection connection;
     protected NioThread ioThread;
     protected SelectionKey selectionKey;
     private final int initialOps;
@@ -54,13 +54,13 @@ public abstract class AbstractHandler
     @Probe
     private final SwCounter migrationCount = newSwCounter();
 
-    public AbstractHandler(SocketConnection connection,
+    public AbstractHandler(ChannelConnection connection,
                            NioThread ioThread,
                            int initialOps,
                            ILogger logger,
                            IOBalancer ioBalancer) {
         this.connection = connection;
-        this.socketChannel = connection.getSocketChannel();
+        this.channel = connection.getChannel();
         this.ioThread = ioThread;
         this.ioThreadId = ioThread.id;
         this.logger = logger;
@@ -68,8 +68,8 @@ public abstract class AbstractHandler
         this.ioBalancer = ioBalancer;
     }
 
-    public SocketChannelWrapper getSocketChannel() {
-        return socketChannel;
+    public Channel getChannel() {
+        return channel;
     }
 
     @Probe(level = DEBUG)
@@ -91,7 +91,7 @@ public abstract class AbstractHandler
 
     protected SelectionKey getSelectionKey() throws IOException {
         if (selectionKey == null) {
-            selectionKey = socketChannel.register(ioThread.getSelector(), initialOps, this);
+            selectionKey = channel.register(ioThread.getSelector(), initialOps, this);
         }
         return selectionKey;
     }
@@ -136,7 +136,7 @@ public abstract class AbstractHandler
         assert ioThread == Thread.currentThread() : "startMigration can only run on the owning NioThread";
         assert ioThread != newOwner : "newOwner can't be the same as the existing owner";
 
-        if (!socketChannel.isOpen()) {
+        if (!channel.isOpen()) {
             // if the channel is closed, we are done.
             return;
         }
@@ -166,7 +166,7 @@ public abstract class AbstractHandler
 
         ioBalancer.signalMigrationComplete();
 
-        if (!socketChannel.isOpen()) {
+        if (!channel.isOpen()) {
             return;
         }
 

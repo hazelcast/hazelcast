@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.networking;
+package com.hazelcast.nio.tcp;
+
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelFactory;
 
 import java.nio.channels.SocketChannel;
 
-/**
- * A factory for creating {@link SocketChannelWrapper} instances.
- */
-public interface SocketChannelWrapperFactory {
+public class PlainChannelFactory implements ChannelFactory {
 
-    SocketChannelWrapper wrapSocketChannel(SocketChannel channel, boolean client, boolean directBuffer) throws Exception;
+    @Override
+    public Channel create(SocketChannel channel, boolean client, boolean directBuffer) throws Exception {
+        return new PlainChannel(channel);
+    }
 }

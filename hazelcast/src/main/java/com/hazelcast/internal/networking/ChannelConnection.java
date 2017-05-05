@@ -18,7 +18,11 @@ package com.hazelcast.internal.networking;
 
 import com.hazelcast.nio.Connection;
 
-public interface SocketWriterInitializer<C extends Connection> {
+public interface ChannelConnection extends Connection {
 
-    void init(C connection, SocketWriter writer, String protocol);
+    ChannelReader getChannelReader();
+
+    ChannelWriter getChannelWriter();
+
+    Channel getChannel();
 }

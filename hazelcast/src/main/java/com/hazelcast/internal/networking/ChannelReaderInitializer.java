@@ -20,6 +20,6 @@ import com.hazelcast.nio.Connection;
 
 import java.io.IOException;
 
-public interface SocketReaderInitializer<C extends Connection> {
-    void init(C connection, SocketReader reader) throws IOException;
+public interface ChannelReaderInitializer<C extends Connection> {
+    void init(C connection, ChannelReader reader) throws IOException;
 }

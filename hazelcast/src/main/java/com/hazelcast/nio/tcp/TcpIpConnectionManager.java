@@ -19,9 +19,9 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.EventLoopGroup;
-import com.hazelcast.internal.networking.SocketChannelWrapper;
-import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
+import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
@@ -89,8 +89,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
 
     @Probe(name = "acceptedSocketCount", level = MANDATORY)
-    private final Set<SocketChannelWrapper> acceptedSockets =
-            Collections.newSetFromMap(new ConcurrentHashMap<SocketChannelWrapper, Boolean>());
+    private final Set<Channel> acceptedSockets =
+            Collections.newSetFromMap(new ConcurrentHashMap<Channel, Boolean>());
 
     @Probe(name = "activeCount", level = MANDATORY)
     private final Set<TcpIpConnection> activeConnections =
@@ -106,7 +106,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     private final ServerSocketChannel serverSocketChannel;
 
-    private final SocketChannelWrapperFactory socketChannelWrapperFactory;
+    private final ChannelFactory channelFactory;
     @Probe
     private final MwCounter openedCount = newMwCounter();
     @Probe
@@ -132,7 +132,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         this.serverSocketChannel = serverSocketChannel;
         this.loggingService = loggingService;
         this.logger = loggingService.getLogger(TcpIpConnectionManager.class);
-        this.socketChannelWrapperFactory = ioService.getSocketChannelWrapperFactory();
+        this.channelFactory = ioService.getSocketChannelWrapperFactory();
         this.metricsRegistry = metricsRegistry;
         this.connector = new TcpIpConnector(this);
         metricsRegistry.scanAndRegister(this, "tcp.connection");
@@ -287,14 +287,14 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         //now you can send anything...
     }
 
-    SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
-        SocketChannelWrapper wrapper = socketChannelWrapperFactory.wrapSocketChannel(
+    Channel wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
+        Channel wrapper = channelFactory.create(
                 socketChannel, client, ioService.useDirectSocketBuffer());
         acceptedSockets.add(wrapper);
         return wrapper;
     }
 
-    synchronized TcpIpConnection newConnection(SocketChannelWrapper channel, Address endpoint) {
+    synchronized TcpIpConnection newConnection(Channel channel, Address endpoint) {
         try {
             if (!live) {
                 throw new IllegalStateException("connection manager is not live!");
@@ -443,7 +443,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
         shutdownAcceptorThread();
 
-        for (SocketChannelWrapper socketChannel : acceptedSockets) {
+        for (Channel socketChannel : acceptedSockets) {
             closeResource(socketChannel);
         }
         for (Connection conn : connectionsMap.values()) {

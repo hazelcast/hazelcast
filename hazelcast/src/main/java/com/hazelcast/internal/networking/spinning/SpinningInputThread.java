@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking.spinning;
 
-import com.hazelcast.internal.networking.SocketConnection;
+import com.hazelcast.internal.networking.ChannelConnection;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -37,8 +37,8 @@ public class SpinningInputThread extends Thread {
         this.socketReaders = new SocketReaders();
     }
 
-    public void addConnection(SocketConnection connection) {
-        SpinningSocketReader reader = (SpinningSocketReader) connection.getSocketReader();
+    public void addConnection(ChannelConnection connection) {
+        SpinningChannelReader reader = (SpinningChannelReader) connection.getChannelReader();
 
         for (; ; ) {
             SocketReaders current = socketReaders;
@@ -47,7 +47,7 @@ public class SpinningInputThread extends Thread {
             }
 
             int length = current.readers.length;
-            SpinningSocketReader[] newReaders = new SpinningSocketReader[length + 1];
+            SpinningChannelReader[] newReaders = new SpinningChannelReader[length + 1];
             arraycopy(current.readers, 0, newReaders, 0, length);
             newReaders[length] = reader;
 
@@ -58,8 +58,8 @@ public class SpinningInputThread extends Thread {
         }
     }
 
-    public void removeConnection(SocketConnection connection) {
-        SpinningSocketReader reader = (SpinningSocketReader) connection.getSocketReader();
+    public void removeConnection(ChannelConnection connection) {
+        SpinningChannelReader reader = (SpinningChannelReader) connection.getChannelReader();
 
         for (; ; ) {
             SocketReaders current = socketReaders;
@@ -73,7 +73,7 @@ public class SpinningInputThread extends Thread {
             }
 
             int length = current.readers.length;
-            SpinningSocketReader[] newReaders = new SpinningSocketReader[length - 1];
+            SpinningChannelReader[] newReaders = new SpinningChannelReader[length - 1];
 
             int destIndex = 0;
             for (int sourceIndex = 0; sourceIndex < length; sourceIndex++) {
@@ -104,7 +104,7 @@ public class SpinningInputThread extends Thread {
                 return;
             }
 
-            for (SpinningSocketReader reader : handlers.readers) {
+            for (SpinningChannelReader reader : handlers.readers) {
                 try {
                     reader.read();
                 } catch (Throwable t) {
@@ -115,17 +115,17 @@ public class SpinningInputThread extends Thread {
     }
 
     static class SocketReaders {
-        final SpinningSocketReader[] readers;
+        final SpinningChannelReader[] readers;
 
         public SocketReaders() {
-            this(new SpinningSocketReader[0]);
+            this(new SpinningChannelReader[0]);
         }
 
-        public SocketReaders(SpinningSocketReader[] readers) {
+        public SocketReaders(SpinningChannelReader[] readers) {
             this.readers = readers;
         }
 
-        public int indexOf(SpinningSocketReader readHandler) {
+        public int indexOf(SpinningChannelReader readHandler) {
             for (int k = 0; k < readers.length; k++) {
                 if (readers[k] == readHandler) {
                     return k;

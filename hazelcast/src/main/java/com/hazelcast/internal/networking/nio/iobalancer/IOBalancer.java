@@ -18,9 +18,9 @@ package com.hazelcast.internal.networking.nio.iobalancer;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.nio.MigratableHandler;
-import com.hazelcast.internal.networking.nio.NioSocketReader;
+import com.hazelcast.internal.networking.nio.NioChannelWriter;
+import com.hazelcast.internal.networking.nio.NioChannelReader;
 import com.hazelcast.internal.networking.nio.NioThread;
-import com.hazelcast.internal.networking.nio.NioSocketWriter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -39,7 +39,7 @@ import static com.hazelcast.spi.properties.GroupProperty.IO_THREAD_COUNT;
  * We have measured significant fluctuations of performance when the threads are not utilized equally.
  *
  * <code>com.hazelcast.nio.tcp.iobalancer.HandlerBalancer</code> tries to detect such situations and fix
- * them by moving {@link NioSocketReader} and {@link NioSocketWriter} between
+ * them by moving {@link NioChannelReader} and {@link NioChannelWriter} between
  * threads.
  *
  * It measures number of events serviced by each handler in a given interval and if imbalance is detected then it

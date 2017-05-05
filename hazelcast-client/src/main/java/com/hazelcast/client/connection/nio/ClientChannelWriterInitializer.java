@@ -17,8 +17,8 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.internal.networking.SocketWriter;
-import com.hazelcast.internal.networking.SocketWriterInitializer;
+import com.hazelcast.internal.networking.ChannelWriter;
+import com.hazelcast.internal.networking.ChannelWriterInitializer;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
@@ -26,18 +26,18 @@ import com.hazelcast.nio.Protocols;
 
 import java.nio.ByteBuffer;
 
-class ClientSocketWriterInitializer implements SocketWriterInitializer<ClientConnection> {
+class ClientChannelWriterInitializer implements ChannelWriterInitializer<ClientConnection> {
 
     private final int bufferSize;
     private final boolean direct;
 
-    ClientSocketWriterInitializer(int bufferSize, boolean direct) {
+    ClientChannelWriterInitializer(int bufferSize, boolean direct) {
         this.bufferSize = bufferSize;
         this.direct = direct;
     }
 
     @Override
-    public void init(ClientConnection connection, SocketWriter writer, String protocol) {
+    public void init(ClientConnection connection, ChannelWriter writer, String protocol) {
         Logger.getLogger(getClass())
               .fine("Initializing ClientSocketWriter ChannelOutboundHandler with " + Protocols.toUserFriendlyString(protocol));
 

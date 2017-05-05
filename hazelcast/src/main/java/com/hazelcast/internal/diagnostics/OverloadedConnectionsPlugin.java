@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.internal.networking.nio.NioSocketWriter;
-import com.hazelcast.internal.networking.spinning.SpinningSocketWriter;
+import com.hazelcast.internal.networking.nio.NioChannelWriter;
+import com.hazelcast.internal.networking.spinning.SpinningChannelWriter;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Packet;
@@ -150,11 +150,11 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
     }
 
     private Queue<OutboundFrame> getOutboundQueue(TcpIpConnection connection, boolean priority) {
-        if (connection.getSocketWriter() instanceof NioSocketWriter) {
-            NioSocketWriter writer = (NioSocketWriter) connection.getSocketWriter();
+        if (connection.getChannelWriter() instanceof NioChannelWriter) {
+            NioChannelWriter writer = (NioChannelWriter) connection.getChannelWriter();
             return priority ? writer.urgentWriteQueue : writer.writeQueue;
-        } else if (connection.getSocketWriter() instanceof SpinningSocketWriter) {
-            SpinningSocketWriter writer = (SpinningSocketWriter) connection.getSocketWriter();
+        } else if (connection.getChannelWriter() instanceof SpinningChannelWriter) {
+            SpinningChannelWriter writer = (SpinningChannelWriter) connection.getChannelWriter();
             return priority ? writer.urgentWriteQueue : writer.writeQueue;
         } else {
             return EMPTY_QUEUE;

@@ -24,11 +24,11 @@ import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelReader;
+import com.hazelcast.internal.networking.ChannelWriter;
 import com.hazelcast.internal.networking.EventLoopGroup;
-import com.hazelcast.internal.networking.SocketChannelWrapper;
-import com.hazelcast.internal.networking.SocketConnection;
-import com.hazelcast.internal.networking.SocketReader;
-import com.hazelcast.internal.networking.SocketWriter;
+import com.hazelcast.internal.networking.ChannelConnection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -53,16 +53,16 @@ import static com.hazelcast.util.StringUtil.timeToStringFriendly;
  * Client implementation of {@link Connection}.
  * ClientConnection is a connection between a Hazelcast Client and a Hazelcast Member.
  */
-public class ClientConnection implements SocketConnection, DiscardableMetricsProvider {
+public class ClientConnection implements ChannelConnection, DiscardableMetricsProvider {
 
     @Probe
     private final int connectionId;
     private final ILogger logger;
 
     private final AtomicInteger pendingPacketCount = new AtomicInteger(0);
-    private final SocketWriter writer;
-    private final SocketReader reader;
-    private final SocketChannelWrapper socketChannel;
+    private final ChannelWriter writer;
+    private final ChannelReader reader;
+    private final Channel socketChannel;
     private final ClientConnectionManagerImpl connectionManager;
     private final LifecycleService lifecycleService;
     private final HazelcastClientInstanceImpl client;
@@ -84,7 +84,7 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
     public ClientConnection(HazelcastClientInstanceImpl client,
                             EventLoopGroup eventLoopGroup,
                             int connectionId,
-                            SocketChannelWrapper socketChannel) throws IOException {
+                            Channel socketChannel) throws IOException {
         this.client = client;
         this.connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();
@@ -125,17 +125,17 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
     }
 
     @Override
-    public SocketReader getSocketReader() {
+    public ChannelReader getChannelReader() {
         return reader;
     }
 
     @Override
-    public SocketWriter getSocketWriter() {
+    public ChannelWriter getChannelWriter() {
         return writer;
     }
 
     @Override
-    public SocketChannelWrapper getSocketChannel() {
+    public Channel getChannel() {
         return socketChannel;
     }
 
@@ -347,7 +347,7 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
         return "ClientConnection{"
                 + "alive=" + isAlive()
                 + ", connectionId=" + connectionId
-                + ", socketChannel=" + socketChannel
+                + ", channel=" + socketChannel
                 + ", remoteEndpoint=" + remoteEndpoint
                 + ", lastReadTime=" + timeToStringFriendly(lastReadTimeMillis())
                 + ", lastWriteTime=" + timeToStringFriendly(lastWriteTimeMillis())

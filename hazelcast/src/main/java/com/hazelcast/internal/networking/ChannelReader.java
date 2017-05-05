@@ -21,13 +21,13 @@ import com.hazelcast.internal.util.counters.SwCounter;
 import java.nio.ByteBuffer;
 
 /**
- * The SocketReader is responsible for reading data from the socket, on behalf of a connection, into a
+ * The ChannelReader is responsible for reading data from the socket, on behalf of a connection, into a
  * {@link java.nio.ByteBuffer}. Once the data is read into the ByteBuffer, this ByteBuffer is passed to the
  * {@link ChannelInboundHandler} that takes care of the actual processing of the incoming data.
  *
- * Each {@link SocketConnection} has its own {@link SocketReader} instance.
+ * Each {@link ChannelConnection} has its own {@link ChannelReader} instance.
  *
- * There are many different flavors of SocketReader:
+ * There are many different flavors of ChannelReader:
  * <ol>
  * <li>reader for member to member communication</li>
  * <li>reader for (old and new) client to member communication</li>
@@ -35,14 +35,14 @@ import java.nio.ByteBuffer;
  * <li>reader for REST/Memcached</li>
  * </ol>
  *
- * A SocketReader is tightly coupled to the threading model; so a SocketReader instance is created using
- * {@link EventLoopGroup#newSocketReader(SocketConnection)}.
+ * A ChannelReader is tightly coupled to the threading model; so a ChannelReader instance is created using
+ * {@link EventLoopGroup#newSocketReader(ChannelConnection)}.
  *
  * @see ChannelInboundHandler
- * @see SocketWriter
+ * @see ChannelWriter
  * @see EventLoopGroup
  */
-public interface SocketReader {
+public interface ChannelReader {
 
     /**
      * Returns the last {@link com.hazelcast.util.Clock#currentTimeMillis()} a read of the socket was done.
@@ -66,14 +66,14 @@ public interface SocketReader {
     SwCounter getPriorityFramesReadCounter();
 
     /**
-     * Initializes this SocketReader.
+     * Initializes this ChannelReader.
      *
      * This method is called from an arbitrary thread and is only called once.
      */
     void init();
 
     /**
-     * Closes this SocketReader.
+     * Closes this ChannelReader.
      *
      * This method can be called from an arbitrary thread, and should only be called once. This should be coordinated
      * through the {@link com.hazelcast.nio.Connection#close(String, Throwable)} method.
@@ -84,7 +84,7 @@ public interface SocketReader {
 
     void setInboundHandler(ChannelInboundHandler inboundHandler);
 
-    SocketChannelWrapper getSocketChannel();
+    Channel getChannel();
 
     ByteBuffer getProtocolBuffer();
 }

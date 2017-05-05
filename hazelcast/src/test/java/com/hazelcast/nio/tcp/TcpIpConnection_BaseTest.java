@@ -203,7 +203,7 @@ public abstract class TcpIpConnection_BaseTest extends TcpIpConnection_AbstractT
 
         InetAddress result = c.getInetAddress();
 
-        assertEquals(c.getSocketChannel().socket().getInetAddress(), result);
+        assertEquals(c.getChannel().socket().getInetAddress(), result);
     }
 
     @Test
@@ -221,7 +221,7 @@ public abstract class TcpIpConnection_BaseTest extends TcpIpConnection_AbstractT
 
         int result = c.getPort();
 
-        assertEquals(c.getSocketChannel().socket().getPort(), result);
+        assertEquals(c.getChannel().socket().getPort(), result);
     }
 
     @Test

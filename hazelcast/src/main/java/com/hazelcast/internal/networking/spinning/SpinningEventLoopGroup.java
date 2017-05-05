@@ -18,11 +18,11 @@ package com.hazelcast.internal.networking.spinning;
 
 import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
-import com.hazelcast.internal.networking.SocketConnection;
-import com.hazelcast.internal.networking.SocketReader;
-import com.hazelcast.internal.networking.SocketReaderInitializer;
-import com.hazelcast.internal.networking.SocketWriter;
-import com.hazelcast.internal.networking.SocketWriterInitializer;
+import com.hazelcast.internal.networking.ChannelConnection;
+import com.hazelcast.internal.networking.ChannelReader;
+import com.hazelcast.internal.networking.ChannelReaderInitializer;
+import com.hazelcast.internal.networking.ChannelWriter;
+import com.hazelcast.internal.networking.ChannelWriterInitializer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 
@@ -47,22 +47,22 @@ public class SpinningEventLoopGroup implements EventLoopGroup {
     private final LoggingService loggingService;
     private final SpinningInputThread inputThread;
     private final SpinningOutputThread outThread;
-    private final SocketWriterInitializer socketWriterInitializer;
-    private final SocketReaderInitializer socketReaderInitializer;
+    private final ChannelWriterInitializer channelWriterInitializer;
+    private final ChannelReaderInitializer channelReaderInitializer;
     private final IOOutOfMemoryHandler oomeHandler;
 
     public SpinningEventLoopGroup(LoggingService loggingService,
                                   IOOutOfMemoryHandler oomeHandler,
-                                  SocketWriterInitializer socketWriterInitializer,
-                                  SocketReaderInitializer socketReaderInitializer,
+                                  ChannelWriterInitializer channelWriterInitializer,
+                                  ChannelReaderInitializer channelReaderInitializer,
                                   String hzName) {
         this.logger = loggingService.getLogger(SpinningEventLoopGroup.class);
         this.loggingService = loggingService;
         this.oomeHandler = oomeHandler;
         this.inputThread = new SpinningInputThread(hzName);
         this.outThread = new SpinningOutputThread(hzName);
-        this.socketWriterInitializer = socketWriterInitializer;
-        this.socketReaderInitializer = socketReaderInitializer;
+        this.channelWriterInitializer = channelWriterInitializer;
+        this.channelReaderInitializer = channelReaderInitializer;
     }
 
     @Override
@@ -71,25 +71,25 @@ public class SpinningEventLoopGroup implements EventLoopGroup {
     }
 
     @Override
-    public SocketWriter newSocketWriter(SocketConnection connection) {
-        ILogger logger = loggingService.getLogger(SpinningSocketWriter.class);
-        return new SpinningSocketWriter(connection, logger, oomeHandler, socketWriterInitializer);
+    public ChannelWriter newSocketWriter(ChannelConnection connection) {
+        ILogger logger = loggingService.getLogger(SpinningChannelWriter.class);
+        return new SpinningChannelWriter(connection, logger, oomeHandler, channelWriterInitializer);
     }
 
     @Override
-    public SocketReader newSocketReader(SocketConnection connection) {
-        ILogger logger = loggingService.getLogger(SpinningSocketReader.class);
-        return new SpinningSocketReader(connection, logger, oomeHandler, socketReaderInitializer);
+    public ChannelReader newSocketReader(ChannelConnection connection) {
+        ILogger logger = loggingService.getLogger(SpinningChannelReader.class);
+        return new SpinningChannelReader(connection, logger, oomeHandler, channelReaderInitializer);
     }
 
     @Override
-    public void onConnectionAdded(SocketConnection connection) {
+    public void onConnectionAdded(ChannelConnection connection) {
         inputThread.addConnection(connection);
         outThread.addConnection(connection);
     }
 
     @Override
-    public void onConnectionRemoved(SocketConnection connection) {
+    public void onConnectionRemoved(ChannelConnection connection) {
         inputThread.removeConnection(connection);
         outThread.removeConnection(connection);
     }

@@ -16,28 +16,28 @@
 
 package com.hazelcast.internal.networking.spinning;
 
+import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
-import com.hazelcast.internal.networking.SocketChannelWrapper;
-import com.hazelcast.internal.networking.SocketConnection;
+import com.hazelcast.internal.networking.ChannelConnection;
 import com.hazelcast.logging.ILogger;
 
 import java.io.EOFException;
 
 public abstract class AbstractHandler {
 
-    protected final SocketConnection connection;
+    protected final ChannelConnection connection;
     protected final ILogger logger;
-    protected final SocketChannelWrapper socketChannel;
+    protected final Channel socketChannel;
     private final IOOutOfMemoryHandler oomeHandler;
 
-    public AbstractHandler(SocketConnection connection, ILogger logger, IOOutOfMemoryHandler oomeHandler) {
+    public AbstractHandler(ChannelConnection connection, ILogger logger, IOOutOfMemoryHandler oomeHandler) {
         this.connection = connection;
         this.oomeHandler = oomeHandler;
         this.logger = logger;
-        this.socketChannel = connection.getSocketChannel();
+        this.socketChannel = connection.getChannel();
     }
 
-    public SocketChannelWrapper getSocketChannel() {
+    public Channel getChannel() {
         return socketChannel;
     }
 
