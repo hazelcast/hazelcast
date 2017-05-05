@@ -219,12 +219,12 @@ public class ClientScheduledFutureProxy<V>
             ClientMessage request = ScheduledExecutorGetResultFromAddressCodec.encodeRequest(schedulerName, taskName, address);
             ClientMessage response = new ClientInvocation(getClient(), request, address).invoke().get(timeout, unit);
             Data data = ScheduledExecutorGetResultFromAddressCodec.decodeResponse(response).response;
-            return getSerializationService().toObject(data);
+            return toObject(data);
         } else {
             ClientMessage request = ScheduledExecutorGetResultFromPartitionCodec.encodeRequest(schedulerName, taskName);
             ClientMessage response = new ClientInvocation(getClient(), request, partitionId).invoke().get(timeout, unit);
             Data data = ScheduledExecutorGetResultFromPartitionCodec.decodeResponse(response).response;
-            return getSerializationService().toObject(data);
+            return toObject(data);
         }
     }
 

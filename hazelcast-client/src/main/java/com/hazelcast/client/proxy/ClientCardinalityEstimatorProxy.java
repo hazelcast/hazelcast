@@ -70,7 +70,7 @@ public class ClientCardinalityEstimatorProxy
     public InternalCompletableFuture<Void> addAsync(Object obj) {
         checkNotNull(obj, "Object is null");
 
-        Data data = getSerializationService().toData(obj);
+        Data data = toData(obj);
         ClientMessage request = CardinalityEstimatorAddCodec.encodeRequest(name, data.hash64());
         return invokeOnPartitionAsync(request, ADD_DECODER);
     }

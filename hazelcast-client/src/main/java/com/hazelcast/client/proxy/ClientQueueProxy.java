@@ -38,7 +38,6 @@ import com.hazelcast.client.impl.protocol.codec.QueueRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueRemoveListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueTakeCodec;
-import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
@@ -52,7 +51,6 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -116,12 +114,9 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
         @Override
         public void handle(Data dataItem, String uuid, int eventType) {
-            SerializationService serializationService = getContext().getSerializationService();
-            ClientClusterService clusterService = getContext().getClusterService();
-
-            Member member = clusterService.getMember(uuid);
+            Member member = getContext().getClusterService().getMember(uuid);
             ItemEvent<E> itemEvent = new DataAwareItemEvent(name, ItemEventType.getByType(eventType),
-                    dataItem, member, serializationService);
+                    dataItem, member, getSerializationService());
             if (eventType == ItemEventType.ADDED.getType()) {
                 listener.itemAdded(itemEvent);
             } else {
@@ -131,12 +126,10 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
         @Override
         public void beforeListenerRegister() {
-
         }
 
         @Override
         public void onListenerRegister() {
-
         }
     }
 
@@ -320,7 +313,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         ClientMessage response = invokeOnPartition(request);
         QueueIteratorCodec.ResponseParameters resultParameters = QueueIteratorCodec.decodeResponse(response);
         Collection<Data> resultCollection = resultParameters.response;
-        return new QueueIterator<E>(resultCollection.iterator(), getContext().getSerializationService(), false);
+        return new QueueIterator<E>(resultCollection.iterator(), getSerializationService(), false);
     }
 
     @Override

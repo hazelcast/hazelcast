@@ -103,10 +103,9 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     }
 
     private void initNearCache() {
-        ClientContext context = getContext();
-        NearCacheConfig nearCacheConfig = context.getClientConfig().getNearCacheConfig(name);
+        NearCacheConfig nearCacheConfig = getContext().getClientConfig().getNearCacheConfig(name);
         if (nearCacheConfig != null) {
-            nearCache = context.getNearCacheManager().getOrCreateNearCache(name, nearCacheConfig);
+            nearCache = getContext().getNearCacheManager().getOrCreateNearCache(name, nearCacheConfig);
             if (nearCacheConfig.isInvalidateOnChange()) {
                 addNearCacheInvalidateListener();
             }
@@ -541,8 +540,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
                            int numberOfAffectedEntries) {
             Member member = getContext().getClusterService().getMember(uuid);
             EntryEventType eventType = EntryEventType.getByType(eventTypeId);
-            EntryEvent<K, V> entryEvent = new DataAwareEntryEvent<K, V>(member, eventTypeId, name, keyData,
-                    valueData, oldValueData, null, getContext().getSerializationService());
+            EntryEvent<K, V> entryEvent = new DataAwareEntryEvent<K, V>(member, eventTypeId, name, keyData, valueData,
+                    oldValueData, null, getSerializationService());
             switch (eventType) {
                 case ADDED:
                     listener.entryAdded(entryEvent);

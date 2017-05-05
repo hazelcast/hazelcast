@@ -53,7 +53,6 @@ import com.hazelcast.mapreduce.impl.task.TransferableJobProcessInformation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
 
@@ -174,12 +173,11 @@ public class ClientMapReduceProxy
     }
 
     private Map toObjectMap(ClientMessage res) {
-        SerializationService serializationService = getContext().getSerializationService();
         Collection<Map.Entry<Data, Data>> entries = MapReduceForCustomCodec.decodeResponse(res).response;
         HashMap hashMap = new HashMap();
         for (Map.Entry<Data, Data> entry : entries) {
-            Object key = serializationService.toObject(entry.getKey());
-            Object value = serializationService.toObject(entry.getValue());
+            Object key = toObject(entry.getKey());
+            Object value = toObject(entry.getValue());
             hashMap.put(key, value);
         }
         return hashMap;
@@ -227,7 +225,6 @@ public class ClientMapReduceProxy
         return MapReduceForCustomCodec
                 .encodeRequest(name, jobId, predicateData, mapperData, combinerFactoryData, reducerFactoryData,
                         toData(keyValueSource), chunkSize, list, topologyChangedStrategyName);
-
     }
 
     private class ClientCompletableFuture<V>
@@ -264,7 +261,6 @@ public class ClientMapReduceProxy
         protected void setResult(Object result) {
             super.setResult(result);
         }
-
     }
 
     private final class ClientTrackableJob<V>
@@ -315,7 +311,5 @@ public class ClientMapReduceProxy
             }
             return null;
         }
-
     }
-
 }

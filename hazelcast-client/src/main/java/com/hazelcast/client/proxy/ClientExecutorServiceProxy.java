@@ -385,7 +385,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         Executor userExecutor = getContext().getExecutionService().getUserExecutor();
         for (Future<T> future : futures) {
             Object value = retrieveResult(future);
-            result.add(new CompletedFuture<T>(getContext().getSerializationService(), value, userExecutor));
+            result.add(new CompletedFuture<T>(getSerializationService(), value, userExecutor));
         }
         return result;
     }
@@ -438,12 +438,10 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
         String uuid = getUUID();
         int partitionId = getPartitionId(key);
-        ClientMessage request =
-                ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
+        ClientMessage request = ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
-        SerializationService serializationService = getContext().getSerializationService();
 
-        ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, serializationService,
+        ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, getSerializationService(),
                 SUBMIT_TO_PARTITION_DECODER);
         delegatingFuture.andThen(callback);
     }
@@ -467,10 +465,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         ClientMessage request =
                 ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
-        SerializationService serializationService = getContext().getSerializationService();
-        ClientDelegatingFuture<T> delegatingFuture =
-                new ClientDelegatingFuture<T>(f, serializationService,
-                        SUBMIT_TO_PARTITION_DECODER);
+        ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, getSerializationService(),
+                SUBMIT_TO_PARTITION_DECODER);
         delegatingFuture.andThen(callback);
     }
 
@@ -490,9 +486,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         String uuid = getUUID();
         ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, toData(task), address);
         ClientInvocationFuture f = invokeOnTarget(request, address);
-        SerializationService serializationService = getContext().getSerializationService();
-        ClientDelegatingFuture<T> delegatingFuture =
-                new ClientDelegatingFuture<T>(f, serializationService, SUBMIT_TO_ADDRESS_DECODER);
+        ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, getSerializationService(),
+                SUBMIT_TO_ADDRESS_DECODER);
         delegatingFuture.andThen(callback);
     }
 
@@ -507,10 +502,10 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         if (sync) {
             Object response = retrieveResultFromMessage(f);
             Executor userExecutor = getContext().getExecutionService().getUserExecutor();
-            return new CompletedFuture<T>(getContext().getSerializationService(), response, userExecutor);
+            return new CompletedFuture<T>(getSerializationService(), response, userExecutor);
         } else {
-            return new ClientAddressCancellableDelegatingFuture<T>(f, getContext(), uuid, address, defaultValue
-                    , SUBMIT_TO_ADDRESS_DECODER);
+            return new ClientAddressCancellableDelegatingFuture<T>(f, getContext(), uuid, address, defaultValue,
+                    SUBMIT_TO_ADDRESS_DECODER);
         }
     }
 
@@ -520,10 +515,10 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         if (sync) {
             Object response = retrieveResultFromMessage(f);
             Executor userExecutor = getContext().getExecutionService().getUserExecutor();
-            return new CompletedFuture<T>(getContext().getSerializationService(), response, userExecutor);
+            return new CompletedFuture<T>(getSerializationService(), response, userExecutor);
         } else {
-            return new ClientPartitionCancellableDelegatingFuture<T>(f, getContext(), uuid, partitionId, defaultValue
-                    , SUBMIT_TO_PARTITION_DECODER);
+            return new ClientPartitionCancellableDelegatingFuture<T>(f, getContext(), uuid, partitionId, defaultValue,
+                    SUBMIT_TO_PARTITION_DECODER);
         }
     }
 
@@ -671,5 +666,4 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         ClientPartitionService partitionService = getContext().getPartitionService();
         return random.nextInt(partitionService.getPartitionCount());
     }
-
 }

@@ -31,7 +31,6 @@ import com.hazelcast.client.impl.protocol.codec.SetIsEmptyCodec;
 import com.hazelcast.client.impl.protocol.codec.SetRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.SetRemoveListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.SetSizeCodec;
-import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
@@ -43,7 +42,6 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Preconditions;
 
 import java.util.Collection;
@@ -210,8 +208,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
         ClientMessage response = invokeOnPartition(request);
         SetGetAllCodec.ResponseParameters resultParameters = SetGetAllCodec.decodeResponse(response);
         List<Data> resultCollection = resultParameters.response;
-        SerializationService serializationService = getContext().getSerializationService();
-        return new UnmodifiableLazyList<E>(resultCollection, serializationService);
+        return new UnmodifiableLazyList<E>(resultCollection, getSerializationService());
     }
 
     @Override
@@ -230,12 +227,9 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
 
         @Override
         public void handle(Data dataItem, String uuid, int eventType) {
-            SerializationService serializationService = getContext().getSerializationService();
-            ClientClusterService clusterService = getContext().getClusterService();
-
-            Member member = clusterService.getMember(uuid);
+            Member member = getContext().getClusterService().getMember(uuid);
             ItemEvent<E> itemEvent = new DataAwareItemEvent(name, ItemEventType.getByType(eventType),
-                    dataItem, member, serializationService);
+                    dataItem, member, getSerializationService());
             if (eventType == ItemEventType.ADDED.getType()) {
                 listener.itemAdded(itemEvent);
             } else {

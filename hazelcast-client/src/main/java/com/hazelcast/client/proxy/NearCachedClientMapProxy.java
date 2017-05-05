@@ -95,10 +95,9 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     protected void onInitialize() {
         super.onInitialize();
 
-        ClientContext context = getContext();
-        logger = context.getLoggingService().getLogger(getClass());
-        NearCacheConfig nearCacheConfig = context.getClientConfig().getNearCacheConfig(name);
-        NearCacheManager nearCacheManager = context.getNearCacheManager();
+        logger = getContext().getLoggingService().getLogger(getClass());
+        NearCacheConfig nearCacheConfig = getContext().getClientConfig().getNearCacheConfig(name);
+        NearCacheManager nearCacheManager = getContext().getNearCacheManager();
         IMapDataStructureAdapter<K, V> adapter = new IMapDataStructureAdapter<K, V>(this);
         nearCache = nearCacheManager.getOrCreateNearCache(name, nearCacheConfig, adapter);
 
@@ -142,7 +141,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         Object value = getCachedValue(key, false);
         if (value != NOT_CACHED) {
             ExecutorService executor = getContext().getExecutionService().getUserExecutor();
-            return new CompletedFuture<V>(getContext().getSerializationService(), value, executor);
+            return new CompletedFuture<V>(getSerializationService(), value, executor);
         }
 
         final long reservationId = nearCache.tryReserveForUpdate(key);
@@ -672,8 +671,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
 
         private RepairingTask getRepairingTask() {
-            ClientContext clientContext = getClientContext();
-            return clientContext.getRepairingTask(SERVICE_NAME);
+            return getContext().getRepairingTask(SERVICE_NAME);
         }
     }
 
@@ -718,14 +716,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
     }
 
-    // used in tests
-    public ClientContext getClientContext() {
-        return getContext();
-    }
-
     private int getConnectedServerVersion() {
-        ClientContext clientContext = getClientContext();
-        ClientClusterService clusterService = clientContext.getClusterService();
+        ClientClusterService clusterService = getContext().getClusterService();
         Address ownerConnectionAddress = clusterService.getOwnerConnectionAddress();
 
         HazelcastClientInstanceImpl client = getClient();

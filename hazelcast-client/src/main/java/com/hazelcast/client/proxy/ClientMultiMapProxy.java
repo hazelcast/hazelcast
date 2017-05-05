@@ -47,7 +47,6 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
@@ -418,8 +417,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
                                                     Aggregation<K, SuppliedValue, Result> aggregation) {
 
-        HazelcastInstance hazelcastInstance = getContext().getHazelcastInstance();
-        JobTracker jobTracker = hazelcastInstance.getJobTracker("hz::aggregation-multimap-" + name);
+        JobTracker jobTracker = getClient().getJobTracker("hz::aggregation-multimap-" + name);
         return aggregate(supplier, aggregation, jobTracker);
     }
 
@@ -523,8 +521,8 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
         private EntryEvent<K, V> createEntryEvent(Data keyData, Data valueData, Data oldValueData,
                                                   Data mergingValueData, int eventType, Member member) {
-            return new DataAwareEntryEvent<K, V>(member, eventType, name, keyData, valueData,
-                    oldValueData, mergingValueData, getContext().getSerializationService());
+            return new DataAwareEntryEvent<K, V>(member, eventType, name, keyData, valueData, oldValueData, mergingValueData,
+                    getSerializationService());
         }
 
         @Override

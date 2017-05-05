@@ -22,7 +22,6 @@ import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.client.impl.ClientMessageDecoder;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheClearCodec;
@@ -149,7 +148,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
     protected void onInitialize() {
         super.onInitialize();
 
-        ClientPartitionService partitionService = clientContext.getPartitionService();
+        ClientPartitionService partitionService = getContext().getPartitionService();
         partitionCount = partitionService.getPartitionCount();
     }
 
@@ -191,8 +190,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
             registerCompletionLatch(completionId, 1);
         }
         try {
-            HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
-            ClientInvocation clientInvocation = new ClientInvocation(client, req, partitionId);
+            ClientInvocation clientInvocation = new ClientInvocation(getClient(), req, partitionId);
             ClientInvocationFuture future = clientInvocation.invoke();
             if (completionOperation) {
                 waitCompletionLatch(completionId, future);
@@ -210,7 +208,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
     }
 
     protected ClientInvocationFuture invoke(ClientMessage req, Data keyData, int completionId) {
-        int partitionId = clientContext.getPartitionService().getPartitionId(keyData);
+        int partitionId = getContext().getPartitionService().getPartitionId(keyData);
         return invoke(req, partitionId, completionId);
     }
 
@@ -442,7 +440,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         }
 
         CallbackAwareClientDelegatingFuture<V> future = new CallbackAwareClientDelegatingFuture<V>(invocationFuture,
-                serializationService, PUT_RESPONSE_DECODER, callback);
+                getSerializationService(), PUT_RESPONSE_DECODER, callback);
         future.andThenInternal(callback, true);
 
         return future;
@@ -500,7 +498,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
     }
 
     protected void removeAllKeysInternal(Collection<Data> dataKeys, long startNanos) {
-        int partitionCount = clientContext.getPartitionService().getPartitionCount();
+        int partitionCount = getContext().getPartitionService().getPartitionCount();
         int completionId = nextCompletionId();
         registerCompletionLatch(completionId, partitionCount);
         ClientMessage request = CacheRemoveAllKeysCodec.encodeRequest(nameWithPrefix, dataKeys, completionId);
@@ -517,7 +515,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
     }
 
     protected void removeAllInternal() {
-        int partitionCount = clientContext.getPartitionService().getPartitionCount();
+        int partitionCount = getContext().getPartitionService().getPartitionCount();
         int completionId = nextCompletionId();
         registerCompletionLatch(completionId, partitionCount);
         ClientMessage request = CacheRemoveAllCodec.encodeRequest(nameWithPrefix, completionId);
@@ -576,7 +574,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
     }
 
     private void deregisterAllCacheEntryListener(Collection<String> listenerRegistrations) {
-        ClientListenerService listenerService = clientContext.getListenerService();
+        ClientListenerService listenerService = getContext().getListenerService();
         for (String regId : listenerRegistrations) {
             listenerService.deregisterListener(regId);
         }
@@ -662,7 +660,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
                     }
                 }
                 currentTimeoutMs -= COMPLETION_LATCH_WAIT_TIME_STEP;
-                if (!clientContext.isActive()) {
+                if (!getContext().isActive()) {
                     throw new HazelcastInstanceNotActiveException();
                 } else if (isClosed()) {
                     throw new IllegalStateException("Cache (" + nameWithPrefix + ") is closed!");

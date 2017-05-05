@@ -96,7 +96,6 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IMapEvent;
@@ -359,7 +358,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         try {
             ClientMessage request = MapGetCodec.encodeRequest(name, keyData, getThreadId());
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            return new ClientDelegatingFuture<V>(future, getContext().getSerializationService(), GET_ASYNC_RESPONSE_DECODER);
+            return new ClientDelegatingFuture<V>(future, getSerializationService(), GET_ASYNC_RESPONSE_DECODER);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -391,7 +390,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             long ttlMillis = getTimeInMillis(ttl, timeunit);
             ClientMessage request = MapPutCodec.encodeRequest(name, keyData, valueData, getThreadId(), ttlMillis);
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            return new ClientDelegatingFuture<V>(future, getContext().getSerializationService(), PUT_ASYNC_RESPONSE_DECODER);
+            return new ClientDelegatingFuture<V>(future, getSerializationService(), PUT_ASYNC_RESPONSE_DECODER);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -417,7 +416,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             long ttlMillis = getTimeInMillis(ttl, timeunit);
             ClientMessage request = MapSetCodec.encodeRequest(name, keyData, valueData, getThreadId(), ttlMillis);
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            return new ClientDelegatingFuture<Void>(future, getContext().getSerializationService(), SET_ASYNC_RESPONSE_DECODER);
+            return new ClientDelegatingFuture<Void>(future, getSerializationService(), SET_ASYNC_RESPONSE_DECODER);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -434,7 +433,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         try {
             ClientMessage request = MapRemoveCodec.encodeRequest(name, keyData, getThreadId());
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            return new ClientDelegatingFuture<V>(future, getContext().getSerializationService(), REMOVE_ASYNC_RESPONSE_DECODER);
+            return new ClientDelegatingFuture<V>(future, getSerializationService(), REMOVE_ASYNC_RESPONSE_DECODER);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -1262,7 +1261,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
         try {
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            new ClientDelegatingFuture(future, getContext().getSerializationService(), SUBMIT_TO_KEY_RESPONSE_DECODER)
+            new ClientDelegatingFuture(future, getSerializationService(), SUBMIT_TO_KEY_RESPONSE_DECODER)
                     .andThen(callback);
         } catch (Exception e) {
             throw rethrow(e);
@@ -1280,7 +1279,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
         try {
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            return new ClientDelegatingFuture(future, getContext().getSerializationService(), SUBMIT_TO_KEY_RESPONSE_DECODER);
+            return new ClientDelegatingFuture(future, getSerializationService(), SUBMIT_TO_KEY_RESPONSE_DECODER);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -1367,8 +1366,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @SuppressWarnings({"deprecation"})
     public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
                                                     Aggregation<K, SuppliedValue, Result> aggregation) {
-        HazelcastInstance hazelcastInstance = getContext().getHazelcastInstance();
-        JobTracker jobTracker = hazelcastInstance.getJobTracker("hz::aggregation-map-" + name);
+        JobTracker jobTracker = getClient().getJobTracker("hz::aggregation-map-" + name);
         return aggregate(supplier, aggregation, jobTracker);
     }
 
@@ -1608,7 +1606,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         private EntryEvent<K, V> createEntryEvent(Data keyData, Data valueData, Data oldValueData, Data mergingValueData,
                                                   int eventType, Member member) {
             return new DataAwareEntryEvent<K, V>(member, eventType, name, keyData, valueData, oldValueData, mergingValueData,
-                    getContext().getSerializationService());
+                    getSerializationService());
         }
 
         @Override

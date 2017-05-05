@@ -18,7 +18,6 @@ package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.client.impl.ClientMessageDecoder;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheGetAllCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheGetCodec;
@@ -98,11 +97,10 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
     private ClientDelegatingFuture<V> getInternal(Data keyData, ExpiryPolicy expiryPolicy, boolean deserializeResponse) {
         Data expiryPolicyData = toData(expiryPolicy);
 
-        HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
         ClientMessage request = CacheGetCodec.encodeRequest(nameWithPrefix, keyData, expiryPolicyData);
-        int partitionId = clientContext.getPartitionService().getPartitionId(keyData);
+        int partitionId = getContext().getPartitionService().getPartitionId(keyData);
 
-        ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId);
+        ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, partitionId);
         ClientInvocationFuture future = clientInvocation.invoke();
         return newDelegatingFuture(future, CACHE_GET_RESPONSE_DECODER, deserializeResponse);
     }
@@ -222,7 +220,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         }
 
         List<Data> dataKeys = new ArrayList<Data>(keys.size());
-        objectToDataCollection(keys, dataKeys, serializationService, NULL_KEY_IS_NOT_ALLOWED);
+        objectToDataCollection(keys, dataKeys, getSerializationService(), NULL_KEY_IS_NOT_ALLOWED);
         Map<K, V> resultMap = createHashMap(keys.size());
         return getAllInternal(dataKeys, expiryPolicy, resultMap, startNanos);
     }
@@ -277,7 +275,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
                                   List<Map.Entry<Data, Data>>[] entriesPerPartition, long startNanos) {
         try {
             // first we fill entry set per partition
-            groupDataToPartitions(map, clientContext.getPartitionService(), entriesPerPartition);
+            groupDataToPartitions(map, getContext().getPartitionService(), entriesPerPartition);
             // then we invoke the operations and sync on completion of these operations
             putToAllPartitionsAndWaitForCompletion(entriesPerPartition, expiryPolicy, startNanos);
         } catch (Exception t) {

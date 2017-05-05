@@ -18,10 +18,10 @@ package com.hazelcast.client.cache.impl.nearcache.invalidation;
 import com.hazelcast.cache.impl.CacheEventHandler;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
-import com.hazelcast.client.cache.impl.NearCachedClientCacheProxy;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -96,7 +96,7 @@ public class ClientCacheMetaDataFetcherTest extends HazelcastTestSupport {
         CachingProvider clientCachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
         Cache<Integer, Integer> clientCache = clientCachingProvider.getCacheManager().createCache(cacheName, newCacheConfig());
 
-        ClientContext clientContext = ((NearCachedClientCacheProxy<Integer, Integer>) clientCache).getClientContext();
+        ClientContext clientContext = ((ClientProxy) clientCache).getContext();
         return clientContext.getRepairingTask(SERVICE_NAME);
     }
 

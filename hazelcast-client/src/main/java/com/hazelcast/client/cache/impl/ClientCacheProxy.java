@@ -20,7 +20,6 @@ import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheAddPartitionLostListenerCodec;
@@ -230,7 +229,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
         }
 
         List<Data> dataKeys = new ArrayList<Data>(keys.size());
-        objectToDataCollection(keys, dataKeys, serializationService, NULL_KEY_IS_NOT_ALLOWED);
+        objectToDataCollection(keys, dataKeys, getSerializationService(), NULL_KEY_IS_NOT_ALLOWED);
         removeAllKeysInternal(dataKeys, startNanos);
     }
 
@@ -345,13 +344,10 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
-        CacheEventListenerAdaptor<K, V> adaptor =
-                new CacheEventListenerAdaptor<K, V>(this,
-                        cacheEntryListenerConfiguration,
-                        clientContext.getSerializationService(),
-                        clientContext.getHazelcastInstance());
+        CacheEventListenerAdaptor<K, V> adaptor = new CacheEventListenerAdaptor<K, V>(this, cacheEntryListenerConfiguration,
+                getSerializationService(), getClient());
         EventHandler handler = createHandler(adaptor);
-        String regId = clientContext.getListenerService().registerListener(createCacheEntryListenerCodec(), handler);
+        String regId = getContext().getListenerService().registerListener(createCacheEntryListenerCodec(), handler);
         if (regId != null) {
             if (addToConfig) {
                 cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
@@ -397,7 +393,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
             return;
         }
 
-        boolean isDeregistered = clientContext.getListenerService().deregisterListener(regId);
+        boolean isDeregistered = getContext().getListenerService().deregisterListener(regId);
         if (isDeregistered) {
             removeListenerLocally(cacheEntryListenerConfiguration);
             cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
@@ -407,15 +403,14 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
 
     protected void updateCacheListenerConfigOnOtherNodes(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
                                                          boolean isRegister) {
-        Collection<Member> members = clientContext.getClusterService().getMemberList();
-        HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
+        Collection<Member> members = getContext().getClusterService().getMemberList();
         for (Member member : members) {
             try {
                 Address address = member.getAddress();
                 Data configData = toData(cacheEntryListenerConfiguration);
                 ClientMessage request = CacheListenerRegistrationCodec.encodeRequest(nameWithPrefix, configData, isRegister,
                         address);
-                ClientInvocation invocation = new ClientInvocation(client, request, address);
+                ClientInvocation invocation = new ClientInvocation(getClient(), request, address);
                 invocation.invoke();
             } catch (Exception e) {
                 sneakyThrow(e);
@@ -426,26 +421,26 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
     @Override
     public Iterator<Entry<K, V>> iterator() {
         ensureOpen();
-        return new ClientClusterWideIterator<K, V>(this, clientContext, false);
+        return new ClientClusterWideIterator<K, V>(this, getContext(), false);
     }
 
     @Override
     public Iterator<Entry<K, V>> iterator(int fetchSize) {
         ensureOpen();
-        return new ClientClusterWideIterator<K, V>(this, clientContext, fetchSize, false);
+        return new ClientClusterWideIterator<K, V>(this, getContext(), fetchSize, false);
     }
 
     @Override
     public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {
         ensureOpen();
-        return new ClientCachePartitionIterator<K, V>(this, clientContext, fetchSize, partitionId, prefetchValues);
+        return new ClientCachePartitionIterator<K, V>(this, getContext(), fetchSize, partitionId, prefetchValues);
     }
 
     @Override
     public String addPartitionLostListener(CachePartitionLostListener listener) {
         EventHandler<ClientMessage> handler = new ClientCachePartitionLostEventHandler(listener);
         injectDependencies(listener);
-        return clientContext.getListenerService().registerListener(createPartitionLostListenerCodec(), handler);
+        return getContext().getListenerService().registerListener(createPartitionLostListenerCodec(), handler);
     }
 
     private ListenerMessageCodec createPartitionLostListenerCodec() {
@@ -474,7 +469,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
 
     @Override
     public boolean removePartitionLostListener(String id) {
-        return clientContext.getListenerService().deregisterListener(id);
+        return getContext().getListenerService().deregisterListener(id);
     }
 
     private final class ClientCachePartitionLostEventHandler
@@ -497,13 +492,8 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
 
         @Override
         public void handle(int partitionId, String uuid) {
-            Member member = clientContext.getClusterService().getMember(uuid);
+            Member member = getContext().getClusterService().getMember(uuid);
             listener.partitionLost(new CachePartitionLostEvent(name, member, PARTITION_LOST.getType(), partitionId));
         }
-    }
-
-    // used in tests
-    public ClientContext getClientContext() {
-        return getContext();
     }
 }

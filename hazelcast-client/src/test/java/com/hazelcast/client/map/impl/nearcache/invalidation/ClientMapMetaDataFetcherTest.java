@@ -17,8 +17,8 @@
 package com.hazelcast.client.map.impl.nearcache.invalidation;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.proxy.NearCachedClientMapProxy;
 import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -91,7 +91,7 @@ public class ClientMapMetaDataFetcherTest extends HazelcastTestSupport {
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
         IMap<Integer, Integer> clientMap = client.getMap(mapName);
 
-        ClientContext clientContext = ((NearCachedClientMapProxy) clientMap).getClientContext();
+        ClientContext clientContext = ((ClientProxy) clientMap).getContext();
         return clientContext.getRepairingTask(SERVICE_NAME);
     }
 

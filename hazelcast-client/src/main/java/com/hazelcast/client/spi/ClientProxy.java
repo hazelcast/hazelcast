@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -45,6 +44,7 @@ public abstract class ClientProxy implements DistributedObject {
     private final ClientContext context;
     private final SerializationService serializationService;
 
+    // these fields are for the legacy constructor without ClientContext
     private volatile ClientContext lazyContext;
     private volatile SerializationService lazySerializationService;
 
@@ -71,7 +71,8 @@ public abstract class ClientProxy implements DistributedObject {
         return getContext().getListenerService().deregisterListener(registrationId);
     }
 
-    protected final ClientContext getContext() {
+    // public for testing
+    public final ClientContext getContext() {
         return context != null ? context : lazyContext;
     }
 
@@ -82,6 +83,18 @@ public abstract class ClientProxy implements DistributedObject {
         this.lazyContext = context;
         this.lazySerializationService = context.getSerializationService();
         return this;
+    }
+
+    protected SerializationService getSerializationService() {
+        return serializationService != null ? serializationService : lazySerializationService;
+    }
+
+    protected Data toData(Object o) {
+        return getSerializationService().toData(o);
+    }
+
+    protected <T> T toObject(Object data) {
+        return getSerializationService().toObject(data);
     }
 
     protected final HazelcastClientInstanceImpl getClient() {
@@ -196,27 +209,6 @@ public abstract class ClientProxy implements DistributedObject {
         }
     }
 
-    protected Data toData(Object o) {
-        return getSerializationService().toData(o);
-    }
-
-    protected <T> T toObject(Object data) {
-        return getSerializationService().toObject(data);
-    }
-
-    protected SerializationService getSerializationService() {
-        return serializationService != null ? serializationService : lazySerializationService;
-    }
-
-    private String getInstanceName() {
-        ClientContext ctx = getContext();
-        if (ctx != null) {
-            HazelcastInstance instance = ctx.getHazelcastInstance();
-            return instance.getName();
-        }
-        return "";
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -227,9 +219,7 @@ public abstract class ClientProxy implements DistributedObject {
         }
 
         ClientProxy that = (ClientProxy) o;
-
-        String instanceName = getInstanceName();
-        if (!instanceName.equals(that.getInstanceName())) {
+        if (!getInstanceName().equals(that.getInstanceName())) {
             return false;
         }
         if (!getDistributedObjectName().equals(that.getDistributedObjectName())) {
@@ -238,16 +228,19 @@ public abstract class ClientProxy implements DistributedObject {
         if (!serviceName.equals(that.serviceName)) {
             return false;
         }
-
         return true;
     }
 
     @Override
     public int hashCode() {
-        String instanceName = getInstanceName();
-        int result = instanceName.hashCode();
+        int result = getInstanceName().hashCode();
         result = 31 * result + serviceName.hashCode();
         result = 31 * result + getDistributedObjectName().hashCode();
         return result;
+    }
+
+    private String getInstanceName() {
+        ClientContext context = getContext();
+        return context != null ? context.getHazelcastInstance().getName() : "";
     }
 }
