@@ -18,7 +18,7 @@ package com.hazelcast.client.protocol;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
-import com.hazelcast.client.impl.protocol.util.ClientMessageReadHandler;
+import com.hazelcast.client.impl.protocol.util.ClientMessageChannelInboundHandler;
 import com.hazelcast.client.impl.protocol.util.ClientMessageSplitter;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.util.counters.SwCounter;
@@ -51,8 +51,8 @@ public class ClientMessageSplitAndBuildTest {
                 BuildInfoProvider.BUILD_INFO.getVersion());
         expectedClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         List<ClientMessage> subFrames = ClientMessageSplitter.getSubFrames(FRAME_SIZE, expectedClientMessage);
-        ClientMessageReadHandler clientMessageReadHandler = new ClientMessageReadHandler(readCounter,
-                new ClientMessageReadHandler.MessageHandler() {
+        ClientMessageChannelInboundHandler clientMessageReadHandler = new ClientMessageChannelInboundHandler(readCounter,
+                new ClientMessageChannelInboundHandler.MessageHandler() {
                     @Override
                     public void handleMessage(ClientMessage message) {
                         message.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
@@ -98,8 +98,8 @@ public class ClientMessageSplitAndBuildTest {
             framedClientMessages.add(ClientMessageSplitter.getSubFrames(FRAME_SIZE, expectedClientMessage));
         }
 
-        ClientMessageReadHandler clientMessageReadHandler = new ClientMessageReadHandler(readCounter,
-                new ClientMessageReadHandler.MessageHandler() {
+        ClientMessageChannelInboundHandler clientMessageReadHandler = new ClientMessageChannelInboundHandler(readCounter,
+                new ClientMessageChannelInboundHandler.MessageHandler() {
                     @Override
                     public void handleMessage(ClientMessage message) {
                         int correlationId = (int) message.getCorrelationId();
@@ -131,8 +131,8 @@ public class ClientMessageSplitAndBuildTest {
                 BuildInfoProvider.BUILD_INFO.getVersion());
         expectedClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         List<ClientMessage> subFrames = ClientMessageSplitter.getSubFrames(expectedClientMessage.getFrameLength() + 1, expectedClientMessage);
-        ClientMessageReadHandler clientMessageReadHandler = new ClientMessageReadHandler(readCounter,
-                new ClientMessageReadHandler.MessageHandler() {
+        ClientMessageChannelInboundHandler clientMessageReadHandler = new ClientMessageChannelInboundHandler(readCounter,
+                new ClientMessageChannelInboundHandler.MessageHandler() {
                     @Override
                     public void handleMessage(ClientMessage message) {
                         message.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);

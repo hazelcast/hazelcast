@@ -46,8 +46,9 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
  * The idea is that different SocketReader and SocketWriter implementations can be made. We already have specific
  * one for non blocking (selector based) IO and for spinning io.  These SocketReader/SocketWriter instances only
  * focus on getting data to and from the socket; they do not concern themselves about interpreting the data. This
- * is a concern of the {@link ReadHandler} and the {@link WriteHandler} instance each SocketReader/SocketWriter
- * has. So a SocketReader/SocketWriter-class is independent of the type of communication that runs on top of it.
+ * is a concern of the {@link ChannelInboundHandler} and the {@link ChannelOutboundHandler} instance each
+ * SocketReader/SocketWriter has. So a SocketReader/SocketWriter-class is independent of the type of communication
+ * that runs on top of it.
  *
  * @see NioEventLoopGroup
  * @see SpinningEventLoopGroup

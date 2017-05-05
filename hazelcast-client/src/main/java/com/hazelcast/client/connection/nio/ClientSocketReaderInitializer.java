@@ -18,8 +18,8 @@ package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.util.ClientMessageReadHandler;
-import com.hazelcast.internal.networking.ReadHandler;
+import com.hazelcast.client.impl.protocol.util.ClientMessageChannelInboundHandler;
+import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.SocketReader;
 import com.hazelcast.internal.networking.SocketReaderInitializer;
 import com.hazelcast.nio.IOUtil;
@@ -40,14 +40,14 @@ class ClientSocketReaderInitializer implements SocketReaderInitializer<ClientCon
     public void init(final ClientConnection connection, SocketReader reader) throws IOException {
         reader.initInputBuffer(IOUtil.newByteBuffer(bufferSize, direct));
 
-        ReadHandler readHandler = new ClientMessageReadHandler(reader.getNormalFramesReadCounter(),
-                new ClientMessageReadHandler.MessageHandler() {
+        ChannelInboundHandler inboundHandler = new ClientMessageChannelInboundHandler(reader.getNormalFramesReadCounter(),
+                new ClientMessageChannelInboundHandler.MessageHandler() {
                     private final ClientConnectionManager connectionManager = connection.getConnectionManager();
                     @Override
                     public void handleMessage(ClientMessage message) {
                         connectionManager.handleClientMessage(message, connection);
                     }
                 });
-        reader.initReadHandler(readHandler);
+        reader.setInboundHandler(inboundHandler);
     }
 }

@@ -16,19 +16,19 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.internal.networking.WriteHandler;
+import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.nio.Packet;
 
 import java.nio.ByteBuffer;
 
 /**
- * A {@link WriteHandler} that for member to member communication.
+ * A {@link ChannelOutboundHandler} that for member to member communication.
  *
  * It writes {@link Packet} instances to the {@link ByteBuffer}.
  *
- * @see MemberReadHandler
+ * @see MemberChannelInboundHandler
  */
-public class MemberWriteHandler implements WriteHandler<Packet> {
+public class MemberChannelOutboundHandler implements ChannelOutboundHandler<Packet> {
 
     @Override
     public boolean onWrite(Packet packet, ByteBuffer dst) {

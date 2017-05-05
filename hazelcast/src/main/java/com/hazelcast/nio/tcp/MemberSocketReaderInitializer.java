@@ -17,14 +17,14 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.config.SSLConfig;
-import com.hazelcast.internal.networking.ReadHandler;
+import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.SocketChannelWrapper;
 import com.hazelcast.internal.networking.SocketReader;
 import com.hazelcast.internal.networking.SocketReaderInitializer;
 import com.hazelcast.internal.networking.SocketWriter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.ascii.TextReadHandler;
+import com.hazelcast.nio.ascii.TextChannelInboundHandler;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -71,31 +71,31 @@ public class MemberSocketReaderInitializer implements SocketReaderInitializer<Tc
             return;
         }
 
-        ReadHandler readHandler;
+        ChannelInboundHandler inboundHandler;
         String protocol = bytesToString(protocolBuffer.array());
         SocketWriter socketWriter = connection.getSocketWriter();
         if (CLUSTER.equals(protocol)) {
             initInputBuffer(connection, reader, ioService.getSocketReceiveBufferSize());
             connection.setType(MEMBER);
             socketWriter.setProtocol(CLUSTER);
-            readHandler = ioService.createReadHandler(connection);
+            inboundHandler = ioService.createReadHandler(connection);
         } else if (CLIENT_BINARY_NEW.equals(protocol)) {
             initInputBuffer(connection, reader, ioService.getSocketClientReceiveBufferSize());
             socketWriter.setProtocol(CLIENT_BINARY_NEW);
-            readHandler = new ClientReadHandler(reader.getNormalFramesReadCounter(), connection, ioService);
+            inboundHandler = new ClientChannelInboundHandler(reader.getNormalFramesReadCounter(), connection, ioService);
         } else {
             ByteBuffer inputBuffer = initInputBuffer(connection, reader, ioService.getSocketReceiveBufferSize());
             socketWriter.setProtocol(TEXT);
             inputBuffer.put(protocolBuffer.array());
-            readHandler = new TextReadHandler(connection);
+            inboundHandler = new TextChannelInboundHandler(connection);
             connectionManager.incrementTextConnections();
         }
 
-        if (readHandler == null) {
-            throw new IOException("Could not initialize ReadHandler!");
+        if (inboundHandler == null) {
+            throw new IOException("Could not initialize ChannelInboundHandler!");
         }
 
-        reader.initReadHandler(readHandler);
+        reader.setInboundHandler(inboundHandler);
     }
 
     private ByteBuffer initInputBuffer(TcpIpConnection connection, SocketReader reader, int sizeKb) {

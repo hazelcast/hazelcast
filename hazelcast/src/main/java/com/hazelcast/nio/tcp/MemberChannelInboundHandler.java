@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.internal.networking.ReadHandler;
+import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.SocketReader;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.nio.Packet;
@@ -25,14 +25,14 @@ import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 import java.nio.ByteBuffer;
 
 /**
- * The {@link ReadHandler} for member to member communication.
+ * The {@link ChannelInboundHandler} for member to member communication.
  *
  * It reads as many packets from the src ByteBuffer as possible, and each of the Packets is send to the {@link PacketDispatcher}.
  *
  * @see PacketDispatcher
- * @see MemberWriteHandler
+ * @see MemberChannelOutboundHandler
  */
-public class MemberReadHandler implements ReadHandler {
+public class MemberChannelInboundHandler implements ChannelInboundHandler {
 
     protected final TcpIpConnection connection;
     protected Packet packet;
@@ -41,7 +41,7 @@ public class MemberReadHandler implements ReadHandler {
     private final Counter normalPacketsRead;
     private final Counter priorityPacketsRead;
 
-    public MemberReadHandler(TcpIpConnection connection, PacketDispatcher packetDispatcher) {
+    public MemberChannelInboundHandler(TcpIpConnection connection, PacketDispatcher packetDispatcher) {
         this.connection = connection;
         this.packetDispatcher = packetDispatcher;
         SocketReader socketReader = connection.getSocketReader();
