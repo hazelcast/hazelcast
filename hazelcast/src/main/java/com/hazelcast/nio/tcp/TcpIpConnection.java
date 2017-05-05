@@ -20,7 +20,7 @@ import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.networking.IOThreadingModel;
+import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.networking.SocketChannelWrapper;
 import com.hazelcast.internal.networking.SocketConnection;
 import com.hazelcast.internal.networking.SocketReader;
@@ -48,7 +48,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <li>{@link SocketWriter}: which care of writing data to the socket.</li>
  * </ol>
  *
- * @see IOThreadingModel
+ * @see EventLoopGroup
  */
 @SuppressWarnings("checkstyle:methodcount")
 public final class TcpIpConnection implements SocketConnection, MetricsProvider, DiscardableMetricsProvider {
@@ -82,14 +82,14 @@ public final class TcpIpConnection implements SocketConnection, MetricsProvider,
     public TcpIpConnection(TcpIpConnectionManager connectionManager,
                            int connectionId,
                            SocketChannelWrapper socketChannel,
-                           IOThreadingModel ioThreadingModel) {
+                           EventLoopGroup eventLoopGroup) {
         this.connectionId = connectionId;
         this.connectionManager = connectionManager;
         this.ioService = connectionManager.getIoService();
         this.logger = ioService.getLoggingService().getLogger(TcpIpConnection.class);
         this.socketChannel = socketChannel;
-        this.socketWriter = ioThreadingModel.newSocketWriter(this);
-        this.socketReader = ioThreadingModel.newSocketReader(this);
+        this.socketWriter = eventLoopGroup.newSocketWriter(this);
+        this.socketReader = eventLoopGroup.newSocketReader(this);
     }
 
     @Override

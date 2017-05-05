@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the implementation of the {@link com.hazelcast.internal.networking.spinning.SpinningIOThreadingModel}.
+ * Contains the implementation of the {@link com.hazelcast.internal.networking.spinning.SpinningEventLoopGroup}.
  */
 package com.hazelcast.internal.networking.spinning;

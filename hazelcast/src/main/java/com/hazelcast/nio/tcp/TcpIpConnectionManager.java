@@ -19,7 +19,7 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.networking.IOThreadingModel;
+import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.networking.SocketChannelWrapper;
 import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
@@ -101,7 +101,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
 
-    private final IOThreadingModel ioThreadingModel;
+    private final EventLoopGroup eventLoopGroup;
     private final MetricsRegistry metricsRegistry;
 
     private final ServerSocketChannel serverSocketChannel;
@@ -126,9 +126,9 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
                                   ServerSocketChannel serverSocketChannel,
                                   LoggingService loggingService,
                                   MetricsRegistry metricsRegistry,
-                                  IOThreadingModel ioThreadingModel) {
+                                  EventLoopGroup eventLoopGroup) {
         this.ioService = ioService;
-        this.ioThreadingModel = ioThreadingModel;
+        this.eventLoopGroup = eventLoopGroup;
         this.serverSocketChannel = serverSocketChannel;
         this.loggingService = loggingService;
         this.logger = loggingService.getLogger(TcpIpConnectionManager.class);
@@ -142,8 +142,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         return ioService;
     }
 
-    public IOThreadingModel getIoThreadingModel() {
-        return ioThreadingModel;
+    public EventLoopGroup getEventLoopGroup() {
+        return eventLoopGroup;
     }
 
     // just for testing
@@ -303,13 +303,13 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
                     this,
                     connectionIdGen.incrementAndGet(),
                     channel,
-                    ioThreadingModel);
+                    eventLoopGroup);
 
             connection.setEndPoint(endpoint);
             activeConnections.add(connection);
 
             connection.start();
-            ioThreadingModel.onConnectionAdded(connection);
+            eventLoopGroup.onConnectionAdded(connection);
 
             logger.info("Established socket connection between "
                     + channel.socket().getLocalSocketAddress() + " and " + channel.socket().getRemoteSocketAddress());
@@ -370,7 +370,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         if (activeConnections.remove(connection)) {
             // this should not be needed; but some tests are using DroppingConnection which is not a TcpIpConnection.
             if (connection instanceof TcpIpConnection) {
-                ioThreadingModel.onConnectionRemoved((TcpIpConnection) connection);
+                eventLoopGroup.onConnectionRemoved((TcpIpConnection) connection);
             }
 
             metricsRegistry.discardMetrics(connection);
@@ -414,7 +414,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         live = true;
         logger.finest("Starting ConnectionManager and IO selectors.");
 
-        ioThreadingModel.start();
+        eventLoopGroup.start();
         startAcceptorThread();
     }
 
@@ -451,7 +451,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         for (TcpIpConnection conn : activeConnections) {
             destroySilently(conn, "TcpIpConnectionManager is stopping");
         }
-        ioThreadingModel.shutdown();
+        eventLoopGroup.shutdown();
         acceptedSockets.clear();
         connectionsInProgress.clear();
         connectionsMap.clear();

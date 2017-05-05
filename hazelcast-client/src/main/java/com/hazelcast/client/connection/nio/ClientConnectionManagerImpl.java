@@ -48,7 +48,7 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.networking.SocketChannelWrapper;
 import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
-import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThreadingModel;
+import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -124,7 +124,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             new CopyOnWriteArraySet<ConnectionHeartbeatListener>();
     private final Credentials credentials;
     private final AtomicLong correlationIddOfLastAuthentication = new AtomicLong(0);
-    private NonBlockingIOThreadingModel ioThreadingModel;
+    private NioEventLoopGroup eventLoopGroup;
 
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator) {
         this.client = client;
@@ -147,7 +147,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         this.socketOptions = networkConfig.getSocketOptions();
 
-        initIOThreads(client);
+        initEventLoopGroup(client);
 
         ClientExtension clientExtension = client.getClientExtension();
         this.socketChannelWrapperFactory = clientExtension.createSocketChannelWrapperFactory();
@@ -156,11 +156,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.credentials = client.getCredentials();
     }
 
-    public NonBlockingIOThreadingModel getIoThreadingModel() {
-        return ioThreadingModel;
+    public NioEventLoopGroup getEventLoopGroup() {
+        return eventLoopGroup;
     }
 
-    protected void initIOThreads(HazelcastClientInstanceImpl client) {
+    protected void initEventLoopGroup(HazelcastClientInstanceImpl client) {
         HazelcastProperties properties = client.getProperties();
         boolean directBuffer = properties.getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
 
@@ -184,7 +184,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             outputThreads = configuredOutputThreads;
         }
 
-        ioThreadingModel = new NonBlockingIOThreadingModel(
+        eventLoopGroup = new NioEventLoopGroup(
                 client.getLoggingService(),
                 client.getMetricsRegistry(),
                 client.getName(),
@@ -220,13 +220,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             return;
         }
         alive = true;
-        startIOThreads();
+        startEventLoopGroup();
         Heartbeat heartbeat = new Heartbeat();
         executionService.scheduleWithRepetition(heartbeat, heartbeatInterval, heartbeatInterval, TimeUnit.MILLISECONDS);
     }
 
-    protected void startIOThreads() {
-        ioThreadingModel.start();
+    protected void startEventLoopGroup() {
+        eventLoopGroup.start();
     }
 
     @Override
@@ -238,13 +238,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         for (ClientConnection connection : activeConnections.values()) {
             connection.close("Hazelcast client is shutting down", null);
         }
-        shutdownIOThreads();
+        stopEventLoopGroup();
         connectionListeners.clear();
         heartbeatListeners.clear();
     }
 
-    protected void shutdownIOThreads() {
-        ioThreadingModel.shutdown();
+    protected void stopEventLoopGroup() {
+        eventLoopGroup.shutdown();
     }
 
     public ClientConnection getConnection(Address target) {
@@ -396,12 +396,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     socketChannelWrapperFactory.wrapSocketChannel(socketChannel, true);
 
             final ClientConnection clientConnection = new ClientConnection(
-                    client, ioThreadingModel, connectionIdGen.incrementAndGet(), socketChannelWrapper);
+                    client, eventLoopGroup, connectionIdGen.incrementAndGet(), socketChannelWrapper);
             socketChannel.configureBlocking(true);
             if (socketInterceptor != null) {
                 socketInterceptor.onConnect(socket);
             }
-            socketChannel.configureBlocking(ioThreadingModel.isBlocking());
+            socketChannel.configureBlocking(eventLoopGroup.isBlocking());
             socket.setSoTimeout(0);
             clientConnection.start();
             return clientConnection;
