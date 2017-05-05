@@ -34,7 +34,7 @@ public abstract class AbstractHandler {
         this.connection = connection;
         this.oomeHandler = oomeHandler;
         this.logger = logger;
-        this.socketChannel = connection.getSocketChannel();
+        this.socketChannel = connection.getChannel();
     }
 
     public Channel getSocketChannel() {

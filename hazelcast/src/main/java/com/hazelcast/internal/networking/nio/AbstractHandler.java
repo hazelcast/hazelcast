@@ -60,7 +60,7 @@ public abstract class AbstractHandler
                            ILogger logger,
                            IOBalancer ioBalancer) {
         this.connection = connection;
-        this.socketChannel = connection.getSocketChannel();
+        this.socketChannel = connection.getChannel();
         this.ioThread = ioThread;
         this.ioThreadId = ioThread.id;
         this.logger = logger;

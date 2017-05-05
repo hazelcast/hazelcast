@@ -117,7 +117,7 @@ public final class TcpIpConnection implements SocketConnection, MetricsProvider,
     }
 
     @Override
-    public Channel getSocketChannel() {
+    public Channel getChannel() {
         return socketChannel;
     }
 

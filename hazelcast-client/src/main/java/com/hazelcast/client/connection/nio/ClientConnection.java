@@ -135,7 +135,7 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
     }
 
     @Override
-    public Channel getSocketChannel() {
+    public Channel getChannel() {
         return socketChannel;
     }
 
