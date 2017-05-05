@@ -7,13 +7,11 @@ import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.nio.serialization.SerializationConcurrencyTest;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.responses.BackupAckResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
@@ -68,9 +66,7 @@ public class OutboundResponseHandlerTest {
         setCallerAddress(op, thatAddress);
 
         ArgumentCaptor<Packet> argument = ArgumentCaptor.forClass(Packet.class);
-        Connection connection = mock(Connection.class);
-        when(connectionManager.getOrConnect(thatAddress)).thenReturn(connection);
-        when(connectionManager.transmit(argument.capture(), eq(connection))).thenReturn(true);
+        when(connectionManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
 
         // make the call
         handler.sendResponse(op, response);
@@ -87,9 +83,7 @@ public class OutboundResponseHandlerTest {
         setCallerAddress(op, thatAddress);
 
         ArgumentCaptor<Packet> argument = ArgumentCaptor.forClass(Packet.class);
-        Connection connection = mock(Connection.class);
-        when(connectionManager.getOrConnect(thatAddress)).thenReturn(connection);
-        when(connectionManager.transmit(argument.capture(), eq(connection))).thenReturn(true);
+        when(connectionManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
 
         // make the call
         handler.sendResponse(op, response);
@@ -107,9 +101,7 @@ public class OutboundResponseHandlerTest {
         setCallerAddress(op, thatAddress);
 
         ArgumentCaptor<Packet> argument = ArgumentCaptor.forClass(Packet.class);
-        Connection connection = mock(Connection.class);
-        when(connectionManager.getOrConnect(thatAddress)).thenReturn(connection);
-        when(connectionManager.transmit(argument.capture(), eq(connection))).thenReturn(true);
+        when(connectionManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
 
         // make the call
         handler.sendResponse(op, response);
@@ -126,9 +118,7 @@ public class OutboundResponseHandlerTest {
         setCallerAddress(op, thatAddress);
 
         ArgumentCaptor<Packet> argument = ArgumentCaptor.forClass(Packet.class);
-        Connection connection = mock(Connection.class);
-        when(connectionManager.getOrConnect(thatAddress)).thenReturn(connection);
-        when(connectionManager.transmit(argument.capture(), eq(connection))).thenReturn(true);
+        when(connectionManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
 
         // make the call
         handler.sendResponse(op, null);
@@ -147,9 +137,7 @@ public class OutboundResponseHandlerTest {
         setCallerAddress(op, thatAddress);
 
         ArgumentCaptor<Packet> argument = ArgumentCaptor.forClass(Packet.class);
-        Connection connection = mock(Connection.class);
-        when(connectionManager.getOrConnect(thatAddress)).thenReturn(connection);
-        when(connectionManager.transmit(argument.capture(), eq(connection))).thenReturn(true);
+        when(connectionManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
 
         // make the call
         handler.sendResponse(op, response);
@@ -167,9 +155,7 @@ public class OutboundResponseHandlerTest {
         setCallerAddress(op, thatAddress);
 
         ArgumentCaptor<Packet> argument = ArgumentCaptor.forClass(Packet.class);
-        Connection connection = mock(Connection.class);
-        when(connectionManager.getOrConnect(thatAddress)).thenReturn(connection);
-        when(connectionManager.transmit(argument.capture(), eq(connection))).thenReturn(true);
+        when(connectionManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
 
         // make the call
         handler.sendResponse(op, response);
@@ -187,9 +173,7 @@ public class OutboundResponseHandlerTest {
         setCallerAddress(op, thatAddress);
 
         ArgumentCaptor<Packet> argument = ArgumentCaptor.forClass(Packet.class);
-        Connection connection = mock(Connection.class);
-        when(connectionManager.getOrConnect(thatAddress)).thenReturn(connection);
-        when(connectionManager.transmit(argument.capture(), eq(connection))).thenReturn(true);
+        when(connectionManager.transmit(argument.capture(), eq(thatAddress))).thenReturn(true);
 
         // make the call
         handler.sendResponse(op, exception);
@@ -198,7 +182,6 @@ public class OutboundResponseHandlerTest {
         ErrorResponse expectedResponse = new ErrorResponse(exception, op.getCallId(), op.isUrgent());
         assertEquals(serializationService.toData(expectedResponse), argument.getValue());
     }
-
 
     @Test
     public void toBackupAckPacket() {

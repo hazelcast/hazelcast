@@ -20,7 +20,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
@@ -105,9 +104,7 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
         }
 
         if (!send) {
-            Connection conn = operation.getConnection();
-            logger.warning("Cannot send response: " + obj + " to " + conn.getEndPoint()
-                    + ". " + operation);
+            logger.warning("Cannot send response: " + obj + " to " + target + ". " + operation);
         }
     }
 
@@ -216,8 +213,7 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
 
     private boolean transmit(Address target, Packet packet) {
         ConnectionManager connectionManager = node.getConnectionManager();
-        Connection connection = connectionManager.getOrConnect(target);
-        return connectionManager.transmit(packet, connection);
+        return connectionManager.transmit(packet, target);
     }
 
     private void checkTarget(Address target) {
