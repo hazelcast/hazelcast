@@ -288,7 +288,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     }
 
     SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
-        SocketChannelWrapper wrapper = socketChannelWrapperFactory.wrapSocketChannel(socketChannel, client);
+        SocketChannelWrapper wrapper = socketChannelWrapperFactory.wrapSocketChannel(
+                socketChannel, client, ioService.useDirectSocketBuffer());
         acceptedSockets.add(wrapper);
         return wrapper;
     }

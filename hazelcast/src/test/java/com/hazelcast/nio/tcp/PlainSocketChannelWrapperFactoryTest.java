@@ -28,6 +28,7 @@ import org.junit.runner.RunWith;
 import java.nio.channels.SocketChannel;
 
 import static org.junit.Assert.assertFalse;
+import static org.mockito.Matchers.floatThat;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -44,7 +45,7 @@ public class PlainSocketChannelWrapperFactoryTest extends HazelcastTestSupport {
     @Test
     public void wrapSocketChannel() throws Exception {
         SocketChannel socketChannel = mock(SocketChannel.class);
-        SocketChannelWrapper wrapper = factory.wrapSocketChannel(socketChannel, false);
+        SocketChannelWrapper wrapper = factory.wrapSocketChannel(socketChannel, false, false);
 
         assertInstanceOf(PlainSocketChannelWrapper.class, wrapper);
     }

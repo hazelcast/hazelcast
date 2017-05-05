@@ -24,7 +24,7 @@ import java.nio.channels.SocketChannel;
 public class PlainSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
 
     @Override
-    public SocketChannelWrapper wrapSocketChannel(SocketChannel channel, boolean client) throws Exception {
+    public SocketChannelWrapper wrapSocketChannel(SocketChannel channel, boolean client, boolean directBuffer) throws Exception {
         return new PlainSocketChannelWrapper(channel);
     }
 }
