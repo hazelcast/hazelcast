@@ -144,7 +144,6 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.impl.xa.XAService;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
 
 import java.util.Collection;
@@ -158,6 +157,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.System.currentTimeMillis;
 
 public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
@@ -331,7 +331,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                 try {
                     c = ClassLoaderUtil.newInstance(config.getClassLoader(), credentialsClassname);
                 } catch (Exception e) {
-                    throw ExceptionUtil.rethrow(e);
+                    throw rethrow(e);
                 }
             }
         }
@@ -365,7 +365,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                 }
             }
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
         return new DefaultClientExtension();
     }
@@ -414,7 +414,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             clusterService.start();
         } catch (Exception e) {
             lifecycleService.shutdown();
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
         proxyManager.init(config);
         listenerService.start();
@@ -612,7 +612,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             }
             return (Collection<DistributedObject>) proxyManager.getDistributedObjects();
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 

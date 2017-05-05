@@ -26,11 +26,12 @@ import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 
 /**
  * Proxy implementation of {@link ICondition}.
@@ -56,7 +57,7 @@ public class ClientConditionProxy extends PartitionSpecificClientProxy implement
             await(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             // TODO: @mm - what if interrupted?
-            ExceptionUtil.sneakyThrow(e);
+            sneakyThrow(e);
         }
     }
 

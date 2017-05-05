@@ -43,7 +43,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 
@@ -63,6 +62,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -637,7 +637,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, partitionId);
             return clientInvocation.invoke();
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -646,7 +646,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             ClientInvocation invocation = new ClientInvocation(getClient(), request, target);
             return invocation.invoke();
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 

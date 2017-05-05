@@ -1001,7 +1001,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             return;
         }
 
-        Collection<Data> dataKeys = CollectionUtil.objectToDataCollection(keys, getSerializationService());
+        Collection<Data> dataKeys = objectToDataCollection(keys, getSerializationService());
         loadAllInternal(replaceExistingValues, dataKeys);
     }
 

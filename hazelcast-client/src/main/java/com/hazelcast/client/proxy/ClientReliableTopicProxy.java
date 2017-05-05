@@ -42,7 +42,6 @@ import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.topic.impl.reliable.ReliableMessageListenerAdapter;
 import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.version.MemberVersion;
 
@@ -275,12 +274,10 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
                 return;
             }
 
-            t = ExceptionUtil.peel(t);
-
+            t = peel(t);
             if (t instanceof StaleSequenceException) {
                 // StaleSequenceException.getHeadSeq() is not available on the client-side, see #7317
                 long remoteHeadSeq = ringbuffer.headSequence();
-
                 if (listener.isLossTolerant()) {
                     if (logger.isFinestEnabled()) {
                         logger.finest("MessageListener " + listener + " on topic: " + name + " ran into a stale sequence. "
@@ -291,7 +288,6 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
                     next();
                     return;
                 }
-
                 logger.warning("Terminating MessageListener:" + listener + " on topic: " + name + ". "
                         + "Reason: The listener was too slow or the retention period of the message has been violated. "
                         + "head: " + remoteHeadSeq + " sequence:" + sequence);
@@ -314,7 +310,6 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
                 logger.warning("Terminating MessageListener " + listener + " on topic: " + name + ". "
                         + "Reason: Unhandled exception, message: " + t.getMessage(), t);
             }
-
             cancel();
         }
 

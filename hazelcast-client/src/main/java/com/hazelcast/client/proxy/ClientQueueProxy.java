@@ -53,14 +53,13 @@ import com.hazelcast.core.Member;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.CollectionUtil;
-import com.hazelcast.util.Preconditions;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -357,8 +356,8 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
     @Override
     public boolean containsAll(Collection<?> c) {
-        Preconditions.checkNotNull(c);
-        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
+        checkNotNull(c);
+        Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = QueueContainsAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         QueueContainsAllCodec.ResponseParameters resultParameters = QueueContainsAllCodec.decodeResponse(response);
@@ -367,8 +366,8 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
     @Override
     public boolean addAll(Collection<? extends E> c) {
-        Preconditions.checkNotNull(c);
-        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
+        checkNotNull(c);
+        Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = QueueAddAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         QueueAddAllCodec.ResponseParameters resultParameters = QueueAddAllCodec.decodeResponse(response);
@@ -377,8 +376,8 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
     @Override
     public boolean removeAll(Collection<?> c) {
-        Preconditions.checkNotNull(c);
-        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
+        checkNotNull(c);
+        Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = QueueCompareAndRemoveAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         QueueCompareAndRemoveAllCodec.ResponseParameters resultParameters =
@@ -388,8 +387,8 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
     @Override
     public boolean retainAll(Collection<?> c) {
-        Preconditions.checkNotNull(c);
-        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
+        checkNotNull(c);
+        Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = QueueCompareAndRetainAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         QueueCompareAndRetainAllCodec.ResponseParameters resultParameters =

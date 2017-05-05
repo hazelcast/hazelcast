@@ -44,9 +44,9 @@ import com.hazelcast.nio.tcp.PlainChannelFactory;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public class DefaultClientExtension implements ClientExtension {
 
@@ -86,7 +86,7 @@ public class DefaultClientExtension implements ClientExtension {
                     .setHazelcastInstance(hazelcastInstance)
                     .build();
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
         return ss;
     }

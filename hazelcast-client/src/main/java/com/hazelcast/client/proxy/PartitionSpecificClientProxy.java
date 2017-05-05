@@ -25,7 +25,8 @@ import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
+
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
  * Base class for proxies of distributed objects that lives in on partition.
@@ -60,7 +61,7 @@ abstract class PartitionSpecificClientProxy extends ClientProxy {
             final ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke();
             return new ClientDelegatingFuture<T>(future, serializationService, clientMessageDecoder);
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 }

@@ -30,7 +30,6 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
 
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
@@ -45,6 +44,8 @@ import static com.hazelcast.transaction.impl.Transaction.State.NO_TXN;
 import static com.hazelcast.transaction.impl.Transaction.State.PREPARED;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 
 /**
  * This class does not need to be thread-safe, it is only used via XAResource
@@ -78,7 +79,7 @@ public class XATransactionProxy {
             txnId = XATransactionCreateCodec.decodeResponse(response).response;
             state = ACTIVE;
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -93,7 +94,7 @@ public class XATransactionProxy {
             state = PREPARED;
         } catch (Exception e) {
             state = ROLLING_BACK;
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -112,7 +113,7 @@ public class XATransactionProxy {
             state = COMMITTED;
         } catch (Exception e) {
             state = COMMIT_FAILED;
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -138,7 +139,7 @@ public class XATransactionProxy {
     private void checkTimeout() {
         long timeoutMillis = TimeUnit.SECONDS.toMillis(timeout);
         if (startTime + timeoutMillis < Clock.currentTimeMillis()) {
-            ExceptionUtil.sneakyThrow(new XAException(XAException.XA_RBTIMEOUT));
+            sneakyThrow(new XAException(XAException.XA_RBTIMEOUT));
         }
     }
 
@@ -148,7 +149,7 @@ public class XATransactionProxy {
             final Future<ClientMessage> future = clientInvocation.invoke();
             return future.get();
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 }

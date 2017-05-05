@@ -44,12 +44,13 @@ import com.hazelcast.core.Member;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.Preconditions;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+
+import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 
 /**
  * Proxy implementation of {@link ISet}.
@@ -126,7 +127,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
     @Override
     public boolean containsAll(Collection<?> c) {
         Preconditions.checkNotNull(c);
-        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
+        Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = SetContainsAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         SetContainsAllCodec.ResponseParameters resultParameters = SetContainsAllCodec.decodeResponse(response);
@@ -136,7 +137,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
     @Override
     public boolean addAll(Collection<? extends E> c) {
         Preconditions.checkNotNull(c);
-        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
+        Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = SetAddAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         SetAddAllCodec.ResponseParameters resultParameters = SetAddAllCodec.decodeResponse(response);
@@ -146,7 +147,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
     @Override
     public boolean removeAll(Collection<?> c) {
         Preconditions.checkNotNull(c);
-        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
+        Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = SetCompareAndRemoveAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         SetCompareAndRemoveAllCodec.ResponseParameters resultParameters = SetCompareAndRemoveAllCodec.decodeResponse(response);
@@ -156,7 +157,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
     @Override
     public boolean retainAll(Collection<?> c) {
         Preconditions.checkNotNull(c);
-        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
+        Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = SetCompareAndRetainAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         SetCompareAndRetainAllCodec.ResponseParameters resultParameters = SetCompareAndRetainAllCodec.decodeResponse(response);

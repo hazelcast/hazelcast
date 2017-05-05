@@ -54,7 +54,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
 
@@ -65,6 +64,8 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
+
+import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 
 /**
  * Proxy implementation of {@link JobTracker} for a client initiated map reduce job.
@@ -194,7 +195,7 @@ public class ClientMapReduceProxy
         Data reducerFactoryData = toData(reducerFactory);
         Collection list = null;
         if (keys != null) {
-            list = CollectionUtil.objectToDataCollection(keys, getSerializationService());
+            list = objectToDataCollection(keys, getSerializationService());
         }
 
         String topologyChangedStrategyName = null;

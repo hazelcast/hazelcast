@@ -26,9 +26,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionalObject;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
+
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 abstract class ClientTxnProxy implements TransactionalObject {
 
@@ -67,7 +68,7 @@ abstract class ClientTxnProxy implements TransactionalObject {
             Future<ClientMessage> future = invocation.invoke();
             return future.get();
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 

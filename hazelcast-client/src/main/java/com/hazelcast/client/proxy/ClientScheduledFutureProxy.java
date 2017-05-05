@@ -42,7 +42,6 @@ import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
 import com.hazelcast.scheduledexecutor.StaleTaskException;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskStatisticsImpl;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.Delayed;
@@ -50,6 +49,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -97,7 +97,7 @@ public class ClientScheduledFutureProxy<V>
                         responseParameters.totalRunTimeNanos, responseParameters.totalIdleTimeNanos);
             }
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
 
     }
@@ -123,7 +123,7 @@ public class ClientScheduledFutureProxy<V>
                 return unit.convert(nanos, TimeUnit.NANOSECONDS);
             }
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -160,7 +160,7 @@ public class ClientScheduledFutureProxy<V>
                 return ScheduledExecutorCancelFromPartitionCodec.decodeResponse(response).response;
             }
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -183,7 +183,7 @@ public class ClientScheduledFutureProxy<V>
                 return ScheduledExecutorIsCancelledFromPartitionCodec.decodeResponse(response).response;
             }
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -205,7 +205,7 @@ public class ClientScheduledFutureProxy<V>
                 return ScheduledExecutorIsDoneFromPartitionCodec.decodeResponse(response).response;
             }
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -234,7 +234,7 @@ public class ClientScheduledFutureProxy<V>
         try {
             return this.get0(Long.MAX_VALUE, TimeUnit.DAYS);
         } catch (TimeoutException e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -261,7 +261,7 @@ public class ClientScheduledFutureProxy<V>
             }
             handler = null;
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
 
     }
