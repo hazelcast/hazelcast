@@ -31,9 +31,9 @@ import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
-import com.hazelcast.internal.networking.ReadHandler;
+import com.hazelcast.internal.networking.ChannelInboundHandler;
+import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
-import com.hazelcast.internal.networking.WriteHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -45,9 +45,9 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
+import com.hazelcast.nio.tcp.MemberChannelOutboundHandler;
 import com.hazelcast.nio.tcp.PlainSocketChannelWrapperFactory;
-import com.hazelcast.nio.tcp.MemberReadHandler;
-import com.hazelcast.nio.tcp.MemberWriteHandler;
+import com.hazelcast.nio.tcp.MemberChannelInboundHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.SecurityContext;
@@ -199,14 +199,14 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public ReadHandler createReadHandler(TcpIpConnection connection, IOService ioService) {
+    public ChannelInboundHandler createReadHandler(TcpIpConnection connection, IOService ioService) {
         NodeEngineImpl nodeEngine = node.nodeEngine;
-        return new MemberReadHandler(connection, nodeEngine.getPacketDispatcher());
+        return new MemberChannelInboundHandler(connection, nodeEngine.getPacketDispatcher());
     }
 
     @Override
-    public WriteHandler createWriteHandler(TcpIpConnection connection, IOService ioService) {
-        return new MemberWriteHandler();
+    public ChannelOutboundHandler createWriteHandler(TcpIpConnection connection, IOService ioService) {
+        return new MemberChannelOutboundHandler();
     }
 
     @Override

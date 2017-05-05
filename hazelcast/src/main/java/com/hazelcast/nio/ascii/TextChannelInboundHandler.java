@@ -31,7 +31,7 @@ import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpDeleteCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpGetCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpPostCommandParser;
-import com.hazelcast.internal.networking.ReadHandler;
+import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
@@ -59,7 +59,7 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
 
 @PrivateApi
-public class TextReadHandler implements ReadHandler {
+public class TextChannelInboundHandler implements ChannelInboundHandler {
 
     private static final Map<String, CommandParser> MAP_COMMAND_PARSERS = new HashMap<String, CommandParser>();
 
@@ -94,7 +94,7 @@ public class TextReadHandler implements ReadHandler {
     private boolean commandLineRead;
     private TextCommand command;
     private final TextCommandService textCommandService;
-    private final TextWriteHandler textWriteHandler;
+    private final TextChannelOutboundHandler textWriteHandler;
     private final TcpIpConnection connection;
     private final boolean restEnabled;
     private final boolean memcacheEnabled;
@@ -103,10 +103,10 @@ public class TextReadHandler implements ReadHandler {
     private long requestIdGen;
     private final ILogger logger;
 
-    public TextReadHandler(TcpIpConnection connection) {
+    public TextChannelInboundHandler(TcpIpConnection connection) {
         IOService ioService = connection.getConnectionManager().getIoService();
         this.textCommandService = ioService.getTextCommandService();
-        this.textWriteHandler = (TextWriteHandler) connection.getSocketWriter().getWriteHandler();
+        this.textWriteHandler = (TextChannelOutboundHandler) connection.getSocketWriter().getOutboundHandler();
         this.connection = connection;
         this.memcacheEnabled = ioService.isMemcacheEnabled();
         this.restEnabled = ioService.isRestEnabled();
@@ -244,7 +244,7 @@ public class TextReadHandler implements ReadHandler {
         }
     }
 
-    public TextWriteHandler getTextWriteHandler() {
+    public TextChannelOutboundHandler getTextWriteHandler() {
         return textWriteHandler;
     }
 

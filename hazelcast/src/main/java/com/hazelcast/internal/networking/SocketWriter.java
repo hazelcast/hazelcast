@@ -17,20 +17,21 @@
 package com.hazelcast.internal.networking;
 
 import com.hazelcast.nio.OutboundFrame;
+import com.hazelcast.nio.ascii.TextChannelInboundHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 
 import java.nio.ByteBuffer;
 
 /**
  * Each {@link TcpIpConnection} has a {@link SocketWriter} and it writes {@link OutboundFrame} instances to the socket. Copying
- * the Frame instances to the byte-buffer is done using the {@link WriteHandler}.
+ * the Frame instances to the byte-buffer is done using the {@link ChannelOutboundHandler}.
  *
  * Each {@link TcpIpConnection} has its own {@link SocketWriter} instance.
  *
- * Before Hazelcast 3.6 the name of this interface was WriteHandler.
+ * Before Hazelcast 3.6 the name of this interface was ChannelOutboundHandler.
  *
  * @see SocketReader
- * @see ReadHandler
+ * @see ChannelInboundHandler
  * @see EventLoopGroup
  */
 public interface SocketWriter {
@@ -62,13 +63,13 @@ public interface SocketWriter {
     void write(OutboundFrame frame);
 
     /**
-     * Gets the {@link WriteHandler} that belongs to this SocketWriter.
+     * Gets the {@link ChannelOutboundHandler} that belongs to this SocketWriter.
      *
-     * This method exists for the {@link com.hazelcast.nio.ascii.TextReadHandler}, but probably should be deleted.
+     * This method exists for the {@link TextChannelInboundHandler}, but probably should be deleted.
      *
-     * @return the WriteHandler
+     * @return the ChannelOutboundHandler
      */
-    WriteHandler getWriteHandler();
+    ChannelOutboundHandler getOutboundHandler();
 
     /**
      * Sets the protocol this SocketWriter should use.
@@ -91,5 +92,5 @@ public interface SocketWriter {
 
     void initOutputBuffer(ByteBuffer outputBuffer);
 
-    void initWriteHandler(WriteHandler writeHandler);
+    void initWriteHandler(ChannelOutboundHandler outboundHandler);
 }

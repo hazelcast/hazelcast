@@ -17,10 +17,10 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.SocketConnection;
 import com.hazelcast.internal.networking.SocketWriter;
 import com.hazelcast.internal.networking.SocketWriterInitializer;
-import com.hazelcast.internal.networking.WriteHandler;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -71,7 +71,7 @@ public final class NioSocketWriter
     private final SwCounter normalFramesWritten = newSwCounter();
     @Probe(name = "priorityFramesWritten")
     private final SwCounter priorityFramesWritten = newSwCounter();
-    private WriteHandler writeHandler;
+    private ChannelOutboundHandler outboundHandler;
 
     private OutboundFrame currentFrame;
     private volatile long lastWriteTime;
@@ -120,8 +120,8 @@ public final class NioSocketWriter
     }
 
     @Override
-    public WriteHandler getWriteHandler() {
-        return writeHandler;
+    public ChannelOutboundHandler getOutboundHandler() {
+        return outboundHandler;
     }
 
     @Probe(name = "writeQueuePendingBytes", level = DEBUG)
@@ -154,7 +154,7 @@ public final class NioSocketWriter
         return scheduled.get() ? 1 : 0;
     }
 
-    // accessed from ReadHandler and SocketConnector
+    // accessed from ChannelInboundHandler and SocketConnector
     @Override
     public void setProtocol(final String protocol) {
         final CountDownLatch latch = new CountDownLatch(1);
@@ -162,7 +162,7 @@ public final class NioSocketWriter
             @Override
             public void run() {
                 try {
-                    if (writeHandler == null) {
+                    if (outboundHandler == null) {
                         initializer.init(connection, NioSocketWriter.this, protocol);
                     }
                 } catch (Throwable t) {
@@ -226,32 +226,32 @@ public final class NioSocketWriter
     }
 
     /**
-     * Makes sure this WriteHandler is scheduled to be executed by the IO thread.
+     * Makes sure this ChannelOutboundHandler is scheduled to be executed by the IO thread.
      * <p/>
      * This call is made by 'outside' threads that interact with the connection. For example when a frame is placed
      * on the connection to be written. It will never be made by an IO thread.
      * <p/>
-     * If the WriteHandler already is scheduled, the call is ignored.
+     * If the ChannelOutboundHandler already is scheduled, the call is ignored.
      */
     private void schedule() {
         if (scheduled.get()) {
-            // So this WriteHandler is still scheduled, we don't need to schedule it again
+            // So this ChannelOutboundHandler is still scheduled, we don't need to schedule it again
             return;
         }
 
         if (!scheduled.compareAndSet(false, true)) {
-            // Another thread already has scheduled this WriteHandler, we are done. It
+            // Another thread already has scheduled this ChannelOutboundHandler, we are done. It
             // doesn't matter which thread does the scheduling, as long as it happens.
             return;
         }
 
-        // We managed to schedule this WriteHandler. This means we need to add a task to
+        // We managed to schedule this ChannelOutboundHandler. This means we need to add a task to
         // the ioThread and give it a kick so that it processes our frames.
         ioThread.addTaskAndWakeup(this);
     }
 
     /**
-     * Tries to unschedule this WriteHandler.
+     * Tries to unschedule this ChannelOutboundHandler.
      * <p/>
      * It will only be unscheduled if:
      * - the outputBuffer is empty
@@ -271,7 +271,7 @@ public final class NioSocketWriter
             registerOp(OP_WRITE);
 
             // If the outputBuffer is not empty, we don't need to unschedule ourselves. This is because the
-            // WriteHandler will be triggered by a nio write event to continue sending data.
+            // ChannelOutboundHandler will be triggered by a nio write event to continue sending data.
             return;
         }
 
@@ -288,7 +288,7 @@ public final class NioSocketWriter
         // So there are frames, but we just unscheduled ourselves. If we don't try to reschedule, then these
         // Frames are at risk not to be send.
         if (!scheduled.compareAndSet(false, true)) {
-            //someone else managed to schedule this WriteHandler, so we are done.
+            //someone else managed to schedule this ChannelOutboundHandler, so we are done.
             return;
         }
 
@@ -304,7 +304,7 @@ public final class NioSocketWriter
         handleCount.inc();
         lastWriteTime = currentTimeMillis();
 
-        if (writeHandler == null) {
+        if (outboundHandler == null) {
             initializer.init(connection, this, CLUSTER);
             registerOp(OP_WRITE);
         }
@@ -323,8 +323,8 @@ public final class NioSocketWriter
     }
 
     @Override
-    public void initWriteHandler(WriteHandler writeHandler) {
-        this.writeHandler = writeHandler;
+    public void initWriteHandler(ChannelOutboundHandler outboundHandler) {
+        this.outboundHandler = outboundHandler;
     }
 
     private void startMigration() throws IOException {
@@ -374,7 +374,7 @@ public final class NioSocketWriter
 
         while (currentFrame != null) {
             // Lets write the currentFrame to the outputBuffer.
-            if (!writeHandler.onWrite(currentFrame, outputBuffer)) {
+            if (!outboundHandler.onWrite(currentFrame, outputBuffer)) {
                 // We are done for this round because not all data of the currentFrame fits in the outputBuffer
                 return;
             }
@@ -440,8 +440,8 @@ public final class NioSocketWriter
      * If the current ioThread is the same as 'theNewOwner' then the call is ignored.
      */
     private final class StartMigrationTask implements Runnable {
-        // field is called 'theNewOwner' to prevent any ambiguity problems with the writeHandler.newOwner.
-        // Else you get a lot of ugly WriteHandler.this.newOwner is ...
+        // field is called 'theNewOwner' to prevent any ambiguity problems with the outboundHandler.newOwner.
+        // Else you get a lot of ugly ChannelOutboundHandler.this.newOwner is ...
         private final NioThread theNewOwner;
 
         StartMigrationTask(NioThread theNewOwner) {

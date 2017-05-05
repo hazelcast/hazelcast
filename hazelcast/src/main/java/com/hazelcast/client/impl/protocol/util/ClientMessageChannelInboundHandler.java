@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.internal.networking.ReadHandler;
+import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.util.collection.Long2ObjectHashMap;
 
@@ -30,7 +30,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.END_FLAG;
 /**
  * Builds {@link ClientMessage}s from byte chunks. Fragmented messages are merged into single messages before processed.
  */
-public class ClientMessageReadHandler implements ReadHandler {
+public class ClientMessageChannelInboundHandler implements ChannelInboundHandler {
 
     private final Long2ObjectHashMap<BufferBuilder> builderBySessionIdMap = new Long2ObjectHashMap<BufferBuilder>();
 
@@ -38,7 +38,7 @@ public class ClientMessageReadHandler implements ReadHandler {
     private final SwCounter messageCounter;
     private ClientMessage message = ClientMessage.create();
 
-    public ClientMessageReadHandler(SwCounter messageCounter, MessageHandler messageHandler) {
+    public ClientMessageChannelInboundHandler(SwCounter messageCounter, MessageHandler messageHandler) {
         this.messageCounter = messageCounter;
         this.delegate = messageHandler;
     }

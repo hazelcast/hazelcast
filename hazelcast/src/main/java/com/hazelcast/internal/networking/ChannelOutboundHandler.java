@@ -23,15 +23,15 @@ import java.nio.ByteBuffer;
 /**
  * Responsible for writing {@link OutboundFrame} to a {@link ByteBuffer}.
  *
- * Each {@link SocketWriter} will have its own {@link WriteHandler} instance. Therefor it doesn't need
+ * Each {@link SocketWriter} will have its own {@link ChannelOutboundHandler} instance. Therefor it doesn't need
  * to be thread-safe.
  *
- * For more information about the WriteHandler (and handlers in generally), have a look at the {@link ReadHandler}.
+ * For more information about the ChannelOutboundHandler (and handlers in generally), have a look at the {@link ChannelInboundHandler}.
  *
  * @param <F>
  * @see EventLoopGroup
  */
-public interface WriteHandler<F extends OutboundFrame> {
+public interface ChannelOutboundHandler<F extends OutboundFrame> {
 
     /**
      * A callback to indicate that the Frame should be written to the destination ByteBuffer.

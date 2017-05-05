@@ -22,7 +22,7 @@ import java.nio.ByteBuffer;
 
 /**
  * The SocketReader is responsible for reading data from the socket, on behalf of a connection, into a
- * {@link java.nio.ByteBuffer}. Once the data is read into the ByteBuffer, this ByteBuffer is passed to the {@link ReadHandler}
+ * {@link java.nio.ByteBuffer}. Once the data is read into the ByteBuffer, this ByteBuffer is passed to the {@link ChannelInboundHandler}
  * that takes care of the actual processing of the incoming data.
  *
  * Each {@link SocketConnection} has its own {@link SocketReader} instance.
@@ -38,9 +38,9 @@ import java.nio.ByteBuffer;
  * A SocketReader is tightly coupled to the threading model; so a SocketReader instance is created using
  * {@link EventLoopGroup#newSocketReader(SocketConnection)}.
  *
- * Before Hazelcast 3.6 the name of this interface was ReadHandler.
+ * Before Hazelcast 3.6 the name of this interface was ChannelInboundHandler.
  *
- * @see ReadHandler
+ * @see ChannelInboundHandler
  * @see SocketWriter
  * @see EventLoopGroup
  */
@@ -84,7 +84,7 @@ public interface SocketReader {
 
     void initInputBuffer(ByteBuffer inputBuffer);
 
-    void initReadHandler(ReadHandler readHandler);
+    void initReadHandler(ChannelInboundHandler inboundHandler);
 
     SocketChannelWrapper getSocketChannel();
 

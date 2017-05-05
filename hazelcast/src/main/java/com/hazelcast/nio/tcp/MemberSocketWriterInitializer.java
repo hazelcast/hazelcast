@@ -18,11 +18,11 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.internal.networking.SocketWriter;
 import com.hazelcast.internal.networking.SocketWriterInitializer;
-import com.hazelcast.internal.networking.WriteHandler;
+import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Protocols;
-import com.hazelcast.nio.ascii.TextWriteHandler;
+import com.hazelcast.nio.ascii.TextChannelOutboundHandler;
 
 import java.net.SocketException;
 import java.nio.ByteBuffer;
@@ -43,21 +43,21 @@ public class MemberSocketWriterInitializer implements SocketWriterInitializer<Tc
 
     @Override
     public void init(TcpIpConnection connection, SocketWriter writer, String protocol) {
-        logger.fine("Initializing SocketWriter WriteHandler with " + Protocols.toUserFriendlyString(protocol));
+        logger.fine("Initializing SocketWriter ChannelOutboundHandler with " + Protocols.toUserFriendlyString(protocol));
 
         initHandler(connection, writer, protocol);
         initOutputBuffer(connection, writer, protocol);
     }
 
     private void initHandler(TcpIpConnection connection, SocketWriter writer, String protocol) {
-        WriteHandler handler;
+        ChannelOutboundHandler handler;
         if (CLUSTER.equals(protocol)) {
             IOService ioService = connection.getConnectionManager().getIoService();
             handler = ioService.createWriteHandler(connection);
         } else if (CLIENT_BINARY_NEW.equals(protocol)) {
-            handler = new ClientWriteHandler();
+            handler = new ClientChannelOutboundHandler();
         } else {
-            handler = new TextWriteHandler(connection);
+            handler = new TextChannelOutboundHandler(connection);
         }
         writer.initWriteHandler(handler);
     }
