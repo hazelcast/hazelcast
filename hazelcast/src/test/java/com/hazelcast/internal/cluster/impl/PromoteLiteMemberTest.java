@@ -55,7 +55,6 @@ import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.PROM
 import static com.hazelcast.internal.cluster.impl.MembershipFailureTest.assertMaster;
 import static com.hazelcast.internal.cluster.impl.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.internal.cluster.impl.PacketFiltersUtil.dropOperationsFrom;
-import static com.hazelcast.internal.cluster.impl.PacketFiltersUtil.resetPacketFiltersFrom;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -319,7 +318,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
             }
         });
 
-        resetPacketFiltersFrom(hz3);
+        dropOperationsBetween(hz3, hz1, EXPLICIT_SUSPICION);
         try {
             future.get();
             fail("Promotion should fail!");
