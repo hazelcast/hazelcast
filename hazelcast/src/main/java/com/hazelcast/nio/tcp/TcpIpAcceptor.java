@@ -18,8 +18,8 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.networking.SocketChannelWrapper;
-import com.hazelcast.internal.networking.nonblocking.SelectorMode;
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.nio.SelectorMode;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOService;
@@ -199,11 +199,11 @@ public class TcpIpAcceptor extends Thread {
     }
 
     private void acceptSocket() {
-        SocketChannelWrapper socketChannelWrapper = null;
+        Channel channel = null;
         try {
             final SocketChannel socketChannel = serverSocketChannel.accept();
             if (socketChannel != null) {
-                socketChannelWrapper = connectionManager.wrapSocketChannel(socketChannel, false);
+                channel = connectionManager.wrapSocketChannel(socketChannel, false);
             }
         } catch (Exception e) {
             exceptionCount.inc();
@@ -225,8 +225,8 @@ public class TcpIpAcceptor extends Thread {
             }
         }
 
-        if (socketChannelWrapper != null) {
-            final SocketChannelWrapper socketChannel = socketChannelWrapper;
+        if (channel != null) {
+            final Channel socketChannel = channel;
             logger.info("Accepting socket connection from " + socketChannel.socket().getRemoteSocketAddress());
             if (ioService.isSocketInterceptorEnabled()) {
                 configureAndAssignSocket(socketChannel);
@@ -241,11 +241,11 @@ public class TcpIpAcceptor extends Thread {
         }
     }
 
-    private void configureAndAssignSocket(SocketChannelWrapper socketChannel) {
+    private void configureAndAssignSocket(Channel socketChannel) {
         try {
             ioService.configureSocket(socketChannel.socket());
             ioService.interceptSocket(socketChannel.socket(), true);
-            socketChannel.configureBlocking(connectionManager.getIoThreadingModel().isBlocking());
+            socketChannel.configureBlocking(connectionManager.getEventLoopGroup().isBlocking());
             connectionManager.newConnection(socketChannel, null);
         } catch (Exception e) {
             exceptionCount.inc();

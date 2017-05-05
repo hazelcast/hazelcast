@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.networking.spinning;
 
+import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
-import com.hazelcast.internal.networking.SocketChannelWrapper;
 import com.hazelcast.internal.networking.SocketConnection;
 import com.hazelcast.logging.ILogger;
 
@@ -27,7 +27,7 @@ public abstract class AbstractHandler {
 
     protected final SocketConnection connection;
     protected final ILogger logger;
-    protected final SocketChannelWrapper socketChannel;
+    protected final Channel socketChannel;
     private final IOOutOfMemoryHandler oomeHandler;
 
     public AbstractHandler(SocketConnection connection, ILogger logger, IOOutOfMemoryHandler oomeHandler) {
@@ -37,7 +37,7 @@ public abstract class AbstractHandler {
         this.socketChannel = connection.getSocketChannel();
     }
 
-    public SocketChannelWrapper getSocketChannel() {
+    public Channel getSocketChannel() {
         return socketChannel;
     }
 

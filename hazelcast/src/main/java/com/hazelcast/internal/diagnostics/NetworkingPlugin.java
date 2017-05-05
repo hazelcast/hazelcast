@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import com.hazelcast.internal.networking.IOThreadingModel;
-import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThread;
-import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThreadingModel;
+import com.hazelcast.internal.networking.EventLoopGroup;
+import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
+import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
@@ -47,30 +47,30 @@ public class NetworkingPlugin extends DiagnosticsPlugin {
 
     private static final double HUNDRED = 100d;
 
-    private final NonBlockingIOThreadingModel ioThreadingModel;
+    private final NioEventLoopGroup eventLoopGroup;
     private final long periodMillis;
 
     public NetworkingPlugin(NodeEngineImpl nodeEngine) {
         this(nodeEngine.getProperties(), getThreadingModel(nodeEngine), nodeEngine.getLogger(NetworkingPlugin.class));
     }
 
-    public NetworkingPlugin(HazelcastProperties properties, IOThreadingModel threadingModel, ILogger logger) {
+    public NetworkingPlugin(HazelcastProperties properties, EventLoopGroup eventLoopGroup, ILogger logger) {
         super(logger);
 
-        if (threadingModel instanceof NonBlockingIOThreadingModel) {
-            this.ioThreadingModel = (NonBlockingIOThreadingModel) threadingModel;
+        if (eventLoopGroup instanceof NioEventLoopGroup) {
+            this.eventLoopGroup = (NioEventLoopGroup) eventLoopGroup;
         } else {
-            this.ioThreadingModel = null;
+            this.eventLoopGroup = null;
         }
-        this.periodMillis = ioThreadingModel == null ? 0 : properties.getMillis(PERIOD_SECONDS);
+        this.periodMillis = this.eventLoopGroup == null ? 0 : properties.getMillis(PERIOD_SECONDS);
     }
 
-    private static IOThreadingModel getThreadingModel(NodeEngineImpl nodeEngine) {
+    private static EventLoopGroup getThreadingModel(NodeEngineImpl nodeEngine) {
         ConnectionManager connectionManager = nodeEngine.getNode().getConnectionManager();
         if (!(connectionManager instanceof TcpIpConnectionManager)) {
             return null;
         }
-        return ((TcpIpConnectionManager) connectionManager).getIoThreadingModel();
+        return ((TcpIpConnectionManager) connectionManager).getEventLoopGroup();
     }
 
     @Override
@@ -88,17 +88,17 @@ public class NetworkingPlugin extends DiagnosticsPlugin {
         writer.startSection("Networking");
 
         writer.startSection("InputThreads");
-        render(writer, ioThreadingModel.getInputThreads());
+        render(writer, eventLoopGroup.getInputThreads());
         writer.endSection();
 
         writer.startSection("OutputThreads");
-        render(writer, ioThreadingModel.getOutputThreads());
+        render(writer, eventLoopGroup.getOutputThreads());
         writer.endSection();
 
         writer.endSection();
     }
 
-    private void render(DiagnosticsLogWriter writer, NonBlockingIOThread[] threads) {
+    private void render(DiagnosticsLogWriter writer, NioThread[] threads) {
         if (threads == null) {
             // this can become null due to stopping of the system.
             return;
@@ -111,7 +111,7 @@ public class NetworkingPlugin extends DiagnosticsPlugin {
         long totalTaskCount = 0;
         long totalHandleCount = 0;
 
-        for (NonBlockingIOThread thread : threads) {
+        for (NioThread thread : threads) {
             totalBytesReceived += thread.bytesTransceived();
             totalFramesReceived += thread.framesTransceived();
             totalPriorityFramesReceived += thread.priorityFramesTransceived();
@@ -120,7 +120,7 @@ public class NetworkingPlugin extends DiagnosticsPlugin {
             totalHandleCount += thread.handleCount();
         }
 
-        for (NonBlockingIOThread thread : threads) {
+        for (NioThread thread : threads) {
             writer.startSection(thread.getName());
             writer.writeKeyValueEntry("frames", toPercentage(thread.framesTransceived(), totalFramesReceived));
             writer.writeKeyValueEntry("priority-frames",

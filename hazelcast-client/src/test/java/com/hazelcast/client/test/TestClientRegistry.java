@@ -120,15 +120,15 @@ class TestClientRegistry {
         }
 
         @Override
-        protected void initIOThreads(HazelcastClientInstanceImpl client) {
+        protected void initEventLoopGroup(HazelcastClientInstanceImpl client) {
         }
 
         @Override
-        protected void startIOThreads() {
+        protected void startEventLoopGroup() {
         }
 
         @Override
-        protected void shutdownIOThreads() {
+        protected void stopEventLoopGroup() {
         }
 
         @Override

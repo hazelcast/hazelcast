@@ -20,8 +20,8 @@ import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.networking.IOThreadingModel;
-import com.hazelcast.internal.networking.SocketChannelWrapper;
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.networking.SocketConnection;
 import com.hazelcast.internal.networking.SocketReader;
 import com.hazelcast.internal.networking.SocketWriter;
@@ -48,12 +48,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <li>{@link SocketWriter}: which care of writing data to the socket.</li>
  * </ol>
  *
- * @see IOThreadingModel
+ * @see EventLoopGroup
  */
 @SuppressWarnings("checkstyle:methodcount")
 public final class TcpIpConnection implements SocketConnection, MetricsProvider, DiscardableMetricsProvider {
 
-    private final SocketChannelWrapper socketChannel;
+    private final Channel socketChannel;
 
     private final SocketReader socketReader;
 
@@ -81,15 +81,15 @@ public final class TcpIpConnection implements SocketConnection, MetricsProvider,
 
     public TcpIpConnection(TcpIpConnectionManager connectionManager,
                            int connectionId,
-                           SocketChannelWrapper socketChannel,
-                           IOThreadingModel ioThreadingModel) {
+                           Channel socketChannel,
+                           EventLoopGroup eventLoopGroup) {
         this.connectionId = connectionId;
         this.connectionManager = connectionManager;
         this.ioService = connectionManager.getIoService();
         this.logger = ioService.getLoggingService().getLogger(TcpIpConnection.class);
         this.socketChannel = socketChannel;
-        this.socketWriter = ioThreadingModel.newSocketWriter(this);
-        this.socketReader = ioThreadingModel.newSocketReader(this);
+        this.socketWriter = eventLoopGroup.newSocketWriter(this);
+        this.socketReader = eventLoopGroup.newSocketReader(this);
     }
 
     @Override
@@ -117,7 +117,7 @@ public final class TcpIpConnection implements SocketConnection, MetricsProvider,
     }
 
     @Override
-    public SocketChannelWrapper getSocketChannel() {
+    public Channel getSocketChannel() {
         return socketChannel;
     }
 

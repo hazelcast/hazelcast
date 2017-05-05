@@ -20,10 +20,10 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.networking.ChannelFactory;
+import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
-import com.hazelcast.internal.networking.ReadHandler;
-import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
-import com.hazelcast.internal.networking.WriteHandler;
+import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -129,11 +129,11 @@ public interface IOService {
 
     InternalSerializationService getSerializationService();
 
-    SocketChannelWrapperFactory getSocketChannelWrapperFactory();
+    ChannelFactory getSocketChannelWrapperFactory();
 
     MemberSocketInterceptor getMemberSocketInterceptor();
 
-    ReadHandler createReadHandler(TcpIpConnection connection);
+    ChannelInboundHandler createReadHandler(TcpIpConnection connection);
 
-    WriteHandler createWriteHandler(TcpIpConnection connection);
+    ChannelOutboundHandler createWriteHandler(TcpIpConnection connection);
 }

@@ -21,9 +21,9 @@ import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
-import com.hazelcast.internal.networking.ReadHandler;
-import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
-import com.hazelcast.internal.networking.WriteHandler;
+import com.hazelcast.internal.networking.ChannelInboundHandler;
+import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.Address;
@@ -39,7 +39,7 @@ import java.util.Map;
 
 /**
  * NodeExtension is a <tt>Node</tt> extension mechanism to be able to plug different implementations of
- * some modules, like; <tt>SerializationService</tt>, <tt>SocketChannelWrapperFactory</tt> etc.
+ * some modules, like; <tt>SerializationService</tt>, <tt>ChannelFactory</tt> etc.
  */
 @PrivateApi
 @SuppressWarnings({"checkstyle:methodcount"})
@@ -122,29 +122,29 @@ public interface NodeExtension {
     MemberSocketInterceptor getMemberSocketInterceptor();
 
     /**
-     * Returns <tt>SocketChannelWrapperFactory</tt> instance to be used by this <tt>Node</tt>.
+     * Returns <tt>ChannelFactory</tt> instance to be used by this <tt>Node</tt>.
      *
-     * @return SocketChannelWrapperFactory
+     * @return ChannelFactory
      */
-    SocketChannelWrapperFactory getSocketChannelWrapperFactory();
+    ChannelFactory getSocketChannelWrapperFactory();
 
     /**
-     * Creates a <tt>ReadHandler</tt> for given <tt>Connection</tt> instance.
+     * Creates a <tt>ChannelInboundHandler</tt> for given <tt>Connection</tt> instance.
      *
      * @param connection tcp-ip connection
      * @param ioService  IOService
-     * @return the created ReadHandler.
+     * @return the created ChannelInboundHandler.
      */
-    ReadHandler createReadHandler(TcpIpConnection connection, IOService ioService);
+    ChannelInboundHandler createReadHandler(TcpIpConnection connection, IOService ioService);
 
     /**
-     * Creates a <tt>WriteHandler</tt> for given <tt>Connection</tt> instance.
+     * Creates a <tt>ChannelOutboundHandler</tt> for given <tt>Connection</tt> instance.
      *
      * @param connection tcp-ip connection
      * @param ioService  IOService
-     * @return the created WriteHandler
+     * @return the created ChannelOutboundHandler
      */
-    WriteHandler createWriteHandler(TcpIpConnection connection, IOService ioService);
+    ChannelOutboundHandler createWriteHandler(TcpIpConnection connection, IOService ioService);
 
     /**
      * Called on thread start to inject/intercept extension specific logic,

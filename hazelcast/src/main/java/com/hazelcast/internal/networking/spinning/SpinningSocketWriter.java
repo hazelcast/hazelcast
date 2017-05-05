@@ -17,11 +17,11 @@
 package com.hazelcast.internal.networking.spinning;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.networking.SocketConnection;
 import com.hazelcast.internal.networking.SocketWriter;
 import com.hazelcast.internal.networking.SocketWriterInitializer;
-import com.hazelcast.internal.networking.WriteHandler;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.OutboundFrame;
@@ -60,7 +60,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     @Probe(name = "priorityFramesWritten")
     private final SwCounter priorityFramesWritten = newSwCounter();
     private volatile long lastWriteTime;
-    private WriteHandler writeHandler;
+    private ChannelOutboundHandler outboundHandler;
     private volatile OutboundFrame currentFrame;
 
     public SpinningSocketWriter(SocketConnection connection,
@@ -116,16 +116,16 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     }
 
     @Override
-    public void initWriteHandler(WriteHandler writeHandler) {
-        this.writeHandler = writeHandler;
+    public void initWriteHandler(ChannelOutboundHandler outboundHandler) {
+        this.outboundHandler = outboundHandler;
     }
 
     @Override
-    public WriteHandler getWriteHandler() {
-        return writeHandler;
+    public ChannelOutboundHandler getOutboundHandler() {
+        return outboundHandler;
     }
 
-    // accessed from ReadHandler and SocketConnector
+    // accessed from ChannelInboundHandler and SocketConnector
     @Override
     public void setProtocol(final String protocol) {
         final CountDownLatch latch = new CountDownLatch(1);
@@ -133,7 +133,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
             @Override
             public void run() {
                 logger.info("Setting protocol: " + protocol);
-                if (writeHandler == null) {
+                if (outboundHandler == null) {
                     initializer.init(connection, SpinningSocketWriter.this, protocol);
                 }
                 latch.countDown();
@@ -197,7 +197,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
             return;
         }
 
-        if (writeHandler == null) {
+        if (outboundHandler == null) {
             logger.warning("SocketWriter is not set, creating SocketWriter with CLUSTER protocol!");
             initializer.init(connection, this, CLUSTER);
             return;
@@ -245,7 +245,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
             }
 
             // Lets write the currentFrame to the outputBuffer.
-            if (!writeHandler.onWrite(currentFrame, outputBuffer)) {
+            if (!outboundHandler.onWrite(currentFrame, outputBuffer)) {
                 // We are done for this round because not all data of the current frame fits in the outputBuffer
                 return;
             }

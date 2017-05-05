@@ -37,7 +37,7 @@ import com.hazelcast.internal.ascii.rest.HttpGetCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpPostCommandProcessor;
 import com.hazelcast.internal.ascii.rest.RestValue;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.ascii.TextWriteHandler;
+import com.hazelcast.nio.ascii.TextChannelOutboundHandler;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
@@ -390,7 +390,7 @@ public class TextCommandServiceImpl implements TextCommandService {
                             stopObject.notify();
                         }
                     } else {
-                        TextWriteHandler textWriteHandler = textCommand.getWriteHandler();
+                        TextChannelOutboundHandler textWriteHandler = textCommand.getWriteHandler();
                         textWriteHandler.enqueue(textCommand);
                     }
                 } catch (InterruptedException e) {

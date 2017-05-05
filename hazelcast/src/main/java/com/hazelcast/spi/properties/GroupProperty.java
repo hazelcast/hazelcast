@@ -171,10 +171,10 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.io.output.thread.count", IO_THREAD_COUNT);
 
     /**
-     * The interval in seconds between {@link com.hazelcast.internal.networking.nonblocking.iobalancer.IOBalancer IOBalancer}
+     * The interval in seconds between {@link com.hazelcast.internal.networking.nio.iobalancer.IOBalancer IOBalancer}
      * executions. The shorter intervals will catch I/O Imbalance faster, but they will cause higher overhead.
      * <p/>
-     * Please see the documentation of {@link com.hazelcast.internal.networking.nonblocking.iobalancer.IOBalancer IOBalancer}
+     * Please see the documentation of {@link com.hazelcast.internal.networking.nio.iobalancer.IOBalancer IOBalancer}
      * for a detailed explanation of the problem.
      * <p/>
      * The default is 20 seconds. A value smaller than 1 disables the balancer.
