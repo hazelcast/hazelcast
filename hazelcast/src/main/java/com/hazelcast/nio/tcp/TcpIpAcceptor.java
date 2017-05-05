@@ -19,7 +19,7 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.SocketChannelWrapper;
-import com.hazelcast.internal.networking.nonblocking.SelectorMode;
+import com.hazelcast.internal.networking.nio.SelectorMode;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOService;
@@ -245,7 +245,7 @@ public class TcpIpAcceptor extends Thread {
         try {
             ioService.configureSocket(socketChannel.socket());
             ioService.interceptSocket(socketChannel.socket(), true);
-            socketChannel.configureBlocking(connectionManager.getIoThreadingModel().isBlocking());
+            socketChannel.configureBlocking(connectionManager.getEventLoopGroup().isBlocking());
             connectionManager.newConnection(socketChannel, null);
         } catch (Exception e) {
             exceptionCount.inc();

@@ -19,7 +19,7 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
-import com.hazelcast.internal.networking.nonblocking.Select_NonBlockingIOThreadingModelFactory;
+import com.hazelcast.internal.networking.nio.Select_NioEventLoopGroupFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
@@ -40,7 +40,7 @@ import static org.junit.Assert.fail;
 
 public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport {
 
-    protected IOThreadingModelFactory threadingModelFactory = new Select_NonBlockingIOThreadingModelFactory();
+    protected EventLoopGroupFactory threadingModelFactory = new Select_NioEventLoopGroupFactory();
 
     protected ILogger logger;
     protected LoggingServiceImpl loggingService;

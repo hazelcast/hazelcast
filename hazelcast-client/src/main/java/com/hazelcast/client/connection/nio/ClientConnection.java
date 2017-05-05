@@ -24,7 +24,7 @@ import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.networking.IOThreadingModel;
+import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.networking.SocketChannelWrapper;
 import com.hazelcast.internal.networking.SocketConnection;
 import com.hazelcast.internal.networking.SocketReader;
@@ -82,7 +82,7 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
     private String connectedServerVersionString;
 
     public ClientConnection(HazelcastClientInstanceImpl client,
-                            IOThreadingModel ioThreadingModel,
+                            EventLoopGroup eventLoopGroup,
                             int connectionId,
                             SocketChannelWrapper socketChannel) throws IOException {
         this.client = client;
@@ -91,8 +91,8 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
         this.socketChannel = socketChannel;
         this.connectionId = connectionId;
         this.logger = client.getLoggingService().getLogger(ClientConnection.class);
-        this.reader = ioThreadingModel.newSocketReader(this);
-        this.writer = ioThreadingModel.newSocketWriter(this);
+        this.reader = eventLoopGroup.newSocketReader(this);
+        this.writer = eventLoopGroup.newSocketWriter(this);
     }
 
     public ClientConnection(HazelcastClientInstanceImpl client,

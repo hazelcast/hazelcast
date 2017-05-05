@@ -36,13 +36,13 @@ import java.nio.ByteBuffer;
  * </ol>
  *
  * A SocketReader is tightly coupled to the threading model; so a SocketReader instance is created using
- * {@link IOThreadingModel#newSocketReader(SocketConnection)}.
+ * {@link EventLoopGroup#newSocketReader(SocketConnection)}.
  *
  * Before Hazelcast 3.6 the name of this interface was ReadHandler.
  *
  * @see ReadHandler
  * @see SocketWriter
- * @see IOThreadingModel
+ * @see EventLoopGroup
  */
 public interface SocketReader {
 

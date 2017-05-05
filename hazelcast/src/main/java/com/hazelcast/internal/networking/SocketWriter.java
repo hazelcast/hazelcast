@@ -31,7 +31,7 @@ import java.nio.ByteBuffer;
  *
  * @see SocketReader
  * @see ReadHandler
- * @see IOThreadingModel
+ * @see EventLoopGroup
  */
 public interface SocketWriter {
 

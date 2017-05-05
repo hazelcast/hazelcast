@@ -29,7 +29,7 @@ public class Spinning_TcpIpConnectionManager_ConnectMemberTest extends TcpIpConn
 
     @Before
     public void setup() throws Exception {
-        threadingModelFactory = new Spinning_IOThreadingModelFactory();
+        threadingModelFactory = new Spinning_EventLoopGroupFactory();
         super.setup();
     }
 }

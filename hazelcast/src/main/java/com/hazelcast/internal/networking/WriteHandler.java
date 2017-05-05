@@ -29,7 +29,7 @@ import java.nio.ByteBuffer;
  * For more information about the WriteHandler (and handlers in generally), have a look at the {@link ReadHandler}.
  *
  * @param <F>
- * @see IOThreadingModel
+ * @see EventLoopGroup
  */
 public interface WriteHandler<F extends OutboundFrame> {
 

@@ -326,7 +326,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  set";version="3.8.0.SNAPSHOT",com.hazelcast.internal.distributedclass
  loading.impl.filter;uses:="com.hazelcast.util.collection,com.hazelcas
  t.internal.util.filter,com.hazelcast.config,com.hazelcast.core";versi
- on="3.8.0.SNAPSHOT",com.hazelcast.internal.networking.nonblocking;use
+ on="3.8.0.SNAPSHOT",com.hazelcast.internal.networking.nio;use
  s:="com.hazelcast.logging,com.hazelcast.internal.util.counters,com.ha
  zelcast.internal.metrics,com.hazelcast.internal.networking,com.hazelc
  ast.internal.networking.nonblocking.iobalancer,com.hazelcast.core,com
@@ -668,7 +668,7 @@ Export-Package: com.hazelcast.cluster.impl;uses:="com.hazelcast.loggin
  om.hazelcast.util,com.hazelcast.cluster.impl,com.hazelcast.spi.proper
  ties,com.hazelcast.config,com.hazelcast.nio.tcp,com.hazelcast.interna
  l.networking.spinning,com.hazelcast.internal.metrics,com.hazelcast.in
- ternal.networking,com.hazelcast.internal.networking.nonblocking,com.h
+ ternal.networking,com.hazelcast.internal.networking.nio,com.h
  azelcast.spi.impl,com.hazelcast.hotrestart,com.hazelcast.wan.impl,com
  .hazelcast.spi.serialization,com.hazelcast.wan,com.hazelcast.internal
  .cluster.impl,com.hazelcast.map.impl,com.hazelcast.memory,com.hazelca

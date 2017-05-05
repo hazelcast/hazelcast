@@ -65,7 +65,7 @@ import java.nio.ByteBuffer;
  * @see WriteHandler
  * @see SocketReader
  * @see TcpIpConnection
- * @see IOThreadingModel
+ * @see EventLoopGroup
  */
 public interface ReadHandler {
 
