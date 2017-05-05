@@ -24,8 +24,8 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.internal.networking.nio.MigratableHandler;
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
 import com.hazelcast.internal.networking.nio.NioThread;
-import com.hazelcast.internal.networking.nio.NioSocketReader;
-import com.hazelcast.internal.networking.nio.NioSocketWriter;
+import com.hazelcast.internal.networking.nio.NioChannelReader;
+import com.hazelcast.internal.networking.nio.NioChannelWriter;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -108,7 +108,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             sb.append(in + ": " + in.getEventCount() + "\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
-                NioSocketReader socketReader = (NioSocketReader) connection.getSocketReader();
+                NioChannelReader socketReader = (NioChannelReader) connection.getChannelReader();
                 if (socketReader.getOwner() == in) {
                     sb.append("\t" + socketReader + " eventCount:" + socketReader.getEventCount() + "\n");
                 }
@@ -119,7 +119,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             sb.append(in + ": " + in.getEventCount() + "\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
-                NioSocketWriter socketWriter = (NioSocketWriter) connection.getSocketWriter();
+                NioChannelWriter socketWriter = (NioChannelWriter) connection.getChannelWriter();
                 if (socketWriter.getOwner() == in) {
                     sb.append("\t" + socketWriter + " eventCount:" + socketWriter.getEventCount() + "\n");
                 }
@@ -132,8 +132,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     private Map<NioThread, Set<MigratableHandler>> getHandlersPerSelector(TcpIpConnectionManager connectionManager) {
         Map<NioThread, Set<MigratableHandler>> handlersPerSelector = new HashMap<NioThread, Set<MigratableHandler>>();
         for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
-            add(handlersPerSelector, (MigratableHandler) connection.getSocketReader());
-            add(handlersPerSelector, (MigratableHandler) connection.getSocketWriter());
+            add(handlersPerSelector, (MigratableHandler) connection.getChannelReader());
+            add(handlersPerSelector, (MigratableHandler) connection.getChannelWriter());
         }
         return handlersPerSelector;
     }

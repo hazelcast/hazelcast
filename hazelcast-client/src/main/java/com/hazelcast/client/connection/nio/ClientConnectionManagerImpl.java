@@ -192,8 +192,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 inputThreads,
                 outputThreads,
                 properties.getInteger(ClientProperty.IO_BALANCER_INTERVAL_SECONDS),
-                new ClientSocketWriterInitializer(getBufferSize(), directBuffer),
-                new ClientSocketReaderInitializer(getBufferSize(), directBuffer));
+                new ClientChannelWriterInitializer(getBufferSize(), directBuffer),
+                new ClientChannelReaderInitializer(getBufferSize(), directBuffer));
     }
 
     private SocketInterceptor initSocketInterceptor(SocketInterceptorConfig sic) {

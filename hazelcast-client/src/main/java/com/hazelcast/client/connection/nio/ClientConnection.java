@@ -25,10 +25,10 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelReader;
 import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.networking.SocketConnection;
-import com.hazelcast.internal.networking.SocketReader;
-import com.hazelcast.internal.networking.SocketWriter;
+import com.hazelcast.internal.networking.ChannelWriter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -60,8 +60,8 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
     private final ILogger logger;
 
     private final AtomicInteger pendingPacketCount = new AtomicInteger(0);
-    private final SocketWriter writer;
-    private final SocketReader reader;
+    private final ChannelWriter writer;
+    private final ChannelReader reader;
     private final Channel socketChannel;
     private final ClientConnectionManagerImpl connectionManager;
     private final LifecycleService lifecycleService;
@@ -125,12 +125,12 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
     }
 
     @Override
-    public SocketReader getSocketReader() {
+    public ChannelReader getChannelReader() {
         return reader;
     }
 
     @Override
-    public SocketWriter getSocketWriter() {
+    public ChannelWriter getChannelWriter() {
         return writer;
     }
 

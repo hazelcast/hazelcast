@@ -16,8 +16,8 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.internal.networking.SocketReader;
-import com.hazelcast.internal.networking.SocketWriter;
+import com.hazelcast.internal.networking.ChannelReader;
+import com.hazelcast.internal.networking.ChannelWriter;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestThread;
@@ -113,8 +113,8 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
         logger.info("expected normal packets: " + expectedNormalPackets);
         logger.info("expected priority packets: " + expectedUrgentPackets);
 
-        final SocketWriter writer = c.getSocketWriter();
-        final SocketReader reader = ((TcpIpConnection) connManagerB.getConnection(addressA)).getSocketReader();
+        final ChannelWriter writer = c.getChannelWriter();
+        final ChannelReader reader = ((TcpIpConnection) connManagerB.getConnection(addressA)).getChannelReader();
         long start = System.currentTimeMillis();
         assertTrueEventually(new AssertTask() {
             @Override
@@ -175,13 +175,13 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
     public class WriteThread extends TestThread {
 
         private final Random random = new Random();
-        private final SocketWriter writeHandler;
+        private final ChannelWriter writeHandler;
         private long normalPackets;
         private long urgentPackets;
 
         public WriteThread(int id, TcpIpConnection c) {
             super("WriteThread-" + id);
-            this.writeHandler = c.getSocketWriter();
+            this.writeHandler = c.getChannelWriter();
         }
 
         @Override

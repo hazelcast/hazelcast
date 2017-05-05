@@ -19,8 +19,8 @@ package com.hazelcast.internal.networking.nio;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.SocketConnection;
-import com.hazelcast.internal.networking.SocketReader;
-import com.hazelcast.internal.networking.SocketReaderInitializer;
+import com.hazelcast.internal.networking.ChannelReader;
+import com.hazelcast.internal.networking.ChannelReaderInitializer;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -34,15 +34,15 @@ import static java.lang.System.currentTimeMillis;
 import static java.nio.channels.SelectionKey.OP_READ;
 
 /**
- * A {@link SocketReader} tailored for non blocking IO.
+ * A {@link ChannelReader} tailored for non blocking IO.
  *
  * When the {@link NioThread} receives a read event from the {@link java.nio.channels.Selector}, then the
  * {@link #handle()} is called to read out the data from the socket into a bytebuffer and hand it over to the
  * {@link ChannelInboundHandler} to get processed.
  */
-public final class NioSocketReader
+public final class NioChannelReader
         extends AbstractHandler
-        implements SocketReader {
+        implements ChannelReader {
 
     protected ByteBuffer inputBuffer;
 
@@ -52,7 +52,7 @@ public final class NioSocketReader
     private final SwCounter normalFramesRead = newSwCounter();
     @Probe(name = "priorityFramesRead")
     private final SwCounter priorityFramesRead = newSwCounter();
-    private final SocketReaderInitializer initializer;
+    private final ChannelReaderInitializer initializer;
     private final ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
     private ChannelInboundHandler inboundHandler;
     private volatile long lastReadTime;
@@ -62,12 +62,12 @@ public final class NioSocketReader
     private long priorityFramesReadLastPublish;
     private long handleCountLastPublish;
 
-    public NioSocketReader(
+    public NioChannelReader(
             SocketConnection connection,
             NioThread ioThread,
             ILogger logger,
             IOBalancer balancer,
-            SocketReaderInitializer initializer) {
+            ChannelReaderInitializer initializer) {
         super(connection, ioThread, OP_READ, logger, balancer);
         this.initializer = initializer;
     }
@@ -190,7 +190,7 @@ public final class NioSocketReader
             @Override
             public void run() {
                 if (ioThread != Thread.currentThread()) {
-                    // the NioSocketReader has migrated to a different IOThread after the close got called.
+                    // the NioChannelReader has migrated to a different IOThread after the close got called.
                     // so we need to send the task to the right ioThread. Otherwise multiple ioThreads could be accessing
                     // the same socketChannel.
                     ioThread.addTaskAndWakeup(this);

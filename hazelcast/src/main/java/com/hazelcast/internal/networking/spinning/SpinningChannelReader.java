@@ -18,10 +18,10 @@ package com.hazelcast.internal.networking.spinning;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
+import com.hazelcast.internal.networking.ChannelReader;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.networking.SocketConnection;
-import com.hazelcast.internal.networking.SocketReader;
-import com.hazelcast.internal.networking.SocketReaderInitializer;
+import com.hazelcast.internal.networking.ChannelReaderInitializer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 
@@ -32,7 +32,7 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 
-public class SpinningSocketReader extends AbstractHandler implements SocketReader {
+public class SpinningChannelReader extends AbstractHandler implements ChannelReader {
 
     @Probe(name = "bytesRead")
     private final SwCounter bytesRead = newSwCounter();
@@ -40,16 +40,16 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
     private final SwCounter normalFramesRead = newSwCounter();
     @Probe(name = "priorityFramesRead")
     private final SwCounter priorityFramesRead = newSwCounter();
-    private final SocketReaderInitializer initializer;
+    private final ChannelReaderInitializer initializer;
     private volatile long lastReadTime;
     private ChannelInboundHandler inboundHandler;
     private ByteBuffer inputBuffer;
     private final ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
 
-    public SpinningSocketReader(SocketConnection connection,
-                                ILogger logger,
-                                IOOutOfMemoryHandler oomeHandler,
-                                SocketReaderInitializer initializer) {
+    public SpinningChannelReader(SocketConnection connection,
+                                 ILogger logger,
+                                 IOOutOfMemoryHandler oomeHandler,
+                                 ChannelReaderInitializer initializer) {
         super(connection, logger, oomeHandler);
         this.initializer = initializer;
     }

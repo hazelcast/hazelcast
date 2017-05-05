@@ -185,7 +185,7 @@ public class TcpIpConnector {
 
                 channel.configureBlocking(false);
                 TcpIpConnection connection = connectionManager.newConnection(channel, address);
-                connection.getSocketWriter().setProtocol(Protocols.CLUSTER);
+                connection.getChannelWriter().setProtocol(Protocols.CLUSTER);
                 connectionManager.sendBindRequest(connection, address, true);
             } catch (Exception e) {
                 closeSocket(socketChannel);

@@ -20,8 +20,8 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.tcp.EventLoopGroupFactory;
 import com.hazelcast.nio.tcp.MockIOService;
-import com.hazelcast.nio.tcp.MemberSocketReaderInitializer;
-import com.hazelcast.nio.tcp.MemberSocketWriterInitializer;
+import com.hazelcast.nio.tcp.MemberChannelReaderInitializer;
+import com.hazelcast.nio.tcp.MemberChannelWriterInitializer;
 
 public class SelectNow_NioEventLoopGroupFactory implements EventLoopGroupFactory {
 
@@ -36,8 +36,8 @@ public class SelectNow_NioEventLoopGroupFactory implements EventLoopGroupFactory
                 ioService.getIoOutOfMemoryHandler(), ioService.getInputSelectorThreadCount(),
                 ioService.getOutputSelectorThreadCount(),
                 ioService.getBalancerIntervalSeconds(),
-                new MemberSocketWriterInitializer(loggingService.getLogger(MemberSocketWriterInitializer.class)),
-                new MemberSocketReaderInitializer(loggingService.getLogger(MemberSocketReaderInitializer.class))
+                new MemberChannelWriterInitializer(loggingService.getLogger(MemberChannelWriterInitializer.class)),
+                new MemberChannelReaderInitializer(loggingService.getLogger(MemberChannelReaderInitializer.class))
         );
         threadingModel.setSelectorMode(SelectorMode.SELECT_NOW);
         return threadingModel;

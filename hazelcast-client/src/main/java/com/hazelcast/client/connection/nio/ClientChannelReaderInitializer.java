@@ -20,24 +20,24 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ClientMessageChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
-import com.hazelcast.internal.networking.SocketReader;
-import com.hazelcast.internal.networking.SocketReaderInitializer;
+import com.hazelcast.internal.networking.ChannelReader;
+import com.hazelcast.internal.networking.ChannelReaderInitializer;
 import com.hazelcast.nio.IOUtil;
 
 import java.io.IOException;
 
-class ClientSocketReaderInitializer implements SocketReaderInitializer<ClientConnection> {
+class ClientChannelReaderInitializer implements ChannelReaderInitializer<ClientConnection> {
 
     private final int bufferSize;
     private final boolean direct;
 
-    ClientSocketReaderInitializer(int bufferSize, boolean direct) {
+    ClientChannelReaderInitializer(int bufferSize, boolean direct) {
         this.bufferSize = bufferSize;
         this.direct = direct;
     }
 
     @Override
-    public void init(final ClientConnection connection, SocketReader reader) throws IOException {
+    public void init(final ClientConnection connection, ChannelReader reader) throws IOException {
         reader.initInputBuffer(IOUtil.newByteBuffer(bufferSize, direct));
 
         ChannelInboundHandler inboundHandler = new ClientMessageChannelInboundHandler(reader.getNormalFramesReadCounter(),

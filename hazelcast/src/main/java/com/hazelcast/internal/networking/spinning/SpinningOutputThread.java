@@ -38,7 +38,7 @@ public class SpinningOutputThread extends Thread {
     }
 
     void addConnection(SocketConnection connection) {
-        SpinningSocketWriter writer = (SpinningSocketWriter) connection.getSocketWriter();
+        SpinningChannelWriter writer = (SpinningChannelWriter) connection.getChannelWriter();
 
         for (; ; ) {
             SocketWriters current = socketWriters;
@@ -48,7 +48,7 @@ public class SpinningOutputThread extends Thread {
 
             int length = current.writers.length;
 
-            SpinningSocketWriter[] newWriters = new SpinningSocketWriter[length + 1];
+            SpinningChannelWriter[] newWriters = new SpinningChannelWriter[length + 1];
             arraycopy(current.writers, 0, newWriters, 0, length);
             newWriters[length] = writer;
 
@@ -60,7 +60,7 @@ public class SpinningOutputThread extends Thread {
     }
 
     void removeConnection(SocketConnection connection) {
-        SpinningSocketWriter writeHandlers = (SpinningSocketWriter) connection.getSocketWriter();
+        SpinningChannelWriter writeHandlers = (SpinningChannelWriter) connection.getChannelWriter();
 
         for (; ; ) {
             SocketWriters current = socketWriters;
@@ -74,7 +74,7 @@ public class SpinningOutputThread extends Thread {
             }
 
             int length = current.writers.length;
-            SpinningSocketWriter[] newWriters = new SpinningSocketWriter[length - 1];
+            SpinningChannelWriter[] newWriters = new SpinningChannelWriter[length - 1];
 
             int destIndex = 0;
             for (int sourceIndex = 0; sourceIndex < length; sourceIndex++) {
@@ -105,7 +105,7 @@ public class SpinningOutputThread extends Thread {
                 return;
             }
 
-            for (SpinningSocketWriter writer : handlers.writers) {
+            for (SpinningChannelWriter writer : handlers.writers) {
                 try {
                     writer.write();
                 } catch (Throwable t) {
@@ -116,17 +116,17 @@ public class SpinningOutputThread extends Thread {
     }
 
     private static class SocketWriters {
-        final SpinningSocketWriter[] writers;
+        final SpinningChannelWriter[] writers;
 
         SocketWriters() {
-            this(new SpinningSocketWriter[0]);
+            this(new SpinningChannelWriter[0]);
         }
 
-        SocketWriters(SpinningSocketWriter[] writers) {
+        SocketWriters(SpinningChannelWriter[] writers) {
             this.writers = writers;
         }
 
-        public int indexOf(SpinningSocketWriter handler) {
+        public int indexOf(SpinningChannelWriter handler) {
             for (int k = 0; k < writers.length; k++) {
                 if (writers[k] == handler) {
                     return k;

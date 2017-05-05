@@ -68,7 +68,7 @@ public abstract class AbstractHandler
         this.ioBalancer = ioBalancer;
     }
 
-    public Channel getSocketChannel() {
+    public Channel getChannel() {
         return socketChannel;
     }
 

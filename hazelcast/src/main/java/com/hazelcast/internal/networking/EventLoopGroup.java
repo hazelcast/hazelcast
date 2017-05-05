@@ -37,17 +37,17 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
  *
  * The 2 crucial parts of the EventLoopGroup are the:
  * <ol>
- * <li>{@link SocketReader}: responsible for reading data from the socket(channel)</li>
- * <li>{@link SocketWriter}: responsible for writing data to the socket(channel)</li>
+ * <li>{@link ChannelReader}: responsible for reading data from the socket(channel)</li>
+ * <li>{@link ChannelWriter}: responsible for writing data to the socket(channel)</li>
  * </ol>
  * The {@link TcpIpConnection} is pretty dumb; it doesn't know anything about threading models; it just owns
- * a {@link SocketReader} and {@link SocketWriter}. This keeps the TcpIpConnection very clean and flexible.
+ * a {@link ChannelReader} and {@link ChannelWriter}. This keeps the TcpIpConnection very clean and flexible.
  *
- * The idea is that different SocketReader and SocketWriter implementations can be made. We already have specific
- * one for non blocking (selector based) IO and for spinning io.  These SocketReader/SocketWriter instances only
+ * The idea is that different ChannelReader and ChannelWriter implementations can be made. We already have specific
+ * one for non blocking (selector based) IO and for spinning io.  These ChannelReader/ChannelWriter instances only
  * focus on getting data to and from the socket; they do not concern themselves about interpreting the data. This
- * is a concern of the {@link ChannelInboundHandler} and the {@link ChannelOutboundHandler} instance each SocketReader/SocketWriter
- * has. So a SocketReader/SocketWriter-class is independent of the type of communication that runs on top of it.
+ * is a concern of the {@link ChannelInboundHandler} and the {@link ChannelOutboundHandler} instance each ChannelReader/ChannelWriter
+ * has. So a ChannelReader/ChannelWriter-class is independent of the type of communication that runs on top of it.
  *
  * @see NioEventLoopGroup
  * @see SpinningEventLoopGroup
@@ -63,20 +63,20 @@ public interface EventLoopGroup {
     boolean isBlocking();
 
     /**
-     * Creates a new SocketWriter for the given connection.
+     * Creates a new ChannelWriter for the given connection.
      *
-     * @param connection the TcpIpConnection to create the SocketWriter for.
-     * @return the created SocketWriter
+     * @param connection the TcpIpConnection to create the ChannelWriter for.
+     * @return the created ChannelWriter
      */
-    SocketWriter newSocketWriter(SocketConnection connection);
+    ChannelWriter newSocketWriter(SocketConnection connection);
 
     /**
-     * Creates a new SocketReader for the given connection.
+     * Creates a new ChannelReader for the given connection.
      *
-     * @param connection the TcpIpConnection to create the SocketReader for.
-     * @return the created SocketReader
+     * @param connection the TcpIpConnection to create the ChannelReader for.
+     * @return the created ChannelReader
      */
-    SocketReader newSocketReader(SocketConnection connection);
+    ChannelReader newSocketReader(SocketConnection connection);
 
     /**
      * Is called when a connection is added.

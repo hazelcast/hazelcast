@@ -20,9 +20,9 @@ import com.hazelcast.nio.Connection;
 
 public interface SocketConnection extends Connection {
 
-    SocketReader getSocketReader();
+    ChannelReader getChannelReader();
 
-    SocketWriter getSocketWriter();
+    ChannelWriter getChannelWriter();
 
     Channel getChannel();
 }

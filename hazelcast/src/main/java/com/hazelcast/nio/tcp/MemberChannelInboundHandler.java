@@ -17,7 +17,7 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.internal.networking.ChannelInboundHandler;
-import com.hazelcast.internal.networking.SocketReader;
+import com.hazelcast.internal.networking.ChannelReader;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
@@ -44,9 +44,9 @@ public class MemberChannelInboundHandler implements ChannelInboundHandler {
     public MemberChannelInboundHandler(TcpIpConnection connection, PacketDispatcher packetDispatcher) {
         this.connection = connection;
         this.packetDispatcher = packetDispatcher;
-        SocketReader socketReader = connection.getSocketReader();
-        this.normalPacketsRead = socketReader.getNormalFramesReadCounter();
-        this.priorityPacketsRead = socketReader.getPriorityFramesReadCounter();
+        ChannelReader channelReader = connection.getChannelReader();
+        this.normalPacketsRead = channelReader.getNormalFramesReadCounter();
+        this.priorityPacketsRead = channelReader.getPriorityFramesReadCounter();
     }
 
     @Override

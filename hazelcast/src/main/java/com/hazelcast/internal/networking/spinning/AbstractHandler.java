@@ -37,7 +37,7 @@ public abstract class AbstractHandler {
         this.socketChannel = connection.getChannel();
     }
 
-    public Channel getSocketChannel() {
+    public Channel getChannel() {
         return socketChannel;
     }
 

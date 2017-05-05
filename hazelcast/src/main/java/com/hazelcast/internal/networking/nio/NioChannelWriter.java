@@ -19,8 +19,8 @@ package com.hazelcast.internal.networking.nio;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.SocketConnection;
-import com.hazelcast.internal.networking.SocketWriter;
-import com.hazelcast.internal.networking.SocketWriterInitializer;
+import com.hazelcast.internal.networking.ChannelWriter;
+import com.hazelcast.internal.networking.ChannelWriterInitializer;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -47,9 +47,9 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 /**
  * The writing side of the {@link TcpIpConnection}.
  */
-public final class NioSocketWriter
+public final class NioChannelWriter
         extends AbstractHandler
-        implements Runnable, SocketWriter {
+        implements Runnable, ChannelWriter {
 
     private static final long TIMEOUT = 3;
 
@@ -60,7 +60,7 @@ public final class NioSocketWriter
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "priorityWriteQueueSize")
     public final Queue<OutboundFrame> urgentWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
-    private final SocketWriterInitializer initializer;
+    private final ChannelWriterInitializer initializer;
 
     private ByteBuffer outputBuffer;
 
@@ -86,11 +86,11 @@ public final class NioSocketWriter
     private long priorityFramesReadLastPublish;
     private long eventsLastPublish;
 
-    public NioSocketWriter(SocketConnection connection,
-                           NioThread ioThread,
-                           ILogger logger,
-                           IOBalancer balancer,
-                           SocketWriterInitializer initializer) {
+    public NioChannelWriter(SocketConnection connection,
+                            NioThread ioThread,
+                            ILogger logger,
+                            IOBalancer balancer,
+                            ChannelWriterInitializer initializer) {
         super(connection, ioThread, OP_WRITE, logger, balancer);
         this.initializer = initializer;
     }
@@ -163,7 +163,7 @@ public final class NioSocketWriter
             public void run() {
                 try {
                     if (outboundHandler == null) {
-                        initializer.init(connection, NioSocketWriter.this, protocol);
+                        initializer.init(connection, NioChannelWriter.this, protocol);
                     }
                 } catch (Throwable t) {
                     onFailure(t);
@@ -323,7 +323,7 @@ public final class NioSocketWriter
     }
 
     @Override
-    public void initWriteHandler(ChannelOutboundHandler outboundHandler) {
+    public void initOutboundHandler(ChannelOutboundHandler outboundHandler) {
         this.outboundHandler = outboundHandler;
     }
 
@@ -416,8 +416,8 @@ public final class NioSocketWriter
     /**
      * The TaskFrame is not really a Frame. It is a way to put a task on one of the frame-queues. Using this approach we
      * can lift on top of the Frame scheduling mechanism and we can prevent having:
-     * - multiple NioThread-tasks for a SocketWriter on multiple NioThread
-     * - multiple NioThread-tasks for a SocketWriter on the same NioThread.
+     * - multiple NioThread-tasks for a ChannelWriter on multiple NioThread
+     * - multiple NioThread-tasks for a ChannelWriter on the same NioThread.
      */
     private static final class TaskFrame implements OutboundFrame {
 
@@ -434,7 +434,7 @@ public final class NioSocketWriter
     }
 
     /**
-     * Triggers the migration when executed by setting the SocketWriter.newOwner field. When the handle method completes, it
+     * Triggers the migration when executed by setting the ChannelWriter.newOwner field. When the handle method completes, it
      * checks if this field if set, if so, the migration starts.
      *
      * If the current ioThread is the same as 'theNewOwner' then the call is ignored.

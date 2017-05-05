@@ -20,8 +20,8 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.networking.SocketConnection;
-import com.hazelcast.internal.networking.SocketWriter;
-import com.hazelcast.internal.networking.SocketWriterInitializer;
+import com.hazelcast.internal.networking.ChannelWriter;
+import com.hazelcast.internal.networking.ChannelWriterInitializer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.OutboundFrame;
@@ -39,7 +39,7 @@ import static com.hazelcast.nio.Protocols.CLUSTER;
 import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class SpinningSocketWriter extends AbstractHandler implements SocketWriter {
+public class SpinningChannelWriter extends AbstractHandler implements ChannelWriter {
 
     private static final long TIMEOUT = 3;
 
@@ -51,7 +51,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     @Probe(name = "priorityWriteQueueSize")
     public final Queue<OutboundFrame> urgentWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
 
-    private final SocketWriterInitializer initializer;
+    private final ChannelWriterInitializer initializer;
     private ByteBuffer outputBuffer;
     @Probe(name = "bytesWritten")
     private final SwCounter bytesWritten = newSwCounter();
@@ -63,10 +63,10 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     private ChannelOutboundHandler outboundHandler;
     private volatile OutboundFrame currentFrame;
 
-    public SpinningSocketWriter(SocketConnection connection,
-                                ILogger logger,
-                                IOOutOfMemoryHandler oomeHandler,
-                                SocketWriterInitializer initializer) {
+    public SpinningChannelWriter(SocketConnection connection,
+                                 ILogger logger,
+                                 IOOutOfMemoryHandler oomeHandler,
+                                 ChannelWriterInitializer initializer) {
         super(connection, logger, oomeHandler);
         this.initializer = initializer;
     }
@@ -116,7 +116,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     }
 
     @Override
-    public void initWriteHandler(ChannelOutboundHandler outboundHandler) {
+    public void initOutboundHandler(ChannelOutboundHandler outboundHandler) {
         this.outboundHandler = outboundHandler;
     }
 
@@ -134,7 +134,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
             public void run() {
                 logger.info("Setting protocol: " + protocol);
                 if (outboundHandler == null) {
-                    initializer.init(connection, SpinningSocketWriter.this, protocol);
+                    initializer.init(connection, SpinningChannelWriter.this, protocol);
                 }
                 latch.countDown();
             }
@@ -198,7 +198,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         }
 
         if (outboundHandler == null) {
-            logger.warning("SocketWriter is not set, creating SocketWriter with CLUSTER protocol!");
+            logger.warning("ChannelWriter is not set, creating ChannelWriter with CLUSTER protocol!");
             initializer.init(connection, this, CLUSTER);
             return;
         }

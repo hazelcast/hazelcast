@@ -23,5 +23,5 @@ import java.nio.channels.SocketChannel;
  */
 public interface ChannelFactory {
 
-    Channel create(SocketChannel channel, boolean client) throws Exception;
+    Channel create(SocketChannel channel, boolean client, boolean directBuffer) throws Exception;
 }

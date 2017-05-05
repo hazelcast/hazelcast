@@ -22,13 +22,13 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
 import java.nio.ByteBuffer;
 
 /**
- * Reads content from a {@link ByteBuffer} and processes it. The ChannelInboundHandler is invoked by the {@link SocketReader} after
+ * Reads content from a {@link ByteBuffer} and processes it. The ChannelInboundHandler is invoked by the {@link ChannelReader} after
  * it has read data from the socket.
  *
  * A typical example is that Packet instances are created from the buffered data and handing them over the the
  * {@link com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher}. See {@link MemberChannelInboundHandler} for more information.
  *
- * Each {@link SocketReader} will have its own {@link ChannelInboundHandler} instance. Therefor it doesn't need to be thread-safe.
+ * Each {@link ChannelReader} will have its own {@link ChannelInboundHandler} instance. Therefor it doesn't need to be thread-safe.
  *
  * <h1>Pipelining & Encryption</h1>
  * The ChannelInboundHandler/ChannelOutboundHandler can also form a pipeline. For example for SSL there could be a initial ChannelInboundHandler that decryption
@@ -63,7 +63,7 @@ import java.nio.ByteBuffer;
  * For encryption is similar approach can be followed where the DecryptingWriteHandler is the last ChannelOutboundHandler in the pipeline.
  *
  * @see ChannelOutboundHandler
- * @see SocketReader
+ * @see ChannelReader
  * @see TcpIpConnection
  * @see EventLoopGroup
  */
@@ -73,7 +73,7 @@ public interface ChannelInboundHandler {
      * A callback to indicate that data is available in the ByteBuffer to be processed.
      *
      * @param src the ByteBuffer containing the data to read. The ByteBuffer is already in reading mode and when completed,
-     *            should not be converted to write-mode using clear/compact. That is a task of the {@link SocketReader}.
+     *            should not be converted to write-mode using clear/compact. That is a task of the {@link ChannelReader}.
      * @throws Exception if something fails while reading data from the ByteBuffer or processing the data
      *                   (e.g. when a Packet fails to get processed). When an exception is thrown, the TcpIpConnection
      *                   is closed. There is no point continuing with a potentially corrupted stream.

@@ -16,8 +16,8 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.internal.networking.SocketWriter;
-import com.hazelcast.internal.networking.SocketWriterInitializer;
+import com.hazelcast.internal.networking.ChannelWriter;
+import com.hazelcast.internal.networking.ChannelWriterInitializer;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOService;
@@ -33,23 +33,23 @@ import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
-public class MemberSocketWriterInitializer implements SocketWriterInitializer<TcpIpConnection> {
+public class MemberChannelWriterInitializer implements ChannelWriterInitializer<TcpIpConnection> {
 
     private final ILogger logger;
 
-    public MemberSocketWriterInitializer(ILogger logger) {
+    public MemberChannelWriterInitializer(ILogger logger) {
         this.logger = logger;
     }
 
     @Override
-    public void init(TcpIpConnection connection, SocketWriter writer, String protocol) {
-        logger.fine("Initializing SocketWriter ChannelOutboundHandler with " + Protocols.toUserFriendlyString(protocol));
+    public void init(TcpIpConnection connection, ChannelWriter writer, String protocol) {
+        logger.fine("Initializing ChannelWriter ChannelOutboundHandler with " + Protocols.toUserFriendlyString(protocol));
 
         initHandler(connection, writer, protocol);
         initOutputBuffer(connection, writer, protocol);
     }
 
-    private void initHandler(TcpIpConnection connection, SocketWriter writer, String protocol) {
+    private void initHandler(TcpIpConnection connection, ChannelWriter writer, String protocol) {
         ChannelOutboundHandler handler;
         if (CLUSTER.equals(protocol)) {
             IOService ioService = connection.getConnectionManager().getIoService();
@@ -59,10 +59,10 @@ public class MemberSocketWriterInitializer implements SocketWriterInitializer<Tc
         } else {
             handler = new TextChannelOutboundHandler(connection);
         }
-        writer.initWriteHandler(handler);
+        writer.initOutboundHandler(handler);
     }
 
-    private void initOutputBuffer(TcpIpConnection connection, SocketWriter writer, String protocol) {
+    private void initOutputBuffer(TcpIpConnection connection, ChannelWriter writer, String protocol) {
         IOService ioService = connection.getConnectionManager().getIoService();
         int sizeKb = CLUSTER.equals(protocol)
                 ? ioService.getSocketSendBufferSize()
