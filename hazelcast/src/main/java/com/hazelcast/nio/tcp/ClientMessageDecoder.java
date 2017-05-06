@@ -32,18 +32,18 @@ import java.nio.ByteBuffer;
  * to the {@link IOService#handleClientMessage(ClientMessage, Connection)}.
  *
  * Probably the design can be simplified if the IOService would expose a method getMessageHandler; so we
- * don't need to let the ClientChannelInboundHandler act like the MessageHandler, but directly send to the right
+ * don't need to let the ClientMessageDecoder act like the MessageHandler, but directly send to the right
  * data-structure.
  *
- * @see ClientChannelOutboundHandler
+ * @see ClientMessageEncoder
  */
-public class ClientChannelInboundHandler implements ChannelInboundHandler, ClientMessageChannelInboundHandler.MessageHandler {
+public class ClientMessageDecoder implements ChannelInboundHandler, ClientMessageChannelInboundHandler.MessageHandler {
 
     private final ClientMessageChannelInboundHandler readHandler;
     private final Connection connection;
     private final IOService ioService;
 
-    public ClientChannelInboundHandler(SwCounter messageCounter, Connection connection, IOService ioService) throws IOException {
+    public ClientMessageDecoder(SwCounter messageCounter, Connection connection, IOService ioService) throws IOException {
         this.connection = connection;
         this.ioService = ioService;
         this.readHandler = new ClientMessageChannelInboundHandler(messageCounter, this);

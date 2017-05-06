@@ -45,9 +45,9 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
-import com.hazelcast.nio.tcp.MemberChannelOutboundHandler;
+import com.hazelcast.nio.tcp.PacketEncoder;
 import com.hazelcast.nio.tcp.PlainChannelFactory;
-import com.hazelcast.nio.tcp.MemberChannelInboundHandler;
+import com.hazelcast.nio.tcp.PacketDecoder;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.SecurityContext;
@@ -201,12 +201,12 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public ChannelInboundHandler createInboundHandler(TcpIpConnection connection, IOService ioService) {
         NodeEngineImpl nodeEngine = node.nodeEngine;
-        return new MemberChannelInboundHandler(connection, nodeEngine.getPacketDispatcher());
+        return new PacketDecoder(connection, nodeEngine.getPacketDispatcher());
     }
 
     @Override
     public ChannelOutboundHandler createOutboundHandler(TcpIpConnection connection, IOService ioService) {
-        return new MemberChannelOutboundHandler();
+        return new PacketEncoder();
     }
 
     @Override

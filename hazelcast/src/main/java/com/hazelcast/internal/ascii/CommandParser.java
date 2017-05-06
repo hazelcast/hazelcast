@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.ascii;
 
-import com.hazelcast.nio.ascii.TextChannelInboundHandler;
+import com.hazelcast.nio.ascii.TextCommandDecoder;
 
 public interface CommandParser  {
-    TextCommand parser(TextChannelInboundHandler readHandler, String cmd, int space);
+    TextCommand parser(TextCommandDecoder readHandler, String cmd, int space);
 }

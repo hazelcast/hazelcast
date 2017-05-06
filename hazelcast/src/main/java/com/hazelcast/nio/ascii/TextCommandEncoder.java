@@ -26,12 +26,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @PrivateApi
-public class TextChannelOutboundHandler implements ChannelOutboundHandler<TextCommand> {
+public class TextCommandEncoder implements ChannelOutboundHandler<TextCommand> {
     private final TcpIpConnection connection;
     private final Map<Long, TextCommand> responses = new ConcurrentHashMap<Long, TextCommand>(100);
     private long currentRequestId;
 
-    public TextChannelOutboundHandler(TcpIpConnection connection) {
+    public TextCommandEncoder(TcpIpConnection connection) {
         this.connection = connection;
     }
 

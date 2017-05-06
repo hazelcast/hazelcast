@@ -22,13 +22,13 @@ import com.hazelcast.nio.Packet;
 import java.nio.ByteBuffer;
 
 /**
- * A {@link ChannelOutboundHandler} that for member to member communication.
+ * A {@link ChannelOutboundHandler} that decodes packets, for member to member communication.
  *
  * It writes {@link Packet} instances to the {@link ByteBuffer}.
  *
- * @see MemberChannelInboundHandler
+ * @see PacketDecoder
  */
-public class MemberChannelOutboundHandler implements ChannelOutboundHandler<Packet> {
+public class PacketEncoder implements ChannelOutboundHandler<Packet> {
 
     @Override
     public boolean onWrite(Packet packet, ByteBuffer dst) {

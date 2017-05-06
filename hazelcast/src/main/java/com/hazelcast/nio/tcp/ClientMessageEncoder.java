@@ -24,9 +24,9 @@ import java.nio.ByteBuffer;
 /**
  * A {@link ChannelOutboundHandler} for the new-client. It writes ClientMessages to the ByteBuffer.
  *
- * @see ClientChannelInboundHandler
+ * @see ClientMessageDecoder
  */
-public class ClientChannelOutboundHandler implements ChannelOutboundHandler<ClientMessage> {
+public class ClientMessageEncoder implements ChannelOutboundHandler<ClientMessage> {
 
     @Override
     public boolean onWrite(ClientMessage message, ByteBuffer dst) throws Exception {

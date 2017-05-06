@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking;
 
-import com.hazelcast.nio.ascii.TextChannelInboundHandler;
+import com.hazelcast.nio.ascii.TextCommandDecoder;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 
 /**
@@ -62,7 +62,7 @@ public interface ChannelWriter {
     /**
      * Gets the {@link ChannelOutboundHandler} that belongs to this ChannelWriter.
      *
-     * This method exists for the {@link TextChannelInboundHandler}, but probably should be deleted.
+     * This method exists for the {@link TextCommandDecoder}, but probably should be deleted.
      *
      * @return the ChannelOutboundHandler
      */

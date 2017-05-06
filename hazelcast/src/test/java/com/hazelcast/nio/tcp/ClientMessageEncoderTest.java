@@ -16,9 +16,8 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.util.SafeBuffer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -35,29 +34,29 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class MemberChannelOutboundHandlerTest extends HazelcastTestSupport {
+public class ClientMessageEncoderTest extends HazelcastTestSupport {
 
-    private InternalSerializationService serializationService;
-    private MemberChannelOutboundHandler writeHandler;
+    private ClientMessageEncoder writeHandler;
 
     @Before
     public void setup() {
-        serializationService = new DefaultSerializationServiceBuilder().build();
-        writeHandler = new MemberChannelOutboundHandler();
+        writeHandler = new ClientMessageEncoder();
     }
 
     @Test
     public void test() throws Exception {
-        Packet packet = new Packet(serializationService.toBytes("foobar"));
+        ClientMessage message = ClientMessage.createForEncode(1000)
+                .setPartitionId(10)
+                .setMessageType(1);
+
         ByteBuffer bb = ByteBuffer.allocate(1000);
-        boolean result = writeHandler.onWrite(packet, bb);
+        boolean result = writeHandler.onWrite(message, bb);
 
         assertTrue(result);
-
-        // now we read out the bb and check if we can find the written packet.
         bb.flip();
-        Packet resultPacket = new Packet();
-        resultPacket.readFrom(bb);
-        assertEquals(packet, resultPacket);
+        ClientMessage clone = ClientMessage.createForDecode(new SafeBuffer(bb.array()), 0);
+
+        assertEquals(message.getPartitionId(), clone.getPartitionId());
+        assertEquals(message.getMessageType(), clone.getMessageType());
     }
 }

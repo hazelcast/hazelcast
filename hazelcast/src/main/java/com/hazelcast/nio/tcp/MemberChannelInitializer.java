@@ -27,8 +27,8 @@ import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Protocols;
-import com.hazelcast.nio.ascii.TextChannelInboundHandler;
-import com.hazelcast.nio.ascii.TextChannelOutboundHandler;
+import com.hazelcast.nio.ascii.TextCommandDecoder;
+import com.hazelcast.nio.ascii.TextCommandEncoder;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -94,12 +94,12 @@ public class MemberChannelInitializer implements ChannelInitializer<TcpIpConnect
         } else if (CLIENT_BINARY_NEW.equals(protocol)) {
             inputBuffer = initInputBuffer(connection, ioService.getSocketClientReceiveBufferSize());
             channelWriter.setProtocol(CLIENT_BINARY_NEW);
-            inboundHandler = new ClientChannelInboundHandler(reader.getNormalFramesReadCounter(), connection, ioService);
+            inboundHandler = new ClientMessageDecoder(reader.getNormalFramesReadCounter(), connection, ioService);
         } else {
             inputBuffer = initInputBuffer(connection, ioService.getSocketReceiveBufferSize());
             channelWriter.setProtocol(TEXT);
             inputBuffer.put(protocolBuffer.array());
-            inboundHandler = new TextChannelInboundHandler(connection);
+            inboundHandler = new TextCommandDecoder(connection);
             connectionManager.incrementTextConnections();
         }
 
@@ -154,9 +154,9 @@ public class MemberChannelInitializer implements ChannelInitializer<TcpIpConnect
             IOService ioService = connection.getConnectionManager().getIoService();
             return ioService.createWriteHandler(connection);
         } else if (CLIENT_BINARY_NEW.equals(protocol)) {
-            return new ClientChannelOutboundHandler();
+            return new ClientMessageEncoder();
         } else {
-            return new TextChannelOutboundHandler(connection);
+            return new TextCommandEncoder(connection);
         }
     }
 

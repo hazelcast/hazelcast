@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking;
 
-import com.hazelcast.nio.tcp.MemberChannelInboundHandler;
+import com.hazelcast.nio.tcp.PacketDecoder;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 
 import java.nio.ByteBuffer;
@@ -26,7 +26,7 @@ import java.nio.ByteBuffer;
  * after it has read data from the socket.
  *
  * A typical example is that Packet instances are created from the buffered data and handing them over the the
- * {@link com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher}. See {@link MemberChannelInboundHandler} for more information.
+ * {@link com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher}. See {@link PacketDecoder} for more information.
  *
  * Each {@link ChannelReader} will have its own {@link ChannelInboundHandler} instance. Therefor it doesn't need to be
  * thread-safe.
@@ -34,7 +34,7 @@ import java.nio.ByteBuffer;
  * <h1>Pipelining & Encryption</h1>
  * The ChannelInboundHandler/ChannelOutboundHandler can also form a pipeline. For example for SSL there could be a initial
  * ChannelInboundHandler that decryption the ByteBuffer and passes the decrypted ByteBuffer to the next ChannelInboundHandler;
- * which could be a {@link MemberChannelInboundHandler} that reads out any Packet from the decrypted ByteBuffer. Using this
+ * which could be a {@link PacketDecoder} that reads out any Packet from the decrypted ByteBuffer. Using this
  * approach encryption can easily be added to any type of communication, not only member 2 member communication.
  *
  * Currently security is added by using a {@link Channel}, but this is not needed if the handlers form a pipeline.
