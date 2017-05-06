@@ -63,6 +63,7 @@ public final class LinTrendAccumulator {
      * Accumulates a new sample.
      */
     public LinTrendAccumulator accumulate(long x, long y) {
+        n++;
         BigInteger bigX = BigInteger.valueOf(x);
         BigInteger bigY = BigInteger.valueOf(y);
         sumX = sumX.add(bigX);

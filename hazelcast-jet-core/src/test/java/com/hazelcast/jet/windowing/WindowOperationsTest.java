@@ -77,23 +77,23 @@ public class WindowOperationsTest {
         // When
 
         LinTrendAccumulator a1 = newF.get();
-        accF.apply(a1, entry(1L, 2L));
-        accF.apply(a1, entry(2L, 4L));
-        assertEquals(a1.finish(), 2.0, Double.MIN_VALUE);
+        accF.apply(a1, entry(1L, 3L));
+        accF.apply(a1, entry(2L, 5L));
+        assertEquals(2.0, a1.finish(), Double.MIN_VALUE);
 
         LinTrendAccumulator a2 = newF.get();
-        accF.apply(a2, entry(4L, 8L));
-        accF.apply(a2, entry(5L, 10L));
-        assertEquals(a2.finish(), 2.0, Double.MIN_VALUE);
+        accF.apply(a2, entry(5L, 11L));
+        accF.apply(a2, entry(6L, 13L));
+        assertEquals(2.0, a2.finish(), Double.MIN_VALUE);
 
         LinTrendAccumulator combined = combineF.apply(a1, a2);
-        assertEquals(combined.finish(), 2.0, Double.MIN_VALUE);
+        assertEquals(2.0, combined.finish(), Double.MIN_VALUE);
 
         LinTrendAccumulator deducted = deductF.apply(combined, a2);
-        assertEquals(deducted.finish(), 2.0, Double.MIN_VALUE);
+        assertEquals(2.0, deducted.finish(), Double.MIN_VALUE);
 
         Double result = finishF.apply(deducted);
-        assertEquals(result, Double.valueOf(2));
+        assertEquals(Double.valueOf(2), result);
     }
 
     @Test

@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.windowing;
 
-import com.hazelcast.jet.Accumulators.LongAccumulator;
 import com.hazelcast.jet.Distributed.Function;
 import com.hazelcast.jet.Distributed.Supplier;
 import com.hazelcast.jet.Distributed.ToLongFunction;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Processor.Context;
+import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;

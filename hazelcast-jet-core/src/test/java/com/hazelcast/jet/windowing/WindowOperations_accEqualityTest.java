@@ -30,7 +30,9 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import static com.hazelcast.jet.windowing.WindowOperations.counting;
+import static com.hazelcast.jet.windowing.WindowOperations.linearTrend;
 import static com.hazelcast.jet.windowing.WindowOperations.reducing;
+import static com.hazelcast.jet.windowing.WindowOperations.summingToLong;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
@@ -45,7 +47,8 @@ public class WindowOperations_accEqualityTest {
     public static Collection<WindowOperation<?, ?, ?>> data() {
         return Arrays.asList(
                 counting(),
-                WindowOperations.summingToLong(),
+                summingToLong(),
+                linearTrend(x -> 1L, x -> 1L),
                 reducing(1, null, null, null)
         );
     }
