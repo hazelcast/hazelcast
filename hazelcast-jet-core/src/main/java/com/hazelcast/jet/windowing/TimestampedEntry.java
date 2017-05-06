@@ -20,33 +20,27 @@ import javax.annotation.Nonnull;
 import java.util.Map;
 
 /**
- * Container of items from a fixed-length timestamp interval. Holds
- * intermediate computation results before the final step of forming the
- * user-visible window.
+ * {@code Map.Entry} extended with a {@code long timestamp}.
  *
  * @param <K> type of grouping key
  * @param <V> type of the stream item
  */
-public final class Frame<K, V> implements Map.Entry<K, V> {
+public final class TimestampedEntry<K, V> implements Map.Entry<K, V> {
     private final long timestamp;
     private final K key;
     private final V value;
 
     /**
-     * Constructs a frame with the supplied field values.
-     * @param timestamp {@link #getTimestamp()}
-     * @param key {@link #getKey()}
-     * @param value {@link #getValue()}
+     * Constructs a timestamped entry with the supplied field values.
      */
-    public Frame(long timestamp, @Nonnull K key, @Nonnull V value) {
+    public TimestampedEntry(long timestamp, @Nonnull K key, @Nonnull V value) {
         this.timestamp = timestamp;
         this.key = key;
         this.value = value;
     }
 
     /**
-     * Returns the timestamp label of this frame (the lowest timestamp
-     * not belonging to it).
+     * Returns the timestamp of this entry.
      */
     public long getTimestamp() {
         return timestamp;
@@ -78,16 +72,16 @@ public final class Frame<K, V> implements Map.Entry<K, V> {
 
     @Override
     public boolean equals(Object obj) {
-        final Frame that;
+        final TimestampedEntry that;
         return this == obj
-                || obj instanceof Frame
-                && this.timestamp == (that = (Frame) obj).timestamp
+                || obj instanceof TimestampedEntry
+                && this.timestamp == (that = (TimestampedEntry) obj).timestamp
                 && this.key.equals(that.key)
                 && this.value.equals(that.value);
     }
 
     @Override
     public String toString() {
-        return "Frame{timestamp=" + timestamp + ", key=" + key + ", value=" + value + '}';
+        return "TimestampedEntry{timestamp=" + timestamp + ", key=" + key + ", value=" + value + '}';
     }
 }

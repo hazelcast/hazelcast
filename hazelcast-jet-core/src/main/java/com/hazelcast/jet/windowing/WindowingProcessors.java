@@ -124,8 +124,8 @@ public final class WindowingProcessors {
      * When the processor receives a punctuation with a given {@code puncVal},
      * it emits the current accumulated state of all frames with {@code
      * timestamp <= puncVal} and deletes these frames from its storage.
-     * The type of emitted items is {@link Frame Frame&lt;K, A>}, so there is
-     * one item per key per frame.
+     * The type of emitted items is {@link TimestampedEntry
+     * TimestampedEntry&lt;K, A>} so there is one item per key per frame.
      *
      * @param <T> input item type
      * @param <K> type of key returned from {@code extractKeyF}
@@ -174,16 +174,15 @@ public final class WindowingProcessors {
     }
 
     /**
-     * Combines frames received from several upstream instances of {@link
+     * Constructs sliding windows by combining their constituent frames
+     * received from several upstream instances of {@link
      * #slidingWindowStage1(Function, ToLongFunction, WindowDefinition,
-     * WindowOperation)} into finalized frames. Combines finalized frames into
-     * sliding windows. Applies the {@code windowOperation}'s finishing function
-     * to produce its emitted output.
+     * WindowOperation)}. After combining applies the {@code windowOperation}'s
+     * finishing function to compute the emitted result.
      * <p>
-     * The type of emitted items is {@link Frame Frame&lt;K, R>}
-     * with the grouping key and the result of the finishing function.
-     * The item's timestamp is the upper exclusive bound of the timestamp range
-     * covered by the window.
+     * The type of emitted items is {@link TimestampedEntry
+     * TimestampedEntry&lt;K, R>}. The item's timestamp is the upper exclusive
+     * bound of the timestamp range covered by the window.
      *
      * @param <A> type of the accumulator
      * @param <R> type of the finishing function's result
@@ -193,10 +192,10 @@ public final class WindowingProcessors {
             @Nonnull WindowDefinition windowDef,
             @Nonnull WindowOperation<?, A, R> windowOperation
     ) {
-        return () -> new WindowingProcessor<Frame<?, A>, A, R>(
+        return () -> new WindowingProcessor<TimestampedEntry<?, A>, A, R>(
                 windowDef,
-                Frame::getTimestamp,
-                Frame::getKey,
+                TimestampedEntry::getTimestamp,
+                TimestampedEntry::getKey,
                 WindowOperation.of(
                         windowOperation.createAccumulatorF(),
                         (acc, frame) -> windowOperation.combineAccumulatorsF().apply(acc, frame.getValue()),
@@ -212,15 +211,16 @@ public final class WindowingProcessors {
      * (see the {@link WindowingProcessors class Javadoc} for an overview). The
      * processor groups items by the grouping key (as obtained from the given
      * key extractor) and by <em>frame</em>, which is a range of timestamps
-     * equal to the sliding step. When it receives a punctuation, it emits the
-     * aggregated results for all the windows that end before the punctuation.
-     * To calculate the finalized window result, it combines the accumulated
-     * value of all its constituent frames and then applies the finishing
-     * function.
+     * equal to the sliding step. When it receives a punctuation, it combines
+     * consecutive frames into sliding windows of the requested size. To
+     * calculate the finalized window result it applies the finishing function
+     * to the combined frames. All windows that end before the punctuation are
+     * computed.
      * <p>
-     * The type of emitted items is {@link Frame Frame&lt;K, A>}, so there is
-     * one item per key per window. The item's timestamp is the upper exclusive
-     * bound of the timestamp range covered by the window.
+     * The type of emitted items is {@link TimestampedEntry
+     * TimestampedEntry&lt;K, A>} so there is one item per key per window. The
+     * item's timestamp is the upper exclusive bound of the timestamp range
+     * covered by the window.
      */
     @Nonnull
     public static <T, A, R> Distributed.Supplier<Processor> slidingWindowSingleStage(

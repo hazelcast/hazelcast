@@ -19,7 +19,6 @@ package com.hazelcast.jet.windowing;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Distributed.Function;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.ProcessorMetaSupplier;
@@ -44,6 +43,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.Processors.writeList;
 import static com.hazelcast.jet.windowing.PunctuationPolicies.limitingLagAndLull;
@@ -54,6 +54,8 @@ import static com.hazelcast.jet.windowing.WindowingProcessors.insertPunctuation;
 import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindowSingleStage;
 import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindowStage1;
 import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindowStage2;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -68,7 +70,7 @@ public class WindowingProcessors_integrationTest extends JetTestSupport {
 
     @Parameters(name = "singleStageProcessor={0}")
     public static Collection<Object> parameters() {
-        return Arrays.asList(true, false);
+        return asList(true, false);
     }
 
     @After
@@ -77,16 +79,17 @@ public class WindowingProcessors_integrationTest extends JetTestSupport {
     }
 
     @Test
-    public void smokeTest() throws InterruptedException {
+    public void smokeTest() throws Exception {
         runTest(
-                Collections.singletonList(new MockEvent("a", 10, 1)),
-                Arrays.asList(
-                        new Frame(1000, "a", 1L),
-                        new Frame(2000, "a", 1L)
+                singletonList(new MockEvent("a", 10, 1)),
+                asList(
+                        new TimestampedEntry<>(1000, "a", 1L),
+                        new TimestampedEntry<>(2000, "a", 1L)
                 ));
     }
 
-    private void runTest(List<MockEvent> sourceEvents, List<Frame> expectedOutput) throws InterruptedException {
+    private void runTest(List<MockEvent> sourceEvents, List<TimestampedEntry<String, Long>> expectedOutput)
+            throws Exception {
         JetInstance instance = super.createJetMember();
 
         WindowDefinition wDef = slidingWindowDef(2000, 1000);
@@ -109,20 +112,21 @@ public class WindowingProcessors_integrationTest extends JetTestSupport {
                     .edge(between(sliwp, sink).oneToMany());
 
         } else {
-            Vertex gbfp = dag.newVertex("gbfp", slidingWindowStage1(MockEvent::getKey, MockEvent::getTimestamp, wDef, counting));
+            Vertex gbfp = dag.newVertex("gbfp", slidingWindowStage1(
+                    MockEvent::getKey, MockEvent::getTimestamp, wDef, counting));
             Vertex sliwp = dag.newVertex("sliwp", slidingWindowStage2(wDef, counting));
             dag
                     .edge(between(insertPP, gbfp).partitioned(MockEvent::getKey))
-                    .edge(between(gbfp, sliwp).partitioned((Function<Frame, Object>) Frame::getKey).distributed())
+                    .edge(between(gbfp, sliwp).partitioned(entryKey()).distributed())
                     .edge(between(sliwp, sink).oneToMany());
         }
 
         instance.newJob(dag).execute();
 
-        IList<Frame> sinkList = instance.getList("sink");
+        IList<TimestampedEntry<String, Long>> sinkList = instance.getList("sink");
 
         assertTrueEventually(() -> assertTrue(sinkList.size() == expectedOutput.size()));
-        // wait little more and make sure, that there are no more frames
+        // wait a little more and make sure, that there are no more frames
         Thread.sleep(2000);
 
         String expected = streamToString(expectedOutput.stream());
@@ -134,7 +138,7 @@ public class WindowingProcessors_integrationTest extends JetTestSupport {
      * Returns a {@link ProcessorMetaSupplier}, that will emit contents of a list and the NOT complete.
      * Emits from single node and single processor instance.
      */
-    private ProcessorMetaSupplier streamList(List<?> sourceList) {
+    private static ProcessorMetaSupplier streamList(List<?> sourceList) {
         return addresses -> address -> count ->
                 IntStream.range(0, count)
                         .mapToObj(i -> i == 0 ? new StreamListP(sourceList) : new NoopP())

@@ -21,7 +21,7 @@ import com.hazelcast.jet.accumulator.DoubleAccumulator;
 import com.hazelcast.jet.accumulator.LinTrendAccumulator;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.accumulator.MutableReference;
-import com.hazelcast.jet.windowing.Frame;
+import com.hazelcast.jet.windowing.TimestampedEntry;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Serializer;
@@ -47,7 +47,7 @@ public final class JetSerializerHook {
     public static final int MAP_ENTRY = -300;
     public static final int CUSTOM_CLASS_LOADED_OBJECT = -301;
     public static final int OBJECT_ARRAY = -302;
-    public static final int FRAME = -303;
+    public static final int TIMESTAMPED_ENTRY = -303;
     public static final int MUTABLE_LONG = -304;
     public static final int MUTABLE_DOUBLE = -305;
     public static final int MUTABLE_REFERENCE = -306;
@@ -150,34 +150,34 @@ public final class JetSerializerHook {
         }
     }
 
-    public static final class FrameSerializer implements SerializerHook<Frame> {
+    public static final class TimestampedEntrySerializer implements SerializerHook<TimestampedEntry> {
 
         @Override
-        public Class<Frame> getSerializationType() {
-            return Frame.class;
+        public Class<TimestampedEntry> getSerializationType() {
+            return TimestampedEntry.class;
         }
 
         @Override
         public Serializer createSerializer() {
-            return new StreamSerializer<Frame>() {
+            return new StreamSerializer<TimestampedEntry>() {
                 @Override
-                public void write(ObjectDataOutput out, Frame object) throws IOException {
+                public void write(ObjectDataOutput out, TimestampedEntry object) throws IOException {
                     out.writeLong(object.getTimestamp());
                     out.writeObject(object.getKey());
                     out.writeObject(object.getValue());
                 }
 
                 @Override
-                public Frame read(ObjectDataInput in) throws IOException {
+                public TimestampedEntry read(ObjectDataInput in) throws IOException {
                     long timestamp = in.readLong();
                     Object key = in.readObject();
                     Object value = in.readObject();
-                    return new Frame<>(timestamp, key, value);
+                    return new TimestampedEntry<>(timestamp, key, value);
                 }
 
                 @Override
                 public int getTypeId() {
-                    return JetSerializerHook.FRAME;
+                    return JetSerializerHook.TIMESTAMPED_ENTRY;
                 }
 
                 @Override

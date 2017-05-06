@@ -21,7 +21,7 @@ import com.hazelcast.jet.accumulator.DoubleAccumulator;
 import com.hazelcast.jet.accumulator.LinTrendAccumulator;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.accumulator.MutableReference;
-import com.hazelcast.jet.windowing.Frame;
+import com.hazelcast.jet.windowing.TimestampedEntry;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -59,7 +59,7 @@ public class JetSerializerHookTest {
         return Arrays.asList(
                 new Object[]{new String[]{"a", "b", "c"}},
                 new SimpleImmutableEntry<>("key", "value"),
-                new Frame<>(1, "key", "value"),
+                new TimestampedEntry<>(1, "key", "value"),
                 new LongAccumulator(2),
                 new DoubleAccumulator(3),
                 new MutableReference<>("foo"),

@@ -122,7 +122,7 @@ public class WindowingProcessors_slidingWindowStage1Test extends StreamingTestSu
         assertOutbox(somePuncs);
     }
 
-    private static Frame<Long, LongAccumulator> frame(long seq, long value) {
-        return new Frame<>(seq, KEY, new LongAccumulator(value));
+    private static TimestampedEntry<Long, LongAccumulator> frame(long timestamp, long value) {
+        return new TimestampedEntry<>(timestamp, KEY, new LongAccumulator(value));
     }
 }

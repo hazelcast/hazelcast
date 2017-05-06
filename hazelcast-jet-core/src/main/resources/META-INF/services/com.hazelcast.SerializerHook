@@ -1,6 +1,6 @@
 com.hazelcast.jet.impl.execution.init.JetSerializerHook$MapEntry
 com.hazelcast.jet.impl.execution.init.JetSerializerHook$ObjectArray
-com.hazelcast.jet.impl.execution.init.JetSerializerHook$FrameSerializer
+com.hazelcast.jet.impl.execution.init.JetSerializerHook$TimestampedEntrySerializer
 com.hazelcast.jet.impl.execution.init.JetSerializerHook$LongAccSerializer
 com.hazelcast.jet.impl.execution.init.JetSerializerHook$DoubleAccSerializer
 com.hazelcast.jet.impl.execution.init.JetSerializerHook$MutableReferenceSerializer

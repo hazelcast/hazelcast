@@ -350,10 +350,10 @@ public class WindowingProcessors_slidingWindowTest extends StreamingTestSupport 
                 // frameTs is higher than any event timestamp in that frame;
                 // therefore we generate an event with frameTs - 1
                 ? entry(frameTs - 1, value)
-                : new Frame<>(frameTs, KEY, new LongAccumulator(value));
+                : new TimestampedEntry<>(frameTs, KEY, new LongAccumulator(value));
     }
 
-    private static Frame<Long, ?> outboxFrame(long ts, long value) {
-        return new Frame<>(ts, KEY, value);
+    private static TimestampedEntry<Long, ?> outboxFrame(long ts, long value) {
+        return new TimestampedEntry<>(ts, KEY, value);
     }
 }

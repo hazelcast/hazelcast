@@ -66,7 +66,7 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
     private final BiConsumer<? super A, ? super T> accumulateF;
     private final Function<A, R> finishAccumulationF;
     private final BinaryOperator<A> combineAccF;
-    private final FlatMapper<Punctuation, Session<K, R>> expiredSesFlatmapper;
+    private final FlatMapper<Punctuation, Session<K, R>> expiredSessionFlatmapper;
 
     SessionWindowP(
             long sessionTimeout,
@@ -81,7 +81,7 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
         this.combineAccF = collector.combiner();
         this.finishAccumulationF = collector.finisher();
         this.sessionTimeout = sessionTimeout;
-        this.expiredSesFlatmapper = flatMapper(this::expiredSesTraverser);
+        this.expiredSessionFlatmapper = flatMapper(this::expiredSessionTraverser);
     }
 
     @Override
@@ -96,10 +96,10 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
 
     @Override
     protected boolean tryProcessPunc0(@Nonnull Punctuation punc) {
-        return expiredSesFlatmapper.tryProcess(punc);
+        return expiredSessionFlatmapper.tryProcess(punc);
     }
 
-    private Traverser<Session<K, R>> expiredSesTraverser(Punctuation punc) {
+    private Traverser<Session<K, R>> expiredSessionTraverser(Punctuation punc) {
         Stream<Session<K, R>> sessions = deadlineToKeys
                 .headMap(punc.timestamp())
                 .values().stream()

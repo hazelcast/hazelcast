@@ -110,7 +110,8 @@ class WindowingProcessor<T, A, R> extends AbstractProcessor {
         nextFrameTsToEmit = wDef.higherFrameTs(punc.timestamp());
         return Traversers.traverseStream(range(rangeStart, nextFrameTsToEmit, wDef.frameLength()).boxed())
                 .<Object>flatMap(frameTs -> Traversers.traverseIterable(computeWindow(frameTs).entrySet())
-                        .map(e -> new Frame<>(frameTs, e.getKey(), winOp.finishAccumulationF().apply(e.getValue())))
+                        .map(e -> new TimestampedEntry<>(
+                                frameTs, e.getKey(), winOp.finishAccumulationF().apply(e.getValue())))
                         .onFirstNull(() -> completeWindow(frameTs)))
                 .append(punc);
     }
