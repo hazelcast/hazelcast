@@ -31,7 +31,6 @@
     <modules>
         <module>hazelcast-jet-all</module>
         <module>hazelcast-jet-distribution</module>
-        <module>hazelcast-jet-cascading</module>
         <module>hazelcast-jet-client-protocol</module>
         <module>hazelcast-jet-core</module>
         <module>hazelcast-jet-kafka</module>
