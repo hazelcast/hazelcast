@@ -61,7 +61,7 @@
 
     <properties>
         <argLine> <!-- surefire parameters -->
-            -Xmx4G
+            -Xmx1G
             -Dhazelcast.phone.home.enabled=false
             -Dhazelcast.mancenter.enabled=false
             -Dhazelcast.logging.type=log4j
