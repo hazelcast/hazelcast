@@ -26,6 +26,7 @@ import com.hazelcast.internal.nearcache.AbstractNearCacheBasicTest;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
+import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -102,17 +103,14 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
         NearCacheManager nearCacheManager = getMapNearCacheManager(nearCacheInstance);
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
 
-        return new NearCacheTestContext<K, V, Data, String>(
-                getSerializationService(nearCacheInstance),
-                nearCacheInstance,
-                dataInstance,
-                new TransactionalMapDataStructureAdapter<K, V>(nearCacheInstance, DEFAULT_NEAR_CACHE_NAME),
-                new TransactionalMapDataStructureAdapter<K, V>(dataInstance, DEFAULT_NEAR_CACHE_NAME),
-                nearCacheConfig,
-                false,
-                nearCache,
-                nearCacheManager,
-                null);
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(nearCacheInstance))
+                .setNearCacheInstance(nearCacheInstance)
+                .setDataInstance(dataInstance)
+                .setNearCacheAdapter(new TransactionalMapDataStructureAdapter<K, V>(nearCacheInstance, DEFAULT_NEAR_CACHE_NAME))
+                .setDataAdapter(new TransactionalMapDataStructureAdapter<K, V>(dataInstance, DEFAULT_NEAR_CACHE_NAME))
+                .setNearCache(nearCache)
+                .setNearCacheManager(nearCacheManager)
+                .build();
     }
 
     /**

@@ -28,6 +28,7 @@ import com.hazelcast.internal.nearcache.AbstractNearCacheBasicTest;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
+import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -107,17 +108,16 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
         NearCacheManager nearCacheManager = getMapNearCacheManager(nearCacheInstance);
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
 
-        return new NearCacheTestContext<K, V, Data, String>(
-                getSerializationService(nearCacheInstance),
-                nearCacheInstance,
-                dataInstance,
-                new IMapDataStructureAdapter<K, V>(nearCacheMap),
-                new IMapDataStructureAdapter<K, V>(dataMap),
-                nearCacheConfig,
-                true,
-                nearCache,
-                nearCacheManager,
-                mapStore);
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(nearCacheInstance))
+                .setNearCacheInstance(nearCacheInstance)
+                .setDataInstance(dataInstance)
+                .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(nearCacheMap))
+                .setDataAdapter(new IMapDataStructureAdapter<K, V>(dataMap))
+                .setNearCache(nearCache)
+                .setNearCacheManager(nearCacheManager)
+                .setLoader(mapStore)
+                .setHasLocalData(true)
+                .build();
     }
 
     public static void addMapStoreConfig(IMapMapStore mapStore, MapConfig mapConfig) {

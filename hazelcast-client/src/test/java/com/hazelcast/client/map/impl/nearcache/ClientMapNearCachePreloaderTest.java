@@ -26,6 +26,7 @@ import com.hazelcast.internal.nearcache.AbstractNearCachePreloaderTest;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
+import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -130,32 +131,30 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(getConfig());
         IMap<K, V> memberMap = member.getMap(nearCacheConfig.getName());
 
-        if (!createClient) {
-            return new NearCacheTestContext<K, V, Data, String>(
-                    getSerializationService(member),
-                    member,
-                    new IMapDataStructureAdapter<K, V>(memberMap),
-                    nearCacheConfig,
-                    false,
-                    null,
-                    null);
+        if (createClient) {
+            NearCacheTestContextBuilder<K, V, Data, String> contextBuilder = createClientContextBuilder();
+            return contextBuilder
+                    .setDataInstance(member)
+                    .setDataAdapter(new IMapDataStructureAdapter<K, V>(memberMap))
+                    .build();
         }
-
-        NearCacheTestContext<K, V, Data, String> clientContext = createClientContext();
-        return new NearCacheTestContext<K, V, Data, String>(
-                clientContext.serializationService,
-                clientContext.nearCacheInstance,
-                member,
-                clientContext.nearCacheAdapter,
-                new IMapDataStructureAdapter<K, V>(memberMap),
-                nearCacheConfig,
-                false,
-                clientContext.nearCache,
-                clientContext.nearCacheManager);
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(member))
+                .setDataInstance(member)
+                .setDataAdapter(new IMapDataStructureAdapter<K, V>(memberMap))
+                .build();
     }
 
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createClientContext() {
+        NearCacheTestContextBuilder<K, V, Data, String> contextBuilder = createClientContextBuilder();
+        return contextBuilder.build();
+    }
+
+    protected ClientConfig getClientConfig() {
+        return new ClientConfig();
+    }
+
+    private <K, V> NearCacheTestContextBuilder<K, V, Data, String> createClientContextBuilder() {
         ClientConfig clientConfig = getClientConfig()
                 .addNearCacheConfig(nearCacheConfig);
 
@@ -165,19 +164,10 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
         NearCacheManager nearCacheManager = client.client.getNearCacheManager();
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(nearCacheConfig.getName());
 
-        return new NearCacheTestContext<K, V, Data, String>(
-                client.getSerializationService(),
-                client,
-                null,
-                new IMapDataStructureAdapter<K, V>(clientMap),
-                null,
-                nearCacheConfig,
-                false,
-                nearCache,
-                nearCacheManager);
-    }
-
-    protected ClientConfig getClientConfig() {
-        return new ClientConfig();
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())
+                .setNearCacheInstance(client)
+                .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(clientMap))
+                .setNearCache(nearCache)
+                .setNearCacheManager(nearCacheManager);
     }
 }

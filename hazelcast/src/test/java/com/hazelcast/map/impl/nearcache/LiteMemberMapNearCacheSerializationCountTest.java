@@ -27,6 +27,7 @@ import com.hazelcast.internal.nearcache.AbstractNearCacheSerializationCountTest;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
+import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -68,7 +69,7 @@ public class LiteMemberMapNearCacheSerializationCountTest extends AbstractNearCa
     @Parameter(value = 3)
     public InMemoryFormat nearCacheInMemoryFormat;
 
-    private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory(2);
+    private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory();
 
     @Parameters(name = "mapFormat:{2} nearCacheFormat:{3}")
     public static Collection<Object[]> parameters() {
@@ -116,16 +117,14 @@ public class LiteMemberMapNearCacheSerializationCountTest extends AbstractNearCa
         NearCacheManager nearCacheManager = getMapNearCacheManager(liteMember);
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
 
-        return new NearCacheTestContext<K, V, Data, String>(
-                getSerializationService(member),
-                liteMember,
-                member,
-                new IMapDataStructureAdapter<K, V>(liteMemberMap),
-                new IMapDataStructureAdapter<K, V>(memberMap),
-                nearCacheConfig,
-                true,
-                nearCache,
-                nearCacheManager);
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(member))
+                .setNearCacheInstance(liteMember)
+                .setDataInstance(member)
+                .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(liteMemberMap))
+                .setDataAdapter(new IMapDataStructureAdapter<K, V>(memberMap))
+                .setNearCache(nearCache)
+                .setNearCacheManager(nearCacheManager)
+                .build();
     }
 
     protected Config createConfig(NearCacheConfig nearCacheConfig, boolean liteMember) {
@@ -135,7 +134,7 @@ public class LiteMemberMapNearCacheSerializationCountTest extends AbstractNearCa
                 .setInMemoryFormat(mapInMemoryFormat)
                 .setBackupCount(0)
                 .setAsyncBackupCount(0);
-        if (nearCacheConfig != null) {
+        if (liteMember && nearCacheConfig != null) {
             mapConfig.setNearCacheConfig(nearCacheConfig);
         }
         prepareSerializationConfig(config.getSerializationConfig());
