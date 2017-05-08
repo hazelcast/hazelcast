@@ -117,6 +117,17 @@ public final class GroupProperty {
     public static final HazelcastProperty EVENT_QUEUE_TIMEOUT_MILLIS
             = new HazelcastProperty("hazelcast.event.queue.timeout.millis", 250, MILLISECONDS);
 
+    /**
+     * To prevent overload on the outbound connections, once and a while an event is made synchronous by wrapping it in a
+     * fake operation and waiting for a fake response. This causes the outbound write queue of the connection to get drained.
+     *
+     * This timeout configures the maximum amount of waiting time for this fake response. Setting it to a too low value
+     * can lead to an uncontrolled growth of the outbound write queue of the connection.
+     */
+    public static final HazelcastProperty EVENT_SYNC_TIMEOUT_MILLIS
+            = new HazelcastProperty("hazelcast.event.sync.timeout.millis", 5000, MILLISECONDS);
+
+
     public static final HazelcastProperty HEALTH_MONITORING_LEVEL
             = new HazelcastProperty("hazelcast.health.monitoring.level", HealthMonitorLevel.SILENT.toString());
     public static final HazelcastProperty HEALTH_MONITORING_DELAY_SECONDS
