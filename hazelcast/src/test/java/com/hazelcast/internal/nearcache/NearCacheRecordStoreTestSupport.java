@@ -110,8 +110,11 @@ public abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTes
 
         // Note that System.currentTimeMillis() is not monotonically increasing.
         // Below assertions can fail anytime but for testing purposes we can use `assertTrueEventually`.
-        assertTrue(nearCacheStats.getCreationTime() >= creationStartTime);
-        assertTrue(nearCacheStats.getCreationTime() <= creationEndTime);
+        long nearCacheStatsCreationTime = nearCacheStats.getCreationTime();
+        assertTrue("nearCacheStatsCreationTime=" + nearCacheStatsCreationTime
+                + ", and creationStartTime=" + creationStartTime, nearCacheStatsCreationTime >= creationStartTime);
+        assertTrue("nearCacheStatsCreationTime=" + nearCacheStatsCreationTime
+                + ", and creationEndTime=" + creationEndTime, nearCacheStatsCreationTime <= creationEndTime);
         assertEquals(expectedHits, nearCacheStats.getHits());
         assertEquals(expectedMisses, nearCacheStats.getMisses());
         assertEquals(expectedEntryCount, nearCacheStats.getOwnedEntryCount());

@@ -18,7 +18,6 @@ package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.util.Clock;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -63,7 +62,7 @@ public class NearCacheStatsImpl implements NearCacheStats {
     private volatile String lastPersistenceFailure = "";
 
     public NearCacheStatsImpl() {
-        this.creationTime = Clock.currentTimeMillis();
+        this.creationTime = getNowInMillis();
     }
 
     public NearCacheStatsImpl(NearCacheStats nearCacheStats) {
@@ -189,7 +188,7 @@ public class NearCacheStatsImpl implements NearCacheStats {
 
     public void addPersistence(long duration, int writtenBytes, int keyCount) {
         PERSISTENCE_COUNT.incrementAndGet(this);
-        lastPersistenceTime = Clock.currentTimeMillis();
+        lastPersistenceTime = getNowInMillis();
         lastPersistenceDuration = duration;
         lastPersistenceWrittenBytes = writtenBytes;
         lastPersistenceKeyCount = keyCount;
@@ -198,11 +197,15 @@ public class NearCacheStatsImpl implements NearCacheStats {
 
     public void addPersistenceFailure(Throwable t) {
         PERSISTENCE_COUNT.incrementAndGet(this);
-        lastPersistenceTime = Clock.currentTimeMillis();
+        lastPersistenceTime = getNowInMillis();
         lastPersistenceDuration = 0;
         lastPersistenceWrittenBytes = 0;
         lastPersistenceKeyCount = 0;
         lastPersistenceFailure = t.getClass().getSimpleName() + ": " + t.getMessage();
+    }
+
+    private static long getNowInMillis() {
+        return System.currentTimeMillis();
     }
 
     @Override
