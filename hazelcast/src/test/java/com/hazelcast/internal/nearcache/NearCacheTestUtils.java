@@ -232,13 +232,11 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     /**
      * Asserts the number of Near Cache invalidations.
      *
-     * @param context         the given {@link NearCacheTestContext} to retrieve the {@link InvalidationListener} from
-     * @param invalidations   the given number of Near Cache invalidations to wait for
-     * @param nearCacheConfig the {@link NearCacheConfig} to check if invalidations are enabled
+     * @param context       the given {@link NearCacheTestContext} to retrieve the {@link InvalidationListener} from
+     * @param invalidations the given number of Near Cache invalidations to wait for
      */
-    public static void assertNearCacheInvalidations(final NearCacheTestContext<?, ?, ?, ?> context, final int invalidations,
-                                                    NearCacheConfig nearCacheConfig) {
-        if (context.invalidationListener != null && invalidations > 0 && nearCacheConfig.isInvalidateOnChange()) {
+    public static void assertNearCacheInvalidations(final NearCacheTestContext<?, ?, ?, ?> context, final int invalidations) {
+        if (context.nearCacheConfig.isInvalidateOnChange() && context.invalidationListener != null && invalidations > 0) {
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() throws Exception {

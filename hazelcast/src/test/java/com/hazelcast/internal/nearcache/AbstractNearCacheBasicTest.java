@@ -43,6 +43,7 @@ import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.EvictionPolicy.NONE;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheContent;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheEvictionsEventually;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheInvalidations;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSize;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheStats;
@@ -55,7 +56,6 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getFromNearCac
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getFuture;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.setEvictionConfig;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheInvalidations;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.waitUntilLoaded;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.warmupPartitionsAndWaitForAllSafeState;
 import static java.lang.String.format;
@@ -127,7 +127,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             context.dataAdapter.put(i, "value-" + i);
         }
-        assertNearCacheInvalidations(context, DEFAULT_RECORD_COUNT, nearCacheConfig);
+        assertNearCacheInvalidations(context, DEFAULT_RECORD_COUNT);
     }
 
     protected final void populateNearCache(NearCacheTestContext<Integer, String, NK, NV> context) {
@@ -877,6 +877,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         context.dataAdapter.put(1, "value-1");
         context.dataAdapter.put(2, "value-2");
         context.dataAdapter.put(3, "value-3");
+        assertNearCacheInvalidations(context, 3);
 
         // populate Near Cache
         context.nearCacheAdapter.get(1);
@@ -920,6 +921,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         // populate data structure with an extra entry
         populateDataAdapter(context);
         context.dataAdapter.put(DEFAULT_RECORD_COUNT, "value-" + DEFAULT_RECORD_COUNT);
+        assertNearCacheInvalidations(context, DEFAULT_RECORD_COUNT + 1);
 
         // populate Near Caches
         populateNearCache(context);
