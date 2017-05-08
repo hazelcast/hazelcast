@@ -2107,6 +2107,14 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 type = PermissionType.TRANSACTION;
             } else if ("all-permissions".equals(nodeName)) {
                 type = PermissionType.ALL;
+            } else if ("durable-executor-service-permission".equals(nodeName)) {
+                type = PermissionType.DURABLE_EXECUTOR_SERVICE;
+            } else if ("cardinality-estimator-permission".equals(nodeName)) {
+                type = PermissionType.CARDINALITY_ESTIMATOR;
+            } else if ("scheduled-executor-permission".equals(nodeName)) {
+                type = PermissionType.SCHEDULED_EXECUTOR;
+            } else if ("cache-permission".equals(nodeName)) {
+                type = PermissionType.CACHE;
             } else {
                 continue;
             }

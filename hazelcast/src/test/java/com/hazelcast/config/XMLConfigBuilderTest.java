@@ -42,12 +42,14 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.URL;
 import java.text.MessageFormat;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
+import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -62,6 +64,15 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     static final String HAZELCAST_START_TAG = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n";
     static final String HAZELCAST_END_TAG = "</hazelcast>\n";
+
+    static final String SECURITY_START_TAG = "<security enabled=\"true\">\n";
+    static final String SECURITY_END_TAG = "</security>\n";
+    static final String ACTIONS_FRAGMENT = "<actions>"
+            + "<action>create</action>"
+            + "<action>destroy</action>"
+            + "<action>add</action>"
+            + "<action>remove</action>"
+            + "</actions>";
 
     @Test
     public void testConfigurationURL() throws Exception {
@@ -1470,5 +1481,30 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         MapConfig mapConfig = config.getMapConfig("test");
 
         assertEquals(mapEvictionPolicyClassName, mapConfig.getMapEvictionPolicy().getClass().getName());
+    }
+
+    @Test
+    public void testCachePermission() {
+        String xml = HAZELCAST_START_TAG + SECURITY_START_TAG
+                + "  <client-permissions>"
+                + "    <cache-permission name=\"/hz/cachemanager1/cache1\" principal=\"dev\">"
+                + ACTIONS_FRAGMENT
+                + "    </cache-permission>\n"
+                + "  </client-permissions>"
+                + SECURITY_END_TAG + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        PermissionConfig expected = new PermissionConfig(CACHE, "/hz/cachemanager1/cache1", "dev");
+        expected.addAction("create").addAction("destroy").addAction("add").addAction("remove");
+        assertPermissionConfig(expected, config);
+    }
+
+    private void assertPermissionConfig(PermissionConfig expected, Config config) {
+        Iterator<PermissionConfig> permConfigs = config.getSecurityConfig().getClientPermissionConfigs().iterator();
+        PermissionConfig configured = permConfigs.next();
+        assertEquals(expected.getType(), configured.getType());
+        assertEquals(expected.getPrincipal(), configured.getPrincipal());
+        assertEquals(expected.getName(), configured.getName());
+        assertEquals(expected.getActions(), configured.getActions());
     }
 }

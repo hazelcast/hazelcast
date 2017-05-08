@@ -23,12 +23,15 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheSizeCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.OperationFactory;
 
+import java.security.Permission;
 import java.util.Map;
 
 /**
- * This client request  specifically calls {@link CacheSizeOperationFactory} on the server side.
+ * This client request specifically calls {@link CacheSizeOperationFactory} on the server side.
  *
  * @see CacheSizeOperationFactory
  */
@@ -64,6 +67,11 @@ public class CacheSizeMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         return CacheSizeCodec.encodeResponse((Integer) response);
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new CachePermission(parameters.name, ActionConstants.ACTION_READ);
     }
 
     @Override

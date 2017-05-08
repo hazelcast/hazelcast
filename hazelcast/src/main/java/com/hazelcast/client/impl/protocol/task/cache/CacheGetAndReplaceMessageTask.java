@@ -22,12 +22,15 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheGetAndReplaceCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.Operation;
 
 import javax.cache.expiry.ExpiryPolicy;
+import java.security.Permission;
 
 /**
- * This client request  specifically calls {@link CacheGetAndReplaceOperation} on the server side.
+ * This client request specifically calls {@link CacheGetAndReplaceOperation} on the server side.
  *
  * @see CacheGetAndReplaceOperation
  */
@@ -54,6 +57,11 @@ public class CacheGetAndReplaceMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         return CacheGetAndReplaceCodec.encodeResponse(serializationService.toData(response));
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new CachePermission(parameters.name, ActionConstants.ACTION_READ, ActionConstants.ACTION_PUT);
     }
 
     @Override
