@@ -38,6 +38,11 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
+    public int size() {
+        return map.size();
+    }
+
+    @Override
     public V get(K key) {
         return map.get(key);
     }

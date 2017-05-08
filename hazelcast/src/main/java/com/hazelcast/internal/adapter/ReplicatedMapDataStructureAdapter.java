@@ -37,6 +37,11 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     }
 
     @Override
+    public int size() {
+        return map.size();
+    }
+
+    @Override
     public V get(K key) {
         return map.get(key);
     }

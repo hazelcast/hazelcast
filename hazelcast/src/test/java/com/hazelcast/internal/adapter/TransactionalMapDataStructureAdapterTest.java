@@ -59,6 +59,14 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
     }
 
     @Test
+    public void testSize() {
+        map.put(23, "foo");
+        map.put(42, "bar");
+
+        assertEquals(2, adapter.size());
+    }
+
+    @Test
     public void testGet() {
         map.put(42, "foobar");
 

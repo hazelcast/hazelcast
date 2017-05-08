@@ -32,6 +32,8 @@ import java.util.Set;
  */
 public interface DataStructureAdapter<K, V> {
 
+    int size();
+
     V get(K key);
 
     ICompletableFuture<V> getAsync(K key);
@@ -89,6 +91,7 @@ public interface DataStructureAdapter<K, V> {
      * Contains all methods of {@link DataStructureAdapter}.
      */
     enum DataStructureMethods implements DataStructureAdapterMethod {
+        SIZE("size"),
         GET("get", Object.class),
         GET_ASYNC("getAsync", Object.class),
         SET("set", Object.class, Object.class),

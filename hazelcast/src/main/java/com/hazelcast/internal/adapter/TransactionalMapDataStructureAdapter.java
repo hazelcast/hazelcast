@@ -43,6 +43,14 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
+    public int size() {
+        begin();
+        int size = transactionalMap.size();
+        commit();
+        return size;
+    }
+
+    @Override
     public V get(K key) {
         begin();
         V value = transactionalMap.get(key);

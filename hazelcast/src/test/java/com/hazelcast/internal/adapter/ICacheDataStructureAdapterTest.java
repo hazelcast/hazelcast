@@ -81,6 +81,14 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testSize() {
+        cache.put(23, "foo");
+        cache.put(42, "bar");
+
+        assertEquals(2, adapter.size());
+    }
+
+    @Test
     public void testGet() {
         cache.put(42, "foobar");
 

@@ -36,6 +36,11 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     }
 
     @Override
+    public int size() {
+        return cache.size();
+    }
+
+    @Override
     public V get(K key) {
         return cache.get(key);
     }
