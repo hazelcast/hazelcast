@@ -103,22 +103,17 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     }
 
     @Override
-    public ClientContext getClientContext() {
-        return clientContext;
-    }
-
-    @Override
     protected void onInitialize() {
         super.onInitialize();
 
-        ClientConfig clientConfig = clientContext.getClientConfig();
+        ClientConfig clientConfig = getContext().getClientConfig();
         NearCacheConfig nearCacheConfig = checkNearCacheConfig(clientConfig.getNearCacheConfig(name),
                 clientConfig.getNativeMemoryConfig());
         cacheOnUpdate = isCacheOnUpdate(nearCacheConfig, nameWithPrefix, logger);
         invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
 
         ICacheDataStructureAdapter<K, V> adapter = new ICacheDataStructureAdapter<K, V>(this);
-        nearCacheManager = clientContext.getNearCacheManager();
+        nearCacheManager = getContext().getNearCacheManager();
         nearCache = nearCacheManager.getOrCreateNearCache(nameWithPrefix, nearCacheConfig, adapter);
         CacheStatistics localCacheStatistics = super.getLocalCacheStatistics();
         ((ClientCacheStatisticsImpl) localCacheStatistics).setNearCacheStats(nearCache.getNearCacheStats());
@@ -152,8 +147,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                                                             ExecutionCallback<V> callback) {
         Object value = getCachedValue(dataKey, false);
         if (value != NOT_CACHED) {
-            return new CompletedFuture<V>(clientContext.getSerializationService(), value,
-                    clientContext.getExecutionService().getUserExecutor());
+            return new CompletedFuture<V>(getSerializationService(), value, getContext().getExecutionService().getUserExecutor());
         }
 
         try {
@@ -466,7 +460,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
 
         ListenerMessageCodec listenerCodec = createInvalidationListenerCodec();
-        ClientListenerService listenerService = clientContext.getListenerService();
+        ClientListenerService listenerService = getContext().getListenerService();
 
         EventHandler eventHandler = createInvalidationEventHandler();
         nearCacheMembershipRegistrationId = listenerService.registerListener(listenerCodec, eventHandler);
@@ -511,7 +505,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     }
 
     private int getConnectedServerVersion() {
-        ClientClusterService clusterService = clientContext.getClusterService();
+        ClientClusterService clusterService = getContext().getClusterService();
         Address ownerConnectionAddress = clusterService.getOwnerConnectionAddress();
 
         HazelcastClientInstanceImpl client = getClient();
@@ -536,8 +530,8 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
         String registrationId = nearCacheMembershipRegistrationId;
         if (registrationId != null) {
-            clientContext.getRepairingTask(SERVICE_NAME).deregisterHandler(name);
-            clientContext.getListenerService().deregisterListener(registrationId);
+            getContext().getRepairingTask(SERVICE_NAME).deregisterHandler(name);
+            getContext().getListenerService().deregisterListener(registrationId);
         }
     }
 
@@ -746,7 +740,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
 
         private RepairingTask getRepairingTask() {
-            return clientContext.getRepairingTask(CacheService.SERVICE_NAME);
+            return getContext().getRepairingTask(CacheService.SERVICE_NAME);
         }
     }
 
@@ -764,7 +758,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         private String clientUuid;
 
         private Pre38NearCacheEventHandler() {
-            this.clientUuid = clientContext.getClusterService().getLocalClient().getUuid();
+            this.clientUuid = getContext().getClusterService().getLocalClient().getUuid();
         }
 
         @Override

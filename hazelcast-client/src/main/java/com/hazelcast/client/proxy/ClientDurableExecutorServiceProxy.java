@@ -206,8 +206,7 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
     private <T> DurableExecutorServiceFuture<T> submitToPartition(Callable<T> task, int partitionId, T result) {
         checkNotNull(task, "task should not be null");
 
-        SerializationService serService = getSerializationService();
-        ClientMessage request = DurableExecutorSubmitToPartitionCodec.encodeRequest(name, serService.toData(task));
+        ClientMessage request = DurableExecutorSubmitToPartitionCodec.encodeRequest(name, toData(task));
         int sequence;
         try {
             ClientMessage response = invokeOnPartition(request, partitionId);
@@ -218,7 +217,8 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
         ClientMessage clientMessage = DurableExecutorRetrieveResultCodec.encodeRequest(name, sequence);
         ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke();
         long taskId = Bits.combineToLong(partitionId, sequence);
-        return new ClientDurableExecutorServiceDelegatingFuture<T>(future, serService, RETRIEVE_RESPONSE_DECODER, result, taskId);
+        return new ClientDurableExecutorServiceDelegatingFuture<T>(future, getSerializationService(), RETRIEVE_RESPONSE_DECODER,
+                result, taskId);
     }
 
     private Executor getUserExecutor() {

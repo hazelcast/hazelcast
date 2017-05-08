@@ -19,7 +19,6 @@ package com.hazelcast.client.cache.impl;
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.ClientMessageDecoder;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
@@ -31,7 +30,6 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
 
 import javax.cache.CacheException;
 import javax.cache.integration.CompletionListener;
@@ -82,12 +80,10 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
     protected final String nameWithPrefix;
     protected final CacheConfig<K, V> cacheConfig;
 
-    protected ClientContext clientContext;
     protected ILogger logger;
 
     boolean statisticsEnabled;
     CacheStatsHandler statsHandler;
-    SerializationService serializationService;
 
     private final ConcurrentMap<Future, CompletionListener> loadAllCalls = new ConcurrentHashMap<Future, CompletionListener>();
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
@@ -105,16 +101,14 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
 
     protected void injectDependencies(Object obj) {
         if (obj instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) obj).setHazelcastInstance(clientContext.getHazelcastInstance());
+            ((HazelcastInstanceAware) obj).setHazelcastInstance(getClient());
         }
     }
 
     @Override
     protected void onInitialize() {
-        clientContext = getContext();
-        logger = clientContext.getLoggingService().getLogger(getClass());
-        serializationService = clientContext.getSerializationService();
-        statsHandler = new CacheStatsHandler(serializationService);
+        logger = getContext().getLoggingService().getLogger(getClass());
+        statsHandler = new CacheStatsHandler(getSerializationService());
     }
 
     @Override
@@ -204,20 +198,9 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
     }
 
     @Override
-    protected <T> T toObject(Object data) {
-        return serializationService.toObject(data);
-    }
-
-    @Override
-    protected Data toData(Object o) {
-        return serializationService.toData(o);
-    }
-
-    @Override
     protected <T> T invoke(ClientMessage clientMessage) {
         try {
-            Future<ClientMessage> future = new ClientInvocation(
-                    (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), clientMessage).invoke();
+            Future<ClientMessage> future = new ClientInvocation(getClient(), clientMessage).invoke();
             return (T) future.get();
         } catch (Exception e) {
             throw rethrow(e);
@@ -226,9 +209,8 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
 
     protected ClientMessage invoke(ClientMessage clientMessage, Data keyData) {
         try {
-            int partitionId = clientContext.getPartitionService().getPartitionId(keyData);
-            Future future = new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(),
-                    clientMessage, partitionId).invoke();
+            int partitionId = getContext().getPartitionService().getPartitionId(keyData);
+            Future future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke();
             return (ClientMessage) future.get();
         } catch (Exception e) {
             throw rethrow(e);
@@ -242,8 +224,7 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
             injectDependencies(completionListener);
 
             final long startNanos = nowInNanosOrDefault();
-            HazelcastClientInstanceImpl hazelcastInstance = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
-            ClientInvocationFuture future = new ClientInvocation(hazelcastInstance, request).invoke();
+            ClientInvocationFuture future = new ClientInvocation(getClient(), request).invoke();
             delegatingFuture = newDelegatingFuture(future, LOAD_ALL_DECODER);
             final Future delFuture = delegatingFuture;
             loadAllCalls.put(delegatingFuture, listener);
@@ -294,11 +275,11 @@ abstract class AbstractClientCacheProxyBase<K, V> extends ClientProxy implements
     }
 
     protected <T> ClientDelegatingFuture<T> newDelegatingFuture(ClientInvocationFuture future, ClientMessageDecoder decoder) {
-        return new ClientDelegatingFuture<T>(future, serializationService, decoder);
+        return new ClientDelegatingFuture<T>(future, getSerializationService(), decoder);
     }
 
-    protected <T> ClientDelegatingFuture<T> newDelegatingFuture(ClientInvocationFuture future,
-                                                                ClientMessageDecoder decoder, boolean deserializeResponse) {
-        return new ClientDelegatingFuture<T>(future, serializationService, decoder, deserializeResponse);
+    protected <T> ClientDelegatingFuture<T> newDelegatingFuture(ClientInvocationFuture future, ClientMessageDecoder decoder,
+                                                                boolean deserializeResponse) {
+        return new ClientDelegatingFuture<T>(future, getSerializationService(), decoder, deserializeResponse);
     }
 }
