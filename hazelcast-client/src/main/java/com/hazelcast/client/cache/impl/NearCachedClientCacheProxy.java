@@ -29,7 +29,6 @@ import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationLis
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
@@ -454,16 +453,17 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
     }
 
+    public String addNearCacheInvalidationListener(EventHandler eventHandler) {
+        return registerListener(createInvalidationListenerCodec(), eventHandler);
+    }
+
     private void registerInvalidationListener() {
         if (!invalidateOnChange) {
             return;
         }
 
-        ListenerMessageCodec listenerCodec = createInvalidationListenerCodec();
-        ClientListenerService listenerService = getContext().getListenerService();
-
         EventHandler eventHandler = createInvalidationEventHandler();
-        nearCacheMembershipRegistrationId = listenerService.registerListener(listenerCodec, eventHandler);
+        nearCacheMembershipRegistrationId = addNearCacheInvalidationListener(eventHandler);
     }
 
     private EventHandler createInvalidationEventHandler() {

@@ -48,6 +48,7 @@ public class NearCacheTestContextBuilder<K, V, NK, NV> {
 
     private boolean hasLocalData;
     private DataStructureLoader loader;
+    private InvalidationListener invalidationListener;
 
     public NearCacheTestContextBuilder(NearCacheConfig nearCacheConfig, SerializationService serializationService) {
         this.nearCacheConfig = nearCacheConfig;
@@ -104,6 +105,11 @@ public class NearCacheTestContextBuilder<K, V, NK, NV> {
         return this;
     }
 
+    public NearCacheTestContextBuilder<K, V, NK, NV> setInvalidationListener(InvalidationListener invalidationListener) {
+        this.invalidationListener = invalidationListener;
+        return this;
+    }
+
     public NearCacheTestContext<K, V, NK, NV> build() {
         checkNotNull(serializationService, "serializationService cannot be null!");
 
@@ -122,6 +128,7 @@ public class NearCacheTestContextBuilder<K, V, NK, NV> {
                 cacheManager,
                 memberCacheManager,
                 hasLocalData,
-                loader);
+                loader,
+                invalidationListener);
     }
 }

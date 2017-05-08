@@ -230,6 +230,27 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     }
 
     /**
+     * Asserts the number of Near Cache invalidations.
+     *
+     * @param context         the given {@link NearCacheTestContext} to retrieve the {@link InvalidationListener} from
+     * @param invalidations   the given number of Near Cache invalidations to wait for
+     * @param nearCacheConfig the {@link NearCacheConfig} to check if invalidations are enabled
+     */
+    public static void assertNearCacheInvalidations(final NearCacheTestContext<?, ?, ?, ?> context, final int invalidations,
+                                                    NearCacheConfig nearCacheConfig) {
+        if (context.invalidationListener != null && invalidations > 0 && nearCacheConfig.isInvalidateOnChange()) {
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEqualsFormat("Expected %d Near Cache invalidations, but found %d (%s)",
+                            invalidations, context.invalidationListener.getInvalidationCount(), context.stats);
+                }
+            });
+            context.invalidationListener.resetInvalidationCount();
+        }
+    }
+
+    /**
      * Asserts the number of evicted entries of a {@link NearCache}.
      *
      * @param context       the {@link NearCacheTestContext} to retrieve the eviction count from
