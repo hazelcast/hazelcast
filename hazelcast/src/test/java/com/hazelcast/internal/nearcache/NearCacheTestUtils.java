@@ -308,16 +308,30 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      * @param context       the given {@link NearCacheTestContext} to retrieve the {@link NearCacheInvalidationListener} from
      * @param invalidations the given number of Near Cache invalidations to wait for
      */
-    public static void assertNearCacheInvalidations(final NearCacheTestContext<?, ?, ?, ?> context, final int invalidations) {
+    public static void assertNearCacheInvalidations(NearCacheTestContext<?, ?, ?, ?> context, int invalidations) {
         if (context.nearCacheConfig.isInvalidateOnChange() && context.invalidationListener != null && invalidations > 0) {
+            assertNearCacheInvalidations(context.invalidationListener, invalidations, context.stats);
+        }
+    }
+
+    /**
+     * Asserts the number of Near Cache invalidations.
+     *
+     * @param listener      the given {@link NearCacheInvalidationListener}
+     * @param invalidations the given number of Near Cache invalidations to wait for
+     * @param stats         the given {@link NearCacheStats} for the assert message
+     */
+    public static void assertNearCacheInvalidations(final NearCacheInvalidationListener listener, final int invalidations,
+                                                    final NearCacheStats stats) {
+        if (listener != null && invalidations > 0) {
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() throws Exception {
                     assertEqualsFormat("Expected %d Near Cache invalidations, but found %d (%s)",
-                            invalidations, context.invalidationListener.getInvalidationCount(), context.stats);
+                            invalidations, listener.getInvalidationCount(), stats);
                 }
             });
-            context.invalidationListener.resetInvalidationCount();
+            listener.resetInvalidationCount();
         }
     }
 

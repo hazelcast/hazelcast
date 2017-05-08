@@ -57,6 +57,7 @@ import javax.cache.configuration.FactoryBuilder;
 import javax.cache.spi.CachingProvider;
 import java.util.Collection;
 
+import static com.hazelcast.client.cache.nearcache.ClientCacheInvalidationListener.createInvalidationEventHandler;
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -143,9 +144,7 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
                 .setNearCacheManager(nearCacheManager)
                 .setCacheManager(cacheManager)
                 .setMemberCacheManager(memberCacheManager)
-                // FIXME: the JCache doesn't send invalidation on CREATED entries, so this will crash some tests
-                // see AbstractCacheRecordStore.doPutRecord()
-                //.setInvalidationListener(createInvalidationEventHandler(clientCache))
+                .setInvalidationListener(createInvalidationEventHandler(clientCache))
                 .build();
     }
 
