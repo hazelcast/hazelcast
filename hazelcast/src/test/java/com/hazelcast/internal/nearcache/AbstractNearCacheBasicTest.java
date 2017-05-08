@@ -1057,6 +1057,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         // wait for the invalidation to be processed
         int expectedSize = isNearCacheDirectlyUpdated ? size : size - 1;
         assertNearCacheSizeEventually(context, expectedSize);
+        assertNearCacheInvalidations(context, 1);
 
         long expectedHits = context.stats.getHits() + (isNearCacheDirectlyUpdated ? 2 : 1);
         long expectedMisses = context.stats.getMisses() + (isNearCacheDirectlyUpdated ? 0 : 1);
