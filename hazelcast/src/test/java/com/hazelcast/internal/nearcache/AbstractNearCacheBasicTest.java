@@ -955,7 +955,6 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     private void testNearCacheMemoryCostCalculation(int threadCount) {
-        nearCacheConfig.setInvalidateOnChange(true);
         final NearCacheTestContext<Integer, String, NK, NV> context = createContext();
 
         populateDataAdapter(context);
