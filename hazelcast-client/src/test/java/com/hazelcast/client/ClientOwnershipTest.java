@@ -174,8 +174,8 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(1, client.getCluster().getMembers().size());
-                assertEquals(1, instance2.getCluster().getMembers().size());
+                assertClusterSize(1, client);
+                assertClusterSize(1, instance2);
             }
         });
 

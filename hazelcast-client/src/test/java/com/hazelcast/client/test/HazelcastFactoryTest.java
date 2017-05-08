@@ -62,9 +62,9 @@ public class HazelcastFactoryTest extends HazelcastTestSupport {
                 touchRandomNode(client1);
                 touchRandomNode(client2);
 
-                assertEquals(3, instance1.getCluster().getMembers().size());
-                assertEquals(3, instance2.getCluster().getMembers().size());
-                assertEquals(3, instance3.getCluster().getMembers().size());
+                assertClusterSize(3, instance1);
+                assertClusterSize(3, instance2);
+                assertClusterSize(3, instance3);
 
                 assertEquals(2, instance1.getClientService().getConnectedClients().size());
                 assertEquals(2, instance2.getClientService().getConnectedClients().size());
@@ -87,9 +87,9 @@ public class HazelcastFactoryTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(3, instance1.getCluster().getMembers().size());
-                assertEquals(3, instance2.getCluster().getMembers().size());
-                assertEquals(3, instance3.getCluster().getMembers().size());
+                assertClusterSize(3, instance1);
+                assertClusterSize(3, instance2);
+                assertClusterSize(3, instance3);
             }
         });
 
@@ -109,8 +109,8 @@ public class HazelcastFactoryTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(3, client1.getCluster().getMembers().size());
-                assertEquals(3, client1.getCluster().getMembers().size());
+                assertClusterSize(3, client1);
+                assertClusterSize(3, client1);
             }
         });
     }

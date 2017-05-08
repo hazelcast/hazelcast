@@ -891,6 +891,51 @@ public abstract class HazelcastTestSupport {
         }, timeoutSeconds);
     }
 
+    public static void assertMasterAddress(HazelcastInstance master, HazelcastInstance instance) {
+        assertEquals(getAddress(master), getNode(instance).getMasterAddress());
+    }
+
+    public static void assertMasterAddressEventually(final HazelcastInstance master, final HazelcastInstance instance) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertMasterAddress(master, instance);
+            }
+        });
+    }
+
+    public static void assertMasterAddress(Address masterAddress, HazelcastInstance instance) {
+        assertEquals(masterAddress, getNode(instance).getMasterAddress());
+    }
+
+    public static void assertMasterAddressEventually(final Address masterAddress, final HazelcastInstance instance) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertMasterAddress(masterAddress, instance);
+            }
+        });
+    }
+
+    public static void assertClusterState(ClusterState expectedState, HazelcastInstance... instances) {
+        for (HazelcastInstance instance : instances) {
+            assertEquals("Instance " + instance.getCluster().getLocalMember(),
+                    expectedState, instance.getCluster().getClusterState());
+        }
+    }
+
+    public static void assertClusterStateEventually(final ClusterState expectedState, final HazelcastInstance... instances) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertClusterState(expectedState, instances);
+            }
+        });
+    }
+
     public static void assertOpenEventually(CountDownLatch latch) {
         assertOpenEventually(latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }

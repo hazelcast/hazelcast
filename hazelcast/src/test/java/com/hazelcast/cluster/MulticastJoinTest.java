@@ -185,8 +185,8 @@ public class MulticastJoinTest extends AbstractJoinTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c2);
 
         // First two nodes are up. All should be in separate clusters.
-        assertEquals(1, h1.getCluster().getMembers().size());
-        assertEquals(1, h2.getCluster().getMembers().size());
+        assertClusterSize(1, h1);
+        assertClusterSize(1, h2);
 
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(c3);
 

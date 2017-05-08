@@ -197,12 +197,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         } catch (HazelcastInstanceNotActiveException ignored) {
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertClusterState(ClusterState.ACTIVE, instances[0], instances[1]);
-            }
-        });
+        assertClusterStateEventually(ClusterState.ACTIVE, instances[0], instances[1]);
     }
 
     @Test
@@ -227,13 +222,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         } catch (HazelcastInstanceNotActiveException ignored) {
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertClusterState(ClusterState.FROZEN, instances[0], instances[1]);
-            }
-        });
+        assertClusterStateEventually(ClusterState.FROZEN, instances[0], instances[1]);
     }
 
     @Test
@@ -258,12 +247,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         } catch (HazelcastInstanceNotActiveException ignored) {
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertClusterState(ClusterState.ACTIVE, instances[0], instances[1]);
-            }
-        });
+        assertClusterStateEventually(ClusterState.ACTIVE, instances[0], instances[1]);
     }
 
     @Test
@@ -288,12 +272,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         } catch (HazelcastInstanceNotActiveException ignored) {
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertClusterState(ClusterState.ACTIVE, instances[0], instances[1]);
-            }
-        });
+        assertClusterStateEventually(ClusterState.ACTIVE, instances[0], instances[1]);
     }
 
     @Test
@@ -316,13 +295,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
         hz.getCluster().changeClusterState(ClusterState.FROZEN, options);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertClusterState(ClusterState.FROZEN, instances[2], instances[1]);
-            }
-        });
+        assertClusterStateEventually(ClusterState.FROZEN, instances[2], instances[1]);
 
         instances[0] = factory.newHazelcastInstance(address);
 
@@ -356,12 +329,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         } catch (TargetNotMemberException ignored) {
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertClusterState(ClusterState.ACTIVE, instances[2], instances[1]);
-            }
-        });
+        assertClusterStateEventually(ClusterState.ACTIVE, instances[2], instances[1]);
 
         instances[0] = factory.newHazelcastInstance(address);
 
@@ -675,13 +643,6 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         transactionManagerServiceField.setAccessible(true);
         transactionManagerServiceField.set(nodeEngine, spiedTransactionManagerService);
         return spiedTransactionManagerService;
-    }
-
-    private static void assertClusterState(ClusterState expectedState, HazelcastInstance... instances) {
-        for (HazelcastInstance instance : instances) {
-            assertEquals("Instance " + instance.getCluster().getLocalMember(),
-                    expectedState, instance.getCluster().getClusterState());
-        }
     }
 
     private static abstract class TransactionAnswer implements Answer<Transaction> {

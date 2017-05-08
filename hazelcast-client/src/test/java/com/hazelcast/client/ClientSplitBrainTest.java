@@ -39,7 +39,6 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -90,8 +89,8 @@ public class ClientSplitBrainTest extends HazelcastTestSupport {
         closeConnectionBetween(h2, h1);
 
         assertOpenEventually(mergedLatch);
-        assertEquals(2, h1.getCluster().getMembers().size());
-        assertEquals(2, h2.getCluster().getMembers().size());
+        assertClusterSize(2, h1);
+        assertClusterSize(2, h2);
 
         AtomicBoolean testFinished = new AtomicBoolean(false);
         final Thread clientThread = startClientPutThread(mapClient, testFinished);

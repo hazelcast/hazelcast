@@ -58,8 +58,8 @@ public class MemberAttributeTest extends HazelcastTestSupport {
         Member m2 = h2.getCluster().getLocalMember();
         assertEquals(123, (int) m2.getIntAttribute("Test"));
 
-        assertEquals(2, h1.getCluster().getMembers().size());
-        assertEquals(2, h2.getCluster().getMembers().size());
+        assertClusterSize(2, h1);
+        assertClusterSize(2, h2);
 
         Member member = null;
         for (Member m : h2.getCluster().getMembers()) {
@@ -99,7 +99,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
         m1.setIntAttribute("Test", 123);
 
         HazelcastInstance h2 = factory.newHazelcastInstance();
-        assertEquals(2, h2.getCluster().getMembers().size());
+        assertClusterSize(2, h2);
 
         Member member = null;
         for (Member m : h2.getCluster().getMembers()) {
@@ -127,7 +127,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
         m1.setIntAttribute("Test", 123);
 
         HazelcastInstance h2 = factory.newHazelcastInstance();
-        assertEquals(2, h2.getCluster().getMembers().size());
+        assertClusterSize(2, h2);
 
         Member member = null;
         for (Member m : h2.getCluster().getMembers()) {
@@ -168,7 +168,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
         m1.setIntAttribute("Test", 123);
 
         HazelcastInstance h2 = factory.newHazelcastInstance();
-        assertEquals(2, h2.getCluster().getMembers().size());
+        assertClusterSize(2, h2);
 
         Member member = null;
         for (Member m : h2.getCluster().getMembers()) {
@@ -209,7 +209,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
         m1.setIntAttribute("Test", 123);
 
         HazelcastInstance h2 = factory.newHazelcastInstance();
-        assertEquals(2, h2.getCluster().getMembers().size());
+        assertClusterSize(2, h2);
 
         Member member = null;
         for (Member m : h2.getCluster().getMembers()) {

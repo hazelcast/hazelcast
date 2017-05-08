@@ -52,7 +52,6 @@ import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.EXPL
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.HEARTBEAT;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.PROMOTE_LITE_MEMBER;
-import static com.hazelcast.internal.cluster.impl.MembershipFailureTest.assertMaster;
 import static com.hazelcast.internal.cluster.impl.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.internal.cluster.impl.PacketFiltersUtil.dropOperationsFrom;
 import static org.hamcrest.Matchers.greaterThan;
@@ -311,12 +310,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         suspectMember(getNode(hz3), getNode(hz1));
         suspectMember(getNode(hz2), getNode(hz1));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertMaster(getAddress(hz2), hz3);
-            }
-        });
+        assertMasterAddressEventually(getAddress(hz2), hz3);
 
         dropOperationsBetween(hz3, hz1, EXPLICIT_SUSPICION);
         try {

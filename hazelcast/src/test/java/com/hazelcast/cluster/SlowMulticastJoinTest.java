@@ -84,7 +84,7 @@ public class SlowMulticastJoinTest extends AbstractJoinTest {
             joiners[i] = (MulticastJoiner) getNode(instances[i]).getJoiner();
         }
 
-        assertEquals(clusterSize, instances[0].getCluster().getMembers().size());
+        assertClusterSize(clusterSize, instances[0]);
 
         // we will split the cluster to subclusters (0, 1), (2)
         final CountDownLatch splitLatch = new CountDownLatch(2);
@@ -122,7 +122,7 @@ public class SlowMulticastJoinTest extends AbstractJoinTest {
                 new MulticastJoiner[] {joiners[1]});
 
         assertTrue(mergeLatch.await(30, TimeUnit.SECONDS));
-        assertEquals(clusterSize, instances[0].getCluster().getMembers().size());
+        assertClusterSize(clusterSize, instances[0]);
 
         // cluster is merged & stable again, split brain join messages should not be accumulated.
         assertSplitBrainMessagesCount(clusterSize, instances, joiners);
