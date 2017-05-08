@@ -62,7 +62,7 @@ public class ClientConnection implements ChannelConnection, DiscardableMetricsPr
     private final AtomicInteger pendingPacketCount = new AtomicInteger(0);
     private final ChannelWriter writer;
     private final ChannelReader reader;
-    private final Channel socketChannel;
+    private final Channel channel;
     private final ClientConnectionManagerImpl connectionManager;
     private final LifecycleService lifecycleService;
     private final HazelcastClientInstanceImpl client;
@@ -84,11 +84,11 @@ public class ClientConnection implements ChannelConnection, DiscardableMetricsPr
     public ClientConnection(HazelcastClientInstanceImpl client,
                             EventLoopGroup eventLoopGroup,
                             int connectionId,
-                            Channel socketChannel) throws IOException {
+                            Channel channel) throws IOException {
         this.client = client;
         this.connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();
-        this.socketChannel = socketChannel;
+        this.channel = channel;
         this.connectionId = connectionId;
         this.logger = client.getLoggingService().getLogger(ClientConnection.class);
         this.reader = eventLoopGroup.newSocketReader(this);
@@ -103,13 +103,13 @@ public class ClientConnection implements ChannelConnection, DiscardableMetricsPr
         this.connectionId = connectionId;
         this.writer = null;
         this.reader = null;
-        this.socketChannel = null;
+        this.channel = null;
         this.logger = client.getLoggingService().getLogger(ClientConnection.class);
     }
 
     @Override
     public void provideMetrics(MetricsRegistry registry) {
-        Socket socket = socketChannel.socket();
+        Socket socket = channel.socket();
         String connectionName = "tcp.connection["
                 + socket.getLocalSocketAddress() + " -> " + socket.getRemoteSocketAddress() + "]";
         registry.scanAndRegister(this, connectionName);
@@ -136,7 +136,7 @@ public class ClientConnection implements ChannelConnection, DiscardableMetricsPr
 
     @Override
     public Channel getChannel() {
-        return socketChannel;
+        return channel;
     }
 
     public void incrementPendingPacketCount() {
@@ -167,7 +167,7 @@ public class ClientConnection implements ChannelConnection, DiscardableMetricsPr
         ByteBuffer buffer = ByteBuffer.allocate(3);
         buffer.put(stringToBytes(Protocols.CLIENT_BINARY_NEW));
         buffer.flip();
-        socketChannel.write(buffer);
+        channel.write(buffer);
 
         // we need to give the reader a kick so it starts reading from the socket.
         reader.init();
@@ -210,17 +210,17 @@ public class ClientConnection implements ChannelConnection, DiscardableMetricsPr
 
     @Override
     public InetAddress getInetAddress() {
-        return socketChannel.socket().getInetAddress();
+        return channel.socket().getInetAddress();
     }
 
     @Override
     public InetSocketAddress getRemoteSocketAddress() {
-        return (InetSocketAddress) socketChannel.socket().getRemoteSocketAddress();
+        return (InetSocketAddress) channel.socket().getRemoteSocketAddress();
     }
 
     @Override
     public int getPort() {
-        return socketChannel.socket().getPort();
+        return channel.socket().getPort();
     }
 
     public ClientConnectionManager getConnectionManager() {
@@ -232,7 +232,7 @@ public class ClientConnection implements ChannelConnection, DiscardableMetricsPr
     }
 
     public InetSocketAddress getLocalSocketAddress() {
-        return (InetSocketAddress) socketChannel.socket().getLocalSocketAddress();
+        return (InetSocketAddress) channel.socket().getLocalSocketAddress();
     }
 
     @Override
@@ -269,8 +269,8 @@ public class ClientConnection implements ChannelConnection, DiscardableMetricsPr
     }
 
     protected void innerClose() throws IOException {
-        if (socketChannel.isOpen()) {
-            socketChannel.close();
+        if (channel.isOpen()) {
+            channel.close();
         }
         reader.close();
         writer.close();
@@ -347,7 +347,7 @@ public class ClientConnection implements ChannelConnection, DiscardableMetricsPr
         return "ClientConnection{"
                 + "alive=" + isAlive()
                 + ", connectionId=" + connectionId
-                + ", channel=" + socketChannel
+                + ", channel=" + channel
                 + ", remoteEndpoint=" + remoteEndpoint
                 + ", lastReadTime=" + timeToStringFriendly(lastReadTimeMillis())
                 + ", lastWriteTime=" + timeToStringFriendly(lastWriteTimeMillis())

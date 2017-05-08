@@ -17,7 +17,6 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
-import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelReader;
@@ -51,9 +50,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @see EventLoopGroup
  */
 @SuppressWarnings("checkstyle:methodcount")
-public final class TcpIpConnection implements ChannelConnection, MetricsProvider, DiscardableMetricsProvider {
+public final class TcpIpConnection implements ChannelConnection, DiscardableMetricsProvider {
 
-    private final Channel socketChannel;
+    private final Channel channel;
 
     private final ChannelReader channelReader;
 
@@ -81,20 +80,20 @@ public final class TcpIpConnection implements ChannelConnection, MetricsProvider
 
     public TcpIpConnection(TcpIpConnectionManager connectionManager,
                            int connectionId,
-                           Channel socketChannel,
+                           Channel channel,
                            EventLoopGroup eventLoopGroup) {
         this.connectionId = connectionId;
         this.connectionManager = connectionManager;
         this.ioService = connectionManager.getIoService();
         this.logger = ioService.getLoggingService().getLogger(TcpIpConnection.class);
-        this.socketChannel = socketChannel;
+        this.channel = channel;
         this.channelWriter = eventLoopGroup.newSocketWriter(this);
         this.channelReader = eventLoopGroup.newSocketReader(this);
     }
 
     @Override
     public void provideMetrics(MetricsRegistry registry) {
-        Socket socket = socketChannel.socket();
+        Socket socket = channel.socket();
         SocketAddress localSocketAddress = socket != null ? socket.getLocalSocketAddress() : null;
         SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
         String metricsId = localSocketAddress + "->" + remoteSocketAddress;
@@ -118,7 +117,7 @@ public final class TcpIpConnection implements ChannelConnection, MetricsProvider
 
     @Override
     public Channel getChannel() {
-        return socketChannel;
+        return channel;
     }
 
     @Override
@@ -145,17 +144,17 @@ public final class TcpIpConnection implements ChannelConnection, MetricsProvider
 
     @Override
     public InetAddress getInetAddress() {
-        return socketChannel.socket().getInetAddress();
+        return channel.socket().getInetAddress();
     }
 
     @Override
     public int getPort() {
-        return socketChannel.socket().getPort();
+        return channel.socket().getPort();
     }
 
     @Override
     public InetSocketAddress getRemoteSocketAddress() {
-        return (InetSocketAddress) socketChannel.socket().getRemoteSocketAddress();
+        return (InetSocketAddress) channel.socket().getRemoteSocketAddress();
     }
 
     @Override
@@ -247,10 +246,10 @@ public final class TcpIpConnection implements ChannelConnection, MetricsProvider
         logClose();
 
         try {
-            if (socketChannel != null && socketChannel.isOpen()) {
+            if (channel != null && channel.isOpen()) {
                 channelReader.close();
                 channelWriter.close();
-                socketChannel.close();
+                channel.close();
             }
         } catch (Exception e) {
             logger.warning(e);
@@ -304,7 +303,7 @@ public final class TcpIpConnection implements ChannelConnection, MetricsProvider
 
     @Override
     public String toString() {
-        Socket socket = socketChannel.socket();
+        Socket socket = channel.socket();
         SocketAddress localSocketAddress = socket != null ? socket.getLocalSocketAddress() : null;
         SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
         return "Connection[id=" + connectionId
