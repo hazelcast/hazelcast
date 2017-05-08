@@ -26,6 +26,7 @@ import com.hazelcast.internal.nearcache.AbstractNearCacheSerializationCountTest;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
+import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -68,7 +69,7 @@ public class MapNearCacheSerializationCountTest extends AbstractNearCacheSeriali
     @Parameter(value = 3)
     public InMemoryFormat nearCacheInMemoryFormat;
 
-    private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory(2);
+    private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory();
 
     @Parameters(name = "mapFormat:{2} nearCacheFormat:{3}")
     public static Collection<Object[]> parameters() {
@@ -108,30 +109,39 @@ public class MapNearCacheSerializationCountTest extends AbstractNearCacheSeriali
 
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
+        Config configWithNearCache = getConfig(true);
+        Config config = getConfig(false);
+
+        HazelcastInstance nearCacheMember = hazelcastFactory.newHazelcastInstance(configWithNearCache);
+        HazelcastInstance dataMember = hazelcastFactory.newHazelcastInstance(config);
+
+        IMap<K, V> nearCacheMap = nearCacheMember.getMap(DEFAULT_NEAR_CACHE_NAME);
+        IMap<K, V> dataMap = dataMember.getMap(DEFAULT_NEAR_CACHE_NAME);
+
+        NearCacheManager nearCacheManager = getMapNearCacheManager(dataMember);
+        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
+
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(dataMember))
+                .setNearCacheInstance(nearCacheMember)
+                .setDataInstance(dataMember)
+                .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(nearCacheMap))
+                .setDataAdapter(new IMapDataStructureAdapter<K, V>(dataMap))
+                .setNearCache(nearCache)
+                .setNearCacheManager(nearCacheManager)
+                .setHasLocalData(true)
+                .build();
+    }
+
+    private Config getConfig(boolean withNearCache) {
         Config config = getConfig();
         MapConfig mapConfig = config.getMapConfig(DEFAULT_NEAR_CACHE_NAME)
                 .setInMemoryFormat(mapInMemoryFormat)
                 .setBackupCount(0)
                 .setAsyncBackupCount(0);
-        if (nearCacheConfig != null) {
+        if (withNearCache && nearCacheConfig != null) {
             mapConfig.setNearCacheConfig(nearCacheConfig);
         }
         prepareSerializationConfig(config.getSerializationConfig());
-
-        HazelcastInstance[] instances = hazelcastFactory.newInstances(config);
-        HazelcastInstance member = instances[0];
-        IMap<K, V> map = member.getMap(DEFAULT_NEAR_CACHE_NAME);
-
-        NearCacheManager nearCacheManager = getMapNearCacheManager(member);
-        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
-
-        return new NearCacheTestContext<K, V, Data, String>(
-                getSerializationService(member),
-                member,
-                new IMapDataStructureAdapter<K, V>(map),
-                nearCacheConfig,
-                true,
-                nearCache,
-                nearCacheManager);
+        return config;
     }
 }

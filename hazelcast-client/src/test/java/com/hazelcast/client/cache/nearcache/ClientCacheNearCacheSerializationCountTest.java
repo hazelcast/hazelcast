@@ -34,6 +34,7 @@ import com.hazelcast.internal.nearcache.AbstractNearCacheSerializationCountTest;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
+import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -152,19 +153,16 @@ public class ClientCacheNearCacheSerializationCountTest extends AbstractNearCach
 
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(cacheNameWithPrefix);
 
-        return new NearCacheTestContext<K, V, Data, String>(
-                client.getSerializationService(),
-                client,
-                member,
-                new ICacheDataStructureAdapter<K, V>(clientCache),
-                new ICacheDataStructureAdapter<K, V>(memberCache),
-                nearCacheConfig,
-                false,
-                nearCache,
-                nearCacheManager,
-                cacheManager,
-                memberCacheManager
-        );
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())
+                .setNearCacheInstance(client)
+                .setDataInstance(member)
+                .setNearCacheAdapter(new ICacheDataStructureAdapter<K, V>(clientCache))
+                .setDataAdapter(new ICacheDataStructureAdapter<K, V>(memberCache))
+                .setNearCache(nearCache)
+                .setNearCacheManager(nearCacheManager)
+                .setCacheManager(cacheManager)
+                .setMemberCacheManager(memberCacheManager)
+                .build();
     }
 
     protected ClientConfig getClientConfig() {

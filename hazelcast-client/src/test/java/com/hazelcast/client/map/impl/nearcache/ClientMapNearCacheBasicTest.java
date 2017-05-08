@@ -29,6 +29,7 @@ import com.hazelcast.internal.nearcache.AbstractNearCacheBasicTest;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
+import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -99,17 +100,15 @@ public class ClientMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data
         NearCacheManager nearCacheManager = client.client.getNearCacheManager();
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
 
-        return new NearCacheTestContext<K, V, Data, String>(
-                client.getSerializationService(),
-                client,
-                member,
-                new IMapDataStructureAdapter<K, V>(clientMap),
-                new IMapDataStructureAdapter<K, V>(memberMap),
-                nearCacheConfig,
-                false,
-                nearCache,
-                nearCacheManager,
-                mapStore);
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())
+                .setNearCacheInstance(client)
+                .setDataInstance(member)
+                .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(clientMap))
+                .setDataAdapter(new IMapDataStructureAdapter<K, V>(memberMap))
+                .setNearCache(nearCache)
+                .setNearCacheManager(nearCacheManager)
+                .setLoader(mapStore)
+                .build();
     }
 
     protected ClientConfig getClientConfig() {
