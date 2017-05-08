@@ -102,7 +102,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         nearCache = nearCacheManager.getOrCreateNearCache(name, nearCacheConfig, adapter);
 
         if (nearCacheConfig.isInvalidateOnChange()) {
-            addNearCacheInvalidationListener(new ConnectedServerVersionAwareNearCacheEventHandler());
+            registerInvalidationListener();
         }
     }
 
@@ -541,9 +541,13 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
     }
 
-    public void addNearCacheInvalidationListener(EventHandler handler) {
+    public String addNearCacheInvalidationListener(EventHandler handler) {
+        return registerListener(createNearCacheEntryListenerCodec(), handler);
+    }
+
+    private void registerInvalidationListener() {
         try {
-            invalidationListenerId = registerListener(createNearCacheEntryListenerCodec(), handler);
+            invalidationListenerId = addNearCacheInvalidationListener(new ConnectedServerVersionAwareNearCacheEventHandler());
         } catch (Exception e) {
             ILogger logger = getContext().getLoggingService().getLogger(getClass());
             logger.severe("-----------------\nNear Cache is not initialized!\n-----------------", e);

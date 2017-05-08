@@ -55,6 +55,7 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getFromNearCac
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getFuture;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.setEvictionConfig;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheInvalidations;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.waitUntilLoaded;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.warmupPartitionsAndWaitForAllSafeState;
 import static java.lang.String.format;
@@ -116,8 +117,8 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * Creates the {@link NearCacheTestContext} used by the Near Cache tests.
      *
      * @param loaderEnabled determines if a loader should be configured
-     * @param <K>        key type of the created {@link DataStructureAdapter}
-     * @param <V>        value type of the created {@link DataStructureAdapter}
+     * @param <K>           key type of the created {@link DataStructureAdapter}
+     * @param <V>           value type of the created {@link DataStructureAdapter}
      * @return a {@link NearCacheTestContext} used by the Near Cache tests
      */
     protected abstract <K, V> NearCacheTestContext<K, V, NK, NV> createContext(boolean loaderEnabled);
@@ -126,6 +127,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             context.dataAdapter.put(i, "value-" + i);
         }
+        assertNearCacheInvalidations(context, DEFAULT_RECORD_COUNT, nearCacheConfig);
     }
 
     protected final void populateNearCache(NearCacheTestContext<Integer, String, NK, NV> context) {
