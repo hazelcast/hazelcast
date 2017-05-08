@@ -24,13 +24,16 @@ import com.hazelcast.client.impl.protocol.codec.CacheIterateEntriesCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.Operation;
 
+import java.security.Permission;
 import java.util.Collections;
 import java.util.Map;
 
 /**
- * This client request  specifically calls {@link CacheEntryIteratorOperation} on the server side.
+ * This client request specifically calls {@link CacheEntryIteratorOperation} on the server side.
  *
  * @see CacheEntryIteratorOperation
  */
@@ -59,6 +62,11 @@ public class CacheIterateEntriesMessageTask
         }
         CacheEntryIterationResult iteratorResult = (CacheEntryIterationResult) response;
         return CacheIterateEntriesCodec.encodeResponse(iteratorResult.getTableIndex(), iteratorResult.getEntries());
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new CachePermission(parameters.name, ActionConstants.ACTION_READ);
     }
 
     @Override
