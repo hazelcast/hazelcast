@@ -61,6 +61,8 @@
     <properties>
         <argLine> <!-- surefire parameters -->
             -Xmx1G
+            -Xms1G
+            -XX:+AlwaysPreTouch
             -Dhazelcast.phone.home.enabled=false
             -Dhazelcast.mancenter.enabled=false
             -Dhazelcast.logging.type=log4j
@@ -289,7 +291,7 @@
                 <configuration>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <runOrder>failedfirst</runOrder>
-                    <forkCount>0.5C</forkCount>
+                    <forkCount>4</forkCount>
                     <failIfNoTests>false</failIfNoTests>
                     <argLine>
                         ${argLine}
