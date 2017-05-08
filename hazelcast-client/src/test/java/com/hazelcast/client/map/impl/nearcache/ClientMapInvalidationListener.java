@@ -46,7 +46,7 @@ class ClientMapInvalidationListener
 
     @Override
     public void handle(Data key, String sourceUuid, UUID partitionUuid, long sequence) {
-        invalidationCount.addAndGet(1);
+        invalidationCount.incrementAndGet();
     }
 
     @Override
