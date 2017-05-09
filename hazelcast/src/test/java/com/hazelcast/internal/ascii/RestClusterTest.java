@@ -125,14 +125,9 @@ public class RestClusterTest extends HazelcastTestSupport {
 
         assertEquals(STATUS_FORBIDDEN, communicator.changeClusterState("dev1", "dev-pass", "frozen").response);
         assertEquals(HttpURLConnection.HTTP_OK, communicator.changeClusterState("dev", "dev-pass", "frozen").responseCode);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertEquals(ClusterState.FROZEN, instance1.getCluster().getClusterState());
-                assertEquals(ClusterState.FROZEN, instance2.getCluster().getClusterState());
-            }
-        });
+
+        assertClusterStateEventually(ClusterState.FROZEN, instance1);
+        assertClusterStateEventually(ClusterState.FROZEN, instance2);
     }
 
     @Test

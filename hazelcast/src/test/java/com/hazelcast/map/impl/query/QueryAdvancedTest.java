@@ -165,8 +165,8 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
             Employee employee = new Employee(i, "name" + i % 100, "city" + (i % 100), i % 60, ((i & 1) == 1), (double) i);
             map.put(String.valueOf(i), employee);
         }
-        assertEquals(2, instance1.getCluster().getMembers().size());
-        assertEquals(2, instance2.getCluster().getMembers().size());
+        assertClusterSize(2, instance1);
+        assertClusterSize(2, instance2);
 
         map = instance2.getMap("employees");
         map.addIndex("name", false);
@@ -213,8 +213,8 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
             Employee employee = new Employee(i, "name" + i % 100, "city" + (i % 100), i % 60, ((i & 1) == 1), (double) i);
             map.put(String.valueOf(i), employee);
         }
-        assertEquals(2, instance1.getCluster().getMembers().size());
-        assertEquals(2, instance2.getCluster().getMembers().size());
+        assertClusterSize(2, instance1);
+        assertClusterSize(2, instance2);
 
         map = instance2.getMap("employees");
         map.addIndex("name", false);

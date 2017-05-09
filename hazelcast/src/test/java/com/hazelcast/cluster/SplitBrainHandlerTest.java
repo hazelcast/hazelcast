@@ -31,8 +31,6 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.FirewallingNodeContext;
 import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.nio.tcp.FirewallingConnectionManager;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -116,8 +114,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         LifecycleCountingListener l = new LifecycleCountingListener();
         h2.getLifecycleService().addLifecycleListener(l);
 
-        assertEquals(1, h1.getCluster().getMembers().size());
-        assertEquals(1, h2.getCluster().getMembers().size());
+        assertClusterSize(1, h1);
+        assertClusterSize(1, h2);
 
         // warning: assuming group name will be visible to the split brain handler!
         config1.getGroupConfig().setName(secondGroupName);
@@ -125,11 +123,10 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
         assertEquals(1, l.getCount(LifecycleState.MERGING));
         assertEquals(1, l.getCount(LifecycleState.MERGED));
-        assertEquals(2, h1.getCluster().getMembers().size());
-        assertEquals(2, h2.getCluster().getMembers().size());
+        assertClusterSize(2, h1);
+        assertClusterSize(2, h2);
 
-        assertEquals(ACTIVE, h1.getCluster().getClusterState());
-        assertEquals(ACTIVE, h2.getCluster().getClusterState());
+        assertClusterState(ACTIVE, h1, h2);
     }
 
     @Test
@@ -161,15 +158,15 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         LifecycleCountingListener l = new LifecycleCountingListener();
         h2.getLifecycleService().addLifecycleListener(l);
 
-        assertEquals(1, h1.getCluster().getMembers().size());
-        assertEquals(1, h2.getCluster().getMembers().size());
+        assertClusterSize(1, h1);
+        assertClusterSize(1, h2);
 
         HazelcastTestSupport.sleepSeconds(10);
 
         assertEquals(0, l.getCount(LifecycleState.MERGING));
         assertEquals(0, l.getCount(LifecycleState.MERGED));
-        assertEquals(1, h1.getCluster().getMembers().size());
-        assertEquals(1, h2.getCluster().getMembers().size());
+        assertClusterSize(1, h1);
+        assertClusterSize(1, h2);
     }
 
     private static class LifecycleCountingListener implements LifecycleListener {
@@ -237,6 +234,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
 
+        assertClusterSizeEventually(3, h2);
+
         final CountDownLatch splitLatch = new CountDownLatch(2);
         h3.getCluster().addMembershipListener(new MembershipListener() {
             @Override
@@ -260,18 +259,16 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         closeConnectionBetween(h2, h3);
 
         assertTrue(splitLatch.await(10, TimeUnit.SECONDS));
-        assertEquals(2, h1.getCluster().getMembers().size());
-        assertEquals(2, h2.getCluster().getMembers().size());
-        assertEquals(1, h3.getCluster().getMembers().size());
+        assertClusterSize(2, h1);
+        assertClusterSize(2, h2);
+        assertClusterSize(1, h3);
 
         assertTrue(mergeLatch.await(30, TimeUnit.SECONDS));
-        assertEquals(3, h1.getCluster().getMembers().size());
-        assertEquals(3, h2.getCluster().getMembers().size());
-        assertEquals(3, h3.getCluster().getMembers().size());
+        assertClusterSize(3, h1);
+        assertClusterSize(3, h2);
+        assertClusterSize(3, h3);
 
-        assertEquals(ACTIVE, h1.getCluster().getClusterState());
-        assertEquals(ACTIVE, h2.getCluster().getClusterState());
-        assertEquals(ACTIVE, h3.getCluster().getClusterState());
+        assertClusterState(ACTIVE, h1, h2, h3);
     }
 
     @Test
@@ -291,7 +288,6 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         c3.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(clusterTwoMembers);
         c4.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(clusterTwoMembers);
 
-
         final CountDownLatch latch = new CountDownLatch(2);
         c3.addListenerConfig(new ListenerConfig(new MergedEventLifeCycleListener(latch)));
 
@@ -303,10 +299,10 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         HazelcastInstance h4 = Hazelcast.newHazelcastInstance(c4);
 
         // We should have two clusters of two
-        assertEquals(2, h1.getCluster().getMembers().size());
-        assertEquals(2, h2.getCluster().getMembers().size());
-        assertEquals(2, h3.getCluster().getMembers().size());
-        assertEquals(2, h4.getCluster().getMembers().size());
+        assertClusterSize(2, h1);
+        assertClusterSize(2, h2);
+        assertClusterSize(2, h3);
+        assertClusterSize(2, h4);
 
         List<String> allMembers = Arrays.asList("127.0.0.1:15701", "127.0.0.1:15704", "127.0.0.1:15703",
                 "127.0.0.1:15702");
@@ -322,10 +318,10 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         assertTrue(latch.await(60, TimeUnit.SECONDS));
 
         // Both nodes from cluster two should have joined cluster one
-        assertEquals(4, h1.getCluster().getMembers().size());
-        assertEquals(4, h2.getCluster().getMembers().size());
-        assertEquals(4, h3.getCluster().getMembers().size());
-        assertEquals(4, h4.getCluster().getMembers().size());
+        assertClusterSize(4, h1);
+        assertClusterSize(4, h2);
+        assertClusterSize(4, h3);
+        assertClusterSize(4, h4);
     }
 
     @Test
@@ -360,9 +356,9 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(c3);
 
         // We should have three clusters of one
-        assertEquals(1, h1.getCluster().getMembers().size());
-        assertEquals(1, h2.getCluster().getMembers().size());
-        assertEquals(1, h3.getCluster().getMembers().size());
+        assertClusterSize(1, h1);
+        assertClusterSize(1, h2);
+        assertClusterSize(1, h3);
 
         List<String> allMembers = Arrays.asList("127.0.0.1:25701", "127.0.0.1:25704", "127.0.0.1:25703");
 
@@ -372,8 +368,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
         // Both nodes from cluster two should have joined cluster one
         assertFalse(h1.getLifecycleService().isRunning());
-        assertEquals(2, h2.getCluster().getMembers().size());
-        assertEquals(2, h3.getCluster().getMembers().size());
+        assertClusterSize(2, h2);
+        assertClusterSize(2, h3);
     }
 
     private static Config buildConfig(boolean multicastEnabled, int port) {
@@ -449,19 +445,17 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         networkConfig.getJoin().getMulticastConfig().setEnabled(multicastEnabled);
         networkConfig.getJoin().getTcpIpConfig().setEnabled(!multicastEnabled).addMember("127.0.0.1");
 
-        HazelcastInstance hz1 = newHazelcastInstance(config, "test-node1", new FirewallingNodeContext());
+        final HazelcastInstance hz1 = newHazelcastInstance(config, "test-node1", new FirewallingNodeContext());
         HazelcastInstance hz2 = newHazelcastInstance(config, "test-node2", new FirewallingNodeContext());
         HazelcastInstance hz3 = newHazelcastInstance(config, "test-node3", new FirewallingNodeContext());
 
-        final Node n1 = TestUtil.getNode(hz1);
-        Node n2 = TestUtil.getNode(hz2);
-        Node n3 = TestUtil.getNode(hz3);
+        assertClusterSizeEventually(3, hz2);
 
         final CountDownLatch splitLatch = new CountDownLatch(2);
         MembershipAdapter membershipAdapter = new MembershipAdapter() {
             @Override
             public void memberRemoved(MembershipEvent event) {
-                if (n1.getLocalMember().equals(event.getMember())) {
+                if (getNode(hz1).getLocalMember().equals(event.getMember())) {
                     splitLatch.countDown();
                 }
             }
@@ -473,39 +467,35 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         final CountDownLatch mergeLatch = new CountDownLatch(1);
         hz1.getLifecycleService().addLifecycleListener(new MergedEventLifeCycleListener(mergeLatch));
 
-        FirewallingConnectionManager cm1 = getFireWalledConnectionManager(hz1);
-        FirewallingConnectionManager cm2 = getFireWalledConnectionManager(hz2);
-        FirewallingConnectionManager cm3 = getFireWalledConnectionManager(hz3);
-
         // block n2 & n3 on n1
-        cm1.block(n2.address);
-        cm1.block(n3.address);
+        block(hz1, hz2);
+        block(hz1, hz3);
 
         // remove and block n1 on n2 & n3
-        suspectMember(n2, n1);
-        suspectMember(n3, n1);
-        cm2.block(n1.address);
-        cm3.block(n1.address);
+        disconnect(hz2, hz1);
+        disconnect(hz3, hz1);
+        block(hz2, hz1);
+        block(hz3, hz1);
 
         assertTrue(splitLatch.await(120, TimeUnit.SECONDS));
-        assertEquals(3, hz1.getCluster().getMembers().size());
-        assertEquals(2, hz2.getCluster().getMembers().size());
-        assertEquals(2, hz3.getCluster().getMembers().size());
+        assertClusterSize(3, hz1);
+        assertClusterSize(2, hz2);
+        assertClusterSize(2, hz3);
 
         // unblock n2 on n1 and n1 on n2 & n3
         // n1 still blocks access to n3
-        cm1.unblock(n2.address);
-        cm2.unblock(n1.address);
-        cm3.unblock(n1.address);
+        unblock(hz1, hz2);
+        unblock(hz2, hz1);
+        unblock(hz3, hz1);
 
         assertTrue(mergeLatch.await(120, TimeUnit.SECONDS));
-        assertEquals(3, hz1.getCluster().getMembers().size());
-        assertEquals(3, hz2.getCluster().getMembers().size());
-        assertEquals(3, hz3.getCluster().getMembers().size());
+        assertClusterSize(3, hz1);
+        assertClusterSize(3, hz2);
+        assertClusterSize(3, hz3);
 
-        assertEquals(n2.getThisAddress(), n1.getMasterAddress());
-        assertEquals(n2.getThisAddress(), n2.getMasterAddress());
-        assertEquals(n2.getThisAddress(), n3.getMasterAddress());
+        assertMasterAddress(hz2, hz1);
+        assertMasterAddress(hz2, hz2);
+        assertMasterAddress(hz2, hz3);
     }
 
     @Test
@@ -517,6 +507,10 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         HazelcastInstance data1 = newHazelcastInstance(buildConfig(groupName, false), "data1", new FirewallingNodeContext());
         HazelcastInstance data2 = newHazelcastInstance(buildConfig(groupName, false), "data2", new FirewallingNodeContext());
         HazelcastInstance data3 = newHazelcastInstance(buildConfig(groupName, false), "data3", new FirewallingNodeContext());
+
+        assertClusterSizeEventually(5, lite2);
+        assertClusterSizeEventually(5, data1);
+        assertClusterSizeEventually(5, data2);
 
         final CountDownLatch splitLatch = new CountDownLatch(6);
         data2.getCluster().addMembershipListener(new MemberRemovedMembershipListener(splitLatch));
@@ -588,6 +582,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = newHazelcastInstance(buildConfig(groupName, false), "hz2", new FirewallingNodeContext());
         HazelcastInstance hz3 = newHazelcastInstance(buildConfig(groupName, false), "hz3", new FirewallingNodeContext());
 
+        assertClusterSizeEventually(3, hz2);
+
         final CountDownLatch splitLatch = new CountDownLatch(2);
         hz3.getCluster().addMembershipListener(new MemberRemovedMembershipListener(splitLatch));
 
@@ -624,6 +620,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = newHazelcastInstance(buildConfig(groupName, false), "hz1", new FirewallingNodeContext());
         HazelcastInstance hz2 = newHazelcastInstance(buildConfig(groupName, false), "hz2", new FirewallingNodeContext());
         HazelcastInstance hz3 = newHazelcastInstance(buildConfig(groupName, false), "hz3", new FirewallingNodeContext());
+
+        assertClusterSizeEventually(3, hz2);
 
         final CountDownLatch splitLatch = new CountDownLatch(2);
         hz3.getCluster().addMembershipListener(new MemberRemovedMembershipListener(splitLatch));
@@ -668,7 +666,6 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         suspectMember(getNode(source), getNode(target));
     }
 
-
     private Config buildConfig(final String groupName, final boolean liteMember) {
         Config config = new Config();
         config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
@@ -704,17 +701,15 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
         HazelcastInstance hz1 = newHazelcastInstance(config, "test-node1", new FirewallingNodeContext());
         HazelcastInstance hz2 = newHazelcastInstance(config, "test-node2", new FirewallingNodeContext());
-        HazelcastInstance hz3 = newHazelcastInstance(config, "test-node3", new FirewallingNodeContext());
+        final HazelcastInstance hz3 = newHazelcastInstance(config, "test-node3", new FirewallingNodeContext());
 
-        Node n1 = TestUtil.getNode(hz1);
-        Node n2 = TestUtil.getNode(hz2);
-        final Node n3 = TestUtil.getNode(hz3);
+        assertClusterSizeEventually(3, hz2);
 
         final CountDownLatch splitLatch = new CountDownLatch(2);
         MembershipAdapter membershipAdapter = new MembershipAdapter() {
             @Override
             public void memberRemoved(MembershipEvent event) {
-                if (n3.getLocalMember().equals(event.getMember())) {
+                if (getNode(hz3).getLocalMember().equals(event.getMember())) {
                     splitLatch.countDown();
                 }
             }
@@ -726,38 +721,33 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         final CountDownLatch mergeLatch = new CountDownLatch(1);
         hz3.getLifecycleService().addLifecycleListener(new MergedEventLifeCycleListener(mergeLatch));
 
-        FirewallingConnectionManager cm1 = getFireWalledConnectionManager(hz1);
-        FirewallingConnectionManager cm2 = getFireWalledConnectionManager(hz2);
-        FirewallingConnectionManager cm3 = getFireWalledConnectionManager(hz3);
+        block(hz3, hz1);
+        block(hz3, hz2);
 
-        cm3.block(n1.address);
-        cm3.block(n2.address);
+        disconnect(hz1, hz3);
+        disconnect(hz2, hz3);
 
-        suspectMember(n1, n3);
-        suspectMember(n2, n3);
-
-        cm1.block(n3.address);
-        cm2.block(n3.address);
+        block(hz1, hz3);
+        block(hz2, hz3);
 
         assertTrue(splitLatch.await(30, TimeUnit.SECONDS));
-        assertEquals(2, hz1.getCluster().getMembers().size());
-        assertEquals(2, hz2.getCluster().getMembers().size());
-        assertEquals(3, hz3.getCluster().getMembers().size());
+        assertClusterSize(2, hz1);
+        assertClusterSize(2, hz2);
+        assertClusterSize(3, hz3);
 
-        cm3.unblock(n1.address);
-        cm1.unblock(n3.address);
-        cm2.unblock(n3.address);
+        unblock(hz3, hz1);
+        unblock(hz1, hz3);
+        unblock(hz2, hz3);
 
         assertTrue(mergeLatch.await(120, TimeUnit.SECONDS));
-        assertEquals(3, hz1.getCluster().getMembers().size());
-        assertEquals(3, hz2.getCluster().getMembers().size());
-        assertEquals(3, hz3.getCluster().getMembers().size());
+        assertClusterSize(3, hz1);
+        assertClusterSize(3, hz2);
+        assertClusterSize(3, hz3);
 
-        assertEquals(n1.getThisAddress(), n1.getMasterAddress());
-        assertEquals(n1.getThisAddress(), n2.getMasterAddress());
-        assertEquals(n1.getThisAddress(), n3.getMasterAddress());
+        assertMasterAddress(hz1, hz1);
+        assertMasterAddress(hz1, hz2);
+        assertMasterAddress(hz1, hz3);
     }
-
 
     @Test
     // https://github.com/hazelcast/hazelcast/issues/8137
@@ -781,17 +771,15 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         networkConfig.setPort(5703);
         HazelcastInstance hz3 = newHazelcastInstance(config, "test-node3", new FirewallingNodeContext());
         networkConfig.setPort(5701);
-        HazelcastInstance hz1 = newHazelcastInstance(config, "test-node1", new FirewallingNodeContext());
+        final HazelcastInstance hz1 = newHazelcastInstance(config, "test-node1", new FirewallingNodeContext());
 
-        final Node n1 = TestUtil.getNode(hz1);
-        Node n2 = TestUtil.getNode(hz2);
-        Node n3 = TestUtil.getNode(hz3);
+        assertClusterSizeEventually(3, hz3);
 
         final CountDownLatch splitLatch = new CountDownLatch(2);
         MembershipAdapter membershipAdapter = new MembershipAdapter() {
             @Override
             public void memberRemoved(MembershipEvent event) {
-                if (n1.getLocalMember().equals(event.getMember())) {
+                if (getNode(hz1).getLocalMember().equals(event.getMember())) {
                     splitLatch.countDown();
                 }
             }
@@ -815,41 +803,37 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         };
         hz1.getLifecycleService().addLifecycleListener(lifecycleListener);
 
-        FirewallingConnectionManager cm1 = getFireWalledConnectionManager(hz1);
-        FirewallingConnectionManager cm2 = getFireWalledConnectionManager(hz2);
-        FirewallingConnectionManager cm3 = getFireWalledConnectionManager(hz3);
+        block(hz1, hz2);
+        block(hz1, hz3);
 
-        cm1.block(n2.address);
-        cm1.block(n3.address);
+        disconnect(hz2, hz1);
+        disconnect(hz3, hz1);
 
-        suspectMember(n2, n1);
-        suspectMember(n3, n1);
-        cm2.block(n1.address);
-        cm3.block(n1.address);
+        block(hz2, hz1);
+        block(hz3, hz1);
 
         assertTrue(splitLatch.await(20, TimeUnit.SECONDS));
-        assertEquals(2, hz2.getCluster().getMembers().size());
-        assertEquals(2, hz3.getCluster().getMembers().size());
-        assertEquals(3, hz1.getCluster().getMembers().size());
+        assertClusterSize(2, hz2);
+        assertClusterSize(2, hz3);
+        assertClusterSize(3, hz1);
 
-        cm1.unblock(n2.address);
-        cm1.unblock(n3.address);
-        cm2.unblock(n1.address);
-        cm3.unblock(n1.address);
+        unblock(hz1, hz2);
+        unblock(hz1, hz3);
+        unblock(hz2, hz1);
+        unblock(hz3, hz1);
 
         assertTrue(mergingLatch.await(60, TimeUnit.SECONDS));
         hz2.getLifecycleService().terminate();
         hz2 = newHazelcastInstance(config, "test-node2", new FirewallingNodeContext());
-        n2 = TestUtil.getNode(hz2);
 
         assertTrue(mergeLatch.await(120, TimeUnit.SECONDS));
-        assertEquals(3, hz1.getCluster().getMembers().size());
-        assertEquals(3, hz2.getCluster().getMembers().size());
-        assertEquals(3, hz3.getCluster().getMembers().size());
+        assertClusterSize(3, hz1);
+        assertClusterSize(3, hz2);
+        assertClusterSize(3, hz3);
 
-        assertEquals(n3.getThisAddress(), n1.getMasterAddress());
-        assertEquals(n3.getThisAddress(), n2.getMasterAddress());
-        assertEquals(n3.getThisAddress(), n3.getMasterAddress());
+        assertMasterAddress(hz3, hz1);
+        assertMasterAddress(hz3, hz2);
+        assertMasterAddress(hz3, hz3);
     }
 
     private static FirewallingConnectionManager getFireWalledConnectionManager(HazelcastInstance hz) {

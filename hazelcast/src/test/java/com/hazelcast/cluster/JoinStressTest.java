@@ -132,7 +132,7 @@ public class JoinStressTest extends HazelcastTestSupport {
         for (int i = 0; i < nodeCount; i++) {
             HazelcastInstance hz = instances.get(i);
             assertNotNull(hz);
-            assertEquals(nodeCount, hz.getCluster().getMembers().size());
+            assertClusterSize(nodeCount, hz);
         }
     }
 

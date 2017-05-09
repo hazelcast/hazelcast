@@ -394,12 +394,6 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         });
     }
 
-    static void assertClusterState(ClusterState expectedState, HazelcastInstance... instances) {
-        for (HazelcastInstance instance : instances) {
-            assertEquals(expectedState, instance.getCluster().getClusterState());
-        }
-    }
-
     private static void assertNodeState(HazelcastInstance[] instances, NodeState expectedState) {
         for (HazelcastInstance instance : instances) {
             Node node = getNode(instance);

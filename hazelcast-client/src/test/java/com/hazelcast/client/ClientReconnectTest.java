@@ -99,7 +99,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(1, client.getCluster().getMembers().size());
+                assertClusterSize(1, client);
                 Iterator<Member> iterator = client.getCluster().getMembers().iterator();
                 Member member = iterator.next();
                 assertEquals(instance2.getCluster().getLocalMember(), member);

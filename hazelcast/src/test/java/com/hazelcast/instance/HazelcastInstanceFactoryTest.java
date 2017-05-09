@@ -34,7 +34,6 @@ import org.mockito.stubbing.Answer;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 
@@ -72,9 +71,9 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() throws Exception {
-                    assertEquals(3, instance1.getCluster().getMembers().size());
-                    assertEquals(3, instance2.getCluster().getMembers().size());
-                    assertEquals(3, instance3.getCluster().getMembers().size());
+                    assertClusterSize(3, instance1);
+                    assertClusterSize(3, instance2);
+                    assertClusterSize(3, instance3);
                 }
             });
         } finally {
@@ -97,16 +96,16 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() throws Exception {
-                    assertEquals(2, instance21.getCluster().getMembers().size());
-                    assertEquals(2, instance22.getCluster().getMembers().size());
+                    assertClusterSize(2, instance21);
+                    assertClusterSize(2, instance22);
                 }
             });
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() throws Exception {
-                    assertEquals(3, instance11.getCluster().getMembers().size());
-                    assertEquals(3, instance12.getCluster().getMembers().size());
-                    assertEquals(3, instance13.getCluster().getMembers().size());
+                    assertClusterSize(3, instance11);
+                    assertClusterSize(3, instance12);
+                    assertClusterSize(3, instance13);
                 }
             });
         } finally {

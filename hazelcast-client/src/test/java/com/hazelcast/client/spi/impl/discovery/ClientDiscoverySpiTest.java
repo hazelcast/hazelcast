@@ -174,11 +174,10 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
                 @Override
                 public void run()
                         throws Exception {
-
-                    assertEquals(3, hazelcastInstance1.getCluster().getMembers().size());
-                    assertEquals(3, hazelcastInstance2.getCluster().getMembers().size());
-                    assertEquals(3, hazelcastInstance3.getCluster().getMembers().size());
-                    assertEquals(3, client.getCluster().getMembers().size());
+                    assertClusterSize(3, hazelcastInstance1);
+                    assertClusterSize(3, hazelcastInstance2);
+                    assertClusterSize(3, hazelcastInstance3);
+                    assertClusterSize(3, client);
                 }
             });
         } finally {

@@ -23,7 +23,6 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -33,11 +32,11 @@ public class AbstractJoinTest extends HazelcastTestSupport {
         config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        assertEquals(1, h1.getCluster().getMembers().size());
+        assertClusterSize(1, h1);
 
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        assertEquals(2, h1.getCluster().getMembers().size());
-        assertEquals(2, h2.getCluster().getMembers().size());
+        assertClusterSize(2, h1);
+        assertClusterSize(2, h2);
 
         h1.shutdown();
         h1 = Hazelcast.newHazelcastInstance(config);

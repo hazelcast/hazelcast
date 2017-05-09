@@ -33,7 +33,6 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
-import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
@@ -85,7 +84,7 @@ public class ClusterRollingRestartTest extends HazelcastTestSupport {
 
         for (HazelcastInstance instance : instances) {
             assertClusterSizeEventually(nodeCount, instance);
-            assertEquals(clusterState, instance.getCluster().getClusterState());
+            assertClusterState(clusterState, instance);
         }
 
         changeClusterStateEventually(instances[0], ClusterState.ACTIVE);

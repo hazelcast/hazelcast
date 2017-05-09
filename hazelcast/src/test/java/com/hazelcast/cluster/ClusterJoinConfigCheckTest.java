@@ -30,7 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
+import static com.hazelcast.test.HazelcastTestSupport.assertClusterSize;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -99,10 +99,10 @@ public class ClusterJoinConfigCheckTest {
         HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config2);
 
         assertTrue(hz1.getLifecycleService().isRunning());
-        assertEquals(1, hz1.getCluster().getMembers().size());
+        assertClusterSize(1, hz1);
 
         assertTrue(hz2.getLifecycleService().isRunning());
-        assertEquals(1, hz2.getCluster().getMembers().size());
+        assertClusterSize(1, hz2);
     }
 
     private void assertIncompatible(Config config1, Config config2, boolean tcp) {
@@ -121,7 +121,7 @@ public class ClusterJoinConfigCheckTest {
         }
 
         assertTrue(hz1.getLifecycleService().isRunning());
-        assertEquals(1, hz1.getCluster().getMembers().size());
+        assertClusterSize(1, hz1);
     }
 
     private void enableTcp(Config config) {
