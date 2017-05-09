@@ -59,10 +59,8 @@ public class MapAggregationLiteMemberTest
         lite = factory.newHazelcastInstance(new Config().setLiteMember(true));
         final HazelcastInstance lite2 = factory.newHazelcastInstance(new Config().setLiteMember(true));
 
-        assertClusterSizeEventually(4, instance);
-        assertClusterSizeEventually(4, instance2);
-        assertClusterSizeEventually(4, lite);
-        assertClusterSizeEventually(4, lite2);
+        assertClusterSize(4, instance, lite2);
+        assertClusterSizeEventually(4, instance2, lite);
     }
 
     @After

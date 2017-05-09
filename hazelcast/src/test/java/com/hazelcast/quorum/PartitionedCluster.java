@@ -34,6 +34,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertClusterSize;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.generateRandomString;
@@ -134,11 +135,8 @@ public class PartitionedCluster {
         splitCluster();
 
         assertTrue(splitLatch.await(30, TimeUnit.SECONDS));
-        assertClusterSizeEventually(3, h1);
-        assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
-        assertClusterSizeEventually(2, h4);
-        assertClusterSizeEventually(2, h5);
+        assertClusterSizeEventually(3, h1, h2, h3);
+        assertClusterSizeEventually(2, h4, h5);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
@@ -157,11 +155,8 @@ public class PartitionedCluster {
         h4 = factory.newHazelcastInstance(config);
         h5 = factory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(5, h1);
-        assertClusterSizeEventually(5, h2);
-        assertClusterSizeEventually(5, h3);
-        assertClusterSizeEventually(5, h4);
-        assertClusterSizeEventually(5, h5);
+        assertClusterSize(5, h1, h4);
+        assertClusterSizeEventually(5, h2, h3, h4);
     }
 
     private QuorumConfig createSuccessfulSplitTestQuorum() {

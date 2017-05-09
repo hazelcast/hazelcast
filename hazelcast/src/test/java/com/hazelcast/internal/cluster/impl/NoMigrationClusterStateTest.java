@@ -126,8 +126,7 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
         changeClusterStateEventually(instances[1], ClusterState.NO_MIGRATION);
         terminateInstance(instances[0]);
 
-        assertClusterSizeEventually(2, instances[1]);
-        assertClusterSizeEventually(2, instances[2]);
+        assertClusterSizeEventually(2, instances[1], instances[2]);
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
@@ -147,8 +146,7 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
         changeClusterStateEventually(instances[1], ClusterState.NO_MIGRATION);
         terminateInstance(instances[0]);
 
-        assertClusterSizeEventually(2, instances[1]);
-        assertClusterSizeEventually(2, instances[2]);
+        assertClusterSizeEventually(2, instances[1], instances[2]);
 
         changeClusterStateEventually(instances[1], ClusterState.ACTIVE);
         assertAllPartitionsAreAssigned(instances[1], 2);
@@ -165,8 +163,7 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
         changeClusterStateEventually(instances[1], ClusterState.NO_MIGRATION);
         terminateInstance(instances[0]);
 
-        assertClusterSizeEventually(2, instances[1]);
-        assertClusterSizeEventually(2, instances[2]);
+        assertClusterSizeEventually(2, instances[1], instances[2]);
 
         changeClusterStateEventually(instances[1], ClusterState.FROZEN);
 

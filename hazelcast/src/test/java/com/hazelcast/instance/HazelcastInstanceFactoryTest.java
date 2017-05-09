@@ -18,7 +18,6 @@ package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -68,14 +67,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
             final HazelcastInstance instance2 = instanceFactory.newHazelcastInstance();
             final HazelcastInstance instance3 = instanceFactory.newHazelcastInstance();
 
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    assertClusterSize(3, instance1);
-                    assertClusterSize(3, instance2);
-                    assertClusterSize(3, instance3);
-                }
-            });
+            assertClusterSizeEventually(3, instance1, instance2, instance3);
         } finally {
             instanceFactory.terminateAll();
         }
@@ -93,21 +85,8 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
             final HazelcastInstance instance21 = instanceFactory2.newHazelcastInstance();
             final HazelcastInstance instance22 = instanceFactory2.newHazelcastInstance();
 
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    assertClusterSize(2, instance21);
-                    assertClusterSize(2, instance22);
-                }
-            });
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    assertClusterSize(3, instance11);
-                    assertClusterSize(3, instance12);
-                    assertClusterSize(3, instance13);
-                }
-            });
+            assertClusterSizeEventually(2, instance21, instance22);
+            assertClusterSizeEventually(3, instance11, instance12, instance13);
         } finally {
             instanceFactory1.terminateAll();
             instanceFactory2.terminateAll();

@@ -49,7 +49,6 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -170,16 +169,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
             assertNotNull(hazelcastInstance3);
             assertNotNull(client);
 
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run()
-                        throws Exception {
-                    assertClusterSize(3, hazelcastInstance1);
-                    assertClusterSize(3, hazelcastInstance2);
-                    assertClusterSize(3, hazelcastInstance3);
-                    assertClusterSize(3, client);
-                }
-            });
+            assertClusterSizeEventually(3, hazelcastInstance1, hazelcastInstance2, hazelcastInstance3, client);
         } finally {
             HazelcastClient.shutdownAll();
             Hazelcast.shutdownAll();

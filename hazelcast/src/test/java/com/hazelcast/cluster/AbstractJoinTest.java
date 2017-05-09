@@ -35,15 +35,14 @@ public class AbstractJoinTest extends HazelcastTestSupport {
         assertClusterSize(1, h1);
 
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        assertClusterSize(2, h1);
-        assertClusterSize(2, h2);
+        assertClusterSize(2, h1, h2);
 
         h1.shutdown();
         h1 = Hazelcast.newHazelcastInstance(config);
         // when h1 is returned, it's guaranteed that it should see 2 members
         assertClusterSize(2, h1);
-        // but h2 will report newly joining member eventually
-        assertClusterSizeEventually(2, h2);
+
+        assertClusterSize(2, h2);
     }
 
     protected void testJoin_With_DifferentBuildNumber(Config config) {
@@ -57,8 +56,7 @@ public class AbstractJoinTest extends HazelcastTestSupport {
             System.setProperty(buildNumberProp, "2");
             HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
 
-            assertClusterSize(2, h1);
-            assertClusterSize(2, h2);
+            assertClusterSize(2, h1, h2);
         } finally {
             System.clearProperty(buildNumberProp);
         }

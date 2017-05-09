@@ -299,9 +299,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
         instances[0] = factory.newHazelcastInstance(address);
 
-        assertClusterSizeEventually(3, instances[0]);
-        assertClusterSizeEventually(3, instances[1]);
-        assertClusterSizeEventually(3, instances[2]);
+        assertClusterSizeEventually(3, instances);
         assertClusterState(ClusterState.FROZEN, instances);
     }
 
@@ -333,9 +331,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
         instances[0] = factory.newHazelcastInstance(address);
 
-        assertClusterSizeEventually(3, instances[0]);
-        assertClusterSizeEventually(3, instances[1]);
-        assertClusterSizeEventually(3, instances[2]);
+        assertClusterSizeEventually(3, instances);
         assertClusterState(ClusterState.ACTIVE, instances);
     }
 

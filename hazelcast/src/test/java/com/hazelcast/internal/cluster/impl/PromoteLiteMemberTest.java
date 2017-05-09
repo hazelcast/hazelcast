@@ -275,8 +275,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         assertPromotionInvocationStarted(hz3);
 
         hz1.getLifecycleService().terminate();
-        assertClusterSizeEventually(2, hz2);
-        assertClusterSizeEventually(2, hz3);
+        assertClusterSizeEventually(2, hz2, hz3);
 
         Exception exception = future.get();
         // MemberLeftException is wrapped by HazelcastException

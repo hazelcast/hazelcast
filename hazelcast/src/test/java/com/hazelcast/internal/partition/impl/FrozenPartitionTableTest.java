@@ -75,9 +75,7 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
         terminateInstance(hz3);
         hz3 = factory.newHazelcastInstance(hz3Address);
 
-        assertClusterSizeEventually(3, hz1);
-        assertClusterSizeEventually(3, hz2);
-        assertClusterSizeEventually(3, hz3);
+        assertClusterSizeEventually(3, hz1, hz2, hz3);
 
         for (HazelcastInstance instance : Arrays.asList(hz1, hz2, hz3)) {
             final HazelcastInstance hz = instance;

@@ -63,10 +63,8 @@ public class MapReduceLiteMemberTest
         lite = factory.newHazelcastInstance(new Config().setLiteMember(true));
         lite2 = factory.newHazelcastInstance(new Config().setLiteMember(true));
 
-        assertClusterSizeEventually(4, instance);
-        assertClusterSizeEventually(4, instance2);
-        assertClusterSizeEventually(4, lite);
-        assertClusterSizeEventually(4, lite2);
+        assertClusterSize(4, instance, lite2);
+        assertClusterSizeEventually(4, instance2, lite);
     }
 
     @After
@@ -150,8 +148,7 @@ public class MapReduceLiteMemberTest
     public void testMapReduceJobSubmissionWithNoDataNode() {
         instance.shutdown();
         instance2.shutdown();
-        assertClusterSizeEventually(2, lite);
-        assertClusterSizeEventually(2, lite2);
+        assertClusterSizeEventually(2, lite, lite2);
 
         testMapReduceJobSubmissionWithNoDataNode(lite);
     }

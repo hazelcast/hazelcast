@@ -148,10 +148,8 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         config1.setLiteMember(true);
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config1);
-        assertNodeStartedEventually(hz1);
 
         HazelcastInstance hz2 = factory.newHazelcastInstance(createConfig());
-        assertNodeStartedEventually(hz2);
 
         warmUpPartitions(hz1, hz2);
         waitAllForSafeState(hz1, hz2);
@@ -166,7 +164,7 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         HazelcastInstance hz3 = factory.newHazelcastInstance(config3);
 
         assertClusterSizeEventually(2, hz2);
-        assertClusterSizeEventually(2, hz3);
+        assertClusterSize(2, hz3);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -191,20 +189,16 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         config1.addListenerConfig(new ListenerConfig(masterListener));
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config1);
-        assertNodeStartedEventually(hz1);
 
         HazelcastInstance hz2 = factory.newHazelcastInstance(createConfig());
-        assertNodeStartedEventually(hz2);
 
         warmUpPartitions(hz1, hz2);
         waitAllForSafeState(hz1, hz2);
 
         HazelcastInstance hz3 = factory.newHazelcastInstance(createConfig());
-        assertNodeStartedEventually(hz3);
 
-        assertClusterSizeEventually(3, hz1);
+        assertClusterSize(3, hz1, hz3);
         assertClusterSizeEventually(3, hz2);
-        assertClusterSizeEventually(3, hz3);
 
         masterListener.other = hz3;
         migrationStartLatch.countDown();
@@ -230,13 +224,11 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         config1.setLiteMember(true);
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config1);
-        assertNodeStartedEventually(hz1);
 
         Config config2 = createConfig();
         final CollectMigrationTaskOnCommit sourceListener = new CollectMigrationTaskOnCommit();
         config2.addListenerConfig(new ListenerConfig(sourceListener));
         HazelcastInstance hz2 = factory.newHazelcastInstance(config2);
-        assertNodeStartedEventually(hz2);
 
         warmUpPartitions(hz1, hz2);
         waitAllForSafeState(hz1, hz2);
@@ -247,11 +239,9 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         destinationListener.other = hz1;
         config3.addListenerConfig(new ListenerConfig(destinationListener));
         HazelcastInstance hz3 = factory.newHazelcastInstance(config3);
-        assertNodeStartedEventually(hz3);
 
-        assertClusterSizeEventually(3, hz1);
+        assertClusterSize(3, hz1, hz3);
         assertClusterSizeEventually(3, hz2);
-        assertClusterSizeEventually(3, hz3);
 
         migrationStartLatch.countDown();
 
@@ -283,10 +273,8 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         config1.addListenerConfig(new ListenerConfig(masterListener));
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config1);
-        assertNodeStartedEventually(hz1);
 
         HazelcastInstance hz2 = factory.newHazelcastInstance(createConfig());
-        assertNodeStartedEventually(hz2);
 
         warmUpPartitions(hz1, hz2);
         waitAllForSafeState(hz1, hz2);
@@ -295,13 +283,11 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         InternalMigrationListenerImpl targetListener = new InternalMigrationListenerImpl();
         config3.addListenerConfig(new ListenerConfig(targetListener));
         HazelcastInstance hz3 = factory.newHazelcastInstance(config3);
-        assertNodeStartedEventually(hz3);
 
         masterListener.other = hz2;
 
-        assertClusterSizeEventually(3, hz1);
+        assertClusterSize(3, hz1, hz3);
         assertClusterSizeEventually(3, hz2);
-        assertClusterSizeEventually(3, hz3);
 
         migrationStartLatch.countDown();
 
@@ -329,10 +315,8 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         config1.addListenerConfig(new ListenerConfig(masterListener));
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config1);
-        assertNodeStartedEventually(hz1);
 
         HazelcastInstance hz2 = factory.newHazelcastInstance(createConfig());
-        assertNodeStartedEventually(hz2);
 
         warmUpPartitions(hz1, hz2);
         waitAllForSafeState(hz1, hz2);
@@ -342,13 +326,11 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         Config config3 = createConfig();
         config3.addListenerConfig(new ListenerConfig(memberListener));
         HazelcastInstance hz3 = factory.newHazelcastInstance(config3);
-        assertNodeStartedEventually(hz3);
 
         warmUpPartitions(hz1, hz2, hz3);
 
-        assertClusterSizeEventually(3, hz1);
+        assertClusterSize(3, hz1, hz3);
         assertClusterSizeEventually(3, hz2);
-        assertClusterSizeEventually(3, hz3);
 
         migrationStartLatch.countDown();
 
@@ -376,10 +358,8 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         config1.addListenerConfig(new ListenerConfig(masterListener));
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config1);
-        assertNodeStartedEventually(hz1);
 
         HazelcastInstance hz2 = factory.newHazelcastInstance(createConfig());
-        assertNodeStartedEventually(hz2);
 
         warmUpPartitions(hz1, hz2);
         waitAllForSafeState(hz1, hz2);
@@ -388,11 +368,9 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         InternalMigrationListenerImpl targetListener = new InternalMigrationListenerImpl();
         config3.addListenerConfig(new ListenerConfig(targetListener));
         HazelcastInstance hz3 = factory.newHazelcastInstance(config3);
-        assertNodeStartedEventually(hz3);
 
-        assertClusterSizeEventually(3, hz1);
+        assertClusterSize(3, hz1, hz3);
         assertClusterSizeEventually(3, hz2);
-        assertClusterSizeEventually(3, hz3);
 
         migrationStartLatch.countDown();
 
@@ -416,13 +394,11 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         config1.addListenerConfig(new ListenerConfig(masterListener));
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config1);
-        assertNodeStartedEventually(hz1);
 
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(hz1);
         final MigrationManager migrationManager = partitionService.getMigrationManager();
 
         HazelcastInstance hz2 = factory.newHazelcastInstance(createConfig());
-        assertNodeStartedEventually(hz2);
 
         warmUpPartitions(hz1, hz2);
         waitAllForSafeState(hz1, hz2);
@@ -432,11 +408,9 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
         config3.addListenerConfig(new ListenerConfig(destinationListener));
         HazelcastInstance hz3 = factory.newHazelcastInstance(config3);
-        assertNodeStartedEventually(hz3);
 
-        assertClusterSizeEventually(3, hz1);
+        assertClusterSize(3, hz1, hz3);
         assertClusterSizeEventually(3, hz2);
-        assertClusterSizeEventually(3, hz3);
 
         migrationStartLatch.countDown();
 
@@ -460,22 +434,18 @@ public class MigrationCommitTest extends HazelcastTestSupport {
         config1.addListenerConfig(new ListenerConfig(new DelayMigrationStart(migrationStartLatch)));
 
         final HazelcastInstance hz1 = factory.newHazelcastInstance(config1);
-        assertNodeStartedEventually(hz1);
 
         Config config2 = createConfig();
         config2.addListenerConfig(new ListenerConfig(new DelayMigrationCommit(migrationCommitLatch)));
         HazelcastInstance hz2 = factory.newHazelcastInstance(config2);
-        assertNodeStartedEventually(hz2);
 
         warmUpPartitions(hz1, hz2);
         waitAllForSafeState(hz1, hz2);
 
         final HazelcastInstance hz3 = factory.newHazelcastInstance(createConfig());
-        assertNodeStartedEventually(hz3);
 
-        assertClusterSizeEventually(3, hz1);
+        assertClusterSize(3, hz1, hz3);
         assertClusterSizeEventually(3, hz2);
-        assertClusterSizeEventually(3, hz3);
 
         migrationStartLatch.countDown();
 

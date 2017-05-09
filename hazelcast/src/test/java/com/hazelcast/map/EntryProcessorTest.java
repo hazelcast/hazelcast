@@ -605,9 +605,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
 
-        assertClusterSize(3, instance1);
-        assertClusterSize(3, instance2);
-        assertClusterSize(3, instance3);
+        assertClusterSize(3, instance1, instance2, instance3);
 
         IMap<Integer, Integer> map = instance1.getMap(MAP_NAME);
         int size = 100;
@@ -622,8 +620,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         instance1.shutdown();
         sleepSeconds(1);
 
-        assertClusterSize(2, instance2);
-        assertClusterSize(2, instance3);
+        assertClusterSize(2, instance2, instance3);
 
         IMap<Integer, Integer> map2 = instance2.getMap(MAP_NAME);
         for (int i = 0; i < size; i++) {

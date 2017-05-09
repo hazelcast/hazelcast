@@ -29,6 +29,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertClusterSize;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -48,10 +49,8 @@ public class ListSetMapReduceLiteMemberTest {
         final HazelcastInstance instance1 = factory.newHazelcastInstance();
         final HazelcastInstance instance2 = factory.newHazelcastInstance();
 
-        assertClusterSizeEventually(4, lite);
-        assertClusterSizeEventually(4, lite2);
-        assertClusterSizeEventually(4, instance1);
-        assertClusterSizeEventually(4, instance2);
+        assertClusterSize(4, lite, instance2);
+        assertClusterSizeEventually(4, lite2, instance1);
 
         client = factory.newHazelcastClient();
     }

@@ -63,9 +63,8 @@ public class MultiMapMapReduceTest
         final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         MultiMap<Integer, Integer> multiMap = h1.getMultiMap("default");
         for (int i = 0; i < keyCount; i++) {

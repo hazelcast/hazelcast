@@ -169,8 +169,8 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
         instance = instances[0];
         logger = instance.getLoggingService().getLogger(getClass());
 
-        HazelcastTestSupport.assertClusterSizeEventually(factory.getCount(), instance);
-        HazelcastTestSupport.assertAllInSafeState(asList(instances));
+        assertClusterSizeEventually(factory.getCount(), instance);
+        assertAllInSafeState(asList(instances));
 
         return instance.getMap(name);
     }

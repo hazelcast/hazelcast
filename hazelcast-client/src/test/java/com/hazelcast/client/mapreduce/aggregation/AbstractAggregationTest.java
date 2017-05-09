@@ -41,8 +41,7 @@ public class AbstractAggregationTest
         HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
+        assertClusterSize(2, h1, h2);
 
         client = hazelcastFactory.newHazelcastClient();
     }

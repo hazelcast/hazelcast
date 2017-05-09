@@ -113,8 +113,7 @@ public class MulticastLoopbackModeTest extends HazelcastTestSupport {
     public void testEnabledMode() throws Exception {
         createTestEnvironment(true);
 
-        assertClusterSize(2, hz1);
-        assertClusterSize(2, hz2);
+        assertClusterSize(2, hz1, hz2);
 
         Cluster cluster1 = hz1.getCluster();
         Cluster cluster2 = hz2.getCluster();

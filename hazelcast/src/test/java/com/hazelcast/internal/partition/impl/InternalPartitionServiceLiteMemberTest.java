@@ -98,8 +98,7 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
         final HazelcastInstance master = factory.newHazelcastInstance(liteMemberConfig);
         final HazelcastInstance other = factory.newHazelcastInstance(liteMemberConfig);
 
-        assertClusterSizeEventually(2, master);
-        assertClusterSizeEventually(2, other);
+        assertClusterSize(2, master, other);
 
         for (HazelcastInstance instance : asList(master, other)) {
             final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(instance);
@@ -173,8 +172,7 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
         final HazelcastInstance master = factory.newHazelcastInstance(liteMemberConfig);
         final HazelcastInstance other = factory.newHazelcastInstance(liteMemberConfig);
 
-        assertClusterSizeEventually(2, master);
-        assertClusterSizeEventually(2, other);
+        assertClusterSize(2, master, other);
 
         for (HazelcastInstance instance : asList(master, other)) {
             final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(instance);
@@ -197,8 +195,7 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
         final HazelcastInstance master = factory.newHazelcastInstance(liteMemberConfig);
         final HazelcastInstance other = factory.newHazelcastInstance(liteMemberConfig);
 
-        assertClusterSizeEventually(2, master);
-        assertClusterSizeEventually(2, other);
+        assertClusterSize(2, master, other);
 
         final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(other);
         partitionService.getPartitionOwnerOrWait(0);
@@ -234,8 +231,7 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
         final HazelcastInstance master = factory.newHazelcastInstance();
         final HazelcastInstance lite = factory.newHazelcastInstance(liteMemberConfig);
 
-        assertClusterSizeEventually(2, master);
-        assertClusterSizeEventually(2, lite);
+        assertClusterSize(2, master, lite);
         warmUpPartitions(master, lite);
 
         master.getLifecycleService().shutdown();
@@ -320,8 +316,7 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
         final HazelcastInstance lite1 = factory.newHazelcastInstance(liteMemberConfig);
         final HazelcastInstance lite2 = factory.newHazelcastInstance(liteMemberConfig);
 
-        assertClusterSizeEventually(2, lite1);
-        assertClusterSizeEventually(2, lite2);
+        assertClusterSize(2, lite1, lite2);
 
         lite1.getLifecycleService().terminate();
     }
@@ -404,8 +399,7 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
         final HazelcastInstance lite = factory.newHazelcastInstance(liteMemberConfig);
         final HazelcastInstance lite2 = factory.newHazelcastInstance(liteMemberConfig);
 
-        assertClusterSizeEventually(2, lite);
-        assertClusterSizeEventually(2, lite2);
+        assertClusterSize(2, lite, lite2);
 
         for (HazelcastInstance instance : asList(lite, lite2)) {
             assertMemberGroupsSizeEventually(instance, 0);
@@ -418,8 +412,7 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
         final HazelcastInstance lite = factory.newHazelcastInstance(liteMemberConfig);
         final HazelcastInstance other = factory.newHazelcastInstance();
 
-        assertClusterSizeEventually(2, lite);
-        assertClusterSizeEventually(2, other);
+        assertClusterSize(2, lite, other);
 
         for (HazelcastInstance instance : asList(lite, other)) {
             assertMemberGroupsSizeEventually(instance, 1);
@@ -432,8 +425,7 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
         final HazelcastInstance lite = factory.newHazelcastInstance(liteMemberConfig);
         final HazelcastInstance other = factory.newHazelcastInstance();
 
-        assertClusterSizeEventually(2, lite);
-        assertClusterSizeEventually(2, other);
+        assertClusterSize(2, lite, other);
 
         for (HazelcastInstance instance : asList(lite, other)) {
             assertMemberGroupsSizeEventually(instance, 1);
@@ -450,8 +442,7 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
         final HazelcastInstance lite = factory.newHazelcastInstance(liteMemberConfig);
         final HazelcastInstance other = factory.newHazelcastInstance();
 
-        assertClusterSizeEventually(2, lite);
-        assertClusterSizeEventually(2, other);
+        assertClusterSize(2, lite, other);
 
         for (HazelcastInstance instance : asList(lite, other)) {
             assertMemberGroupsSizeEventually(instance, 1);
@@ -490,8 +481,7 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
         final HazelcastInstance lite = factory.newHazelcastInstance(liteMemberConfig);
         final HazelcastInstance lite2 = factory.newHazelcastInstance(liteMemberConfig);
 
-        assertClusterSizeEventually(2, lite);
-        assertClusterSizeEventually(2, lite2);
+        assertClusterSize(2, lite, lite2);
 
         for (HazelcastInstance instance : asList(lite, lite2)) {
             assertMaxBackupCountEventually(instance, 0);
@@ -504,8 +494,7 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
         final HazelcastInstance lite = factory.newHazelcastInstance(liteMemberConfig);
         final HazelcastInstance other = factory.newHazelcastInstance();
 
-        assertClusterSizeEventually(2, lite);
-        assertClusterSizeEventually(2, other);
+        assertClusterSize(2, lite, other);
 
         for (HazelcastInstance instance : asList(lite, other)) {
             assertMaxBackupCountEventually(instance, 0);
@@ -519,9 +508,8 @@ public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport
         final HazelcastInstance other = factory.newHazelcastInstance();
         final HazelcastInstance other2 = factory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, lite);
+        assertClusterSize(3, lite, other2);
         assertClusterSizeEventually(3, other);
-        assertClusterSizeEventually(3, other2);
 
         for (HazelcastInstance instance : asList(lite, other, other2)) {
             assertMaxBackupCountEventually(instance, 1);

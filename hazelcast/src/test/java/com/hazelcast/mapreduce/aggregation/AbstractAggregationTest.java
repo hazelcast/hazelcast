@@ -44,8 +44,7 @@ public class AbstractAggregationTest
         HAZELCAST_INSTANCE = INSTANCE_FACTORY.newHazelcastInstance();
         HazelcastInstance hazelcastInstance = INSTANCE_FACTORY.newHazelcastInstance();
 
-        assertClusterSizeEventually(2, HAZELCAST_INSTANCE);
-        assertClusterSizeEventually(2, hazelcastInstance);
+        assertClusterSize(2, HAZELCAST_INSTANCE, hazelcastInstance);
     }
 
     @AfterClass

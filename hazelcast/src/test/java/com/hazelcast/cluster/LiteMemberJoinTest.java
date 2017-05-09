@@ -37,6 +37,7 @@ import org.junit.runner.RunWith;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertClusterSize;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.closeConnectionBetween;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
@@ -82,8 +83,8 @@ public class LiteMemberJoinTest {
         final HazelcastInstance other = Hazelcast.newHazelcastInstance(configCreator.create(name, pw, false));
 
         assertTrue(getNode(liteMaster).isMaster());
-        assertClusterSizeEventually(2, liteMaster);
-        assertClusterSizeEventually(2, other);
+        assertClusterSize(2, liteMaster);
+        assertClusterSize(2, other);
 
         final Set<Member> members = other.getCluster().getMembers();
         assertLiteMemberExcluding(members, other);
@@ -120,8 +121,9 @@ public class LiteMemberJoinTest {
     private void test_liteMemberBecomesVisibleTo2ndNode(final ConfigCreator configCreator) {
         final HazelcastInstance master = Hazelcast.newHazelcastInstance(configCreator.create(name, pw, false));
         final HazelcastInstance other = Hazelcast.newHazelcastInstance(configCreator.create(name, pw, false));
-        Hazelcast.newHazelcastInstance(configCreator.create(name, pw, true));
+        final HazelcastInstance other2 = Hazelcast.newHazelcastInstance(configCreator.create(name, pw, true));
 
+        assertClusterSize(3, master, other2);
         assertClusterSizeEventually(3, other);
 
         final Set<Member> members = other.getCluster().getMembers();
@@ -168,8 +170,7 @@ public class LiteMemberJoinTest {
 
         reconnect(master, liteInstance);
 
-        assertClusterSizeEventually(2, master);
-        assertClusterSizeEventually(2, liteInstance);
+        assertClusterSizeEventually(2, master, liteInstance);
 
         final Set<Member> members = master.getCluster().getMembers();
         assertLiteMemberExcluding(members, master);
