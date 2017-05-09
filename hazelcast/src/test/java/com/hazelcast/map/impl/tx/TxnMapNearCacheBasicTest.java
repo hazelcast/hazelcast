@@ -67,19 +67,24 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     @Parameter
     public InMemoryFormat inMemoryFormat;
 
+    @Parameter(value = 1)
+    public boolean serializeKeys;
+
     private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory();
 
-    @Parameters(name = "format:{0}")
+    @Parameters(name = "format:{0} serializeKeys:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {InMemoryFormat.BINARY},
-                {InMemoryFormat.OBJECT},
+                {InMemoryFormat.BINARY, true},
+                {InMemoryFormat.BINARY, false},
+                {InMemoryFormat.OBJECT, true},
+                {InMemoryFormat.OBJECT, false},
         });
     }
 
     @Before
     public void setUp() {
-        nearCacheConfig = createNearCacheConfig(inMemoryFormat, true)
+        nearCacheConfig = createNearCacheConfig(inMemoryFormat, serializeKeys)
                 .setCacheLocalEntries(true)
                 // we have to configure invalidation, otherwise the Near Cache in the TransactionalMap will not be used
                 .setInvalidateOnChange(true);

@@ -109,8 +109,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
     public V get(Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        Data keyData = toDataWithStrategy(key);
-        return toObject(getInternal(keyData));
+        return toObject(getInternal(key));
     }
 
     @Override
@@ -123,9 +122,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data keyData = toDataWithStrategy(key);
         Data valueData = toData(value);
-        Data result = putInternal(keyData, valueData, ttl, timeunit);
+        Data result = putInternal(key, valueData, ttl, timeunit);
         return toObject(result);
     }
 
@@ -134,9 +132,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data keyData = toDataWithStrategy(key);
         Data valueData = toData(value);
-        return tryPutInternal(keyData, valueData, timeout, timeunit);
+        return tryPutInternal(key, valueData, timeout, timeunit);
     }
 
     @Override
@@ -149,9 +146,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data keyData = toDataWithStrategy(key);
         Data valueData = toData(value);
-        Data result = putIfAbsentInternal(keyData, valueData, ttl, timeunit);
+        Data result = putIfAbsentInternal(key, valueData, ttl, timeunit);
         return toObject(result);
     }
 
@@ -160,9 +156,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data keyData = toDataWithStrategy(key);
         Data valueData = toData(value);
-        putTransientInternal(keyData, valueData, ttl, timeunit);
+        putTransientInternal(key, valueData, ttl, timeunit);
     }
 
     @Override
@@ -171,10 +166,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         checkNotNull(oldValue, NULL_VALUE_IS_NOT_ALLOWED);
         checkNotNull(newValue, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data keyData = toDataWithStrategy(key);
         Data oldValueData = toData(oldValue);
         Data newValueData = toData(newValue);
-        return replaceInternal(keyData, oldValueData, newValueData);
+        return replaceInternal(key, oldValueData, newValueData);
     }
 
     @Override
@@ -182,9 +176,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data keyData = toDataWithStrategy(key);
         Data valueData = toData(value);
-        return toObject(replaceInternal(keyData, valueData));
+        return toObject(replaceInternal(key, valueData));
     }
 
     @Override
@@ -197,17 +190,15 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data keyData = toDataWithStrategy(key);
         Data valueData = toData(value);
-        setInternal(keyData, valueData, ttl, timeunit);
+        setInternal(key, valueData, ttl, timeunit);
     }
 
     @Override
     public V remove(Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        Data keyData = toDataWithStrategy(key);
-        Data result = removeInternal(keyData);
+        Data result = removeInternal(key);
         return toObject(result);
     }
 
@@ -216,9 +207,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data keyData = toDataWithStrategy(key);
         Data valueData = toData(value);
-        return removeInternal(keyData, valueData);
+        return removeInternal(key, valueData);
     }
 
     @Override
@@ -232,16 +222,14 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
     public void delete(Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        Data keyData = toDataWithStrategy(key);
-        deleteInternal(keyData);
+        deleteInternal(key);
     }
 
     @Override
     public boolean containsKey(Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        Data keyData = toDataWithStrategy(key);
-        return containsKeyInternal(keyData);
+        return containsKeyInternal(key);
     }
 
     @Override
@@ -281,16 +269,14 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
     public boolean tryRemove(K key, long timeout, TimeUnit timeunit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        Data keyData = toDataWithStrategy(key);
-        return tryRemoveInternal(keyData, timeout, timeunit);
+        return tryRemoveInternal(key, timeout, timeunit);
     }
 
     @Override
     public ICompletableFuture<V> getAsync(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        Data keyData = toDataWithStrategy(key);
-        return new DelegatingFuture<V>(getAsyncInternal(keyData), serializationService);
+        return new DelegatingFuture<V>(getAsyncInternal(key), serializationService);
     }
 
     @Override
@@ -311,9 +297,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data keyData = toDataWithStrategy(key);
         Data valueData = toData(value);
-        return new DelegatingFuture<V>(putAsyncInternal(keyData, valueData, ttl, timeunit), serializationService);
+        return new DelegatingFuture<V>(putAsyncInternal(key, valueData, ttl, timeunit), serializationService);
     }
 
     @Override
@@ -326,17 +311,15 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data keyData = toDataWithStrategy(key);
         Data valueData = toData(value);
-        return new DelegatingFuture<Void>(setAsyncInternal(keyData, valueData, ttl, timeunit), serializationService);
+        return new DelegatingFuture<Void>(setAsyncInternal(key, valueData, ttl, timeunit), serializationService);
     }
 
     @Override
     public ICompletableFuture<V> removeAsync(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        Data keyData = toDataWithStrategy(key);
-        return new DelegatingFuture<V>(removeAsyncInternal(keyData), serializationService);
+        return new DelegatingFuture<V>(removeAsyncInternal(key), serializationService);
     }
 
     @Override
@@ -345,18 +328,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
             return emptyMap();
         }
 
-        List<Data> requestedKeys = new ArrayList<Data>(keys.size());
-        for (K key : keys) {
-            checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        int keysSize = keys.size();
+        List<Data> dataKeys = new ArrayList<Data>(keysSize);
+        List<Object> resultingKeyValuePairs = new ArrayList<Object>(keysSize * 2);
+        getAllObjectInternal(keys, dataKeys, resultingKeyValuePairs);
 
-            Data keyData = toDataWithStrategy(key);
-            requestedKeys.add(keyData);
-        }
-
-        List<Object> resultingKeyValuePairs = new ArrayList<Object>(2 * keys.size());
-        getAllObjectInternal(requestedKeys, resultingKeyValuePairs);
-
-        Map<K, V> result = createHashMap(keys.size());
+        Map<K, V> result = createHashMap(keysSize);
         for (int i = 0; i < resultingKeyValuePairs.size(); ) {
             K key = toObject(resultingKeyValuePairs.get(i++));
             V value = toObject(resultingKeyValuePairs.get(i++));
@@ -450,8 +427,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
-        Data keyData = toDataWithStrategy(key);
-        return addLocalEntryListenerInternal(listener, predicate, keyData, includeValue);
+        return addLocalEntryListenerInternal(listener, predicate, toDataWithStrategy(key), includeValue);
     }
 
     @Override
@@ -459,8 +435,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
-        Data keyData = toDataWithStrategy(key);
-        return addLocalEntryListenerInternal(listener, predicate, keyData, includeValue);
+        return addLocalEntryListenerInternal(listener, predicate, toDataWithStrategy(key), includeValue);
     }
 
     @Override
@@ -565,7 +540,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
     public boolean evict(Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        return evictInternal(toDataWithStrategy(key));
+        return evictInternal(key);
     }
 
     @Override
@@ -585,7 +560,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         checkTrue(isMapStoreEnabled(), "First you should configure a map store");
         checkNotNull(keys, "Parameter keys should not be null.");
 
-        loadInternal(convertToData(keys), replaceExistingValues);
+        loadInternal(keys, null, replaceExistingValues);
     }
 
     /**
@@ -695,7 +670,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        Data result = executeOnKeyInternal(toDataWithStrategy(key), entryProcessor);
+        Data result = executeOnKeyInternal(key, entryProcessor);
         return toObject(result);
     }
 
@@ -708,26 +683,21 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
             return emptyMap();
         }
         Set<Data> dataKeys = new HashSet<Data>(keys.size());
-        for (K key : keys) {
-            dataKeys.add(toDataWithStrategy(key));
-        }
-        return executeOnKeysInternal(dataKeys, entryProcessor);
+        return executeOnKeysInternal(keys, dataKeys, entryProcessor);
     }
 
     @Override
     public void submitToKey(K key, EntryProcessor entryProcessor, ExecutionCallback callback) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        Data keyData = toDataWithStrategy(key);
-        executeOnKeyInternal(keyData, entryProcessor, callback);
+        executeOnKeyInternal(key, entryProcessor, callback);
     }
 
     @Override
     public ICompletableFuture submitToKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        Data keyData = toDataWithStrategy(key);
-        InternalCompletableFuture future = executeOnKeyInternal(keyData, entryProcessor, null);
+        InternalCompletableFuture future = executeOnKeyInternal(key, entryProcessor, null);
         return new DelegatingFuture(future, serializationService);
     }
 

@@ -34,7 +34,6 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapManagedService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.invalidation.MemberMapMetaDataFetcher;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
@@ -144,14 +143,14 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
         return false;
     }
 
-    public Object getFromNearCache(String mapName, Data key) {
+    public Object getFromNearCache(String mapName, Object key) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         if (!mapContainer.hasInvalidationListener()) {
             return null;
         }
 
         NearCacheConfig nearCacheConfig = mapContainer.getMapConfig().getNearCacheConfig();
-        NearCache<Data, Object> nearCache = getOrCreateNearCache(mapName, nearCacheConfig);
+        NearCache<Object, Object> nearCache = getOrCreateNearCache(mapName, nearCacheConfig);
         return nearCache.get(key);
     }
 
