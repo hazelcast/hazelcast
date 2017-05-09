@@ -39,6 +39,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
 
     private String groupName;
 
+    @Deprecated
     private String groupPassword;
 
     private String joinerType;
@@ -98,7 +99,6 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
             return false;
         }
 
-        verifyGroupPassword(found);
         verifyJoiner(found);
         verifyPartitionGroup(found);
         verifyPartitionCount(found);
@@ -111,12 +111,6 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
             return false;
         }
         return true;
-    }
-
-    private void verifyGroupPassword(ConfigCheck found) {
-        if (!equals(groupPassword, found.groupPassword)) {
-            throw new ConfigMismatchException("Incompatible group password!");
-        }
     }
 
     private void verifyApplicationValidationToken(ConfigCheck found) {
@@ -208,7 +202,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         groupName = in.readUTF();
-        groupPassword = in.readUTF();
+        in.readUTF();
         joinerType = in.readUTF();
         partitionGroupEnabled = in.readBoolean();
         if (partitionGroupEnabled) {
