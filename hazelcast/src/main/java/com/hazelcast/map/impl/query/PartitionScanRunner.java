@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
@@ -37,6 +38,7 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -72,11 +74,15 @@ public class PartitionScanRunner {
     @SuppressWarnings("unchecked")
     public Collection<QueryableEntry> run(String mapName, Predicate predicate, int partitionId) {
         PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate) predicate : null;
-        List<QueryableEntry> resultList = new LinkedList<QueryableEntry>();
-
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        Iterator<Record> iterator = partitionContainer.getRecordStore(mapName).loadAwareIterator(getNow(), false);
+        RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
+        if (recordStore == null) {
+            return Collections.emptyList();
+        }
+
+        List<QueryableEntry> resultList = new LinkedList<QueryableEntry>();
+        Iterator<Record> iterator = recordStore.loadAwareIterator(getNow(), false);
         Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry(pagingPredicate);
         boolean useCachedValues = isUseCachedDeserializedValuesEnabled(mapContainer);
         Extractors extractors = mapServiceContext.getExtractors(mapName);

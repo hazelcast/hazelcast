@@ -20,11 +20,12 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 
-public class MapFetchKeysOperation extends MapOperation implements ReadonlyOperation {
+public class MapFetchKeysOperation extends MapOperation implements ReadonlyOperation, PartitionAwareOperation {
 
     private int fetchSize;
     private int lastTableIndex;

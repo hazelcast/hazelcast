@@ -19,13 +19,14 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
 /**
  * Triggers map loading from a map store
  */
-public class LoadMapOperation extends MapOperation {
+public class LoadMapOperation extends MapOperation implements PartitionAwareOperation {
 
     private boolean replaceExistingValues;
 

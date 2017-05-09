@@ -26,10 +26,12 @@ import com.hazelcast.spi.impl.MutatingOperation;
 public class ClearNearCacheOperation extends MapOperation implements MutatingOperation {
 
     public ClearNearCacheOperation() {
+        this.createRecordStoreOnDemand = false;
     }
 
     public ClearNearCacheOperation(String mapName) {
         super(mapName);
+        this.createRecordStoreOnDemand = false;
     }
 
     @Override

@@ -44,11 +44,13 @@ public class MadePublishableOperation extends MapOperation {
     private transient boolean done;
 
     public MadePublishableOperation() {
+        this.createRecordStoreOnDemand = false;
     }
 
     public MadePublishableOperation(String mapName, String cacheName) {
         super(mapName);
         this.cacheName = cacheName;
+        this.createRecordStoreOnDemand = false;
     }
 
     @Override
