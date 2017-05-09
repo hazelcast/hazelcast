@@ -57,7 +57,6 @@ public final class ObjectNamespaceSerializationHelper {
     }
 
     public static ObjectNamespace readNamespaceCompatibly(ObjectDataInput in) throws IOException {
-        assert !in.getVersion().isUnknown();
         ObjectNamespace namespace = in.readObject();
         if (namespace.getClass() == DefaultObjectNamespace.class) {
             namespace = new DistributedObjectNamespace(namespace);
