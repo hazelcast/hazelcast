@@ -81,7 +81,7 @@ public class TimedMemberStateFactory {
     private static final int INITIAL_PARTITION_SAFETY_CHECK_DELAY = 15;
     private static final int PARTITION_SAFETY_CHECK_PERIOD = 60;
 
-    private final HazelcastInstanceImpl instance;
+    protected final HazelcastInstanceImpl instance;
     private final int maxVisibleInstanceCount;
     private final boolean cacheServiceEnabled;
 
@@ -194,7 +194,7 @@ public class TimedMemberStateFactory {
         memberState.setClusterHotRestartStatus(state);
     }
 
-    private void createNodeState(MemberStateImpl memberState) {
+    protected void createNodeState(MemberStateImpl memberState) {
         Node node = instance.node;
         ClusterService cluster = instance.node.clusterService;
         NodeStateImpl nodeState = new NodeStateImpl(cluster.getClusterState(), node.getState(),
