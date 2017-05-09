@@ -34,6 +34,8 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 public class JetInstanceTest extends JetTestSupport {
 
+    private static final String UNABLE_TO_CONNECT_MESSAGE = "Unable to connect";
+
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
@@ -67,7 +69,7 @@ public class JetInstanceTest extends JetTestSupport {
         Hazelcast.newHazelcastInstance();
 
         expectedException.expect(IllegalStateException.class);
-        expectedException.expectMessage("Unable to connect");
+        expectedException.expectMessage(UNABLE_TO_CONNECT_MESSAGE);
         Jet.newJetClient();
     }
 
@@ -76,7 +78,7 @@ public class JetInstanceTest extends JetTestSupport {
         Jet.newJetInstance();
 
         expectedException.expect(IllegalStateException.class);
-        expectedException.expectMessage("Unable to connect");
+        expectedException.expectMessage(UNABLE_TO_CONNECT_MESSAGE);
         HazelcastClient.newHazelcastClient();
     }
 }
