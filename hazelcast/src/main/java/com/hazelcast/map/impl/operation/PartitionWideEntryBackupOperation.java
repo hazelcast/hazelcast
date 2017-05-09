@@ -18,18 +18,17 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.Map;
+
+import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 
 public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBackupOperation implements BackupOperation {
 
@@ -42,53 +41,19 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
 
     @Override
     public void run() {
-        long now = getNow();
-        boolean shouldClone = mapContainer.shouldCloneOnEntryProcessing();
-        SerializationService serializationService = getNodeEngine().getSerializationService();
+        responses = new MapEntries(recordStore.size());
+        EntryOperator operator = operator(this, backupProcessor, getPredicate(), true);
 
-        Iterator<Record> iterator = recordStore.iterator(now, true);
+        Iterator<Record> iterator = recordStore.iterator(Clock.currentTimeMillis(), true);
         while (iterator.hasNext()) {
             Record record = iterator.next();
-            Data dataKey = record.getKey();
-            Object oldValue = record.getValue();
-            Object value = shouldClone ? serializationService.toObject(serializationService.toData(oldValue)) : oldValue;
-
-            if (!applyPredicate(dataKey, value)) {
-                continue;
-            }
-
-            Map.Entry entry = createMapEntry(dataKey, value);
-            processBackup(entry);
-
-            if (noOp(entry, oldValue)) {
-                continue;
-            }
-            if (entryRemovedBackup(entry, dataKey)) {
-                continue;
-            }
-            entryAddedOrUpdatedBackup(entry, dataKey);
-
-            evict(dataKey);
+            operator.operateOnKey(record.getKey()).doPostOperateOps();
         }
-
-        publishWanReplicationEventBackups();
-    }
-
-    protected Predicate getPredicate() {
-        return null;
     }
 
     @Override
     public Object getResponse() {
         return true;
-    }
-
-    private boolean applyPredicate(Data key, Object value) {
-        if (getPredicate() == null) {
-            return true;
-        }
-        QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
-        return getPredicate().apply(queryEntry);
     }
 
     @Override

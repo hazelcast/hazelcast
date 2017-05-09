@@ -173,12 +173,12 @@ public class MapEventPublisherImpl implements MapEventPublisher {
      * @param eventType     the event type
      * @param dataKey       the key of the event map entry
      * @param oldValue      the old value of the map entry
-     * @param value         the new value of the map entry
+     * @param newValue         the new value of the map entry
      * @param mergingValue  the value used when performing a merge operation in case of a {@link EntryEventType#MERGED} event.
      *                      This value together with the old value produced the new value.
      */
     private void publishEvent(Collection<EventRegistration> registrations, Address caller, String mapName,
-                                     EntryEventType eventType, Data dataKey, Object oldValue, Object value,
+                                     EntryEventType eventType, Data dataKey, Object oldValue, Object newValue,
                                      Object mergingValue) {
 
         EntryEventDataCache eventDataCache = filteringStrategy.getEntryEventDataCache();
@@ -189,13 +189,13 @@ public class MapEventPublisherImpl implements MapEventPublisher {
             EventFilter filter = registration.getFilter();
             // a filtering strategy determines whether the event must be published on the specific
             // event registration and may alter the type of event to be published
-            int eventTypeForPublishing = filteringStrategy.doFilter(filter, dataKey, oldValue, value, eventType, mapName);
+            int eventTypeForPublishing = filteringStrategy.doFilter(filter, dataKey, oldValue, newValue, eventType, mapName);
             if (eventTypeForPublishing == FILTER_DOES_NOT_MATCH) {
                 continue;
             }
 
             EntryEventData eventDataToBePublished = eventDataCache.getOrCreateEventData(mapName, caller, dataKey,
-                    value, oldValue, mergingValue, eventTypeForPublishing, isIncludeValue(filter));
+                    newValue, oldValue, mergingValue, eventTypeForPublishing, isIncludeValue(filter));
             eventService.publishEvent(SERVICE_NAME, registration, eventDataToBePublished, orderKey);
         }
 

@@ -17,71 +17,54 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryBackupProcessor;
-import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
-
-import static com.hazelcast.core.EntryEventType.REMOVED;
-import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
- * Abstract class that provides common backup post-ops
- * <p/>
- * Backup operations of operations that extends {@link AbstractMultipleEntryOperation} should
- * extend this class.
- * <p/>
- * Common functions for these classes can be moved to this class. For now, it only overrides
- * {@link AbstractMultipleEntryOperation#afterRun} method to publish backups of wan replication events.
+ * Provides common backup operation functionality for {@link com.hazelcast.map.EntryProcessor}
+ * that can run on multiple entries.
  */
-abstract class AbstractMultipleEntryBackupOperation extends AbstractMultipleEntryOperation {
+abstract class AbstractMultipleEntryBackupOperation extends MapOperation {
 
-    protected AbstractMultipleEntryBackupOperation() {
+    protected MapEntries responses;
+    protected EntryBackupProcessor backupProcessor;
+    protected List<WanEventHolder> wanEventList = Collections.emptyList();
+
+    public AbstractMultipleEntryBackupOperation() {
     }
 
-    protected AbstractMultipleEntryBackupOperation(String name, EntryBackupProcessor backupProcessor) {
-        super(name, backupProcessor);
+    public AbstractMultipleEntryBackupOperation(String name, EntryBackupProcessor backupProcessor) {
+        super(name);
+        this.backupProcessor = backupProcessor;
     }
 
-    @Override
-    public void afterRun() throws Exception {
-        publishWanReplicationEventBackups();
+    protected Predicate getPredicate() {
+        return null;
     }
 
-    protected void publishWanReplicationEventBackups() {
-        for (WanEventWrapper wanEventWrapper : wanEventList) {
-            publishWanReplicationEventBackup(wanEventWrapper.getKey(),
-                    wanEventWrapper.getValue(), wanEventWrapper.getEventType());
-        }
-    }
+    protected void setWanEventList(List<WanEventHolder> wanEventList) {
+        assert wanEventList != null;
 
-    protected void publishWanReplicationEventBackup(Data key, Object value, EntryEventType eventType) {
-        if (mapContainer.isWanReplicationEnabled()) {
-            if (REMOVED.equals(eventType)) {
-                mapEventPublisher.publishWanReplicationRemoveBackup(name, key, getNow());
-            } else {
-                final Record record = recordStore.getRecord(key);
-                if (record != null) {
-                    final Data dataValueAsData = toData(value);
-                    final EntryView entryView = createSimpleEntryView(key, dataValueAsData, record);
-                    mapEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
-                }
-            }
-        }
+        this.wanEventList = wanEventList;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(wanEventList.size());
-        for (WanEventWrapper wanEventWrapper : wanEventList) {
-            out.writeData(wanEventWrapper.getKey());
-            out.writeData(wanEventWrapper.getValue());
-            out.writeInt(wanEventWrapper.getEventType().getType());
+        for (WanEventHolder wanEventHolder : wanEventList) {
+            out.writeData(wanEventHolder.getKey());
+            out.writeData(wanEventHolder.getValue());
+            out.writeInt(wanEventHolder.getEventType().getType());
         }
     }
 
@@ -89,11 +72,14 @@ abstract class AbstractMultipleEntryBackupOperation extends AbstractMultipleEntr
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        for (int i = 0; i < size; i++) {
-            Data key = in.readData();
-            Data value = in.readData();
-            EntryEventType entryEventType = EntryEventType.getByType(in.readInt());
-            wanEventList.add(new WanEventWrapper(key, value, entryEventType));
+        if (size > 0) {
+            wanEventList = new ArrayList<WanEventHolder>(size);
+            for (int i = 0; i < size; i++) {
+                Data key = in.readData();
+                Data value = in.readData();
+                EntryEventType entryEventType = EntryEventType.getByType(in.readInt());
+                wanEventList.add(new WanEventHolder(key, value, entryEventType));
+            }
         }
     }
 }

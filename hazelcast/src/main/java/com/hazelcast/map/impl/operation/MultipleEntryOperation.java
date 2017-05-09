@@ -24,26 +24,36 @@ import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 
-public class MultipleEntryOperation extends AbstractMultipleEntryOperation implements BackupAwareOperation {
+
+public class MultipleEntryOperation extends MapOperation
+        implements MutatingOperation, PartitionAwareOperation, BackupAwareOperation {
 
     protected Set<Data> keys;
+    protected MapEntries responses;
+    protected EntryProcessor entryProcessor;
+
+    protected transient EntryOperator operator;
 
     public MultipleEntryOperation() {
     }
 
     public MultipleEntryOperation(String name, Set<Data> keys, EntryProcessor entryProcessor) {
-        super(name, entryProcessor);
+        super(name);
         this.keys = keys;
+        this.entryProcessor = entryProcessor;
     }
 
     @Override
@@ -58,41 +68,19 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
     @Override
     @SuppressWarnings("checkstyle:npathcomplexity")
     public void run() throws Exception {
-        long now = getNow();
-        boolean shouldClone = mapContainer.shouldCloneOnEntryProcessing();
-        SerializationService serializationService = getNodeEngine().getSerializationService();
-
         responses = new MapEntries(keys.size());
+
+        operator = operator(this, entryProcessor, getPredicate(), true);
         for (Data key : keys) {
-            if (!isKeyProcessable(key)) {
-                continue;
-            }
-
-            Object oldValue = recordStore.get(key, false);
-            Object value = shouldClone ? serializationService.toObject(serializationService.toData(oldValue)) : oldValue;
-
-            Map.Entry entry = createMapEntry(key, value);
-            if (!isEntryProcessable(entry)) {
-                continue;
-            }
-
-            Data response = process(entry);
+            Data response = operator.operateOnKey(key).doPostOperateOps().getResult();
             if (response != null) {
                 responses.add(key, response);
             }
-
-            // first call noOp, other if checks below depends on it.
-            if (noOp(entry, oldValue, now)) {
-                continue;
-            }
-            if (entryRemoved(entry, key, oldValue, now)) {
-                continue;
-            }
-
-            entryAddedOrUpdated(entry, key, oldValue, now);
-
-            evict(key);
         }
+    }
+
+    protected Predicate getPredicate() {
+        return null;
     }
 
     @Override
@@ -121,7 +109,7 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
         MultipleEntryBackupOperation backupOperation = null;
         if (backupProcessor != null) {
             backupOperation = new MultipleEntryBackupOperation(name, keys, backupProcessor);
-            backupOperation.setWanEventList(wanEventList);
+            backupOperation.setWanEventList(operator.getWanEventList());
         }
         return backupOperation;
     }

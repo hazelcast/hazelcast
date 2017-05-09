@@ -22,12 +22,12 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
+
+import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 
 public class MultipleEntryBackupOperation extends AbstractMultipleEntryBackupOperation implements BackupOperation {
 
@@ -43,33 +43,9 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryBackupOpe
 
     @Override
     public void run() throws Exception {
-        boolean shouldClone = mapContainer.shouldCloneOnEntryProcessing();
-        SerializationService serializationService = getNodeEngine().getSerializationService();
-
+        EntryOperator operator = operator(this, backupProcessor, getPredicate(), true);
         for (Data key : keys) {
-            if (!isKeyProcessable(key)) {
-                continue;
-            }
-
-            Object oldValue = recordStore.get(key, true);
-            Object value = shouldClone ? serializationService.toObject(serializationService.toData(oldValue)) : oldValue;
-
-            Map.Entry entry = createMapEntry(key, value);
-            if (!isEntryProcessable(entry)) {
-                continue;
-            }
-
-            processBackup(entry);
-
-            if (noOp(entry, oldValue)) {
-                continue;
-            }
-            if (entryRemovedBackup(entry, key)) {
-                continue;
-            }
-            entryAddedOrUpdatedBackup(entry, key);
-
-            evict(key);
+            operator.operateOnKey(key).doPostOperateOps();
         }
     }
 

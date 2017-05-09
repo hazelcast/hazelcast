@@ -86,7 +86,7 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
         return MapService.SERVICE_NAME;
     }
 
-    protected boolean isPostProcessing(RecordStore recordStore) {
+    public boolean isPostProcessing(RecordStore recordStore) {
         MapDataStore mapDataStore = recordStore.getMapDataStore();
         return mapDataStore.isPostProcessingMapStore() || mapServiceContext.hasInterceptor(name);
     }
@@ -112,7 +112,7 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
     }
 
     // TODO: improve here it's possible that client cannot manage to attach listener
-    protected final void invalidateNearCache(Data key) {
+    public final void invalidateNearCache(Data key) {
         if (!mapContainer.hasInvalidationListener() || key == null) {
             return;
         }
