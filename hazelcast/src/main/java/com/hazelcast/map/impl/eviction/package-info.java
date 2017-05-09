@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains eviction classes.<br/>
+ * This package contains eviction classes.
  */
 package com.hazelcast.map.impl.eviction;
