@@ -101,6 +101,6 @@ public class LongAccumulator {
 
     @Override
     public String toString() {
-        return "MutableLong(" + value + ')';
+        return "LongAccumulator(" + value + ')';
     }
 }

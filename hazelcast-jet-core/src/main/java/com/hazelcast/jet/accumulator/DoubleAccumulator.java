@@ -66,6 +66,6 @@ public class DoubleAccumulator {
 
     @Override
     public String toString() {
-        return "MutableDouble(" + value + ')';
+        return "DoubleAccumulator(" + value + ')';
     }
 }

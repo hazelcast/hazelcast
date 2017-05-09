@@ -22,6 +22,9 @@ import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.accumulator.MutableReference;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Utility class with factory methods for several useful windowing
@@ -86,6 +89,60 @@ public final class WindowOperations {
                 LinTrendAccumulator::combine,
                 LinTrendAccumulator::deduct,
                 LinTrendAccumulator::finish
+        );
+    }
+
+    /**
+     * Returns an operation, that calculates multiple aggregations and returns their value in
+     * {@code List<Object>}.
+     * <p>
+     * Useful, if you want to calculate multiple values for the same window.
+     *
+     * @param operations Operations to calculate.
+     */
+    @SafeVarargs
+    public static <T> WindowOperation<T, List<Object>, List<Object>> allOf(
+            WindowOperation<? super T, ?, ?> ... operations
+    ) {
+        WindowOperation[] untypedOps = operations;
+
+        return WindowOperation.of(
+                () -> {
+                    Object[] res = new Object[untypedOps.length];
+                    for (int i = 0; i < untypedOps.length; i++) {
+                        res[i] = untypedOps[i].createAccumulatorF().get();
+                    }
+                    // wrap to List to have equals() implemented
+                    return Arrays.asList(res);
+                },
+                (accs, item) -> {
+                    for (int i = 0; i < untypedOps.length; i++) {
+                        accs.set(i, untypedOps[i].accumulateItemF().apply(accs.get(i), item));
+                    }
+                    return accs;
+                },
+                (accs1, accs2) -> {
+                    for (int i = 0; i < untypedOps.length; i++) {
+                        accs1.set(i, untypedOps[i].combineAccumulatorsF().apply(accs1.get(i), accs2.get(i)));
+                    }
+                    return accs1;
+                },
+                // we support deduct, only if all operations do
+                Stream.of(untypedOps).allMatch(o -> o.deductAccumulatorF() != null)
+                        ? (accs1, accs2) -> {
+                            for (int i = 0; i < untypedOps.length; i++) {
+                                    accs1.set(i, untypedOps[i].deductAccumulatorF().apply(accs1.get(i), accs2.get(i)));
+                                }
+                                return accs1;
+                            }
+                        : null,
+                accs -> {
+                    Object[] res = new Object[untypedOps.length];
+                    for (int i = 0; i < untypedOps.length; i++) {
+                        res[i] = untypedOps[i].finishAccumulationF().apply(accs.get(i));
+                    }
+                    return Arrays.asList(res);
+                }
         );
     }
 

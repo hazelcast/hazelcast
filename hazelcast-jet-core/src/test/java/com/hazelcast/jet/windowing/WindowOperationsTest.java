@@ -16,30 +16,36 @@
 
 package com.hazelcast.jet.windowing;
 
-import com.hazelcast.jet.accumulator.LongAccumulator;
-import com.hazelcast.jet.accumulator.MutableReference;
 import com.hazelcast.jet.Distributed;
-import com.hazelcast.jet.Distributed.BiConsumer;
 import com.hazelcast.jet.Distributed.BinaryOperator;
+import com.hazelcast.jet.Distributed.Comparator;
+import com.hazelcast.jet.Distributed.Optional;
 import com.hazelcast.jet.Distributed.Supplier;
 import com.hazelcast.jet.accumulator.LinTrendAccumulator;
+import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.accumulator.MutableReference;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.stream.DistributedCollectors.maxBy;
 import static com.hazelcast.jet.windowing.WindowOperations.counting;
 import static com.hazelcast.jet.windowing.WindowOperations.linearTrend;
+import static com.hazelcast.jet.windowing.WindowOperations.allOf;
 import static com.hazelcast.jet.windowing.WindowOperations.reducing;
 import static com.hazelcast.jet.windowing.WindowOperations.summingToLong;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
@@ -60,6 +66,43 @@ public class WindowOperationsTest {
     public void when_summingToLongWithMapper() {
         validateOp(summingToLong(x -> 1L), LongAccumulator::get,
                 new Object(), 1L, 2L, 1L);
+    }
+
+    @Test
+    public void when_allOf() {
+        validateOp(
+                allOf(counting(), summingToLong()),
+                Function.identity(),
+                10L,
+                Arrays.asList(new LongAccumulator(1L), new LongAccumulator(10L)),
+                Arrays.asList(new LongAccumulator(2L), new LongAccumulator(20L)),
+                Arrays.asList(1L, 10L)
+        );
+    }
+
+    @Test
+    public void when_allOfWithoutDeduct() {
+        WindowOperation<Long, List<Object>, List<Object>> op = allOf(counting(), WindowOperation.fromCollector(maxBy(Comparator.<Long>naturalOrder())));
+
+        // Then
+        assertNull(op.deductAccumulatorF());
+
+        // When
+        List<Object> acc1 = op.createAccumulatorF().get();
+        acc1 = op.accumulateItemF().apply(acc1, 10L);
+
+        List<Object> acc2 = op.createAccumulatorF().get();
+        acc2 = op.accumulateItemF().apply(acc2, 20L);
+
+        // Checks must be made early because combine/deduct
+        // are allowed to be destructive ops
+
+        List<Object> combined = op.combineAccumulatorsF().apply(acc1, acc2);
+
+        // When
+        List<Object> finished = op.finishAccumulationF().apply(combined);
+        // Then
+        assertEquals("finished", Arrays.asList(2L, Optional.of(20L)), finished);
     }
 
     @Test
@@ -116,7 +159,6 @@ public class WindowOperationsTest {
         assertNotNull(deductAccF);
 
         // When
-
         A acc1 = op.createAccumulatorF().get();
         acc1 = op.accumulateItemF().apply(acc1, item);
 
@@ -127,22 +169,22 @@ public class WindowOperationsTest {
         // are allowed to be destructive ops
 
         // Then
-        assertEquals(expectAcced, getAccValF.apply(acc1));
-        assertEquals(expectAcced, getAccValF.apply(acc2));
+        assertEquals("accumulated", expectAcced, getAccValF.apply(acc1));
+        assertEquals("accumulated", expectAcced, getAccValF.apply(acc2));
 
         // When
         A combined = op.combineAccumulatorsF().apply(acc1, acc2);
         // Then
-        assertEquals(expectCombined, getAccValF.apply(combined));
+        assertEquals("combined", expectCombined, getAccValF.apply(combined));
 
         // When
         A deducted = deductAccF.apply(combined, acc2);
         // Then
-        assertEquals(expectAcced, getAccValF.apply(combined));
+        assertEquals("deducted", expectAcced, getAccValF.apply(combined));
 
         // When
         R finished = op.finishAccumulationF().apply(deducted);
         // Then
-        assertEquals(expectFinished, finished);
+        assertEquals("finished", expectFinished, finished);
     }
 }
