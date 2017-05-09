@@ -23,6 +23,7 @@ import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -30,7 +31,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 
 public class LockReplicationOperation extends Operation
-        implements IdentifiedDataSerializable {
+        implements IdentifiedDataSerializable, Versioned {
 
     private final Collection<LockStoreImpl> locks = new LinkedList<LockStoreImpl>();
 
