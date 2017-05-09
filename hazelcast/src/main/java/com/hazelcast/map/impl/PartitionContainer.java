@@ -19,8 +19,10 @@ package com.hazelcast.map.impl;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.impl.query.IndexProvider;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
@@ -119,7 +121,8 @@ public class PartitionContainer {
         keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
 
         InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
-        Indexes indexesForMap = new Indexes(ss, mapContainer.getExtractors());
+        IndexProvider indexProvider = serviceContext.getIndexProvider(mapConfig.getName());
+        Indexes indexesForMap = new Indexes(ss, indexProvider, mapContainer.getExtractors());
         indexes.putIfAbsent(name, indexesForMap);
 
         RecordStore recordStore = serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);
@@ -240,9 +243,12 @@ public class PartitionContainer {
         Indexes ixs = indexes.get(name);
         if (ixs == null) {
 
+            MapServiceContext mapServiceContext = mapService.getMapServiceContext();
             InternalSerializationService ss = (InternalSerializationService)
-                    mapService.getMapServiceContext().getNodeEngine().getSerializationService();
-            Indexes indexesForMap = new Indexes(ss, mapService.getMapServiceContext().getMapContainer(name).getExtractors());
+                    mapServiceContext.getNodeEngine().getSerializationService();
+            Extractors extractors = mapServiceContext.getMapContainer(name).getExtractors();
+            IndexProvider indexProvider = mapServiceContext.getIndexProvider(name);
+            Indexes indexesForMap = new Indexes(ss, indexProvider, extractors);
             ixs = indexes.putIfAbsent(name, indexesForMap);
             if (ixs == null) {
                 ixs = indexesForMap;

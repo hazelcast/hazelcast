@@ -142,6 +142,7 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
         Set<QueryableEntry> result = null;
         Predicate optimizedPredicate = null;
         for (PartitionContainer partitionContainer : mapServiceContext.getPartitionContainers()) {
+
             final Indexes indexes = partitionContainer.getIndexes(name);
             if (optimizedPredicate == null) {
                 QueryOptimizer queryOptimizer = mapServiceContext.getQueryOptimizer();

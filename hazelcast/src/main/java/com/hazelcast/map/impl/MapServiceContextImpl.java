@@ -39,6 +39,8 @@ import com.hazelcast.map.impl.query.AggregationResult;
 import com.hazelcast.map.impl.query.AggregationResultProcessor;
 import com.hazelcast.map.impl.query.CallerRunsAccumulationExecutor;
 import com.hazelcast.map.impl.query.CallerRunsPartitionScanExecutor;
+import com.hazelcast.map.impl.query.DefaultIndexProvider;
+import com.hazelcast.map.impl.query.IndexProvider;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.MapQueryEngineImpl;
 import com.hazelcast.map.impl.query.ParallelAccumulationExecutor;
@@ -135,6 +137,7 @@ class MapServiceContextImpl implements MapServiceContext {
     protected MapEventPublisher mapEventPublisher;
     protected MapService mapService;
     protected EventService eventService;
+    protected IndexProvider indexProvider;
     protected MapOperationProviders operationProviders;
     protected ResultProcessorRegistry resultProcessorRegistry;
 
@@ -156,6 +159,7 @@ class MapServiceContextImpl implements MapServiceContext {
         this.mapQueryRunner = createMapQueryRunner(nodeEngine, queryOptimizer, resultProcessorRegistry, partitionScanRunner);
         this.eventService = nodeEngine.getEventService();
         this.operationProviders = createOperationProviders();
+        this.indexProvider = new DefaultIndexProvider();
         this.partitioningStrategyFactory = new PartitioningStrategyFactory(nodeEngine.getConfigClassLoader());
     }
 
@@ -644,6 +648,11 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public MapOperationProvider getMapOperationProvider(MapConfig mapConfig) {
         return operationProviders.getOperationProvider(mapConfig);
+    }
+
+    @Override
+    public IndexProvider getIndexProvider(String name) {
+        return indexProvider;
     }
 
     @Override

@@ -43,15 +43,19 @@ public class IndexImpl implements Index {
 
     private volatile TypeConverter converter;
 
-    private final InternalSerializationService ss;
+    protected final InternalSerializationService ss;
     private final Extractors extractors;
 
     public IndexImpl(String attributeName, boolean ordered, InternalSerializationService ss, Extractors extractors) {
         this.attributeName = attributeName;
         this.ordered = ordered;
         this.ss = ss;
-        this.indexStore = ordered ? new SortedIndexStore() : new UnsortedIndexStore();
+        this.indexStore = createIndexStore(ordered);
         this.extractors = extractors;
+    }
+
+    public IndexStore createIndexStore(boolean ordered) {
+        return ordered ? new SortedIndexStore() : new UnsortedIndexStore();
     }
 
     @Override

@@ -22,6 +22,7 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.query.DefaultIndexProvider;
 import com.hazelcast.map.impl.querycache.QueryCacheConfigurator;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheEventService;
@@ -69,7 +70,8 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         this.delegate = delegate;
         this.context = context;
         this.serializationService = context.getSerializationService();
-        this.indexes = new Indexes(serializationService, Extractors.empty());
+        // TODO off-heap indexes
+        this.indexes = new Indexes(serializationService, new DefaultIndexProvider(), Extractors.empty());
         this.includeValue = isIncludeValue();
         this.partitioningStrategy = getPartitioningStrategy();
         this.recordStore = new DefaultQueryCacheRecordStore(serializationService, indexes, getQueryCacheConfig(),

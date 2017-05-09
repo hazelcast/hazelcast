@@ -20,6 +20,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.map.impl.query.DefaultIndexProvider;
 import com.hazelcast.map.impl.record.AbstractRecord;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.Record;
@@ -83,7 +84,7 @@ public class IndexTest {
 
     @Test
     public void testRemoveEnumIndex() {
-        Indexes is = new Indexes(ss, Extractors.empty());
+        Indexes is = new Indexes(ss, new DefaultIndexProvider(), Extractors.empty());
         is.addOrGetIndex("favoriteCity", false);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
@@ -97,7 +98,7 @@ public class IndexTest {
 
     @Test
     public void testUpdateEnumIndex() {
-        Indexes is = new Indexes(ss, Extractors.empty());
+        Indexes is = new Indexes(ss, new DefaultIndexProvider(), Extractors.empty());
         is.addOrGetIndex("favoriteCity", false);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
@@ -112,7 +113,7 @@ public class IndexTest {
 
     @Test
     public void testIndex() throws QueryException {
-        Indexes is = new Indexes(ss, Extractors.empty());
+        Indexes is = new Indexes(ss, new DefaultIndexProvider(), Extractors.empty());
         Index dIndex = is.addOrGetIndex("d", false);
         Index boolIndex = is.addOrGetIndex("bool", false);
         Index strIndex = is.addOrGetIndex("str", false);
@@ -174,7 +175,7 @@ public class IndexTest {
 
     @Test
     public void testIndexWithNull() throws QueryException {
-        Indexes is = new Indexes(ss, Extractors.empty());
+        Indexes is = new Indexes(ss, new DefaultIndexProvider(), Extractors.empty());
         Index strIndex = is.addOrGetIndex("str", true);
 
         Data value = ss.toData(new MainPortable(false, 1, null));
