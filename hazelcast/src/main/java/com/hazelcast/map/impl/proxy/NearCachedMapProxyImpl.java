@@ -88,8 +88,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         }
     }
 
-    // this operation returns the object in data format,
-    // except when it is retrieved from Near Cache and Near Cache memory format is object
+    // this operation returns the value as Data, except when it's retrieved from Near Cache with in-memory-format OBJECT
     @Override
     @SuppressWarnings("unchecked")
     protected V getInternal(Data key) {
@@ -143,41 +142,34 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
                 }
             });
         }
-
         return future;
     }
 
     @Override
     protected Data putInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        Data data;
         try {
-            data = super.putInternal(key, value, ttl, timeunit);
+            return super.putInternal(key, value, ttl, timeunit);
         } finally {
             invalidateNearCache(key);
         }
-        return data;
     }
 
     @Override
     protected boolean tryPutInternal(Data key, Data value, long timeout, TimeUnit timeunit) {
-        boolean putInternal;
         try {
-            putInternal = super.tryPutInternal(key, value, timeout, timeunit);
+            return super.tryPutInternal(key, value, timeout, timeunit);
         } finally {
             invalidateNearCache(key);
         }
-        return putInternal;
     }
 
     @Override
     protected Data putIfAbsentInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        Data data;
         try {
-            data = super.putIfAbsentInternal(key, value, ttl, timeunit);
+            return super.putIfAbsentInternal(key, value, ttl, timeunit);
         } finally {
             invalidateNearCache(key);
         }
-        return data;
     }
 
     @Override
@@ -191,46 +183,38 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     @Override
     protected InternalCompletableFuture<Data> putAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        InternalCompletableFuture<Data> future;
         try {
-            future = super.putAsyncInternal(key, value, ttl, timeunit);
+            return super.putAsyncInternal(key, value, ttl, timeunit);
         } finally {
             invalidateNearCache(key);
         }
-        return future;
     }
 
     @Override
     protected InternalCompletableFuture<Data> setAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        InternalCompletableFuture<Data> future;
         try {
-            future = super.setAsyncInternal(key, value, ttl, timeunit);
+            return super.setAsyncInternal(key, value, ttl, timeunit);
         } finally {
             invalidateNearCache(key);
         }
-        return future;
     }
 
     @Override
     protected boolean replaceInternal(Data key, Data expect, Data update) {
-        boolean replaceInternal;
         try {
-            replaceInternal = super.replaceInternal(key, expect, update);
+            return super.replaceInternal(key, expect, update);
         } finally {
             invalidateNearCache(key);
         }
-        return replaceInternal;
     }
 
     @Override
     protected Data replaceInternal(Data key, Data value) {
-        Data replaceInternal;
         try {
-            replaceInternal = super.replaceInternal(key, value);
+            return super.replaceInternal(key, value);
         } finally {
             invalidateNearCache(key);
         }
-        return replaceInternal;
     }
 
     @Override
@@ -244,13 +228,11 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     @Override
     protected boolean evictInternal(Data key) {
-        boolean evictInternal;
         try {
-            evictInternal = super.evictInternal(key);
+            return super.evictInternal(key);
         } finally {
             invalidateNearCache(key);
         }
-        return evictInternal;
     }
 
     @Override
@@ -293,13 +275,11 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     @Override
     protected Data removeInternal(Data key) {
-        Data data;
         try {
-            data = super.removeInternal(key);
+            return super.removeInternal(key);
         } finally {
             invalidateNearCache(key);
         }
-        return data;
     }
 
     @Override
@@ -322,35 +302,29 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     @Override
     protected boolean removeInternal(Data key, Data value) {
-        boolean removeInternal;
         try {
-            removeInternal = super.removeInternal(key, value);
+            return super.removeInternal(key, value);
         } finally {
             invalidateNearCache(key);
         }
-        return removeInternal;
     }
 
     @Override
     protected boolean tryRemoveInternal(Data key, long timeout, TimeUnit timeunit) {
-        boolean removeInternal;
         try {
-            removeInternal = super.tryRemoveInternal(key, timeout, timeunit);
+            return super.tryRemoveInternal(key, timeout, timeunit);
         } finally {
             invalidateNearCache(key);
         }
-        return removeInternal;
     }
 
     @Override
     protected InternalCompletableFuture<Data> removeAsyncInternal(Data key) {
-        InternalCompletableFuture<Data> future;
         try {
-            future = super.removeAsyncInternal(key);
+            return super.removeAsyncInternal(key);
         } finally {
             invalidateNearCache(key);
         }
-        return future;
     }
 
     @Override
@@ -359,7 +333,6 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         if (cachedValue != NOT_CACHED) {
             return true;
         }
-
         return super.containsKeyInternal(keyData);
     }
 
@@ -398,7 +371,6 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
                 reservedKeys.put(key, reservationId);
             }
         }
-
         return reservedKeys;
     }
 
@@ -409,8 +381,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected void invokePutAllOperationFactory(Address address, long size,
-                                                int[] partitions, MapEntries[] entries) throws Exception {
+    protected void invokePutAllOperationFactory(Address address, long size, int[] partitions, MapEntries[] entries)
+            throws Exception {
         try {
             super.invokePutAllOperationFactory(address, size, partitions, entries);
         } finally {
@@ -424,41 +396,34 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     @Override
     public Data executeOnKeyInternal(Data key, EntryProcessor entryProcessor) {
-        Data data;
         try {
-            data = super.executeOnKeyInternal(key, entryProcessor);
+            return super.executeOnKeyInternal(key, entryProcessor);
         } finally {
             invalidateNearCache(key);
         }
-        return data;
     }
 
     @Override
     public Map executeOnKeysInternal(Set<Data> keys, EntryProcessor entryProcessor) {
-        Map map;
         try {
-            map = super.executeOnKeysInternal(keys, entryProcessor);
+            return super.executeOnKeysInternal(keys, entryProcessor);
         } finally {
             invalidateNearCache(keys);
         }
-        return map;
     }
 
     @Override
     public InternalCompletableFuture<Object> executeOnKeyInternal(Data key, EntryProcessor entryProcessor,
                                                                   ExecutionCallback<Object> callback) {
-        InternalCompletableFuture<Object> future;
         try {
-            future = super.executeOnKeyInternal(key, entryProcessor, callback);
+            return super.executeOnKeyInternal(key, entryProcessor, callback);
         } finally {
             invalidateNearCache(key);
         }
-        return future;
     }
 
     @Override
-    public void executeOnEntriesInternal(EntryProcessor entryProcessor, Predicate predicate,
-                                         List<Data> resultingKeyValuePairs) {
+    public void executeOnEntriesInternal(EntryProcessor entryProcessor, Predicate predicate, List<Data> resultingKeyValuePairs) {
         try {
             super.executeOnEntriesInternal(entryProcessor, predicate, resultingKeyValuePairs);
         } finally {
@@ -475,7 +440,6 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
             mapNearCacheManager.deregisterRepairingHandler(name);
             removeEntryListener(invalidationListenerId);
         }
-
         return super.preDestroy();
     }
 
@@ -498,7 +462,6 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         if (key == null) {
             return;
         }
-
         nearCache.remove(key);
     }
 
@@ -514,37 +477,33 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         }
     }
 
-    protected boolean isOwn(Data key) {
-        int partitionId = partitionService.getPartitionId(key);
-        Address partitionOwner = partitionService.getPartitionOwner(partitionId);
-        return thisAddress.equals(partitionOwner);
-    }
-
     private Object tryPublishReserved(Data key, Object value, long reservationId) {
         assert value != NOT_CACHED;
 
-        // `value` is cached even it is null.
+        // `value` is cached even if it's null
         Object cachedValue = nearCache.tryPublishReserved(key, value, reservationId, true);
         return cachedValue != null ? cachedValue : value;
     }
 
     private boolean cachingAllowedFor(Data key) {
-        return !isOwn(key) || cacheLocalEntries;
+        return cacheLocalEntries || !isOwn(key);
+    }
+
+    private boolean isOwn(Data key) {
+        int partitionId = partitionService.getPartitionId(key);
+        Address partitionOwner = partitionService.getPartitionOwner(partitionId);
+        return thisAddress.equals(partitionOwner);
     }
 
     private Object getCachedValue(Data key, boolean deserializeValue) {
         Object value = nearCache.get(key);
-
         if (value == null) {
             return NOT_CACHED;
         }
-
         if (value == CACHED_AS_NULL) {
             return null;
         }
-
         mapServiceContext.interceptAfterGet(name, value);
-
         return deserializeValue ? toObject(value) : value;
     }
 
@@ -552,7 +511,6 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         if (!cachingAllowedFor(key)) {
             return NOT_RESERVED;
         }
-
         return nearCache.tryReserveForUpdate(key);
     }
 
