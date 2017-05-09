@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Outbox;
@@ -77,7 +78,7 @@ public class WriteFilePTest extends JetTestSupport {
     @Test
     public void when_localParallelismMoreThan1_then_multipleFiles() throws Exception {
         // Given
-        DAG dag = buildDag(null, false);
+        DAG dag = buildDag(null, null, false);
         dag.getVertex("writer").localParallelism(2);
         addItemsToList(0, 10);
 
@@ -96,7 +97,7 @@ public class WriteFilePTest extends JetTestSupport {
     @Ignore // the test keeps failing on Jenkins, even though it runs without failure hundreds of times locally
     public void when_twoMembers_then_twoFiles() throws Exception {
         // Given
-        DAG dag = buildDag(null, false);
+        DAG dag = buildDag(null, null, false);
         addItemsToList(0, 10);
         createJetMember();
 
@@ -114,7 +115,7 @@ public class WriteFilePTest extends JetTestSupport {
     @Test
     public void smokeTest_smallFile() throws Exception {
         // Given
-        DAG dag = buildDag(null, false);
+        DAG dag = buildDag(null, null, false);
         addItemsToList(0, 10);
 
         // When
@@ -127,7 +128,7 @@ public class WriteFilePTest extends JetTestSupport {
     @Test
     public void smokeTest_bigFile() throws Exception {
         // Given
-        DAG dag = buildDag(null, false);
+        DAG dag = buildDag(null, null, false);
         addItemsToList(0, 100_000);
 
         // When
@@ -140,7 +141,7 @@ public class WriteFilePTest extends JetTestSupport {
     @Test
     public void when_append_then_previousContentsOfFileIsKept() throws Exception {
         // Given
-        DAG dag = buildDag(null, true);
+        DAG dag = buildDag(null, null, true);
         addItemsToList(1, 10);
         try (BufferedWriter writer = Files.newBufferedWriter(file)) {
             writer.write("0");
@@ -157,7 +158,7 @@ public class WriteFilePTest extends JetTestSupport {
     @Test
     public void when_overwrite_then_previousContentsOverwritten() throws Exception {
         // Given
-        DAG dag = buildDag(null, false);
+        DAG dag = buildDag(null, null, false);
         addItemsToList(0, 10);
         try (BufferedWriter writer = Files.newBufferedWriter(file)) {
             writer.write("bla bla");
@@ -180,7 +181,7 @@ public class WriteFilePTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", () -> new SlowSourceP(semaphore, numItems))
                 .localParallelism(1);
-        Vertex sink = dag.newVertex("sink", writeFile(directory.toString(), null, false))
+        Vertex sink = dag.newVertex("sink", writeFile(directory.toString(), null, null, false))
                 .localParallelism(1);
         dag.edge(between(source, sink));
 
@@ -203,7 +204,7 @@ public class WriteFilePTest extends JetTestSupport {
     public void testCharset() throws ExecutionException, InterruptedException, IOException {
         // Given
         Charset charset = Charset.forName("iso-8859-2");
-        DAG dag = buildDag(charset, true);
+        DAG dag = buildDag(null, charset, true);
         String text = "ľščťž";
         list.add(text);
 
@@ -222,7 +223,7 @@ public class WriteFilePTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex reader = dag.newVertex("reader", readList(list.getName()))
                 .localParallelism(1);
-        Vertex writer = dag.newVertex("writer", writeFile(myFile.toString(), null, false))
+        Vertex writer = dag.newVertex("writer", writeFile(myFile.toString(), null, null, false))
                 .localParallelism(1);
         dag.edge(between(reader, writer));
         addItemsToList(0, 10);
@@ -233,6 +234,19 @@ public class WriteFilePTest extends JetTestSupport {
         // Then
         assertTrue(Files.exists(directory.resolve("subdir1")));
         assertTrue(Files.exists(directory.resolve("subdir1/subdir2")));
+    }
+
+    @Test
+    public void when_toStringF_then_used() throws Exception {
+        // Given
+        DAG dag = buildDag(val -> Integer.toString(Integer.parseInt(val) - 1), null, false);
+        addItemsToList(1, 11);
+
+        // When
+        instance.newJob(dag).execute().get();
+
+        // Then
+        checkFileContents(StandardCharsets.UTF_8, 10);
     }
 
     private static class SlowSourceP implements Processor {
@@ -285,11 +299,11 @@ public class WriteFilePTest extends JetTestSupport {
         }
     }
 
-    private DAG buildDag(Charset charset, boolean append) {
+    private DAG buildDag(Distributed.Function<String, String> toStringF, Charset charset, boolean append) {
         DAG dag = new DAG();
         Vertex reader = dag.newVertex("reader", readList(list.getName()))
                 .localParallelism(1);
-        Vertex writer = dag.newVertex("writer", writeFile(directory.toString(), charset, append))
+        Vertex writer = dag.newVertex("writer", writeFile(directory.toString(), toStringF, charset, append))
                 .localParallelism(1);
         dag.edge(between(reader, writer));
         return dag;

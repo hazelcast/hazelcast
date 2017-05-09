@@ -378,15 +378,29 @@ public final class Processors {
     }
 
     /**
-     * Convenience for {@link #writeFile(String, Charset, boolean)} with
-     * UTF-8 charset and with overwriting of existing files.
+     * Convenience for {@link #writeFile(String, Distributed.Function, Charset,
+     * boolean)} with UTF-8 charset and with overwriting of existing files.
      *
      * @param directoryName directory to create the files in. Will be created,
      *                      if it doesn't exist. Must be the same on all nodes.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeFile(@Nonnull String directoryName) {
-        return writeFile(directoryName, null, false);
+        return writeFile(directoryName, null, null, false);
+    }
+
+    /**
+     * Convenience for {@link #writeFile(String, Distributed.Function, Charset,
+     * boolean)} with UTF-8 charset and with overwriting of existing files.
+     *
+     * @param directoryName directory to create the files in. Will be created,
+     *                      if it doesn't exist. Must be the same on all nodes.
+     */
+    @Nonnull
+    public static <T> ProcessorMetaSupplier writeFile(
+            @Nonnull String directoryName, @Nullable Distributed.Function<T, String> toStringF
+    ) {
+        return writeFile(directoryName, toStringF, null, false);
     }
 
     /**
@@ -404,14 +418,20 @@ public final class Processors {
      *
      * @param directoryName directory to create the files in. Will be created,
      *                      if it doesn't exist. Must be the same on all nodes.
-     * @param charset charset used to encode the file output, or {@code null} to use UTF-8
+     * @param toStringF A function to convert items to String (a formatter), or
+     *                {@code null} to use {@code toString()}
+     * @param charset charset used to encode the file output, or {@code null}
+     *                to use UTF-8
      * @param append whether to append or overwrite the file
      */
     @Nonnull
-    public static ProcessorMetaSupplier writeFile(
-            @Nonnull String directoryName, @Nullable Charset charset, boolean append
+    public static <T> ProcessorMetaSupplier writeFile(
+            @Nonnull String directoryName,
+            @Nullable Distributed.Function<T, String> toStringF,
+            @Nullable Charset charset,
+            boolean append
     ) {
-        return WriteFileP.supplier(directoryName, charset == null ? null : charset.name(), append);
+        return WriteFileP.supplier(directoryName, toStringF, charset == null ? null : charset.name(), append);
     }
 
     /**

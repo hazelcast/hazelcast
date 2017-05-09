@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 
 import javax.annotation.Nonnull;
@@ -34,17 +35,24 @@ import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 /**
- * @see com.hazelcast.jet.Processors#writeFile(String, Charset, boolean)
+ * @see com.hazelcast.jet.Processors#writeFile(String,
+ * com.hazelcast.jet.Distributed.Function, Charset, boolean)
  */
 public final class WriteFileP {
 
     private WriteFileP() { }
 
     /**
-     * Use {@link com.hazelcast.jet.Processors#writeFile(String, Charset, boolean)}
+     * Use {@link com.hazelcast.jet.Processors#writeFile(String,
+     * com.hazelcast.jet.Distributed.Function, Charset, boolean)}
      */
-    public static ProcessorMetaSupplier supplier(@Nonnull String directoryName, @Nullable String charset,
+    public static <T> ProcessorMetaSupplier supplier(
+            @Nonnull String directoryName,
+            @Nullable Distributed.Function<T, String> toStringF,
+            @Nullable String charset,
             boolean append) {
+        Distributed.Function<T, String> toStringF2 = toStringF == null ? Object::toString : toStringF;
+
         return addresses -> address -> count -> {
             Path directory = Paths.get(directoryName);
             // ignore the result: we'll fail later when creating the files.
@@ -56,7 +64,7 @@ public final class WriteFileP {
                             globalIndex -> createBufferedWriter(directory.resolve(Integer.toString(globalIndex)),
                                     charset, append),
                             (writer, item) -> uncheckRun(() -> {
-                                writer.write(item.toString());
+                                writer.write(toStringF2.apply((T) item));
                                 writer.newLine();
                             }),
                             writer -> uncheckRun(writer::flush),
