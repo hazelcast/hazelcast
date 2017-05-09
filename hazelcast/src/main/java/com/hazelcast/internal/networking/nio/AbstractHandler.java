@@ -18,12 +18,11 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ChannelConnection;
+import com.hazelcast.internal.networking.NioChannel;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
@@ -31,8 +30,7 @@ import java.nio.channels.SocketChannel;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
-public abstract class AbstractHandler
-        implements SelectionHandler, MigratableHandler {
+public abstract class AbstractHandler implements SelectionHandler, MigratableHandler {
 
     // for the time being we configure using a int until we have decided which load strategy to use.
     protected static final int LOAD_TYPE = Integer.getInteger("io.load", 0);
@@ -40,11 +38,10 @@ public abstract class AbstractHandler
     @Probe(name = "handleCount")
     protected final SwCounter handleCount = newSwCounter();
     protected final ILogger logger;
-    protected final Channel channel;
-    protected final ChannelConnection connection;
+    protected final NioChannel channel;
+    protected final SocketChannel socketChannel;
     protected NioThread ioThread;
     protected SelectionKey selectionKey;
-    private final SocketChannel socketChannel;
     private final int initialOps;
     private final IOBalancer ioBalancer;
 
@@ -56,13 +53,12 @@ public abstract class AbstractHandler
     @Probe
     private final SwCounter migrationCount = newSwCounter();
 
-    public AbstractHandler(ChannelConnection connection,
+    public AbstractHandler(NioChannel channel,
                            NioThread ioThread,
                            int initialOps,
                            ILogger logger,
                            IOBalancer ioBalancer) {
-        this.connection = connection;
-        this.channel = connection.getChannel();
+        this.channel = channel;
         this.socketChannel = channel.socketChannel();
         this.ioThread = ioThread;
         this.ioThreadId = ioThread.id;
@@ -127,11 +123,11 @@ public abstract class AbstractHandler
             selectionKey.cancel();
         }
 
-        if (e instanceof EOFException) {
-            connection.close("Connection closed by the other side", e);
-        } else {
-            connection.close("Exception in " + getClass().getSimpleName(), e);
-        }
+//        if (e instanceof EOFException) {
+//            connection.close("Connection closed by the other side", e);
+//        } else {
+//            connection.close("Exception in " + getClass().getSimpleName(), e);
+//        }
     }
 
     // This method run on the oldOwner NioThread

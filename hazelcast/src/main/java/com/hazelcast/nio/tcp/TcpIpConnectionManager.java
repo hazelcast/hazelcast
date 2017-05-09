@@ -303,14 +303,12 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             TcpIpConnection connection = new TcpIpConnection(
                     this,
                     connectionIdGen.incrementAndGet(),
-                    channel,
-                    eventLoopGroup);
+                    channel);
 
             connection.setEndPoint(endpoint);
             activeConnections.add(connection);
 
-            connection.start();
-            eventLoopGroup.onConnectionAdded(connection);
+            eventLoopGroup.register(channel);
 
             logger.info("Established socket connection between "
                     + channel.getLocalSocketAddress() + " and " + channel.getRemoteSocketAddress());
@@ -368,14 +366,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     public void onConnectionClose(Connection connection) {
         closedCount.inc();
 
-        if (activeConnections.remove(connection)) {
-            // this should not be needed; but some tests are using DroppingConnection which is not a TcpIpConnection.
-            if (connection instanceof TcpIpConnection) {
-                eventLoopGroup.onConnectionRemoved((TcpIpConnection) connection);
-            }
-
-            metricsRegistry.discardMetrics(connection);
-        }
+        activeConnections.remove(connection);
 
         Address endPoint = connection.getEndPoint();
         if (endPoint != null) {

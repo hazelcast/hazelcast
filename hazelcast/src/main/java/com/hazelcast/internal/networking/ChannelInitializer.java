@@ -16,13 +16,12 @@
 
 package com.hazelcast.internal.networking;
 
-import com.hazelcast.nio.Connection;
+import java.io.IOException;
 
-public interface ChannelConnection extends Connection {
+public interface ChannelInitializer {
 
-    ChannelReader getChannelReader();
+    InitResult<ChannelInboundHandler> initInbound(Channel channel) throws IOException;
 
-    ChannelWriter getChannelWriter();
-
-    Channel getChannel();
+    InitResult<ChannelOutboundHandler> initOutbound(Channel channel) throws IOException;
 }
+

@@ -16,12 +16,10 @@
 
 package com.hazelcast.internal.networking.spinning;
 
-import com.hazelcast.internal.networking.ChannelConnection;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import static java.lang.System.arraycopy;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 public class SpinningInputThread extends Thread {
@@ -37,58 +35,58 @@ public class SpinningInputThread extends Thread {
         this.socketReaders = new SocketReaders();
     }
 
-    public void addConnection(ChannelConnection connection) {
-        SpinningChannelReader reader = (SpinningChannelReader) connection.getChannelReader();
-
-        for (; ; ) {
-            SocketReaders current = socketReaders;
-            if (current == SHUTDOWN) {
-                return;
-            }
-
-            int length = current.readers.length;
-            SpinningChannelReader[] newReaders = new SpinningChannelReader[length + 1];
-            arraycopy(current.readers, 0, newReaders, 0, length);
-            newReaders[length] = reader;
-
-            SocketReaders update = new SocketReaders(newReaders);
-            if (CONNECTION_HANDLERS.compareAndSet(this, current, update)) {
-                return;
-            }
-        }
-    }
-
-    public void removeConnection(ChannelConnection connection) {
-        SpinningChannelReader reader = (SpinningChannelReader) connection.getChannelReader();
-
-        for (; ; ) {
-            SocketReaders current = socketReaders;
-            if (current == SHUTDOWN) {
-                return;
-            }
-
-            int indexOf = current.indexOf(reader);
-            if (indexOf == -1) {
-                return;
-            }
-
-            int length = current.readers.length;
-            SpinningChannelReader[] newReaders = new SpinningChannelReader[length - 1];
-
-            int destIndex = 0;
-            for (int sourceIndex = 0; sourceIndex < length; sourceIndex++) {
-                if (sourceIndex != indexOf) {
-                    newReaders[destIndex] = current.readers[sourceIndex];
-                    destIndex++;
-                }
-            }
-
-            SocketReaders update = new SocketReaders(newReaders);
-            if (CONNECTION_HANDLERS.compareAndSet(this, current, update)) {
-                return;
-            }
-        }
-    }
+//    public void addConnection(ChannelConnection connection) {
+//        SpinningChannelReader reader = (SpinningChannelReader) connection.getChannelReader();
+//
+//        for (; ; ) {
+//            SocketReaders current = socketReaders;
+//            if (current == SHUTDOWN) {
+//                return;
+//            }
+//
+//            int length = current.readers.length;
+//            SpinningChannelReader[] newReaders = new SpinningChannelReader[length + 1];
+//            arraycopy(current.readers, 0, newReaders, 0, length);
+//            newReaders[length] = reader;
+//
+//            SocketReaders update = new SocketReaders(newReaders);
+//            if (CONNECTION_HANDLERS.compareAndSet(this, current, update)) {
+//                return;
+//            }
+//        }
+//    }
+//
+//    public void removeConnection(ChannelConnection connection) {
+//        SpinningChannelReader reader = (SpinningChannelReader) connection.getChannelReader();
+//
+//        for (; ; ) {
+//            SocketReaders current = socketReaders;
+//            if (current == SHUTDOWN) {
+//                return;
+//            }
+//
+//            int indexOf = current.indexOf(reader);
+//            if (indexOf == -1) {
+//                return;
+//            }
+//
+//            int length = current.readers.length;
+//            SpinningChannelReader[] newReaders = new SpinningChannelReader[length - 1];
+//
+//            int destIndex = 0;
+//            for (int sourceIndex = 0; sourceIndex < length; sourceIndex++) {
+//                if (sourceIndex != indexOf) {
+//                    newReaders[destIndex] = current.readers[sourceIndex];
+//                    destIndex++;
+//                }
+//            }
+//
+//            SocketReaders update = new SocketReaders(newReaders);
+//            if (CONNECTION_HANDLERS.compareAndSet(this, current, update)) {
+//                return;
+//            }
+//        }
+//    }
 
     public void shutdown() {
         socketReaders = SHUTDOWN;

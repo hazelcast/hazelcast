@@ -17,13 +17,12 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.networking.ChannelWriter;
-import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelInitializer;
+import com.hazelcast.internal.networking.CloseListener;
 import com.hazelcast.internal.networking.EventLoopGroup;
-import com.hazelcast.internal.networking.ChannelConnection;
-import com.hazelcast.internal.networking.ChannelReader;
-import com.hazelcast.internal.networking.ChannelReaderInitializer;
-import com.hazelcast.internal.networking.ChannelWriterInitializer;
+import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
+import com.hazelcast.internal.networking.NioChannel;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -38,6 +37,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW_STRING;
 import static com.hazelcast.util.HashUtil.hashToIndex;
+import static com.hazelcast.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.util.concurrent.BackoffIdleStrategy.createBackoffIdleStrategy;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -46,7 +46,7 @@ import static java.util.logging.Level.INFO;
 
 /**
  * A non blocking {@link EventLoopGroup} implementation that makes use of {@link java.nio.channels.Selector} to have a
- * limited set of io threads, handle an arbitrary number of connections.
+ * limited set of io threads, handle an arbitrary number of channels.
  *
  * By default the {@link NioThread} blocks on the Selector, but it can be put in a 'selectNow' mode that makes it
  * spinning on the selector. This is an experimental feature and will cause the io threads to run hot. For this reason, when
@@ -65,12 +65,10 @@ public class NioEventLoopGroup
     private final String hzName;
     private final IOOutOfMemoryHandler oomeHandler;
     private final int balanceIntervalSeconds;
-    private final ChannelWriterInitializer channelWriterInitializer;
-    private final ChannelReaderInitializer channelReaderInitializer;
+    private final ChannelInitializer channelInitializer;
     private final int inputThreadCount;
     private final int outputThreadCount;
-    private final Map<ChannelConnection, ChannelConnection> connections
-            = new ConcurrentHashMap<ChannelConnection, ChannelConnection>();
+    private final Map<NioChannel, NioChannel> channels = new ConcurrentHashMap<NioChannel, NioChannel>();
 
     // The selector mode determines how IO threads will block (or not) on the Selector:
     //  select:         this is the default mode, uses Selector.select(long timeout)
@@ -93,8 +91,7 @@ public class NioEventLoopGroup
             int inputThreadCount,
             int outputThreadCount,
             int balanceIntervalSeconds,
-            ChannelWriterInitializer channelWriterInitializer,
-            ChannelReaderInitializer channelReaderInitializer) {
+            ChannelInitializer channelInitializer) {
         this.hzName = hzName;
         this.metricsRegistry = metricsRegistry;
         this.loggingService = loggingService;
@@ -103,8 +100,7 @@ public class NioEventLoopGroup
         this.logger = loggingService.getLogger(NioEventLoopGroup.class);
         this.oomeHandler = oomeHandler;
         this.balanceIntervalSeconds = balanceIntervalSeconds;
-        this.channelWriterInitializer = channelWriterInitializer;
-        this.channelReaderInitializer = channelReaderInitializer;
+        this.channelInitializer = channelInitializer;
     }
 
     private SelectorMode getSelectorMode() {
@@ -201,8 +197,8 @@ public class NioEventLoopGroup
     private class PublishAllTask implements Runnable {
         @Override
         public void run() {
-            for (ChannelConnection connection : connections.values()) {
-                final NioChannelReader reader = (NioChannelReader) connection.getChannelReader();
+            for (NioChannel channel : channels.values()) {
+                final NioChannelReader reader = channel.getReader();
                 NioThread inputThread = reader.getOwner();
                 if (inputThread != null) {
                     inputThread.addTaskAndWakeup(new Runnable() {
@@ -213,7 +209,7 @@ public class NioEventLoopGroup
                     });
                 }
 
-                final NioChannelWriter writer = (NioChannelWriter) connection.getChannelWriter();
+                final NioChannelWriter writer = channel.getWriter();
                 NioThread outputThread = writer.getOwner();
                 if (outputThread != null) {
                     outputThread.addTaskAndWakeup(new Runnable() {
@@ -227,28 +223,62 @@ public class NioEventLoopGroup
         }
     }
 
-    @Override
-    public void onConnectionAdded(ChannelConnection connection) {
-        connections.put(connection, connection);
-
-        MigratableHandler reader = (MigratableHandler) connection.getChannelReader();
-        MigratableHandler writer = (MigratableHandler) connection.getChannelWriter();
-        ioBalancer.channelAdded(reader, writer);
-    }
-
-    @Override
-    public void onConnectionRemoved(ChannelConnection connection) {
-        connections.remove(connection);
-
-        MigratableHandler reader = (MigratableHandler) connection.getChannelReader();
-        MigratableHandler writer = (MigratableHandler) connection.getChannelWriter();
-        ioBalancer.channelRemoved(reader, writer);
-    }
-
     private void startIOBalancer() {
         ioBalancer = new IOBalancer(inputThreads, outputThreads, hzName, balanceIntervalSeconds, loggingService);
         ioBalancer.start();
         metricsRegistry.scanAndRegister(ioBalancer, "tcp.balancer");
+    }
+
+    @Override
+    public void register(Channel channel) {
+        NioChannel nioChannel = checkInstanceOf(NioChannel.class, channel);
+
+        final NioChannelReader reader = newChannelReader(nioChannel);
+        final NioChannelWriter writer = newChannelWriter(nioChannel);
+
+        nioChannel.setReader(reader);
+        nioChannel.setWriter(writer);
+
+        ioBalancer.channelAdded(reader, writer);
+
+        reader.start();
+
+        channel.addCloseListener(new CloseListener() {
+            @Override
+            public void onClose(String msg, Throwable cause) {
+                ioBalancer.channelRemoved(reader, writer);
+            }
+        });
+    }
+
+    private NioChannelWriter newChannelWriter(NioChannel channel) {
+        int index = hashToIndex(nextOutputThreadIndex.getAndIncrement(), outputThreadCount);
+        NioThread[] threads = outputThreads;
+        if (threads == null) {
+            throw new IllegalStateException("IO thread is closed!");
+        }
+
+        return new NioChannelWriter(
+                channel,
+                threads[index],
+                loggingService.getLogger(NioChannelWriter.class),
+                ioBalancer,
+                channelInitializer);
+    }
+
+    private NioChannelReader newChannelReader(NioChannel channel) {
+        int index = hashToIndex(nextInputThreadIndex.getAndIncrement(), inputThreadCount);
+        NioThread[] threads = inputThreads;
+        if (threads == null) {
+            throw new IllegalStateException("IO thread is closed!");
+        }
+
+        return new NioChannelReader(
+                channel,
+                threads[index],
+                loggingService.getLogger(NioChannelReader.class),
+                ioBalancer,
+                channelInitializer);
     }
 
     @Override
@@ -272,37 +302,5 @@ public class NioEventLoopGroup
         for (NioThread thread : threads) {
             thread.shutdown();
         }
-    }
-
-    @Override
-    public ChannelWriter newSocketWriter(ChannelConnection connection) {
-        int index = hashToIndex(nextOutputThreadIndex.getAndIncrement(), outputThreadCount);
-        NioThread[] threads = outputThreads;
-        if (threads == null) {
-            throw new IllegalStateException("IO thread is closed!");
-        }
-
-        return new NioChannelWriter(
-                connection,
-                threads[index],
-                loggingService.getLogger(NioChannelWriter.class),
-                ioBalancer,
-                channelWriterInitializer);
-    }
-
-    @Override
-    public ChannelReader newSocketReader(ChannelConnection connection) {
-        int index = hashToIndex(nextInputThreadIndex.getAndIncrement(), inputThreadCount);
-        NioThread[] threads = inputThreads;
-        if (threads == null) {
-            throw new IllegalStateException("IO thread is closed!");
-        }
-
-        return new NioChannelReader(
-                connection,
-                threads[index],
-                loggingService.getLogger(NioChannelReader.class),
-                ioBalancer,
-                channelReaderInitializer);
     }
 }

@@ -17,5 +17,8 @@
 /**
  * Contains the socket connection functionality. So effectively it contains all the networking that is shared between
  * client and server.
+ *
+ * Connections are build on top of channels, and there is no reliance of the com.hazelcast.internal.networking module on
+ * connections (no cycles).
  */
 package com.hazelcast.internal.networking;

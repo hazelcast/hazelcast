@@ -270,7 +270,7 @@ public class PreconditionsTest {
 
     @Test
     public void test_checkInstanceOf() throws Exception {
-        int value = checkInstanceOf(Number.class, Integer.MAX_VALUE, "argumentName");
+        Number value = checkInstanceOf(Number.class, Integer.MAX_VALUE, "argumentName");
         assertEquals("Returned value should be " + Integer.MAX_VALUE, Integer.MAX_VALUE, value);
     }
 

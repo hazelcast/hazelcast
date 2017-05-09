@@ -17,11 +17,10 @@
 package com.hazelcast.internal.networking.spinning;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
-import com.hazelcast.internal.networking.ChannelConnection;
-import com.hazelcast.internal.networking.ChannelWriter;
-import com.hazelcast.internal.networking.ChannelWriterInitializer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.OutboundFrame;
@@ -35,11 +34,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.nio.Protocols.CLUSTER;
 import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class SpinningChannelWriter extends AbstractHandler implements ChannelWriter {
+public class SpinningChannelWriter extends AbstractHandler {
 
     private static final long TIMEOUT = 3;
 
@@ -51,7 +49,7 @@ public class SpinningChannelWriter extends AbstractHandler implements ChannelWri
     @Probe(name = "priorityWriteQueueSize")
     public final Queue<OutboundFrame> urgentWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
 
-    private final ChannelWriterInitializer initializer;
+    private final ChannelInitializer initializer;
     private ByteBuffer outputBuffer;
     @Probe(name = "bytesWritten")
     private final SwCounter bytesWritten = newSwCounter();
@@ -63,15 +61,15 @@ public class SpinningChannelWriter extends AbstractHandler implements ChannelWri
     private ChannelOutboundHandler outboundHandler;
     private volatile OutboundFrame currentFrame;
 
-    public SpinningChannelWriter(ChannelConnection connection,
+    public SpinningChannelWriter(Channel channel,
                                  ILogger logger,
                                  IOOutOfMemoryHandler oomeHandler,
-                                 ChannelWriterInitializer initializer) {
-        super(connection, logger, oomeHandler);
+                                 ChannelInitializer initializer) {
+        super(channel, logger, oomeHandler);
         this.initializer = initializer;
     }
 
-    @Override
+    // @Override
     public void write(OutboundFrame frame) {
         if (frame.isUrgent()) {
             urgentWriteQueue.add(frame);
@@ -95,7 +93,7 @@ public class SpinningChannelWriter extends AbstractHandler implements ChannelWri
         return Math.max(currentTimeMillis() - lastWriteTime, 0);
     }
 
-    @Override
+    // @Override
     public int totalFramesPending() {
         return urgentWriteQueue.size() + writeQueue.size();
     }
@@ -110,47 +108,37 @@ public class SpinningChannelWriter extends AbstractHandler implements ChannelWri
         return bytesPending;
     }
 
-    @Override
+    // @Override
     public long lastWriteTimeMillis() {
         return lastWriteTime;
     }
 
-    @Override
-    public void setOutboundHandler(ChannelOutboundHandler outboundHandler) {
-        this.outboundHandler = outboundHandler;
-    }
-
-    @Override
-    public ChannelOutboundHandler getOutboundHandler() {
-        return outboundHandler;
-    }
-
     // accessed from ChannelInboundHandler and SocketConnector
-    @Override
+    //  @Override
     public void setProtocol(final String protocol) {
-        final CountDownLatch latch = new CountDownLatch(1);
-        urgentWriteQueue.add(new TaskFrame(new Runnable() {
-            @Override
-            public void run() {
-                logger.info("Setting protocol: " + protocol);
-                if (outboundHandler == null) {
-                    initializer.init(connection, SpinningChannelWriter.this, protocol);
-                }
-                latch.countDown();
-            }
-        }));
-
-        try {
-            latch.await(TIMEOUT, SECONDS);
-        } catch (InterruptedException e) {
-            logger.finest("CountDownLatch::await interrupted", e);
-        }
+//        final CountDownLatch latch = new CountDownLatch(1);
+//        urgentWriteQueue.add(new TaskFrame(new Runnable() {
+//            @Override
+//            public void run() {
+//                logger.info("Setting protocol: " + protocol);
+//                if (outboundHandler == null) {
+//                    initializer.init(connection, SpinningChannelWriter.this, protocol);
+//                }
+//                latch.countDown();
+//            }
+//        }));
+//
+//        try {
+//            latch.await(TIMEOUT, SECONDS);
+//        } catch (InterruptedException e) {
+//            logger.finest("CountDownLatch::await interrupted", e);
+//        }
     }
 
-    @Override
-    public void initOutputBuffer(ByteBuffer outputBuffer) {
-        this.outputBuffer = outputBuffer;
-    }
+//    @Override
+//    public void initOutputBuffer(ByteBuffer outputBuffer) {
+//        this.outputBuffer = outputBuffer;
+//    }
 
     private OutboundFrame poll() {
         for (; ; ) {
@@ -182,7 +170,7 @@ public class SpinningChannelWriter extends AbstractHandler implements ChannelWri
         }
     }
 
-    @Override
+    //   @Override
     public void close() {
         writeQueue.clear();
         urgentWriteQueue.clear();
@@ -193,21 +181,21 @@ public class SpinningChannelWriter extends AbstractHandler implements ChannelWri
     }
 
     public void write() throws Exception {
-        if (!connection.isAlive()) {
-            return;
-        }
-
-        if (outboundHandler == null) {
-            logger.warning("ChannelWriter is not set, creating ChannelWriter with CLUSTER protocol!");
-            initializer.init(connection, this, CLUSTER);
-            return;
-        }
-
-        fillOutputBuffer();
-
-        if (dirtyOutputBuffer()) {
-            writeOutputBufferToSocket();
-        }
+//        if (!connection.isAlive()) {
+//            return;
+//        }
+//
+//        if (outboundHandler == null) {
+//            logger.warning("ChannelWriter is not set, creating ChannelWriter with CLUSTER protocol!");
+//            initializer.init(connection, this, CLUSTER);
+//            return;
+//        }
+//
+//        fillOutputBuffer();
+//
+//        if (dirtyOutputBuffer()) {
+//            writeOutputBufferToSocket();
+//        }
     }
 
     /**
@@ -263,7 +251,7 @@ public class SpinningChannelWriter extends AbstractHandler implements ChannelWri
     private void writeOutputBufferToSocket() throws Exception {
         // So there is data for writing, so lets prepare the buffer for writing and then write it to the channel.
         outputBuffer.flip();
-        int result = socketChannel.write(outputBuffer);
+        int result = channel.write(outputBuffer);
         if (result > 0) {
             lastWriteTime = currentTimeMillis();
             bytesWritten.inc(result);
@@ -296,7 +284,7 @@ public class SpinningChannelWriter extends AbstractHandler implements ChannelWri
         @Override
         public void run() {
             try {
-                socketChannel.closeOutbound();
+                channel.closeOutbound();
             } catch (IOException e) {
                 logger.finest("Error while closing outbound", e);
             } finally {

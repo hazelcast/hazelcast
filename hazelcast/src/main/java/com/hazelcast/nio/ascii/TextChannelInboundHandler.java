@@ -31,6 +31,7 @@ import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpDeleteCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpGetCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpPostCommandParser;
+import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionType;
@@ -94,7 +95,7 @@ public class TextChannelInboundHandler implements ChannelInboundHandler {
     private boolean commandLineRead;
     private TextCommand command;
     private final TextCommandService textCommandService;
-    private final TextChannelOutboundHandler textWriteHandler;
+    private final Channel channel;
     private final TcpIpConnection connection;
     private final boolean restEnabled;
     private final boolean memcacheEnabled;
@@ -106,7 +107,7 @@ public class TextChannelInboundHandler implements ChannelInboundHandler {
     public TextChannelInboundHandler(TcpIpConnection connection) {
         IOService ioService = connection.getConnectionManager().getIoService();
         this.textCommandService = ioService.getTextCommandService();
-        this.textWriteHandler = (TextChannelOutboundHandler) connection.getChannelWriter().getOutboundHandler();
+        this.channel = connection.getChannel();
         this.connection = connection;
         this.memcacheEnabled = ioService.isMemcacheEnabled();
         this.restEnabled = ioService.isRestEnabled();
@@ -115,7 +116,7 @@ public class TextChannelInboundHandler implements ChannelInboundHandler {
     }
 
     public void sendResponse(TextCommand command) {
-        textWriteHandler.enqueue(command);
+       // channel.enqueue(command);
     }
 
     @Override
@@ -244,8 +245,8 @@ public class TextChannelInboundHandler implements ChannelInboundHandler {
         }
     }
 
-    public TextChannelOutboundHandler getTextWriteHandler() {
-        return textWriteHandler;
+    public Channel getChannel() {
+        return channel;
     }
 
     public void closeConnection() {

@@ -16,9 +16,7 @@
 
 package com.hazelcast.internal.networking;
 
-import com.hazelcast.nio.Connection;
+public interface CloseListener {
 
-public interface ChannelWriterInitializer<C extends Connection> {
-
-    void init(C connection, ChannelWriter writer, String protocol);
+    void onClose(String msg, Throwable cause);
 }

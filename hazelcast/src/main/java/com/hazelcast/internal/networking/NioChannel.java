@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.tcp;
+package com.hazelcast.internal.networking;
 
-import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.nio.NioChannelReader;
+import com.hazelcast.internal.networking.nio.NioChannelWriter;
+import com.hazelcast.nio.OutboundFrame;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -27,17 +29,36 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class PlainChannel implements Channel {
+public class NioChannel implements Channel {
 
     protected final SocketChannel socketChannel;
+    private NioChannelReader reader;
+    private NioChannelWriter writer;
     private final ConcurrentMap<?, ?> attributeMap = new ConcurrentHashMap<Object, Object>();
 
-    public PlainChannel(SocketChannel socketChannel) {
+    public NioChannel(SocketChannel socketChannel) {
         this.socketChannel = socketChannel;
     }
 
+    public NioChannelReader getReader() {
+        return reader;
+    }
+
+    public NioChannelWriter getWriter() {
+        return writer;
+    }
+
+    @Override
     public ConcurrentMap attributeMap() {
         return attributeMap;
+    }
+
+    public void setReader(NioChannelReader reader) {
+        this.reader = reader;
+    }
+
+    public void setWriter(NioChannelWriter writer) {
+        this.writer = writer;
     }
 
     @Override
@@ -45,7 +66,6 @@ public class PlainChannel implements Channel {
         return socketChannel.socket();
     }
 
-    @Override
     public SocketChannel socketChannel() {
         return socketChannel;
     }
@@ -60,6 +80,11 @@ public class PlainChannel implements Channel {
     public SocketAddress getLocalSocketAddress() {
         Socket socket = socket();
         return socket == null ? null : socket.getLocalSocketAddress();
+    }
+
+    @Override
+    public boolean isConnected() {
+        return socketChannel.isConnected();
     }
 
     @Override
@@ -97,6 +122,30 @@ public class PlainChannel implements Channel {
 
     @Override
     public String toString() {
-        return "PlainChannel{channel=" + socketChannel + '}';
+        return "NioChannel{channel=" + socketChannel + '}';
+    }
+
+    @Override
+    public void addCloseListener(CloseListener closeListener) {
+
+    }
+
+    @Override
+    public long lastWriteTimeMillis() {
+        return writer.lastWriteTimeMillis();
+    }
+
+    @Override
+    public long lastReadTimeMillis() {
+        return reader.lastReadTimeMillis();
+    }
+
+    @Override
+    public boolean write(OutboundFrame frame) {
+        if (!socketChannel.isOpen()) {
+            return false;
+        }
+        writer.write(frame);
+        return true;
     }
 }

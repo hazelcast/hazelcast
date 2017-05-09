@@ -17,10 +17,10 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
-import com.hazelcast.internal.networking.ChannelWriter;
-import com.hazelcast.internal.networking.ChannelConnection;
-import com.hazelcast.internal.networking.ChannelWriterInitializer;
+import com.hazelcast.internal.networking.NioChannel;
+import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -38,7 +38,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.nio.Protocols.CLUSTER;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
@@ -47,9 +46,7 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 /**
  * The writing side of the {@link TcpIpConnection}.
  */
-public final class NioChannelWriter
-        extends AbstractHandler
-        implements Runnable, ChannelWriter {
+public final class NioChannelWriter extends AbstractHandler implements Runnable {
 
     private static final long TIMEOUT = 3;
 
@@ -59,7 +56,7 @@ public final class NioChannelWriter
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "priorityWriteQueueSize")
     public final Queue<OutboundFrame> urgentWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
-    private final ChannelWriterInitializer initializer;
+    private final ChannelInitializer initializer;
 
     private ByteBuffer outputBuffer;
 
@@ -85,12 +82,12 @@ public final class NioChannelWriter
     private long priorityFramesReadLastPublish;
     private long eventsLastPublish;
 
-    public NioChannelWriter(ChannelConnection connection,
+    public NioChannelWriter(NioChannel channel,
                             NioThread ioThread,
                             ILogger logger,
                             IOBalancer balancer,
-                            ChannelWriterInitializer initializer) {
-        super(connection, ioThread, OP_WRITE, logger, balancer);
+                            ChannelInitializer initializer) {
+        super(channel, ioThread, OP_WRITE, logger, balancer);
         this.initializer = initializer;
     }
 
@@ -108,28 +105,18 @@ public final class NioChannelWriter
         }
     }
 
-    @Override
-    public int totalFramesPending() {
-        return writeQueue.size() + urgentWriteQueue.size();
-    }
-
-    @Override
+    //@Override
     public long lastWriteTimeMillis() {
         return lastWriteTime;
     }
 
-    @Override
-    public ChannelOutboundHandler getOutboundHandler() {
-        return outboundHandler;
-    }
-
     @Probe(name = "writeQueuePendingBytes", level = DEBUG)
-    public long bytesPending() {
+    private long bytesPending() {
         return bytesPending(writeQueue);
     }
 
     @Probe(name = "priorityWriteQueuePendingBytes", level = DEBUG)
-    public long priorityBytesPending() {
+    private long priorityBytesPending() {
         return bytesPending(urgentWriteQueue);
     }
 
@@ -154,23 +141,24 @@ public final class NioChannelWriter
     }
 
     // accessed from ChannelInboundHandler and SocketConnector
-    @Override
+    //@Override
     public void setProtocol(final String protocol) {
         final CountDownLatch latch = new CountDownLatch(1);
         ioThread.addTaskAndWakeup(new Runnable() {
             @Override
             public void run() {
-                try {
-                    if (outboundHandler == null) {
-                        initializer.init(connection, NioChannelWriter.this, protocol);
-                    }
-                } catch (Throwable t) {
-                    onFailure(t);
-                } finally {
-                    latch.countDown();
-                }
+//                try {
+//                    if (outboundHandler == null) {
+//                        //initializer.init(connection, NioChannelWriter.this, protocol);
+//                    }
+//                } catch (Throwable t) {
+//                    onFailure(t);
+//                } finally {
+//                    latch.countDown();
+//                }
             }
         });
+
         try {
             latch.await(TIMEOUT, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
@@ -178,12 +166,7 @@ public final class NioChannelWriter
         }
     }
 
-    @Override
-    public void initOutputBuffer(ByteBuffer outputBuffer) {
-        this.outputBuffer = outputBuffer;
-    }
-
-    @Override
+    //@Override
     public void write(OutboundFrame frame) {
         if (frame.isUrgent()) {
             urgentWriteQueue.offer(frame);
@@ -304,7 +287,10 @@ public final class NioChannelWriter
         lastWriteTime = currentTimeMillis();
 
         if (outboundHandler == null) {
-            initializer.init(connection, this, CLUSTER);
+            InitResult<ChannelOutboundHandler> initResult = initializer.initOutbound(channel);
+            this.outboundHandler = initResult.getHandler();
+            this.outputBuffer = initResult.getByteBuffer();
+            //todo: byte-buffer and outbound handler need to be configured.
             registerOp(OP_WRITE);
         }
 
@@ -319,11 +305,6 @@ public final class NioChannelWriter
         } else {
             startMigration();
         }
-    }
-
-    @Override
-    public void setOutboundHandler(ChannelOutboundHandler outboundHandler) {
-        this.outboundHandler = outboundHandler;
     }
 
     private void startMigration() throws IOException {
@@ -392,7 +373,7 @@ public final class NioChannelWriter
         }
     }
 
-    @Override
+    //@Override
     public void close() {
         writeQueue.clear();
         urgentWriteQueue.clear();
@@ -409,7 +390,7 @@ public final class NioChannelWriter
 
     @Override
     public String toString() {
-        return connection + ".socketWriter";
+        return channel + ".socketWriter";
     }
 
     /**
