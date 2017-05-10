@@ -42,7 +42,7 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
      */
     public static final int DEFAULT_ASYNC_BACKUP_COUNT = 0;
 
-    private String name;
+    private String name="";
     private List<ItemListenerConfig> listenerConfigs;
     private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
