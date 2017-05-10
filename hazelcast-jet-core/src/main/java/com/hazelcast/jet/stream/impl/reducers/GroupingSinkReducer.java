@@ -17,7 +17,7 @@
 package com.hazelcast.jet.stream.impl.reducers;
 
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Distributed.Function;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Vertex;
@@ -30,21 +30,21 @@ import com.hazelcast.jet.stream.impl.processor.GroupAndAccumulateP;
 import java.util.stream.Collector;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.DistributedFunctions.entryKey;
+import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 
 public class GroupingSinkReducer<T, A, K, D, R> implements DistributedCollector.Reducer<T, R> {
 
     private final String sinkName;
-    private final Function<JetInstance, ? extends R> toDistributedObject;
-    private final Function<? super T, ? extends K> classifier;
+    private final DistributedFunction<JetInstance, ? extends R> toDistributedObject;
+    private final DistributedFunction<? super T, ? extends K> classifier;
     private final Collector<? super T, A, D> collector;
     private final ProcessorSupplier processorSupplier;
 
     public GroupingSinkReducer(String sinkName,
-                               Function<JetInstance, ? extends R> toDistributedObject,
-                               Function<? super T, ? extends K> classifier,
+                               DistributedFunction<JetInstance, ? extends R> toDistributedObject,
+                               DistributedFunction<? super T, ? extends K> classifier,
                                Collector<? super T, A, D> collector,
                                ProcessorSupplier processorSupplier) {
         this.sinkName = sinkName;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.Distributed.Supplier;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.DagValidator;
 import com.hazelcast.jet.impl.SerializationConstants;
 import com.hazelcast.nio.ObjectDataInput;
@@ -70,12 +70,12 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     /**
      * Creates a vertex from a {@code Supplier<Processor>} and adds it to this DAG.
      *
-     * @see Vertex#Vertex(String, Supplier)
+     * @see Vertex#Vertex(String, DistributedSupplier)
      *
      * @param name the unique name of the vertex
      * @param simpleSupplier the simple, parameterless supplier of {@code Processor} instances
      */
-    public Vertex newVertex(String name, Supplier<? extends Processor> simpleSupplier) {
+    public Vertex newVertex(String name, DistributedSupplier<? extends Processor> simpleSupplier) {
         return addVertex(new Vertex(name, simpleSupplier));
     }
 

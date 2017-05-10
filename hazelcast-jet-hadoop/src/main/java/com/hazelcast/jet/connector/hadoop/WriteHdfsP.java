@@ -18,7 +18,7 @@ package com.hazelcast.jet.connector.hadoop;
 
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Distributed.Function;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
@@ -36,7 +36,7 @@ import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.jet.Distributed.Function.identity;
+import static com.hazelcast.jet.function.DistributedFunction.identity;
 import static com.hazelcast.jet.connector.hadoop.SerializableJobConf.asSerializable;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
@@ -67,11 +67,13 @@ public final class WriteHdfsP<K, KM, V, VM> extends AbstractProcessor {
     private final RecordWriter<KM, VM> recordWriter;
     private final TaskAttemptContextImpl taskAttemptContext;
     private final OutputCommitter outputCommitter;
-    private final Function<K, KM> keyMapper;
-    private final Function<V, VM> valueMapper;
+    private final DistributedFunction<K, KM> keyMapper;
+    private final DistributedFunction<V, VM> valueMapper;
 
     private WriteHdfsP(RecordWriter<KM, VM> recordWriter, TaskAttemptContextImpl taskAttemptContext,
-                       OutputCommitter outputCommitter, Function<K, KM> keyMapper, Function<V, VM> valueMapper) {
+                       OutputCommitter outputCommitter,
+                       DistributedFunction<K, KM> keyMapper, DistributedFunction<V, VM> valueMapper
+    ) {
         this.recordWriter = recordWriter;
         this.taskAttemptContext = taskAttemptContext;
         this.outputCommitter = outputCommitter;
@@ -134,9 +136,11 @@ public final class WriteHdfsP<K, KM, V, VM> extends AbstractProcessor {
      * @param <VM>        the type of the value after mapping
      */
     @Nonnull
-    public static <K, KM, V, VM> ProcessorMetaSupplier writeHdfs(@Nonnull JobConf jobConf,
-                                                                 @Nonnull Function<K, KM> keyMapper,
-                                                                 @Nonnull Function<V, VM> valueMapper) {
+    public static <K, KM, V, VM> ProcessorMetaSupplier writeHdfs(
+            @Nonnull JobConf jobConf,
+            @Nonnull DistributedFunction<K, KM> keyMapper,
+            @Nonnull DistributedFunction<V, VM> valueMapper
+    ) {
         return new MetaSupplier<>(asSerializable(jobConf), keyMapper, valueMapper);
     }
 
@@ -146,12 +150,15 @@ public final class WriteHdfsP<K, KM, V, VM> extends AbstractProcessor {
         static final long serialVersionUID = 1L;
 
         private final SerializableJobConf jobConf;
-        private final Function<K, KM> keyMapper;
-        private final Function<V, VM> valueMapper;
+        private final DistributedFunction<K, KM> keyMapper;
+        private final DistributedFunction<V, VM> valueMapper;
 
         private transient Address address;
 
-        MetaSupplier(SerializableJobConf jobConf, Function<K, KM> keyMapper, Function<V, VM> valueMapper) {
+        MetaSupplier(SerializableJobConf jobConf,
+                     DistributedFunction<K, KM> keyMapper,
+                     DistributedFunction<V, VM> valueMapper
+        ) {
             this.jobConf = jobConf;
             this.keyMapper = keyMapper;
             this.valueMapper = valueMapper;
@@ -163,7 +170,7 @@ public final class WriteHdfsP<K, KM, V, VM> extends AbstractProcessor {
         }
 
         @Override @Nonnull
-        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+        public DistributedFunction<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             return address -> new Supplier<>(address.equals(this.address), jobConf, keyMapper, valueMapper);
         }
     }
@@ -174,14 +181,18 @@ public final class WriteHdfsP<K, KM, V, VM> extends AbstractProcessor {
 
         private final boolean commitJob;
         private final SerializableJobConf jobConf;
-        private final Function<K, KM> keyMapper;
-        private final Function<V, VM> valueMapper;
+        private final DistributedFunction<K, KM> keyMapper;
+        private final DistributedFunction<V, VM> valueMapper;
 
         private transient Context context;
         private transient OutputCommitter outputCommitter;
         private transient JobContextImpl jobContext;
 
-        Supplier(boolean commitJob, SerializableJobConf jobConf, Function<K, KM> keyMapper, Function<V, VM> valueMapper) {
+        Supplier(boolean commitJob,
+                 SerializableJobConf jobConf,
+                 DistributedFunction<K, KM> keyMapper,
+                 DistributedFunction<V, VM> valueMapper
+        ) {
             this.commitJob = commitJob;
             this.jobConf = jobConf;
             this.keyMapper = keyMapper;

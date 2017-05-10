@@ -17,7 +17,8 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.function.DistributedComparator;
+import com.hazelcast.jet.function.DistributedOptional;
 import org.junit.Test;
 
 import java.util.Collection;
@@ -242,8 +243,8 @@ public class CollectorsTest extends AbstractStreamTest {
 
     @Test
     public void list_minBy() throws Exception {
-        Distributed.Optional<Integer> min = streamList()
-                .collect(DistributedCollectors.minBy(Distributed.Comparator.naturalOrder()));
+        DistributedOptional<Integer> min = streamList()
+                .collect(DistributedCollectors.minBy(DistributedComparator.naturalOrder()));
 
         assertTrue(min.isPresent());
         assertEquals(0, (int) min.get());
@@ -253,17 +254,17 @@ public class CollectorsTest extends AbstractStreamTest {
     public void empty_minBy() throws Exception {
         IStreamList<Integer> list = getList();
 
-        Distributed.Optional<Integer> min = list
+        DistributedOptional<Integer> min = list
                 .stream()
-                .collect(DistributedCollectors.minBy(Distributed.Comparator.naturalOrder()));
+                .collect(DistributedCollectors.minBy(DistributedComparator.naturalOrder()));
 
         assertFalse(min.isPresent());
     }
 
     @Test
     public void list_maxBy() throws Exception {
-        Distributed.Optional<Integer> max = streamList()
-                .collect(DistributedCollectors.maxBy(Distributed.Comparator.naturalOrder()));
+        DistributedOptional<Integer> max = streamList()
+                .collect(DistributedCollectors.maxBy(DistributedComparator.naturalOrder()));
 
         assertTrue(max.isPresent());
         assertEquals(COUNT - 1, (int) max.get());
@@ -273,9 +274,9 @@ public class CollectorsTest extends AbstractStreamTest {
     public void empty_maxBy() throws Exception {
         IStreamList<Integer> list = getList();
 
-        Distributed.Optional<Integer> max = list
+        DistributedOptional<Integer> max = list
                 .stream()
-                .collect(DistributedCollectors.maxBy(Distributed.Comparator.naturalOrder()));
+                .collect(DistributedCollectors.maxBy(DistributedComparator.naturalOrder()));
 
         assertFalse(max.isPresent());
     }
@@ -324,7 +325,7 @@ public class CollectorsTest extends AbstractStreamTest {
 
     @Test
     public void map_reducing() throws Exception {
-        Distributed.Optional<Integer> sum = streamMap()
+        DistributedOptional<Integer> sum = streamMap()
                 .map(Entry::getValue)
                 .collect(DistributedCollectors.reducing((a, b) -> a + b));
 
@@ -334,7 +335,7 @@ public class CollectorsTest extends AbstractStreamTest {
 
     @Test
     public void cache_reducing() throws Exception {
-        Distributed.Optional<Integer> sum = streamCache()
+        DistributedOptional<Integer> sum = streamCache()
                 .map(Entry::getValue)
                 .collect(DistributedCollectors.reducing((a, b) -> a + b));
 
@@ -346,9 +347,9 @@ public class CollectorsTest extends AbstractStreamTest {
     public void map_empty_reducing() throws Exception {
         IStreamMap<String, Integer> map = getMap();
 
-        Distributed.Optional<Integer> sum = map.stream()
-                                               .map(Entry::getValue)
-                                               .collect(DistributedCollectors.reducing((a, b) -> a + b));
+        DistributedOptional<Integer> sum = map.stream()
+                                              .map(Entry::getValue)
+                                              .collect(DistributedCollectors.reducing((a, b) -> a + b));
 
         assertFalse(sum.isPresent());
     }
@@ -357,9 +358,9 @@ public class CollectorsTest extends AbstractStreamTest {
     public void cache_empty_reducing() throws Exception {
         IStreamCache<String, Integer> cache = getCache();
 
-        Distributed.Optional<Integer> sum = cache.stream()
-                                                 .map(Entry::getValue)
-                                                 .collect(DistributedCollectors.reducing((a, b) -> a + b));
+        DistributedOptional<Integer> sum = cache.stream()
+                                                .map(Entry::getValue)
+                                                .collect(DistributedCollectors.reducing((a, b) -> a + b));
 
         assertFalse(sum.isPresent());
     }

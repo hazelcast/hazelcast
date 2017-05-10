@@ -18,7 +18,7 @@ package com.hazelcast.jet.stream.impl.reducers;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Distributed.Supplier;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.DistributedCollector.Reducer;
@@ -31,7 +31,7 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 
-import static com.hazelcast.jet.Distributed.Function.identity;
+import static com.hazelcast.jet.function.DistributedFunction.identity;
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.Processors.writeList;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
@@ -103,7 +103,7 @@ public final class Reducers {
 
 
     private static <T> Vertex buildCombiner(DAG dag, Vertex accumulate, BinaryOperator<T> combiner) {
-        Supplier<Processor> supplier = () -> new CombineP<>(combiner, identity());
+        DistributedSupplier<Processor> supplier = () -> new CombineP<>(combiner, identity());
         Vertex combine = dag.newVertex("combine", supplier).localParallelism(1);
         dag.edge(between(accumulate, combine)
                 .distributed()

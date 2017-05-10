@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.ProcessorMetaSupplier;
+import com.hazelcast.jet.function.DistributedFunction;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -36,7 +36,7 @@ import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 /**
  * @see com.hazelcast.jet.Processors#writeFile(String,
- * com.hazelcast.jet.Distributed.Function, Charset, boolean)
+ * com.hazelcast.jet.DistributedFunction, Charset, boolean)
  */
 public final class WriteFileP {
 
@@ -44,14 +44,14 @@ public final class WriteFileP {
 
     /**
      * Use {@link com.hazelcast.jet.Processors#writeFile(String,
-     * com.hazelcast.jet.Distributed.Function, Charset, boolean)}
+     * com.hazelcast.jet.DistributedFunction, Charset, boolean)}
      */
     public static <T> ProcessorMetaSupplier supplier(
             @Nonnull String directoryName,
-            @Nullable Distributed.Function<T, String> toStringF,
+            @Nullable DistributedFunction<T, String> toStringF,
             @Nullable String charset,
             boolean append) {
-        Distributed.Function<T, String> toStringF2 = toStringF == null ? Object::toString : toStringF;
+        DistributedFunction<T, String> toStringF2 = toStringF == null ? Object::toString : toStringF;
 
         return addresses -> address -> count -> {
             Path directory = Paths.get(directoryName);

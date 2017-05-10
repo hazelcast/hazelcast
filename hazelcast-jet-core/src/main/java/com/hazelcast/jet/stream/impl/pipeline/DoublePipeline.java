@@ -17,8 +17,9 @@
 package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.function.DistributedComparator;
+import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.stream.DistributedCollectors;
 import com.hazelcast.jet.stream.DistributedDoubleStream;
 import com.hazelcast.jet.stream.DistributedIntStream;
@@ -165,7 +166,7 @@ class DoublePipeline implements DistributedDoubleStream {
     public <R> R collect(Supplier<R> supplier,
                          ObjDoubleConsumer<R> accumulator,
                          BiConsumer<R, R> combiner) {
-        Distributed.BiConsumer<R, Double> boxedAccumulator = accumulator::accept;
+        DistributedBiConsumer<R, Double> boxedAccumulator = accumulator::accept;
         return inner.collect(supplier, boxedAccumulator, combiner);
     }
 
@@ -176,12 +177,12 @@ class DoublePipeline implements DistributedDoubleStream {
 
     @Override
     public OptionalDouble min() {
-        return toOptionalDouble(inner.min(Distributed.Comparator.naturalOrder()));
+        return toOptionalDouble(inner.min(DistributedComparator.naturalOrder()));
     }
 
     @Override
     public OptionalDouble max() {
-        return toOptionalDouble(inner.max(Distributed.Comparator.naturalOrder()));
+        return toOptionalDouble(inner.max(DistributedComparator.naturalOrder()));
     }
 
     @Override

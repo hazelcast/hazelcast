@@ -17,7 +17,7 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.function.DistributedDoubleUnaryOperator;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -130,7 +130,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
         int repetitions = 10;
         double[] doubles = stream
                 .filter(n -> n < repetitions)
-                .flatMap(n -> DoubleStream.iterate(n, Distributed.DoubleUnaryOperator.identity()).limit(repetitions))
+                .flatMap(n -> DoubleStream.iterate(n, DistributedDoubleUnaryOperator.identity()).limit(repetitions))
                 .toArray();
 
         Arrays.sort(doubles);

@@ -16,8 +16,17 @@
 
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.function.DistributedBiConsumer;
+import com.hazelcast.jet.function.DistributedIntBinaryOperator;
+import com.hazelcast.jet.function.DistributedIntConsumer;
+import com.hazelcast.jet.function.DistributedIntFunction;
+import com.hazelcast.jet.function.DistributedIntPredicate;
+import com.hazelcast.jet.function.DistributedIntToDoubleFunction;
+import com.hazelcast.jet.function.DistributedIntToLongFunction;
+import com.hazelcast.jet.function.DistributedIntUnaryOperator;
+import com.hazelcast.jet.function.DistributedObjIntConsumer;
+import com.hazelcast.jet.function.DistributedSupplier;
 
 import java.util.OptionalInt;
 import java.util.function.BiConsumer;
@@ -33,8 +42,9 @@ import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 /**
- * An extension of {@link java.util.stream.IntStream} to support distributed stream operations by replacing
- * functional interfaces with their serializable equivalents.
+ * An extension of {@link IntStream} that supports distributed stream
+ * operations by replacing functional interfaces with their serializable
+ * equivalents.
  */
 @SuppressWarnings("checkstyle:methodcount")
 public interface DistributedIntStream extends IntStream {
@@ -52,7 +62,7 @@ public interface DistributedIntStream extends IntStream {
      *                  should be included
      * @return the new stream
      */
-    default DistributedIntStream filter(Distributed.IntPredicate predicate) {
+    default DistributedIntStream filter(DistributedIntPredicate predicate) {
         return filter((IntPredicate) predicate);
     }
 
@@ -68,7 +78,7 @@ public interface DistributedIntStream extends IntStream {
      *               function to apply to each element
      * @return the new stream
      */
-    default DistributedIntStream map(Distributed.IntUnaryOperator mapper) {
+    default DistributedIntStream map(DistributedIntUnaryOperator mapper) {
         return map((IntUnaryOperator) mapper);
     }
 
@@ -85,7 +95,7 @@ public interface DistributedIntStream extends IntStream {
      *               function to apply to each element
      * @return the new stream
      */
-    default <U> DistributedStream<U> mapToObj(Distributed.IntFunction<? extends U> mapper) {
+    default <U> DistributedStream<U> mapToObj(DistributedIntFunction<? extends U> mapper) {
         return mapToObj((IntFunction<? extends U>) mapper);
     }
 
@@ -101,7 +111,7 @@ public interface DistributedIntStream extends IntStream {
      *               function to apply to each element
      * @return the new stream
      */
-    default DistributedLongStream mapToLong(Distributed.IntToLongFunction mapper) {
+    default DistributedLongStream mapToLong(DistributedIntToLongFunction mapper) {
         return mapToLong((IntToLongFunction) mapper);
     }
 
@@ -117,7 +127,7 @@ public interface DistributedIntStream extends IntStream {
      *               function to apply to each element
      * @return the new stream
      */
-    default DistributedDoubleStream mapToDouble(Distributed.IntToDoubleFunction mapper) {
+    default DistributedDoubleStream mapToDouble(DistributedIntToDoubleFunction mapper) {
         return mapToDouble((IntToDoubleFunction) mapper);
     }
 
@@ -137,9 +147,9 @@ public interface DistributedIntStream extends IntStream {
      *               function to apply to each element which produces an
      *               {@code IntStream} of new values
      * @return the new stream
-     * @see DistributedStream#flatMap(Distributed.Function)
+     * @see DistributedStream#flatMap(com.hazelcast.jet.function.DistributedFunction)
      */
-    default DistributedIntStream flatMap(Distributed.IntFunction<? extends IntStream> mapper) {
+    default DistributedIntStream flatMap(DistributedIntFunction<? extends IntStream> mapper) {
         return flatMap((IntFunction<? extends IntStream>) mapper);
     }
 
@@ -182,7 +192,7 @@ public interface DistributedIntStream extends IntStream {
      *               they are consumed from the stream
      * @return the new stream
      */
-    default DistributedIntStream peek(Distributed.IntConsumer action) {
+    default DistributedIntStream peek(DistributedIntConsumer action) {
         return peek((IntConsumer) action);
     }
 
@@ -249,7 +259,7 @@ public interface DistributedIntStream extends IntStream {
      * @see #max()
      * @see #average()
      */
-    default int reduce(int identity, Distributed.IntBinaryOperator op) {
+    default int reduce(int identity, DistributedIntBinaryOperator op) {
         return reduce(identity, (IntBinaryOperator) op);
     }
 
@@ -286,9 +296,9 @@ public interface DistributedIntStream extends IntStream {
      *           stateless
      *           function for combining two values
      * @return the result of the reduction
-     * @see #reduce(int, Distributed.IntBinaryOperator)
+     * @see #reduce(int, DistributedIntBinaryOperator)
      */
-    default OptionalInt reduce(Distributed.IntBinaryOperator op) {
+    default OptionalInt reduce(DistributedIntBinaryOperator op) {
         return reduce((IntBinaryOperator) op);
     }
 
@@ -306,7 +316,7 @@ public interface DistributedIntStream extends IntStream {
      *     return result;
      * }</pre>
      *
-     * <p>Like {@link #reduce(int, Distributed.IntBinaryOperator)}, {@code collect} operations
+     * <p>Like {@link #reduce(int, DistributedIntBinaryOperator)}, {@code collect} operations
      * can be parallelized without requiring additional synchronization.
      *
      * <p>This is a terminal
@@ -326,10 +336,10 @@ public interface DistributedIntStream extends IntStream {
      *                    function for combining two values, which must be
      *                    compatible with the accumulator function
      * @return the result of the reduction
-     * @see DistributedStream#collect(Distributed.Supplier, Distributed.BiConsumer, Distributed.BiConsumer)
+     * @see DistributedStream#collect(DistributedSupplier, DistributedBiConsumer, DistributedBiConsumer)
      */
-    default <R> R collect(Distributed.Supplier<R> supplier, Distributed.ObjIntConsumer<R> accumulator,
-                          Distributed.BiConsumer<R, R> combiner) {
+    default <R> R collect(DistributedSupplier<R> supplier, DistributedObjIntConsumer<R> accumulator,
+                          DistributedBiConsumer<R, R> combiner) {
         return collect((Supplier<R>) supplier, accumulator, combiner);
     }
 
@@ -348,7 +358,7 @@ public interface DistributedIntStream extends IntStream {
      * @return {@code true} if any elements of the stream match the provided
      * predicate, otherwise {@code false}
      */
-    default boolean anyMatch(Distributed.IntPredicate predicate) {
+    default boolean anyMatch(DistributedIntPredicate predicate) {
         return anyMatch((IntPredicate) predicate);
     }
 
@@ -367,7 +377,7 @@ public interface DistributedIntStream extends IntStream {
      * @return {@code true} if either all elements of the stream match the
      * provided predicate or the stream is empty, otherwise {@code false}
      */
-    default boolean allMatch(Distributed.IntPredicate predicate) {
+    default boolean allMatch(DistributedIntPredicate predicate) {
         return allMatch((IntPredicate) predicate);
     }
 
@@ -386,7 +396,7 @@ public interface DistributedIntStream extends IntStream {
      * @return {@code true} if either no elements of the stream match the
      * provided predicate or the stream is empty, otherwise {@code false}
      */
-    default boolean noneMatch(Distributed.IntPredicate predicate) {
+    default boolean noneMatch(DistributedIntPredicate predicate) {
         return noneMatch((IntPredicate) predicate);
     }
 

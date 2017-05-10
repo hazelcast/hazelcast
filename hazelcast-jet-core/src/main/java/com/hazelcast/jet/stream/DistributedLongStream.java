@@ -16,8 +16,17 @@
 
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.function.DistributedBiConsumer;
+import com.hazelcast.jet.function.DistributedLongBinaryOperator;
+import com.hazelcast.jet.function.DistributedLongConsumer;
+import com.hazelcast.jet.function.DistributedLongFunction;
+import com.hazelcast.jet.function.DistributedLongPredicate;
+import com.hazelcast.jet.function.DistributedLongToDoubleFunction;
+import com.hazelcast.jet.function.DistributedLongToIntFunction;
+import com.hazelcast.jet.function.DistributedLongUnaryOperator;
+import com.hazelcast.jet.function.DistributedObjLongConsumer;
+import com.hazelcast.jet.function.DistributedSupplier;
 
 import java.util.OptionalLong;
 import java.util.function.BiConsumer;
@@ -34,8 +43,9 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 /**
- * An extension of {@link java.util.stream.LongStream} to support distributed stream operations by replacing
- * functional interfaces with their serializable equivalents.
+ * An extension of {@link LongStream} that supports distributed stream
+ * operations by replacing functional interfaces with their serializable
+ * equivalents.
  */
 @SuppressWarnings("checkstyle:methodcount")
 public interface DistributedLongStream extends LongStream {
@@ -53,7 +63,7 @@ public interface DistributedLongStream extends LongStream {
      *                  should be included
      * @return the new stream
      */
-    default DistributedLongStream filter(Distributed.LongPredicate predicate) {
+    default DistributedLongStream filter(DistributedLongPredicate predicate) {
         return filter((LongPredicate) predicate);
     }
 
@@ -69,7 +79,7 @@ public interface DistributedLongStream extends LongStream {
      *               function to apply to each element
      * @return the new stream
      */
-    default DistributedLongStream map(Distributed.LongUnaryOperator mapper) {
+    default DistributedLongStream map(DistributedLongUnaryOperator mapper) {
         return map((LongUnaryOperator) mapper);
     }
 
@@ -86,7 +96,7 @@ public interface DistributedLongStream extends LongStream {
      *               function to apply to each element
      * @return the new stream
      */
-    default <U> DistributedStream<U> mapToObj(Distributed.LongFunction<? extends U> mapper) {
+    default <U> DistributedStream<U> mapToObj(DistributedLongFunction<? extends U> mapper) {
         return mapToObj((LongFunction<? extends U>) mapper);
     }
 
@@ -102,7 +112,7 @@ public interface DistributedLongStream extends LongStream {
      *               function to apply to each element
      * @return the new stream
      */
-    default DistributedIntStream mapToInt(Distributed.LongToIntFunction mapper) {
+    default DistributedIntStream mapToInt(DistributedLongToIntFunction mapper) {
         return mapToInt((LongToIntFunction) mapper);
     }
 
@@ -118,7 +128,7 @@ public interface DistributedLongStream extends LongStream {
      *               function to apply to each element
      * @return the new stream
      */
-    default DistributedDoubleStream mapToDouble(Distributed.LongToDoubleFunction mapper) {
+    default DistributedDoubleStream mapToDouble(DistributedLongToDoubleFunction mapper) {
         return mapToDouble((LongToDoubleFunction) mapper);
     }
 
@@ -138,9 +148,9 @@ public interface DistributedLongStream extends LongStream {
      *               function to apply to each element which produces a
      *               {@code LongStream} of new values
      * @return the new stream
-     * @see DistributedStream#flatMap(Distributed.Function)
+     * @see DistributedStream#flatMap(com.hazelcast.jet.function.DistributedFunction)
      */
-    default DistributedLongStream flatMap(Distributed.LongFunction<? extends LongStream> mapper) {
+    default DistributedLongStream flatMap(DistributedLongFunction<? extends LongStream> mapper) {
         return flatMap((LongFunction<? extends LongStream>) mapper);
     }
 
@@ -185,7 +195,7 @@ public interface DistributedLongStream extends LongStream {
      *               they are consumed from the stream
      * @return the new stream
      */
-    default DistributedLongStream peek(Distributed.LongConsumer action) {
+    default DistributedLongStream peek(DistributedLongConsumer action) {
         return peek((LongConsumer) action);
     }
 
@@ -252,7 +262,7 @@ public interface DistributedLongStream extends LongStream {
      * @see #max()
      * @see #average()
      */
-    default long reduce(long identity, Distributed.LongBinaryOperator op) {
+    default long reduce(long identity, DistributedLongBinaryOperator op) {
         return reduce(identity, (LongBinaryOperator) op);
     }
 
@@ -291,7 +301,7 @@ public interface DistributedLongStream extends LongStream {
      * @return the result of the reduction
      * @see #reduce(long, LongBinaryOperator)
      */
-    default OptionalLong reduce(Distributed.LongBinaryOperator op) {
+    default OptionalLong reduce(DistributedLongBinaryOperator op) {
         return reduce((LongBinaryOperator) op);
     }
 
@@ -331,8 +341,8 @@ public interface DistributedLongStream extends LongStream {
      * @return the result of the reduction
      * @see Stream#collect(Supplier, BiConsumer, BiConsumer)
      */
-    default <R> R collect(Distributed.Supplier<R> supplier, Distributed.ObjLongConsumer<R> accumulator,
-                          Distributed.BiConsumer<R, R> combiner) {
+    default <R> R collect(DistributedSupplier<R> supplier, DistributedObjLongConsumer<R> accumulator,
+                          DistributedBiConsumer<R, R> combiner) {
         return collect((Supplier<R>) supplier, accumulator, combiner);
     }
 
@@ -351,7 +361,7 @@ public interface DistributedLongStream extends LongStream {
      * @return {@code true} if any elements of the stream match the provided
      * predicate, otherwise {@code false}
      */
-    default boolean anyMatch(Distributed.LongPredicate predicate) {
+    default boolean anyMatch(DistributedLongPredicate predicate) {
         return anyMatch((LongPredicate) predicate);
     }
 
@@ -370,7 +380,7 @@ public interface DistributedLongStream extends LongStream {
      * @return {@code true} if either all elements of the stream match the
      * provided predicate or the stream is empty, otherwise {@code false}
      */
-    default boolean allMatch(Distributed.LongPredicate predicate) {
+    default boolean allMatch(DistributedLongPredicate predicate) {
         return allMatch((LongPredicate) predicate);
     }
 
@@ -389,7 +399,7 @@ public interface DistributedLongStream extends LongStream {
      * @return {@code true} if either no elements of the stream match the
      * provided predicate or the stream is empty, otherwise {@code false}
      */
-    default boolean noneMatch(Distributed.LongPredicate predicate) {
+    default boolean noneMatch(DistributedLongPredicate predicate) {
         return noneMatch((LongPredicate) predicate);
     }
 

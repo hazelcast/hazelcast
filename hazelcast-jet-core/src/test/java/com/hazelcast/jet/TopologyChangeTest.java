@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.Distributed.Supplier;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -190,15 +190,15 @@ public class TopologyChangeTest extends JetTestSupport {
         static List<Throwable> completeErrors = new CopyOnWriteArrayList<>();
 
         private final RuntimeException initError;
-        private final Supplier<Processor> supplier;
+        private final DistributedSupplier<Processor> supplier;
 
         private boolean initCalled;
 
-        MockSupplier(Supplier<Processor> supplier) {
+        MockSupplier(DistributedSupplier<Processor> supplier) {
             this(null, supplier);
         }
 
-        MockSupplier(RuntimeException initError, Supplier<Processor> supplier) {
+        MockSupplier(RuntimeException initError, DistributedSupplier<Processor> supplier) {
             this.initError = initError;
             this.supplier = supplier;
         }

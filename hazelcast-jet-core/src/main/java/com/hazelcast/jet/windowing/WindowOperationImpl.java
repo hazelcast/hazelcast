@@ -16,24 +16,26 @@
 
 package com.hazelcast.jet.windowing;
 
-import com.hazelcast.jet.Distributed;
-import com.hazelcast.jet.Distributed.BinaryOperator;
+import com.hazelcast.jet.function.DistributedBinaryOperator;
+import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedSupplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 class WindowOperationImpl<T, A, R> implements WindowOperation<T, A, R> {
-    private final Distributed.Supplier<A> createAccumulatorF;
-    private final Distributed.BiFunction<A, T, A> accumulateItemF;
-    private final Distributed.BinaryOperator<A> combineAccumulatorsF;
-    private final Distributed.BinaryOperator<A> deductAccumulatorF;
-    private final Distributed.Function<A, R> finishAccumulationF;
+    private final DistributedSupplier<A> createAccumulatorF;
+    private final DistributedBiFunction<A, T, A> accumulateItemF;
+    private final DistributedBinaryOperator<A> combineAccumulatorsF;
+    private final DistributedBinaryOperator<A> deductAccumulatorF;
+    private final DistributedFunction<A, R> finishAccumulationF;
 
-    WindowOperationImpl(Distributed.Supplier<A> createAccumulatorF,
-                        Distributed.BiFunction<A, T, A> accumulateItemF,
-                        Distributed.BinaryOperator<A> combineAccumulatorsF,
-                        Distributed.BinaryOperator<A> deductAccumulatorF,
-                        Distributed.Function<A, R> finishAccumulationF
+    WindowOperationImpl(DistributedSupplier<A> createAccumulatorF,
+                        DistributedBiFunction<A, T, A> accumulateItemF,
+                        DistributedBinaryOperator<A> combineAccumulatorsF,
+                        DistributedBinaryOperator<A> deductAccumulatorF,
+                        DistributedFunction<A, R> finishAccumulationF
     ) {
         this.createAccumulatorF = createAccumulatorF;
         this.accumulateItemF = accumulateItemF;
@@ -43,27 +45,27 @@ class WindowOperationImpl<T, A, R> implements WindowOperation<T, A, R> {
     }
 
     @Override @Nonnull
-    public Distributed.Supplier<A> createAccumulatorF() {
+    public DistributedSupplier<A> createAccumulatorF() {
         return createAccumulatorF;
     }
 
     @Override @Nonnull
-    public Distributed.BiFunction<A, T, A> accumulateItemF() {
+    public DistributedBiFunction<A, T, A> accumulateItemF() {
         return accumulateItemF;
     }
 
     @Override @Nonnull
-    public Distributed.BinaryOperator<A> combineAccumulatorsF() {
+    public DistributedBinaryOperator<A> combineAccumulatorsF() {
         return combineAccumulatorsF;
     }
 
     @Override @Nullable
-    public BinaryOperator<A> deductAccumulatorF() {
+    public DistributedBinaryOperator<A> deductAccumulatorF() {
         return deductAccumulatorF;
     }
 
     @Override @Nonnull
-    public Distributed.Function<A, R> finishAccumulationF() {
+    public DistributedFunction<A, R> finishAccumulationF() {
         return finishAccumulationF;
     }
 }

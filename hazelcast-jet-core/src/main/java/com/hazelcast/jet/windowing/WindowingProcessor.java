@@ -17,7 +17,7 @@
 package com.hazelcast.jet.windowing;
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Distributed.ToLongFunction;
+import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.jet.Punctuation;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
@@ -30,7 +30,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.LongStream;
 
-import static com.hazelcast.jet.Distributed.Comparator.naturalOrder;
+import static com.hazelcast.jet.function.DistributedComparator.naturalOrder;
 import static java.lang.Math.min;
 import static java.util.Collections.emptyMap;
 
@@ -48,7 +48,7 @@ class WindowingProcessor<T, A, R> extends AbstractProcessor {
     final Map<Object, A> slidingWindow = new HashMap<>();
 
     private final WindowDefinition wDef;
-    private final ToLongFunction<? super T> extractFrameTimestampF;
+    private final DistributedToLongFunction<? super T> extractFrameTimestampF;
     private final Function<? super T, ?> extractKeyF;
     private final WindowOperation<? super T, A, R> winOp;
 
@@ -59,7 +59,7 @@ class WindowingProcessor<T, A, R> extends AbstractProcessor {
 
     WindowingProcessor(
             WindowDefinition winDef,
-            ToLongFunction<? super T> extractFrameTimestampF,
+            DistributedToLongFunction<? super T> extractFrameTimestampF,
             Function<? super T, ?> extractKeyF,
             WindowOperation<? super T, A, R> winOp) {
         this.wDef = winDef;

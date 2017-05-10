@@ -17,8 +17,8 @@
 package com.hazelcast.jet.stream;
 
 
-import com.hazelcast.jet.Distributed.Function;
-import com.hazelcast.jet.Distributed.ToDoubleFunction;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedToDoubleFunction;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -50,7 +50,7 @@ public class DistributedStreamNonDistributedFunctionsTest extends AbstractStream
 
     @Test
     public void map() {
-        Function<Integer, String> f = (Function<Integer, String> & Serializable) Object::toString;
+        DistributedFunction<Integer, String> f = (DistributedFunction<Integer, String> & Serializable) Object::toString;
         stream.map(f);
     }
 
@@ -115,7 +115,7 @@ public class DistributedStreamNonDistributedFunctionsTest extends AbstractStream
 
     @Test
     public void mapToDouble() {
-        ToDoubleFunction<Integer> mapper = (ToDoubleFunction<Integer> & Serializable) m -> m;
+        DistributedToDoubleFunction<Integer> mapper = (DistributedToDoubleFunction<Integer> & Serializable) m -> m;
         stream.mapToDouble(mapper);
     }
 

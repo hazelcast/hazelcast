@@ -16,29 +16,29 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.Distributed;
-import com.hazelcast.jet.Distributed.BiConsumer;
-import com.hazelcast.jet.Distributed.Consumer;
-import com.hazelcast.jet.Distributed.IntFunction;
+import com.hazelcast.jet.function.DistributedBiConsumer;
+import com.hazelcast.jet.function.DistributedConsumer;
+import com.hazelcast.jet.function.DistributedIntFunction;
 import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Punctuation;
+import com.hazelcast.jet.function.DistributedSupplier;
 
 import javax.annotation.Nonnull;
 
 public final class WriteBufferedP<B, T> implements Processor {
 
-    private final Consumer<B> flushBuffer;
-    private final IntFunction<B> newBuffer;
-    private final BiConsumer<B, T> addToBuffer;
-    private final Consumer<B> disposeBuffer;
+    private final DistributedConsumer<B> flushBuffer;
+    private final DistributedIntFunction<B> newBuffer;
+    private final DistributedBiConsumer<B, T> addToBuffer;
+    private final DistributedConsumer<B> disposeBuffer;
     private B buffer;
 
-    WriteBufferedP(IntFunction<B> newBuffer,
-                   BiConsumer<B, T> addToBuffer,
-                   Consumer<B> flushBuffer,
-                   Consumer<B> disposeBuffer) {
+    WriteBufferedP(DistributedIntFunction<B> newBuffer,
+                   DistributedBiConsumer<B, T> addToBuffer,
+                   DistributedConsumer<B> flushBuffer,
+                   DistributedConsumer<B> disposeBuffer) {
         this.newBuffer = newBuffer;
         this.addToBuffer = addToBuffer;
         this.flushBuffer = flushBuffer;
@@ -51,11 +51,11 @@ public final class WriteBufferedP<B, T> implements Processor {
     }
 
     @Nonnull
-    public static <B, T> Distributed.Supplier<Processor> writeBuffered(
-            IntFunction<B> newBuffer,
-            BiConsumer<B, T> addToBuffer,
-            Consumer<B> consumeBuffer,
-            Consumer<B> closeBuffer
+    public static <B, T> DistributedSupplier<Processor> writeBuffered(
+            DistributedIntFunction<B> newBuffer,
+            DistributedBiConsumer<B, T> addToBuffer,
+            DistributedConsumer<B> consumeBuffer,
+            DistributedConsumer<B> closeBuffer
     ) {
         return () -> new WriteBufferedP<>(newBuffer, addToBuffer, consumeBuffer, closeBuffer);
     }

@@ -18,7 +18,7 @@ package com.hazelcast.jet.connector.hadoop;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Distributed.BiFunction;
+import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
@@ -91,9 +91,9 @@ import static org.apache.hadoop.mapred.Reporter.NULL;
 public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
 
     private final Traverser<R> trav;
-    private final BiFunction<K, V, R> mapper;
+    private final DistributedBiFunction<K, V, R> mapper;
 
-    private ReadHdfsP(@Nonnull List<RecordReader> recordReaders, @Nonnull BiFunction<K, V, R> mapper) {
+    private ReadHdfsP(@Nonnull List<RecordReader> recordReaders, @Nonnull DistributedBiFunction<K, V, R> mapper) {
         this.trav = traverseIterable(recordReaders).flatMap(this::traverseRecordReader);
         this.mapper = mapper;
     }
@@ -151,7 +151,7 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
      */
     @Nonnull
     public static <K, V, R> MetaSupplier<K, V, R> readHdfs(
-            @Nonnull JobConf jobConf, @Nonnull BiFunction<K, V, R> mapper
+            @Nonnull JobConf jobConf, @Nonnull DistributedBiFunction<K, V, R> mapper
     ) {
         return new MetaSupplier<>(asSerializable(jobConf), mapper);
     }
@@ -161,13 +161,13 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
         static final long serialVersionUID = 1L;
 
         private final SerializableJobConf jobConf;
-        private final BiFunction<K, V, R> mapper;
+        private final DistributedBiFunction<K, V, R> mapper;
 
         private transient Map<Address, List<IndexedInputSplit>> assigned;
         private transient ILogger logger;
 
 
-        MetaSupplier(@Nonnull SerializableJobConf jobConf, @Nonnull BiFunction<K, V, R> mapper) {
+        MetaSupplier(@Nonnull SerializableJobConf jobConf, @Nonnull DistributedBiFunction<K, V, R> mapper) {
             this.jobConf = jobConf;
             this.mapper = mapper;
         }
@@ -334,11 +334,11 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
 
         private SerializableJobConf jobConf;
         private List<IndexedInputSplit> assignedSplits;
-        private BiFunction<K, V, R> mapper;
+        private DistributedBiFunction<K, V, R> mapper;
 
         Supplier(SerializableJobConf jobConf,
                  Collection<IndexedInputSplit> assignedSplits,
-                 @Nonnull BiFunction<K, V, R> mapper
+                 @Nonnull DistributedBiFunction<K, V, R> mapper
         ) {
             this.jobConf = jobConf;
             this.assignedSplits = assignedSplits.stream().collect(toList());
@@ -378,7 +378,7 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
             jobConf = new SerializableJobConf();
             jobConf.readFields(in);
             assignedSplits = (List<IndexedInputSplit>) in.readObject();
-            mapper = (BiFunction<K, V, R>) in.readObject();
+            mapper = (DistributedBiFunction<K, V, R>) in.readObject();
         }
     }
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.Distributed.Function;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.impl.SerializationConstants;
 import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
@@ -28,7 +28,7 @@ import com.hazelcast.util.UuidUtil;
 import java.io.IOException;
 import java.io.Serializable;
 
-import static com.hazelcast.jet.DistributedFunctions.wholeItem;
+import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 import static com.hazelcast.jet.Partitioner.defaultPartitioner;
 
 /**
@@ -230,7 +230,7 @@ public class Edge implements IdentifiedDataSerializable {
      * strategy. The strategy is applied to the result of the
      * {@code keyExtractor} function.
      */
-    public <T> Edge partitioned(Distributed.Function<T, ?> keyExtractor) {
+    public <T> Edge partitioned(DistributedFunction<T, ?> keyExtractor) {
         return partitioned(keyExtractor, defaultPartitioner());
     }
 
@@ -239,7 +239,7 @@ public class Edge implements IdentifiedDataSerializable {
      * pattern and applies the provided partitioning strategy. The strategy
      * is applied to the result of the {@code keyExtractor} function.
      */
-    public <T, K> Edge partitioned(Distributed.Function<T, K> keyExtractor, Partitioner<? super K> partitioner) {
+    public <T, K> Edge partitioned(DistributedFunction<T, K> keyExtractor, Partitioner<? super K> partitioner) {
         this.forwardingPattern = ForwardingPattern.PARTITIONED;
         this.partitioner = new KeyPartitioner<>(keyExtractor, partitioner);
         return this;
@@ -494,10 +494,10 @@ public class Edge implements IdentifiedDataSerializable {
 
         private static final long serialVersionUID = 1L;
 
-        private final Function<T, K> keyExtractor;
+        private final DistributedFunction<T, K> keyExtractor;
         private final Partitioner<? super K> partitioner;
 
-        KeyPartitioner(Function<T, K> keyExtractor, Partitioner<? super K> partitioner) {
+        KeyPartitioner(DistributedFunction<T, K> keyExtractor, Partitioner<? super K> partitioner) {
             this.keyExtractor = keyExtractor;
             this.partitioner = partitioner;
         }

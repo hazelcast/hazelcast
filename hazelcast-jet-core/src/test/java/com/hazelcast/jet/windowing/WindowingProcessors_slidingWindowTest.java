@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.windowing;
 
-import com.hazelcast.jet.Distributed.Function;
-import com.hazelcast.jet.Distributed.Supplier;
-import com.hazelcast.jet.Distributed.ToLongFunction;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.jet.accumulator.LongAccumulator;
@@ -57,7 +57,7 @@ import static org.mockito.Mockito.mock;
  * <ul><li>
  *     {@link WindowingProcessors#slidingWindowStage2(WindowDefinition, WindowOperation)}
  * </li><li>
- *     {@link WindowingProcessors#slidingWindowSingleStage(Function, ToLongFunction,
+ *     {@link WindowingProcessors#slidingWindowSingleStage(DistributedFunction, DistributedToLongFunction,
  *     WindowDefinition, WindowOperation)}
  * </ul>
  */
@@ -105,7 +105,7 @@ public class WindowingProcessors_slidingWindowTest extends StreamingTestSupport 
                     hasDeduct ? (acc1, acc2) -> new LongAccumulator(acc1.get() - acc2.get()) : null,
                     LongAccumulator::get);
 
-        Supplier<Processor> procSupplier = singleStageProcessor
+        DistributedSupplier<Processor> procSupplier = singleStageProcessor
                 ? slidingWindowSingleStage(t -> KEY, Entry<Long, Long>::getKey, windowDef, operation)
                 : slidingWindowStage2(windowDef, operation);
         processor = (WindowingProcessor<?, ?, Long>) procSupplier.get();

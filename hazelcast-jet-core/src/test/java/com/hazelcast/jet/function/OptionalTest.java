@@ -1,6 +1,21 @@
-package com.hazelcast.jet;
+/*
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import com.hazelcast.jet.Distributed.Optional;
+package com.hazelcast.jet.function;
+
 import com.hazelcast.jet.TestUtil.DummyUncheckedTestException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -12,7 +27,7 @@ import org.junit.runner.RunWith;
 
 import java.util.NoSuchElementException;
 
-import static com.hazelcast.jet.Distributed.Optional.empty;
+import static com.hazelcast.jet.function.DistributedOptional.empty;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -22,7 +37,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 public class OptionalTest {
 
-    private Optional<Integer> optional = Optional.of(123456);
+    private DistributedOptional<Integer> optional = DistributedOptional.of(123456);
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -72,8 +87,8 @@ public class OptionalTest {
     public void testEquals() {
         assertTrue(optional.equals(optional));
         assertFalse(optional.equals("blabla"));
-        assertTrue(empty().equals(Distributed.Optional.ofNullable(null)));
-        assertTrue(Distributed.Optional.of(5).equals(Distributed.Optional.ofNullable(5)));
+        assertTrue(empty().equals(DistributedOptional.ofNullable(null)));
+        assertTrue(DistributedOptional.of(5).equals(DistributedOptional.ofNullable(5)));
     }
 
     @Test
@@ -85,7 +100,7 @@ public class OptionalTest {
         // empty to empty
         assertFalse(empty().flatMap(v -> empty()).isPresent());
         // not-null to not-null
-        assertEquals(Integer.valueOf(5), optional.flatMap(v -> Distributed.Optional.of(5)).get());
+        assertEquals(Integer.valueOf(5), optional.flatMap(v -> DistributedOptional.of(5)).get());
     }
 
     @Test

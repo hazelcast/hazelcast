@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.Distributed.Supplier;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.SerializationConstants;
 import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
 import com.hazelcast.nio.ObjectDataInput;
@@ -73,7 +73,7 @@ public class Vertex implements IdentifiedDataSerializable {
      * @param name the unique name of the vertex
      * @param processorSupplier the simple, parameterless supplier of {@code Processor} instances
      */
-    public Vertex(@Nonnull String name, @Nonnull Supplier<? extends Processor> processorSupplier) {
+    public Vertex(@Nonnull String name, @Nonnull DistributedSupplier<? extends Processor> processorSupplier) {
         checkNotNull(name, "name");
         checkNotNull(processorSupplier, "supplier");
 

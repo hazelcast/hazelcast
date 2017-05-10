@@ -16,7 +16,10 @@
 
 package com.hazelcast.jet.windowing;
 
-import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.DistributedBinaryOperator;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.stream.DistributedCollector;
 
 import javax.annotation.Nonnull;
@@ -59,13 +62,13 @@ public interface WindowOperation<T, A, R> extends Serializable {
      * this method) and can be evicted from a processor's storage.
      */
     @Nonnull
-    Distributed.Supplier<A> createAccumulatorF();
+    DistributedSupplier<A> createAccumulatorF();
 
     /**
      * A function that updates the accumulated value to account for a new item.
      */
     @Nonnull
-    Distributed.BiFunction<A, T, A> accumulateItemF();
+    DistributedBiFunction<A, T, A> accumulateItemF();
 
     /**
      * A function that accepts two accumulators, merges their contents, and
@@ -74,7 +77,7 @@ public interface WindowOperation<T, A, R> extends Serializable {
      * not the right-hand one.
      */
     @Nonnull
-    Distributed.BinaryOperator<A> combineAccumulatorsF();
+    DistributedBinaryOperator<A> combineAccumulatorsF();
 
     /**
      * A function that accepts two accumulators, deducts the contents of the
@@ -97,14 +100,14 @@ public interface WindowOperation<T, A, R> extends Serializable {
      * difference.
      */
     @Nullable
-    Distributed.BinaryOperator<A> deductAccumulatorF();
+    DistributedBinaryOperator<A> deductAccumulatorF();
 
     /**
      * A function that finishes the accumulation process by transforming
      * the accumulator object into the final result.
      */
     @Nonnull
-    Distributed.Function<A, R> finishAccumulationF();
+    DistributedFunction<A, R> finishAccumulationF();
 
     /**
      * Returns a new {@code WindowOperation} object composed from the provided
@@ -120,11 +123,11 @@ public interface WindowOperation<T, A, R> extends Serializable {
 *
      */
     @Nonnull
-    static <T, A, R> WindowOperation<T, A, R> of(Distributed.Supplier<A> createAccumulatorF,
-                                                 Distributed.BiFunction<A, T, A> accumulateItemF,
-                                                 Distributed.BinaryOperator<A> combineAccumulatorsF,
-                                                 Distributed.BinaryOperator<A> deductAccumulatorF,
-                                                 Distributed.Function<A, R> finishAccumulationF
+    static <T, A, R> WindowOperation<T, A, R> of(DistributedSupplier<A> createAccumulatorF,
+                                                 DistributedBiFunction<A, T, A> accumulateItemF,
+                                                 DistributedBinaryOperator<A> combineAccumulatorsF,
+                                                 DistributedBinaryOperator<A> deductAccumulatorF,
+                                                 DistributedFunction<A, R> finishAccumulationF
     ) {
         Objects.requireNonNull(createAccumulatorF);
         Objects.requireNonNull(accumulateItemF);

@@ -21,10 +21,10 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.Distributed.BiConsumer;
-import com.hazelcast.jet.Distributed.Consumer;
-import com.hazelcast.jet.Distributed.Function;
-import com.hazelcast.jet.Distributed.IntFunction;
+import com.hazelcast.jet.function.DistributedBiConsumer;
+import com.hazelcast.jet.function.DistributedConsumer;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedIntFunction;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
 
@@ -39,7 +39,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
-import static com.hazelcast.jet.DistributedFunctions.noopConsumer;
+import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static java.util.stream.Collectors.toList;
 
 public final class HazelcastWriters {
@@ -91,7 +91,7 @@ public final class HazelcastWriters {
      */
     private static class CacheFlush {
 
-        static Function<HazelcastInstance, Consumer<ArrayMap>> flushToCache(String name) {
+        static DistributedFunction<HazelcastInstance, DistributedConsumer<ArrayMap>> flushToCache(String name) {
             return instance -> {
                 ICache cache = instance.getCacheManager().getCache(name);
                 return buffer -> {
@@ -164,19 +164,19 @@ public final class HazelcastWriters {
         static final long serialVersionUID = 1L;
 
         private final SerializableClientConfig clientConfig;
-        private final Function<HazelcastInstance, Consumer<B>> instanceToFlushBuffer;
-        private final IntFunction<B> bufferSupplier;
-        private final BiConsumer<B, T> addToBuffer;
-        private final Consumer<B> disposeBuffer;
+        private final DistributedFunction<HazelcastInstance, DistributedConsumer<B>> instanceToFlushBuffer;
+        private final DistributedIntFunction<B> bufferSupplier;
+        private final DistributedBiConsumer<B, T> addToBuffer;
+        private final DistributedConsumer<B> disposeBuffer;
 
-        private transient Consumer<B> flushBuffer;
+        private transient DistributedConsumer<B> flushBuffer;
         private transient HazelcastInstance client;
 
         HazelcastWriterSupplier(SerializableClientConfig clientConfig,
-                                IntFunction<B> newBuffer,
-                                BiConsumer<B, T> addToBuffer,
-                                Function<HazelcastInstance, Consumer<B>> instanceToFlushBuffer,
-                                Consumer<B> disposeBuffer) {
+                                DistributedIntFunction<B> newBuffer,
+                                DistributedBiConsumer<B, T> addToBuffer,
+                                DistributedFunction<HazelcastInstance, DistributedConsumer<B>> instanceToFlushBuffer,
+                                DistributedConsumer<B> disposeBuffer) {
             this.clientConfig = clientConfig;
             this.instanceToFlushBuffer = instanceToFlushBuffer;
             this.bufferSupplier = newBuffer;

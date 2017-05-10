@@ -16,6 +16,11 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetTestInstanceFactory;
+import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -32,7 +37,7 @@ import static com.hazelcast.jet.TestUtil.executeAndPeel;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class TimeoutTest extends JetTestSupport {
+public class OperationTimeoutTest extends JetTestSupport {
 
     private static final int TIMEOUT_MILLIS = 8000;
 
@@ -60,7 +65,7 @@ public class TimeoutTest extends JetTestSupport {
         // Given
         JetInstance instance = factory.newMember(config);
         DAG dag = new DAG();
-        Vertex slow = dag.newVertex("slow", SlowProcessor::new);
+        dag.newVertex("slow", SlowProcessor::new);
 
         // When
         executeAndPeel(instance.newJob(dag));
@@ -73,7 +78,7 @@ public class TimeoutTest extends JetTestSupport {
         factory.newMember(config);
 
         DAG dag = new DAG();
-        Vertex slow = dag.newVertex("slow", SlowProcessor::new);
+        dag.newVertex("slow", SlowProcessor::new);
 
         // When
         executeAndPeel(instance.newJob(dag));

@@ -17,10 +17,10 @@
 package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Distributed;
-import com.hazelcast.jet.Distributed.Function;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.stream.impl.processor.TransformP;
 
@@ -32,10 +32,10 @@ import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
 
 class TransformPipeline<E_IN, E_OUT> extends AbstractIntermediatePipeline<E_IN, E_OUT> {
 
-    private final Distributed.Function<Traverser<E_IN>, Traverser<E_OUT>> transformer;
+    private final DistributedFunction<Traverser<E_IN>, Traverser<E_OUT>> transformer;
 
     TransformPipeline(StreamContext context, Pipeline<E_IN> upstream,
-                      Distributed.Function<Traverser<E_IN>, Traverser<E_OUT>> transformer) {
+                      DistributedFunction<Traverser<E_IN>, Traverser<E_OUT>> transformer) {
         super(context, upstream.isOrdered(), upstream);
         this.transformer = transformer;
     }
@@ -45,7 +45,7 @@ class TransformPipeline<E_IN, E_OUT> extends AbstractIntermediatePipeline<E_IN, 
         Vertex previous = upstream.buildDAG(dag);
         // the lambda below must not capture `this`, therefore the instance variable
         // must first be loaded into a local variable
-        Function<Traverser<E_IN>, Traverser<E_OUT>> transformer = this.transformer;
+        DistributedFunction<Traverser<E_IN>, Traverser<E_OUT>> transformer = this.transformer;
         Vertex transform = dag.newVertex(uniqueVertexName("transform"), () -> new TransformP<>(transformer));
         if (upstream.isOrdered()) {
             transform.localParallelism(1);
@@ -55,23 +55,23 @@ class TransformPipeline<E_IN, E_OUT> extends AbstractIntermediatePipeline<E_IN, 
     }
 
     @Override
-    public DistributedStream<E_OUT> filter(Distributed.Predicate<? super E_OUT> predicate) {
+    public DistributedStream<E_OUT> filter(DistributedPredicate<? super E_OUT> predicate) {
         // prevent capture of `this`
-        Function<Traverser<E_IN>, Traverser<E_OUT>> transformer = this.transformer;
+        DistributedFunction<Traverser<E_IN>, Traverser<E_OUT>> transformer = this.transformer;
         return new TransformPipeline<>(context, upstream, t -> transformer.apply(t).filter(predicate));
     }
 
     @Override
-    public <R> DistributedStream<R> map(Distributed.Function<? super E_OUT, ? extends R> mapper) {
+    public <R> DistributedStream<R> map(DistributedFunction<? super E_OUT, ? extends R> mapper) {
         // prevent capture of `this`
-        Function<Traverser<E_IN>, Traverser<E_OUT>> transformer = this.transformer;
+        DistributedFunction<Traverser<E_IN>, Traverser<E_OUT>> transformer = this.transformer;
         return new TransformPipeline<>(context, upstream, t -> transformer.apply(t).map(mapper));
     }
 
     @Override
-    public <R> DistributedStream<R> flatMap(Distributed.Function<? super E_OUT, ? extends Stream<? extends R>> mapper) {
+    public <R> DistributedStream<R> flatMap(DistributedFunction<? super E_OUT, ? extends Stream<? extends R>> mapper) {
         // prevent capture of `this`
-        Function<Traverser<E_IN>, Traverser<E_OUT>> transformer = this.transformer;
+        DistributedFunction<Traverser<E_IN>, Traverser<E_OUT>> transformer = this.transformer;
         return new TransformPipeline<>(context, upstream,
                 t -> transformer.apply(t)
                                 .flatMap(item -> traverseStream(mapper.apply(item))));

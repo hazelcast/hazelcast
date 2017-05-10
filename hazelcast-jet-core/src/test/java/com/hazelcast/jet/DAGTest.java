@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.Distributed.Supplier;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
@@ -42,7 +42,7 @@ import static org.junit.Assert.assertSame;
 @RunWith(HazelcastParallelClassRunner.class)
 public class DAGTest {
 
-    private static final Supplier<Processor> PROCESSOR_SUPPLIER = TestProcessor::new;
+    private static final DistributedSupplier<Processor> PROCESSOR_SUPPLIER = TestProcessor::new;
 
     @Rule
     public ExpectedException exceptionRule = ExpectedException.none();

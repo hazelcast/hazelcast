@@ -16,7 +16,10 @@
 
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.function.DistributedBiConsumer;
+import com.hazelcast.jet.function.DistributedBinaryOperator;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.stream.impl.reducers.DistributedCollectorImpl;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
@@ -48,7 +51,7 @@ public interface DistributedCollector<T, A, R> extends java.util.stream.Collecto
      * @return a function which returns a new, mutable result container
      */
     @Override
-    Distributed.Supplier<A> supplier();
+    DistributedSupplier<A> supplier();
 
     /**
      * A function that folds a value into a mutable result container.
@@ -56,7 +59,7 @@ public interface DistributedCollector<T, A, R> extends java.util.stream.Collecto
      * @return a function which folds a value into a mutable result container
      */
     @Override
-    Distributed.BiConsumer<A, T> accumulator();
+    DistributedBiConsumer<A, T> accumulator();
 
     /**
      * A function that accepts two partial results and merges them.  The
@@ -67,7 +70,7 @@ public interface DistributedCollector<T, A, R> extends java.util.stream.Collecto
      * result
      */
     @Override
-    Distributed.BinaryOperator<A> combiner();
+    DistributedBinaryOperator<A> combiner();
 
     /**
      * Perform the final transformation from the intermediate accumulation type
@@ -81,7 +84,7 @@ public interface DistributedCollector<T, A, R> extends java.util.stream.Collecto
      * result
      */
     @Override
-    Distributed.Function<A, R> finisher();
+    DistributedFunction<A, R> finisher();
 
     /**
      * Returns a new {@code Distributed.Collector} described by the given {@code supplier},
@@ -100,9 +103,9 @@ public interface DistributedCollector<T, A, R> extends java.util.stream.Collecto
      * @return the new {@code Distributed.Collector}
      * @throws NullPointerException if any argument is null
      */
-    static <T, R> DistributedCollector<T, R, R> of(Distributed.Supplier<R> supplier,
-                                                   Distributed.BiConsumer<R, T> accumulator,
-                                                   Distributed.BinaryOperator<R> combiner,
+    static <T, R> DistributedCollector<T, R, R> of(DistributedSupplier<R> supplier,
+                                                   DistributedBiConsumer<R, T> accumulator,
+                                                   DistributedBinaryOperator<R> combiner,
                                                    Characteristics... characteristics) {
         Objects.requireNonNull(supplier);
         Objects.requireNonNull(accumulator);
@@ -131,10 +134,10 @@ public interface DistributedCollector<T, A, R> extends java.util.stream.Collecto
      * @return the new {@code Distributed.Collector}
      * @throws NullPointerException if any argument is null
      */
-    static <T, A, R> DistributedCollector<T, A, R> of(Distributed.Supplier<A> supplier,
-                                                      Distributed.BiConsumer<A, T> accumulator,
-                                                      Distributed.BinaryOperator<A> combiner,
-                                                      Distributed.Function<A, R> finisher,
+    static <T, A, R> DistributedCollector<T, A, R> of(DistributedSupplier<A> supplier,
+                                                      DistributedBiConsumer<A, T> accumulator,
+                                                      DistributedBinaryOperator<A> combiner,
+                                                      DistributedFunction<A, R> finisher,
                                                       Characteristics... characteristics) {
         Objects.requireNonNull(supplier);
         Objects.requireNonNull(accumulator);

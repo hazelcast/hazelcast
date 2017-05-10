@@ -17,10 +17,10 @@
 package com.hazelcast.jet.windowing;
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Distributed.BinaryOperator;
-import com.hazelcast.jet.Distributed.Function;
-import com.hazelcast.jet.Distributed.Supplier;
-import com.hazelcast.jet.Distributed.ToLongFunction;
+import com.hazelcast.jet.function.DistributedBinaryOperator;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.jet.Punctuation;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.stream.DistributedCollector;
@@ -44,7 +44,7 @@ import static java.lang.System.arraycopy;
 
 /**
  * Session window processor. See {@link
- * WindowingProcessors#sessionWindow(long, ToLongFunction, Function,
+ * WindowingProcessors#sessionWindow(long, DistributedToLongFunction, DistributedFunction,
  * DistributedCollector) sessionWindow(sessionTimeout, extractTimestampF,
  * extractKeyF, collector)} for documentation.
  *
@@ -60,18 +60,18 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
     SortedMap<Long, Set<K>> deadlineToKeys = new TreeMap<>();
 
     private final long sessionTimeout;
-    private final ToLongFunction<? super T> extractTimestampF;
-    private final Function<? super T, K> extractKeyF;
-    private final Supplier<A> newAccumulatorF;
+    private final DistributedToLongFunction<? super T> extractTimestampF;
+    private final DistributedFunction<? super T, K> extractKeyF;
+    private final DistributedSupplier<A> newAccumulatorF;
     private final BiConsumer<? super A, ? super T> accumulateF;
-    private final Function<A, R> finishAccumulationF;
-    private final BinaryOperator<A> combineAccF;
+    private final DistributedFunction<A, R> finishAccumulationF;
+    private final DistributedBinaryOperator<A> combineAccF;
     private final FlatMapper<Punctuation, Session<K, R>> expiredSessionFlatmapper;
 
     SessionWindowP(
             long sessionTimeout,
-            ToLongFunction<? super T> extractTimestampF,
-            Function<? super T, K> extractKeyF,
+            DistributedToLongFunction<? super T> extractTimestampF,
+            DistributedFunction<? super T, K> extractKeyF,
             DistributedCollector<? super T, A, R> collector
     ) {
         this.extractTimestampF = extractTimestampF;

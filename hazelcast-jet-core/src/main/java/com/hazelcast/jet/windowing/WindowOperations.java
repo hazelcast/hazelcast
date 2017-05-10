@@ -16,10 +16,12 @@
 
 package com.hazelcast.jet.windowing;
 
-import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.accumulator.LinTrendAccumulator;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.accumulator.MutableReference;
+import com.hazelcast.jet.function.DistributedBinaryOperator;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedToLongFunction;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
@@ -61,7 +63,7 @@ public final class WindowOperations {
      * {@code getValueF} applied to each item in the window.
      */
     public static <T> WindowOperation<T, LongAccumulator, Long> summingToLong(
-            @Nonnull Distributed.ToLongFunction<T> getValueF
+            @Nonnull DistributedToLongFunction<T> getValueF
     ) {
         return WindowOperation.of(
                 LongAccumulator::new,
@@ -80,8 +82,8 @@ public final class WindowOperations {
      * extracted from each item by the two provided functions.
      */
     public static <T> WindowOperation<T, LinTrendAccumulator, Double> linearTrend(
-            @Nonnull Distributed.ToLongFunction<T> getX,
-            @Nonnull Distributed.ToLongFunction<T> getY
+            @Nonnull DistributedToLongFunction<T> getX,
+            @Nonnull DistributedToLongFunction<T> getY
     ) {
         return WindowOperation.of(
                 LinTrendAccumulator::new,
@@ -179,9 +181,9 @@ public final class WindowOperations {
      */
     public static <T, U> WindowOperation<T, MutableReference<U>, U> reducing(
             U identity,
-            Distributed.Function<? super T, ? extends U> mapF,
-            Distributed.BinaryOperator<U> combineF,
-            Distributed.BinaryOperator<U> deductF
+            DistributedFunction<? super T, ? extends U> mapF,
+            DistributedBinaryOperator<U> combineF,
+            DistributedBinaryOperator<U> deductF
     ) {
         return new WindowOperationImpl<>(
                 () -> new MutableReference<>(identity),

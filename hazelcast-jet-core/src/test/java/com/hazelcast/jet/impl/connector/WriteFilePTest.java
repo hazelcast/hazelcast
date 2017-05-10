@@ -17,12 +17,12 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -299,7 +299,7 @@ public class WriteFilePTest extends JetTestSupport {
         }
     }
 
-    private DAG buildDag(Distributed.Function<String, String> toStringF, Charset charset, boolean append) {
+    private DAG buildDag(DistributedFunction<String, String> toStringF, Charset charset, boolean append) {
         DAG dag = new DAG();
         Vertex reader = dag.newVertex("reader", readList(list.getName()))
                 .localParallelism(1);

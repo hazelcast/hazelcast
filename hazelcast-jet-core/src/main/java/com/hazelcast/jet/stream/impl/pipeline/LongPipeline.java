@@ -17,8 +17,9 @@
 package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.function.DistributedComparator;
+import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.stream.DistributedCollectors;
 import com.hazelcast.jet.stream.DistributedDoubleStream;
 import com.hazelcast.jet.stream.DistributedIntStream;
@@ -165,7 +166,7 @@ class LongPipeline implements DistributedLongStream {
     public <R> R collect(Supplier<R> supplier,
                          ObjLongConsumer<R> accumulator,
                          BiConsumer<R, R> combiner) {
-        Distributed.BiConsumer<R, Long> boxedAccumulator = accumulator::accept;
+        DistributedBiConsumer<R, Long> boxedAccumulator = accumulator::accept;
         return inner.collect(supplier, boxedAccumulator, combiner);
     }
 
@@ -176,12 +177,12 @@ class LongPipeline implements DistributedLongStream {
 
     @Override
     public OptionalLong min() {
-        return toOptionalLong(inner.min(Distributed.Comparator.naturalOrder()));
+        return toOptionalLong(inner.min(DistributedComparator.naturalOrder()));
     }
 
     @Override
     public OptionalLong max() {
-        return toOptionalLong(inner.max(Distributed.Comparator.naturalOrder()));
+        return toOptionalLong(inner.max(DistributedComparator.naturalOrder()));
     }
 
     @Override

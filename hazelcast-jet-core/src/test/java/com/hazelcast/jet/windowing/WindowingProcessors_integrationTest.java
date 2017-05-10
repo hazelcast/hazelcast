@@ -37,13 +37,11 @@ import org.junit.runners.Parameterized.Parameters;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.DistributedFunctions.entryKey;
+import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.Processors.writeList;
 import static com.hazelcast.jet.windowing.PunctuationPolicies.limitingLagAndLull;

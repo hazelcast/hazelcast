@@ -16,16 +16,15 @@
 
 package com.hazelcast.jet.stream.impl.distributed;
 
-import com.hazelcast.jet.Distributed.Comparator;
-import com.hazelcast.jet.stream.impl.distributed.DistributedComparators.NullComparator;
+import com.hazelcast.jet.function.DistributedComparator;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.Distributed.Comparator.nullsFirst;
-import static com.hazelcast.jet.Distributed.Comparator.nullsLast;
+import static com.hazelcast.jet.function.DistributedComparator.nullsFirst;
+import static com.hazelcast.jet.function.DistributedComparator.nullsLast;
 import static com.hazelcast.jet.stream.impl.distributed.DistributedComparators.NATURAL_ORDER_COMPARATOR;
 import static com.hazelcast.jet.stream.impl.distributed.DistributedComparators.REVERSE_ORDER_COMPARATOR;
 import static org.junit.Assert.*;
@@ -42,14 +41,14 @@ public class DistributedComparatorsTest {
 
     @Test
     public void reverseOrderComparator() {
-        Comparator c = REVERSE_ORDER_COMPARATOR;
+        DistributedComparator c = REVERSE_ORDER_COMPARATOR;
         assertEquals(1, c.compare(1, 2));
         assertEquals(-1, c.compare(2, 1));
     }
 
     @Test
     public void nullsFirstComparator() {
-        Comparator c = nullsFirst(NATURAL_ORDER_COMPARATOR);
+        DistributedComparator c = nullsFirst(NATURAL_ORDER_COMPARATOR);
         assertEquals(-1, c.compare(1, 2));
         assertEquals(1, c.compare(2, 1));
         assertEquals(1, c.compare(0, null));
@@ -58,7 +57,7 @@ public class DistributedComparatorsTest {
 
     @Test
     public void nullsLastComparator() {
-        Comparator c = nullsLast(NATURAL_ORDER_COMPARATOR);
+        DistributedComparator c = nullsLast(NATURAL_ORDER_COMPARATOR);
         assertEquals(-1, c.compare(1, 2));
         assertEquals(1, c.compare(2, 1));
         assertEquals(-1, c.compare(0, null));
@@ -67,7 +66,7 @@ public class DistributedComparatorsTest {
 
     @Test
     public void nullsFirst_withoutWrapped() {
-        Comparator c = nullsFirst(null);
+        DistributedComparator c = nullsFirst(null);
         assertEquals(0, c.compare(1, 2));
         assertEquals(0, c.compare(2, 1));
         assertEquals(1, c.compare(0, null));
@@ -76,7 +75,7 @@ public class DistributedComparatorsTest {
 
     @Test
     public void nullsLast_withoutWrapped() {
-        Comparator c = nullsLast(null);
+        DistributedComparator c = nullsLast(null);
         assertEquals(0, c.compare(1, 2));
         assertEquals(0, c.compare(2, 1));
         assertEquals(-1, c.compare(0, null));

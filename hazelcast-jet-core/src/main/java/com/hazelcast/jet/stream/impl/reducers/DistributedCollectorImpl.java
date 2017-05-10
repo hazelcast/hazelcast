@@ -16,26 +16,25 @@
 
 package com.hazelcast.jet.stream.impl.reducers;
 
-import com.hazelcast.jet.Distributed;
-import com.hazelcast.jet.Distributed.BiConsumer;
-import com.hazelcast.jet.Distributed.BinaryOperator;
-import com.hazelcast.jet.Distributed.Function;
-import com.hazelcast.jet.Distributed.Supplier;
+import com.hazelcast.jet.function.DistributedBiConsumer;
+import com.hazelcast.jet.function.DistributedBinaryOperator;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.stream.DistributedCollector;
 
 import java.util.Set;
 
 public class DistributedCollectorImpl<T, A, R> implements DistributedCollector<T, A, R> {
 
-    private final Supplier<A> supplier;
-    private final BiConsumer<A, T> accumulator;
-    private final BinaryOperator<A> combiner;
+    private final DistributedSupplier<A> supplier;
+    private final DistributedBiConsumer<A, T> accumulator;
+    private final DistributedBinaryOperator<A> combiner;
     private final Set<Characteristics> characteristics;
-    private final Function<A, R> finisher;
+    private final DistributedFunction<A, R> finisher;
 
     public DistributedCollectorImpl(
-            Distributed.Supplier<A> supplier, Distributed.BiConsumer<A, T> accumulator,
-            Distributed.BinaryOperator<A> combiner, Distributed.Function<A, R> finisher,
+            DistributedSupplier<A> supplier, DistributedBiConsumer<A, T> accumulator,
+            DistributedBinaryOperator<A> combiner, DistributedFunction<A, R> finisher,
             Set<Characteristics> characteristics
     ) {
         this.supplier = supplier;
@@ -46,33 +45,33 @@ public class DistributedCollectorImpl<T, A, R> implements DistributedCollector<T
     }
 
     public DistributedCollectorImpl(
-            Distributed.Supplier<A> supplier, Distributed.BiConsumer<A, T> accumulator,
-            Distributed.BinaryOperator<A> combiner, Set<Characteristics> characteristics
+            DistributedSupplier<A> supplier, DistributedBiConsumer<A, T> accumulator,
+            DistributedBinaryOperator<A> combiner, Set<Characteristics> characteristics
     ) {
         this(supplier, accumulator, combiner, castingIdentity(), characteristics);
     }
 
-    static <I, R> Distributed.Function<I, R> castingIdentity() {
+    static <I, R> DistributedFunction<I, R> castingIdentity() {
         return i -> (R) i;
     }
 
     @Override
-    public Supplier<A> supplier() {
+    public DistributedSupplier<A> supplier() {
         return supplier;
     }
 
     @Override
-    public BiConsumer<A, T> accumulator() {
+    public DistributedBiConsumer<A, T> accumulator() {
         return accumulator;
     }
 
     @Override
-    public BinaryOperator<A> combiner() {
+    public DistributedBinaryOperator<A> combiner() {
         return combiner;
     }
 
     @Override
-    public Function<A, R> finisher() {
+    public DistributedFunction<A, R> finisher() {
         return finisher;
     }
 

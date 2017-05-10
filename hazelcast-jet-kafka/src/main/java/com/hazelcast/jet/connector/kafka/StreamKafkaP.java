@@ -17,7 +17,7 @@
 package com.hazelcast.jet.connector.kafka;
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Distributed.Supplier;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.util.Preconditions;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -60,7 +60,7 @@ public final class StreamKafkaP extends AbstractProcessor {
      * @param properties consumer properties which should contain consumer group name,
      *                   broker address and key/value deserializers
      */
-    public static Supplier<Processor> streamKafka(Properties properties, String... topics) {
+    public static DistributedSupplier<Processor> streamKafka(Properties properties, String... topics) {
         Preconditions.checkPositive(topics.length, "At least one topic must be supplied");
         Preconditions.checkTrue(properties.containsKey("group.id"), "Properties should contain `group.id`");
         properties.put("enable.auto.commit", false);

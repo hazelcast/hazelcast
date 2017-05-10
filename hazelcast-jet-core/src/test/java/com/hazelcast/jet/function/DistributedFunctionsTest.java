@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet;
+package com.hazelcast.jet.function;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.DistributedFunctions.entryKey;
-import static com.hazelcast.jet.DistributedFunctions.entryValue;
-import static com.hazelcast.jet.DistributedFunctions.noopConsumer;
-import static com.hazelcast.jet.DistributedFunctions.wholeItem;
 import static com.hazelcast.jet.Util.entry;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertSame;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
@@ -36,22 +33,22 @@ public class DistributedFunctionsTest {
     @Test
     public void when_wholeItem() {
         Object o = new Object();
-        assertSame(o, wholeItem().apply(o));
+        assertSame(o, DistributedFunctions.wholeItem().apply(o));
     }
 
     @Test
     public void when_entryKey() {
-        assertEquals(1, entryKey().apply(entry(1, 2)));
+        Assert.assertEquals(1, DistributedFunctions.entryKey().apply(entry(1, 2)));
     }
 
     @Test
     public void when_entryValue() {
-        assertEquals(2, entryValue().apply(entry(1, 2)));
+        Assert.assertEquals(2, DistributedFunctions.entryValue().apply(entry(1, 2)));
     }
 
     @Test
     public void when_noopConsumer() {
         // assert it's non-null and doesn't fail
-        noopConsumer().accept(1);
+        DistributedFunctions.noopConsumer().accept(1);
     }
 }

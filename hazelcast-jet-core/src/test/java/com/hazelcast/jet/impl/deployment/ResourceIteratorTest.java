@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.deployment;
 
-import com.hazelcast.jet.Distributed.IntFunction;
+import com.hazelcast.jet.function.DistributedIntFunction;
 import com.hazelcast.jet.config.ResourceConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -64,7 +64,7 @@ public class ResourceIteratorTest {
         doTest(3, i -> i == 2 ? "" : "contents" + i);
     }
 
-    private void doTest(int numFiles, IntFunction<String> contentsFactory) throws IOException {
+    private void doTest(int numFiles, DistributedIntFunction<String> contentsFactory) throws IOException {
         Path directory = null;
         Path[] files = null;
 

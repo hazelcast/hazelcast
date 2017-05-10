@@ -17,7 +17,7 @@
 package com.hazelcast.jet.stream.impl.reducers;
 
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Distributed.Function;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Processors;
@@ -33,15 +33,15 @@ import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 public class SinkReducer<T, K, V, R> implements DistributedCollector.Reducer<T, R> {
 
     final String sinkName;
-    final Function<JetInstance, ? extends R> toDistributedObject;
-    final Function<? super T, ? extends K> keyMapper;
-    final Function<? super T, ? extends V> valueMapper;
+    final DistributedFunction<JetInstance, ? extends R> toDistributedObject;
+    final DistributedFunction<? super T, ? extends K> keyMapper;
+    final DistributedFunction<? super T, ? extends V> valueMapper;
     final ProcessorSupplier processorSupplier;
 
     public SinkReducer(String sinkName,
-                       Function<JetInstance, ? extends R> toDistributedObject,
-                       Function<? super T, ? extends K> keyMapper,
-                       Function<? super T, ? extends V> valueMapper,
+                       DistributedFunction<JetInstance, ? extends R> toDistributedObject,
+                       DistributedFunction<? super T, ? extends K> keyMapper,
+                       DistributedFunction<? super T, ? extends V> valueMapper,
                        ProcessorSupplier processorSupplier) {
         this.sinkName = sinkName;
         this.toDistributedObject = toDistributedObject;

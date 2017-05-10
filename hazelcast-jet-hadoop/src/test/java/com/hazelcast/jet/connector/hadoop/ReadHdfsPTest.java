@@ -18,11 +18,11 @@ package com.hazelcast.jet.connector.hadoop;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -78,12 +78,12 @@ public class ReadHdfsPTest extends JetTestSupport {
     public Class<? extends InputFormat> inputFormatClass;
 
     @Parameterized.Parameter(1)
-    public Distributed.BiFunction mapper;
+    public DistributedBiFunction mapper;
 
     @Parameterized.Parameters(name = "Executing: {0} {1}")
     public static Collection<Object[]> parameters() {
-        Distributed.BiFunction defaultMapper = Util::entry;
-        Distributed.BiFunction mapper = (k, v) -> v.toString();
+        DistributedBiFunction defaultMapper = Util::entry;
+        DistributedBiFunction mapper = (k, v) -> v.toString();
 
         return Arrays.asList(
                 new Object[]{TextInputFormat.class, defaultMapper}, //

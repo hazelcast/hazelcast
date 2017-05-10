@@ -17,8 +17,8 @@
 package com.hazelcast.jet.stream.impl.reducers;
 
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Distributed.BinaryOperator;
-import com.hazelcast.jet.Distributed.Function;
+import com.hazelcast.jet.function.DistributedBinaryOperator;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Vertex;
@@ -27,19 +27,19 @@ import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.MergeP;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.DistributedFunctions.entryKey;
+import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 
 public class MergingSinkReducer<T, K, V, R> extends SinkReducer<T, K, V, R> {
 
-    private final BinaryOperator<V> mergeFunction;
+    private final DistributedBinaryOperator<V> mergeFunction;
 
     public MergingSinkReducer(String sinkName,
-                              Function<JetInstance, ? extends R> toDistributedObject,
-                              Function<? super T, ? extends K> keyMapper,
-                              Function<? super T, ? extends V> valueMapper,
-                              BinaryOperator<V> mergeFunction,
+                              DistributedFunction<JetInstance, ? extends R> toDistributedObject,
+                              DistributedFunction<? super T, ? extends K> keyMapper,
+                              DistributedFunction<? super T, ? extends V> valueMapper,
+                              DistributedBinaryOperator<V> mergeFunction,
                               ProcessorSupplier processorSupplier) {
         super(sinkName, toDistributedObject, keyMapper, valueMapper, processorSupplier);
         this.mergeFunction = mergeFunction;

@@ -16,8 +16,17 @@
 
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.function.DistributedBiConsumer;
+import com.hazelcast.jet.function.DistributedDoubleBinaryOperator;
+import com.hazelcast.jet.function.DistributedDoubleConsumer;
+import com.hazelcast.jet.function.DistributedDoubleFunction;
+import com.hazelcast.jet.function.DistributedDoublePredicate;
+import com.hazelcast.jet.function.DistributedDoubleToIntFunction;
+import com.hazelcast.jet.function.DistributedDoubleToLongFunction;
+import com.hazelcast.jet.function.DistributedDoubleUnaryOperator;
+import com.hazelcast.jet.function.DistributedObjDoubleConsumer;
+import com.hazelcast.jet.function.DistributedSupplier;
 
 import java.util.OptionalDouble;
 import java.util.function.BiConsumer;
@@ -34,8 +43,9 @@ import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
 /**
- * An extension of {@link java.util.stream.DoubleStream} to support distributed stream operations by replacing
- * functional interfaces with their serializable equivalents.
+ * An extension of {@link DoubleStream} that supports
+ * distributed stream operations by replacing functional interfaces with
+ * their serializable equivalents.
  */
 @SuppressWarnings("checkstyle:methodcount")
 public interface DistributedDoubleStream extends DoubleStream {
@@ -53,7 +63,7 @@ public interface DistributedDoubleStream extends DoubleStream {
      *                  should be included
      * @return the new stream
      */
-    default DistributedDoubleStream filter(Distributed.DoublePredicate predicate) {
+    default DistributedDoubleStream filter(DistributedDoublePredicate predicate) {
         return filter((DoublePredicate) predicate);
     }
 
@@ -69,7 +79,7 @@ public interface DistributedDoubleStream extends DoubleStream {
      *               function to apply to each element
      * @return the new stream
      */
-    default DistributedDoubleStream map(Distributed.DoubleUnaryOperator mapper) {
+    default DistributedDoubleStream map(DistributedDoubleUnaryOperator mapper) {
         return map((DoubleUnaryOperator) mapper);
     }
 
@@ -86,7 +96,7 @@ public interface DistributedDoubleStream extends DoubleStream {
      *               function to apply to each element
      * @return the new stream
      */
-    default <U> DistributedStream<U> mapToObj(Distributed.DoubleFunction<? extends U> mapper) {
+    default <U> DistributedStream<U> mapToObj(DistributedDoubleFunction<? extends U> mapper) {
         return mapToObj((DoubleFunction<? extends U>) mapper);
     }
 
@@ -102,7 +112,7 @@ public interface DistributedDoubleStream extends DoubleStream {
      *               function to apply to each element
      * @return the new stream
      */
-    default DistributedLongStream mapToLong(Distributed.DoubleToLongFunction mapper) {
+    default DistributedLongStream mapToLong(DistributedDoubleToLongFunction mapper) {
         return mapToLong((DoubleToLongFunction) mapper);
     }
 
@@ -118,7 +128,7 @@ public interface DistributedDoubleStream extends DoubleStream {
      *               function to apply to each element
      * @return the new stream
      */
-    default DistributedIntStream mapToInt(Distributed.DoubleToIntFunction mapper) {
+    default DistributedIntStream mapToInt(DistributedDoubleToIntFunction mapper) {
         return mapToInt((DoubleToIntFunction) mapper);
     }
 
@@ -138,9 +148,9 @@ public interface DistributedDoubleStream extends DoubleStream {
      *               function to apply to each element which produces a
      *               {@code DoubleStream} of new values
      * @return the new stream
-     * @see DistributedStream#flatMap(Distributed.Function)
+     * @see DistributedStream#flatMap(com.hazelcast.jet.function.DistributedFunction)
      */
-    default DistributedDoubleStream flatMap(Distributed.DoubleFunction<? extends DoubleStream> mapper) {
+    default DistributedDoubleStream flatMap(DistributedDoubleFunction<? extends DoubleStream> mapper) {
         return flatMap((DoubleFunction<? extends DoubleStream>) mapper);
     }
 
@@ -186,7 +196,7 @@ public interface DistributedDoubleStream extends DoubleStream {
      *               they are consumed from the stream
      * @return the new stream
      */
-    default DistributedDoubleStream peek(Distributed.DoubleConsumer action) {
+    default DistributedDoubleStream peek(DistributedDoubleConsumer action) {
         return peek((DoubleConsumer) action);
     }
 
@@ -227,7 +237,7 @@ public interface DistributedDoubleStream extends DoubleStream {
      * @param action a
      *               non-interfering action to perform on the elements
      */
-    default void forEach(Distributed.DoubleConsumer action) {
+    default void forEach(DistributedDoubleConsumer action) {
         forEach((DoubleConsumer) action);
     }
 
@@ -243,7 +253,7 @@ public interface DistributedDoubleStream extends DoubleStream {
      *               non-interfering action to perform on the elements
      * @see #forEach(DoubleConsumer)
      */
-    default void forEachOrdered(Distributed.DoubleConsumer action) {
+    default void forEachOrdered(DistributedDoubleConsumer action) {
         forEachOrdered((DoubleConsumer) action);
     }
 
@@ -282,7 +292,7 @@ public interface DistributedDoubleStream extends DoubleStream {
      * @see #max()
      * @see #average()
      */
-    default double reduce(double identity, Distributed.DoubleBinaryOperator op) {
+    default double reduce(double identity, DistributedDoubleBinaryOperator op) {
         return reduce(identity, (DoubleBinaryOperator) op);
     }
 
@@ -321,7 +331,7 @@ public interface DistributedDoubleStream extends DoubleStream {
      * @return the result of the reduction
      * @see #reduce(double, DoubleBinaryOperator)
      */
-    default OptionalDouble reduce(Distributed.DoubleBinaryOperator op) {
+    default OptionalDouble reduce(DistributedDoubleBinaryOperator op) {
         return reduce((DoubleBinaryOperator) op);
     }
 
@@ -362,8 +372,8 @@ public interface DistributedDoubleStream extends DoubleStream {
      * @return the result of the reduction
      * @see Stream#collect(Supplier, BiConsumer, BiConsumer)
      */
-    default <R> R collect(Distributed.Supplier<R> supplier, Distributed.ObjDoubleConsumer<R> accumulator,
-                          Distributed.BiConsumer<R, R> combiner) {
+    default <R> R collect(DistributedSupplier<R> supplier, DistributedObjDoubleConsumer<R> accumulator,
+                          DistributedBiConsumer<R, R> combiner) {
         return collect((Supplier<R>) supplier, accumulator, combiner);
     }
 
@@ -382,7 +392,7 @@ public interface DistributedDoubleStream extends DoubleStream {
      * @return {@code true} if any elements of the stream match the provided
      * predicate, otherwise {@code false}
      */
-    default boolean anyMatch(Distributed.DoublePredicate predicate) {
+    default boolean anyMatch(DistributedDoublePredicate predicate) {
         return anyMatch((DoublePredicate) predicate);
     }
 
@@ -401,7 +411,7 @@ public interface DistributedDoubleStream extends DoubleStream {
      * @return {@code true} if either all elements of the stream match the
      * provided predicate or the stream is empty, otherwise {@code false}
      */
-    default boolean allMatch(Distributed.DoublePredicate predicate) {
+    default boolean allMatch(DistributedDoublePredicate predicate) {
         return allMatch((DoublePredicate) predicate);
     }
 
@@ -420,7 +430,7 @@ public interface DistributedDoubleStream extends DoubleStream {
      * @return {@code true} if either no elements of the stream match the
      * provided predicate or the stream is empty, otherwise {@code false}
      */
-    default boolean noneMatch(Distributed.DoublePredicate predicate) {
+    default boolean noneMatch(DistributedDoublePredicate predicate) {
         return noneMatch((DoublePredicate) predicate);
     }
 

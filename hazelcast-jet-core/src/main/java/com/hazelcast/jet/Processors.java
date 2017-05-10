@@ -17,9 +17,14 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.jet.Distributed.Consumer;
-import com.hazelcast.jet.Distributed.IntFunction;
+import com.hazelcast.jet.function.DistributedConsumer;
+import com.hazelcast.jet.function.DistributedBiConsumer;
+import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedIntFunction;
 import com.hazelcast.jet.Traversers.ResettableSingletonTraverser;
+import com.hazelcast.jet.function.DistributedPredicate;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.ReadIListP;
@@ -46,7 +51,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static com.hazelcast.jet.DistributedFunctions.noopConsumer;
+import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.Traversers.lazy;
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
@@ -218,10 +223,10 @@ public final class Processors {
      * @param flushBuffer flushes the buffer
      */
     @Nonnull
-    public static <B, T> Distributed.Supplier<Processor> writeBuffered(
-            @Nonnull IntFunction<B> newBuffer,
-            @Nonnull Distributed.BiConsumer<B, T> addToBuffer,
-            @Nonnull Consumer<B> flushBuffer
+    public static <B, T> DistributedSupplier<Processor> writeBuffered(
+            @Nonnull DistributedIntFunction<B> newBuffer,
+            @Nonnull DistributedBiConsumer<B, T> addToBuffer,
+            @Nonnull DistributedConsumer<B> flushBuffer
     ) {
         return WriteBufferedP.writeBuffered(newBuffer, addToBuffer, flushBuffer, noopConsumer());
     }
@@ -242,11 +247,11 @@ public final class Processors {
      * @param disposeBuffer disposes of the buffer
      */
     @Nonnull
-    public static <B, T> Distributed.Supplier<Processor> writeBuffered(
-            @Nonnull IntFunction<B> newBuffer,
-            @Nonnull Distributed.BiConsumer<B, T> addToBuffer,
-            @Nonnull Consumer<B> flushBuffer,
-            @Nonnull Consumer<B> disposeBuffer
+    public static <B, T> DistributedSupplier<Processor> writeBuffered(
+            @Nonnull DistributedIntFunction<B> newBuffer,
+            @Nonnull DistributedBiConsumer<B, T> addToBuffer,
+            @Nonnull DistributedConsumer<B> flushBuffer,
+            @Nonnull DistributedConsumer<B> disposeBuffer
     ) {
         return WriteBufferedP.writeBuffered(newBuffer, addToBuffer, flushBuffer, disposeBuffer);
     }
@@ -254,7 +259,7 @@ public final class Processors {
     /**
      * Returns a supplier of processors that connect to specified socket and write the items as text
      */
-    public static Distributed.Supplier<Processor> writeSocket(@Nonnull String host, int port) {
+    public static DistributedSupplier<Processor> writeSocket(@Nonnull String host, int port) {
         return writeBuffered(
                 index -> createBufferedWriter(host, port),
                 (bufferedWriter, item) -> uncheckRun(() -> bufferedWriter.write(item.toString())),
@@ -273,7 +278,7 @@ public final class Processors {
      * @see #streamTextSocket(String, int, Charset)
      */
     @Nonnull
-    public static Distributed.Supplier<Processor> streamTextSocket(@Nonnull String host, int port) {
+    public static DistributedSupplier<Processor> streamTextSocket(@Nonnull String host, int port) {
         return streamTextSocket(host, port, null);
     }
 
@@ -293,7 +298,7 @@ public final class Processors {
      * @param charset Character set used to decode the stream
      */
     @Nonnull
-    public static Distributed.Supplier<Processor> streamTextSocket(@Nonnull String host, int port, Charset charset) {
+    public static DistributedSupplier<Processor> streamTextSocket(@Nonnull String host, int port, Charset charset) {
         return StreamTextSocketP.supplier(host, port, charset != null ? charset.name() : null);
     }
 
@@ -398,7 +403,7 @@ public final class Processors {
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeFile(
-            @Nonnull String directoryName, @Nullable Distributed.Function<T, String> toStringF
+            @Nonnull String directoryName, @Nullable DistributedFunction<T, String> toStringF
     ) {
         return writeFile(directoryName, toStringF, null, false);
     }
@@ -427,7 +432,7 @@ public final class Processors {
     @Nonnull
     public static <T> ProcessorMetaSupplier writeFile(
             @Nonnull String directoryName,
-            @Nullable Distributed.Function<T, String> toStringF,
+            @Nullable DistributedFunction<T, String> toStringF,
             @Nullable Charset charset,
             boolean append
     ) {
@@ -445,8 +450,8 @@ public final class Processors {
      * @param <R> type of emitted item
      */
     @Nonnull
-    public static <T, R> Distributed.Supplier<Processor> map(
-            @Nonnull Distributed.Function<? super T, ? extends R> mapper
+    public static <T, R> DistributedSupplier<Processor> map(
+            @Nonnull DistributedFunction<? super T, ? extends R> mapper
     ) {
         return () -> {
             final ResettableSingletonTraverser<R> trav = new ResettableSingletonTraverser<>();
@@ -465,7 +470,7 @@ public final class Processors {
      * @param <T> type of received item
      */
     @Nonnull
-    public static <T> Distributed.Supplier<Processor> filter(@Nonnull Distributed.Predicate<? super T> predicate) {
+    public static <T> DistributedSupplier<Processor> filter(@Nonnull DistributedPredicate<? super T> predicate) {
         return () -> {
             final ResettableSingletonTraverser<T> trav = new ResettableSingletonTraverser<>();
             return new TransformP<T, T>(item -> {
@@ -484,8 +489,8 @@ public final class Processors {
      * @param <R> emitted item type
      */
     @Nonnull
-    public static <T, R> Distributed.Supplier<Processor> flatMap(
-            @Nonnull Distributed.Function<? super T, ? extends Traverser<? extends R>> mapper
+    public static <T, R> DistributedSupplier<Processor> flatMap(
+            @Nonnull DistributedFunction<? super T, ? extends Traverser<? extends R>> mapper
     ) {
         return () -> new TransformP<T, R>(mapper);
     }
@@ -517,18 +522,18 @@ public final class Processors {
      * @param <R> type of emitted item
      */
     @Nonnull
-    public static <T, K, A, R> Distributed.Supplier<Processor> groupAndAccumulate(
-            @Nonnull Distributed.Function<? super T, ? extends K> keyExtractor,
-            @Nonnull Distributed.Supplier<? extends A> supplier,
-            @Nonnull Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator,
-            @Nonnull Distributed.BiFunction<? super K, ? super A, ? extends R> finisher
+    public static <T, K, A, R> DistributedSupplier<Processor> groupAndAccumulate(
+            @Nonnull DistributedFunction<? super T, ? extends K> keyExtractor,
+            @Nonnull DistributedSupplier<? extends A> supplier,
+            @Nonnull DistributedBiFunction<? super A, ? super T, ? extends A> accumulator,
+            @Nonnull DistributedBiFunction<? super K, ? super A, ? extends R> finisher
     ) {
         return () -> new GroupAndAccumulateP<>(keyExtractor, supplier, accumulator, finisher);
     }
 
     /**
-     * Convenience over {@link #groupAndAccumulate(Distributed.Function, Distributed.Supplier,
-     * Distributed.BiFunction, Distributed.BiFunction) groupAndAccumulate(keyExtractor,
+     * Convenience over {@link #groupAndAccumulate(DistributedFunction, DistributedSupplier,
+     * DistributedBiFunction, DistributedBiFunction) groupAndAccumulate(keyExtractor,
      * supplier, accumulator, finisher)} with the constructor of
      * {@code SimpleImmutableEntry} as the finisher function, which means the
      * processor emits items of type {@code java.util.Map.Entry<K, A>}. Note that
@@ -543,17 +548,17 @@ public final class Processors {
      * @param <A> type of accumulated value
      */
     @Nonnull
-    public static <T, A> Distributed.Supplier<Processor> groupAndAccumulate(
-            @Nonnull Distributed.Function<? super T, ?> keyExtractor,
-            @Nonnull Distributed.Supplier<? extends A> supplier,
-            @Nonnull Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator
+    public static <T, A> DistributedSupplier<Processor> groupAndAccumulate(
+            @Nonnull DistributedFunction<? super T, ?> keyExtractor,
+            @Nonnull DistributedSupplier<? extends A> supplier,
+            @Nonnull DistributedBiFunction<? super A, ? super T, ? extends A> accumulator
     ) {
         return groupAndAccumulate(keyExtractor, supplier, accumulator, Util::entry);
     }
 
     /**
-     * Convenience over {@link #groupAndAccumulate(Distributed.Function, Distributed.Supplier,
-     * Distributed.BiFunction, Distributed.BiFunction)
+     * Convenience over {@link #groupAndAccumulate(DistributedFunction, DistributedSupplier,
+     * DistributedBiFunction, DistributedBiFunction)
      * groupAndAccumulate(keyExtractor, supplier, accumulator, finisher)} with identity
      * function as the key extractor and constructor of {@code SimpleImmutableEntry}
      * as the finisher function, which means the processor emits items of type
@@ -565,11 +570,11 @@ public final class Processors {
      * @param <A> type of accumulated value
      */
     @Nonnull
-    public static <T, A> Distributed.Supplier<Processor> groupAndAccumulate(
-            @Nonnull Distributed.Supplier<? extends A> supplier,
-            @Nonnull Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator
+    public static <T, A> DistributedSupplier<Processor> groupAndAccumulate(
+            @Nonnull DistributedSupplier<? extends A> supplier,
+            @Nonnull DistributedBiFunction<? super A, ? super T, ? extends A> accumulator
     ) {
-        return groupAndAccumulate(Distributed.Function.identity(), supplier, accumulator);
+        return groupAndAccumulate(DistributedFunction.identity(), supplier, accumulator);
     }
 
     /**
@@ -602,18 +607,18 @@ public final class Processors {
      * @param <R> type of emitted item
      */
     @Nonnull
-    public static <T, K, A, R> Distributed.Supplier<Processor> groupAndCollect(
-            @Nonnull Distributed.Function<? super T, ? extends K> keyExtractor,
-            @Nonnull Distributed.Supplier<? extends A> supplier,
-            @Nonnull Distributed.BiConsumer<? super A, ? super T> collector,
-            @Nonnull Distributed.BiFunction<? super K, ? super A, ? extends R> finisher
+    public static <T, K, A, R> DistributedSupplier<Processor> groupAndCollect(
+            @Nonnull DistributedFunction<? super T, ? extends K> keyExtractor,
+            @Nonnull DistributedSupplier<? extends A> supplier,
+            @Nonnull DistributedBiConsumer<? super A, ? super T> collector,
+            @Nonnull DistributedBiFunction<? super K, ? super A, ? extends R> finisher
     ) {
         return () -> new GroupAndCollectP<>(keyExtractor, supplier, collector, finisher);
     }
 
     /**
-     * Convenience over {@link #groupAndCollect(Distributed.Function, Distributed.Supplier,
-     * Distributed.BiConsumer, Distributed.BiFunction) groupAndCollect(keyExtractor,
+     * Convenience over {@link #groupAndCollect(DistributedFunction, DistributedSupplier,
+     * DistributedBiConsumer, DistributedBiFunction) groupAndCollect(keyExtractor,
      * supplier, collector, finisher)} with the constructor of
      * {@code SimpleImmutableEntry} as the finisher function, which means the
      * processor emits items of type {@code java.util.Map.Entry<K, A>}. Note that
@@ -629,17 +634,17 @@ public final class Processors {
      * @param <A> type of result container
      */
     @Nonnull
-    public static <T, A> Distributed.Supplier<Processor> groupAndCollect(
-            @Nonnull Distributed.Function<? super T, ?> keyExtractor,
-            @Nonnull Distributed.Supplier<? extends A> supplier,
-            @Nonnull Distributed.BiConsumer<? super A, ? super T> collector
+    public static <T, A> DistributedSupplier<Processor> groupAndCollect(
+            @Nonnull DistributedFunction<? super T, ?> keyExtractor,
+            @Nonnull DistributedSupplier<? extends A> supplier,
+            @Nonnull DistributedBiConsumer<? super A, ? super T> collector
     ) {
         return groupAndCollect(keyExtractor, supplier, collector, Util::entry);
     }
 
     /**
-     * Convenience over {@link #groupAndCollect(Distributed.Function, Distributed.Supplier,
-     * Distributed.BiConsumer, Distributed.BiFunction)
+     * Convenience over {@link #groupAndCollect(DistributedFunction, DistributedSupplier,
+     * DistributedBiConsumer, DistributedBiFunction)
      * groupAndCollect(keyExtractor, supplier, collector, finisher)} with identity
      * function as the key extractor and constructor of {@code SimpleImmutableEntry}
      * as the finisher function, which means the processor emits items of type
@@ -652,11 +657,11 @@ public final class Processors {
      * @param <A> type of accumulated value
      */
     @Nonnull
-    public static <T, A> Distributed.Supplier<Processor> groupAndCollect(
-            @Nonnull Distributed.Supplier<? extends A> supplier,
-            @Nonnull Distributed.BiConsumer<? super A, ? super T> collector
+    public static <T, A> DistributedSupplier<Processor> groupAndCollect(
+            @Nonnull DistributedSupplier<? extends A> supplier,
+            @Nonnull DistributedBiConsumer<? super A, ? super T> collector
     ) {
-        return groupAndCollect(Distributed.Function.identity(), supplier, collector);
+        return groupAndCollect(DistributedFunction.identity(), supplier, collector);
     }
 
     /**
@@ -682,17 +687,17 @@ public final class Processors {
      * @param <R> type of emitted item
      */
     @Nonnull
-    public static <T, A, R> Distributed.Supplier<Processor> accumulate(
-            @Nonnull Distributed.Supplier<? extends A> supplier,
-            @Nonnull Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator,
-            @Nonnull Distributed.Function<? super A, ? extends R> finisher
+    public static <T, A, R> DistributedSupplier<Processor> accumulate(
+            @Nonnull DistributedSupplier<? extends A> supplier,
+            @Nonnull DistributedBiFunction<? super A, ? super T, ? extends A> accumulator,
+            @Nonnull DistributedFunction<? super A, ? extends R> finisher
     ) {
         return groupAndAccumulate(x -> true, supplier, accumulator, (dummyTrueBoolean, a) -> finisher.apply(a));
     }
 
     /**
-     * Convenience over {@link #accumulate(Distributed.Supplier, Distributed.BiFunction,
-     * Distributed.Function) accumulate(supplier, accumulator, finisher)}
+     * Convenience over {@link #accumulate(DistributedSupplier, DistributedBiFunction,
+     * DistributedFunction) accumulate(supplier, accumulator, finisher)}
      * with identity function as the finisher, which means the processor emits an
      * item of type {@code A}.
      *
@@ -702,9 +707,9 @@ public final class Processors {
      * @param <A> type of accumulated value
      */
     @Nonnull
-    public static <T, A> Distributed.Supplier<Processor> accumulate(
-            @Nonnull Distributed.Supplier<? extends A> supplier,
-            @Nonnull Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator
+    public static <T, A> DistributedSupplier<Processor> accumulate(
+            @Nonnull DistributedSupplier<? extends A> supplier,
+            @Nonnull DistributedBiFunction<? super A, ? super T, ? extends A> accumulator
     ) {
         return groupAndAccumulate(x -> true, supplier, accumulator, (dummyTrueBoolean, a) -> a);
     }
@@ -733,17 +738,17 @@ public final class Processors {
      * @param <R> type of emitted item
      */
     @Nonnull
-    public static <T, A, R> Distributed.Supplier<Processor> collect(
-            @Nonnull Distributed.Supplier<? extends A> supplier,
-            @Nonnull Distributed.BiConsumer<? super A, ? super T> collector,
-            @Nonnull Distributed.Function<? super A, ? extends R> finisher
+    public static <T, A, R> DistributedSupplier<Processor> collect(
+            @Nonnull DistributedSupplier<? extends A> supplier,
+            @Nonnull DistributedBiConsumer<? super A, ? super T> collector,
+            @Nonnull DistributedFunction<? super A, ? extends R> finisher
     ) {
         return groupAndCollect(x -> true, supplier, collector, (dummyTrueBoolean, a) -> finisher.apply(a));
     }
 
     /**
-     * Convenience over {@link #collect(Distributed.Supplier, Distributed.BiConsumer,
-     * Distributed.Function) collect(supplier, collector, finisher)} with
+     * Convenience over {@link #collect(DistributedSupplier, DistributedBiConsumer,
+     * DistributedFunction) collect(supplier, collector, finisher)} with
      * identity function as the finisher, which means the processor emits an
      * item of type {@code A}.
      *
@@ -754,9 +759,9 @@ public final class Processors {
      * @param <A> type of result container
      */
     @Nonnull
-    public static <T, A> Distributed.Supplier<Processor> collect(
-            @Nonnull Distributed.Supplier<? extends A> supplier,
-            @Nonnull Distributed.BiConsumer<? super A, ? super T> collector
+    public static <T, A> DistributedSupplier<Processor> collect(
+            @Nonnull DistributedSupplier<? extends A> supplier,
+            @Nonnull DistributedBiConsumer<? super A, ? super T> collector
     ) {
         return groupAndCollect(x -> true, supplier, collector, (dummyTrueBoolean, a) -> a);
     }
@@ -769,17 +774,17 @@ public final class Processors {
      * @param <K> key type
      */
     @Nonnull
-    public static <T, K> Distributed.Supplier<Processor> countDistinct(@Nonnull Distributed.Function<T, K> keyExtractor) {
+    public static <T, K> DistributedSupplier<Processor> countDistinct(@Nonnull DistributedFunction<T, K> keyExtractor) {
         return () -> new CountDistinctP<>(keyExtractor);
     }
 
     /**
-     * Convenience over {@link #countDistinct(Distributed.Function)} with identity
+     * Convenience over {@link #countDistinct(DistributedFunction)} with identity
      * function as the key extractor, which means the processor will emit the number
      * of distinct items it has seen in the input.
      */
     @Nonnull
-    public static Distributed.Supplier<Processor> countDistinct() {
+    public static DistributedSupplier<Processor> countDistinct() {
         return () -> new CountDistinctP<>(x -> x);
     }
 
@@ -803,7 +808,7 @@ public final class Processors {
      * processors that are {@code instanceof} {@link AbstractProcessor}.
      */
     @Nonnull
-    public static Distributed.Supplier<Processor> nonCooperative(Distributed.Supplier<Processor> wrapped) {
+    public static DistributedSupplier<Processor> nonCooperative(DistributedSupplier<Processor> wrapped) {
         return () -> {
             final Processor p = wrapped.get();
             ((AbstractProcessor) p).setCooperative(false);
@@ -835,7 +840,7 @@ public final class Processors {
         /**
          * Constructs a processor with the given mapping function.
          */
-        TransformP(@Nonnull Distributed.Function<? super T, ? extends Traverser<? extends R>> mapper) {
+        TransformP(@Nonnull DistributedFunction<? super T, ? extends Traverser<? extends R>> mapper) {
             this.flatMapper = flatMapper(mapper);
         }
 
@@ -928,13 +933,13 @@ public final class Processors {
      * @param <K> type of grouping key
      */
     private static class CountDistinctP<T, K> extends AbstractProcessor {
-        private final Distributed.Function<T, K> extractKey;
+        private final DistributedFunction<T, K> extractKey;
         private final Set<K> seenItems = new HashSet<>();
 
         /**
          * Constructs the processor with the given key extractor function.
          */
-        CountDistinctP(@Nonnull Distributed.Function<T, K> extractKey) {
+        CountDistinctP(@Nonnull DistributedFunction<T, K> extractKey) {
             this.extractKey = extractKey;
         }
 

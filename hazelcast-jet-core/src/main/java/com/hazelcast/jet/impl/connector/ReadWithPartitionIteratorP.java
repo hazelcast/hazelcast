@@ -24,12 +24,12 @@ import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Partition;
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.util.CircularListCursor;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Address;
@@ -148,13 +148,13 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
         static final long serialVersionUID = 1L;
 
         private final SerializableClientConfig serializableConfig;
-        private final Distributed.Function<HazelcastInstance, Function<Integer, Iterator<T>>> iteratorSupplier;
+        private final DistributedFunction<HazelcastInstance, Function<Integer, Iterator<T>>> iteratorSupplier;
 
         private transient int remotePartitionCount;
 
         RemoteClusterMetaSupplier(
                 ClientConfig clientConfig,
-                Distributed.Function<HazelcastInstance, Function<Integer, Iterator<T>>> iteratorSupplier
+                DistributedFunction<HazelcastInstance, Function<Integer, Iterator<T>>> iteratorSupplier
         ) {
             this.serializableConfig = new SerializableClientConfig(clientConfig);
             this.iteratorSupplier = iteratorSupplier;
@@ -190,7 +190,7 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
 
         private final List<Integer> ownedPartitions;
         private final SerializableClientConfig serializableClientConfig;
-        private final Distributed.Function<HazelcastInstance, Function<Integer, Iterator<T>>> iteratorSupplier;
+        private final DistributedFunction<HazelcastInstance, Function<Integer, Iterator<T>>> iteratorSupplier;
 
         private transient HazelcastInstance client;
         private transient Function<Integer, Iterator<T>> partitionToIterator;
@@ -198,7 +198,7 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
         RemoteClusterProcessorSupplier(
                 List<Integer> ownedPartitions,
                 SerializableClientConfig serializableClientConfig,
-                Distributed.Function<HazelcastInstance, Function<Integer, Iterator<T>>> iteratorSupplier
+                DistributedFunction<HazelcastInstance, Function<Integer, Iterator<T>>> iteratorSupplier
         ) {
             this.ownedPartitions = ownedPartitions;
             this.serializableClientConfig = serializableClientConfig;
@@ -226,12 +226,12 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
 
         static final long serialVersionUID = 1L;
 
-        private final Distributed.Function<HazelcastInstance, Function<Integer, Iterator<T>>> iteratorSupplier;
+        private final DistributedFunction<HazelcastInstance, Function<Integer, Iterator<T>>> iteratorSupplier;
 
         private transient Map<Address, List<Integer>> addrToPartitions;
 
         LocalClusterMetaSupplier(
-                Distributed.Function<HazelcastInstance, Function<Integer, Iterator<T>>> iteratorSupplier
+                DistributedFunction<HazelcastInstance, Function<Integer, Iterator<T>>> iteratorSupplier
         ) {
             this.iteratorSupplier = iteratorSupplier;
         }
@@ -255,13 +255,13 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
         static final long serialVersionUID = 1L;
 
         private final List<Integer> ownedPartitions;
-        private final Distributed.Function<HazelcastInstance, Function<Integer, Iterator<T>>> iteratorSupplier;
+        private final DistributedFunction<HazelcastInstance, Function<Integer, Iterator<T>>> iteratorSupplier;
 
         private transient Function<Integer, Iterator<T>> partitionToIterator;
 
         LocalClusterProcessorSupplier(
                 List<Integer> ownedPartitions,
-                Distributed.Function<HazelcastInstance, Function<Integer, Iterator<T>>> iteratorSupplier
+                DistributedFunction<HazelcastInstance, Function<Integer, Iterator<T>>> iteratorSupplier
         ) {
             this.ownedPartitions = ownedPartitions != null ? ownedPartitions : Collections.emptyList();
             this.iteratorSupplier = iteratorSupplier;

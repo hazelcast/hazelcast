@@ -17,7 +17,7 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.function.DistributedIntUnaryOperator;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -148,7 +148,7 @@ public class IntStreamTest extends AbstractStreamTest {
         int repetitions = 10;
         int[] ints = stream
                 .filter(n -> n < repetitions)
-                .flatMap(n -> IntStream.iterate(n, Distributed.IntUnaryOperator.identity()).limit(repetitions))
+                .flatMap(n -> IntStream.iterate(n, DistributedIntUnaryOperator.identity()).limit(repetitions))
                 .toArray();
 
         Arrays.sort(ints);

@@ -18,9 +18,9 @@ package com.hazelcast.jet.stream.impl.reducers;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.stream.DistributedCollector.Reducer;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
@@ -86,7 +86,7 @@ public class CollectorReducer<T, A, R> implements Reducer<T, R> {
 
     static <A, R> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex,
                                        Object combiner, Function<A, R> finisher) {
-        Distributed.Supplier<Processor> processorSupplier = getCombinerSupplier(combiner, finisher);
+        DistributedSupplier<Processor> processorSupplier = getCombinerSupplier(combiner, finisher);
         Vertex combinerVertex = dag.newVertex("combiner", processorSupplier).localParallelism(1);
         dag.edge(between(accumulatorVertex, combinerVertex)
                 .distributed()
@@ -96,7 +96,7 @@ public class CollectorReducer<T, A, R> implements Reducer<T, R> {
         return combinerVertex;
     }
 
-    private static <A, R> Distributed.Supplier<Processor> getCombinerSupplier(Object combiner, Function<A, R> finisher) {
+    private static <A, R> DistributedSupplier<Processor> getCombinerSupplier(Object combiner, Function<A, R> finisher) {
         if (combiner instanceof BiConsumer) {
             return () -> new CollectorCombineP((BiConsumer) combiner, finisher);
         } else if (combiner instanceof BinaryOperator) {

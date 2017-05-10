@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.windowing;
 
-import com.hazelcast.jet.Distributed.LongSupplier;
+import com.hazelcast.jet.function.DistributedLongSupplier;
 import com.hazelcast.jet.impl.util.TimestampHistory;
 
 import javax.annotation.Nonnull;
@@ -96,7 +96,7 @@ public final class PunctuationPolicies {
 
     @Nonnull
     static PunctuationPolicy limitingLagAndDelay(
-            long maxLag, long maxRetainNanos, int numStoredSamples, LongSupplier nanoClock
+            long maxLag, long maxRetainNanos, int numStoredSamples, DistributedLongSupplier nanoClock
     ) {
         return new PunctuationPolicyBase() {
 
@@ -192,7 +192,7 @@ public final class PunctuationPolicies {
     }
 
     @Nonnull
-    static PunctuationPolicy limitingLagAndLull(long lag, long maxLullMs, LongSupplier nanoClock) {
+    static PunctuationPolicy limitingLagAndLull(long lag, long maxLullMs, DistributedLongSupplier nanoClock) {
         checkNotNegative(lag, "lag must not be negative");
         checkNotNegative(maxLullMs, "maxLullMs must not be negative");
 

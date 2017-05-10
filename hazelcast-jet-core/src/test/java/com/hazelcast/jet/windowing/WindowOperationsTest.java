@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.windowing;
 
-import com.hazelcast.jet.Distributed;
-import com.hazelcast.jet.Distributed.BinaryOperator;
-import com.hazelcast.jet.Distributed.Comparator;
-import com.hazelcast.jet.Distributed.Optional;
-import com.hazelcast.jet.Distributed.Supplier;
 import com.hazelcast.jet.accumulator.LinTrendAccumulator;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.accumulator.MutableReference;
+import com.hazelcast.jet.function.DistributedBinaryOperator;
+import com.hazelcast.jet.function.DistributedComparator;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedOptional;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -38,9 +38,10 @@ import java.util.function.Function;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.stream.DistributedCollectors.maxBy;
+import static com.hazelcast.jet.windowing.WindowOperation.fromCollector;
+import static com.hazelcast.jet.windowing.WindowOperations.allOf;
 import static com.hazelcast.jet.windowing.WindowOperations.counting;
 import static com.hazelcast.jet.windowing.WindowOperations.linearTrend;
-import static com.hazelcast.jet.windowing.WindowOperations.allOf;
 import static com.hazelcast.jet.windowing.WindowOperations.reducing;
 import static com.hazelcast.jet.windowing.WindowOperations.summingToLong;
 import static org.junit.Assert.assertEquals;
@@ -82,7 +83,8 @@ public class WindowOperationsTest {
 
     @Test
     public void when_allOfWithoutDeduct() {
-        WindowOperation<Long, List<Object>, List<Object>> op = allOf(counting(), WindowOperation.fromCollector(maxBy(Comparator.<Long>naturalOrder())));
+        WindowOperation<Long, List<Object>, List<Object>> op = allOf(counting(),
+                fromCollector(maxBy(DistributedComparator.<Long>naturalOrder())));
 
         // Then
         assertNull(op.deductAccumulatorF());
@@ -102,7 +104,7 @@ public class WindowOperationsTest {
         // When
         List<Object> finished = op.finishAccumulationF().apply(combined);
         // Then
-        assertEquals("finished", Arrays.asList(2L, Optional.of(20L)), finished);
+        assertEquals("finished", Arrays.asList(2L, DistributedOptional.of(20L)), finished);
     }
 
     @Test
@@ -110,11 +112,11 @@ public class WindowOperationsTest {
         // Given
 
         WindowOperation<Entry<Long, Long>, LinTrendAccumulator, Double> op = linearTrend(Entry::getKey, Entry::getValue);
-        Supplier<LinTrendAccumulator> newF = op.createAccumulatorF();
+        DistributedSupplier<LinTrendAccumulator> newF = op.createAccumulatorF();
         BiFunction<LinTrendAccumulator, Entry<Long, Long>, LinTrendAccumulator> accF = op.accumulateItemF();
-        BinaryOperator<LinTrendAccumulator> combineF = op.combineAccumulatorsF();
-        BinaryOperator<LinTrendAccumulator> deductF = op.deductAccumulatorF();
-        Distributed.Function<LinTrendAccumulator, Double> finishF = op.finishAccumulationF();
+        DistributedBinaryOperator<LinTrendAccumulator> combineF = op.combineAccumulatorsF();
+        DistributedBinaryOperator<LinTrendAccumulator> deductF = op.deductAccumulatorF();
+        DistributedFunction<LinTrendAccumulator, Double> finishF = op.finishAccumulationF();
         assertNotNull(deductF);
 
         // When
@@ -155,7 +157,7 @@ public class WindowOperationsTest {
             R expectFinished
     ) {
         // Given
-        BinaryOperator<A> deductAccF = op.deductAccumulatorF();
+        DistributedBinaryOperator<A> deductAccF = op.deductAccumulatorF();
         assertNotNull(deductAccF);
 
         // When

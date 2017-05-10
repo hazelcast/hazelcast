@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.windowing;
 
-import com.hazelcast.jet.Distributed;
-import com.hazelcast.jet.Distributed.Function;
-import com.hazelcast.jet.Distributed.ToLongFunction;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.stream.DistributedCollector;
 
 import javax.annotation.Nonnull;
 
-import static com.hazelcast.jet.Distributed.Function.identity;
+import static com.hazelcast.jet.function.DistributedFunction.identity;
 
 /**
  * Contains factory methods for processors dealing with windowing
@@ -104,9 +104,9 @@ public final class WindowingProcessors {
      * @param <T> the type of stream item
      */
     @Nonnull
-    public static <T> Distributed.Supplier<Processor> insertPunctuation(
-            @Nonnull Distributed.ToLongFunction<T> extractTimestampF,
-            @Nonnull Distributed.Supplier<PunctuationPolicy> newPuncPolicyF
+    public static <T> DistributedSupplier<Processor> insertPunctuation(
+            @Nonnull DistributedToLongFunction<T> extractTimestampF,
+            @Nonnull DistributedSupplier<PunctuationPolicy> newPuncPolicyF
     ) {
         return () -> new InsertPunctuationP<>(extractTimestampF, newPuncPolicyF.get());
     }
@@ -133,9 +133,9 @@ public final class WindowingProcessors {
      *            createAccumulatorF()}
      */
     @Nonnull
-    public static <T, K, A> Distributed.Supplier<Processor> slidingWindowStage1(
-            @Nonnull Distributed.Function<? super T, K> extractKeyF,
-            @Nonnull Distributed.ToLongFunction<? super T> extractTimestampF,
+    public static <T, K, A> DistributedSupplier<Processor> slidingWindowStage1(
+            @Nonnull DistributedFunction<? super T, K> extractKeyF,
+            @Nonnull DistributedToLongFunction<? super T> extractTimestampF,
             @Nonnull WindowDefinition windowDef,
             @Nonnull WindowOperation<? super T, A, ?> windowOperation
     ) {
@@ -159,14 +159,14 @@ public final class WindowingProcessors {
     }
 
     /**
-     * Convenience for {@link #slidingWindowStage1(Distributed.Function,
-     * Distributed.ToLongFunction, WindowDefinition, WindowOperation)
+     * Convenience for {@link #slidingWindowStage1(DistributedFunction,
+     * DistributedToLongFunction, WindowDefinition, WindowOperation)
      * slidingWindowStage1(extractKeyF, extractTimestampF, windowDef,
      * windowOperation)} which doesn't group by key.
      */
     @Nonnull
-    public static <T, A> Distributed.Supplier<Processor> slidingWindowStage1(
-            @Nonnull Distributed.ToLongFunction<? super T> extractTimestampF,
+    public static <T, A> DistributedSupplier<Processor> slidingWindowStage1(
+            @Nonnull DistributedToLongFunction<? super T> extractTimestampF,
             @Nonnull WindowDefinition windowDef,
             @Nonnull WindowOperation<? super T, A, ?> windowOperation
     ) {
@@ -176,7 +176,7 @@ public final class WindowingProcessors {
     /**
      * Constructs sliding windows by combining their constituent frames
      * received from several upstream instances of {@link
-     * #slidingWindowStage1(Function, ToLongFunction, WindowDefinition,
+     * #slidingWindowStage1(DistributedFunction, DistributedToLongFunction, WindowDefinition,
      * WindowOperation)}. After combining applies the {@code windowOperation}'s
      * finishing function to compute the emitted result.
      * <p>
@@ -188,7 +188,7 @@ public final class WindowingProcessors {
      * @param <R> type of the finishing function's result
      */
     @Nonnull
-    public static <A, R> Distributed.Supplier<Processor> slidingWindowStage2(
+    public static <A, R> DistributedSupplier<Processor> slidingWindowStage2(
             @Nonnull WindowDefinition windowDef,
             @Nonnull WindowOperation<?, A, R> windowOperation
     ) {
@@ -223,9 +223,9 @@ public final class WindowingProcessors {
      * covered by the window.
      */
     @Nonnull
-    public static <T, A, R> Distributed.Supplier<Processor> slidingWindowSingleStage(
-            @Nonnull Distributed.Function<? super T, ?> extractKeyF,
-            @Nonnull Distributed.ToLongFunction<? super T> extractTimestampF,
+    public static <T, A, R> DistributedSupplier<Processor> slidingWindowSingleStage(
+            @Nonnull DistributedFunction<? super T, ?> extractKeyF,
+            @Nonnull DistributedToLongFunction<? super T> extractTimestampF,
             @Nonnull WindowDefinition windowDef,
             @Nonnull WindowOperation<? super T, A, R> windowOperation
     ) {
@@ -238,14 +238,14 @@ public final class WindowingProcessors {
     }
 
     /**
-     * Convenience for {@link #slidingWindowSingleStage(Function,
-     * ToLongFunction, WindowDefinition, WindowOperation)
+     * Convenience for {@link #slidingWindowSingleStage(DistributedFunction,
+     * DistributedToLongFunction, WindowDefinition, WindowOperation)
      * slidingWindowSingleStage(extractKeyF, extractTimestampF, windowDef,
      * windowOperation} which doesn't group by key.
      */
     @Nonnull
-    public static <T, A, R> Distributed.Supplier<Processor> slidingWindowSingleStage(
-            @Nonnull Distributed.ToLongFunction<? super T> extractTimestampF,
+    public static <T, A, R> DistributedSupplier<Processor> slidingWindowSingleStage(
+            @Nonnull DistributedToLongFunction<? super T> extractTimestampF,
             @Nonnull WindowDefinition windowDef,
             @Nonnull WindowOperation<? super T, A, R> windowOperation
     ) {
@@ -276,10 +276,10 @@ public final class WindowingProcessors {
      * @param <R> type of the session window's result value
      */
     @Nonnull
-    public static <T, K, A, R> Distributed.Supplier<Processor> sessionWindow(
+    public static <T, K, A, R> DistributedSupplier<Processor> sessionWindow(
             long sessionTimeout,
-            @Nonnull Distributed.ToLongFunction<? super T> extractTimestampF,
-            @Nonnull Distributed.Function<? super T, K> extractKeyF,
+            @Nonnull DistributedToLongFunction<? super T> extractTimestampF,
+            @Nonnull DistributedFunction<? super T, K> extractKeyF,
             @Nonnull DistributedCollector<? super T, A, R> windowOperation
     ) {
         return () -> new SessionWindowP<>(sessionTimeout, extractTimestampF, extractKeyF, windowOperation);

@@ -28,8 +28,8 @@ import java.util.function.ToLongFunction;
 /**
  * A processor that inserts punctuation into a data stream. See
  * {@link WindowingProcessors#insertPunctuation(
- * com.hazelcast.jet.Distributed.ToLongFunction,
- * com.hazelcast.jet.Distributed.Supplier)
+ *      com.hazelcast.jet.function.DistributedToLongFunction,
+ *      com.hazelcast.jet.function.DistributedSupplier)
  * WindowingProcessors.insertPunctuation()}.
  *
  * @param <T> type of the stream item

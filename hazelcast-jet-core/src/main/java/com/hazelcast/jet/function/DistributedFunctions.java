@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet;
+package com.hazelcast.jet.function;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Factory methods for several common distributed functions.
@@ -28,12 +29,12 @@ public final class DistributedFunctions {
     }
 
     /**
-     * Synonym for {@link Distributed.Function#identity}, to be used as a
+     * Synonym for {@link DistributedFunction#identity}, to be used as a
      * projection function (e.g., key extractor).
      */
     @Nonnull
-    public static <T> Distributed.Function<T, T> wholeItem() {
-        return Distributed.Function.identity();
+    public static <T> DistributedFunction<T, T> wholeItem() {
+        return DistributedFunction.identity();
     }
 
     /**
@@ -42,7 +43,7 @@ public final class DistributedFunctions {
      * @param <K> type of entry's key
      */
     @Nonnull
-    public static <K> Distributed.Function<Map.Entry<K, ?>, K> entryKey() {
+    public static <K> DistributedFunction<Entry<K, ?>, K> entryKey() {
         return Map.Entry::getKey;
     }
 
@@ -52,7 +53,7 @@ public final class DistributedFunctions {
      * @param <V> type of entry's value
      */
     @Nonnull
-    public static <V> Distributed.Function<Map.Entry<?, V>, V> entryValue() {
+    public static <V> DistributedFunction<Entry<?, V>, V> entryValue() {
         return Map.Entry::getValue;
     }
 
@@ -60,7 +61,7 @@ public final class DistributedFunctions {
      * Returns a consumer that does nothing with the argument.
      */
     @Nonnull
-    public static <T> Distributed.Consumer<T> noopConsumer() {
+    public static <T> DistributedConsumer<T> noopConsumer() {
         return t -> {
         };
     }

@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Distributed.Supplier;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.Processor;
 
 import javax.annotation.Nonnull;
@@ -86,7 +86,7 @@ public class StreamTextSocketP extends AbstractProcessor {
         return host + ':' + port;
     }
 
-    public static Supplier<Processor> supplier(String host, int port, String charset) {
+    public static DistributedSupplier<Processor> supplier(String host, int port, String charset) {
         return () -> new StreamTextSocketP(host, port,
                 charset == null ? StandardCharsets.UTF_8 : Charset.forName(charset));
     }

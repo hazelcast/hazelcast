@@ -16,17 +16,17 @@
 
 package com.hazelcast.jet.stream.impl.distributed;
 
-import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.function.DistributedComparator;
 
 public final class DistributedComparators {
 
-    public static final Distributed.Comparator<Comparable<Object>> NATURAL_ORDER_COMPARATOR = new NaturalOrderComparator();
-    public static final Distributed.Comparator<Comparable<Object>> REVERSE_ORDER_COMPARATOR = new ReverseOrderComparator();
+    public static final DistributedComparator<Comparable<Object>> NATURAL_ORDER_COMPARATOR = new NaturalOrderComparator();
+    public static final DistributedComparator<Comparable<Object>> REVERSE_ORDER_COMPARATOR = new ReverseOrderComparator();
 
     private DistributedComparators() {
     }
 
-    private static class NaturalOrderComparator implements Distributed.Comparator<Comparable<Object>> {
+    private static class NaturalOrderComparator implements DistributedComparator<Comparable<Object>> {
 
         @Override
         public int compare(Comparable<Object> c1, Comparable<Object> c2) {
@@ -34,12 +34,12 @@ public final class DistributedComparators {
         }
 
         @Override
-        public Distributed.Comparator<Comparable<Object>> reversed() {
+        public DistributedComparator<Comparable<Object>> reversed() {
             return REVERSE_ORDER_COMPARATOR;
         }
     }
 
-    private static class ReverseOrderComparator implements Distributed.Comparator<Comparable<Object>> {
+    private static class ReverseOrderComparator implements DistributedComparator<Comparable<Object>> {
 
         @Override
         public int compare(Comparable<Object> c1, Comparable<Object> c2) {
@@ -47,7 +47,7 @@ public final class DistributedComparators {
         }
 
         @Override
-        public Distributed.Comparator<Comparable<Object>> reversed() {
+        public DistributedComparator<Comparable<Object>> reversed() {
             return NATURAL_ORDER_COMPARATOR;
         }
     }
@@ -55,7 +55,7 @@ public final class DistributedComparators {
     /**
      * Null-friendly comparator
      */
-    public static final class NullComparator<T> implements Distributed.Comparator<T> {
+    public static final class NullComparator<T> implements DistributedComparator<T> {
         private static final long serialVersionUID = -7569533591570686392L;
         private final boolean nullFirst;
 

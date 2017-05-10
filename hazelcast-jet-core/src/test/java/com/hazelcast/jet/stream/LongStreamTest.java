@@ -17,7 +17,7 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.function.DistributedLongUnaryOperator;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -143,7 +143,7 @@ public class LongStreamTest extends AbstractStreamTest {
         int repetitions = 10;
         long[] longs = stream
                 .filter(n -> n < repetitions)
-                .flatMap(n -> LongStream.iterate(n, Distributed.LongUnaryOperator.identity()).limit(repetitions))
+                .flatMap(n -> LongStream.iterate(n, DistributedLongUnaryOperator.identity()).limit(repetitions))
                 .toArray();
 
         Arrays.sort(longs);
