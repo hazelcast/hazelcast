@@ -142,7 +142,7 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
         Address address = getOwnerConnectionAddress();
         final ClientConnectionManager cm = client.getConnectionManager();
         final ClientConnection connection = (ClientConnection) cm.getConnection(address);
-        InetSocketAddress inetSocketAddress = connection != null ? connection.getLocalSocketAddress() : null;
+        InetSocketAddress inetSocketAddress = connection != null ? connection.getLocalAddress() : null;
         final String uuid = getPrincipal().getUuid();
         return new ClientImpl(uuid, inetSocketAddress);
     }

@@ -307,7 +307,7 @@ class TestClientRegistry {
         }
 
         @Override
-        public InetSocketAddress getLocalSocketAddress() {
+        public InetSocketAddress getLocalAddress() {
             try {
                 return localAddress.getInetSocketAddress();
             } catch (UnknownHostException e) {
