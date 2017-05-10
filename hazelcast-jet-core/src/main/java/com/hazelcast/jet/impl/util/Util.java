@@ -52,6 +52,10 @@ public final class Util {
         return new MemoizingSupplier<>(onceSupplier);
     }
 
+    public static <T> Supplier<T> memoizeConcurrent(Supplier<T> onceSupplier) {
+        return new ConcurrentMemoizingSupplier<T>(onceSupplier);
+    }
+
     public static <T> T uncheckCall(@Nonnull Callable<T> callable) {
         try {
             return callable.call();

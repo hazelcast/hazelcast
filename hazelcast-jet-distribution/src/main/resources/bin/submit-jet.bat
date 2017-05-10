@@ -1,0 +1,26 @@
+@echo off
+
+SETLOCAL
+
+if NOT DEFINED JAVA_HOME goto error
+set RUN_JAVA=%JAVA_HOME%\bin\java
+
+set CLASSPATH=%~dp0..\lib\hazelcast-jet-${project.version}.jar
+SET JAR_FILE=%1
+
+ECHO ########################################
+ECHO # RUN_JAVA=%RUN_JAVA%
+ECHO # starting now....
+ECHO ########################################
+
+"%RUN_JAVA%" -cp "%CLASSPATH%";"%JAR_FILE%" com.hazelcast.jet.server.JetBootstrap %JAR_FILE% %2 %3 %4 %5 %6 %7 %8 %9
+goto endofscript 
+
+:error
+ECHO JAVA_HOME environment variable must be set!
+pause
+
+
+:endofscript
+
+ENDLOCAL 

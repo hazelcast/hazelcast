@@ -15,6 +15,7 @@
  */
 
 /**
- * Util class for starting a server instance
+ * Contains Java program entry points that will start a Jet server
+ * instance, submit jobs to a Jet cluster, etc.
  */
 package com.hazelcast.jet.server;

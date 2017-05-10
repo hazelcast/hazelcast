@@ -22,16 +22,23 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.List;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import static com.hazelcast.jet.impl.util.Util.addClamped;
+import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static com.hazelcast.jet.impl.util.Util.subtractClamped;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class UtilTest {
 
     @Test
-    public void testAddClamped() {
+    public void when_addClamped_then_doesntOverflow() {
         // no overflow
         assertEquals(0, addClamped(0, 0));
         assertEquals(1, addClamped(1, 0));
@@ -48,7 +55,7 @@ public class UtilTest {
     }
 
     @Test
-    public void testSubtractClamped() {
+    public void when_subtractClamped_then_doesntOverflow() {
         // no overflow
         assertEquals(0, subtractClamped(0, 0));
         assertEquals(1, subtractClamped(1, 0));
@@ -62,6 +69,32 @@ public class UtilTest {
         // overflow over MIN_VALUE
         assertEquals(Long.MIN_VALUE, subtractClamped(Long.MIN_VALUE, 1));
         assertEquals(Long.MIN_VALUE, subtractClamped(Long.MIN_VALUE, Long.MAX_VALUE));
+    }
+
+    @Test
+    public void when_memoizeConcurrent_then_threadSafe() {
+        final Object obj = new Object();
+        Supplier<Object> supplier = new Supplier<Object>() {
+            boolean supplied;
+            @Override
+            public Object get() {
+               if (supplied) {
+                   throw new IllegalStateException("Supplier was already called once.");
+               }
+               supplied = true;
+               return obj;
+            }
+        };
+
+        // does not fail 100% with non-concurrent memoize, but about 50% of the time.
+        List<Object> list = Stream.generate(memoizeConcurrent(supplier)).limit(4).parallel().collect(Collectors.toList());
+        assertTrue("Not all objects matched expected", list.stream().allMatch(o -> o.equals(obj)));
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void when_memoizeConcurrentWithNullSupplier_then_exception() {
+       Supplier<Object> supplier = () -> null;
+       memoizeConcurrent(supplier).get();
     }
 
 }

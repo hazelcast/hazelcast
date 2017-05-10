@@ -85,7 +85,6 @@ public final class Jet {
         return new JetClientInstanceImpl(((HazelcastClientProxy) client).client);
     }
 
-
     static void configureJetService(JetConfig jetConfig) {
         jetConfig.getHazelcastConfig().getServicesConfig()
                  .addServiceConfig(new ServiceConfig().setEnabled(true)
@@ -93,5 +92,4 @@ public final class Jet {
                                                       .setClassName(JetService.class.getName())
                                                       .setConfigObject(jetConfig));
     }
-
 }

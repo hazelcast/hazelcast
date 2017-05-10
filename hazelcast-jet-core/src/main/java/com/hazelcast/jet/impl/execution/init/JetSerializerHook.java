@@ -48,8 +48,8 @@ public final class JetSerializerHook {
     public static final int CUSTOM_CLASS_LOADED_OBJECT = -301;
     public static final int OBJECT_ARRAY = -302;
     public static final int TIMESTAMPED_ENTRY = -303;
-    public static final int MUTABLE_LONG = -304;
-    public static final int MUTABLE_DOUBLE = -305;
+    public static final int LONG_ACC = -304;
+    public static final int DOUBLE_ACC = -305;
     public static final int MUTABLE_REFERENCE = -306;
     public static final int LIN_REG_ACC = -307;
 
@@ -203,7 +203,7 @@ public final class JetSerializerHook {
             return new StreamSerializer<LongAccumulator>() {
                 @Override
                 public int getTypeId() {
-                    return MUTABLE_LONG;
+                    return LONG_ACC;
                 }
 
                 @Override
@@ -241,7 +241,7 @@ public final class JetSerializerHook {
             return new StreamSerializer<DoubleAccumulator>() {
                 @Override
                 public int getTypeId() {
-                    return MUTABLE_DOUBLE;
+                    return DOUBLE_ACC;
                 }
 
                 @Override

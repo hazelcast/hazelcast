@@ -45,21 +45,21 @@
         <file>
             <source>${resource.dir}/hazelcast-jet-default.xml</source>
             <destName>hazelcast-jet.xml</destName>
-            <outputDirectory>bin</outputDirectory>
+            <outputDirectory>config</outputDirectory>
         </file>
         <file>
             <source>${resource.dir}/hazelcast-jet-full-example.xml</source>
-            <outputDirectory>bin</outputDirectory>
+            <outputDirectory>config</outputDirectory>
         </file>
         <file>
             <source>${resource.dir}/hazelcast-jet-member-default.xml</source>
             <destName>hazelcast.xml</destName>
-            <outputDirectory>bin</outputDirectory>
+            <outputDirectory>config</outputDirectory>
         </file>
         <file>
             <source>${resource.dir}/hazelcast-jet-client-default.xml</source>
             <destName>hazelcast-client.xml</destName>
-            <outputDirectory>bin</outputDirectory>
+            <outputDirectory>config</outputDirectory>
         </file>
     </files>
     <fileSets>

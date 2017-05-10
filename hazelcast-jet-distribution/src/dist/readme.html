@@ -143,15 +143,20 @@
 		
 		<h3 id="folders">Folders</h3>	
 			
-			<li><strong>/bin</strong>
+			<li>
+				<strong>/config</strong>
 				<ul>
-				<li><strong>hazelcast-jet.xml </strong> &mdash; the configuration file for Hazelcast Jet cluster.</li>
-				<li><strong>hazelcast.xml</strong> &mdash; the configuration file for embedded Hazelcast IMDG cluster.</li>
-				<li><strong>start.bat</strong> &mdash; Starts a Hazelcast Jet member for Windows users.</li>
-				<li><strong>start.sh</strong> &mdash;  Starts a Hazelcast Jet member for Linux users.</li>
-                <li><strong>stop.bat</strong> &mdash; Stops the current running Hazelcast Jet member for Windows users.</li>
-                <li><strong>stop.sh</strong> &mdash; Stops the current running Hazelcast Jet member for Linux users.</li>
-                <li><strong>cluster.sh</strong> &mdash; Provides basic functionalities for cluster management such as getting and changing the cluster state, shutting down the cluster or forcing the cluster to clean its persisted data and make a fresh start.</li>
+					<li><strong>hazelcast.xml</strong> &mdash; the configuration file for embedded Hazelcast IMDG
+						cluster.</li>
+					<li><strong>hazelcast-jet.xml </strong> &mdash; the configuration file for Hazelcast Jet cluster.</li>
+				</ul>
+				<strong>/bin</strong>
+				<ul>
+				<li><strong>start-jet.sh / start-jet.bat</strong> &mdash; Starts a new Hazelcast Jet member</li>
+                <li><strong>stop-jet.sh / stop-jet.bat</strong> &mdash; Stops all running Hazelcast Jet members</li>
+                <li><strong>submit-jet.sh</strong> &mdash; Utility for submitting jobs to Jet cluster</li>
+                <li><strong>cluster.sh</strong> &mdash; Provides basic functionality for cluster management such as getting
+					and changing the cluster state, shutting down the cluster or forcing the cluster to clean its persisted data and make a fresh start.</li>
 				</ul>
 			</li>
 			
