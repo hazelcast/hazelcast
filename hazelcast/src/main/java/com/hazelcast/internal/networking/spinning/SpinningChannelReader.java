@@ -17,22 +17,20 @@
 package com.hazelcast.internal.networking.spinning;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.networking.ChannelConnection;
+import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
-import com.hazelcast.internal.networking.ChannelReader;
-import com.hazelcast.internal.networking.ChannelReaderInitializer;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 
-import java.io.EOFException;
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 
-public class SpinningChannelReader extends AbstractHandler implements ChannelReader {
+public class SpinningChannelReader extends AbstractHandler {
 
     @Probe(name = "bytesRead")
     private final SwCounter bytesRead = newSwCounter();
@@ -40,30 +38,20 @@ public class SpinningChannelReader extends AbstractHandler implements ChannelRea
     private final SwCounter normalFramesRead = newSwCounter();
     @Probe(name = "priorityFramesRead")
     private final SwCounter priorityFramesRead = newSwCounter();
-    private final ChannelReaderInitializer initializer;
+    private final ChannelInitializer initializer;
     private volatile long lastReadTime;
     private ChannelInboundHandler inboundHandler;
     private ByteBuffer inputBuffer;
 
-    public SpinningChannelReader(ChannelConnection connection,
+    public SpinningChannelReader(Channel channel,
                                  ILogger logger,
                                  IOOutOfMemoryHandler oomeHandler,
-                                 ChannelReaderInitializer initializer) {
-        super(connection, logger, oomeHandler);
+                                 ChannelInitializer initializer) {
+        super(channel, logger, oomeHandler);
         this.initializer = initializer;
     }
 
-    @Override
-    public void initInputBuffer(ByteBuffer inputBuffer) {
-        this.inputBuffer = inputBuffer;
-    }
-
-    @Override
-    public void setInboundHandler(ChannelInboundHandler inboundHandler) {
-        this.inboundHandler = inboundHandler;
-    }
-
-    @Override
+    // @Override
     public long lastReadTimeMillis() {
         return lastReadTime;
     }
@@ -73,56 +61,56 @@ public class SpinningChannelReader extends AbstractHandler implements ChannelRea
         return max(currentTimeMillis() - lastReadTime, 0);
     }
 
-    @Override
+    //  @Override
     public SwCounter getNormalFramesReadCounter() {
         return normalFramesRead;
     }
 
-    @Override
+    //  @Override
     public SwCounter getPriorityFramesReadCounter() {
         return priorityFramesRead;
     }
 
-    @Override
+    //   @Override
     public void init() {
         //no-op
     }
 
-    @Override
+    //  @Override
     public void close() {
         //no-op
     }
 
     public void read() throws Exception {
-        if (!connection.isAlive()) {
-            socketChannel.closeInbound();
-            return;
-        }
-
-        if (inboundHandler == null) {
-            initializer.init(connection, this);
-            if (inboundHandler == null) {
-                // when using SSL, we can read 0 bytes since data read from socket can be handshake frames.
-                return;
-            }
-        }
-
-        int readBytes = socketChannel.read(inputBuffer);
-        if (readBytes <= 0) {
-            if (readBytes == -1) {
-                throw new EOFException("Remote socket closed!");
-            }
-            return;
-        }
-
-        lastReadTime = currentTimeMillis();
-        bytesRead.inc(readBytes);
-        inputBuffer.flip();
-        inboundHandler.onRead(inputBuffer);
-        if (inputBuffer.hasRemaining()) {
-            inputBuffer.compact();
-        } else {
-            inputBuffer.clear();
-        }
+//        if (!channel.isAlive()) {
+//            channel.closeInbound();
+//            return;
+//        }
+//
+//        if (inboundHandler == null) {
+//            initializer.init(channel, this);
+//            if (inboundHandler == null) {
+//                // when using SSL, we can read 0 bytes since data read from socket can be handshake frames.
+//                return;
+//            }
+//        }
+//
+//        int readBytes = channel.read(inputBuffer);
+//        if (readBytes <= 0) {
+//            if (readBytes == -1) {
+//                throw new EOFException("Remote socket closed!");
+//            }
+//            return;
+//        }
+//
+//        lastReadTime = currentTimeMillis();
+//        bytesRead.inc(readBytes);
+//        inputBuffer.flip();
+//        inboundHandler.onRead(inputBuffer);
+//        if (inputBuffer.hasRemaining()) {
+//            inputBuffer.compact();
+//        } else {
+//            inputBuffer.clear();
+//        }
     }
 }

@@ -16,12 +16,10 @@
 
 package com.hazelcast.internal.networking.spinning;
 
-import com.hazelcast.internal.networking.ChannelConnection;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import static java.lang.System.arraycopy;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 public class SpinningOutputThread extends Thread {
@@ -37,59 +35,59 @@ public class SpinningOutputThread extends Thread {
         this.socketWriters = new SocketWriters();
     }
 
-    void addConnection(ChannelConnection connection) {
-        SpinningChannelWriter writer = (SpinningChannelWriter) connection.getChannelWriter();
-
-        for (; ; ) {
-            SocketWriters current = socketWriters;
-            if (current == SHUTDOWN) {
-                return;
-            }
-
-            int length = current.writers.length;
-
-            SpinningChannelWriter[] newWriters = new SpinningChannelWriter[length + 1];
-            arraycopy(current.writers, 0, newWriters, 0, length);
-            newWriters[length] = writer;
-
-            SocketWriters update = new SocketWriters(newWriters);
-            if (CONNECTION_HANDLERS.compareAndSet(this, current, update)) {
-                return;
-            }
-        }
-    }
-
-    void removeConnection(ChannelConnection connection) {
-        SpinningChannelWriter writeHandlers = (SpinningChannelWriter) connection.getChannelWriter();
-
-        for (; ; ) {
-            SocketWriters current = socketWriters;
-            if (current == SHUTDOWN) {
-                return;
-            }
-
-            int indexOf = current.indexOf(writeHandlers);
-            if (indexOf == -1) {
-                return;
-            }
-
-            int length = current.writers.length;
-            SpinningChannelWriter[] newWriters = new SpinningChannelWriter[length - 1];
-
-            int destIndex = 0;
-            for (int sourceIndex = 0; sourceIndex < length; sourceIndex++) {
-                if (sourceIndex != indexOf) {
-                    newWriters[destIndex] = current.writers[sourceIndex];
-                    destIndex++;
-                }
-            }
-
-            SocketWriters update = new SocketWriters(newWriters);
-            if (CONNECTION_HANDLERS.compareAndSet(this, current, update)) {
-                return;
-            }
-        }
-    }
+//    void addConnection(ChannelConnection connection) {
+//        SpinningChannelWriter writer = (SpinningChannelWriter) connection.getChannelWriter();
+//
+//        for (; ; ) {
+//            SocketWriters current = socketWriters;
+//            if (current == SHUTDOWN) {
+//                return;
+//            }
+//
+//            int length = current.writers.length;
+//
+//            SpinningChannelWriter[] newWriters = new SpinningChannelWriter[length + 1];
+//            arraycopy(current.writers, 0, newWriters, 0, length);
+//            newWriters[length] = writer;
+//
+//            SocketWriters update = new SocketWriters(newWriters);
+//            if (CONNECTION_HANDLERS.compareAndSet(this, current, update)) {
+//                return;
+//            }
+//        }
+//    }
+//
+//    void removeConnection(ChannelConnection connection) {
+//        SpinningChannelWriter writeHandlers = (SpinningChannelWriter) connection.getChannelWriter();
+//
+//        for (; ; ) {
+//            SocketWriters current = socketWriters;
+//            if (current == SHUTDOWN) {
+//                return;
+//            }
+//
+//            int indexOf = current.indexOf(writeHandlers);
+//            if (indexOf == -1) {
+//                return;
+//            }
+//
+//            int length = current.writers.length;
+//            SpinningChannelWriter[] newWriters = new SpinningChannelWriter[length - 1];
+//
+//            int destIndex = 0;
+//            for (int sourceIndex = 0; sourceIndex < length; sourceIndex++) {
+//                if (sourceIndex != indexOf) {
+//                    newWriters[destIndex] = current.writers[sourceIndex];
+//                    destIndex++;
+//                }
+//            }
+//
+//            SocketWriters update = new SocketWriters(newWriters);
+//            if (CONNECTION_HANDLERS.compareAndSet(this, current, update)) {
+//                return;
+//            }
+//        }
+//    }
 
     public void shutdown() {
         socketWriters = SHUTDOWN;

@@ -17,8 +17,8 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.internal.networking.ChannelInboundHandler;
-import com.hazelcast.internal.networking.ChannelReader;
 import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 
@@ -38,15 +38,13 @@ public class MemberChannelInboundHandler implements ChannelInboundHandler {
     protected Packet packet;
 
     private final PacketDispatcher packetDispatcher;
-    private final Counter normalPacketsRead;
-    private final Counter priorityPacketsRead;
+    //todo
+    private final Counter normalPacketsRead = SwCounter.newSwCounter();
+    private final Counter priorityPacketsRead = SwCounter.newSwCounter();
 
     public MemberChannelInboundHandler(TcpIpConnection connection, PacketDispatcher packetDispatcher) {
         this.connection = connection;
         this.packetDispatcher = packetDispatcher;
-        ChannelReader channelReader = connection.getChannelReader();
-        this.normalPacketsRead = channelReader.getNormalFramesReadCounter();
-        this.priorityPacketsRead = channelReader.getPriorityFramesReadCounter();
     }
 
     @Override

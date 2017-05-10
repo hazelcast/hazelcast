@@ -16,16 +16,11 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ChannelConnection;
-import com.hazelcast.internal.networking.ChannelReader;
-import com.hazelcast.internal.networking.ChannelWriter;
-import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.OutboundFrame;
@@ -38,23 +33,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The Tcp/Ip implementation of the {@link com.hazelcast.nio.Connection}.
- * <p>
- * A {@link TcpIpConnection} is not responsible for reading or writing data to a socket, this is done through:
- * <ol>
- * <li>{@link ChannelReader}: which care of reading from the socket and feeding it into the system/li>
- * <li>{@link ChannelWriter}: which care of writing data to the socket.</li>
- * </ol>
- *
- * @see EventLoopGroup
  */
 @SuppressWarnings("checkstyle:methodcount")
-public final class TcpIpConnection implements ChannelConnection, DiscardableMetricsProvider {
+public final class TcpIpConnection implements Connection {
 
     private final Channel channel;
-
-    private final ChannelReader channelReader;
-
-    private final ChannelWriter channelWriter;
 
     private final TcpIpConnectionManager connectionManager;
 
@@ -78,39 +61,30 @@ public final class TcpIpConnection implements ChannelConnection, DiscardableMetr
 
     public TcpIpConnection(TcpIpConnectionManager connectionManager,
                            int connectionId,
-                           Channel channel,
-                           EventLoopGroup eventLoopGroup) {
+                           Channel channel) {
         this.connectionId = connectionId;
         this.connectionManager = connectionManager;
         this.ioService = connectionManager.getIoService();
         this.logger = ioService.getLoggingService().getLogger(TcpIpConnection.class);
         this.channel = channel;
-        this.channelWriter = eventLoopGroup.newSocketWriter(this);
-        this.channelReader = eventLoopGroup.newSocketReader(this);
     }
 
-    @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        String metricsId = channel.getLocalSocketAddress() + "->" + channel.getRemoteSocketAddress();
-        registry.scanAndRegister(channelWriter, "tcp.connection[" + metricsId + "].out");
-        registry.scanAndRegister(channelReader, "tcp.connection[" + metricsId + "].in");
-    }
+//    @Override
+//    public void provideMetrics(MetricsRegistry registry) {
+//        Socket socket = channel.socket();
+//        SocketAddress localSocketAddress = socket != null ? socket.getLocalSocketAddress() : null;
+//        SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
+//        String metricsId = localSocketAddress + "->" + remoteSocketAddress;
+//        registry.scanAndRegister(channelWriter, "tcp.connection[" + metricsId + "].out");
+//        registry.scanAndRegister(channelReader, "tcp.connection[" + metricsId + "].in");
+//    }
+//
+//    @Override
+//    public void discardMetrics(MetricsRegistry registry) {
+//        registry.deregister(channelReader);
+//        registry.deregister(channelWriter);
+//    }
 
-    @Override
-    public void discardMetrics(MetricsRegistry registry) {
-        registry.deregister(channelReader);
-        registry.deregister(channelWriter);
-    }
-
-    public ChannelReader getChannelReader() {
-        return channelReader;
-    }
-
-    public ChannelWriter getChannelWriter() {
-        return channelWriter;
-    }
-
-    @Override
     public Channel getChannel() {
         return channel;
     }
@@ -159,12 +133,12 @@ public final class TcpIpConnection implements ChannelConnection, DiscardableMetr
 
     @Override
     public long lastWriteTimeMillis() {
-        return channelWriter.lastWriteTimeMillis();
+        return channel.lastWriteTimeMillis();
     }
 
     @Override
     public long lastReadTimeMillis() {
-        return channelReader.lastReadTimeMillis();
+        return channel.lastReadTimeMillis();
     }
 
     @Override
@@ -190,15 +164,6 @@ public final class TcpIpConnection implements ChannelConnection, DiscardableMetr
         return t != null && t != ConnectionType.NONE && t.isClient();
     }
 
-    /**
-     * Starts this connection.
-     * <p>
-     * Starting means that the connection is going to register itself to listen to incoming traffic.
-     */
-    public void start() {
-        channelReader.init();
-    }
-
     @Override
     public boolean write(OutboundFrame frame) {
         if (!alive.get()) {
@@ -207,7 +172,7 @@ public final class TcpIpConnection implements ChannelConnection, DiscardableMetr
             }
             return false;
         }
-        channelWriter.write(frame);
+        channel.write(frame);
         return true;
     }
 
@@ -242,8 +207,6 @@ public final class TcpIpConnection implements ChannelConnection, DiscardableMetr
 
         try {
             if (channel != null && channel.isOpen()) {
-                channelReader.close();
-                channelWriter.close();
                 channel.close();
             }
         } catch (Exception e) {

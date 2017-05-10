@@ -20,7 +20,6 @@ import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.Protocols;
 import com.hazelcast.util.AddressUtil;
 
 import java.io.IOException;
@@ -185,7 +184,7 @@ public class TcpIpConnector {
 
                 channel.configureBlocking(false);
                 TcpIpConnection connection = connectionManager.newConnection(channel, address);
-                connection.getChannelWriter().setProtocol(Protocols.CLUSTER);
+                //connection.getChannelWriter().setProtocol(Protocols.CLUSTER);
                 connectionManager.sendBindRequest(connection, address, true);
             } catch (Exception e) {
                 closeSocket(socketChannel);

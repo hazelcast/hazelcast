@@ -25,6 +25,7 @@ import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelFactory;
+import com.hazelcast.internal.networking.PlainNioChannelFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
@@ -351,7 +352,7 @@ public class MockIOService implements IOService {
 
     @Override
     public ChannelFactory getSocketChannelWrapperFactory() {
-        return new PlainChannelFactory();
+        return new PlainNioChannelFactory();
     }
 
     @Override

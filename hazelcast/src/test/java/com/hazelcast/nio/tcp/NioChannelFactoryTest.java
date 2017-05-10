@@ -17,6 +17,8 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.NioChannel;
+import com.hazelcast.internal.networking.PlainNioChannelFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,13 +34,13 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class PlainChannelFactoryTest extends HazelcastTestSupport {
+public class NioChannelFactoryTest extends HazelcastTestSupport {
 
-    private PlainChannelFactory factory;
+    private PlainNioChannelFactory factory;
 
     @Before
     public void setup() {
-        factory = new PlainChannelFactory();
+        factory = new PlainNioChannelFactory();
     }
 
     @Test
@@ -46,6 +48,6 @@ public class PlainChannelFactoryTest extends HazelcastTestSupport {
         SocketChannel socketChannel = mock(SocketChannel.class);
         Channel wrapper = factory.create(socketChannel, false, false);
 
-        assertInstanceOf(PlainChannel.class, wrapper);
+        assertInstanceOf(NioChannel.class, wrapper);
     }
 }

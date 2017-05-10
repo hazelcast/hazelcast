@@ -40,7 +40,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.SocketInterceptor;
-import com.hazelcast.nio.tcp.PlainChannelFactory;
+import com.hazelcast.internal.networking.PlainNioChannelFactory;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -108,7 +108,7 @@ public class DefaultClientExtension implements ClientExtension {
 
     @Override
     public ChannelFactory createSocketChannelWrapperFactory() {
-        return new PlainChannelFactory();
+        return new PlainNioChannelFactory();
     }
 
     @Override

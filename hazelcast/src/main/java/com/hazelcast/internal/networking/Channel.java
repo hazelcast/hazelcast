@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.networking;
 
+import com.hazelcast.nio.OutboundFrame;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.Socket;
@@ -26,16 +28,13 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Wraps a {@link java.nio.channels.SocketChannel}.
+ * Responsible for transmitting or receiving data.
  *
- * The reason this class exists is because for enterprise encryption. Ideally the SocketChannel should have been decorated
- * with this encryption functionality, but unfortunately that isn't possible with this class.
+ * It could be seen as a wrapper around e.g. a {@link SocketChannel}; but a Channel isn't bound to a particular protocol
+ * like TCP/IP.
  *
- * That is why a new 'wrapper' interface is introduced which acts like a SocketChannel and the implementations wrap a
- * SocketChannel.
- *
- * In the future we should get rid of this class and rely on {@link ChannelInboundHandler}/{@link ChannelOutboundHandler}
- * chaining to add encryption. This will remove more artifacts from the architecture that can't carry their weight.
+ * Channel and {@link EventLoopGroup} are very closely related. For example a
+ * {@link com.hazelcast.internal.networking.nio.NioEventLoopGroup} requires a {@link NioChannel}.
  */
 public interface Channel extends Closeable {
 
@@ -69,19 +68,26 @@ public interface Channel extends Closeable {
     /**
      * This method will be removed from the interface. Only an explicit cast to NioChannel will expose the SocketChannel.
      */
-    SocketChannel socketChannel();
+    boolean isConnected();
 
     /**
+     * Will be removed in the future; only reason this method exists is for TLS.
+     *
      * @see java.nio.channels.SocketChannel#read(ByteBuffer)
      */
     int read(ByteBuffer dst) throws IOException;
 
     /**
+     * Will be removed in the future; only reason this method exists is for TLS.
+     *
      * @see java.nio.channels.SocketChannel#write(ByteBuffer)
      */
     int write(ByteBuffer src) throws IOException;
 
     /**
+     * Will be removed in the future; it a responsibility of the {@link EventLoopGroup} to poke around in e.g. the
+     * {@link SocketChannel} to make it blocking or not.
+     *
      * @see java.nio.channels.SocketChannel#configureBlocking(boolean)
      */
     SelectableChannel configureBlocking(boolean block) throws IOException;
@@ -94,7 +100,7 @@ public interface Channel extends Closeable {
     /**
      * Closes inbound.
      *
-     * <p>Not thread safe. Should be called in channel reader thread.</p>
+     * <p>Not thread safe. Should be called in appropriate io thread.</p>
      *
      * @throws IOException
      */
@@ -103,7 +109,9 @@ public interface Channel extends Closeable {
     /**
      * Closes outbound.
      *
-     * <p>Not thread safe. Should be called in channel writer thread.</p>
+     * <p>Not thread safe. Should be called in appropriate io thread.</p>
+     *
+     * Will be removed in the future.
      *
      * @throws IOException
      */
@@ -111,6 +119,33 @@ public interface Channel extends Closeable {
 
     /**
      * @see java.nio.channels.SocketChannel#close()
+     *
+     * Will be removed in the future.
      */
     void close() throws IOException;
+
+    void addCloseListener(CloseListener closeListener);
+
+    /**
+     * @return the last time in milliseconds a write to the network was made.
+     */
+    long lastWriteTimeMillis();
+
+    /**
+     * @return the last time in milliseconds a read from the network was done.
+     */
+    long lastReadTimeMillis();
+
+    /**
+     * Writes an OutboundFrame to this channel. The frame doesn't need to be written to socket directly, it is also
+     * ok if the frame gets queued for writing at some point in time.
+     *
+     * Unlike the {@link #write(ByteBuffer)}, this method is thread-safe.
+     *
+     * No guarantee is made that the frame is going to be written or received even if the method returned true.
+     *
+     * @param frame the frame to write
+     * @return false was not written because the channel got closed.
+     */
+    boolean write(OutboundFrame frame);
 }

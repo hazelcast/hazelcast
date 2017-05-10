@@ -16,10 +16,23 @@
 
 package com.hazelcast.internal.networking;
 
-import com.hazelcast.nio.Connection;
+import java.nio.ByteBuffer;
 
-import java.io.IOException;
+public class InitResult<H> {
 
-public interface ChannelReaderInitializer<C extends Connection> {
-    void init(C connection, ChannelReader reader) throws IOException;
+    private ByteBuffer byteBuffer;
+    private H handler;
+
+    public InitResult(ByteBuffer byteBuffer, H handler) {
+        this.byteBuffer = byteBuffer;
+        this.handler = handler;
+    }
+
+    public ByteBuffer getByteBuffer() {
+        return byteBuffer;
+    }
+
+    public H getHandler() {
+        return handler;
+    }
 }

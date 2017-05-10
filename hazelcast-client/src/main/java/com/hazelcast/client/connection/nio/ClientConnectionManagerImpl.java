@@ -192,8 +192,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 inputThreads,
                 outputThreads,
                 properties.getInteger(ClientProperty.IO_BALANCER_INTERVAL_SECONDS),
-                new ClientChannelWriterInitializer(getBufferSize(), directBuffer),
-                new ClientChannelReaderInitializer(getBufferSize(), directBuffer));
+                new ClientChannelInitializer(getBufferSize(), directBuffer));
     }
 
     private SocketInterceptor initSocketInterceptor(SocketInterceptorConfig sic) {
@@ -396,17 +395,18 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             HazelcastProperties properties = client.getProperties();
             boolean directBuffer = properties.getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
 
-            Channel channel =
-                    channelFactory.create(socketChannel, true, directBuffer);
+            Channel channel = channelFactory.create(socketChannel, true, directBuffer);
 
-            final ClientConnection clientConnection = new ClientConnection(
-                    client, eventLoopGroup, connectionIdGen.incrementAndGet(), channel);
+            final ClientConnection clientConnection = new ClientConnection(client, connectionIdGen.incrementAndGet(), channel);
             socketChannel.configureBlocking(true);
             if (socketInterceptor != null) {
                 socketInterceptor.onConnect(socket);
             }
             socketChannel.configureBlocking(eventLoopGroup.isBlocking());
             socket.setSoTimeout(0);
+
+            eventLoopGroup.register(channel);
+
             clientConnection.start();
             return clientConnection;
         } catch (Exception e) {

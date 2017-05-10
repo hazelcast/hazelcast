@@ -18,27 +18,22 @@ package com.hazelcast.internal.networking.spinning;
 
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
-import com.hazelcast.internal.networking.ChannelConnection;
 import com.hazelcast.logging.ILogger;
-
-import java.io.EOFException;
 
 public abstract class AbstractHandler {
 
-    protected final ChannelConnection connection;
     protected final ILogger logger;
-    protected final Channel socketChannel;
+    protected final Channel channel;
     private final IOOutOfMemoryHandler oomeHandler;
 
-    public AbstractHandler(ChannelConnection connection, ILogger logger, IOOutOfMemoryHandler oomeHandler) {
-        this.connection = connection;
+    public AbstractHandler(Channel channel, ILogger logger, IOOutOfMemoryHandler oomeHandler) {
         this.oomeHandler = oomeHandler;
         this.logger = logger;
-        this.socketChannel = connection.getChannel();
+        this.channel = channel;
     }
 
     public Channel getChannel() {
-        return socketChannel;
+        return channel;
     }
 
     public void onFailure(Throwable e) {
@@ -46,10 +41,10 @@ public abstract class AbstractHandler {
             oomeHandler.handle((OutOfMemoryError) e);
         }
 
-        if (e instanceof EOFException) {
-            connection.close("Connection closed by the other side", e);
-        } else {
-            connection.close("Exception in " + getClass().getSimpleName(), e);
-        }
+//        if (e instanceof EOFException) {
+//            connection.close("Connection closed by the other side", e);
+//        } else {
+//            connection.close("Exception in " + getClass().getSimpleName(), e);
+//        }
     }
 }

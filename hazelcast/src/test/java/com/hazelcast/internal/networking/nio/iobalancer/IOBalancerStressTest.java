@@ -108,10 +108,10 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             sb.append(in + ": " + in.getEventCount() + "\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
-                NioChannelReader socketReader = (NioChannelReader) connection.getChannelReader();
-                if (socketReader.getOwner() == in) {
-                    sb.append("\t" + socketReader + " eventCount:" + socketReader.getEventCount() + "\n");
-                }
+//                NioChannelReader socketReader = (NioChannelReader) connection.getChannelReader();
+//                if (socketReader.getOwner() == in) {
+//                    sb.append("\t" + socketReader + " eventCount:" + socketReader.getEventCount() + "\n");
+//                }
             }
         }
         sb.append("out selectors\n");
@@ -119,10 +119,10 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             sb.append(in + ": " + in.getEventCount() + "\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
-                NioChannelWriter socketWriter = (NioChannelWriter) connection.getChannelWriter();
-                if (socketWriter.getOwner() == in) {
-                    sb.append("\t" + socketWriter + " eventCount:" + socketWriter.getEventCount() + "\n");
-                }
+//                NioChannelWriter socketWriter = (NioChannelWriter) connection.getChannelWriter();
+//                if (socketWriter.getOwner() == in) {
+//                    sb.append("\t" + socketWriter + " eventCount:" + socketWriter.getEventCount() + "\n");
+//                }
             }
         }
 
@@ -132,8 +132,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     private Map<NioThread, Set<MigratableHandler>> getHandlersPerSelector(TcpIpConnectionManager connectionManager) {
         Map<NioThread, Set<MigratableHandler>> handlersPerSelector = new HashMap<NioThread, Set<MigratableHandler>>();
         for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
-            add(handlersPerSelector, (MigratableHandler) connection.getChannelReader());
-            add(handlersPerSelector, (MigratableHandler) connection.getChannelWriter());
+//            add(handlersPerSelector, (MigratableHandler) connection.getChannelReader());
+//            add(handlersPerSelector, (MigratableHandler) connection.getChannelWriter());
         }
         return handlersPerSelector;
     }
