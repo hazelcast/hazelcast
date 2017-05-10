@@ -374,7 +374,6 @@ public class CacheListenerTest extends HazelcastTestSupport {
                         FactoryBuilder.factoryOf(new TestListener(new AtomicInteger())), null, true,
                         true));
 
-        final Cache<String, String> cache = cacheManager.createCache("MyCache", config);
+        cacheManager.createCache("MyCache", config);
     }
-
 }

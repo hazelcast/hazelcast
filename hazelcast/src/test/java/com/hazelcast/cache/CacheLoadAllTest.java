@@ -44,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -128,7 +129,7 @@ public class CacheLoadAllTest extends CacheTestSupport {
             }
         });
 
-        latch.await(60, TimeUnit.SECONDS);
+        assertTrue(latch.await(60, TimeUnit.SECONDS));
 
         // Verify that load-all works
         for (Map.Entry<String, String> entry : entries.entrySet()) {

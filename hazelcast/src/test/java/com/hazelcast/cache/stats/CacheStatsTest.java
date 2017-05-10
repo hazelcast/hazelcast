@@ -34,6 +34,7 @@ import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 import java.util.concurrent.Callable;
 
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -167,7 +168,7 @@ public class CacheStatsTest extends CacheTestSupport {
         }
         long end = System.nanoTime();
 
-        float avgPutTime = (end - start) / 1000;
+        float avgPutTime = NANOSECONDS.toMicros(end - start);
 
         assertTrue(stats.getAveragePutTime() > 0);
         assertTrue(stats.getAveragePutTime() < avgPutTime);
@@ -231,7 +232,7 @@ public class CacheStatsTest extends CacheTestSupport {
         }
         long end = System.nanoTime();
 
-        float avgGetTime = (end - start) / 1000;
+        float avgGetTime = NANOSECONDS.toMicros(end - start);
 
         assertTrue(stats.getAverageGetTime() > 0);
         assertTrue(stats.getAverageGetTime() < avgGetTime);
@@ -296,7 +297,7 @@ public class CacheStatsTest extends CacheTestSupport {
         }
         long end = System.nanoTime();
 
-        float avgRemoveTime = (end - start) / 1000;
+        float avgRemoveTime = NANOSECONDS.toMicros(end - start);
 
         assertTrue(stats.getAverageRemoveTime() > 0);
         assertTrue(stats.getAverageRemoveTime() < avgRemoveTime);

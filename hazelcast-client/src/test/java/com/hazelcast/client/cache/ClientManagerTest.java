@@ -20,7 +20,6 @@ import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -32,9 +31,7 @@ import org.junit.runner.RunWith;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -43,7 +40,7 @@ import static org.junit.Assert.assertEquals;
 @Ignore
 public class ClientManagerTest {
 
-    //TODO fix these URL so that they work for both local and CI builds
+    // TODO: fix these URL so that they work for both local and CI builds
     final URI uri1 = new File("hazelcast-client/src/test/java/com/hazelcast/client/cache/hazelcast-client-c1.xml").toURI();
     final URI uri2 = new File("hazelcast-client/src/test/java/com/hazelcast/client/cache/hazelcast-client-c2.xml").toURI();
 
@@ -55,7 +52,7 @@ public class ClientManagerTest {
         config.getGroupConfig().setName("cluster1");
         config.getGroupConfig().setPassword("cluster1pass");
 
-        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
+        Hazelcast.newHazelcastInstance(config);
 
         Config config2 = new Config();
         config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
@@ -63,7 +60,7 @@ public class ClientManagerTest {
         config2.getGroupConfig().setName("cluster2");
         config2.getGroupConfig().setPassword("cluster2pass");
 
-        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config2);
+        Hazelcast.newHazelcastInstance(config2);
     }
 
     public void tearDown() {
@@ -71,8 +68,7 @@ public class ClientManagerTest {
     }
 
     @Test
-    public void testMultiClusterMultipleClients()
-            throws MalformedURLException, URISyntaxException {
+    public void testMultiClusterMultipleClients() {
         final String cacheName = "test";
         final String key1 = "key1";
         final String valuecm1 = "Value-is-cm1";
@@ -93,8 +89,6 @@ public class ClientManagerTest {
 
         cachingProvider.close(uri1, null);
         cachingProvider.close(uri2, null);
-//        cm1.close();
-//        cm2.close();
 
         final CacheManager cm11 = cachingProvider.getCacheManager(uri1, null);
 

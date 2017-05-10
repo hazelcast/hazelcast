@@ -57,7 +57,7 @@ public class ClientCacheProxyTest extends HazelcastTestSupport {
         assertNull(logger.message);
     }
 
-    private class TestLogger extends AbstractLogger {
+    private static class TestLogger extends AbstractLogger {
 
         String message;
 
