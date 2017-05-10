@@ -532,19 +532,11 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void warmUpPartitions(HazelcastInstance... instances) {
-        try {
-            TestUtil.warmUpPartitions(instances);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        TestUtil.warmUpPartitions(instances);
     }
 
     public static void warmUpPartitions(Collection<HazelcastInstance> instances) {
-        try {
-            TestUtil.warmUpPartitions(instances);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        TestUtil.warmUpPartitions(instances);
     }
 
     public static boolean isInstanceInSafeState(HazelcastInstance instance) {
@@ -634,6 +626,9 @@ public abstract class HazelcastTestSupport {
     public static void assertAllInSafeState(Collection<HazelcastInstance> nodes) {
         Map<Address, PartitionServiceState> nonSafeStates = new HashMap<Address, PartitionServiceState>();
         for (HazelcastInstance node : nodes) {
+            if (node == null) {
+                continue;
+            }
             final PartitionServiceState state = getPartitionServiceState(node);
             if (state != PartitionServiceState.SAFE) {
                 nonSafeStates.put(getAddress(node), state);

@@ -57,7 +57,6 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getFuture;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.setEvictionConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.waitUntilLoaded;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.warmupPartitionsAndWaitForAllSafeState;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.Executors.newFixedThreadPool;
@@ -676,9 +675,8 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         NearCacheTestContext<Integer, String, NK, NV> context = createContext(true);
         DataStructureAdapter<Integer, String> adapter = useDataAdapter ? context.dataAdapter : context.nearCacheAdapter;
 
-        // wait until the initial load is done and the cluster is in a safe state
+        // wait until the initial load is done
         waitUntilLoaded(context);
-        warmupPartitionsAndWaitForAllSafeState(context);
 
         populateDataAdapter(context);
         populateNearCache(context);

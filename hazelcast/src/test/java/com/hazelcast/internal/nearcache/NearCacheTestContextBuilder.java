@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureLoader;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.test.HazelcastTestSupport;
 
 import javax.cache.CacheManager;
 
@@ -31,7 +32,7 @@ import static org.junit.Assert.assertNotEquals;
 /**
  * Builder for {@link NearCacheTestContext}.
  */
-public class NearCacheTestContextBuilder<K, V, NK, NV> {
+public class NearCacheTestContextBuilder<K, V, NK, NV> extends HazelcastTestSupport {
 
     private NearCacheConfig nearCacheConfig;
     private SerializationService serializationService;
@@ -116,7 +117,7 @@ public class NearCacheTestContextBuilder<K, V, NK, NV> {
         assertNotEquals("nearCacheInstance and dataInstance have to be different instances", nearCacheInstance, dataInstance);
         assertNotEquals("nearCacheAdapter and dataAdapter have to be different instances", nearCacheAdapter, dataAdapter);
 
-        return new NearCacheTestContext<K, V, NK, NV>(
+        NearCacheTestContext<K, V, NK, NV> context = new NearCacheTestContext<K, V, NK, NV>(
                 nearCacheConfig,
                 serializationService,
                 nearCacheInstance,
@@ -130,5 +131,10 @@ public class NearCacheTestContextBuilder<K, V, NK, NV> {
                 hasLocalData,
                 loader,
                 invalidationListener);
+
+        warmUpPartitions(context.dataInstance, context.nearCacheInstance);
+        waitAllForSafeState(context.dataInstance, context.nearCacheInstance);
+
+        return context;
     }
 }

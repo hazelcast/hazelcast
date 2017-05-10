@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
+
 public final class TestUtil {
 
     static final private SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
@@ -64,23 +66,29 @@ public final class TestUtil {
         hz.getLifecycleService().terminate();
     }
 
-    public static void warmUpPartitions(HazelcastInstance... instances) throws InterruptedException {
+    public static void warmUpPartitions(HazelcastInstance... instances) {
         for (HazelcastInstance instance : instances) {
+            if (instance == null) {
+                continue;
+            }
             final PartitionService ps = instance.getPartitionService();
             for (Partition partition : ps.getPartitions()) {
                 while (partition.getOwner() == null) {
-                    Thread.sleep(10);
+                    sleepMillis(10);
                 }
             }
         }
     }
 
-    public static void warmUpPartitions(Collection<HazelcastInstance> instances) throws InterruptedException {
+    public static void warmUpPartitions(Collection<HazelcastInstance> instances) {
         for (HazelcastInstance instance : instances) {
+            if (instance == null) {
+                continue;
+            }
             final PartitionService ps = instance.getPartitionService();
             for (Partition partition : ps.getPartitions()) {
                 while (partition.getOwner() == null) {
-                    Thread.sleep(10);
+                    sleepMillis(10);
                 }
             }
         }
