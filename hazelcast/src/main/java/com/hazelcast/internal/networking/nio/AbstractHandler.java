@@ -26,6 +26,7 @@ import com.hazelcast.logging.ILogger;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
@@ -43,6 +44,7 @@ public abstract class AbstractHandler
     protected final ChannelConnection connection;
     protected NioThread ioThread;
     protected SelectionKey selectionKey;
+    private final SocketChannel socketChannel;
     private final int initialOps;
     private final IOBalancer ioBalancer;
 
@@ -61,6 +63,7 @@ public abstract class AbstractHandler
                            IOBalancer ioBalancer) {
         this.connection = connection;
         this.channel = connection.getChannel();
+        this.socketChannel = channel.socketChannel();
         this.ioThread = ioThread;
         this.ioThreadId = ioThread.id;
         this.logger = logger;
@@ -91,7 +94,7 @@ public abstract class AbstractHandler
 
     protected SelectionKey getSelectionKey() throws IOException {
         if (selectionKey == null) {
-            selectionKey = channel.register(ioThread.getSelector(), initialOps, this);
+            selectionKey = socketChannel.register(ioThread.getSelector(), initialOps, this);
         }
         return selectionKey;
     }

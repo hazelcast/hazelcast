@@ -22,10 +22,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
 public class PlainChannel implements Channel {
@@ -37,13 +34,13 @@ public class PlainChannel implements Channel {
     }
 
     @Override
-    public boolean isBlocking() {
-        return socketChannel.isBlocking();
+    public Socket socket() {
+        return socketChannel.socket();
     }
 
     @Override
-    public Socket socket() {
-        return socketChannel.socket();
+    public SocketChannel socketChannel() {
+        return socketChannel;
     }
 
     @Override
@@ -56,16 +53,6 @@ public class PlainChannel implements Channel {
     public SocketAddress getLocalAddress() {
         Socket socket = socket();
         return socket == null ? null : socket.getLocalSocketAddress();
-    }
-
-    @Override
-    public boolean isConnected() {
-        return socketChannel.isConnected();
-    }
-
-    @Override
-    public boolean connect(SocketAddress socketAddress) throws IOException {
-        return socketChannel.connect(socketAddress);
     }
 
     @Override
@@ -99,16 +86,6 @@ public class PlainChannel implements Channel {
     @Override
     public void close() throws IOException {
         socketChannel.close();
-    }
-
-    @Override
-    public SelectionKey keyFor(Selector selector) {
-        return socketChannel.keyFor(selector);
-    }
-
-    @Override
-    public SelectionKey register(Selector selector, int ops, Object attachment) throws ClosedChannelException {
-        return socketChannel.register(selector, ops, attachment);
     }
 
     @Override
