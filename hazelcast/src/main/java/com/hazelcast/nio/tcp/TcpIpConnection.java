@@ -91,7 +91,7 @@ public final class TcpIpConnection implements ChannelConnection, DiscardableMetr
 
     @Override
     public void provideMetrics(MetricsRegistry registry) {
-        String metricsId = channel.getLocalAddress() + "->" + channel.getRemoteAddress();
+        String metricsId = channel.getLocalSocketAddress() + "->" + channel.getRemoteSocketAddress();
         registry.scanAndRegister(channelWriter, "tcp.connection[" + metricsId + "].out");
         registry.scanAndRegister(channelReader, "tcp.connection[" + metricsId + "].in");
     }
@@ -148,8 +148,8 @@ public final class TcpIpConnection implements ChannelConnection, DiscardableMetr
     }
 
     @Override
-    public InetSocketAddress getRemoteAddress() {
-        return (InetSocketAddress) channel.getRemoteAddress();
+    public InetSocketAddress getRemoteSocketAddress() {
+        return (InetSocketAddress) channel.getRemoteSocketAddress();
     }
 
     @Override
@@ -299,7 +299,7 @@ public final class TcpIpConnection implements ChannelConnection, DiscardableMetr
     @Override
     public String toString() {
         return "Connection[id=" + connectionId
-                + ", " + channel.getLocalAddress() + "->" + channel.getRemoteAddress()
+                + ", " + channel.getLocalSocketAddress() + "->" + channel.getRemoteSocketAddress()
                 + ", endpoint=" + endPoint
                 + ", alive=" + alive
                 + ", type=" + type

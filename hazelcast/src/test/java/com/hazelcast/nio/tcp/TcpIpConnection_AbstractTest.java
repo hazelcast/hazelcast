@@ -146,7 +146,7 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
 
         for (; ; ) {
             for (TcpIpConnection connection : connManager.getActiveConnections()) {
-                if (connection.getRemoteAddress().equals(localSocketAddress)) {
+                if (connection.getRemoteSocketAddress().equals(localSocketAddress)) {
                     return connection;
                 }
             }

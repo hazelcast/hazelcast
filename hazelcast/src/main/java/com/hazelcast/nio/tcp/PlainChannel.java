@@ -51,13 +51,13 @@ public class PlainChannel implements Channel {
     }
 
     @Override
-    public SocketAddress getRemoteAddress() {
+    public SocketAddress getRemoteSocketAddress() {
         Socket socket = socket();
         return socket == null ? null : socket.getRemoteSocketAddress();
     }
 
     @Override
-    public SocketAddress getLocalAddress() {
+    public SocketAddress getLocalSocketAddress() {
         Socket socket = socket();
         return socket == null ? null : socket.getLocalSocketAddress();
     }

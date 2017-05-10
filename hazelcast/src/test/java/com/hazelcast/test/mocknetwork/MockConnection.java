@@ -146,7 +146,7 @@ public class MockConnection implements Connection {
         }
     }
 
-    public InetSocketAddress getRemoteAddress() {
+    public InetSocketAddress getRemoteSocketAddress() {
         return new InetSocketAddress(getInetAddress(), getPort());
     }
 

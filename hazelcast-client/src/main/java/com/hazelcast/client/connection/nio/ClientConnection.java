@@ -109,7 +109,7 @@ public class ClientConnection implements ChannelConnection, DiscardableMetricsPr
     @Override
     public void provideMetrics(MetricsRegistry registry) {
         String connectionName = "tcp.connection["
-                + channel.getLocalAddress() + " -> " + channel.getRemoteAddress() + "]";
+                + channel.getLocalSocketAddress() + " -> " + channel.getRemoteSocketAddress() + "]";
         registry.scanAndRegister(this, connectionName);
         registry.scanAndRegister(reader, connectionName + ".in");
         registry.scanAndRegister(writer, connectionName + ".out");
@@ -212,8 +212,8 @@ public class ClientConnection implements ChannelConnection, DiscardableMetricsPr
     }
 
     @Override
-    public InetSocketAddress getRemoteAddress() {
-        return (InetSocketAddress) channel.getRemoteAddress();
+    public InetSocketAddress getRemoteSocketAddress() {
+        return (InetSocketAddress) channel.getRemoteSocketAddress();
     }
 
     @Override
@@ -230,7 +230,7 @@ public class ClientConnection implements ChannelConnection, DiscardableMetricsPr
     }
 
     public InetSocketAddress getLocalSocketAddress() {
-        return (InetSocketAddress) channel.getLocalAddress();
+        return (InetSocketAddress) channel.getLocalSocketAddress();
     }
 
     @Override

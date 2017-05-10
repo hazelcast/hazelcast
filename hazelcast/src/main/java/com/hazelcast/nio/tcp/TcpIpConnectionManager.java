@@ -313,7 +313,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             eventLoopGroup.onConnectionAdded(connection);
 
             logger.info("Established socket connection between "
-                    + channel.getLocalAddress() + " and " + channel.getRemoteAddress());
+                    + channel.getLocalSocketAddress() + " and " + channel.getRemoteSocketAddress());
             openedCount.inc();
 
             metricsRegistry.collectMetrics(connection);
