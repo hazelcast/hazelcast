@@ -68,6 +68,20 @@ The following are the other improvements performed to solve the enhancement issu
 
 This section lists the fixed issues for Hazelcast 3.8 and 3.8.x releases.
 
+*3.8.2 Fixes*
+
+- Even though a CachePermission already exists, the respective PermissionType does not exist and cannot be configured programmatically or declaratively. [#10503]
+- Management Center reports incorrect values for backups. Given that there is one copy of the data across a native map, it is expected to see identical memory footprint on the entry and the backups with identical sum across a server. But it is not the case. [#10454]
+- There is a memory leak caused by ThreadGroup. [#10394]
+- Split-Brain messages still occupy the memory after recovery. [#10325]
+- When shutting down a client with a topic subscription, it logs a warning level exception which seems harmless. It is not good to log a harmless exception as warning. [#10291]
+- There is a race condition in the back pressure at the client side which causes the back pressure not to work. [#10253]
+- Ringbuffer OutOfMemoryError: GC overhead limit exceeded. [#10189]
+- ClientContext is created for every proxy and it causes unneeded resource allocations. [#10117]
+- Hazelcast terminates listeners incorrectly. [#10101]
+- When hostname is used in the Hazelcast member configuration instead of IP address, NullPointerException is thrown. [#9884]
+- When using a Hazelcast Client instance, if the redoOperation is set to true, operations which failed to be sent to the cluster are retried, but failures from executing the operation itself in the cluster are not. [#8545]
+
 *3.8.1 Fixes*
 
 - `BackupEntryProcessor` returned from `AbstractEntryProcessor` does not support `HazelcastInstanceAware`. [10083]
