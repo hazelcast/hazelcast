@@ -30,6 +30,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.nio.ConnectionType.MEMBER;
 import static com.hazelcast.nio.IOService.KILO_BYTE;
@@ -40,6 +41,8 @@ import static com.hazelcast.nio.Protocols.TEXT;
 import static com.hazelcast.util.StringUtil.bytesToString;
 
 public class MemberChannelReaderInitializer implements ChannelReaderInitializer<TcpIpConnection> {
+
+    private static final String PROTOCOL_BUFFER = "protocolbuffer";
 
     private final ILogger logger;
 
@@ -52,10 +55,10 @@ public class MemberChannelReaderInitializer implements ChannelReaderInitializer<
         TcpIpConnectionManager connectionManager = connection.getConnectionManager();
         IOService ioService = connectionManager.getIoService();
 
-        ByteBuffer protocolBuffer = reader.getProtocolBuffer();
-        Channel socketChannel = reader.getChannel();
+        Channel channel = reader.getChannel();
+        ByteBuffer protocolBuffer = getProtocolBuffer(channel);
 
-        int readBytes = socketChannel.read(protocolBuffer);
+        int readBytes = channel.read(protocolBuffer);
 
         if (readBytes == -1) {
             throw new EOFException("Could not read protocol type!");
@@ -70,6 +73,9 @@ public class MemberChannelReaderInitializer implements ChannelReaderInitializer<
             // we have not yet received all protocol bytes
             return;
         }
+
+        // since the protocol is complete; we can remove the protocol-buffer.
+        channel.attributeMap().remove(PROTOCOL_BUFFER);
 
         ChannelInboundHandler inboundHandler;
         String protocol = bytesToString(protocolBuffer.array());
@@ -96,6 +102,16 @@ public class MemberChannelReaderInitializer implements ChannelReaderInitializer<
         }
 
         reader.setInboundHandler(inboundHandler);
+    }
+
+    private static ByteBuffer getProtocolBuffer(Channel channel) {
+        ConcurrentMap attributeMap = channel.attributeMap();
+        ByteBuffer protocolBuffer = (ByteBuffer) attributeMap.get(PROTOCOL_BUFFER);
+        if (protocolBuffer == null) {
+            protocolBuffer = ByteBuffer.allocate(3);
+            attributeMap.put(PROTOCOL_BUFFER, protocolBuffer);
+        }
+        return protocolBuffer;
     }
 
     private ByteBuffer initInputBuffer(TcpIpConnection connection, ChannelReader reader, int sizeKb) {

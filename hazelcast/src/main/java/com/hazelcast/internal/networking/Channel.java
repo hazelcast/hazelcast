@@ -23,6 +23,7 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Wraps a {@link java.nio.channels.SocketChannel}.
@@ -37,6 +38,16 @@ import java.nio.channels.SocketChannel;
  * chaining to add encryption. This will remove more artifacts from the architecture that can't carry their weight.
  */
 public interface Channel extends Closeable {
+
+    /**
+     * Returns the attribute map.
+     *
+     * Attribute map can be used to store data into a socket. For example to find the Connection for a Channel, one can
+     * store the Connection in this channel using some well known key.
+     *
+     * @return the attribute map.
+     */
+    ConcurrentMap attributeMap();
 
     /**
      * @see java.nio.channels.SocketChannel#socket()

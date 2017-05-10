@@ -85,6 +85,4 @@ public interface ChannelReader {
     void setInboundHandler(ChannelInboundHandler inboundHandler);
 
     Channel getChannel();
-
-    ByteBuffer getProtocolBuffer();
 }
