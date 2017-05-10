@@ -16,10 +16,13 @@
 
 package com.hazelcast.internal.usercodedeployment;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * ClassDefinition to be used with UserCodeDeployment feature
- * when sending classes from client to server
+ * when sending classes from client to server.
  */
+@SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 public class ClassDefinition {
 
     private final String className;
