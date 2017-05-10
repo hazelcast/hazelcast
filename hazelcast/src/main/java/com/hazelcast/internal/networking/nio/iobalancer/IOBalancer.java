@@ -100,12 +100,12 @@ public class IOBalancer {
         return outLoadTracker;
     }
 
-    public void connectionAdded(MigratableHandler readHandler, MigratableHandler writeHandler) {
+    public void channelAdded(MigratableHandler readHandler, MigratableHandler writeHandler) {
         inLoadTracker.notifyHandlerAdded(readHandler);
         outLoadTracker.notifyHandlerAdded(writeHandler);
     }
 
-    public void connectionRemoved(MigratableHandler readHandler, MigratableHandler writeHandler) {
+    public void channelRemoved(MigratableHandler readHandler, MigratableHandler writeHandler) {
         inLoadTracker.notifyHandlerRemoved(readHandler);
         outLoadTracker.notifyHandlerRemoved(writeHandler);
     }

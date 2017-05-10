@@ -233,7 +233,7 @@ public class NioEventLoopGroup
 
         MigratableHandler reader = (MigratableHandler) connection.getChannelReader();
         MigratableHandler writer = (MigratableHandler) connection.getChannelWriter();
-        ioBalancer.connectionAdded(reader, writer);
+        ioBalancer.channelAdded(reader, writer);
     }
 
     @Override
@@ -242,7 +242,7 @@ public class NioEventLoopGroup
 
         MigratableHandler reader = (MigratableHandler) connection.getChannelReader();
         MigratableHandler writer = (MigratableHandler) connection.getChannelWriter();
-        ioBalancer.connectionRemoved(reader, writer);
+        ioBalancer.channelRemoved(reader, writer);
     }
 
     private void startIOBalancer() {
