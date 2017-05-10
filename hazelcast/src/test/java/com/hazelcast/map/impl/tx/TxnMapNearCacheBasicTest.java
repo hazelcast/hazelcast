@@ -28,6 +28,7 @@ import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -84,15 +85,13 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
 
     @After
     public void tearDown() {
-        hazelcastFactory.shutdownAll();
+        hazelcastFactory.terminateAll();
     }
 
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean loaderEnabled) {
-        Config configWithNearCache = getConfig();
-        configWithNearCache.getMapConfig(DEFAULT_NEAR_CACHE_NAME).setNearCacheConfig(nearCacheConfig);
-
-        Config config = getConfig();
+        Config configWithNearCache = createConfig(true);
+        Config config = createConfig(false);
 
         HazelcastInstance nearCacheInstance = hazelcastFactory.newHazelcastInstance(configWithNearCache);
         HazelcastInstance dataInstance = hazelcastFactory.newHazelcastInstance(config);
@@ -111,6 +110,16 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
                 .build();
+    }
+
+    protected Config createConfig(boolean withNearCache) {
+        Config config = getConfig()
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), PARTITION_COUNT);
+
+        if (withNearCache) {
+            config.getMapConfig(DEFAULT_NEAR_CACHE_NAME).setNearCacheConfig(nearCacheConfig);
+        }
+        return config;
     }
 
     /**

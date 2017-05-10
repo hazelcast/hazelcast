@@ -86,6 +86,11 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     protected static final String DEFAULT_NEAR_CACHE_NAME = "defaultNearCache";
 
     /**
+     * The partition count to configure in the Hazelcast members.
+     */
+    protected static final String PARTITION_COUNT = "5";
+
+    /**
      * Defines all {@link DataStructureMethods} which are using EntryProcessors.
      */
     private static final List<DataStructureMethods> ENTRY_PROCESSOR_METHODS = asList(

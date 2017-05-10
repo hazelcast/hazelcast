@@ -31,6 +31,7 @@ import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -78,19 +79,14 @@ public class ClientMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data
 
     @After
     public void tearDown() {
-        hazelcastFactory.shutdownAll();
+        hazelcastFactory.terminateAll();
     }
 
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean loaderEnabled) {
-        Config config = getConfig();
         IMapMapStore mapStore = loaderEnabled ? new IMapMapStore() : null;
-        if (loaderEnabled) {
-            addMapStoreConfig(mapStore, config.getMapConfig(DEFAULT_NEAR_CACHE_NAME));
-        }
-
-        ClientConfig clientConfig = getClientConfig()
-                .addNearCacheConfig(nearCacheConfig);
+        Config config = createConfig(mapStore);
+        ClientConfig clientConfig = createClientConfig();
 
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
@@ -113,7 +109,17 @@ public class ClientMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data
                 .build();
     }
 
-    protected ClientConfig getClientConfig() {
-        return new ClientConfig();
+    protected Config createConfig(IMapMapStore mapStore) {
+        Config config = getConfig()
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), PARTITION_COUNT);
+
+        addMapStoreConfig(mapStore, config.getMapConfig(DEFAULT_NEAR_CACHE_NAME));
+
+        return config;
+    }
+
+    protected ClientConfig createClientConfig() {
+        return new ClientConfig()
+                .addNearCacheConfig(nearCacheConfig);
     }
 }

@@ -30,6 +30,7 @@ import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -80,24 +81,14 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
 
     @After
     public void tearDown() {
-        hazelcastFactory.shutdownAll();
+        hazelcastFactory.terminateAll();
     }
 
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean loaderEnabled) {
         IMapMapStore mapStore = loaderEnabled ? new IMapMapStore() : null;
-
-        Config configWithNearCache = getConfig();
-        MapConfig mapConfig = configWithNearCache.getMapConfig(DEFAULT_NEAR_CACHE_NAME)
-                .setNearCacheConfig(nearCacheConfig);
-        if (loaderEnabled) {
-            addMapStoreConfig(mapStore, mapConfig);
-        }
-
-        Config config = getConfig();
-        if (loaderEnabled) {
-            addMapStoreConfig(mapStore, config.getMapConfig(DEFAULT_NEAR_CACHE_NAME));
-        }
+        Config configWithNearCache = createConfig(mapStore, true);
+        Config config = createConfig(mapStore, false);
 
         HazelcastInstance nearCacheInstance = hazelcastFactory.newHazelcastInstance(configWithNearCache);
         HazelcastInstance dataInstance = hazelcastFactory.newHazelcastInstance(config);
@@ -120,7 +111,24 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
                 .build();
     }
 
+    protected Config createConfig(IMapMapStore mapStore, boolean withNearCache) {
+        Config config = getConfig()
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), PARTITION_COUNT);
+
+        MapConfig mapConfig = config.getMapConfig(DEFAULT_NEAR_CACHE_NAME);
+        addMapStoreConfig(mapStore, mapConfig);
+        if (withNearCache) {
+            mapConfig.setNearCacheConfig(nearCacheConfig);
+        }
+
+        return config;
+    }
+
     public static void addMapStoreConfig(IMapMapStore mapStore, MapConfig mapConfig) {
+        if (mapStore == null) {
+            return;
+        }
+
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setEnabled(true)
                 .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER)
