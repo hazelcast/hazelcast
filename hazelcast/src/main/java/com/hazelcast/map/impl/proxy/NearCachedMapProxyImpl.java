@@ -33,6 +33,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -114,10 +115,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     protected InternalCompletableFuture<Data> getAsyncInternal(final Data key) {
         Object value = getCachedValue(key, false);
         if (value != NOT_CACHED) {
-            return new CompletedFuture<Data>(
-                    getNodeEngine().getSerializationService(),
-                    value,
-                    getNodeEngine().getExecutionService().getExecutor(ASYNC_EXECUTOR));
+            ExecutionService executionService = getNodeEngine().getExecutionService();
+            return new CompletedFuture<Data>(serializationService, value, executionService.getExecutor(ASYNC_EXECUTOR));
         }
 
         final long reservationId = tryReserveForUpdate(key);
@@ -337,15 +336,15 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected void getAllObjectInternal(List<Data> keys, List<Object> resultingKeyValuePairs) {
-        getCachedValues(keys, resultingKeyValuePairs);
+    protected void getAllObjectInternal(List<Data> dataKeys, List<Object> resultingKeyValuePairs) {
+        getCachedValues(dataKeys, resultingKeyValuePairs);
 
         Map<Data, Long> reservations = emptyMap();
         try {
-            reservations = tryReserveForUpdate(keys);
+            reservations = tryReserveForUpdate(dataKeys);
             int currentSize = resultingKeyValuePairs.size();
 
-            super.getAllObjectInternal(keys, resultingKeyValuePairs);
+            super.getAllObjectInternal(dataKeys, resultingKeyValuePairs);
 
             for (int i = currentSize; i < resultingKeyValuePairs.size(); ) {
                 Data key = toData(resultingKeyValuePairs.get(i++));
