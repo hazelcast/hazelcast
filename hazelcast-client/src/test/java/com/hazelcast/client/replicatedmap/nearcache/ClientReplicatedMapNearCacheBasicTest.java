@@ -30,6 +30,7 @@ import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -71,17 +72,13 @@ public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasi
 
     @After
     public void tearDown() {
-        hazelcastFactory.shutdownAll();
+        hazelcastFactory.terminateAll();
     }
 
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean loaderEnabled) {
-        Config config = getConfig();
-        config.getReplicatedMapConfig(DEFAULT_NEAR_CACHE_NAME)
-                .setInMemoryFormat(nearCacheConfig.getInMemoryFormat());
-
-        ClientConfig clientConfig = getClientConfig()
-                .addNearCacheConfig(nearCacheConfig);
+        Config config = createConfig();
+        ClientConfig clientConfig = createClientConfig();
 
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
@@ -103,7 +100,18 @@ public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasi
                 .build();
     }
 
-    protected ClientConfig getClientConfig() {
-        return new ClientConfig();
+    protected Config createConfig() {
+        Config config = getConfig()
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), PARTITION_COUNT);
+
+        config.getReplicatedMapConfig(DEFAULT_NEAR_CACHE_NAME)
+                .setInMemoryFormat(nearCacheConfig.getInMemoryFormat());
+
+        return config;
+    }
+
+    protected ClientConfig createClientConfig() {
+        return new ClientConfig()
+                .addNearCacheConfig(nearCacheConfig);
     }
 }

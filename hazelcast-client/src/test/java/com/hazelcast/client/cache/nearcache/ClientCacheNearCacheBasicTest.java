@@ -25,6 +25,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy;
@@ -37,6 +38,7 @@ import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -93,17 +95,16 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
 
     @After
     public void tearDown() {
-        hazelcastFactory.shutdownAll();
+        hazelcastFactory.terminateAll();
     }
 
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean loaderEnabled) {
-        ClientConfig clientConfig = getClientConfig()
-                .addNearCacheConfig(nearCacheConfig);
-
+        Config config = createConfig();
+        ClientConfig clientConfig = createClientConfig();
         CacheConfig<K, V> cacheConfig = createCacheConfig(nearCacheConfig, loaderEnabled);
 
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(getConfig());
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
 
         CachingProvider memberProvider = HazelcastServerCachingProvider.createCachingProvider(member);
@@ -134,8 +135,14 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
                 .build();
     }
 
-    protected ClientConfig getClientConfig() {
-        return new ClientConfig();
+    protected Config createConfig() {
+        return getConfig()
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), PARTITION_COUNT);
+    }
+
+    protected ClientConfig createClientConfig() {
+        return new ClientConfig()
+                .addNearCacheConfig(nearCacheConfig);
     }
 
     @SuppressWarnings("unchecked")
