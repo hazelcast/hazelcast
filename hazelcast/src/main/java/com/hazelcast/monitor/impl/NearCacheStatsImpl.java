@@ -19,6 +19,7 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.monitor.NearCacheStats;
 
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getLong;
@@ -45,6 +46,9 @@ public class NearCacheStatsImpl implements NearCacheStats {
             newUpdater(NearCacheStatsImpl.class, "expirations");
     private static final AtomicLongFieldUpdater<NearCacheStatsImpl> PERSISTENCE_COUNT =
             newUpdater(NearCacheStatsImpl.class, "persistenceCount");
+
+    private AtomicLong increments = new AtomicLong();
+    private AtomicLong decrements = new AtomicLong();
 
     private volatile long creationTime;
     private volatile long ownedEntryCount;
@@ -98,10 +102,12 @@ public class NearCacheStatsImpl implements NearCacheStats {
     }
 
     public void incrementOwnedEntryCount() {
+        increments.incrementAndGet();
         OWNED_ENTRY_COUNT.incrementAndGet(this);
     }
 
     public void decrementOwnedEntryCount() {
+        decrements.incrementAndGet();
         OWNED_ENTRY_COUNT.decrementAndGet(this);
     }
 
@@ -274,7 +280,9 @@ public class NearCacheStatsImpl implements NearCacheStats {
         return "NearCacheStatsImpl{"
                 + "ownedEntryCount=" + ownedEntryCount
                 + ", ownedEntryMemoryCost=" + ownedEntryMemoryCost
-                + ", creationTime=" + creationTime
+                + " (increments: " + increments.get()
+                + ", decrements: " + decrements.get()
+                + "), creationTime=" + creationTime
                 + ", hits=" + hits
                 + ", misses=" + misses
                 + ", ratio=" + format("%.1f%%", getRatio())
