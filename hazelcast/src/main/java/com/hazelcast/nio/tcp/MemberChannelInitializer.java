@@ -19,13 +19,16 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
+import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.ChannelReader;
-import com.hazelcast.internal.networking.ChannelReaderInitializer;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.ChannelWriter;
 import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOService;
+import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.ascii.TextChannelInboundHandler;
+import com.hazelcast.nio.ascii.TextChannelOutboundHandler;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -40,19 +43,20 @@ import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
 import static com.hazelcast.nio.Protocols.TEXT;
 import static com.hazelcast.util.StringUtil.bytesToString;
+import static com.hazelcast.util.StringUtil.stringToBytes;
 
-public class MemberChannelReaderInitializer implements ChannelReaderInitializer<TcpIpConnection> {
+public class MemberChannelInitializer implements ChannelInitializer<TcpIpConnection> {
 
     private static final String PROTOCOL_BUFFER = "protocolbuffer";
 
     private final ILogger logger;
 
-    public MemberChannelReaderInitializer(ILogger logger) {
+    public MemberChannelInitializer(ILogger logger) {
         this.logger = logger;
     }
 
     @Override
-    public InitResult<ChannelInboundHandler> init(TcpIpConnection connection, ChannelReader reader) throws IOException {
+    public InitResult<ChannelInboundHandler> initInbound(TcpIpConnection connection, ChannelReader reader) throws IOException {
         TcpIpConnectionManager connectionManager = connection.getConnectionManager();
         IOService ioService = connectionManager.getIoService();
 
@@ -134,5 +138,46 @@ public class MemberChannelReaderInitializer implements ChannelReaderInitializer<
     private static boolean isSslEnabled(IOService ioService) {
         SSLConfig config = ioService.getSSLConfig();
         return config != null && config.isEnabled();
+    }
+
+    @Override
+    public InitResult<ChannelOutboundHandler> initOutbound(TcpIpConnection connection, ChannelWriter writer, String protocol) {
+        logger.fine("Initializing ChannelWriter ChannelOutboundHandler with " + Protocols.toUserFriendlyString(protocol));
+
+        ChannelOutboundHandler handler = newOutboundHandler(connection, protocol);
+        ByteBuffer outputBuffer = newOutputBuffer(connection, protocol);
+        return new InitResult<ChannelOutboundHandler>(outputBuffer, handler);
+    }
+
+    private ChannelOutboundHandler newOutboundHandler(TcpIpConnection connection, String protocol) {
+        if (CLUSTER.equals(protocol)) {
+            IOService ioService = connection.getConnectionManager().getIoService();
+            return ioService.createWriteHandler(connection);
+        } else if (CLIENT_BINARY_NEW.equals(protocol)) {
+            return new ClientChannelOutboundHandler();
+        } else {
+            return new TextChannelOutboundHandler(connection);
+        }
+    }
+
+    private ByteBuffer newOutputBuffer(TcpIpConnection connection, String protocol) {
+        IOService ioService = connection.getConnectionManager().getIoService();
+        int sizeKb = CLUSTER.equals(protocol)
+                ? ioService.getSocketSendBufferSize()
+                : ioService.getSocketClientSendBufferSize();
+        int size = KILO_BYTE * sizeKb;
+
+        ByteBuffer outputBuffer = newByteBuffer(size, ioService.useDirectSocketBuffer());
+        if (CLUSTER.equals(protocol)) {
+            outputBuffer.put(stringToBytes(CLUSTER));
+        }
+
+        try {
+            connection.getChannel().socket().setSendBufferSize(size);
+        } catch (SocketException e) {
+            logger.finest("Failed to adjust TCP send buffer of " + connection + " to " + size + " B.", e);
+        }
+
+        return outputBuffer;
     }
 }

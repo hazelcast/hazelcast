@@ -20,9 +20,11 @@ import com.hazelcast.nio.Connection;
 
 import java.io.IOException;
 
-public interface ChannelReaderInitializer<C extends Connection> {
+public interface ChannelInitializer<C extends Connection> {
     /**
      * Returned value could be null if not enough data is available to determine how to init (e.g. protocol info locking)
      */
-    InitResult<ChannelInboundHandler> init(C connection, ChannelReader reader) throws IOException;
+    InitResult<ChannelInboundHandler> initInbound(C connection, ChannelReader reader) throws IOException;
+
+    InitResult<ChannelOutboundHandler> initOutbound(C connection, ChannelWriter writer, String protocol);
 }

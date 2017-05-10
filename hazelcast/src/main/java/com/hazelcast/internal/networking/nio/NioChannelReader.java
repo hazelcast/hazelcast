@@ -20,7 +20,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelReader;
 import com.hazelcast.internal.networking.ChannelConnection;
-import com.hazelcast.internal.networking.ChannelReaderInitializer;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
@@ -53,7 +53,7 @@ public final class NioChannelReader
     private final SwCounter normalFramesRead = newSwCounter();
     @Probe(name = "priorityFramesRead")
     private final SwCounter priorityFramesRead = newSwCounter();
-    private final ChannelReaderInitializer initializer;
+    private final ChannelInitializer initializer;
     private ChannelInboundHandler inboundHandler;
     private volatile long lastReadTime;
 
@@ -67,7 +67,7 @@ public final class NioChannelReader
             NioThread ioThread,
             ILogger logger,
             IOBalancer balancer,
-            ChannelReaderInitializer initializer) {
+            ChannelInitializer initializer) {
         super(connection, ioThread, OP_READ, logger, balancer);
         this.initializer = initializer;
     }
@@ -143,7 +143,7 @@ public final class NioChannelReader
         lastReadTime = currentTimeMillis();
 
         if (inboundHandler == null) {
-            InitResult<ChannelInboundHandler> init = initializer.init(connection, this);
+            InitResult<ChannelInboundHandler> init = initializer.initInbound(connection, this);
             if (init == null) {
                 // when using SSL, we can read 0 bytes since data read from socket can be handshake frames.
                 return;

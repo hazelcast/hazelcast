@@ -17,11 +17,11 @@
 package com.hazelcast.internal.networking.spinning;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.networking.ChannelConnection;
 import com.hazelcast.internal.networking.ChannelWriter;
-import com.hazelcast.internal.networking.ChannelWriterInitializer;
 import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -52,7 +52,7 @@ public class SpinningChannelWriter extends AbstractHandler implements ChannelWri
     @Probe(name = "priorityWriteQueueSize")
     public final Queue<OutboundFrame> urgentWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
 
-    private final ChannelWriterInitializer initializer;
+    private final ChannelInitializer initializer;
     private ByteBuffer outputBuffer;
     @Probe(name = "bytesWritten")
     private final SwCounter bytesWritten = newSwCounter();
@@ -67,7 +67,7 @@ public class SpinningChannelWriter extends AbstractHandler implements ChannelWri
     public SpinningChannelWriter(ChannelConnection connection,
                                  ILogger logger,
                                  IOOutOfMemoryHandler oomeHandler,
-                                 ChannelWriterInitializer initializer) {
+                                 ChannelInitializer initializer) {
         super(connection, logger, oomeHandler);
         this.initializer = initializer;
     }
@@ -130,7 +130,8 @@ public class SpinningChannelWriter extends AbstractHandler implements ChannelWri
             public void run() {
                 logger.info("Setting protocol: " + protocol);
                 if (outboundHandler == null) {
-                    InitResult<ChannelOutboundHandler> init = initializer.init(connection, SpinningChannelWriter.this, protocol);
+                    InitResult<ChannelOutboundHandler> init
+                            = initializer.initOutbound(connection, SpinningChannelWriter.this, protocol);
                     outputBuffer = init.getByteBuffer();
                     outboundHandler = init.getHandler();
                 }
@@ -192,7 +193,7 @@ public class SpinningChannelWriter extends AbstractHandler implements ChannelWri
 
         if (outboundHandler == null) {
             logger.warning("ChannelWriter is not set, creating ChannelWriter with CLUSTER protocol!");
-            InitResult<ChannelOutboundHandler> init = initializer.init(connection, this, CLUSTER);
+            InitResult<ChannelOutboundHandler> init = initializer.initOutbound(connection, this, CLUSTER);
             this.outputBuffer = init.getByteBuffer();
             this.outboundHandler = init.getHandler();
             return;

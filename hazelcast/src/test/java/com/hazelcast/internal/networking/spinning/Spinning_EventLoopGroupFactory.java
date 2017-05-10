@@ -19,9 +19,8 @@ package com.hazelcast.internal.networking.spinning;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.EventLoopGroupFactory;
+import com.hazelcast.nio.tcp.MemberChannelInitializer;
 import com.hazelcast.nio.tcp.MockIOService;
-import com.hazelcast.nio.tcp.MemberChannelReaderInitializer;
-import com.hazelcast.nio.tcp.MemberChannelWriterInitializer;
 
 public class Spinning_EventLoopGroupFactory implements EventLoopGroupFactory {
 
@@ -31,8 +30,7 @@ public class Spinning_EventLoopGroupFactory implements EventLoopGroupFactory {
         return new SpinningEventLoopGroup(
                 loggingService,
                 ioService.getIoOutOfMemoryHandler(),
-                new MemberChannelWriterInitializer(loggingService.getLogger(MemberChannelWriterInitializer.class)),
-                new MemberChannelReaderInitializer(loggingService.getLogger(MemberChannelReaderInitializer.class))
+                new MemberChannelInitializer(loggingService.getLogger(MemberChannelInitializer.class))
                 , "hz");
     }
 }
