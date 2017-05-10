@@ -208,18 +208,6 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     }
 
     /**
-     * Calls {@link HazelcastTestSupport#warmUpPartitions(HazelcastInstance...)} and
-     * {@link HazelcastTestSupport#waitAllForSafeState(HazelcastInstance...)} on the instances of the given
-     * {@link NearCacheTestContext}.
-     *
-     * @param context the given {@link NearCacheTestContext} to retrieve the Hazelcast instances from
-     */
-    public static void warmupPartitionsAndWaitForAllSafeState(NearCacheTestContext<?, ?, ?, ?> context) {
-        warmUpPartitions(context.dataInstance, context.nearCacheInstance);
-        waitAllForSafeState(context.dataInstance, context.nearCacheInstance);
-    }
-
-    /**
      * Waits until the {@link com.hazelcast.internal.adapter.DataStructureLoader} is finished.
      *
      * @param context the given {@link NearCacheTestContext} to retrieve the {@link DataStructureAdapter} from
