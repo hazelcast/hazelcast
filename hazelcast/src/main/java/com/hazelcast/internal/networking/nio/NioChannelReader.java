@@ -53,7 +53,6 @@ public final class NioChannelReader
     @Probe(name = "priorityFramesRead")
     private final SwCounter priorityFramesRead = newSwCounter();
     private final ChannelReaderInitializer initializer;
-    private final ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
     private ChannelInboundHandler inboundHandler;
     private volatile long lastReadTime;
 
@@ -84,11 +83,6 @@ public final class NioChannelReader
             default:
                 throw new RuntimeException();
         }
-    }
-
-    @Override
-    public ByteBuffer getProtocolBuffer() {
-        return protocolBuffer;
     }
 
     @Override

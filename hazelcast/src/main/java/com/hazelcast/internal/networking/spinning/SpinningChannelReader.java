@@ -17,11 +17,11 @@
 package com.hazelcast.internal.networking.spinning;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.networking.ChannelConnection;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelReader;
-import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
-import com.hazelcast.internal.networking.ChannelConnection;
 import com.hazelcast.internal.networking.ChannelReaderInitializer;
+import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 
@@ -44,7 +44,6 @@ public class SpinningChannelReader extends AbstractHandler implements ChannelRea
     private volatile long lastReadTime;
     private ChannelInboundHandler inboundHandler;
     private ByteBuffer inputBuffer;
-    private final ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
 
     public SpinningChannelReader(ChannelConnection connection,
                                  ILogger logger,
@@ -52,11 +51,6 @@ public class SpinningChannelReader extends AbstractHandler implements ChannelRea
                                  ChannelReaderInitializer initializer) {
         super(connection, logger, oomeHandler);
         this.initializer = initializer;
-    }
-
-    @Override
-    public ByteBuffer getProtocolBuffer() {
-        return protocolBuffer;
     }
 
     @Override

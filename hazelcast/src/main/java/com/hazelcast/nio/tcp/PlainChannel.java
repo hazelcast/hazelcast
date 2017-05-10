@@ -24,13 +24,20 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class PlainChannel implements Channel {
 
     protected final SocketChannel socketChannel;
+    private final ConcurrentMap<?, ?> attributeMap = new ConcurrentHashMap<Object, Object>();
 
     public PlainChannel(SocketChannel socketChannel) {
         this.socketChannel = socketChannel;
+    }
+
+    public ConcurrentMap attributeMap() {
+        return attributeMap;
     }
 
     @Override
