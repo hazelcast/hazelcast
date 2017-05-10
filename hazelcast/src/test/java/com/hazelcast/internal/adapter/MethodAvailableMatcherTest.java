@@ -35,28 +35,28 @@ public class MethodAvailableMatcherTest {
     @Rule
     public ExpectedException expected = ExpectedException.none();
 
-    private DataStructureAdapter<Integer, String> adapter = new ReplicatedMapDataStructureAdapter<Integer, String>(null);
+    private Class<? extends DataStructureAdapter> adapterClass = ReplicatedMapDataStructureAdapter.class;
 
     @Test
     public void assertThat_withAvailableMethod() {
-        assertThat(adapter, new MethodAvailableMatcher(DataStructureMethods.CLEAR));
+        assertThat(adapterClass, new MethodAvailableMatcher(DataStructureMethods.CLEAR));
     }
 
     @Test
     public void assertThat_withAvailableMethod_withParameter() {
-        assertThat(adapter, new MethodAvailableMatcher(DataStructureMethods.GET));
+        assertThat(adapterClass, new MethodAvailableMatcher(DataStructureMethods.GET));
     }
 
     @Test
     public void assertThat_withAvailableMethod_withMultipleParameters() {
-        assertThat(adapter, new MethodAvailableMatcher(DataStructureMethods.PUT));
+        assertThat(adapterClass, new MethodAvailableMatcher(DataStructureMethods.PUT));
     }
 
     @Test
     public void assertThat_withAvailableMethod_withParameterMismatch() {
         expected.expect(AssertionError.class);
-        expected.expectMessage("Could not find method " + adapter.getClass().getSimpleName() + ".put(Integer, String)");
-        assertThat(adapter, new MethodAvailableMatcher(new DataStructureAdapterMethod() {
+        expected.expectMessage("Could not find method " + adapterClass.getSimpleName() + ".put(Integer, String)");
+        assertThat(adapterClass, new MethodAvailableMatcher(new DataStructureAdapterMethod() {
             @Override
             public String getMethodName() {
                 return "put";
@@ -78,14 +78,14 @@ public class MethodAvailableMatcherTest {
     public void assertThat_withUnavailableMethod_withParameter() {
         expected.expect(AssertionError.class);
         expected.expectMessage("removeAsync(Object) to be available");
-        assertThat(adapter, new MethodAvailableMatcher(DataStructureMethods.REMOVE_ASYNC));
+        assertThat(adapterClass, new MethodAvailableMatcher(DataStructureMethods.REMOVE_ASYNC));
     }
 
     @Test
     public void assertThat_withUnavailableMethod_withMultipleParameters() {
         expected.expect(AssertionError.class);
         expected.expectMessage("putIfAbsentAsync(Object, Object) to be available");
-        assertThat(adapter, new MethodAvailableMatcher(DataStructureMethods.PUT_IF_ABSENT_ASYNC));
+        assertThat(adapterClass, new MethodAvailableMatcher(DataStructureMethods.PUT_IF_ABSENT_ASYNC));
     }
 
     @Test
