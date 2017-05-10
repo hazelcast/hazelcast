@@ -16,13 +16,22 @@
 
 package com.hazelcast.internal.networking;
 
-import com.hazelcast.nio.Connection;
+import java.nio.ByteBuffer;
 
-import java.io.IOException;
+public class InitResult<H> {
+    private final ByteBuffer byteBuffer;
+    private final H handler;
 
-public interface ChannelReaderInitializer<C extends Connection> {
-    /**
-     * Returned value could be null if not enough data is available to determine how to init (e.g. protocol info locking)
-     */
-    InitResult<ChannelInboundHandler> init(C connection, ChannelReader reader) throws IOException;
+    public InitResult(ByteBuffer byteBuffer, H handler) {
+        this.byteBuffer = byteBuffer;
+        this.handler = handler;
+    }
+
+    public ByteBuffer getByteBuffer() {
+        return byteBuffer;
+    }
+
+    public H getHandler() {
+        return handler;
+    }
 }

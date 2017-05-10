@@ -22,6 +22,7 @@ import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelReader;
 import com.hazelcast.internal.networking.ChannelReaderInitializer;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
+import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 
@@ -51,16 +52,6 @@ public class SpinningChannelReader extends AbstractHandler implements ChannelRea
                                  ChannelReaderInitializer initializer) {
         super(connection, logger, oomeHandler);
         this.initializer = initializer;
-    }
-
-    @Override
-    public void initInputBuffer(ByteBuffer inputBuffer) {
-        this.inputBuffer = inputBuffer;
-    }
-
-    @Override
-    public void setInboundHandler(ChannelInboundHandler inboundHandler) {
-        this.inboundHandler = inboundHandler;
     }
 
     @Override
@@ -100,11 +91,13 @@ public class SpinningChannelReader extends AbstractHandler implements ChannelRea
         }
 
         if (inboundHandler == null) {
-            initializer.init(connection, this);
-            if (inboundHandler == null) {
+            InitResult<ChannelInboundHandler> init = initializer.init(connection, this);
+            if (init == null) {
                 // when using SSL, we can read 0 bytes since data read from socket can be handshake frames.
                 return;
             }
+            this.inboundHandler = init.getHandler();
+            this.inputBuffer = init.getByteBuffer();
         }
 
         int readBytes = socketChannel.read(inputBuffer);

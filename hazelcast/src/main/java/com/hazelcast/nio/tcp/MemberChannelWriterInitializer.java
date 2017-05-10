@@ -16,9 +16,10 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.ChannelWriter;
 import com.hazelcast.internal.networking.ChannelWriterInitializer;
-import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Protocols;
@@ -42,27 +43,26 @@ public class MemberChannelWriterInitializer implements ChannelWriterInitializer<
     }
 
     @Override
-    public void init(TcpIpConnection connection, ChannelWriter writer, String protocol) {
+    public InitResult<ChannelOutboundHandler> init(TcpIpConnection connection, ChannelWriter writer, String protocol) {
         logger.fine("Initializing ChannelWriter ChannelOutboundHandler with " + Protocols.toUserFriendlyString(protocol));
 
-        initHandler(connection, writer, protocol);
-        initOutputBuffer(connection, writer, protocol);
+        ChannelOutboundHandler handler = newOutboundHandler(connection, protocol);
+        ByteBuffer outputBuffer = newOutputBuffer(connection, protocol);
+        return new InitResult<ChannelOutboundHandler>(outputBuffer, handler);
     }
 
-    private void initHandler(TcpIpConnection connection, ChannelWriter writer, String protocol) {
-        ChannelOutboundHandler handler;
+    private ChannelOutboundHandler newOutboundHandler(TcpIpConnection connection, String protocol) {
         if (CLUSTER.equals(protocol)) {
             IOService ioService = connection.getConnectionManager().getIoService();
-            handler = ioService.createWriteHandler(connection);
+            return ioService.createWriteHandler(connection);
         } else if (CLIENT_BINARY_NEW.equals(protocol)) {
-            handler = new ClientChannelOutboundHandler();
+            return new ClientChannelOutboundHandler();
         } else {
-            handler = new TextChannelOutboundHandler(connection);
+            return new TextChannelOutboundHandler(connection);
         }
-        writer.setOutboundHandler(handler);
     }
 
-    private void initOutputBuffer(TcpIpConnection connection, ChannelWriter writer, String protocol) {
+    private ByteBuffer newOutputBuffer(TcpIpConnection connection, String protocol) {
         IOService ioService = connection.getConnectionManager().getIoService();
         int sizeKb = CLUSTER.equals(protocol)
                 ? ioService.getSocketSendBufferSize()
@@ -74,12 +74,12 @@ public class MemberChannelWriterInitializer implements ChannelWriterInitializer<
             outputBuffer.put(stringToBytes(CLUSTER));
         }
 
-        writer.initOutputBuffer(outputBuffer);
-
         try {
             connection.getChannel().socket().setSendBufferSize(size);
         } catch (SocketException e) {
             logger.finest("Failed to adjust TCP send buffer of " + connection + " to " + size + " B.", e);
         }
+
+        return outputBuffer;
     }
 }

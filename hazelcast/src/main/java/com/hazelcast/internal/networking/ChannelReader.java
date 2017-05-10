@@ -18,8 +18,6 @@ package com.hazelcast.internal.networking;
 
 import com.hazelcast.internal.util.counters.SwCounter;
 
-import java.nio.ByteBuffer;
-
 /**
  * The ChannelReader is responsible for reading data from the socket, on behalf of a connection, into a
  * {@link java.nio.ByteBuffer}. Once the data is read into the ByteBuffer, this ByteBuffer is passed to the
@@ -79,10 +77,6 @@ public interface ChannelReader {
      * through the {@link com.hazelcast.nio.Connection#close(String, Throwable)} method.
      */
     void close();
-
-    void initInputBuffer(ByteBuffer inputBuffer);
-
-    void setInboundHandler(ChannelInboundHandler inboundHandler);
 
     Channel getChannel();
 }

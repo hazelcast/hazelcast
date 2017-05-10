@@ -22,9 +22,11 @@ import com.hazelcast.client.impl.protocol.util.ClientMessageChannelInboundHandle
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelReader;
 import com.hazelcast.internal.networking.ChannelReaderInitializer;
+import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.nio.IOUtil;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 class ClientChannelReaderInitializer implements ChannelReaderInitializer<ClientConnection> {
 
@@ -37,17 +39,18 @@ class ClientChannelReaderInitializer implements ChannelReaderInitializer<ClientC
     }
 
     @Override
-    public void init(final ClientConnection connection, ChannelReader reader) throws IOException {
-        reader.initInputBuffer(IOUtil.newByteBuffer(bufferSize, direct));
+    public InitResult<ChannelInboundHandler> init(final ClientConnection connection, ChannelReader reader) throws IOException {
+        ByteBuffer inputBuffer = IOUtil.newByteBuffer(bufferSize, direct);
 
         ChannelInboundHandler inboundHandler = new ClientMessageChannelInboundHandler(reader.getNormalFramesReadCounter(),
                 new ClientMessageChannelInboundHandler.MessageHandler() {
                     private final ClientConnectionManager connectionManager = connection.getConnectionManager();
+
                     @Override
                     public void handleMessage(ClientMessage message) {
                         connectionManager.handleClientMessage(message, connection);
                     }
                 });
-        reader.setInboundHandler(inboundHandler);
+        return new InitResult<ChannelInboundHandler>(inputBuffer, inboundHandler);
     }
 }
