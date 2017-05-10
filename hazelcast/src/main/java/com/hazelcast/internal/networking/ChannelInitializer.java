@@ -22,7 +22,7 @@ import java.io.IOException;
 
 public interface ChannelInitializer<C extends Connection> {
     /**
-     * Returned value could be null if not enough data is available to determine how to init (e.g. protocol info locking)
+     * Returned value could be null if not enough data is available to determine how to init (e.g. protocol info lacking)
      */
     InitResult<ChannelInboundHandler> initInbound(C connection, ChannelReader reader) throws IOException;
 
