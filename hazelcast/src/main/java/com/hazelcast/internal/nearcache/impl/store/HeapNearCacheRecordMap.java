@@ -24,6 +24,8 @@ import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.SampleableConcurrentHashMap;
 
+import java.util.List;
+
 /**
  * {@link SampleableNearCacheRecordMap} implementation for on-heap Near Caches.
  *
@@ -37,12 +39,57 @@ public class HeapNearCacheRecordMap<K, V extends NearCacheRecord>
 
     private final SerializationService serializationService;
 
+    @SuppressWarnings("checkstyle:magicnumber")
     HeapNearCacheRecordMap(SerializationService serializationService, int initialCapacity) {
-        super(initialCapacity);
+        super(initialCapacity, 0.91f, 16, ReferenceType.STRONG, ReferenceType.STRONG, null);
         this.serializationService = serializationService;
     }
 
-    public class NearCacheEvictableSamplingEntry extends SamplingEntry<K, V> implements EvictionCandidate<K, V> {
+    @Override
+    public int fetchKeys(int tableIndex, int size, List<K> keys) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int fetchEntries(int tableIndex, int size, List<Entry<K, V>> entries) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected boolean isValidForFetching(V value, long now) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    protected <E extends SamplingEntry> E createSamplingEntry(K key, V value) {
+        return (E) new NearCacheEvictableSamplingEntry(key, value);
+    }
+
+    @Override
+    public <C extends EvictionCandidate<K, V>> int evict(Iterable<C> evictionCandidates,
+                                                         EvictionListener<K, V> evictionListener) {
+        if (evictionCandidates == null) {
+            return 0;
+        }
+        int actualEvictedCount = 0;
+        for (EvictionCandidate<K, V> evictionCandidate : evictionCandidates) {
+            if (remove(evictionCandidate.getAccessor()) != null) {
+                actualEvictedCount++;
+                if (evictionListener != null) {
+                    evictionListener.onEvict(evictionCandidate.getAccessor(), evictionCandidate.getEvictable(), false);
+                }
+            }
+        }
+        return actualEvictedCount;
+    }
+
+    @Override
+    public Iterable<NearCacheEvictableSamplingEntry> sample(int sampleCount) {
+        return super.getRandomSamples(sampleCount);
+    }
+
+    private class NearCacheEvictableSamplingEntry extends SamplingEntry<K, V> implements EvictionCandidate<K, V> {
 
         NearCacheEvictableSamplingEntry(K key, V value) {
             super(key, value);
@@ -82,34 +129,5 @@ public class HeapNearCacheRecordMap<K, V extends NearCacheRecord>
         public long getAccessHit() {
             return value.getAccessHit();
         }
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    protected <E extends SamplingEntry> E createSamplingEntry(K key, V value) {
-        return (E) new NearCacheEvictableSamplingEntry(key, value);
-    }
-
-    @Override
-    public <C extends EvictionCandidate<K, V>> int evict(Iterable<C> evictionCandidates,
-                                                         EvictionListener<K, V> evictionListener) {
-        if (evictionCandidates == null) {
-            return 0;
-        }
-        int actualEvictedCount = 0;
-        for (EvictionCandidate<K, V> evictionCandidate : evictionCandidates) {
-            if (remove(evictionCandidate.getAccessor()) != null) {
-                actualEvictedCount++;
-                if (evictionListener != null) {
-                    evictionListener.onEvict(evictionCandidate.getAccessor(), evictionCandidate.getEvictable(), false);
-                }
-            }
-        }
-        return actualEvictedCount;
-    }
-
-    @Override
-    public Iterable<NearCacheEvictableSamplingEntry> sample(int sampleCount) {
-        return super.getRandomSamples(sampleCount);
     }
 }
