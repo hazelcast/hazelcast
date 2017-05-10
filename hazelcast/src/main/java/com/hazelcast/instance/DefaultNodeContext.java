@@ -23,8 +23,7 @@ import com.hazelcast.internal.networking.spinning.SpinningEventLoopGroup;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.NodeIOService;
-import com.hazelcast.nio.tcp.MemberChannelReaderInitializer;
-import com.hazelcast.nio.tcp.MemberChannelWriterInitializer;
+import com.hazelcast.nio.tcp.MemberChannelInitializer;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.spi.annotation.PrivateApi;
 
@@ -65,15 +64,12 @@ public class DefaultNodeContext implements NodeContext {
         boolean spinning = Boolean.getBoolean("hazelcast.io.spinning");
         LoggingServiceImpl loggingService = node.loggingService;
 
-        MemberChannelWriterInitializer socketWriterInitializer
-                = new MemberChannelWriterInitializer(loggingService.getLogger(MemberChannelWriterInitializer.class));
-        MemberChannelReaderInitializer socketReaderInitializer
-                = new MemberChannelReaderInitializer(loggingService.getLogger(MemberChannelReaderInitializer.class));
+        MemberChannelInitializer socketReaderInitializer
+                = new MemberChannelInitializer(loggingService.getLogger(MemberChannelInitializer.class));
         if (spinning) {
             return new SpinningEventLoopGroup(
                     loggingService,
                     ioService.getIoOutOfMemoryHandler(),
-                    socketWriterInitializer,
                     socketReaderInitializer,
                     node.hazelcastInstance.getName());
         } else {
@@ -84,7 +80,6 @@ public class DefaultNodeContext implements NodeContext {
                     ioService.getIoOutOfMemoryHandler(), ioService.getInputSelectorThreadCount(),
                     ioService.getOutputSelectorThreadCount(),
                     ioService.getBalancerIntervalSeconds(),
-                    socketWriterInitializer,
                     socketReaderInitializer
             );
         }

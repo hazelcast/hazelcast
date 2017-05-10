@@ -20,9 +20,8 @@ import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.networking.ChannelConnection;
 import com.hazelcast.internal.networking.ChannelReader;
-import com.hazelcast.internal.networking.ChannelReaderInitializer;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.ChannelWriter;
-import com.hazelcast.internal.networking.ChannelWriterInitializer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 
@@ -47,22 +46,19 @@ public class SpinningEventLoopGroup implements EventLoopGroup {
     private final LoggingService loggingService;
     private final SpinningInputThread inputThread;
     private final SpinningOutputThread outThread;
-    private final ChannelWriterInitializer channelWriterInitializer;
-    private final ChannelReaderInitializer channelReaderInitializer;
+    private final ChannelInitializer channelInitializer;
     private final IOOutOfMemoryHandler oomeHandler;
 
     public SpinningEventLoopGroup(LoggingService loggingService,
                                   IOOutOfMemoryHandler oomeHandler,
-                                  ChannelWriterInitializer channelWriterInitializer,
-                                  ChannelReaderInitializer channelReaderInitializer,
+                                  ChannelInitializer channelInitializer,
                                   String hzName) {
         this.logger = loggingService.getLogger(SpinningEventLoopGroup.class);
         this.loggingService = loggingService;
         this.oomeHandler = oomeHandler;
         this.inputThread = new SpinningInputThread(hzName);
         this.outThread = new SpinningOutputThread(hzName);
-        this.channelWriterInitializer = channelWriterInitializer;
-        this.channelReaderInitializer = channelReaderInitializer;
+        this.channelInitializer = channelInitializer;
     }
 
     @Override
@@ -73,13 +69,13 @@ public class SpinningEventLoopGroup implements EventLoopGroup {
     @Override
     public ChannelWriter newSocketWriter(ChannelConnection connection) {
         ILogger logger = loggingService.getLogger(SpinningChannelWriter.class);
-        return new SpinningChannelWriter(connection, logger, oomeHandler, channelWriterInitializer);
+        return new SpinningChannelWriter(connection, logger, oomeHandler, channelInitializer);
     }
 
     @Override
     public ChannelReader newSocketReader(ChannelConnection connection) {
         ILogger logger = loggingService.getLogger(SpinningChannelReader.class);
-        return new SpinningChannelReader(connection, logger, oomeHandler, channelReaderInitializer);
+        return new SpinningChannelReader(connection, logger, oomeHandler, channelInitializer);
     }
 
     @Override

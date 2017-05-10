@@ -22,8 +22,7 @@ import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.networking.ChannelConnection;
 import com.hazelcast.internal.networking.ChannelReader;
-import com.hazelcast.internal.networking.ChannelReaderInitializer;
-import com.hazelcast.internal.networking.ChannelWriterInitializer;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -65,8 +64,7 @@ public class NioEventLoopGroup
     private final String hzName;
     private final IOOutOfMemoryHandler oomeHandler;
     private final int balanceIntervalSeconds;
-    private final ChannelWriterInitializer channelWriterInitializer;
-    private final ChannelReaderInitializer channelReaderInitializer;
+    private final ChannelInitializer channelInitializer;
     private final int inputThreadCount;
     private final int outputThreadCount;
     private final Map<ChannelConnection, ChannelConnection> connections
@@ -93,8 +91,7 @@ public class NioEventLoopGroup
             int inputThreadCount,
             int outputThreadCount,
             int balanceIntervalSeconds,
-            ChannelWriterInitializer channelWriterInitializer,
-            ChannelReaderInitializer channelReaderInitializer) {
+            ChannelInitializer channelInitializer) {
         this.hzName = hzName;
         this.metricsRegistry = metricsRegistry;
         this.loggingService = loggingService;
@@ -103,8 +100,7 @@ public class NioEventLoopGroup
         this.logger = loggingService.getLogger(NioEventLoopGroup.class);
         this.oomeHandler = oomeHandler;
         this.balanceIntervalSeconds = balanceIntervalSeconds;
-        this.channelWriterInitializer = channelWriterInitializer;
-        this.channelReaderInitializer = channelReaderInitializer;
+        this.channelInitializer = channelInitializer;
     }
 
     private SelectorMode getSelectorMode() {
@@ -287,7 +283,7 @@ public class NioEventLoopGroup
                 threads[index],
                 loggingService.getLogger(NioChannelWriter.class),
                 ioBalancer,
-                channelWriterInitializer);
+                channelInitializer);
     }
 
     @Override
@@ -303,6 +299,6 @@ public class NioEventLoopGroup
                 threads[index],
                 loggingService.getLogger(NioChannelReader.class),
                 ioBalancer,
-                channelReaderInitializer);
+                channelInitializer);
     }
 }

@@ -17,10 +17,10 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.ChannelWriter;
 import com.hazelcast.internal.networking.ChannelConnection;
-import com.hazelcast.internal.networking.ChannelWriterInitializer;
 import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
@@ -60,7 +60,7 @@ public final class NioChannelWriter
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "priorityWriteQueueSize")
     public final Queue<OutboundFrame> urgentWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
-    private final ChannelWriterInitializer initializer;
+    private final ChannelInitializer initializer;
 
     private ByteBuffer outputBuffer;
 
@@ -90,7 +90,7 @@ public final class NioChannelWriter
                             NioThread ioThread,
                             ILogger logger,
                             IOBalancer balancer,
-                            ChannelWriterInitializer initializer) {
+                            ChannelInitializer initializer) {
         super(connection, ioThread, OP_WRITE, logger, balancer);
         this.initializer = initializer;
     }
@@ -163,7 +163,8 @@ public final class NioChannelWriter
             public void run() {
                 try {
                     if (outboundHandler == null) {
-                        InitResult<ChannelOutboundHandler> init = initializer.init(connection, NioChannelWriter.this, protocol);
+                        InitResult<ChannelOutboundHandler> init
+                                = initializer.initOutbound(connection, NioChannelWriter.this, protocol);
                         outputBuffer = init.getByteBuffer();
                         outboundHandler = init.getHandler();
                     }
@@ -302,7 +303,7 @@ public final class NioChannelWriter
         lastWriteTime = currentTimeMillis();
 
         if (outboundHandler == null) {
-            InitResult<ChannelOutboundHandler> init = initializer.init(connection, this, CLUSTER);
+            InitResult<ChannelOutboundHandler> init = initializer.initOutbound(connection, this, CLUSTER);
             this.outputBuffer = init.getByteBuffer();
             this.outboundHandler = init.getHandler();
             registerOp(OP_WRITE);

@@ -20,7 +20,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelConnection;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelReader;
-import com.hazelcast.internal.networking.ChannelReaderInitializer;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.internal.util.counters.SwCounter;
@@ -41,7 +41,7 @@ public class SpinningChannelReader extends AbstractHandler implements ChannelRea
     private final SwCounter normalFramesRead = newSwCounter();
     @Probe(name = "priorityFramesRead")
     private final SwCounter priorityFramesRead = newSwCounter();
-    private final ChannelReaderInitializer initializer;
+    private final ChannelInitializer initializer;
     private volatile long lastReadTime;
     private ChannelInboundHandler inboundHandler;
     private ByteBuffer inputBuffer;
@@ -49,7 +49,7 @@ public class SpinningChannelReader extends AbstractHandler implements ChannelRea
     public SpinningChannelReader(ChannelConnection connection,
                                  ILogger logger,
                                  IOOutOfMemoryHandler oomeHandler,
-                                 ChannelReaderInitializer initializer) {
+                                 ChannelInitializer initializer) {
         super(connection, logger, oomeHandler);
         this.initializer = initializer;
     }
@@ -91,7 +91,7 @@ public class SpinningChannelReader extends AbstractHandler implements ChannelRea
         }
 
         if (inboundHandler == null) {
-            InitResult<ChannelInboundHandler> init = initializer.init(connection, this);
+            InitResult<ChannelInboundHandler> init = initializer.initInbound(connection, this);
             if (init == null) {
                 // when using SSL, we can read 0 bytes since data read from socket can be handshake frames.
                 return;
