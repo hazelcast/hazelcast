@@ -21,8 +21,8 @@ package com.hazelcast.config;
  */
 public class CacheSimpleEntryListenerConfig {
 
-    private String cacheEntryListenerFactory;
-    private String cacheEntryEventFilterFactory;
+    private String cacheEntryListenerFactory="";
+    private String cacheEntryEventFilterFactory="";
     private boolean oldValueRequired;
     private boolean synchronous;
 
