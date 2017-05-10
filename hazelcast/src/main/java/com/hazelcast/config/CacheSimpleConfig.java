@@ -65,10 +65,10 @@ public class CacheSimpleConfig {
      */
     public static final String DEFAULT_CACHE_MERGE_POLICY = PassThroughCacheMergePolicy.class.getName();
 
-    private String name;
+    private String name="";
 
-    private String keyType;
-    private String valueType;
+    private String keyType="";
+    private String valueType="";
 
     private boolean statisticsEnabled;
     private boolean managementEnabled;
@@ -76,8 +76,8 @@ public class CacheSimpleConfig {
     private boolean readThrough;
     private boolean writeThrough;
 
-    private String cacheLoaderFactory;
-    private String cacheWriterFactory;
+    private String cacheLoaderFactory="";
+    private String cacheWriterFactory="";
 
     private String cacheLoader;
     private String cacheWriter;
@@ -96,7 +96,7 @@ public class CacheSimpleConfig {
 
     private CacheSimpleConfig readOnly;
 
-    private String quorumName;
+    private String quorumName="";
 
     private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs;
 
@@ -689,7 +689,7 @@ public class CacheSimpleConfig {
      */
     public static class ExpiryPolicyFactoryConfig {
 
-        private final String className;
+        private final String className="";
         private final TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig;
 
         public ExpiryPolicyFactoryConfig(String className) {
