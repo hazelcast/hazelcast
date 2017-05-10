@@ -52,43 +52,22 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
         if (randomAddress == null) {
             throw new IOException("No address found to invoke");
         }
-        final Connection connection = getOrTriggerConnect(randomAddress);
+        Connection connection = getOrTriggerConnect(randomAddress);
         send(invocation, (ClientConnection) connection);
     }
 
     @Override
-    public ClientConnection getConnection(int partitionId)
-            throws IOException {
-        final Address owner = partitionService.getPartitionOwner(partitionId);
-        if (owner == null) {
-            throw new IOException("Partition does not have an owner. partitionId: " + partitionId);
-        }
-        return (ClientConnection) getOrConnect(owner);
-    }
-
-    @Override
-    public void invokeOnTarget(ClientInvocation invocation, Address target)
-            throws IOException {
-        if (target == null) {
-            throw new NullPointerException("Target can not be null");
-        }
+    public void invokeOnTarget(ClientInvocation invocation, Address target) throws IOException {
+        assert (target != null);
         if (!isMember(target)) {
             throw new TargetNotMemberException("Target '" + target + "' is not a member.");
         }
-        final Connection connection = getOrTriggerConnect(target);
+        Connection connection = getOrTriggerConnect(target);
         invokeOnConnection(invocation, (ClientConnection) connection);
     }
 
     private Connection getOrTriggerConnect(Address target) throws IOException {
         Connection connection = connectionManager.getOrTriggerConnect(target, false);
-        if (connection == null) {
-            throw new IOException("No available connection to address " + target);
-        }
-        return connection;
-    }
-
-    private Connection getOrConnect(Address target) throws IOException {
-        Connection connection = connectionManager.getOrConnect(target, false);
         if (connection == null) {
             throw new IOException("No available connection to address " + target);
         }
