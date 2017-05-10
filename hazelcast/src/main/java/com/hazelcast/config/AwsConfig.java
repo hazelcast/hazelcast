@@ -42,14 +42,14 @@ public class AwsConfig {
     private static final int CONNECTION_TIMEOUT = 5;
 
     private boolean enabled;
-    private String accessKey;
-    private String secretKey;
+    private String accessKey="";
+    private String secretKey="";
     private String region = "us-east-1";
-    private String securityGroupName;
-    private String tagKey;
-    private String tagValue;
+    private String securityGroupName="";
+    private String tagKey="";
+    private String tagValue="";
     private String hostHeader = "ec2.amazonaws.com";
-    private String iamRole;
+    private String iamRole="";
     private int connectionTimeoutSeconds = CONNECTION_TIMEOUT;
 
     /**
