@@ -21,12 +21,14 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
+import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.TransactionalMapDataStructureAdapter;
 import com.hazelcast.internal.nearcache.AbstractNearCacheBasicTest;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
+import com.hazelcast.internal.nearcache.NearCacheTestUtils;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -49,7 +51,6 @@ import java.util.Collection;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSize;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheStats;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assumeThatMethodIsAvailable;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getMapNearCacheManager;
 import static java.util.Arrays.asList;
@@ -86,6 +87,11 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     @After
     public void tearDown() {
         hazelcastFactory.terminateAll();
+    }
+
+    @Override
+    protected void assumeThatMethodIsAvailable(DataStructureAdapterMethod method) {
+        NearCacheTestUtils.assumeThatMethodIsAvailable(TransactionalMapDataStructureAdapter.class, method);
     }
 
     @Override
@@ -127,8 +133,8 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
      */
     @Override
     protected void whenGetIsUsed_thenNearCacheShouldBePopulated(DataStructureMethods method) {
+        assumeThatMethodIsAvailable(method);
         NearCacheTestContext<Integer, String, Data, String> context = createContext();
-        assumeThatMethodIsAvailable(context.nearCacheAdapter, method);
 
         // populate the data structure
         populateDataAdapter(context);

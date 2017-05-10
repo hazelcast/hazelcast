@@ -27,9 +27,9 @@ import java.util.Arrays;
 import static java.lang.String.format;
 
 /**
- * Checks if the given {@link DataStructureAdapter} implements a specified method.
+ * Checks if the given {@link DataStructureAdapter} class implements a specified method.
  */
-public final class MethodAvailableMatcher extends TypeSafeMatcher<DataStructureAdapter> {
+public final class MethodAvailableMatcher extends TypeSafeMatcher<Class<? extends DataStructureAdapter>> {
 
     private static final ILogger LOGGER = Logger.getLogger(MethodAvailableMatcher.class);
 
@@ -44,14 +44,13 @@ public final class MethodAvailableMatcher extends TypeSafeMatcher<DataStructureA
     }
 
     /**
-     * Matches the given {@link DataStructureAdapter} with the specified method name and parameter types.
+     * Matches the given {@link DataStructureAdapter} class with the specified method name and parameter types.
      *
-     * @param dataStructureAdapter the {@link DataStructureAdapter} to test
+     * @param dataStructureAdapterClass the {@link DataStructureAdapter} class to test
      * @return {@code true} if the method is found and is not annotated with {@link MethodNotAvailable}
      */
     @Override
-    public boolean matchesSafely(DataStructureAdapter dataStructureAdapter) {
-        Class<? extends DataStructureAdapter> dataStructureAdapterClass = dataStructureAdapter.getClass();
+    public boolean matchesSafely(Class<? extends DataStructureAdapter> dataStructureAdapterClass) {
         try {
             Method method = dataStructureAdapterClass.getMethod(methodName, adapterMethod.getParameterTypes());
             boolean isAvailable = !method.isAnnotationPresent(MethodNotAvailable.class);
@@ -70,8 +69,9 @@ public final class MethodAvailableMatcher extends TypeSafeMatcher<DataStructureA
     }
 
     @Override
-    protected void describeMismatchSafely(DataStructureAdapter dataStructureAdapter, Description mismatchDescription) {
-        mismatchDescription.appendText(format("%s.%s(%s) is annotated with @%s", dataStructureAdapter.getClass().getSimpleName(),
+    protected void describeMismatchSafely(Class<? extends DataStructureAdapter> dataStructureAdapterClass,
+                                          Description mismatchDescription) {
+        mismatchDescription.appendText(format("%s.%s(%s) is annotated with @%s", dataStructureAdapterClass.getSimpleName(),
                 methodName, parameterTypeString, MethodNotAvailable.class.getSimpleName()));
     }
 }

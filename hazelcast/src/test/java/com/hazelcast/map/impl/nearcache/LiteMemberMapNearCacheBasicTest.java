@@ -21,6 +21,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
 import com.hazelcast.internal.adapter.IMapMapStore;
 import com.hazelcast.internal.nearcache.AbstractNearCacheBasicTest;
@@ -28,6 +29,7 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
+import com.hazelcast.internal.nearcache.NearCacheTestUtils;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -79,6 +81,11 @@ public class LiteMemberMapNearCacheBasicTest extends AbstractNearCacheBasicTest<
     @After
     public void tearDown() {
         hazelcastFactory.terminateAll();
+    }
+
+    @Override
+    protected void assumeThatMethodIsAvailable(DataStructureAdapterMethod method) {
+        NearCacheTestUtils.assumeThatMethodIsAvailable(IMapDataStructureAdapter.class, method);
     }
 
     @Override

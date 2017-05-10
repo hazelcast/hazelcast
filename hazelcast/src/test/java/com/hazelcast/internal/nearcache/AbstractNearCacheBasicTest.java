@@ -19,6 +19,7 @@ package com.hazelcast.internal.nearcache;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
+import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.ICacheCompletionListener;
 import com.hazelcast.internal.adapter.ICacheReplaceEntryProcessor;
 import com.hazelcast.internal.adapter.IMapReplaceEntryProcessor;
@@ -51,7 +52,6 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertThatMemo
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertThatMemoryCostsAreZero;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assumeThatLocalUpdatePolicyIsCacheOnUpdate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assumeThatLocalUpdatePolicyIsInvalidate;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assumeThatMethodIsAvailable;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getFromNearCache;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getFuture;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
@@ -106,6 +106,14 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * Needs to be set by the implementations of this class in their {@link org.junit.Before} methods.
      */
     protected NearCacheConfig nearCacheConfig;
+
+    /**
+     * Assumes that the {@link DataStructureAdapter} created by the Near Cache test supports a given
+     * {@link DataStructureAdapterMethod}.
+     *
+     * @param method the {@link DataStructureAdapterMethod} to test for
+     */
+    protected abstract void assumeThatMethodIsAvailable(DataStructureAdapterMethod method);
 
     /**
      * Creates the {@link NearCacheTestContext} used by the Near Cache tests.
@@ -206,8 +214,8 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     protected void whenGetIsUsed_thenNearCacheShouldBePopulated(DataStructureMethods method) {
+        assumeThatMethodIsAvailable(method);
         NearCacheTestContext<Integer, String, NK, NV> context = createContext();
-        assumeThatMethodIsAvailable(context.nearCacheAdapter, method);
 
         // populate the data structure
         populateDataAdapter(context);
@@ -233,8 +241,8 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      */
     @Test
     public void whenGetAllWithHalfFilledNearCacheIsUsed_thenNearCacheShouldBePopulated() {
+        assumeThatMethodIsAvailable(DataStructureMethods.GET_ALL);
         NearCacheTestContext<Integer, String, NK, NV> context = createContext();
-        assumeThatMethodIsAvailable(context.nearCacheAdapter, DataStructureMethods.GET_ALL);
 
         // populate the data structure
         populateDataAdapter(context);
@@ -267,8 +275,8 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      */
     @Test
     public void whenGetAllWithEmptySetIsUsed_thenNearCacheShouldNotBePopulated() {
+        assumeThatMethodIsAvailable(DataStructureMethods.GET_ALL);
         NearCacheTestContext<Integer, String, NK, NV> context = createContext();
-        assumeThatMethodIsAvailable(context.nearCacheAdapter, DataStructureMethods.GET_ALL);
 
         // populate the data structure
         populateDataAdapter(context);
@@ -345,10 +353,10 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     private void whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods method) {
+        assumeThatMethodIsAvailable(method);
+        assumeThatLocalUpdatePolicyIsCacheOnUpdate(nearCacheConfig);
         NearCacheTestContext<Integer, String, NK, NV> context = createContext();
         DataStructureAdapter<Integer, String> adapter = context.nearCacheAdapter;
-        assumeThatLocalUpdatePolicyIsCacheOnUpdate(context);
-        assumeThatMethodIsAvailable(adapter, method);
 
         Map<Integer, String> putAllMap = new HashMap<Integer, String>(DEFAULT_RECORD_COUNT);
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
@@ -539,15 +547,15 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * With the {@link NearCacheTestContext#nearCacheAdapter} Near Cache invalidations are not needed.
      */
     private void whenEntryIsChanged_thenNearCacheShouldBeInvalidated(boolean useDataAdapter, DataStructureMethods method) {
-        nearCacheConfig.setInvalidateOnChange(useDataAdapter);
-        NearCacheTestContext<Integer, String, NK, NV> context = createContext();
-        DataStructureAdapter<Integer, String> adapter = useDataAdapter ? context.dataAdapter : context.nearCacheAdapter;
+        assumeThatMethodIsAvailable(method);
         if (!ENTRY_PROCESSOR_METHODS.contains(method)) {
             // since EntryProcessors return a user-defined result we cannot directly put this into the Near Cache,
             // so we execute this test also for CACHE_ON_UPDATE configurations
-            assumeThatLocalUpdatePolicyIsInvalidate(context);
+            assumeThatLocalUpdatePolicyIsInvalidate(nearCacheConfig);
         }
-        assumeThatMethodIsAvailable(adapter, method);
+        nearCacheConfig.setInvalidateOnChange(useDataAdapter);
+        NearCacheTestContext<Integer, String, NK, NV> context = createContext();
+        DataStructureAdapter<Integer, String> adapter = useDataAdapter ? context.dataAdapter : context.nearCacheAdapter;
 
         populateDataAdapter(context);
         populateNearCache(context);
@@ -663,10 +671,10 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * With the {@link NearCacheTestContext#nearCacheAdapter} Near Cache invalidations are not needed.
      */
     private void whenEntryIsLoaded_thenNearCacheShouldBeInvalidated(boolean useDataAdapter, DataStructureMethods method) {
+        assumeThatMethodIsAvailable(method);
         nearCacheConfig.setInvalidateOnChange(useDataAdapter);
         NearCacheTestContext<Integer, String, NK, NV> context = createContext(true);
         DataStructureAdapter<Integer, String> adapter = useDataAdapter ? context.dataAdapter : context.nearCacheAdapter;
-        assumeThatMethodIsAvailable(adapter, method);
 
         // wait until the initial load is done and the cluster is in a safe state
         waitUntilLoaded(context);
@@ -808,10 +816,10 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * With the {@link NearCacheTestContext#nearCacheAdapter} Near Cache invalidations are not needed.
      */
     private void whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(boolean useDataAdapter, DataStructureMethods method) {
+        assumeThatMethodIsAvailable(method);
         nearCacheConfig.setInvalidateOnChange(useDataAdapter);
         NearCacheTestContext<Integer, String, NK, NV> context = createContext();
         DataStructureAdapter<Integer, String> adapter = useDataAdapter ? context.dataAdapter : context.nearCacheAdapter;
-        assumeThatMethodIsAvailable(adapter, method);
 
         populateDataAdapter(context);
         populateNearCache(context);
@@ -874,9 +882,9 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
      * With the {@link NearCacheTestContext#nearCacheAdapter} Near Cache invalidations are not needed.
      */
     private void testContainsKey(boolean useDataAdapter) {
+        assumeThatMethodIsAvailable(DataStructureMethods.CONTAINS_KEY);
         nearCacheConfig.setInvalidateOnChange(useDataAdapter);
         final NearCacheTestContext<Integer, String, NK, NV> context = createContext();
-        assumeThatMethodIsAvailable(context.nearCacheAdapter, DataStructureMethods.CONTAINS_KEY);
 
         // populate data structure
         context.dataAdapter.put(1, "value-1");
@@ -1047,7 +1055,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
         NearCacheTestContext<Integer, String, NK, NV> context = createContext();
         DataStructureAdapter<Integer, String> adapter = useDataAdapter ? context.dataAdapter : context.nearCacheAdapter;
-        boolean isNearCacheDirectlyUpdated = isCacheOnUpdate(context) && !useDataAdapter;
+        boolean isNearCacheDirectlyUpdated = isCacheOnUpdate(nearCacheConfig) && !useDataAdapter;
 
         populateDataAdapter(context);
         populateNearCache(context);
