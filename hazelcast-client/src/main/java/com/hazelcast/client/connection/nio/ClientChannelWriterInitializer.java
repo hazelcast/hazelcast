@@ -17,9 +17,10 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.ChannelWriter;
 import com.hazelcast.internal.networking.ChannelWriterInitializer;
-import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Protocols;
@@ -37,17 +38,19 @@ class ClientChannelWriterInitializer implements ChannelWriterInitializer<ClientC
     }
 
     @Override
-    public void init(ClientConnection connection, ChannelWriter writer, String protocol) {
+    public InitResult<ChannelOutboundHandler> init(ClientConnection connection, ChannelWriter writer, String protocol) {
         Logger.getLogger(getClass())
-              .fine("Initializing ClientSocketWriter ChannelOutboundHandler with " + Protocols.toUserFriendlyString(protocol));
+                .fine("Initializing ClientSocketWriter ChannelOutboundHandler with " + Protocols.toUserFriendlyString(protocol));
 
-        writer.initOutputBuffer(IOUtil.newByteBuffer(bufferSize, direct));
+        ByteBuffer outputBuffer = IOUtil.newByteBuffer(bufferSize, direct);
 
-        writer.setOutboundHandler(new ChannelOutboundHandler<ClientMessage>() {
+        ChannelOutboundHandler handler = new ChannelOutboundHandler<ClientMessage>() {
             @Override
             public boolean onWrite(ClientMessage msg, ByteBuffer dst) throws Exception {
                 return msg.writeTo(dst);
             }
-        });
+        };
+
+        return new InitResult<ChannelOutboundHandler>(outputBuffer, handler);
     }
 }

@@ -20,5 +20,5 @@ import com.hazelcast.nio.Connection;
 
 public interface ChannelWriterInitializer<C extends Connection> {
 
-    void init(C connection, ChannelWriter writer, String protocol);
+    InitResult<ChannelOutboundHandler> init(C connection, ChannelWriter writer, String protocol);
 }

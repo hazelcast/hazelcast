@@ -22,6 +22,7 @@ import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelReader;
 import com.hazelcast.internal.networking.ChannelReaderInitializer;
 import com.hazelcast.internal.networking.ChannelWriter;
+import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.ascii.TextChannelInboundHandler;
@@ -51,7 +52,7 @@ public class MemberChannelReaderInitializer implements ChannelReaderInitializer<
     }
 
     @Override
-    public void init(TcpIpConnection connection, ChannelReader reader) throws IOException {
+    public InitResult<ChannelInboundHandler> init(TcpIpConnection connection, ChannelReader reader) throws IOException {
         TcpIpConnectionManager connectionManager = connection.getConnectionManager();
         IOService ioService = connectionManager.getIoService();
 
@@ -66,12 +67,12 @@ public class MemberChannelReaderInitializer implements ChannelReaderInitializer<
 
         if (readBytes == 0 && isSslEnabled(ioService)) {
             // when using SSL, we can read 0 bytes since data read from socket can be handshake data.
-            return;
+            return null;
         }
 
         if (protocolBuffer.hasRemaining()) {
             // we have not yet received all protocol bytes
-            return;
+            return null;
         }
 
         // since the protocol is complete; we can remove the protocol-buffer.
@@ -80,17 +81,18 @@ public class MemberChannelReaderInitializer implements ChannelReaderInitializer<
         ChannelInboundHandler inboundHandler;
         String protocol = bytesToString(protocolBuffer.array());
         ChannelWriter channelWriter = connection.getChannelWriter();
+        ByteBuffer inputBuffer;
         if (CLUSTER.equals(protocol)) {
-            initInputBuffer(connection, reader, ioService.getSocketReceiveBufferSize());
+            inputBuffer = initInputBuffer(connection, ioService.getSocketReceiveBufferSize());
             connection.setType(MEMBER);
             channelWriter.setProtocol(CLUSTER);
             inboundHandler = ioService.createReadHandler(connection);
         } else if (CLIENT_BINARY_NEW.equals(protocol)) {
-            initInputBuffer(connection, reader, ioService.getSocketClientReceiveBufferSize());
+            inputBuffer = initInputBuffer(connection, ioService.getSocketClientReceiveBufferSize());
             channelWriter.setProtocol(CLIENT_BINARY_NEW);
             inboundHandler = new ClientChannelInboundHandler(reader.getNormalFramesReadCounter(), connection, ioService);
         } else {
-            ByteBuffer inputBuffer = initInputBuffer(connection, reader, ioService.getSocketReceiveBufferSize());
+            inputBuffer = initInputBuffer(connection, ioService.getSocketReceiveBufferSize());
             channelWriter.setProtocol(TEXT);
             inputBuffer.put(protocolBuffer.array());
             inboundHandler = new TextChannelInboundHandler(connection);
@@ -101,7 +103,7 @@ public class MemberChannelReaderInitializer implements ChannelReaderInitializer<
             throw new IOException("Could not initialize ChannelInboundHandler!");
         }
 
-        reader.setInboundHandler(inboundHandler);
+        return new InitResult<ChannelInboundHandler>(inputBuffer, inboundHandler);
     }
 
     private static ByteBuffer getProtocolBuffer(Channel channel) {
@@ -114,12 +116,11 @@ public class MemberChannelReaderInitializer implements ChannelReaderInitializer<
         return protocolBuffer;
     }
 
-    private ByteBuffer initInputBuffer(TcpIpConnection connection, ChannelReader reader, int sizeKb) {
+    private ByteBuffer initInputBuffer(TcpIpConnection connection, int sizeKb) {
         boolean directBuffer = connection.getConnectionManager().getIoService().useDirectSocketBuffer();
         int sizeBytes = sizeKb * KILO_BYTE;
 
         ByteBuffer inputBuffer = newByteBuffer(sizeBytes, directBuffer);
-        reader.initInputBuffer(inputBuffer);
 
         try {
             connection.getChannel().socket().setReceiveBufferSize(sizeBytes);

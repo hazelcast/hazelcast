@@ -20,8 +20,6 @@ import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.ascii.TextChannelInboundHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 
-import java.nio.ByteBuffer;
-
 /**
  * Each {@link TcpIpConnection} has a {@link ChannelWriter} and it writes {@link OutboundFrame} instances to the socket. Copying
  * the Frame instances to the byte-buffer is done using the {@link ChannelOutboundHandler}.
@@ -89,8 +87,4 @@ public interface ChannelWriter {
      * through the {@link TcpIpConnection#close(String, Throwable)} method.
      */
     void close();
-
-    void initOutputBuffer(ByteBuffer outputBuffer);
-
-    void setOutboundHandler(ChannelOutboundHandler outboundHandler);
 }

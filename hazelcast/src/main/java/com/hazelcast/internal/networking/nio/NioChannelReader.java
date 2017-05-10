@@ -21,6 +21,7 @@ import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelReader;
 import com.hazelcast.internal.networking.ChannelConnection;
 import com.hazelcast.internal.networking.ChannelReaderInitializer;
+import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -85,16 +86,6 @@ public final class NioChannelReader
         }
     }
 
-    @Override
-    public void initInputBuffer(ByteBuffer inputBuffer) {
-        this.inputBuffer = inputBuffer;
-    }
-
-    @Override
-    public void setInboundHandler(ChannelInboundHandler inboundHandler) {
-        this.inboundHandler = inboundHandler;
-    }
-
     @Probe(name = "idleTimeMs")
     private long idleTimeMs() {
         return Math.max(currentTimeMillis() - lastReadTime, 0);
@@ -152,11 +143,13 @@ public final class NioChannelReader
         lastReadTime = currentTimeMillis();
 
         if (inboundHandler == null) {
-            initializer.init(connection, this);
-            if (inboundHandler == null) {
+            InitResult<ChannelInboundHandler> init = initializer.init(connection, this);
+            if (init == null) {
                 // when using SSL, we can read 0 bytes since data read from socket can be handshake frames.
                 return;
             }
+            this.inboundHandler = init.getHandler();
+            this.inputBuffer = init.getByteBuffer();
         }
 
         int readBytes = channel.read(inputBuffer);

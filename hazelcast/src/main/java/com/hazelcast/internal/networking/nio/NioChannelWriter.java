@@ -21,6 +21,7 @@ import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.ChannelWriter;
 import com.hazelcast.internal.networking.ChannelConnection;
 import com.hazelcast.internal.networking.ChannelWriterInitializer;
+import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -162,7 +163,9 @@ public final class NioChannelWriter
             public void run() {
                 try {
                     if (outboundHandler == null) {
-                        initializer.init(connection, NioChannelWriter.this, protocol);
+                        InitResult<ChannelOutboundHandler> init = initializer.init(connection, NioChannelWriter.this, protocol);
+                        outputBuffer = init.getByteBuffer();
+                        outboundHandler = init.getHandler();
                     }
                 } catch (Throwable t) {
                     onFailure(t);
@@ -176,11 +179,6 @@ public final class NioChannelWriter
         } catch (InterruptedException e) {
             logger.finest("CountDownLatch::await interrupted", e);
         }
-    }
-
-    @Override
-    public void initOutputBuffer(ByteBuffer outputBuffer) {
-        this.outputBuffer = outputBuffer;
     }
 
     @Override
@@ -304,7 +302,9 @@ public final class NioChannelWriter
         lastWriteTime = currentTimeMillis();
 
         if (outboundHandler == null) {
-            initializer.init(connection, this, CLUSTER);
+            InitResult<ChannelOutboundHandler> init = initializer.init(connection, this, CLUSTER);
+            this.outputBuffer = init.getByteBuffer();
+            this.outboundHandler = init.getHandler();
             registerOp(OP_WRITE);
         }
 
@@ -319,11 +319,6 @@ public final class NioChannelWriter
         } else {
             startMigration();
         }
-    }
-
-    @Override
-    public void setOutboundHandler(ChannelOutboundHandler outboundHandler) {
-        this.outboundHandler = outboundHandler;
     }
 
     private void startMigration() throws IOException {

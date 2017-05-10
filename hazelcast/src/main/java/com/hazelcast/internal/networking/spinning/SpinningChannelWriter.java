@@ -22,6 +22,7 @@ import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.networking.ChannelConnection;
 import com.hazelcast.internal.networking.ChannelWriter;
 import com.hazelcast.internal.networking.ChannelWriterInitializer;
+import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.OutboundFrame;
@@ -116,11 +117,6 @@ public class SpinningChannelWriter extends AbstractHandler implements ChannelWri
     }
 
     @Override
-    public void setOutboundHandler(ChannelOutboundHandler outboundHandler) {
-        this.outboundHandler = outboundHandler;
-    }
-
-    @Override
     public ChannelOutboundHandler getOutboundHandler() {
         return outboundHandler;
     }
@@ -134,7 +130,9 @@ public class SpinningChannelWriter extends AbstractHandler implements ChannelWri
             public void run() {
                 logger.info("Setting protocol: " + protocol);
                 if (outboundHandler == null) {
-                    initializer.init(connection, SpinningChannelWriter.this, protocol);
+                    InitResult<ChannelOutboundHandler> init = initializer.init(connection, SpinningChannelWriter.this, protocol);
+                    outputBuffer = init.getByteBuffer();
+                    outboundHandler = init.getHandler();
                 }
                 latch.countDown();
             }
@@ -145,11 +143,6 @@ public class SpinningChannelWriter extends AbstractHandler implements ChannelWri
         } catch (InterruptedException e) {
             logger.finest("CountDownLatch::await interrupted", e);
         }
-    }
-
-    @Override
-    public void initOutputBuffer(ByteBuffer outputBuffer) {
-        this.outputBuffer = outputBuffer;
     }
 
     private OutboundFrame poll() {
@@ -199,7 +192,9 @@ public class SpinningChannelWriter extends AbstractHandler implements ChannelWri
 
         if (outboundHandler == null) {
             logger.warning("ChannelWriter is not set, creating ChannelWriter with CLUSTER protocol!");
-            initializer.init(connection, this, CLUSTER);
+            InitResult<ChannelOutboundHandler> init = initializer.init(connection, this, CLUSTER);
+            this.outputBuffer = init.getByteBuffer();
+            this.outboundHandler = init.getHandler();
             return;
         }
 
