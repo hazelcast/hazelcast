@@ -85,9 +85,8 @@ public class ClientMapReduceTest
         HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(config);
         HazelcastInstance h3 = hazelcastFactory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         IMap<Integer, Integer> m1 = client.getMap(randomString());
@@ -118,9 +117,8 @@ public class ClientMapReduceTest
         HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(config);
         HazelcastInstance h3 = hazelcastFactory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         IMap<Integer, Integer> m1 = client.getMap(randomString());
@@ -152,9 +150,8 @@ public class ClientMapReduceTest
         HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(config);
         HazelcastInstance h3 = hazelcastFactory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         IMap<Integer, Integer> m1 = client.getMap(randomString());
@@ -182,9 +179,8 @@ public class ClientMapReduceTest
         HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(config);
         HazelcastInstance h3 = hazelcastFactory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         IMap<Integer, Integer> m1 = client.getMap(randomString());
@@ -219,9 +215,8 @@ public class ClientMapReduceTest
         HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(config);
         HazelcastInstance h3 = hazelcastFactory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         IMap<Integer, Integer> m1 = client.getMap(randomString());
@@ -250,9 +245,8 @@ public class ClientMapReduceTest
         HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(config);
         HazelcastInstance h3 = hazelcastFactory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         IMap<Integer, Integer> m1 = client.getMap(randomString());
@@ -277,9 +271,8 @@ public class ClientMapReduceTest
         HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(config);
         HazelcastInstance h3 = hazelcastFactory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         IMap<Integer, Integer> m1 = client.getMap(randomString());
@@ -305,9 +298,8 @@ public class ClientMapReduceTest
         HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(config);
         HazelcastInstance h3 = hazelcastFactory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         IMap<Integer, Integer> m1 = client.getMap(randomString());
@@ -341,9 +333,8 @@ public class ClientMapReduceTest
         HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(config);
         HazelcastInstance h3 = hazelcastFactory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         IMap<Integer, Integer> m1 = client.getMap(randomString());
@@ -388,9 +379,8 @@ public class ClientMapReduceTest
         HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(config);
         HazelcastInstance h3 = hazelcastFactory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         IMap<Integer, Integer> m1 = client.getMap(randomString());
@@ -435,9 +425,8 @@ public class ClientMapReduceTest
         HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(config);
         HazelcastInstance h3 = hazelcastFactory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         IMap<Integer, Integer> m1 = client.getMap(randomString());
@@ -489,9 +478,8 @@ public class ClientMapReduceTest
         HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(config);
         HazelcastInstance h3 = hazelcastFactory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         IMap<Integer, Integer> m1 = client.getMap(randomString());
@@ -542,9 +530,8 @@ public class ClientMapReduceTest
         HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(config);
         HazelcastInstance h3 = hazelcastFactory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         IMap<Integer, Integer> m1 = client.getMap(randomString());

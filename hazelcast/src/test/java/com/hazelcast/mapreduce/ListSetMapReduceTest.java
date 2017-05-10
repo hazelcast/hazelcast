@@ -49,9 +49,8 @@ public class ListSetMapReduceTest
         final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         int expectedResult = 0;
         IList<Integer> list = h1.getList("default");
@@ -85,9 +84,8 @@ public class ListSetMapReduceTest
         final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         int expectedResult = 0;
         ISet<Integer> set = h1.getSet("default");

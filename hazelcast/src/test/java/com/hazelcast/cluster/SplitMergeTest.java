@@ -62,8 +62,7 @@ public class SplitMergeTest extends HazelcastTestSupport {
 
         // merge back
         mergeBack(h2, getAddress(h1));
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
+        assertClusterSizeEventually(2, h1, h2);
 
         String currentUuid_H1 = getNode(h1).getThisUuid();
         String currentUuid_H2 = getNode(h2).getThisUuid();
@@ -91,15 +90,12 @@ public class SplitMergeTest extends HazelcastTestSupport {
         // create split
         closeConnectionBetween(h1, h3);
         closeConnectionBetween(h2, h3);
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
+        assertClusterSizeEventually(2, h1, h2);
         assertClusterSizeEventually(1, h3);
 
         // merge back
         mergeBack(h3, getAddress(h1));
-        assertClusterSizeEventually(3, h1);
-        assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
+        assertClusterSizeEventually(3, h1, h2, h3);
 
         // all partitions are assigned and all migrations & promotions are completed
         waitAllForSafeState(h1, h2, h3);
@@ -120,8 +116,7 @@ public class SplitMergeTest extends HazelcastTestSupport {
 
         // merge back
         mergeBack(h2, getAddress(h1));
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
+        assertClusterSizeEventually(2, h1, h2);
 
         lifecycleListener.assertStates(LifecycleState.MERGING, LifecycleState.MERGED);
     }

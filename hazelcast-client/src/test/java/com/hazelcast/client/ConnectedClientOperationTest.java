@@ -54,8 +54,7 @@ public class ConnectedClientOperationTest extends HazelcastTestSupport {
     public void testNumberOfConnectedClients() throws Exception {
         HazelcastInstance h1 = factory.newHazelcastInstance();
         HazelcastInstance h2 = factory.newHazelcastInstance();
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
+        assertClusterSize(2, h1, h2);
 
         int numberOfClients = 6;
         for (int i = 0; i < numberOfClients; i++) {

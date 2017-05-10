@@ -98,9 +98,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         try {
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
@@ -138,9 +137,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         try {
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
@@ -173,9 +171,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         try {
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
@@ -212,9 +209,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         try {
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
@@ -255,9 +251,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         try {
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
@@ -290,9 +285,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         try {
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
@@ -326,9 +320,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         try {
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
@@ -360,9 +353,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         try {
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
@@ -391,9 +383,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         try {
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
@@ -424,9 +415,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         try {
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
@@ -455,9 +445,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         try {
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
@@ -497,9 +486,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         try {
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
@@ -552,9 +540,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         try {
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
@@ -590,9 +577,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         try {
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
@@ -629,9 +615,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         try {
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
@@ -682,9 +667,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         try {
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
@@ -735,9 +719,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         try {
 
@@ -796,9 +779,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         try {
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
@@ -854,9 +836,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         try {
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
@@ -913,9 +894,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         try {
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
@@ -953,9 +933,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
         try {
-            assertClusterSizeEventually(3, h1);
+            assertClusterSize(3, h1, h3);
             assertClusterSizeEventually(3, h2);
-            assertClusterSizeEventually(3, h3);
 
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
             for (int i = 0; i < 100; i++) {
@@ -983,9 +962,8 @@ public class MapReduceTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertClusterSizeEventually(3, h1);
+        assertClusterSize(3, h1, h3);
         assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {

@@ -58,8 +58,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
         Member m2 = h2.getCluster().getLocalMember();
         assertEquals(123, (int) m2.getIntAttribute("Test"));
 
-        assertClusterSize(2, h1);
-        assertClusterSize(2, h2);
+        assertClusterSize(2, h1, h2);
 
         Member member = null;
         for (Member m : h2.getCluster().getMembers()) {

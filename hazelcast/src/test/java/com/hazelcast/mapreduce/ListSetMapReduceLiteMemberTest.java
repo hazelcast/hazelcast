@@ -61,10 +61,8 @@ public class ListSetMapReduceLiteMemberTest
         lite = factory.newHazelcastInstance(liteConfig);
         final HazelcastInstance lite2 = factory.newHazelcastInstance(liteConfig);
 
-        assertClusterSizeEventually(4, instance);
-        assertClusterSizeEventually(4, instance2);
-        assertClusterSizeEventually(4, lite);
-        assertClusterSizeEventually(4, lite2);
+        assertClusterSize(4, instance, lite2);
+        assertClusterSizeEventually(4, instance2, lite);
     }
 
     @After

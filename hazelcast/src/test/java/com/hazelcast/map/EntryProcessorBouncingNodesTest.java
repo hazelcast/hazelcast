@@ -104,7 +104,9 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         HazelcastInstance instance = newInstance(withIndex);
         HazelcastInstance instance2 = newInstance(withIndex);
         HazelcastInstance instance3 = newInstance(withIndex);
-        assertClusterSizeEventually(3, instance);
+
+        assertClusterSize(3, instance, instance3);
+        assertClusterSizeEventually(3, instance2);
 
         final IMap<Integer, ListHolder> map = instance.getMap(MAP_NAME);
         final ListHolder expected = new ListHolder();

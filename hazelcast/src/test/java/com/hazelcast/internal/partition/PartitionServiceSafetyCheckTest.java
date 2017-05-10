@@ -189,8 +189,7 @@ public class PartitionServiceSafetyCheckTest extends PartitionCorrectnessTestSup
         waitAllForSafeState(hz1, hz2, hz3);
 
         hz2.getLifecycleService().terminate();
-        assertClusterSizeEventually(2, hz1);
-        assertClusterSizeEventually(2, hz3);
+        assertClusterSizeEventually(2, hz1, hz3);
         waitAllForSafeState(hz1, hz3);
         assertPartitionAssignments(factory);
 

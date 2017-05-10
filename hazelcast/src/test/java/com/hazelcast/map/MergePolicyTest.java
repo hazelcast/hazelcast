@@ -95,8 +95,7 @@ public class MergePolicyTest extends HazelcastTestSupport {
         mergeBlockingLatch.countDown();
 
         assertOpenEventually(lifeCycleListener.mergeFinishedLatch);
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
+        assertClusterSizeEventually(2, h1, h2);
 
         IMap<Object, Object> mapTest = h1.getMap(mapName);
         assertEquals("LatestUpdatedValue", mapTest.get("key1"));
@@ -143,8 +142,7 @@ public class MergePolicyTest extends HazelcastTestSupport {
         mergeBlockingLatch.countDown();
 
         assertOpenEventually(lifeCycleListener.mergeFinishedLatch);
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
+        assertClusterSizeEventually(2, h1, h2);
 
         IMap<Object, Object> mapTest = h2.getMap(mapName);
         assertEquals("higherHitsValue", mapTest.get("key1"));
@@ -184,8 +182,7 @@ public class MergePolicyTest extends HazelcastTestSupport {
         mergeBlockingLatch.countDown();
 
         assertOpenEventually(lifeCycleListener.mergeFinishedLatch);
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
+        assertClusterSizeEventually(2, h1, h2);
 
         IMap<Object, Object> mapTest = h2.getMap(mapName);
         assertEquals("PutIfAbsentValue1", mapTest.get("key1"));
@@ -225,8 +222,7 @@ public class MergePolicyTest extends HazelcastTestSupport {
         mergeBlockingLatch.countDown();
 
         assertOpenEventually(lifeCycleListener.mergeFinishedLatch);
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
+        assertClusterSizeEventually(2, h1, h2);
 
         IMap<Object, Object> mapTest = h2.getMap(mapName);
         assertEquals("passThroughValue", mapTest.get(key));
@@ -265,8 +261,7 @@ public class MergePolicyTest extends HazelcastTestSupport {
         mergeBlockingLatch.countDown();
 
         assertOpenEventually(lifeCycleListener.mergeFinishedLatch);
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
+        assertClusterSizeEventually(2, h1, h2);
 
         IMap<Object, Object> mapTest = h2.getMap(mapName);
         assertNotNull(mapTest.get(key));

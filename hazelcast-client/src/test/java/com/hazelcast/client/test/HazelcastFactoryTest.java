@@ -62,9 +62,7 @@ public class HazelcastFactoryTest extends HazelcastTestSupport {
                 touchRandomNode(client1);
                 touchRandomNode(client2);
 
-                assertClusterSize(3, instance1);
-                assertClusterSize(3, instance2);
-                assertClusterSize(3, instance3);
+                assertClusterSize(3, instance1, instance2, instance3);
 
                 assertEquals(2, instance1.getClientService().getConnectedClients().size());
                 assertEquals(2, instance2.getClientService().getConnectedClients().size());
@@ -84,14 +82,7 @@ public class HazelcastFactoryTest extends HazelcastTestSupport {
         final HazelcastInstance client1 = instanceFactory.newHazelcastClient(clientConfig);
         final HazelcastInstance client2 = instanceFactory.newHazelcastClient(clientConfig);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertClusterSize(3, instance1);
-                assertClusterSize(3, instance2);
-                assertClusterSize(3, instance3);
-            }
-        });
+        assertClusterSizeEventually(3, instance1, instance2, instance3);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -106,13 +97,7 @@ public class HazelcastFactoryTest extends HazelcastTestSupport {
             }
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertClusterSize(3, client1);
-                assertClusterSize(3, client1);
-            }
-        });
+        assertClusterSizeEventually(3, client1, client2);
     }
 
     private static void touchRandomNode(HazelcastInstance hazelcastInstance) {

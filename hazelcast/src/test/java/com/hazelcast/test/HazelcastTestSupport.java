@@ -864,10 +864,12 @@ public abstract class HazelcastTestSupport {
         });
     }
 
-    public static void assertClusterSize(int expectedSize, HazelcastInstance instance) {
-        int clusterSize = getClusterSize(instance);
-        if (expectedSize != clusterSize) {
-            fail(format("Cluster size is not correct. Expected: %d Actual: %d", expectedSize, clusterSize));
+    public static void assertClusterSize(int expectedSize, HazelcastInstance... instances) {
+        for (HazelcastInstance instance : instances) {
+            int clusterSize = getClusterSize(instance);
+            if (expectedSize != clusterSize) {
+                fail(format("Cluster size is not correct. Expected: %d Actual: %d", expectedSize, clusterSize));
+            }
         }
     }
 
@@ -876,8 +878,10 @@ public abstract class HazelcastTestSupport {
         return members == null ? 0 : members.size();
     }
 
-    public static void assertClusterSizeEventually(int expectedSize, HazelcastInstance instance) {
-        assertClusterSizeEventually(expectedSize, instance, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    public static void assertClusterSizeEventually(int expectedSize, HazelcastInstance... instances) {
+        for (HazelcastInstance instance : instances) {
+            assertClusterSizeEventually(expectedSize, instance, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+        }
     }
 
     public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance,
@@ -891,30 +895,20 @@ public abstract class HazelcastTestSupport {
         }, timeoutSeconds);
     }
 
-    public static void assertMasterAddress(HazelcastInstance master, HazelcastInstance instance) {
-        assertEquals(getAddress(master), getNode(instance).getMasterAddress());
+    public static void assertMasterAddress(Address masterAddress, HazelcastInstance... instances) {
+        for (HazelcastInstance instance : instances) {
+            assertEquals(masterAddress, getNode(instance).getMasterAddress());
+        }
     }
 
-    public static void assertMasterAddressEventually(final HazelcastInstance master, final HazelcastInstance instance) {
+    public static void assertMasterAddressEventually(final Address masterAddress, final HazelcastInstance... instances) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
-                assertMasterAddress(master, instance);
-            }
-        });
-    }
-
-    public static void assertMasterAddress(Address masterAddress, HazelcastInstance instance) {
-        assertEquals(masterAddress, getNode(instance).getMasterAddress());
-    }
-
-    public static void assertMasterAddressEventually(final Address masterAddress, final HazelcastInstance instance) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertMasterAddress(masterAddress, instance);
+                for (HazelcastInstance instance : instances) {
+                    assertMasterAddress(masterAddress, instance);
+                }
             }
         });
     }

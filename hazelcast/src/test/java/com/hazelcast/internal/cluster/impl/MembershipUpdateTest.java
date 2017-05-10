@@ -319,14 +319,13 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(2, hz1);
+        assertClusterSize(2, hz1, hz2);
 
         dropOperationsFrom(hz1, MEMBER_INFO_UPDATE);
 
         HazelcastInstance hz3 = factory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, hz1);
-        assertClusterSizeEventually(3, hz3);
+        assertClusterSize(3, hz1, hz3);
         assertClusterSize(2, hz2);
 
         resetPacketFiltersFrom(hz1);
@@ -348,14 +347,13 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(2, hz1);
+        assertClusterSize(2, hz1, hz2);
 
         dropOperationsFrom(hz1, MEMBER_INFO_UPDATE);
 
         HazelcastInstance hz3 = factory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, hz1);
-        assertClusterSizeEventually(3, hz3);
+        assertClusterSize(3, hz1, hz3);
         assertClusterSize(2, hz2);
 
         resetPacketFiltersFrom(hz1);
@@ -425,6 +423,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
         HazelcastInstance hz3 = factory.newHazelcastInstance(config);
 
+        assertClusterSize(3, hz1, hz3);
         assertClusterSizeEventually(3, hz2);
 
         dropOperationsBetween(hz1, hz3, MEMBER_INFO_UPDATE);
@@ -448,6 +447,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
         HazelcastInstance hz3 = factory.newHazelcastInstance(config);
 
+        assertClusterSize(3, hz1, hz3);
         assertClusterSizeEventually(3, hz2);
 
         dropOperationsBetween(hz1, hz3, MEMBER_INFO_UPDATE);
@@ -525,9 +525,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         future.get();
 
         // member update should not be applied
-        assertClusterSize(3, hz1);
-        assertClusterSize(3, hz2);
-        assertClusterSize(3, hz3);
+        assertClusterSize(3, hz1, hz2, hz3);
 
         assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz2));
         assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz3));
@@ -544,22 +542,19 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         HazelcastInstance hz3 = factory.newHazelcastInstance(config);
         HazelcastInstance hz4 = factory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(4, hz2);
-        assertClusterSizeEventually(4, hz3);
+        assertClusterSize(4, hz2, hz3);
 
         dropOperationsBetween(hz1, hz2, MEMBER_INFO_UPDATE);
 
         final MemberImpl member3 = getNode(hz3).getLocalMember();
         hz3.getLifecycleService().terminate();
 
-        assertClusterSizeEventually(3, hz1);
-        assertClusterSizeEventually(3, hz4);
+        assertClusterSizeEventually(3, hz1, hz4);
         assertClusterSize(4, hz2);
 
         hz3 = newHazelcastInstance(config, "test-instance", new StaticMemberNodeContext(member3));
 
-        assertClusterSizeEventually(4, hz1);
-        assertClusterSizeEventually(4, hz4);
+        assertClusterSizeEventually(4, hz1, hz4);
 
         resetPacketFiltersFrom(hz1);
 

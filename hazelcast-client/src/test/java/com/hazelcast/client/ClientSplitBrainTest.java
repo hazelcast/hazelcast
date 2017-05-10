@@ -89,8 +89,7 @@ public class ClientSplitBrainTest extends HazelcastTestSupport {
         closeConnectionBetween(h2, h1);
 
         assertOpenEventually(mergedLatch);
-        assertClusterSize(2, h1);
-        assertClusterSize(2, h2);
+        assertClusterSize(2, h1, h2);
 
         AtomicBoolean testFinished = new AtomicBoolean(false);
         final Thread clientThread = startClientPutThread(mapClient, testFinished);

@@ -25,6 +25,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -77,7 +78,7 @@ public class JoinStressTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testJoincompletesCorrectlyWhenMultipleNodesStartedParallel() throws Exception {
+    public void testJoinCompletesCorrectlyWhenMultipleNodesStartedParallel() throws Exception {
         int count = 10;
         final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(count);
         final HazelcastInstance[] instances = new HazelcastInstance[count];
@@ -96,7 +97,7 @@ public class JoinStressTest extends HazelcastTestSupport {
 
         assertOpenEventually(latch);
         for (int i = 0; i < count; i++) {
-            assertClusterSize(count, instances[i]);
+            assertClusterSizeEventually(count, instances[i]);
         }
     }
 
@@ -132,7 +133,7 @@ public class JoinStressTest extends HazelcastTestSupport {
         for (int i = 0; i < nodeCount; i++) {
             HazelcastInstance hz = instances.get(i);
             assertNotNull(hz);
-            assertClusterSize(nodeCount, hz);
+            assertClusterSizeEventually(nodeCount, hz);
         }
     }
 
@@ -194,10 +195,16 @@ public class JoinStressTest extends HazelcastTestSupport {
             HazelcastInstance hz = instances.get(i);
             assertNotNull(hz);
 
-            int clusterSize = hz.getCluster().getMembers().size();
-            String groupName = hz.getConfig().getGroupConfig().getName();
-            int shouldBeClusterSize = groups.get(groupName).get();
-            assertEquals(groupName + ": ", shouldBeClusterSize, clusterSize);
+            final int clusterSize = hz.getCluster().getMembers().size();
+            final String groupName = hz.getConfig().getGroupConfig().getName();
+            final int shouldBeClusterSize = groups.get(groupName).get();
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run()
+                        throws Exception {
+                    assertEquals(groupName + ": ", shouldBeClusterSize, clusterSize);
+                }
+            });
         }
     }
 

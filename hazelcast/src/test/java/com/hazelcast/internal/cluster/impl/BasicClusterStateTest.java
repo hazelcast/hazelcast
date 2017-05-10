@@ -130,8 +130,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
 
         hz2 = factory.newHazelcastInstance(address);
 
-        assertClusterSizeEventually(3, hz1);
-        assertClusterSizeEventually(3, hz2);
+        assertClusterSizeEventually(3, hz1, hz2);
         assertEquals(NodeState.ACTIVE, getNode(hz2).getState());
     }
 
@@ -152,8 +151,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
 
         hz2 = factory.newHazelcastInstance(address);
 
-        assertClusterSizeEventually(3, hz1);
-        assertClusterSizeEventually(3, hz2);
+        assertClusterSizeEventually(3, hz1, hz2);
         assertEquals(NodeState.PASSIVE, getNode(hz2).getState());
     }
 
@@ -215,8 +213,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
 
         changeClusterStateEventually(hz2, ClusterState.FROZEN);
         terminateInstance(hz1);
-        assertClusterSizeEventually(2, hz2);
-        assertClusterSizeEventually(2, hz3);
+        assertClusterSizeEventually(2, hz2, hz3);
 
         // try until member is removed and partition-service takes care of removal
         changeClusterStateEventually(hz3, ClusterState.ACTIVE);
@@ -239,8 +236,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
 
         changeClusterStateEventually(hz2, ClusterState.FROZEN);
         terminateInstance(hz1);
-        assertClusterSizeEventually(2, hz2);
-        assertClusterSizeEventually(2, hz3);
+        assertClusterSizeEventually(2, hz2, hz3);
 
         // try until member is removed and partition-service takes care of removal
         changeClusterStateEventually(hz3, ClusterState.PASSIVE);
@@ -340,8 +336,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
 
         other = factory.newHazelcastInstance(otherAddress);
 
-        assertClusterSizeEventually(2, master);
-        assertClusterSizeEventually(2, other);
+        assertClusterSizeEventually(2, master, other);
 
         other.shutdown();
     }

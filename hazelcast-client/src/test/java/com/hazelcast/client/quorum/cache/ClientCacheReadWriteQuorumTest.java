@@ -118,11 +118,8 @@ public class ClientCacheReadWriteQuorumTest extends HazelcastTestSupport {
     }
 
     private static void verifyClients() {
-        assertClusterSizeEventually(3, c1);
-        assertClusterSizeEventually(3, c2);
-        assertClusterSizeEventually(3, c3);
-        assertClusterSizeEventually(2, c4);
-        assertClusterSizeEventually(2, c5);
+        assertClusterSizeEventually(3, c1, c2, c3);
+        assertClusterSizeEventually(2, c4, c5);
     }
 
     @AfterClass

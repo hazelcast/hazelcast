@@ -102,8 +102,7 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
         final Map<Object, Object> expectedValues = testCase.populateMaps(map1, map2, h1);
 
         assertOpenEventually(lifeCycleListener.latch);
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
+        assertClusterSizeEventually(2, h1, h2);
 
         assertTrueEventually(new AssertTask() {
             @Override

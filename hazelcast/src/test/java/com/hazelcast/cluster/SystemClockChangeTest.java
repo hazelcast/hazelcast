@@ -87,13 +87,11 @@ public class SystemClockChangeTest extends AbstractClockTest {
         HazelcastInstance hz1 = startNode();
         HazelcastInstance hz2 = startNode();
 
-        assertClusterSizeEventually(3, hz1);
-        assertClusterSizeEventually(3, hz2);
+        assertClusterSizeEventually(3, hz1, hz2);
 
         shutdownIsolatedNode();
 
-        assertClusterSizeEventually(2, hz1);
-        assertClusterSizeEventually(2, hz2);
+        assertClusterSizeEventually(2, hz1, hz2);
 
         assertClusterTime(hz1, hz2);
     }

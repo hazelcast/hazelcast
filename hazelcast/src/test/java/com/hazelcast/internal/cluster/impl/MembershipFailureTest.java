@@ -94,9 +94,8 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         HazelcastInstance slave1 = newHazelcastInstance();
         HazelcastInstance slave2 = newHazelcastInstance();
 
-        assertClusterSizeEventually(3, master);
+        assertClusterSize(3, master, slave2);
         assertClusterSizeEventually(3, slave1);
-        assertClusterSizeEventually(3, slave2);
 
         if (terminate) {
             terminateInstance(slave1);
@@ -104,11 +103,9 @@ public class MembershipFailureTest extends HazelcastTestSupport {
             slave1.shutdown();
         }
 
-        assertClusterSizeEventually(2, master);
-        assertClusterSizeEventually(2, slave2);
+        assertClusterSizeEventually(2, master, slave2);
 
-        assertMasterAddress(getAddress(master), master);
-        assertMasterAddress(getAddress(master), slave2);
+        assertMasterAddress(getAddress(master), master, slave2);
         assertMemberViewsAreSame(getMemberMap(master), getMemberMap(slave2));
     }
 
@@ -127,9 +124,8 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         HazelcastInstance slave1 = newHazelcastInstance();
         HazelcastInstance slave2 = newHazelcastInstance();
 
-        assertClusterSizeEventually(3, master);
+        assertClusterSize(3, master, slave2);
         assertClusterSizeEventually(3, slave1);
-        assertClusterSizeEventually(3, slave2);
 
         if (terminate) {
             terminateInstance(master);
@@ -137,11 +133,9 @@ public class MembershipFailureTest extends HazelcastTestSupport {
             master.shutdown();
         }
 
-        assertClusterSizeEventually(2, slave1);
-        assertClusterSizeEventually(2, slave2);
+        assertClusterSizeEventually(2, slave1, slave2);
 
-        assertMasterAddress(getAddress(slave1), slave1);
-        assertMasterAddress(getAddress(slave1), slave2);
+        assertMasterAddress(getAddress(slave1), slave1, slave2);
         assertMemberViewsAreSame(getMemberMap(slave1), getMemberMap(slave2));
     }
 
@@ -161,9 +155,8 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         HazelcastInstance slave1 = newHazelcastInstance();
         HazelcastInstance slave2 = newHazelcastInstance();
 
-        assertClusterSizeEventually(4, master);
-        assertClusterSizeEventually(4, masterCandidate);
-        assertClusterSizeEventually(4, slave1);
+        assertClusterSize(4, master, slave2);
+        assertClusterSizeEventually(4, masterCandidate, slave1);
 
         if (simultaneousCrash) {
             terminateInstanceAsync(master);
@@ -173,11 +166,9 @@ public class MembershipFailureTest extends HazelcastTestSupport {
             terminateInstance(masterCandidate);
         }
 
-        assertClusterSizeEventually(2, slave1);
-        assertClusterSizeEventually(2, slave2);
+        assertClusterSizeEventually(2, slave1, slave2);
 
-        assertMasterAddress(getAddress(slave1), slave1);
-        assertMasterAddress(getAddress(slave1), slave2);
+        assertMasterAddress(getAddress(slave1), slave1, slave2);
         assertMemberViewsAreSame(getMemberMap(slave1), getMemberMap(slave2));
     }
 
@@ -197,10 +188,8 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         HazelcastInstance slave1 = newHazelcastInstance();
         HazelcastInstance slave2 = newHazelcastInstance();
 
-        assertClusterSizeEventually(4, master);
-        assertClusterSizeEventually(4, masterCandidate);
-        assertClusterSizeEventually(4, slave1);
-        assertClusterSizeEventually(4, slave2);
+        assertClusterSize(4, master, slave2);
+        assertClusterSizeEventually(4, masterCandidate, slave1);
 
         // drop FETCH_MEMBER_LIST_STATE packets to block mastership claim process
         dropOperationsBetween(masterCandidate, slave1, FETCH_MEMBER_LIST_STATE);
@@ -221,8 +210,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         assertClusterSizeEventually(2, masterCandidate);
         assertClusterSizeEventually(2, slave2);
 
-        assertMasterAddress(getAddress(masterCandidate), masterCandidate);
-        assertMasterAddress(getAddress(masterCandidate), slave2);
+        assertMasterAddress(getAddress(masterCandidate), masterCandidate, slave2);
         assertMemberViewsAreSame(getMemberMap(masterCandidate), getMemberMap(slave2));
     }
 
@@ -233,10 +221,8 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         HazelcastInstance slave1 = newHazelcastInstance();
         HazelcastInstance slave2 = newHazelcastInstance();
 
-        assertClusterSizeEventually(4, master);
-        assertClusterSizeEventually(4, masterCandidate);
-        assertClusterSizeEventually(4, slave1);
-        assertClusterSizeEventually(4, slave2);
+        assertClusterSize(4, master, slave2);
+        assertClusterSizeEventually(4, masterCandidate, slave1);
 
         // drop FETCH_MEMBER_LIST_STATE packets to block mastership claim process
         dropOperationsBetween(masterCandidate, slave1, FETCH_MEMBER_LIST_STATE);
@@ -254,11 +240,9 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         sleepSeconds(3);
         terminateInstance(masterCandidate);
 
-        assertClusterSizeEventually(2, slave1);
-        assertClusterSizeEventually(2, slave2);
+        assertClusterSizeEventually(2, slave1, slave2);
 
-        assertMasterAddress(getAddress(slave1), slave1);
-        assertMasterAddress(getAddress(slave1), slave2);
+        assertMasterAddress(getAddress(slave1), slave1, slave2);
         assertMemberViewsAreSame(getMemberMap(slave1), getMemberMap(slave2));
     }
 
@@ -270,14 +254,12 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         HazelcastInstance slave1 = newHazelcastInstance(config);
         HazelcastInstance slave2 = newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, master);
+        assertClusterSize(3, master, slave2);
         assertClusterSizeEventually(3, slave1);
-        assertClusterSizeEventually(3, slave2);
 
         dropOperationsFrom(slave2, HEARTBEAT);
 
-        assertClusterSizeEventually(2, master);
-        assertClusterSizeEventually(2, slave1);
+        assertClusterSizeEventually(2, master, slave1);
         assertClusterSizeEventually(1, slave2);
     }
 
@@ -290,20 +272,15 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         HazelcastInstance slave1 = newHazelcastInstance(config);
         HazelcastInstance slave2 = newHazelcastInstance(config);
 
-
-        assertClusterSizeEventually(3, master);
+        assertClusterSize(3, master, slave2);
         assertClusterSizeEventually(3, slave1);
-        assertClusterSizeEventually(3, slave2);
-
-        dropOperationsFrom(master, HEARTBEAT);
 
         dropOperationsFrom(master, HEARTBEAT);
         dropOperationsFrom(slave1, HEARTBEAT_COMPLAINT);
         dropOperationsFrom(slave2, HEARTBEAT_COMPLAINT);
 
         assertClusterSizeEventually(1, master);
-        assertClusterSizeEventually(2, slave1);
-        assertClusterSizeEventually(2, slave2);
+        assertClusterSizeEventually(2, slave1, slave2);
     }
 
     @Test
@@ -314,16 +291,14 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         HazelcastInstance slave1 = newHazelcastInstance(config);
         final HazelcastInstance slave2 = newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, master);
+        assertClusterSize(3, master, slave2);
         assertClusterSizeEventually(3, slave1);
-        assertClusterSizeEventually(3, slave2);
 
         // prevent heartbeat from master to slave to prevent suspect to be removed
         dropOperationsBetween(master, slave1, HEARTBEAT);
         suspectMember(slave1, master);
 
-        assertClusterSizeEventually(2, master);
-        assertClusterSizeEventually(2, slave2);
+        assertClusterSizeEventually(2, master, slave2);
         assertClusterSizeEventually(1, slave1);
     }
 
@@ -335,16 +310,14 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         HazelcastInstance slave1 = newHazelcastInstance(config);
         final HazelcastInstance slave2 = newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, master);
+        assertClusterSize(3, master, slave2);
         assertClusterSizeEventually(3, slave1);
-        assertClusterSizeEventually(3, slave2);
 
         // prevent heartbeat from master to slave to prevent suspect to be removed
         dropOperationsBetween(master, slave1, HEARTBEAT);
         suspectMember(slave1, master);
 
-        assertClusterSizeEventually(2, master);
-        assertClusterSizeEventually(2, slave2);
+        assertClusterSizeEventually(2, master, slave2);
         assertClusterSizeEventually(1, slave1);
     }
 
@@ -356,9 +329,8 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         HazelcastInstance slave1 = newHazelcastInstance(config);
         final HazelcastInstance slave2 = newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, master);
+        assertClusterSize(3, master, slave2);
         assertClusterSizeEventually(3, slave1);
-        assertClusterSizeEventually(3, slave2);
 
         dropOperationsBetween(slave2, slave1, HEARTBEAT);
 
@@ -390,14 +362,12 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         HazelcastInstance slave1 = newHazelcastInstance(config);
         HazelcastInstance slave2 = newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, master);
+        assertClusterSize(3, master, slave2);
         assertClusterSizeEventually(3, slave1);
-        assertClusterSizeEventually(3, slave2);
 
         dropOperationsFrom(slave2, MASTER_CONFIRM);
 
-        assertClusterSizeEventually(2, master);
-        assertClusterSizeEventually(2, slave1);
+        assertClusterSizeEventually(2, master, slave1);
         assertClusterSizeEventually(1, slave2);
     }
 
@@ -416,15 +386,13 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         HazelcastInstance slave1 = newHazelcastInstance(config1);
         HazelcastInstance slave2 = newHazelcastInstance(config2);
 
-        assertClusterSizeEventually(3, master);
+        assertClusterSize(3, master, slave2);
         assertClusterSizeEventually(3, slave1);
-        assertClusterSizeEventually(3, slave2);
 
         dropOperationsBetween(master, slave2, MEMBER_INFO_UPDATE);
         dropOperationsFrom(slave2, MASTER_CONFIRM, HEARTBEAT);
 
-        assertClusterSizeEventually(2, master);
-        assertClusterSizeEventually(2, slave1);
+        assertClusterSizeEventually(2, master, slave1);
 
         dropOperationsFrom(slave2, HEARTBEAT);
         ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(slave2);
@@ -445,10 +413,8 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         HazelcastInstance slave2 = newHazelcastInstance(config);
         HazelcastInstance slave3 = newHazelcastInstance(config);
 
-        assertClusterSizeEventually(4, master);
-        assertClusterSizeEventually(4, slave1);
-        assertClusterSizeEventually(4, slave2);
-        assertClusterSizeEventually(4, slave3);
+        assertClusterSize(4, master, slave3);
+        assertClusterSizeEventually(4, slave1, slave2);
 
         dropOperationsFrom(master, HEARTBEAT, MASTER_CONFIRM);
         dropOperationsFrom(slave1, HEARTBEAT, MASTER_CONFIRM);
@@ -460,13 +426,11 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         suspectMember(slave3, master);
         suspectMember(slave3, slave1);
 
-        assertClusterSizeEventually(2, slave2);
-        assertClusterSizeEventually(2, slave3);
+        assertClusterSizeEventually(2, slave2, slave3);
 
         assertMemberViewsAreSame(getMemberMap(slave2), getMemberMap(slave3));
 
-        assertClusterSizeEventually(2, master);
-        assertClusterSizeEventually(2, slave1);
+        assertClusterSizeEventually(2, master, slave1);
 
         assertMemberViewsAreSame(getMemberMap(master), getMemberMap(slave1));
     }
@@ -477,32 +441,28 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         HazelcastInstance master = newHazelcastInstance(config);
         HazelcastInstance slave1 = newHazelcastInstance(config);
 
-        assertClusterSizeEventually(2, master);
-        assertClusterSizeEventually(2, slave1);
+        assertClusterSize(2, master);
+        assertClusterSize(2, slave1);
 
         HazelcastInstance slave2 = newHazelcastInstance(config);
-        assertClusterSizeEventually(3, master);
+        assertClusterSize(3, master);
         assertClusterSizeEventually(3, slave1);
-        assertClusterSizeEventually(3, slave2);
+        assertClusterSize(3, slave2);
 
         dropOperationsBetween(master, slave1, MEMBER_INFO_UPDATE);
 
         HazelcastInstance slave3 = newHazelcastInstance(config);
 
-        assertClusterSizeEventually(4, slave3);
+        assertClusterSize(4, slave3);
         assertClusterSizeEventually(4, slave2);
         assertClusterSize(3, slave1);
 
         master.getLifecycleService().terminate();
 
-        assertClusterSizeEventually(3, slave1);
-        assertClusterSizeEventually(3, slave2);
-        assertClusterSizeEventually(3, slave3);
+        assertClusterSizeEventually(3, slave1, slave2, slave3);
 
         Address newMasterAddress = getAddress(slave1);
-        assertMasterAddress(newMasterAddress, slave1);
-        assertMasterAddress(newMasterAddress, slave2);
-        assertMasterAddress(newMasterAddress, slave3);
+        assertMasterAddress(newMasterAddress, slave1, slave2, slave3);
     }
 
     @Test
@@ -510,14 +470,10 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         Config config = new Config().setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
         HazelcastInstance master = newHazelcastInstance(config);
         HazelcastInstance slave1 = newHazelcastInstance(config);
-
-        assertClusterSizeEventually(2, master);
-        assertClusterSizeEventually(2, slave1);
-
         HazelcastInstance slave2 = newHazelcastInstance(config);
-        assertClusterSizeEventually(3, master);
+
+        assertClusterSize(3, master, slave2);
         assertClusterSizeEventually(3, slave1);
-        assertClusterSizeEventually(3, slave2);
         // master, slave1, slave2
 
         dropOperationsBetween(master, slave1, MEMBER_INFO_UPDATE);
@@ -525,8 +481,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         HazelcastInstance slave3 = newHazelcastInstance(config);
         // master, slave1, slave2, slave3
 
-        assertClusterSizeEventually(4, slave3);
-        assertClusterSizeEventually(4, slave2);
+        assertClusterSizeEventually(4, slave3, slave2);
         assertClusterSize(3, slave1);
 
         dropOperationsBetween(master, asList(slave1, slave2), MEMBER_INFO_UPDATE);
@@ -534,8 +489,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         HazelcastInstance slave4 = newHazelcastInstance(config);
         // master, slave1, slave2, slave3, slave4
 
-        assertClusterSizeEventually(5, slave4);
-        assertClusterSizeEventually(5, slave3);
+        assertClusterSizeEventually(5, slave4, slave3);
         assertClusterSizeEventually(4, slave2);
         assertClusterSize(3, slave1);
 
@@ -544,7 +498,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         HazelcastInstance slave5 = newHazelcastInstance(config);
         // master, slave1, slave2, slave3, slave4, slave5
 
-        assertClusterSizeEventually(6, slave5);
+        assertClusterSize(6, slave5);
         assertClusterSizeEventually(6, slave4);
         assertClusterSizeEventually(5, slave3);
         assertClusterSizeEventually(4, slave2);
@@ -552,15 +506,10 @@ public class MembershipFailureTest extends HazelcastTestSupport {
 
         master.getLifecycleService().terminate();
 
-        assertClusterSizeEventually(5, slave1);
-        assertClusterSizeEventually(5, slave2);
-        assertClusterSizeEventually(5, slave3);
+        assertClusterSizeEventually(5, slave1, slave2, slave3);
 
         Address newMasterAddress = getAddress(slave1);
-        assertMasterAddress(newMasterAddress, slave2);
-        assertMasterAddress(newMasterAddress, slave3);
-        assertMasterAddress(newMasterAddress, slave4);
-        assertMasterAddress(newMasterAddress, slave5);
+        assertMasterAddress(newMasterAddress, slave2, slave3, slave4, slave5);
     }
 
     @Test
@@ -571,14 +520,13 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         HazelcastInstance master = newHazelcastInstance(config);
         HazelcastInstance slave1 = newHazelcastInstance(config);
 
-        assertClusterSizeEventually(2, master);
-        assertClusterSizeEventually(2, slave1);
+        assertClusterSize(2, master, slave1);
 
         dropOperationsBetween(master, slave1, MEMBER_INFO_UPDATE);
 
         HazelcastInstance slave2 = newHazelcastInstance(config);
-        assertClusterSizeEventually(3, master);
-        assertClusterSizeEventually(3, slave2);
+        assertClusterSize(3, master);
+        assertClusterSize(3, slave2);
         assertClusterSize(2, slave1);
 
         master.getLifecycleService().terminate();
@@ -599,9 +547,8 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         final HazelcastInstance member2 = newHazelcastInstance(config);
         final HazelcastInstance member3 = newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, member1);
+        assertClusterSize(3, member1, member3);
         assertClusterSizeEventually(3, member2);
-        assertClusterSizeEventually(3, member3);
 
         final CountDownLatch mergeLatch = new CountDownLatch(1);
         member3.getLifecycleService().addLifecycleListener(new LifecycleListener() {
@@ -673,10 +620,8 @@ public class MembershipFailureTest extends HazelcastTestSupport {
                 .setProperty(GroupProperty.MASTERSHIP_CLAIM_TIMEOUT_SECONDS.getName(), "10"));
         final HazelcastInstance member4 = newHazelcastInstance(config);
 
-        assertClusterSizeEventually(4, member1);
-        assertClusterSizeEventually(4, member2);
-        assertClusterSizeEventually(4, member3);
-        assertClusterSizeEventually(4, member4);
+        assertClusterSize(4, member1, member4);
+        assertClusterSizeEventually(4, member2, member3);
 
         dropOperationsFrom(member1, MEMBER_INFO_UPDATE, HEARTBEAT);
         dropOperationsFrom(member2, FETCH_MEMBER_LIST_STATE);
@@ -700,8 +645,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
 
         // member4 will learn member list
         resetPacketFiltersFrom(member2);
-        assertClusterSizeEventually(2, member2);
-        assertClusterSizeEventually(2, member4);
+        assertClusterSizeEventually(2, member2, member4);
         assertMemberViewsAreSame(getMemberMap(member2), getMemberMap(member4));
 
         resetPacketFiltersFrom(member1);
@@ -718,10 +662,8 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         final HazelcastInstance member3 = newHazelcastInstance(config);
         final HazelcastInstance member4 = newHazelcastInstance(config);
 
-        assertClusterSizeEventually(4, member1);
-        assertClusterSizeEventually(4, member2);
-        assertClusterSizeEventually(4, member3);
-        assertClusterSizeEventually(4, member4);
+        assertClusterSize(4, member1, member4);
+        assertClusterSizeEventually(4, member2, member3);
 
         dropOperationsFrom(member1, MEMBER_INFO_UPDATE, HEARTBEAT);
         dropOperationsFrom(member2, FETCH_MEMBER_LIST_STATE, HEARTBEAT);
@@ -745,8 +687,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
 
         // member4 will learn member list
         resetPacketFiltersFrom(member3);
-        assertClusterSizeEventually(2, member3);
-        assertClusterSizeEventually(2, member4);
+        assertClusterSizeEventually(2, member3, member4);
         assertMemberViewsAreSame(getMemberMap(member3), getMemberMap(member4));
 
         resetPacketFiltersFrom(member1);
