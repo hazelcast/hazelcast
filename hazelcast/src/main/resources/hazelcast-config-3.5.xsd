@@ -411,21 +411,25 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0">
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        Number of synchronous backups. For example, if 1 is set as the backup-count,
-                        then all entries of the map are copied to one other JVM for
-                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                        Number of total (synchronous + asynchronous) backups.
+                        For example, if `1` is set as the `backup-count`,
+                        then all entries of the cache are copied to one other instance for fail-safety.
+                        Valid numbers are 0 (no backup), 1, 2 ... 6.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1">
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        Number of asynchronous backups. For example, if 1 is set as the backup-count,
-                        then all entries of the map are copied to one other JVM for
-                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                        Number of asynchronous backups. For example, if `1` is set as the `async-backup-count`,
+                        then all entries of the cache are copied to one other instance as asynchronous for fail-safety.
+                        `async-backup-count` cannot be bigger than `backup-count` and
+                        the remaining backups are considered as synchronous backup.
+                        So `sync-backup-count` is calculated as `backup-count - async-backup-count`.
+                        Valid numbers are 0 (no backup), 1, 2 ... 6.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
