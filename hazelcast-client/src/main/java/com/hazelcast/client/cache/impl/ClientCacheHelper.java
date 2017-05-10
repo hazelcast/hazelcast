@@ -156,16 +156,34 @@ final class ClientCacheHelper {
     }
 
     private static <K, V> Object resolveCacheConfig(HazelcastClientInstanceImpl client, CacheConfig<K, V> newCacheConfig,
-                                                         int partitionId)
+                                                    int partitionId)
             throws IOException {
-        ClientConnection sendConnection = client.getInvocationService().getConnection(partitionId);
-        if (null != sendConnection && BuildInfo.UNKNOWN_HAZELCAST_VERSION == sendConnection.getConnectedServerVersion()) {
+
+        Address address = getSendAddress(client, partitionId);
+        ClientConnection sendConnection = (ClientConnection) client.getConnectionManager().getOrConnect(address, false);
+        if (BuildInfo.UNKNOWN_HAZELCAST_VERSION == sendConnection.getConnectedServerVersion()) {
             boolean compatibilityEnabled = client.getProperties().getBoolean(ClientProperty.COMPATIBILITY_3_6_SERVER_ENABLED);
             if (compatibilityEnabled) {
                 return new LegacyCacheConfig<K, V>(newCacheConfig);
             }
         }
         return newCacheConfig;
+    }
+
+    private static Address getSendAddress(HazelcastClientInstanceImpl client, int partitionId) throws IOException {
+        Address address;
+        if (client.getClientConfig().getNetworkConfig().isSmartRouting()) {
+            address = client.getClientPartitionService().getPartitionOwner(partitionId);
+            if (address == null) {
+                throw new IOException("Partition does not have an owner. partitionId: " + partitionId);
+            }
+        } else {
+            address = client.getClientClusterService().getOwnerConnectionAddress();
+            if (address == null) {
+                throw new IOException("ClientNonSmartInvocationServiceImpl: Owner connection is not available.");
+            }
+        }
+        return address;
     }
 
     /**
