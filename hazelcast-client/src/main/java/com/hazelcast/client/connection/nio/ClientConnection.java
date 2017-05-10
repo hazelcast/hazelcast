@@ -229,7 +229,7 @@ public class ClientConnection implements ChannelConnection, DiscardableMetricsPr
         this.remoteEndpoint = remoteEndpoint;
     }
 
-    public InetSocketAddress getLocalSocketAddress() {
+    public InetSocketAddress getLocalAddress() {
         return (InetSocketAddress) channel.getLocalAddress();
     }
 
