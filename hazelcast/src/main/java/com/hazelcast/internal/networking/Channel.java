@@ -59,12 +59,12 @@ public interface Channel extends Closeable {
     /**
      * @return the remote address. Returned value could be null.
      */
-    SocketAddress getRemoteAddress();
+    SocketAddress getRemoteSocketAddress();
 
     /**
      * @return the local address. Returned value could be null
      */
-    SocketAddress getLocalAddress();
+    SocketAddress getLocalSocketAddress();
 
     /**
      * This method will be removed from the interface. Only an explicit cast to NioChannel will expose the SocketChannel.
