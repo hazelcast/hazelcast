@@ -17,35 +17,22 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
-import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryBackupProcessor;
-import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.DistributedObjectNamespace;
-import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
-import static com.hazelcast.core.EntryEventType.ADDED;
-import static com.hazelcast.core.EntryEventType.REMOVED;
-import static com.hazelcast.core.EntryEventType.UPDATED;
-import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
-import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
+import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 
 /**
  * Set & Unlock processing for the EntryOperation
@@ -54,7 +41,7 @@ import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
  */
 public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOperation implements BackupAwareOperation, Notifier {
 
-    protected Data value;
+    protected Data newValue;
     protected Data oldValue;
     protected String caller;
     protected long begin;
@@ -65,10 +52,10 @@ public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOpera
     }
 
     public EntryOffloadableSetUnlockOperation(String name, EntryEventType modificationType, Data key, Data oldValue,
-                                              Data value, String caller, long threadId, long begin,
+                                              Data newValue, String caller, long threadId, long begin,
                                               EntryBackupProcessor entryBackupProcessor) {
-        super(name, key, value);
-        this.value = value;
+        super(name, key, newValue);
+        this.newValue = newValue;
         this.oldValue = oldValue;
         this.caller = caller;
         this.begin = begin;
@@ -81,7 +68,8 @@ public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOpera
     public void run() throws Exception {
         verifyLock();
         try {
-            updateRecordStore();
+            operator(this).init(dataKey, oldValue, newValue, null, modificationType)
+                    .doPostOperateOps();
         } finally {
             unlockKey();
         }
@@ -96,21 +84,6 @@ public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOpera
         }
     }
 
-    private void updateRecordStore() {
-        if (modificationType == null) {
-            return;
-        }
-        if (modificationType == REMOVED) {
-            recordStore.remove(dataKey);
-            getLocalMapStats().incrementRemoves(getLatencyFrom(begin));
-        } else if (modificationType == ADDED || modificationType == UPDATED) {
-            recordStore.set(dataKey, value, DEFAULT_TTL);
-            getLocalMapStats().incrementPuts(getLatencyFrom(begin));
-        } else {
-            throw new IllegalArgumentException("Unsupported event type " + modificationType);
-        }
-    }
-
     private void unlockKey() {
         boolean unlocked = recordStore.unlock(dataKey, caller, threadId, getCallId());
         if (!unlocked) {
@@ -118,77 +91,6 @@ public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOpera
                     String.format("Unexpected error! EntryOffloadableSetUnlockOperation finished but the unlock method "
                             + "returned false for caller=%s and threadId=%d", caller, threadId));
         }
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-        super.afterRun();
-        if (modificationType == null) {
-            return;
-        }
-
-        mapServiceContext.interceptAfterPut(name, value);
-        if (isPostProcessing(recordStore)) {
-            Record record = recordStore.getRecord(dataKey);
-            value = record == null ? null : toData(record.getValue());
-        }
-        invalidateNearCache(dataKey);
-        publishEntryEvent();
-        publishWanReplicationEvent();
-        evict(dataKey);
-    }
-
-    private void publishWanReplicationEvent() {
-        final MapContainer mapContainer = this.mapContainer;
-        if (mapContainer.getWanReplicationPublisher() == null && mapContainer.getWanMergePolicy() == null) {
-            return;
-        }
-        final Data key = getKey();
-
-        if (REMOVED.equals(modificationType)) {
-            mapEventPublisher.publishWanReplicationRemove(name, key, begin);
-
-        } else {
-            final Record record = recordStore.getRecord(key);
-            if (record != null) {
-                final EntryView entryView = createSimpleEntryView(key, value, record);
-                mapEventPublisher.publishWanReplicationUpdate(name, entryView);
-            }
-        }
-    }
-
-    private void publishEntryEvent() {
-        if (hasRegisteredListenerForThisMap()) {
-            nullifyOldValueIfNecessary();
-            mapEventPublisher.publishEvent(getCallerAddress(), name, modificationType, dataKey, oldValue, value);
-        }
-    }
-
-    private boolean hasRegisteredListenerForThisMap() {
-        final EventService eventService = getNodeEngine().getEventService();
-        return eventService.hasEventRegistration(SERVICE_NAME, name);
-    }
-
-    /**
-     * Nullify old value if in memory format is object and operation is not removal
-     * since old and new value in fired event {@link com.hazelcast.core.EntryEvent}
-     * may be same due to the object in memory format.
-     */
-    private void nullifyOldValueIfNecessary() {
-        final MapConfig mapConfig = mapContainer.getMapConfig();
-        final InMemoryFormat format = mapConfig.getInMemoryFormat();
-        if (format == InMemoryFormat.OBJECT && modificationType != REMOVED) {
-            oldValue = null;
-        }
-    }
-
-    private Data toData(Object obj) {
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        return mapServiceContext.toData(obj);
-    }
-
-    private long getLatencyFrom(long begin) {
-        return Clock.currentTimeMillis() - begin;
     }
 
     @Override
@@ -242,7 +144,7 @@ public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOpera
         super.writeInternal(out);
         out.writeUTF(modificationType != null ? modificationType.name() : "");
         out.writeData(oldValue);
-        out.writeData(value);
+        out.writeData(newValue);
         out.writeUTF(caller);
         out.writeLong(begin);
         out.writeObject(entryBackupProcessor);
@@ -254,7 +156,7 @@ public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOpera
         String modificationTypeName = in.readUTF();
         modificationType = modificationTypeName.equals("") ? null : EntryEventType.valueOf(modificationTypeName);
         oldValue = in.readData();
-        value = in.readData();
+        newValue = in.readData();
         caller = in.readUTF();
         begin = in.readLong();
         entryBackupProcessor = in.readObject();

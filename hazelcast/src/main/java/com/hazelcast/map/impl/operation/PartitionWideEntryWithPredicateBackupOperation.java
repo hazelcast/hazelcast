@@ -37,6 +37,7 @@ public class PartitionWideEntryWithPredicateBackupOperation extends PartitionWid
         this.predicate = predicate;
     }
 
+    @Override
     protected Predicate getPredicate() {
         return predicate;
     }

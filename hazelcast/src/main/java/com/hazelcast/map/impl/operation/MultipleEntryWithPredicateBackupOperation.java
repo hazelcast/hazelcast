@@ -24,7 +24,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -43,8 +42,8 @@ public class MultipleEntryWithPredicateBackupOperation extends MultipleEntryBack
     }
 
     @Override
-    protected boolean isEntryProcessable(Map.Entry entry) {
-        return super.isEntryProcessable(entry) && predicate.apply(entry);
+    public Predicate getPredicate() {
+        return predicate;
     }
 
     @Override

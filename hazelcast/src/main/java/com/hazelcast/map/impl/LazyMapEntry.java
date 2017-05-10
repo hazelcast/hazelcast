@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.impl.operation.EntryOperator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -44,7 +45,7 @@ import java.util.Map;
  *
  * @param <K> key
  * @param <V> value
- * @see com.hazelcast.map.impl.operation.EntryOperation#createMapEntry(Data, Object)
+ * @see EntryOperator#createMapEntry(Data, Object, Boolean)
  */
 public class LazyMapEntry<K, V> extends CachedQueryEntry<K, V> implements Serializable, IdentifiedDataSerializable {
 
@@ -79,6 +80,15 @@ public class LazyMapEntry<K, V> extends CachedQueryEntry<K, V> implements Serial
         modified = true;
         valueObject = null;
         valueData = null;
+    }
+
+    /**
+     * Checks if this entry has null value without any deserialization.
+     *
+     * @return true if value is null, otherwise returns false.
+     */
+    public boolean hasNullValue() {
+        return valueObject == null && valueData == null;
     }
 
     public boolean isModified() {

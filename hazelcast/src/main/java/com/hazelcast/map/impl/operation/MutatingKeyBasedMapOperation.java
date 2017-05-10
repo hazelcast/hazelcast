@@ -16,19 +16,13 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.LazyMapEntry;
-import com.hazelcast.map.impl.LocalMapStatsProvider;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
-import java.util.Map;
 
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
@@ -69,26 +63,6 @@ public abstract class MutatingKeyBasedMapOperation extends MapOperation
 
     public final Data getKey() {
         return dataKey;
-    }
-
-    /**
-     * noOp in two cases:
-     * - setValue not called on entry
-     * - or entry does not exist and no add operation is done.
-     */
-    protected boolean noOp(Map.Entry entry, Object oldValue) {
-        final LazyMapEntry mapEntrySimple = (LazyMapEntry) entry;
-        return !mapEntrySimple.isModified() || (oldValue == null && entry.getValue() == null);
-    }
-
-    protected long getNow() {
-        return Clock.currentTimeMillis();
-    }
-
-    protected LocalMapStatsImpl getLocalMapStats() {
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
-        return localMapStatsProvider.getLocalMapStatsImpl(name);
     }
 
     @Override
