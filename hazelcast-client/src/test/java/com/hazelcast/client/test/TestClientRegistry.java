@@ -292,7 +292,7 @@ class TestClientRegistry {
         }
 
         @Override
-        public InetSocketAddress getRemoteSocketAddress() {
+        public InetSocketAddress getRemoteAddress() {
             try {
                 return remoteAddress.getInetSocketAddress();
             } catch (UnknownHostException e) {

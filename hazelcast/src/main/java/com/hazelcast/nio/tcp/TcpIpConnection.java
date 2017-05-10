@@ -19,11 +19,11 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.networking.ChannelReader;
-import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelConnection;
+import com.hazelcast.internal.networking.ChannelReader;
 import com.hazelcast.internal.networking.ChannelWriter;
+import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionType;
@@ -33,8 +33,6 @@ import com.hazelcast.nio.OutboundFrame;
 import java.io.EOFException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketAddress;
 import java.nio.channels.CancelledKeyException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -93,10 +91,7 @@ public final class TcpIpConnection implements ChannelConnection, DiscardableMetr
 
     @Override
     public void provideMetrics(MetricsRegistry registry) {
-        Socket socket = channel.socket();
-        SocketAddress localSocketAddress = socket != null ? socket.getLocalSocketAddress() : null;
-        SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
-        String metricsId = localSocketAddress + "->" + remoteSocketAddress;
+        String metricsId = channel.getLocalAddress() + "->" + channel.getRemoteAddress();
         registry.scanAndRegister(channelWriter, "tcp.connection[" + metricsId + "].out");
         registry.scanAndRegister(channelReader, "tcp.connection[" + metricsId + "].in");
     }
@@ -153,8 +148,8 @@ public final class TcpIpConnection implements ChannelConnection, DiscardableMetr
     }
 
     @Override
-    public InetSocketAddress getRemoteSocketAddress() {
-        return (InetSocketAddress) channel.socket().getRemoteSocketAddress();
+    public InetSocketAddress getRemoteAddress() {
+        return (InetSocketAddress) channel.getRemoteAddress();
     }
 
     @Override
@@ -303,11 +298,8 @@ public final class TcpIpConnection implements ChannelConnection, DiscardableMetr
 
     @Override
     public String toString() {
-        Socket socket = channel.socket();
-        SocketAddress localSocketAddress = socket != null ? socket.getLocalSocketAddress() : null;
-        SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
         return "Connection[id=" + connectionId
-                + ", " + localSocketAddress + "->" + remoteSocketAddress
+                + ", " + channel.getLocalAddress() + "->" + channel.getRemoteAddress()
                 + ", endpoint=" + endPoint
                 + ", alive=" + alive
                 + ", type=" + type

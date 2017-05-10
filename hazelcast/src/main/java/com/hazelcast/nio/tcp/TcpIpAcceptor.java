@@ -227,7 +227,7 @@ public class TcpIpAcceptor extends Thread {
 
         if (channel != null) {
             final Channel socketChannel = channel;
-            logger.info("Accepting socket connection from " + socketChannel.socket().getRemoteSocketAddress());
+            logger.info("Accepting socket connection from " + socketChannel.getRemoteAddress());
             if (ioService.isSocketInterceptorEnabled()) {
                 configureAndAssignSocket(socketChannel);
             } else {

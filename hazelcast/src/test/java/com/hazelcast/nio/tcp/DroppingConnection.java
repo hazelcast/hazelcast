@@ -104,7 +104,7 @@ class DroppingConnection implements Connection {
     }
 
     @Override
-    public InetSocketAddress getRemoteSocketAddress() {
+    public InetSocketAddress getRemoteAddress() {
         try {
             return endpoint.getInetSocketAddress();
         } catch (UnknownHostException e) {
