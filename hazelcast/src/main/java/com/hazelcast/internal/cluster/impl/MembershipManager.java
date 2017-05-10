@@ -427,6 +427,11 @@ public class MembershipManager {
 
         clusterServiceLock.lock();
         try {
+            if (!clusterService.isJoined()) {
+                logger.fine("Cannot handle suspect of " + suspectedMember + " because this node is not joined...");
+                return;
+            }
+
             ClusterJoinManager clusterJoinManager = clusterService.getClusterJoinManager();
             if (clusterService.isMaster() && !clusterJoinManager.isMastershipClaimInProgress()) {
                 removeMember(suspectedMember, reason, shouldCloseConn);
@@ -697,7 +702,7 @@ public class MembershipManager {
             futures.put(member.getAddress(), invokeFetchMembersViewOp(member.getAddress(), member.getUuid()));
         }
 
-        while (true) {
+        while (clusterService.isJoined()) {
             boolean done = true;
 
             for (Entry<Address, Future<MembersView>> e : new ArrayList<Entry<Address, Future<MembersView>>>(futures.entrySet())) {
