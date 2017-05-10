@@ -85,7 +85,7 @@ public interface Connection {
      * <p>
      * todo: do we really need this method because we have getInetAddress, InetSocketAddress and getEndPoint.
      */
-    InetSocketAddress getRemoteSocketAddress();
+    InetSocketAddress getRemoteAddress();
 
     /**
      * Gets the {@link Address} of the other side of this Connection.

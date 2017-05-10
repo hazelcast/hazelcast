@@ -47,6 +47,18 @@ public class PlainChannel implements Channel {
     }
 
     @Override
+    public SocketAddress getRemoteAddress() {
+        Socket socket = socket();
+        return socket == null ? null : socket.getRemoteSocketAddress();
+    }
+
+    @Override
+    public SocketAddress getLocalAddress() {
+        Socket socket = socket();
+        return socket == null ? null : socket.getLocalSocketAddress();
+    }
+
+    @Override
     public boolean isConnected() {
         return socketChannel.isConnected();
     }

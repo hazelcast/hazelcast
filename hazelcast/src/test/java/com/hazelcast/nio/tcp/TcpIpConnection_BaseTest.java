@@ -210,7 +210,7 @@ public abstract class TcpIpConnection_BaseTest extends TcpIpConnection_AbstractT
     public void getRemoteSocketAddress() {
         TcpIpConnection c = connect(connManagerA, addressB);
 
-        InetSocketAddress result = c.getRemoteSocketAddress();
+        InetSocketAddress result = c.getRemoteAddress();
 
         assertEquals(new InetSocketAddress(addressB.getHost(), addressB.getPort()), result);
     }

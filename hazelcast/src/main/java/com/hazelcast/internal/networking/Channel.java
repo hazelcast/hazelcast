@@ -19,6 +19,7 @@ package com.hazelcast.internal.networking;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
@@ -49,6 +50,16 @@ public interface Channel extends Closeable {
      * @see java.nio.channels.SocketChannel#socket()
      */
     Socket socket();
+
+    /**
+     * @return the remote address. Returned value could be null.
+     */
+    SocketAddress getRemoteAddress();
+
+    /**
+     * @return the local address. Returned value could be null
+     */
+    SocketAddress getLocalAddress();
 
     /**
      * @see SocketChannel#isConnected() ()

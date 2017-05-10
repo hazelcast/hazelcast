@@ -41,7 +41,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -109,9 +108,8 @@ public class ClientConnection implements ChannelConnection, DiscardableMetricsPr
 
     @Override
     public void provideMetrics(MetricsRegistry registry) {
-        Socket socket = channel.socket();
         String connectionName = "tcp.connection["
-                + socket.getLocalSocketAddress() + " -> " + socket.getRemoteSocketAddress() + "]";
+                + channel.getLocalAddress() + " -> " + channel.getRemoteAddress() + "]";
         registry.scanAndRegister(this, connectionName);
         registry.scanAndRegister(reader, connectionName + ".in");
         registry.scanAndRegister(writer, connectionName + ".out");
@@ -214,8 +212,8 @@ public class ClientConnection implements ChannelConnection, DiscardableMetricsPr
     }
 
     @Override
-    public InetSocketAddress getRemoteSocketAddress() {
-        return (InetSocketAddress) channel.socket().getRemoteSocketAddress();
+    public InetSocketAddress getRemoteAddress() {
+        return (InetSocketAddress) channel.getRemoteAddress();
     }
 
     @Override
@@ -232,7 +230,7 @@ public class ClientConnection implements ChannelConnection, DiscardableMetricsPr
     }
 
     public InetSocketAddress getLocalSocketAddress() {
-        return (InetSocketAddress) channel.socket().getLocalSocketAddress();
+        return (InetSocketAddress) channel.getLocalAddress();
     }
 
     @Override
