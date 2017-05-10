@@ -21,10 +21,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
 /**
@@ -42,12 +39,9 @@ import java.nio.channels.SocketChannel;
 public interface Channel extends Closeable {
 
     /**
-     * @see java.nio.channels.SocketChannel#isOpen()
-     */
-    boolean isBlocking();
-
-    /**
      * @see java.nio.channels.SocketChannel#socket()
+     *
+     * This method will be removed from the interface. Only an explicit cast to NioChannel will expose the Socket.
      */
     Socket socket();
 
@@ -62,24 +56,9 @@ public interface Channel extends Closeable {
     SocketAddress getLocalAddress();
 
     /**
-     * @see SocketChannel#isConnected() ()
+     * This method will be removed from the interface. Only an explicit cast to NioChannel will expose the SocketChannel.
      */
-    boolean isConnected();
-
-    /**
-     * @see java.nio.channels.SocketChannel#connect(java.net.SocketAddress)
-     */
-    boolean connect(java.net.SocketAddress socketAddress) throws IOException;
-
-    /**
-     * @see java.nio.channels.SocketChannel#keyFor(Selector)
-     */
-    SelectionKey keyFor(Selector selector);
-
-    /**
-     * @see java.nio.channels.SocketChannel#register(Selector, int, Object)
-     */
-    SelectionKey register(Selector selector, int ops, Object attachment) throws ClosedChannelException;
+    SocketChannel socketChannel();
 
     /**
      * @see java.nio.channels.SocketChannel#read(ByteBuffer)
