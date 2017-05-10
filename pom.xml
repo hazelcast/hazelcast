@@ -139,6 +139,9 @@
             <email>info@hazelcast.com</email>
             <url>https://hazelcast.atlassian.net/wiki/display/COM/Hazelcast+Contributor+Agreement</url>
         </contributor>
+        <contributor>
+            <name>legelstein</name>
+        </contributor>
     </contributors>
 
     <issueManagement>
