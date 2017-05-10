@@ -61,6 +61,7 @@ public class CacheWriteQuorumTest {
     private static HazelcastServerCachingProvider cachingProvider3;
     private static HazelcastServerCachingProvider cachingProvider4;
     private static HazelcastServerCachingProvider cachingProvider5;
+
     private ICache<Integer, String> cache1;
     private ICache<Integer, String> cache2;
     private ICache<Integer, String> cache3;
@@ -68,7 +69,7 @@ public class CacheWriteQuorumTest {
     private ICache<Integer, String> cache5;
 
     @BeforeClass
-    public static void initialize() throws Exception {
+    public static void initialize() {
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
         cacheConfig.setName(CACHE_NAME_PREFIX + "*");
         cacheConfig.setQuorumName(QUORUM_ID);
@@ -214,32 +215,32 @@ public class CacheWriteQuorumTest {
 
     @Test(expected = ExecutionException.class)
     public void testGetAndPutAsyncOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        Future<String> foo = cache4.getAndPutAsync(1, "");
-        foo.get();
+        Future<String> future = cache4.getAndPutAsync(1, "");
+        future.get();
     }
 
     @Test
     public void testGetAndRemoveAsyncOperationSuccessfulWhenQuorumSizeMet() throws Exception {
-        Future<String> foo = cache1.getAndRemoveAsync(1);
-        foo.get();
+        Future<String> future = cache1.getAndRemoveAsync(1);
+        future.get();
     }
 
     @Test(expected = ExecutionException.class)
     public void testGetAndRemoveAsyncOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        Future<String> foo = cache4.getAndRemoveAsync(1);
-        foo.get();
+        Future<String> future = cache4.getAndRemoveAsync(1);
+        future.get();
     }
 
     @Test
     public void testGetAndReplaceAsyncOperationSuccessfulWhenQuorumSizeMet() throws Exception {
-        Future<String> foo = cache1.getAndReplaceAsync(1, "");
-        foo.get();
+        Future<String> future = cache1.getAndReplaceAsync(1, "");
+        future.get();
     }
 
     @Test(expected = ExecutionException.class)
     public void testGetAndReplaceAsyncOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        Future<String> foo = cache4.getAndReplaceAsync(1, "");
-        foo.get();
+        Future<String> future = cache4.getAndReplaceAsync(1, "");
+        future.get();
     }
 
     @Test
@@ -269,50 +270,50 @@ public class CacheWriteQuorumTest {
 
     @Test
     public void testPutAsyncOperationSuccessfulWhenQuorumSizeMet() throws Exception {
-        Future<Void> foo = cache1.putAsync(1, "");
-        foo.get();
+        Future<Void> future = cache1.putAsync(1, "");
+        future.get();
     }
 
     @Test(expected = ExecutionException.class)
     public void testPutAsyncOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        Future<Void> foo = cache4.putAsync(1, "");
-        foo.get();
+        Future<Void> future = cache4.putAsync(1, "");
+        future.get();
     }
 
     @Test
     public void testPutIfAbsentAsyncOperationSuccessfulWhenQuorumSizeMet() throws Exception {
-        Future<Boolean> foo = cache1.putIfAbsentAsync(1, "");
-        foo.get();
+        Future<Boolean> future = cache1.putIfAbsentAsync(1, "");
+        future.get();
     }
 
     @Test(expected = ExecutionException.class)
     public void testPutIfAbsentAsyncOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        Future<Boolean> foo = cache4.putIfAbsentAsync(1, "");
-        foo.get();
+        Future<Boolean> future = cache4.putIfAbsentAsync(1, "");
+        future.get();
     }
 
     @Test
     public void testRemoveAsyncOperationSuccessfulWhenQuorumSizeMet() throws Exception {
-        Future<Boolean> foo = cache1.removeAsync(1);
-        foo.get();
+        Future<Boolean> future = cache1.removeAsync(1);
+        future.get();
     }
 
     @Test(expected = ExecutionException.class)
     public void testRemoveAsyncOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        Future<Boolean> foo = cache4.removeAsync(1);
-        foo.get();
+        Future<Boolean> future = cache4.removeAsync(1);
+        future.get();
     }
 
     @Test
     public void testReplaceAsyncOperationSuccessfulWhenQuorumSizeMet() throws Exception {
-        Future<Boolean> foo = cache1.replaceAsync(1, "");
-        foo.get();
+        Future<Boolean> future = cache1.replaceAsync(1, "");
+        future.get();
     }
 
     @Test(expected = ExecutionException.class)
     public void testReplaceAsyncOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        Future<Boolean> foo = cache4.replaceAsync(1, "");
-        foo.get();
+        Future<Boolean> future = cache4.replaceAsync(1, "");
+        future.get();
     }
 
     @Test

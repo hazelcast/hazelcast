@@ -51,13 +51,8 @@ public class ClientMapWriteQuorumTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME_PREFIX = "quorum";
     private static final String QUORUM_ID = "threeNodeQuorumRule";
-    static PartitionedCluster cluster;
 
-    static IMap<Object, Object> map1;
-    static IMap<Object, Object> map2;
-    static IMap<Object, Object> map3;
-    static IMap<Object, Object> map4;
-    static IMap<Object, Object> map5;
+    static PartitionedCluster cluster;
 
     static HazelcastInstance c1;
     static HazelcastInstance c2;
@@ -66,6 +61,12 @@ public class ClientMapWriteQuorumTest extends HazelcastTestSupport {
     static HazelcastInstance c5;
 
     private static TestHazelcastFactory factory;
+
+    IMap<Object, Object> map1;
+    IMap<Object, Object> map2;
+    IMap<Object, Object> map3;
+    IMap<Object, Object> map4;
+    IMap<Object, Object> map5;
 
     @BeforeClass
     public static void initialize() throws Exception {
@@ -152,14 +153,14 @@ public class ClientMapWriteQuorumTest extends HazelcastTestSupport {
 
     @Test
     public void testPutAsyncOperationSuccessfulWhenQuorumSizeMet() throws Exception {
-        Future<Object> foo = map1.putAsync("foo", "bar");
-        foo.get();
+        Future<Object> future = map1.putAsync("foo", "bar");
+        future.get();
     }
 
     @Test(expected = ExecutionException.class)
     public void testPutAsyncOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        Future<Object> foo = map4.putAsync("foo", "bar");
-        foo.get();
+        Future<Object> future = map4.putAsync("foo", "bar");
+        future.get();
     }
 
     @Test
@@ -198,14 +199,14 @@ public class ClientMapWriteQuorumTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveAsyncOperationSuccessfulWhenQuorumSizeMet() throws Exception {
-        Future<Object> foo = map1.removeAsync("foo");
-        foo.get();
+        Future<Object> future = map1.removeAsync("foo");
+        future.get();
     }
 
     @Test(expected = ExecutionException.class)
     public void testRemoveAsyncOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        Future<Object> foo = map4.removeAsync("foo");
-        foo.get();
+        Future<Object> future = map4.removeAsync("foo");
+        future.get();
     }
 
     @Test
@@ -364,13 +365,13 @@ public class ClientMapWriteQuorumTest extends HazelcastTestSupport {
 
     @Test
     public void testSubmmtToKeyOperationSuccessfulWhenQuorumSizeMet() throws Exception {
-        Future foo = map1.submitToKey("foo", new TestLoggingEntryProcessor());
-        foo.get();
+        Future future = map1.submitToKey("foo", new TestLoggingEntryProcessor());
+        future.get();
     }
 
     @Test(expected = ExecutionException.class)
     public void testSubmitToKeyOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        Future foo = map4.submitToKey("foo", new TestLoggingEntryProcessor());
-        foo.get();
+        Future future = map4.submitToKey("foo", new TestLoggingEntryProcessor());
+        future.get();
     }
 }

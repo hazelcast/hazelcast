@@ -32,17 +32,15 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSize;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
+import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.generateRandomString;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
-
 import static com.hazelcast.test.HazelcastTestSupport.suspectMember;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class PartitionedCluster {
 
@@ -60,18 +58,17 @@ public class PartitionedCluster {
         this.factory = factory;
     }
 
-    public PartitionedCluster partitionFiveMembersThreeAndTwo(MapConfig mapConfig, QuorumConfig quorumConfig) throws Exception {
+    public PartitionedCluster partitionFiveMembersThreeAndTwo(MapConfig mapConfig, QuorumConfig quorumConfig) {
         createFiveMemberCluster(mapConfig, quorumConfig);
         return splitFiveMembersThreeAndTwo();
     }
 
-    public PartitionedCluster partitionFiveMembersThreeAndTwo(CacheSimpleConfig cacheSimpleConfig, QuorumConfig quorumConfig)
-            throws Exception {
+    public PartitionedCluster partitionFiveMembersThreeAndTwo(CacheSimpleConfig cacheSimpleConfig, QuorumConfig quorumConfig) {
         createFiveMemberCluster(cacheSimpleConfig, quorumConfig);
         return splitFiveMembersThreeAndTwo();
     }
 
-    public PartitionedCluster partitionFiveMembersThreeAndTwo(QueueConfig qConfig, QuorumConfig quorumConfig) throws Exception {
+    public PartitionedCluster partitionFiveMembersThreeAndTwo(QueueConfig qConfig, QuorumConfig quorumConfig) {
         createFiveMemberCluster(qConfig, quorumConfig);
         return splitFiveMembersThreeAndTwo();
     }
@@ -117,7 +114,7 @@ public class PartitionedCluster {
         return config;
     }
 
-    public PartitionedCluster splitFiveMembersThreeAndTwo() throws Exception {
+    public PartitionedCluster splitFiveMembersThreeAndTwo() {
         final CountDownLatch splitLatch = new CountDownLatch(6);
         h4.getCluster().addMembershipListener(new MembershipAdapter() {
             @Override
@@ -134,13 +131,12 @@ public class PartitionedCluster {
 
         splitCluster();
 
-        assertTrue(splitLatch.await(30, TimeUnit.SECONDS));
+        assertOpenEventually(splitLatch, 30);
         assertClusterSizeEventually(3, h1, h2, h3);
         assertClusterSizeEventually(2, h4, h5);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() throws Exception {
                 assertFalse(h4.getQuorumService().getQuorum(SUCCESSFUL_SPLIT_TEST_QUORUM_NAME).isPresent());
                 assertFalse(h5.getQuorumService().getQuorum(SUCCESSFUL_SPLIT_TEST_QUORUM_NAME).isPresent());
             }

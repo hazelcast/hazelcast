@@ -56,6 +56,7 @@ public class ClientTransactionalMapQuorumTest extends HazelcastTestSupport {
     private static final String QUORUM_ID = "threeNodeQuorumRule";
 
     static PartitionedCluster cluster;
+
     static HazelcastInstance c1;
     static HazelcastInstance c2;
     static HazelcastInstance c3;

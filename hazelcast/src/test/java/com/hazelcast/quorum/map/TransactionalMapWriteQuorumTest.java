@@ -72,7 +72,7 @@ public class TransactionalMapWriteQuorumTest {
     }
 
     @BeforeClass
-    public static void initialize() throws Exception {
+    public static void initialize() {
         QuorumConfig quorumConfig = new QuorumConfig();
         quorumConfig.setEnabled(true);
         quorumConfig.setSize(3);

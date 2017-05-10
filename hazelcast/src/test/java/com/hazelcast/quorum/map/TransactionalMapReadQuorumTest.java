@@ -57,7 +57,6 @@ public class TransactionalMapReadQuorumTest {
     @Parameterized.Parameter(0)
     public TransactionOptions options;
 
-
     @Parameterized.Parameters(name = "Executing: {0}")
     public static Collection<Object[]> parameters() {
 
@@ -74,7 +73,7 @@ public class TransactionalMapReadQuorumTest {
     }
 
     @BeforeClass
-    public static void initialize() throws Exception {
+    public static void initialize() {
         QuorumConfig quorumConfig = new QuorumConfig();
         quorumConfig.setEnabled(true);
         quorumConfig.setSize(3);

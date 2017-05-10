@@ -48,14 +48,15 @@ public class MapReadQuorumTest {
     private static final String QUORUM_ID = "threeNodeQuorumRule";
 
     static PartitionedCluster cluster;
-    static IMap<Object, Object> map1;
-    static IMap<Object, Object> map2;
-    static IMap<Object, Object> map3;
-    static IMap<Object, Object> map4;
-    static IMap<Object, Object> map5;
+
+    IMap<Object, Object> map1;
+    IMap<Object, Object> map2;
+    IMap<Object, Object> map3;
+    IMap<Object, Object> map4;
+    IMap<Object, Object> map5;
 
     @BeforeClass
-    public static void initialize() throws Exception {
+    public static void initialize() {
         QuorumConfig quorumConfig = new QuorumConfig();
         quorumConfig.setName(QUORUM_ID);
         quorumConfig.setType(QuorumType.READ);
@@ -63,7 +64,8 @@ public class MapReadQuorumTest {
         quorumConfig.setSize(3);
         MapConfig mapConfig = new MapConfig(MAP_NAME_PREFIX + "*");
         mapConfig.setQuorumName(QUORUM_ID);
-        cluster = new PartitionedCluster(new TestHazelcastInstanceFactory()).partitionFiveMembersThreeAndTwo(mapConfig, quorumConfig);
+        cluster = new PartitionedCluster(new TestHazelcastInstanceFactory())
+                .partitionFiveMembersThreeAndTwo(mapConfig, quorumConfig);
     }
 
     @Before
@@ -93,14 +95,14 @@ public class MapReadQuorumTest {
 
     @Test
     public void testGetAsyncOperationSuccessfulWhenQuorumSizeMet() throws Exception {
-        Future<Object> foo = map1.getAsync("foo");
-        foo.get();
+        Future<Object> future = map1.getAsync("foo");
+        future.get();
     }
 
     @Test(expected = ExecutionException.class)
     public void testGetAsyncOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        Future<Object> foo = map4.getAsync("foo");
-        foo.get();
+        Future<Object> future = map4.getAsync("foo");
+        future.get();
     }
 
     @Test

@@ -32,7 +32,7 @@ import org.junit.runner.RunWith;
 public class QueueWriteQuorumTest extends AbstractQueueQuorumTest {
 
     @BeforeClass
-    public static void initialize() throws Exception {
+    public static void initialize() {
         initializeFiveMemberCluster(QuorumType.WRITE, 3);
         addQueueData(q4);
         cluster.splitFiveMembersThreeAndTwo();
