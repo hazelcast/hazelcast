@@ -91,15 +91,15 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} that accumulates the input
+     * Returns a {@code DistributedCollector} that accumulates the input
      * elements into a new {@code Collection}, in encounter order. The {@code
      * Collection} is created by the provided factory.
      *
      * @param <T>               the type of the input elements
      * @param <C>               the type of the resulting {@code Collection}
-     * @param collectionFactory a {@code Distributed.Supplier} which returns a new, empty
+     * @param collectionFactory a {@code DistributedSupplier} which returns a new, empty
      *                          {@code Collection} of the appropriate type
-     * @return a {@code Distributed.Collector} which collects all the input elements into a
+     * @return a {@code DistributedCollector} which collects all the input elements into a
      * {@code Collection}, in encounter order
      */
     public static <T, C extends Collection<T>>
@@ -113,14 +113,14 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} that accumulates the input
+     * Returns a {@code DistributedCollector} that accumulates the input
      * elements into a new {@code List}. There are no guarantees on the type,
      * mutability, serializability, or thread-safety of the {@code List}
      * returned; if more control over the returned {@code List} is required,
      * use {@link #toCollection(DistributedSupplier)}.
      *
      * @param <T> the type of the input elements
-     * @return a {@code Distributed.Collector} which collects all the input elements into a
+     * @return a {@code DistributedCollector} which collects all the input elements into a
      *         {@code List}, in encounter order
      */
     public static <T> DistributedCollector<T, ?, List<T>> toList() {
@@ -133,7 +133,7 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} that accumulates the input
+     * Returns a {@code DistributedCollector} that accumulates the input
      * elements into a new {@code Set}. There are no guarantees on the type,
      * mutability, serializability, or thread-safety of the {@code Set}
      * returned; if more control over the returned {@code Set} is required, use
@@ -143,7 +143,7 @@ public abstract class DistributedCollectors {
      * Collector.
      *
      * @param <T> the type of the input elements
-     * @return a {@code  Distributed.Collector} which collects all the input elements
+     * @return a {@code  DistributedCollector} which collects all the input elements
      *         into a {@code Set}
      */
     public static <T>
@@ -157,10 +157,10 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} that concatenates the input elements into a
+     * Returns a {@code DistributedCollector} that concatenates the input elements into a
      * {@code String}, in encounter order.
      *
-     * @return a {@code Distributed.Collector} that concatenates the input elements into a
+     * @return a {@code DistributedCollector} that concatenates the input elements into a
      * {@code String}, in encounter order
      */
     public static DistributedCollector<CharSequence, ?, String> joining() {
@@ -174,11 +174,11 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} that concatenates the input elements,
+     * Returns a {@code DistributedCollector} that concatenates the input elements,
      * separated by the specified delimiter, in encounter order.
      *
      * @param delimiter the delimiter to be used between each element
-     * @return A {@code Distributed.Collector} which concatenates CharSequence elements,
+     * @return A {@code DistributedCollector} which concatenates CharSequence elements,
      * separated by the specified delimiter, in encounter order
      */
     public static DistributedCollector<CharSequence, ?, String> joining(CharSequence delimiter) {
@@ -186,7 +186,7 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} that concatenates the input elements,
+     * Returns a {@code DistributedCollector} that concatenates the input elements,
      * separated by the specified delimiter, with the specified prefix and
      * suffix, in encounter order.
      *
@@ -195,7 +195,7 @@ public abstract class DistributedCollectors {
      *                  of the joined result
      * @param suffix    the sequence of characters to be used at the end
      *                  of the joined result
-     * @return A {@code Distributed.Collector} which concatenates CharSequence elements,
+     * @return A {@code DistributedCollector} which concatenates CharSequence elements,
      * separated by the specified delimiter, in encounter order
      */
     public static DistributedCollector<CharSequence, ?, String> joining(CharSequence delimiter,
@@ -208,7 +208,7 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Adapts a {@code Distributed.Collector} accepting elements of type {@code U} to one
+     * Adapts a {@code DistributedCollector} accepting elements of type {@code U} to one
      * accepting elements of type {@code T} by applying a mapping function to
      * each input element before accumulation.
      *
@@ -232,7 +232,7 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Adapts a {@code Distributed.Collector} to perform an additional finishing
+     * Adapts a {@code DistributedCollector} to perform an additional finishing
      * transformation.  For example, one could adapt the {@link #toList()}
      * collector to always produce an immutable list with:
      * <pre>{@code
@@ -271,12 +271,12 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} accepting elements of type {@code T} that
+     * Returns a {@code DistributedCollector} accepting elements of type {@code T} that
      * counts the number of input elements.  If no elements are present, the
      * result is 0.
      *
      * @param <T> the type of the input elements
-     * @return a {@code Distributed.Collector} that counts the input elements
+     * @return a {@code DistributedCollector} that counts the input elements
      * @implSpec This produces a result equivalent to:
      * <pre>{@code
      *     reducing(0L, e -> 1L, Long::sum)
@@ -287,15 +287,15 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} that produces the minimal element according
-     * to a given {@code Distributed.Comparator}, described as an {@code Optional<T>}.
+     * Returns a {@code DistributedCollector} that produces the minimal element according
+     * to a given {@code DistributedComparator}, described as an {@code Optional<T>}.
      *
      * @param <T>        the type of the input elements
-     * @param comparator a {@code Distributed.Comparator} for comparing elements
-     * @return a {@code Distributed.Collector} that produces the minimal value
+     * @param comparator a {@code DistributedComparator} for comparing elements
+     * @return a {@code DistributedCollector} that produces the minimal value
      * @implSpec This produces a result equivalent to:
      * <pre>{@code
-     *     reducing(Distributed.BinaryOperator.minBy(comparator))
+     *     reducing(DistributedBinaryOperator.minBy(comparator))
      * }</pre>
      */
     public static <T> DistributedCollector<T, ?, DistributedOptional<T>>
@@ -304,15 +304,15 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} that produces the maximal element according
-     * to a given {@code Distributed.Comparator}, described as an {@code Optional<T>}.
+     * Returns a {@code DistributedCollector} that produces the maximal element according
+     * to a given {@code DistributedComparator}, described as an {@code Optional<T>}.
      *
      * @param <T>        the type of the input elements
-     * @param comparator a {@code Distributed.Comparator} for comparing elements
-     * @return a {@code Distributed.Collector} that produces the maximal value
+     * @param comparator a {@code DistributedComparator} for comparing elements
+     * @return a {@code DistributedCollector} that produces the maximal value
      * @implSpec This produces a result equivalent to:
      * <pre>{@code
-     *     reducing(Distributed.BinaryOperator.maxBy(comparator))
+     *     reducing(DistributedBinaryOperator.maxBy(comparator))
      * }</pre>
      */
     public static <T> DistributedCollector<T, ?, DistributedOptional<T>>
@@ -321,13 +321,13 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} that produces the sum of a integer-valued
+     * Returns a {@code DistributedCollector} that produces the sum of a integer-valued
      * function applied to the input elements.  If no elements are present,
      * the result is 0.
      *
      * @param <T>    the type of the input elements
      * @param mapper a function extracting the property to be summed
-     * @return a {@code Distributed.Collector} that produces the sum of a derived property
+     * @return a {@code DistributedCollector} that produces the sum of a derived property
      */
     public static <T> DistributedCollector<T, ?, Integer>
     summingInt(DistributedToIntFunction<? super T> mapper) {
@@ -344,13 +344,13 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} that produces the sum of a long-valued
+     * Returns a {@code DistributedCollector} that produces the sum of a long-valued
      * function applied to the input elements.  If no elements are present,
      * the result is 0.
      *
      * @param <T>    the type of the input elements
      * @param mapper a function extracting the property to be summed
-     * @return a {@code Distributed.Collector} that produces the sum of a derived property
+     * @return a {@code DistributedCollector} that produces the sum of a derived property
      */
     public static <T> DistributedCollector<T, ?, Long>
     summingLong(DistributedToLongFunction<? super T> mapper) {
@@ -367,7 +367,7 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} that produces the sum of a double-valued
+     * Returns a {@code DistributedCollector} that produces the sum of a double-valued
      * function applied to the input elements.  If no elements are present,
      * the result is 0.
      * <p>
@@ -380,7 +380,7 @@ public abstract class DistributedCollectors {
      *
      * @param <T>    the type of the input elements
      * @param mapper a function extracting the property to be summed
-     * @return a {@code Distributed.Collector} that produces the sum of a derived property
+     * @return a {@code DistributedCollector} that produces the sum of a derived property
      */
     public static <T> DistributedCollector<T, ?, Double>
     summingDouble(DistributedToDoubleFunction<? super T> mapper) {
@@ -408,13 +408,13 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} that produces the arithmetic mean of an integer-valued
+     * Returns a {@code DistributedCollector} that produces the arithmetic mean of an integer-valued
      * function applied to the input elements.  If no elements are present,
      * the result is 0.
      *
      * @param <T>    the type of the input elements
      * @param mapper a function extracting the property to be summed
-     * @return a {@code Distributed.Collector} that produces the sum of a derived property
+     * @return a {@code DistributedCollector} that produces the sum of a derived property
      */
     public static <T> DistributedCollector<T, ?, Double>
     averagingInt(DistributedToIntFunction<? super T> mapper) {
@@ -433,13 +433,13 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} that produces the arithmetic mean of a long-valued
+     * Returns a {@code DistributedCollector} that produces the arithmetic mean of a long-valued
      * function applied to the input elements.  If no elements are present,
      * the result is 0.
      *
      * @param <T>    the type of the input elements
      * @param mapper a function extracting the property to be summed
-     * @return a {@code Distributed.Collector} that produces the sum of a derived property
+     * @return a {@code DistributedCollector} that produces the sum of a derived property
      */
     public static <T> DistributedCollector<T, ?, Double>
     averagingLong(DistributedToLongFunction<? super T> mapper) {
@@ -458,7 +458,7 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} that produces the arithmetic mean of a double-valued
+     * Returns a {@code DistributedCollector} that produces the arithmetic mean of a double-valued
      * function applied to the input elements.  If no elements are present,
      * the result is 0.
      * <p>
@@ -471,7 +471,7 @@ public abstract class DistributedCollectors {
      *
      * @param <T>    the type of the input elements
      * @param mapper a function extracting the property to be summed
-     * @return a {@code Distributed.Collector} that produces the sum of a derived property
+     * @return a {@code DistributedCollector} that produces the sum of a derived property
      */
     @SuppressWarnings("checkstyle:magicnumber")
     public static <T> DistributedCollector<T, ?, Double>
@@ -501,15 +501,15 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} which performs a reduction of its
-     * input elements under a specified {@code Distributed.BinaryOperator} using the
+     * Returns a {@code DistributedCollector} which performs a reduction of its
+     * input elements under a specified {@code DistributedBinaryOperator} using the
      * provided identity.
      *
      * @param <T>      element type for the input and output of the reduction
      * @param identity the identity value for the reduction (also, the value
      *                 that is returned when there are no input elements)
-     * @param op       a {@code Distributed.BinaryOperator<T>} used to reduce the input elements
-     * @return a {@code Distributed.Collector} which implements the reduction operation
+     * @param op       a {@code DistributedBinaryOperator<T>} used to reduce the input elements
+     * @return a {@code DistributedCollector} which implements the reduction operation
      * @see #reducing(DistributedBinaryOperator)
      * @see #reducing(Object, DistributedFunction, DistributedBinaryOperator)
      */
@@ -526,13 +526,13 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} which performs a reduction of its
-     * input elements under a specified {@code Distributed.BinaryOperator}.  The result
+     * Returns a {@code DistributedCollector} which performs a reduction of its
+     * input elements under a specified {@code DistributedBinaryOperator}.  The result
      * is described as an {@code Optional<T>}.
      *
      * @param <T> element type for the input and output of the reduction
-     * @param op  a {@code Distributed.BinaryOperator<T>} used to reduce the input elements
-     * @return a {@code Distributed.Collector} which implements the reduction operation
+     * @param op  a {@code DistributedBinaryOperator<T>} used to reduce the input elements
+     * @return a {@code DistributedCollector} which implements the reduction operation
      * @apiNote The {@code reducing()} collectors are most useful when used in a
      * multi-level reduction, downstream of {@code groupingBy} or
      * {@code partitioningBy}.  To perform a simple reduction on a stream,
@@ -570,9 +570,9 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} which performs a reduction of its
+     * Returns a {@code DistributedCollector} which performs a reduction of its
      * input elements under a specified mapping function and
-     * {@code Distributed.BinaryOperator}. This is a generalization of
+     * {@code DistributedBinaryOperator}. This is a generalization of
      * {@link #reducing(Object, DistributedBinaryOperator)} which allows a transformation
      * of the elements before reduction.
      *
@@ -581,8 +581,8 @@ public abstract class DistributedCollectors {
      * @param identity the identity value for the reduction (also, the value
      *                 that is returned when there are no input elements)
      * @param mapper   a mapping function to apply to each input value
-     * @param op       a {@code Distributed.BinaryOperator<U>} used to reduce the mapped values
-     * @return a {@code Distributed.Collector} implementing the map-reduce operation
+     * @param op       a {@code DistributedBinaryOperator<U>} used to reduce the mapped values
+     * @return a {@code DistributedCollector} implementing the map-reduce operation
      * @apiNote The {@code reducing()} collectors are most useful when used in a
      * multi-level reduction, downstream of {@code groupingBy} or
      * {@code partitioningBy}.  To perform a simple map-reduce on a stream,
@@ -606,7 +606,7 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} implementing a "group by" operation on
+     * Returns a {@code DistributedCollector} implementing a "group by" operation on
      * input elements of type {@code T}, grouping elements according to a
      * classification function, and returning the results in a {@code Map}.
      * <p>
@@ -623,7 +623,7 @@ public abstract class DistributedCollectors {
      * @param <T>        the type of the input elements
      * @param <K>        the type of the keys
      * @param classifier the classifier function mapping input elements to keys
-     * @return a {@code Distributed.Collector} implementing the group-by operation
+     * @return a {@code DistributedCollector} implementing the group-by operation
      * @see #groupingBy(DistributedFunction, DistributedCollector)
      * @see #groupingBy(DistributedFunction, DistributedSupplier, DistributedCollector)
      */
@@ -633,11 +633,11 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} implementing a cascaded "group by" operation
+     * Returns a {@code DistributedCollector} implementing a cascaded "group by" operation
      * on input elements of type {@code T}, grouping elements according to a
      * classification function, and then performing a reduction operation on
      * the values associated with a given key using the specified downstream
-     * {@code Distributed.Collector}.
+     * {@code DistributedCollector}.
      * <p>
      * <p>The classification function maps elements to some key type {@code K}.
      * The downstream collector operates on elements of type {@code T} and
@@ -659,8 +659,8 @@ public abstract class DistributedCollectors {
      * @param <A>        the intermediate accumulation type of the downstream collector
      * @param <D>        the result type of the downstream reduction
      * @param classifier a classifier function mapping input elements to keys
-     * @param downstream a {@code Distributed.Collector} implementing the downstream reduction
-     * @return a {@code Distributed.Collector} implementing the cascaded group-by operation
+     * @param downstream a {@code DistributedCollector} implementing the downstream reduction
+     * @return a {@code DistributedCollector} implementing the cascaded group-by operation
      * @see #groupingBy(DistributedFunction)
      * @see #groupingBy(DistributedFunction, DistributedSupplier, DistributedCollector)
      */
@@ -671,11 +671,11 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} implementing a cascaded "group by" operation
+     * Returns a {@code DistributedCollector} implementing a cascaded "group by" operation
      * on input elements of type {@code T}, grouping elements according to a
      * classification function, and then performing a reduction operation on
      * the values associated with a given key using the specified downstream
-     * {@code Distributed.Collector}.  The {@code Map} produced by the Collector is created
+     * {@code DistributedCollector}.  The {@code Map} produced by the Collector is created
      * with the supplied factory function.
      * <p>
      * <p>The classification function maps elements to some key type {@code K}.
@@ -697,10 +697,10 @@ public abstract class DistributedCollectors {
      * @param <D>        the result type of the downstream reduction
      * @param <M>        the type of the resulting {@code Map}
      * @param classifier a classifier function mapping input elements to keys
-     * @param downstream a {@code Distributed.Collector} implementing the downstream reduction
+     * @param downstream a {@code DistributedCollector} implementing the downstream reduction
      * @param mapFactory a function which, when called, produces a new empty
      *                   {@code Map} of the desired type
-     * @return a {@code Distributed.Collector} implementing the cascaded group-by operation
+     * @return a {@code DistributedCollector} implementing the cascaded group-by operation
      * @see #groupingBy(DistributedFunction, DistributedCollector)
      * @see #groupingBy(DistributedFunction)
      */
@@ -738,8 +738,8 @@ public abstract class DistributedCollectors {
     // skip groupingByConcurrent
 
     /**
-     * Returns a {@code Distributed.Collector} which partitions the input elements according
-     * to a {@code Distributed.Predicate}, and organizes them into a
+     * Returns a {@code DistributedCollector} which partitions the input elements according
+     * to a {@code DistributedPredicate}, and organizes them into a
      * {@code Map<Boolean, List<T>>}.
      * <p>
      * There are no guarantees on the type, mutability,
@@ -747,7 +747,7 @@ public abstract class DistributedCollectors {
      *
      * @param <T>       the type of the input elements
      * @param predicate a predicate used for classifying input elements
-     * @return a {@code Distributed.Collector} implementing the partitioning operation
+     * @return a {@code DistributedCollector} implementing the partitioning operation
      * @see #partitioningBy(DistributedPredicate, DistributedCollector)
      */
     public static <T>
@@ -756,9 +756,9 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} which partitions the input elements according
-     * to a {@code Distributed.Predicate}, reduces the values in each partition according to
-     * another {@code Distributed.Collector}, and organizes them into a
+     * Returns a {@code DistributedCollector} which partitions the input elements according
+     * to a {@code DistributedPredicate}, reduces the values in each partition according to
+     * another {@code DistributedCollector}, and organizes them into a
      * {@code Map<Boolean, D>} whose values are the result of the downstream
      * reduction.
      * <p>
@@ -769,9 +769,9 @@ public abstract class DistributedCollectors {
      * @param <A>        the intermediate accumulation type of the downstream collector
      * @param <D>        the result type of the downstream reduction
      * @param predicate  a predicate used for classifying input elements
-     * @param downstream a {@code Distributed.Collector} implementing the downstream
+     * @param downstream a {@code DistributedCollector} implementing the downstream
      *                   reduction
-     * @return a {@code Distributed.Collector} implementing the cascaded partitioning
+     * @return a {@code DistributedCollector} implementing the cascaded partitioning
      * operation
      * @see #partitioningBy(DistributedPredicate)
      */
@@ -799,7 +799,7 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} that accumulates elements into a
+     * Returns a {@code DistributedCollector} that accumulates elements into a
      * {@code Map} whose keys and values are the result of applying the provided
      * mapping functions to the input elements.
      * <p>
@@ -815,7 +815,7 @@ public abstract class DistributedCollectors {
      * @param <U>         the output type of the value mapping function
      * @param keyMapper   a mapping function to produce keys
      * @param valueMapper a mapping function to produce values
-     * @return a {@code Distributed.Collector} which collects elements into a {@code Map}
+     * @return a {@code DistributedCollector} which collects elements into a {@code Map}
      * whose keys and values are the result of applying mapping functions to
      * the input elements
      * @see #toMap(DistributedFunction, DistributedFunction, DistributedBinaryOperator)
@@ -829,7 +829,7 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} that accumulates elements into a
+     * Returns a {@code DistributedCollector} that accumulates elements into a
      * {@code Map} whose keys and values are the result of applying the provided
      * mapping functions to the input elements.
      * <p>
@@ -847,7 +847,7 @@ public abstract class DistributedCollectors {
      *                      values associated with the same key, as supplied
      *                      to {@link Map#merge(Object, Object,
      *                      java.util.function.BiFunction)}
-     * @return a {@code Distributed.Collector} which collects elements into a {@code Map}
+     * @return a {@code DistributedCollector} which collects elements into a {@code Map}
      * whose keys are the result of applying a key mapping function to the input
      * elements, and whose values are the result of applying a value mapping
      * function to all input elements equal to the key and combining them
@@ -864,7 +864,7 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} that accumulates elements into a
+     * Returns a {@code DistributedCollector} that accumulates elements into a
      * {@code Map} whose keys and values are the result of applying the provided
      * mapping functions to the input elements.
      * <p>
@@ -885,7 +885,7 @@ public abstract class DistributedCollectors {
      *                      to {@link Map#merge(Object, Object, java.util.function.BiFunction)}
      * @param mapSupplier   a function which returns a new, empty {@code Map} into
      *                      which the results will be inserted
-     * @return a {@code Distributed.Collector} which collects elements into a {@code Map}
+     * @return a {@code DistributedCollector} which collects elements into a {@code Map}
      * whose keys are the result of applying a key mapping function to the input
      * elements, and whose values are the result of applying a value mapping
      * function to all input elements equal to the key and combining them
@@ -907,13 +907,13 @@ public abstract class DistributedCollectors {
     // to concurrent map ? skip?
 
     /**
-     * Returns a {@code Distributed.Collector} which applies an {@code int}-producing
+     * Returns a {@code DistributedCollector} which applies an {@code int}-producing
      * mapping function to each input element, and returns summary statistics
      * for the resulting values.
      *
      * @param <T>    the type of the input elements
      * @param mapper a mapping function to apply to each element
-     * @return a {@code Distributed.Collector} implementing the summary-statistics reduction
+     * @return a {@code DistributedCollector} implementing the summary-statistics reduction
      * @see #summarizingDouble(DistributedToDoubleFunction)
      * @see #summarizingLong(DistributedToLongFunction)
      */
@@ -930,13 +930,13 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} which applies an {@code long}-producing
+     * Returns a {@code DistributedCollector} which applies an {@code long}-producing
      * mapping function to each input element, and returns summary statistics
      * for the resulting values.
      *
      * @param <T>    the type of the input elements
      * @param mapper the mapping function to apply to each element
-     * @return a {@code Distributed.Collector} implementing the summary-statistics reduction
+     * @return a {@code DistributedCollector} implementing the summary-statistics reduction
      * @see #summarizingDouble(DistributedToDoubleFunction)
      * @see #summarizingInt(DistributedToIntFunction)
      */
@@ -953,13 +953,13 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Returns a {@code Distributed.Collector} which applies an {@code double}-producing
+     * Returns a {@code DistributedCollector} which applies an {@code double}-producing
      * mapping function to each input element, and returns summary statistics
      * for the resulting values.
      *
      * @param <T>    the type of the input elements
      * @param mapper a mapping function to apply to each element
-     * @return a {@code Distributed.Collector} implementing the summary-statistics reduction
+     * @return a {@code DistributedCollector} implementing the summary-statistics reduction
      * @see #summarizingLong(DistributedToLongFunction)
      * @see #summarizingInt(DistributedToIntFunction)
      */
@@ -1247,7 +1247,7 @@ public abstract class DistributedCollectors {
      *
      * @param <T>       the type of the input elements
      * @param listName  Name of the list to store the results
-     * @return a {@code Distributed.Collector} which collects all the input elements into a
+     * @return a {@code DistributedCollector} which collects all the input elements into a
      * Hazelcast {@code IList}, in encounter order
      */
     public static <T> Reducer<T, IStreamList<T>> toIList(String listName) {
@@ -1286,7 +1286,7 @@ public abstract class DistributedCollectors {
      * on input elements of type {@code T}, grouping elements according to a
      * classification function, and then performing a reduction operation on
      * the values associated with a given key using the specified downstream
-     * {@code Distributed.Collector}.
+     * {@code DistributedCollector}.
      * <p>
      * <p>The classification function maps elements to some key type {@code K}.
      * The downstream collector operates on elements of type {@code T} and
@@ -1306,7 +1306,7 @@ public abstract class DistributedCollectors {
      * @param <D>        the result type of the downstream reduction
      * @param mapName    Name of the map to store the results
      * @param classifier a classifier function mapping input elements to keys
-     * @param downstream a {@code Distributed.Collector} implementing the downstream reduction
+     * @param downstream a {@code DistributedCollector} implementing the downstream reduction
      * @return a {@code Reducer} implementing the cascaded group-by operation
      * @see #groupingByToIMap(String, DistributedFunction)
      */
@@ -1350,7 +1350,7 @@ public abstract class DistributedCollectors {
      * on input elements of type {@code T}, grouping elements according to a
      * classification function, and then performing a reduction operation on
      * the values associated with a given key using the specified downstream
-     * {@code Distributed.Collector}.
+     * {@code DistributedCollector}.
      * <p>
      * <p>The classification function maps elements to some key type {@code K}.
      * The downstream collector operates on elements of type {@code T} and
@@ -1370,7 +1370,7 @@ public abstract class DistributedCollectors {
      * @param <D>        the result type of the downstream reduction
      * @param cacheName  Name of the cache to store the results
      * @param classifier a classifier function mapping input elements to keys
-     * @param downstream a {@code Distributed.Collector} implementing the downstream reduction
+     * @param downstream a {@code DistributedCollector} implementing the downstream reduction
      * @return a {@code Reducer} implementing the cascaded group-by operation
      * @see #groupingByToICache(String, DistributedFunction)
      */

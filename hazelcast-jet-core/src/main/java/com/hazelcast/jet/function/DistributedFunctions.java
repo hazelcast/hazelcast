@@ -65,4 +65,20 @@ public final class DistributedFunctions {
         return t -> {
         };
     }
+
+    /**
+     * Returns a predicate that always returns {@code true}.
+     */
+    @Nonnull
+    public static <T> DistributedPredicate<T> alwaysTrue() {
+        return t -> true;
+    }
+
+    /**
+     * Returns a predicate that always returns {@code false}.
+     */
+    @Nonnull
+    public static <T> DistributedPredicate<T> alwaysFalse() {
+        return t -> false;
+    }
 }

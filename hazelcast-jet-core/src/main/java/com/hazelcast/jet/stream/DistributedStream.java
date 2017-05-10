@@ -219,7 +219,7 @@ public interface DistributedStream<T> extends Stream<T> {
      * <p>This is a stateful intermediate operation.
      *
      * @param comparator a non-interfering, stateless
-     *                   {@code Distributed.Comparator} to be used to compare stream elements
+     *                   {@code DistributedComparator} to be used to compare stream elements
      * @return the new stream
      */
     default DistributedStream<T> sorted(DistributedComparator<? super T> comparator) {
@@ -415,7 +415,7 @@ public interface DistributedStream<T> extends Stream<T> {
     /**
      * Performs a mutable
      * reduction operation on the elements of this stream using a
-     * {@code Distributed.Collector}.  A {@code Distributed.Collector}
+     * {@code DistributedCollector}.  A {@code DistributedCollector}
      * encapsulates the functions used as arguments to
      * {@link #collect(DistributedSupplier, DistributedBiConsumer, DistributedBiConsumer)},
      * allowing for reuse of collection strategies and composition of collect operations such as
@@ -430,8 +430,8 @@ public interface DistributedStream<T> extends Stream<T> {
      * additional synchronization is needed for a parallel reduction.
      *
      * @param <R>       the type of the result
-     * @param <A>       the intermediate accumulation type of the {@code Distributed.Collector}
-     * @param collector the {@code Distributed.Collector} describing the reduction
+     * @param <A>       the intermediate accumulation type of the {@code DistributedCollector}
+     * @param collector the {@code DistributedCollector} describing the reduction
      * @return the result of the reduction
      * @see #collect(Supplier, BiConsumer, BiConsumer)
      * @see Collectors
@@ -457,13 +457,13 @@ public interface DistributedStream<T> extends Stream<T> {
 
     /**
      * Returns the minimum element of this stream according to the provided
-     * {@code Distributed.Comparator}.  This is a special case of a
+     * {@code DistributedComparator}.  This is a special case of a
      * reduction.
      *
      * <p>This is a terminal operation.
      *
      * @param comparator a non-interfering, stateless
-     *                   {@code Distributed.Comparator} to compare elements of this stream
+     *                   {@code DistributedComparator} to compare elements of this stream
      * @return an {@code Optional} describing the minimum element of this stream,
      * or an empty {@code Optional} if the stream is empty
      * @throws NullPointerException if the minimum element is null
@@ -474,14 +474,14 @@ public interface DistributedStream<T> extends Stream<T> {
 
     /**
      * Returns the maximum element of this stream according to the provided
-     * {@code Distributed.Comparator}.  This is a special case of a
+     * {@code DistributedComparator}.  This is a special case of a
      * reduction.
      *
      * <p>This is a terminal operation.
      *
      * @param comparator a non-interfering,
      *                   stateless
-     *                   {@code Distributed.Comparator} to compare elements of this stream
+     *                   {@code DistributedComparator} to compare elements of this stream
      * @return an {@code Optional} describing the maximum element of this stream,
      * or an empty {@code Optional} if the stream is empty
      * @throws NullPointerException if the maximum element is null

@@ -87,9 +87,9 @@ public interface DistributedCollector<T, A, R> extends java.util.stream.Collecto
     DistributedFunction<A, R> finisher();
 
     /**
-     * Returns a new {@code Distributed.Collector} described by the given {@code supplier},
+     * Returns a new {@code DistributedCollector} described by the given {@code supplier},
      * {@code accumulator}, and {@code combiner} functions.  The resulting
-     * {@code Distributed.Collector} has the {@code Collector.Characteristics.IDENTITY_FINISH}
+     * {@code DistributedCollector} has the {@code Collector.Characteristics.IDENTITY_FINISH}
      * characteristic.
      *
      * @param supplier        The supplier function for the new collector
@@ -100,7 +100,7 @@ public interface DistributedCollector<T, A, R> extends java.util.stream.Collecto
      * @param <T>             The type of input elements for the new collector
      * @param <R>             The type of intermediate accumulation result, and final result,
      *                        for the new collector
-     * @return the new {@code Distributed.Collector}
+     * @return the new {@code DistributedCollector}
      * @throws NullPointerException if any argument is null
      */
     static <T, R> DistributedCollector<T, R, R> of(DistributedSupplier<R> supplier,
@@ -119,7 +119,7 @@ public interface DistributedCollector<T, A, R> extends java.util.stream.Collecto
     }
 
     /**
-     * Returns a new {@code Distributed.Collector} described by the given {@code supplier},
+     * Returns a new {@code DistributedCollector} described by the given {@code supplier},
      * {@code accumulator}, {@code combiner}, and {@code finisher} functions.
      *
      * @param supplier        The supplier function for the new collector
@@ -131,7 +131,7 @@ public interface DistributedCollector<T, A, R> extends java.util.stream.Collecto
      * @param <T>             The type of input elements for the new collector
      * @param <A>             The intermediate accumulation type of the new collector
      * @param <R>             The final result type of the new collector
-     * @return the new {@code Distributed.Collector}
+     * @return the new {@code DistributedCollector}
      * @throws NullPointerException if any argument is null
      */
     static <T, A, R> DistributedCollector<T, A, R> of(DistributedSupplier<A> supplier,

@@ -17,12 +17,12 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.jet.function.DistributedConsumer;
+import com.hazelcast.jet.Traversers.ResettableSingletonTraverser;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedIntFunction;
-import com.hazelcast.jet.Traversers.ResettableSingletonTraverser;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
@@ -33,6 +33,10 @@ import com.hazelcast.jet.impl.connector.StreamFilesP;
 import com.hazelcast.jet.impl.connector.StreamTextSocketP;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
+import com.hazelcast.jet.impl.connector.WriteSystemOutP;
+import com.hazelcast.jet.impl.util.PeekWrappedP;
+import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
+import com.hazelcast.jet.impl.util.WrappingProcessorSupplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -51,9 +55,10 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.Traversers.lazy;
 import static com.hazelcast.jet.Traversers.traverseStream;
+import static com.hazelcast.jet.function.DistributedFunctions.alwaysTrue;
+import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
@@ -383,7 +388,7 @@ public final class Processors {
     }
 
     /**
-     * Convenience for {@link #writeFile(String, Distributed.Function, Charset,
+     * Convenience for {@link #writeFile(String, DistributedFunction, Charset,
      * boolean)} with UTF-8 charset and with overwriting of existing files.
      *
      * @param directoryName directory to create the files in. Will be created,
@@ -395,7 +400,7 @@ public final class Processors {
     }
 
     /**
-     * Convenience for {@link #writeFile(String, Distributed.Function, Charset,
+     * Convenience for {@link #writeFile(String, DistributedFunction, Charset,
      * boolean)} with UTF-8 charset and with overwriting of existing files.
      *
      * @param directoryName directory to create the files in. Will be created,
@@ -794,7 +799,7 @@ public final class Processors {
      * that are {@code instanceof} {@link AbstractProcessor}.
      */
     @Nonnull
-    public static ProcessorSupplier nonCooperative(ProcessorSupplier wrapped) {
+    public static ProcessorSupplier nonCooperative(@Nonnull ProcessorSupplier wrapped) {
         return count -> {
             final Collection<? extends Processor> ps = wrapped.get(count);
             ps.forEach(p -> ((AbstractProcessor) p).setCooperative(false));
@@ -808,7 +813,7 @@ public final class Processors {
      * processors that are {@code instanceof} {@link AbstractProcessor}.
      */
     @Nonnull
-    public static DistributedSupplier<Processor> nonCooperative(DistributedSupplier<Processor> wrapped) {
+    public static DistributedSupplier<Processor> nonCooperative(@Nonnull DistributedSupplier<Processor> wrapped) {
         return () -> {
             final Processor p = wrapped.get();
             ((AbstractProcessor) p).setCooperative(false);
@@ -825,6 +830,174 @@ public final class Processors {
         public void process(int ordinal, @Nonnull Inbox inbox) {
             inbox.drain(noopConsumer());
         }
+    }
+
+    /**
+     * Convenience for {@link #writeSystemOut(DistributedFunction)} without format.
+     * It will use {@link Object#toString()}.
+     */
+    @Nonnull
+    public static DistributedSupplier<Processor> writeSystemOut() {
+        return writeSystemOut(Object::toString);
+    }
+
+    /**
+     * Returns a supplier of processors, that sends all events to logger on the
+     * INFO level.
+     * <p>
+     * Note, that the event will be logged on the nodes, not on the client.
+     * Useful for testing.
+     *
+     * @param toStringF Function to convert item to String, if {@code null},
+     *                  {@link Object#toString()} is used.
+     */
+    @Nonnull
+    public static DistributedSupplier<Processor> writeSystemOut(
+            @Nonnull DistributedFunction<Object, String> toStringF
+    ) {
+        return () -> new WriteSystemOutP(toStringF);
+    }
+
+    /**
+     * See {@link #peekInput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)}
+     */
+    @Nonnull
+    public static DistributedSupplier<Processor> peekInput(@Nonnull DistributedSupplier<Processor> wrapped) {
+        return peekInput(Object::toString, alwaysTrue(), wrapped);
+    }
+
+    /**
+     * See {@link #peekInput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)}
+     */
+    @Nonnull
+    public static DistributedSupplier<Processor> peekInput(
+            @Nonnull DistributedFunction<Object, String> toStringF,
+            @Nonnull DistributedPredicate<Object> shouldLogF,
+            @Nonnull DistributedSupplier<Processor> wrapped) {
+        return () -> new PeekWrappedP(wrapped.get(), toStringF, shouldLogF, true, false);
+    }
+
+    /**
+     * See {@link #peekInput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)}
+     */
+    @Nonnull
+    public static ProcessorSupplier peekInput(@Nonnull ProcessorSupplier wrapped) {
+        return peekInput(Object::toString, alwaysTrue(), wrapped);
+    }
+
+    /**
+     * See {@link #peekInput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)}
+     */
+    @Nonnull
+    public static ProcessorSupplier peekInput(
+            @Nonnull DistributedFunction<Object, String> toStringF,
+            @Nonnull DistributedPredicate<Object> shouldLogF,
+            @Nonnull ProcessorSupplier wrapped
+    ) {
+        return new WrappingProcessorSupplier(wrapped, p -> new PeekWrappedP(p, toStringF, shouldLogF, true, false));
+    }
+
+    /**
+     * See {@link #peekInput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)}
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier peekInput(@Nonnull ProcessorMetaSupplier wrapped) {
+        return peekInput(Object::toString, alwaysTrue(), wrapped);
+    }
+
+    /**
+     * Returns a supplier, that wraps the provided {@link
+     * ProcessorMetaSupplier}, so that all input events are logged, when they
+     * are removed from the {@link Inbox}. Events are logged at the INFO level
+     * to the following logger: {@link PeekWrappedP}.
+     *
+     * @param toStringF Function to convert items to String, if {@code null},
+     *                  {@link Object#toString()} is used.
+     * @param shouldLogF Function to filter logged items. If {@code null}, all
+     *                   items are logged. <b>Warning:</b> Function will see
+     *                   both items and {@link Punctuation}
+     * @param wrapped The wrapped supplier.
+     *
+     * @see #peekOutput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier peekInput(
+            @Nonnull DistributedFunction<Object, String> toStringF,
+            @Nonnull DistributedPredicate<Object> shouldLogF,
+            @Nonnull ProcessorMetaSupplier wrapped
+    ) {
+        return new WrappingProcessorMetaSupplier(wrapped, p -> new PeekWrappedP(p, toStringF, shouldLogF, true, false));
+    }
+
+    /**
+     * See {@link #peekOutput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)}
+     */
+    @Nonnull
+    public static DistributedSupplier<Processor> peekOutput(@Nonnull DistributedSupplier<Processor> wrapped) {
+        return peekOutput(Object::toString, alwaysTrue(), wrapped);
+    }
+
+    /**
+     * See {@link #peekOutput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)}
+     */
+    @Nonnull
+    public static DistributedSupplier<Processor> peekOutput(
+            @Nonnull DistributedFunction<Object, String> toStringF,
+            @Nonnull DistributedPredicate<Object> shouldLogF,
+            @Nonnull DistributedSupplier<Processor> wrapped) {
+        return () -> new PeekWrappedP(wrapped.get(), toStringF, shouldLogF, false, true);
+    }
+
+    /**
+     * See {@link #peekOutput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)}
+     */
+    @Nonnull
+    public static ProcessorSupplier peekOutput(@Nonnull ProcessorSupplier wrapped) {
+        return peekOutput(Object::toString, alwaysTrue(), wrapped);
+    }
+
+    /**
+     * See {@link #peekOutput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)}
+     */
+    @Nonnull
+    public static ProcessorSupplier peekOutput(
+            @Nonnull DistributedFunction<Object, String> toStringF,
+            @Nonnull DistributedPredicate<Object> shouldLogF,
+            @Nonnull ProcessorSupplier wrapped
+    ) {
+        return new WrappingProcessorSupplier(wrapped, p -> new PeekWrappedP(p, toStringF, shouldLogF, false, true));
+    }
+
+    /**
+     * See {@link #peekOutput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)}
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier peekOutput(@Nonnull ProcessorMetaSupplier wrapped) {
+        return peekOutput(Object::toString, alwaysTrue(), wrapped);
+    }
+
+    /**
+     * Returns a supplier, that wraps the provided {@link
+     * ProcessorMetaSupplier}, so that all output events are logged, when they
+     * are accepted by the {@link Outbox}. Events are logged at the INFO level
+     * to the following logger: {@link PeekWrappedP}.
+     *
+     * @param toStringF Function to convert items to String, if {@code null},
+     *                  {@link Object#toString()} is used.
+     * @param shouldLogF Function to filter logged items. If {@code null}, all
+     *                   items are logged. <b>Warning:</b> Function will see
+     *                   both items and {@link Punctuation}
+     * @param wrapped The wrapped supplier.
+     *
+     * @see #peekInput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier peekOutput(
+            @Nonnull DistributedFunction<Object, String> toStringF,
+            @Nonnull DistributedPredicate<Object> shouldLogF,
+            @Nonnull ProcessorMetaSupplier wrapped
+    ) {
+        return new WrappingProcessorMetaSupplier(wrapped, p -> new PeekWrappedP(p, toStringF, shouldLogF, false, true));
     }
 
     /**

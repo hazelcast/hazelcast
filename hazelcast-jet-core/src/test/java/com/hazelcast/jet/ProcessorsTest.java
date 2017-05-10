@@ -42,7 +42,6 @@ import static com.hazelcast.jet.Util.entry;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -212,7 +211,6 @@ public class ProcessorsTest {
         testAccumulate(p, a_listResultTester());
     }
 
-
     private static TwinConsumer<String> ga_stringResultTester() {
         final Set<String> expected = new HashSet<>(asList("1:[1, 1]", "2:[2, 2]"));
         return (String result1, String result2) -> assertEquals(expected, new HashSet<>(asList(result1, result2)));
@@ -289,7 +287,6 @@ public class ProcessorsTest {
         Processor p = supplier.get();
         p.init(outbox, context);
         return p;
-
     }
 
     private interface TwinConsumer<T> extends BiConsumer<T, T> { }
