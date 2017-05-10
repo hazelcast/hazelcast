@@ -70,3 +70,5 @@ public class HazelcastSerialClassRunner extends AbstractHazelcastClassRunner {
         }
     }
 }
+
+
