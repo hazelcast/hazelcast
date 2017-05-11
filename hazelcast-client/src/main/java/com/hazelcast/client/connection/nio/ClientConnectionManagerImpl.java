@@ -83,7 +83,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
 
 import static com.hazelcast.client.config.SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
 import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
@@ -407,8 +406,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
             connectionStrategy.onConnectToCluster();
         } catch (Exception e) {
-            Level level = e instanceof AuthenticationException ? Level.WARNING : Level.FINEST;
-            logger.log(level, "Exception during initial connection to " + ownerInetSocketAddress, e);
+            logger.warning("Exception during initial connection to " + ownerInetSocketAddress + ", exception " + e);
             if (null != connection) {
                 connection.close("Could not connect to " + ownerInetSocketAddress + " as owner", e);
             }
