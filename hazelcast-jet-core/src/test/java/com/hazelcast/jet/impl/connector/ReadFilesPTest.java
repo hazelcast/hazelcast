@@ -30,14 +30,12 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Edge.between;
@@ -55,14 +53,14 @@ public class ReadFilesPTest extends JetTestSupport {
     private IStreamList<String> list;
 
     @Before
-    public void setup() throws IOException {
+    public void setup() throws Exception {
         instance = createJetMember();
         directory = createTempDirectory();
         list = instance.getList("writer");
     }
 
     @Test
-    public void test_smallFiles() throws IOException, InterruptedException, ExecutionException {
+    public void test_smallFiles() throws Exception {
         DAG dag = buildDag(null);
 
         File file1 = new File(directory, randomName());
@@ -78,7 +76,7 @@ public class ReadFilesPTest extends JetTestSupport {
     }
 
     @Test
-    public void test_largeFile() throws IOException, InterruptedException, ExecutionException {
+    public void test_largeFile() throws Exception {
         DAG dag = buildDag(null);
 
         File file1 = new File(directory, randomName());
@@ -91,7 +89,7 @@ public class ReadFilesPTest extends JetTestSupport {
     }
 
     @Test
-    public void when_glob_the_useGlob() throws IOException, InterruptedException, ExecutionException {
+    public void when_glob_the_useGlob() throws Exception {
         DAG dag = buildDag("file2.*");
 
         File file1 = new File(directory, "file1.txt");
@@ -106,7 +104,25 @@ public class ReadFilesPTest extends JetTestSupport {
         finishDirectory(file1, file2);
     }
 
+    @Test
+    public void when_directory_then_ignore() throws Exception {
+        DAG dag = buildDag(null);
+
+        File file1 = new File(directory, randomName());
+        assertTrue(file1.mkdir());
+
+        instance.newJob(dag).execute().get();
+
+        assertEquals(0, list.size());
+
+        finishDirectory(file1);
+    }
+
     private DAG buildDag(String glob) {
+        if (glob == null) {
+            glob = "*";
+        }
+
         DAG dag = new DAG();
         Vertex reader = dag.newVertex("reader", readFiles(directory.getPath(), StandardCharsets.UTF_8, glob))
                 .localParallelism(1);
@@ -115,7 +131,7 @@ public class ReadFilesPTest extends JetTestSupport {
         return dag;
     }
 
-    private static void appendToFile(File file, String... lines) throws IOException {
+    private static void appendToFile(File file, String... lines) throws Exception {
         try (PrintWriter writer = new PrintWriter(new FileOutputStream(file, true))) {
             for (String payload : lines) {
                 writer.write(payload + '\n');
@@ -123,14 +139,14 @@ public class ReadFilesPTest extends JetTestSupport {
         }
     }
 
-    private static File createTempDirectory() throws IOException {
+    private static File createTempDirectory() throws Exception {
         Path directory = Files.createTempDirectory("read-file-p");
         File file = directory.toFile();
         file.deleteOnExit();
         return file;
     }
 
-    private void finishDirectory(File ... files) throws InterruptedException, ExecutionException {
+    private void finishDirectory(File ... files) throws Exception {
         for (File file : files) {
             assertTrue(file.delete());
         }

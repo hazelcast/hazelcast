@@ -24,7 +24,6 @@ import javax.annotation.Nonnull;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -57,7 +56,7 @@ public class ReadFilesP extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(directory, glob == null ? "*" : glob)) {
+        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(directory, glob)) {
             StreamSupport.stream(directoryStream.spliterator(), false)
                     .filter(this::shouldProcessEvent)
                     .forEach(this::processFile);
@@ -69,6 +68,9 @@ public class ReadFilesP extends AbstractProcessor {
     }
 
     private boolean shouldProcessEvent(Path file) {
+        if (Files.isDirectory(file)) {
+            return false;
+        }
         int hashCode = file.hashCode();
         return ((hashCode & Integer.MAX_VALUE) % parallelism) == id;
     }
@@ -95,14 +97,14 @@ public class ReadFilesP extends AbstractProcessor {
     /**
      * @see com.hazelcast.jet.Processors#readFiles(String, Charset, String)
      */
-    public static ProcessorSupplier supplier(String directory, String charset, String glob) {
+    public static ProcessorSupplier supplier(@Nonnull String directory, @Nonnull String charset, @Nonnull String glob) {
         return new ProcessorSupplier() {
             static final long serialVersionUID = 1L;
 
             @Nonnull
             @Override
             public Collection<? extends Processor> get(int count) {
-                Charset charsetObj = charset == null ? StandardCharsets.UTF_8 : Charset.forName(charset);
+                Charset charsetObj = Charset.forName(charset);
                 return IntStream.range(0, count)
                         .mapToObj(i -> new ReadFilesP(directory, charsetObj, glob, count, i))
                         .collect(Collectors.toList());

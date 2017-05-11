@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.function.DistributedSupplier;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedReader;
@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
@@ -34,14 +33,14 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 /**
  * @see com.hazelcast.jet.Processors#streamTextSocket(String, int, Charset)
  */
-public class StreamTextSocketP extends AbstractProcessor {
+public final class StreamTextSocketP extends AbstractProcessor {
 
     private final String host;
     private final int port;
     private final Charset charset;
     private CompletableFuture<Void> jobFuture;
 
-    StreamTextSocketP(String host, int port, Charset charset) {
+    private StreamTextSocketP(String host, int port, Charset charset) {
         this.host = host;
         this.port = port;
         this.charset = charset;
@@ -86,8 +85,7 @@ public class StreamTextSocketP extends AbstractProcessor {
         return host + ':' + port;
     }
 
-    public static DistributedSupplier<Processor> supplier(String host, int port, String charset) {
-        return () -> new StreamTextSocketP(host, port,
-                charset == null ? StandardCharsets.UTF_8 : Charset.forName(charset));
+    public static DistributedSupplier<Processor> supplier(String host, int port, @Nonnull String charset) {
+        return () -> new StreamTextSocketP(host, port, Charset.forName(charset));
     }
 }

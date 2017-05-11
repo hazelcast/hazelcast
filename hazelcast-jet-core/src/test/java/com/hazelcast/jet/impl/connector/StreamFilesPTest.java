@@ -20,6 +20,7 @@ import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.Processors;
 import com.hazelcast.logging.Log4jFactory;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -66,7 +67,6 @@ public class StreamFilesPTest extends JetTestSupport {
     @Before
     public void before() throws Exception {
         workDir = Files.createTempDirectory("jet-test-streamFilesPTest").toFile();
-        processor = new StreamFilesP(workDir.getAbsolutePath(), UTF_8, 1, 0);
         driverThread = new Thread(this::driveProcessor,
                 "Driving StreamFileP (" + testName.getMethodName() + ')');
     }
@@ -80,14 +80,14 @@ public class StreamFilesPTest extends JetTestSupport {
 
     @Test
     public void supplier() {
-        ProcessorSupplier supplier = StreamFilesP.supplier(workDir.getAbsolutePath(), null);
+        ProcessorSupplier supplier = Processors.streamFiles(workDir.getAbsolutePath());
         assertEquals(1, supplier.get(1).size());
         supplier.complete(null);
     }
 
     @Test
     public void when_writeOneFile_then_seeAllLines() throws Exception {
-        initializeProcessor();
+        initializeProcessor(null);
         driverThread.start();
         try (PrintWriter w = new PrintWriter(new FileWriter(new File(workDir, "a.txt")))) {
             for (int i = 0; i < LINE_COUNT; i++) {
@@ -101,7 +101,7 @@ public class StreamFilesPTest extends JetTestSupport {
     @Test
     public void when_writeTwoFiles_then_seeAllLines() throws Exception {
         // Given
-        initializeProcessor();
+        initializeProcessor(null);
         driverThread.start();
         try (PrintWriter w1 = new PrintWriter(new FileWriter(new File(workDir, "a.txt")));
              PrintWriter w2 = new PrintWriter(new FileWriter(new File(workDir, "b.txt")))
@@ -120,6 +120,27 @@ public class StreamFilesPTest extends JetTestSupport {
     }
 
     @Test
+    public void when_glob_then_onlyMatchingProcessed() throws Exception {
+        // Given
+        initializeProcessor("a.*");
+        driverThread.start();
+        try (PrintWriter w1 = new PrintWriter(new FileWriter(new File(workDir, "a.txt")));
+                PrintWriter w2 = new PrintWriter(new FileWriter(new File(workDir, "b.txt")))
+        ) {
+            // When
+            for (int i = 0; i < LINE_COUNT; i++) {
+                w1.println(i);
+                w1.flush();
+                w2.println(i);
+                w2.flush();
+            }
+
+            // Then
+            assertEmittedCountEventually(LINE_COUNT);
+        }
+    }
+
+    @Test
     public void when_preExistingFile_then_seeAppendedLines() throws Exception {
         // Given
         try (PrintWriter w = new PrintWriter(new FileWriter(new File(workDir, "a.txt")))) {
@@ -128,7 +149,7 @@ public class StreamFilesPTest extends JetTestSupport {
             }
             w.write("incomplete line");
             w.flush();
-            initializeProcessor();
+            initializeProcessor(null);
             // Directory watch service is apparently initialized asynchronously so we
             // have to give it some time. This is a hacky, non-repeatable test.
             Thread.sleep(1000);
@@ -156,7 +177,7 @@ public class StreamFilesPTest extends JetTestSupport {
                 w.println(i);
             }
         }
-        initializeProcessor();
+        initializeProcessor(null);
         // Directory watch service is apparently initialized asynchronously so we
         // have to give it some time. This is a hacky, non-repeatable test.
         Thread.sleep(1000);
@@ -177,7 +198,7 @@ public class StreamFilesPTest extends JetTestSupport {
                 w.println(i);
             }
         }
-        initializeProcessor();
+        initializeProcessor(null);
         updateFileOffsetsSize();
         assertEquals(1, fileOffsetsSize);
         driverThread.start();
@@ -192,7 +213,7 @@ public class StreamFilesPTest extends JetTestSupport {
     @Test
     public void when_watchedDirDeleted_then_complete() throws Exception {
         // Given
-        initializeProcessor();
+        initializeProcessor(null);
         driverThread.start();
 
         // When
@@ -214,7 +235,11 @@ public class StreamFilesPTest extends JetTestSupport {
         fileOffsetsSize = processor.fileOffsets.size();
     }
 
-    private void initializeProcessor() {
+    private void initializeProcessor(String glob) {
+        if (glob == null) {
+            glob = "*";
+        }
+        processor = new StreamFilesP(workDir.getAbsolutePath(), UTF_8, glob, 1, 0);
         Outbox outbox = mock(Outbox.class);
         when(outbox.offer(any())).thenAnswer(item -> {
             emittedCount++;
@@ -231,7 +256,8 @@ public class StreamFilesPTest extends JetTestSupport {
     // 3. Wait a bit more
     // 4. Ensure the value hasn't increased
     private void assertEmittedCountEventually(long expected) throws Exception {
-        assertTrueEventually(() -> assertTrue(emittedCount >= expected), ASSERT_COUNT_TIMEOUT_SECONDS);
+        assertTrueEventually(() -> assertTrue("emittedCount=" + emittedCount + ", expected=" + expected,
+                emittedCount >= expected), ASSERT_COUNT_TIMEOUT_SECONDS);
         assertEquals(expected, emittedCount);
         Thread.sleep(2000);
         assertEquals(expected, emittedCount);
