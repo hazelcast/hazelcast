@@ -241,7 +241,7 @@ public class TcpIpAcceptor implements MetricsProvider {
             try {
                 SocketChannel socketChannel = serverSocketChannel.accept();
                 if (socketChannel != null) {
-                    channel = connectionManager.wrapSocketChannel(socketChannel, false);
+                    channel = connectionManager.createChannel(socketChannel, false);
                 }
             } catch (Exception e) {
                 exceptionCount.inc();
@@ -283,7 +283,6 @@ public class TcpIpAcceptor implements MetricsProvider {
             try {
                 ioService.configureSocket(channel.socket());
                 ioService.interceptSocket(channel.socket(), true);
-                channel.configureBlocking(connectionManager.getEventLoopGroup().isBlocking());
                 connectionManager.newConnection(channel, null);
             } catch (Exception e) {
                 exceptionCount.inc();

@@ -17,10 +17,8 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.networking.ChannelConnection;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.networking.ChannelReader;
 import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
@@ -35,15 +33,11 @@ import static java.lang.System.currentTimeMillis;
 import static java.nio.channels.SelectionKey.OP_READ;
 
 /**
- * A {@link ChannelReader} tailored for non blocking IO.
- *
  * When the {@link NioThread} receives a read event from the {@link java.nio.channels.Selector}, then the
  * {@link #handle()} is called to read out the data from the socket into a bytebuffer and hand it over to the
  * {@link ChannelInboundHandler} to get processed.
  */
-public final class NioChannelReader
-        extends AbstractHandler
-        implements ChannelReader {
+public final class NioChannelReader extends AbstractHandler {
 
     protected ByteBuffer inputBuffer;
 
@@ -63,12 +57,12 @@ public final class NioChannelReader
     private long handleCountLastPublish;
 
     public NioChannelReader(
-            ChannelConnection connection,
+            NioChannel channel,
             NioThread ioThread,
             ILogger logger,
             IOBalancer balancer,
             ChannelInitializer initializer) {
-        super(connection, ioThread, OP_READ, logger, balancer);
+        super(channel, ioThread, OP_READ, logger, balancer);
         this.initializer = initializer;
     }
 
@@ -91,33 +85,16 @@ public final class NioChannelReader
         return Math.max(currentTimeMillis() - lastReadTime, 0);
     }
 
-    @Override
     public SwCounter getNormalFramesReadCounter() {
         return normalFramesRead;
     }
 
-    @Override
     public SwCounter getPriorityFramesReadCounter() {
         return priorityFramesRead;
     }
 
-    @Override
     public long lastReadTimeMillis() {
         return lastReadTime;
-    }
-
-    @Override
-    public void init() {
-        ioThread.addTaskAndWakeup(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    getSelectionKey();
-                } catch (Throwable t) {
-                    onFailure(t);
-                }
-            }
-        });
     }
 
     /**
@@ -142,14 +119,8 @@ public final class NioChannelReader
         // the connection is going to be closed anyway.
         lastReadTime = currentTimeMillis();
 
-        if (inboundHandler == null) {
-            InitResult<ChannelInboundHandler> init = initializer.initInbound(connection, this);
-            if (init == null) {
-                // when using SSL, we can read 0 bytes since data read from socket can be handshake frames.
-                return;
-            }
-            this.inboundHandler = init.getHandler();
-            this.inputBuffer = init.getByteBuffer();
+        if (inboundHandler == null && !init()) {
+            return;
         }
 
         int readBytes = channel.read(inputBuffer);
@@ -171,6 +142,24 @@ public final class NioChannelReader
         }
     }
 
+    private boolean init() throws IOException {
+        InitResult<ChannelInboundHandler> init = initializer.initInbound(channel);
+        if (init == null) {
+            // we can't initialize yet
+            return false;
+        }
+        this.inboundHandler = init.getHandler();
+        this.inputBuffer = init.getByteBuffer();
+
+        if (inboundHandler instanceof ChannelInboundHandlerWithCounters) {
+            ChannelInboundHandlerWithCounters withCounters = (ChannelInboundHandlerWithCounters) inboundHandler;
+            withCounters.setNormalPacketsRead(normalFramesRead);
+            withCounters.setPriorityPacketsRead(priorityFramesRead);
+        }
+
+        return true;
+    }
+
     @Override
     public void publish() {
         if (Thread.currentThread() != ioThread) {
@@ -188,7 +177,6 @@ public final class NioChannelReader
         handleCountLastPublish = handleCount.get();
     }
 
-    @Override
     public void close() {
         ioThread.addTaskAndWakeup(new Runnable() {
             @Override
@@ -212,7 +200,7 @@ public final class NioChannelReader
 
     @Override
     public String toString() {
-        return connection + ".channelReader";
+        return channel + ".channelReader";
     }
 
     private class StartMigrationTask implements Runnable {

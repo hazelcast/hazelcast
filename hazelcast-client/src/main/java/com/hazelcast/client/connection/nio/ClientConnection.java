@@ -20,47 +20,36 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.BuildInfo;
-import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ChannelConnection;
-import com.hazelcast.internal.networking.ChannelReader;
-import com.hazelcast.internal.networking.ChannelWriter;
-import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.nio.Protocols;
 import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.util.StringUtil.stringToBytes;
 import static com.hazelcast.util.StringUtil.timeToStringFriendly;
 
 /**
  * Client implementation of {@link Connection}.
  * ClientConnection is a connection between a Hazelcast Client and a Hazelcast Member.
  */
-public class ClientConnection implements ChannelConnection, DiscardableMetricsProvider {
+public class ClientConnection implements Connection {
 
     @Probe
     private final int connectionId;
     private final ILogger logger;
 
     private final AtomicInteger pendingPacketCount = new AtomicInteger(0);
-    private final ChannelWriter writer;
-    private final ChannelReader reader;
     private final Channel channel;
     private final ClientConnectionManagerImpl connectionManager;
     private final LifecycleService lifecycleService;
@@ -81,17 +70,15 @@ public class ClientConnection implements ChannelConnection, DiscardableMetricsPr
     private String connectedServerVersionString;
 
     public ClientConnection(HazelcastClientInstanceImpl client,
-                            EventLoopGroup eventLoopGroup,
                             int connectionId,
                             Channel channel) throws IOException {
         this.client = client;
         this.connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();
         this.channel = channel;
+        channel.attributeMap().put(ClientConnection.class, this);
         this.connectionId = connectionId;
         this.logger = client.getLoggingService().getLogger(ClientConnection.class);
-        this.reader = eventLoopGroup.newSocketReader(this);
-        this.writer = eventLoopGroup.newSocketWriter(this);
     }
 
     public ClientConnection(HazelcastClientInstanceImpl client,
@@ -100,41 +87,8 @@ public class ClientConnection implements ChannelConnection, DiscardableMetricsPr
         this.connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();
         this.connectionId = connectionId;
-        this.writer = null;
-        this.reader = null;
         this.channel = null;
         this.logger = client.getLoggingService().getLogger(ClientConnection.class);
-    }
-
-    @Override
-    public void provideMetrics(MetricsRegistry registry) {
-        String connectionName = "tcp.connection["
-                + channel.getLocalSocketAddress() + " -> " + channel.getRemoteSocketAddress() + "]";
-        registry.scanAndRegister(this, connectionName);
-        registry.scanAndRegister(reader, connectionName + ".in");
-        registry.scanAndRegister(writer, connectionName + ".out");
-    }
-
-    @Override
-    public void discardMetrics(MetricsRegistry registry) {
-        registry.deregister(this);
-        registry.deregister(reader);
-        registry.deregister(writer);
-    }
-
-    @Override
-    public ChannelReader getChannelReader() {
-        return reader;
-    }
-
-    @Override
-    public ChannelWriter getChannelWriter() {
-        return writer;
-    }
-
-    @Override
-    public Channel getChannel() {
-        return channel;
     }
 
     public void incrementPendingPacketCount() {
@@ -151,24 +105,14 @@ public class ClientConnection implements ChannelConnection, DiscardableMetricsPr
 
     @Override
     public boolean write(OutboundFrame frame) {
-        if (!isAlive()) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Connection is closed, dropping frame -> " + frame);
-            }
-            return false;
+        if (channel.write(frame)) {
+            return true;
         }
-        writer.write(frame);
-        return true;
-    }
 
-    public void start() throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(3);
-        buffer.put(stringToBytes(Protocols.CLIENT_BINARY_NEW));
-        buffer.flip();
-        channel.write(buffer);
-
-        // we need to give the reader a kick so it starts reading from the socket.
-        reader.init();
+        if (logger.isFinestEnabled()) {
+            logger.finest("Connection is closed, dropping frame -> " + frame);
+        }
+        return false;
     }
 
     @Override
@@ -183,12 +127,12 @@ public class ClientConnection implements ChannelConnection, DiscardableMetricsPr
 
     @Override
     public long lastReadTimeMillis() {
-        return reader.lastReadTimeMillis();
+        return channel.lastReadTimeMillis();
     }
 
     @Override
     public long lastWriteTimeMillis() {
-        return writer.lastWriteTimeMillis();
+        return channel.lastWriteTimeMillis();
     }
 
     @Override
@@ -267,11 +211,7 @@ public class ClientConnection implements ChannelConnection, DiscardableMetricsPr
     }
 
     protected void innerClose() throws IOException {
-        if (channel.isOpen()) {
-            channel.close();
-        }
-        reader.close();
-        writer.close();
+        channel.close();
     }
 
     @Override

@@ -19,7 +19,7 @@ package com.hazelcast.internal.networking.nio;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
+import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
@@ -89,7 +89,7 @@ public class NioThread extends Thread implements OperationHostileThread {
 
     private Selector selector;
 
-    private final IOOutOfMemoryHandler oomeHandler;
+    private final ChannelErrorHandler errorHandler;
 
     private final SelectorMode selectMode;
 
@@ -105,28 +105,28 @@ public class NioThread extends Thread implements OperationHostileThread {
 
     public NioThread(String threadName,
                      ILogger logger,
-                     IOOutOfMemoryHandler oomeHandler) {
-        this(threadName, logger, oomeHandler, SelectorMode.SELECT, null);
+                     ChannelErrorHandler errorHandler) {
+        this(threadName, logger, errorHandler, SelectorMode.SELECT, null);
     }
 
     public NioThread(String threadName,
                      ILogger logger,
-                     IOOutOfMemoryHandler oomeHandler,
+                     ChannelErrorHandler errorHandler,
                      SelectorMode selectMode,
                      IdleStrategy idleStrategy) {
-        this(threadName, logger, oomeHandler, selectMode, newSelector(logger), idleStrategy);
+        this(threadName, logger, errorHandler, selectMode, newSelector(logger), idleStrategy);
     }
 
     public NioThread(String threadName,
                      ILogger logger,
-                     IOOutOfMemoryHandler oomeHandler,
+                     ChannelErrorHandler errorHandler,
                      SelectorMode selectMode,
                      Selector selector,
                      IdleStrategy idleStrategy) {
         super(threadName);
         this.logger = logger;
         this.selectMode = selectMode;
-        this.oomeHandler = oomeHandler;
+        this.errorHandler = errorHandler;
         this.selector = selector;
         this.selectorWorkaroundTest = false;
         this.idleStrategy = idleStrategy;
@@ -178,8 +178,8 @@ public class NioThread extends Thread implements OperationHostileThread {
         return selector;
     }
 
-    public IOOutOfMemoryHandler getOomeHandler() {
-        return oomeHandler;
+    public ChannelErrorHandler getErrorHandler() {
+        return errorHandler;
     }
 
     /**
@@ -260,10 +260,8 @@ public class NioThread extends Thread implements OperationHostileThread {
                     coolDown();
                 }
             }
-        } catch (OutOfMemoryError e) {
-            oomeHandler.handle(e);
         } catch (Throwable e) {
-            logger.warning("Unhandled exception in " + getName(), e);
+            errorHandler.onError(null, e);
         } finally {
             closeSelector();
         }

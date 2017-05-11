@@ -235,12 +235,20 @@ public final class Preconditions {
      * @return the object argument.
      * @throws java.lang.IllegalArgumentException if the object is not an instance of the expected type.
      */
-    public static <E> E checkInstanceOf(Class type, E object, String errorMessage) {
+    public static <E> E checkInstanceOf(Class<E> type, Object object, String errorMessage) {
         isNotNull(type, "type");
         if (!type.isInstance(object)) {
             throw new IllegalArgumentException(errorMessage);
         }
-        return object;
+        return (E) object;
+    }
+
+    public static <E> E checkInstanceOf(Class<E> type, Object object) {
+        isNotNull(type, "type");
+        if (!type.isInstance(object)) {
+            throw new IllegalArgumentException(object + " should be instanceof " + type.getName());
+        }
+        return (E) object;
     }
 
     /**

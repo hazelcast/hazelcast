@@ -19,20 +19,25 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ClientMessageChannelInboundHandler;
+import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
-import com.hazelcast.internal.networking.ChannelOutboundHandler;
-import com.hazelcast.internal.networking.ChannelReader;
 import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.networking.ChannelWriter;
+import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.InitResult;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.Protocols;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-class ClientChannelInitializer implements ChannelInitializer<ClientConnection> {
+import static com.hazelcast.nio.IOUtil.newByteBuffer;
+import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
+/**
+ * Client side ChannelInitializer. Client in this case is a real client using client protocol etc.
+ *
+ * It will automatically send the Client Protocol to the server and configure the correct buffers/handlers.
+ */
+class ClientChannelInitializer implements ChannelInitializer {
 
     private final int bufferSize;
     private final boolean direct;
@@ -43,11 +48,12 @@ class ClientChannelInitializer implements ChannelInitializer<ClientConnection> {
     }
 
     @Override
-    public InitResult<ChannelInboundHandler> initInbound(final ClientConnection connection, ChannelReader reader)
-            throws IOException {
-        ByteBuffer inputBuffer = IOUtil.newByteBuffer(bufferSize, direct);
+    public InitResult<ChannelInboundHandler> initInbound(final Channel channel) throws IOException {
+        ByteBuffer inputBuffer = newByteBuffer(bufferSize, direct);
 
-        ChannelInboundHandler inboundHandler = new ClientMessageChannelInboundHandler(reader.getNormalFramesReadCounter(),
+        final ClientConnection connection = (ClientConnection) channel.attributeMap().get(ClientConnection.class);
+
+        ChannelInboundHandler inboundHandler = new ClientMessageChannelInboundHandler(
                 new ClientMessageChannelInboundHandler.MessageHandler() {
                     private final ClientConnectionManager connectionManager = connection.getConnectionManager();
 
@@ -60,19 +66,19 @@ class ClientChannelInitializer implements ChannelInitializer<ClientConnection> {
     }
 
     @Override
-    public InitResult<ChannelOutboundHandler> initOutbound(ClientConnection connection, ChannelWriter writer, String protocol) {
-        Logger.getLogger(getClass())
-                .fine("Initializing ClientSocketWriter ChannelOutboundHandler with " + Protocols.toUserFriendlyString(protocol));
+    public InitResult<ChannelOutboundHandler> initOutbound(Channel channel) {
+        ByteBuffer outputBuffer = newByteBuffer(bufferSize, direct);
 
-        ByteBuffer outputBuffer = IOUtil.newByteBuffer(bufferSize, direct);
+        // add the protocol-bytes so the client makes itself known to the 'server'
+        outputBuffer.put(stringToBytes(CLIENT_BINARY_NEW));
 
-        ChannelOutboundHandler handler = new ChannelOutboundHandler<ClientMessage>() {
+        ChannelOutboundHandler outboundHandler = new ChannelOutboundHandler<ClientMessage>() {
             @Override
             public boolean onWrite(ClientMessage msg, ByteBuffer dst) throws Exception {
                 return msg.writeTo(dst);
             }
         };
 
-        return new InitResult<ChannelOutboundHandler>(outputBuffer, handler);
+        return new InitResult<ChannelOutboundHandler>(outputBuffer, outboundHandler);
     }
 }

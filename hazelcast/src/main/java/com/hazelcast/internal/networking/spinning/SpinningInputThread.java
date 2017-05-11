@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.networking.spinning;
 
-import com.hazelcast.internal.networking.ChannelConnection;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -32,13 +31,11 @@ public class SpinningInputThread extends Thread {
 
     private volatile ChannelReaders channelReaders = new ChannelReaders();
 
-    public SpinningInputThread(String hzName) {
+    SpinningInputThread(String hzName) {
         super(ThreadUtil.createThreadName(hzName, "in-thread"));
     }
 
-    public void addConnection(ChannelConnection connection) {
-        SpinningChannelReader reader = (SpinningChannelReader) connection.getChannelReader();
-
+    void register(SpinningChannelReader reader) {
         for (; ; ) {
             ChannelReaders current = channelReaders;
             if (current == SHUTDOWN) {
@@ -57,9 +54,7 @@ public class SpinningInputThread extends Thread {
         }
     }
 
-    public void removeConnection(ChannelConnection connection) {
-        SpinningChannelReader reader = (SpinningChannelReader) connection.getChannelReader();
-
+    void unregister(SpinningChannelReader reader) {
         for (; ; ) {
             ChannelReaders current = channelReaders;
             if (current == SHUTDOWN) {
@@ -116,17 +111,17 @@ public class SpinningInputThread extends Thread {
     static class ChannelReaders {
         final SpinningChannelReader[] readers;
 
-        public ChannelReaders() {
+        ChannelReaders() {
             this(new SpinningChannelReader[0]);
         }
 
-        public ChannelReaders(SpinningChannelReader[] readers) {
+        ChannelReaders(SpinningChannelReader[] readers) {
             this.readers = readers;
         }
 
-        public int indexOf(SpinningChannelReader readHandler) {
+        public int indexOf(SpinningChannelReader reader) {
             for (int k = 0; k < readers.length; k++) {
-                if (readers[k] == readHandler) {
+                if (readers[k] == reader) {
                     return k;
                 }
             }

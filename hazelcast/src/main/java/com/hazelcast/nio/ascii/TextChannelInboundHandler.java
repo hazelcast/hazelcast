@@ -94,7 +94,7 @@ public class TextChannelInboundHandler implements ChannelInboundHandler {
     private boolean commandLineRead;
     private TextCommand command;
     private final TextCommandService textCommandService;
-    private final TextChannelOutboundHandler textWriteHandler;
+    private final TextChannelOutboundHandler outboundHandler;
     private final TcpIpConnection connection;
     private final boolean restEnabled;
     private final boolean memcacheEnabled;
@@ -103,10 +103,10 @@ public class TextChannelInboundHandler implements ChannelInboundHandler {
     private long requestIdGen;
     private final ILogger logger;
 
-    public TextChannelInboundHandler(TcpIpConnection connection) {
+    public TextChannelInboundHandler(TcpIpConnection connection, TextChannelOutboundHandler outboundHandler) {
         IOService ioService = connection.getConnectionManager().getIoService();
         this.textCommandService = ioService.getTextCommandService();
-        this.textWriteHandler = (TextChannelOutboundHandler) connection.getChannelWriter().getOutboundHandler();
+        this.outboundHandler = outboundHandler;
         this.connection = connection;
         this.memcacheEnabled = ioService.isMemcacheEnabled();
         this.restEnabled = ioService.isRestEnabled();
@@ -115,7 +115,7 @@ public class TextChannelInboundHandler implements ChannelInboundHandler {
     }
 
     public void sendResponse(TextCommand command) {
-        textWriteHandler.enqueue(command);
+        outboundHandler.enqueue(command);
     }
 
     @Override
@@ -244,8 +244,8 @@ public class TextChannelInboundHandler implements ChannelInboundHandler {
         }
     }
 
-    public TextChannelOutboundHandler getTextWriteHandler() {
-        return textWriteHandler;
+    public TextChannelOutboundHandler getOutboundHandler() {
+        return outboundHandler;
     }
 
     public void closeConnection() {

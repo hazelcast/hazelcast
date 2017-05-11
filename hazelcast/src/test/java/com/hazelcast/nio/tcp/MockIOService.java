@@ -23,9 +23,9 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
-import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelFactory;
+import com.hazelcast.internal.networking.nio.NioChannelFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
@@ -87,15 +87,6 @@ public class MockIOService implements IOService {
     @Override
     public LoggingService getLoggingService() {
         return loggingService;
-    }
-
-    @Override
-    public IOOutOfMemoryHandler getIoOutOfMemoryHandler() {
-        return new IOOutOfMemoryHandler() {
-            @Override
-            public void handle(OutOfMemoryError error) {
-            }
-        };
     }
 
     @Override
@@ -352,8 +343,8 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public ChannelFactory getSocketChannelWrapperFactory() {
-        return new PlainChannelFactory();
+    public ChannelFactory getChannelFactory() {
+        return new NioChannelFactory();
     }
 
     @Override
@@ -362,7 +353,7 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public ChannelInboundHandler createReadHandler(final TcpIpConnection connection) {
+    public ChannelInboundHandler createInboundHandler(final TcpIpConnection connection) {
         return new MemberChannelInboundHandler(connection, new PacketDispatcher() {
             private ILogger logger = loggingService.getLogger("MockIOService");
 
@@ -385,7 +376,7 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public ChannelOutboundHandler createWriteHandler(TcpIpConnection connection) {
+    public ChannelOutboundHandler createOutboundHandler(TcpIpConnection connection) {
         return new MemberChannelOutboundHandler();
     }
 

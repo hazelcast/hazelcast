@@ -38,9 +38,8 @@ import static com.hazelcast.spi.properties.GroupProperty.IO_THREAD_COUNT;
  * By default Hazelcast uses 3 threads to read data from TCP connections and 3 threads to write data to connections.
  * We have measured significant fluctuations of performance when the threads are not utilized equally.
  *
- * <code>com.hazelcast.nio.tcp.iobalancer.HandlerBalancer</code> tries to detect such situations and fix
- * them by moving {@link NioChannelReader} and {@link NioChannelWriter} between
- * threads.
+ * <code>IOBalancer</code> tries to detect such situations and fix them by moving {@link NioChannelReader} and
+ * {@link NioChannelWriter} between {@link NioThread} instances.
  *
  * It measures number of events serviced by each handler in a given interval and if imbalance is detected then it
  * schedules handler migration to fix the situation. The exact migration strategy can be customized via

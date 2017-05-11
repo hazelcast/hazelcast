@@ -128,7 +128,7 @@ public interface NodeExtension {
      *
      * @return ChannelFactory
      */
-    ChannelFactory getSocketChannelWrapperFactory();
+    ChannelFactory getChannelFactory();
 
     /**
      * Creates a <tt>ChannelInboundHandler</tt> for given <tt>Connection</tt> instance.

@@ -17,6 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cluster.Joiner;
+import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
 import com.hazelcast.internal.networking.spinning.SpinningEventLoopGroup;
@@ -24,6 +25,7 @@ import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.NodeIOService;
 import com.hazelcast.nio.tcp.MemberChannelInitializer;
+import com.hazelcast.nio.tcp.TcpIpConnectionChannelErrorHandler;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.spi.annotation.PrivateApi;
 
@@ -64,24 +66,30 @@ public class DefaultNodeContext implements NodeContext {
         boolean spinning = Boolean.getBoolean("hazelcast.io.spinning");
         LoggingServiceImpl loggingService = node.loggingService;
 
-        MemberChannelInitializer socketReaderInitializer
-                = new MemberChannelInitializer(loggingService.getLogger(MemberChannelInitializer.class));
+        MemberChannelInitializer initializer
+                = new MemberChannelInitializer(loggingService.getLogger(MemberChannelInitializer.class), ioService);
+
+        ChannelErrorHandler exceptionHandler
+                = new TcpIpConnectionChannelErrorHandler(loggingService.getLogger(TcpIpConnectionChannelErrorHandler.class));
+
         if (spinning) {
             return new SpinningEventLoopGroup(
                     loggingService,
-                    ioService.getIoOutOfMemoryHandler(),
-                    socketReaderInitializer,
+                    node.nodeEngine.getMetricsRegistry(),
+                    exceptionHandler,
+                    initializer,
                     node.hazelcastInstance.getName());
         } else {
             return new NioEventLoopGroup(
                     loggingService,
                     node.nodeEngine.getMetricsRegistry(),
                     node.hazelcastInstance.getName(),
-                    ioService.getIoOutOfMemoryHandler(), ioService.getInputSelectorThreadCount(),
+                    exceptionHandler,
+                    ioService.getInputSelectorThreadCount(),
                     ioService.getOutputSelectorThreadCount(),
                     ioService.getBalancerIntervalSeconds(),
-                    socketReaderInitializer
-            );
+                    initializer);
         }
     }
+
 }

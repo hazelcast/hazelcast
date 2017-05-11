@@ -18,37 +18,18 @@ package com.hazelcast.internal.networking;
 
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
 import com.hazelcast.internal.networking.spinning.SpinningEventLoopGroup;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.tcp.TcpIpConnection;
 
 /**
- * An abstract of the threading model used by the {@link Connection}.
+ * The EventLoopGroup is responsible for processing registered channels. Effectively it is the threading model for the io system.
  *
- * The default implementation of this is the {@link NioEventLoopGroup}
- * that relies on selectors. But also different implementations can be added like spinning, thread per connection etc.
+ * An event loop is for example visible on the NioThread where we loop over the selector events. The EventLoopGroup is the group
+ * of all these thread instances.
  *
- * Apart from providing a hook to add new functionality, it also simplifies the {@link Connection} and
- * {@link com.hazelcast.nio.ConnectionManager} since concerns are separated:
- * separated:
- * <ol>
- * <li>the ConnectionManager is responsible for managing connections</li>
- * <li>the EventLoopGroup is responsible for providing threads to the connections.</li>
- * </ol>
+ * The default implementation of this is the {@link NioEventLoopGroup} that relies on selectors. But also different
+ * implementations can be added like spinning, thread per connection, epoll based etc.
  *
- * The 2 crucial parts of the EventLoopGroup are the:
- * <ol>
- * <li>{@link ChannelReader}: responsible for reading data from the socket(channel)</li>
- * <li>{@link ChannelWriter}: responsible for writing data to the socket(channel)</li>
- * </ol>
- * The {@link TcpIpConnection} is pretty dumb; it doesn't know anything about threading models; it just owns
- * a {@link ChannelReader} and {@link ChannelWriter}. This keeps the TcpIpConnection very clean and flexible.
- *
- * The idea is that different ChannelReader and ChannelWriter implementations can be made. We already have specific
- * one for non blocking (selector based) IO and for spinning io.  These ChannelReader/ChannelWriter instances only
- * focus on getting data to and from the socket; they do not concern themselves about interpreting the data. This
- * is a concern of the {@link ChannelInboundHandler} and the {@link ChannelOutboundHandler} instance each
- * ChannelReader/ChannelWriter has. So a ChannelReader/ChannelWriter-class is independent of the type of communication
- * that runs on top of it.
+ * todo:
+ * - packet/client-message reader and metrics
  *
  * @see NioEventLoopGroup
  * @see SpinningEventLoopGroup
@@ -56,50 +37,22 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
 public interface EventLoopGroup {
 
     /**
-     * Tells whether or not every I/O operation on SocketChannel should block until it completes.
+     * Registers a channel at this {@link EventLoopGroup}.
      *
-     * @return true if blocking, false otherwise.
-     * @see {@link java.nio.channels.SelectableChannel#configureBlocking(boolean)}
+     * Every Channel should be registered at at most 1 EventLoopGroup and it is very unlikely that during the lifespan of the
+     * Channel, it will change its EventLoopGroup.
+     *
+     * @param channel the channel to register.
      */
-    boolean isBlocking();
+    void register(Channel channel);
 
     /**
-     * Creates a new ChannelWriter for the given connection.
-     *
-     * @param connection the TcpIpConnection to create the ChannelWriter for.
-     * @return the created ChannelWriter
+     * Starts this EventLoopGroup.
      */
-    ChannelWriter newSocketWriter(ChannelConnection connection);
-
-    /**
-     * Creates a new ChannelReader for the given connection.
-     *
-     * @param connection the TcpIpConnection to create the ChannelReader for.
-     * @return the created ChannelReader
-     */
-    ChannelReader newSocketReader(ChannelConnection connection);
-
-    /**
-     * Is called when a connection is added.
-     *
-     * @param connection the connection added.
-     */
-    void onConnectionAdded(ChannelConnection connection);
-
-    /**
-     * Is called when a connection is removed.
-     *
-     * @param connection the connection removed.
-     */
-    void onConnectionRemoved(ChannelConnection connection);
-
-    /**
-     * Starts the EventLoopGroup.
-      */
     void start();
 
     /**
-     * Shuts down the EventLoopGroup.
-      */
+     * Shuts down this EventLoopGroup.
+     */
     void shutdown();
 }

@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.tcp;
+package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelFactory;
 
 import java.nio.channels.SocketChannel;
 
-public class PlainChannelFactory implements ChannelFactory {
+public class NioChannelFactory implements ChannelFactory {
 
     @Override
-    public Channel create(SocketChannel channel, boolean client, boolean directBuffer) throws Exception {
-        return new PlainChannel(channel);
+    public Channel create(SocketChannel channel, boolean clientMode, boolean directBuffer) throws Exception {
+        return new NioChannel(channel, clientMode);
     }
 }

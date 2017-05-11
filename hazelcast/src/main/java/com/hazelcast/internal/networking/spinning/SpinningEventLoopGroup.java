@@ -16,14 +16,19 @@
 
 package com.hazelcast.internal.networking.spinning;
 
-import com.hazelcast.internal.networking.EventLoopGroup;
-import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
-import com.hazelcast.internal.networking.ChannelConnection;
-import com.hazelcast.internal.networking.ChannelReader;
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelCloseListener;
+import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.networking.ChannelWriter;
+import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+
+import java.io.IOException;
+
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.Preconditions.checkInstanceOf;
 
 /**
  * A {@link EventLoopGroup} that uses (busy) spinning on the SocketChannels to see if there is something
@@ -42,52 +47,55 @@ import com.hazelcast.logging.LoggingService;
  */
 public class SpinningEventLoopGroup implements EventLoopGroup {
 
+    private final ChannelCloseListener channelCloseListener = new ChannelCloseListenerImpl();
     private final ILogger logger;
     private final LoggingService loggingService;
     private final SpinningInputThread inputThread;
-    private final SpinningOutputThread outThread;
+    private final SpinningOutputThread outputThread;
     private final ChannelInitializer channelInitializer;
-    private final IOOutOfMemoryHandler oomeHandler;
+    private final ChannelErrorHandler errorHandler;
+    private final MetricsRegistry metricsRegistry;
+    private final ILogger readerLogger;
+    private final ILogger writerLogger;
 
     public SpinningEventLoopGroup(LoggingService loggingService,
-                                  IOOutOfMemoryHandler oomeHandler,
+                                  MetricsRegistry metricsRegistry,
+                                  ChannelErrorHandler errorHandler,
                                   ChannelInitializer channelInitializer,
                                   String hzName) {
-        this.logger = loggingService.getLogger(SpinningEventLoopGroup.class);
         this.loggingService = loggingService;
-        this.oomeHandler = oomeHandler;
+        this.logger = loggingService.getLogger(SpinningEventLoopGroup.class);
+        this.readerLogger = loggingService.getLogger(SpinningChannelReader.class);
+        this.writerLogger = loggingService.getLogger(SpinningChannelReader.class);
+        this.metricsRegistry = metricsRegistry;
+        this.errorHandler = errorHandler;
         this.inputThread = new SpinningInputThread(hzName);
-        this.outThread = new SpinningOutputThread(hzName);
+        this.outputThread = new SpinningOutputThread(hzName);
         this.channelInitializer = channelInitializer;
     }
 
     @Override
-    public boolean isBlocking() {
-        return false;
-    }
+    public void register(final Channel channel) {
+        SpinningChannel spinningChannel = checkInstanceOf(SpinningChannel.class, channel);
+        try {
+            spinningChannel.socketChannel().configureBlocking(false);
+        } catch (IOException e) {
+            throw rethrow(e);
+        }
 
-    @Override
-    public ChannelWriter newSocketWriter(ChannelConnection connection) {
-        ILogger logger = loggingService.getLogger(SpinningChannelWriter.class);
-        return new SpinningChannelWriter(connection, logger, oomeHandler, channelInitializer);
-    }
+        SpinningChannelReader reader = new SpinningChannelReader(channel, readerLogger, errorHandler, channelInitializer);
+        spinningChannel.setReader(reader);
+        inputThread.register(reader);
 
-    @Override
-    public ChannelReader newSocketReader(ChannelConnection connection) {
-        ILogger logger = loggingService.getLogger(SpinningChannelReader.class);
-        return new SpinningChannelReader(connection, logger, oomeHandler, channelInitializer);
-    }
+        SpinningChannelWriter writer = new SpinningChannelWriter(channel, writerLogger, errorHandler, channelInitializer);
+        spinningChannel.setWriter(writer);
+        outputThread.register(writer);
 
-    @Override
-    public void onConnectionAdded(ChannelConnection connection) {
-        inputThread.addConnection(connection);
-        outThread.addConnection(connection);
-    }
+        String metricsId = channel.getLocalSocketAddress() + "->" + channel.getRemoteSocketAddress();
+        metricsRegistry.scanAndRegister(writer, "tcp.connection[" + metricsId + "].out");
+        metricsRegistry.scanAndRegister(reader, "tcp.connection[" + metricsId + "].in");
 
-    @Override
-    public void onConnectionRemoved(ChannelConnection connection) {
-        inputThread.removeConnection(connection);
-        outThread.removeConnection(connection);
+        channel.addCloseListener(channelCloseListener);
     }
 
     @Override
@@ -95,12 +103,25 @@ public class SpinningEventLoopGroup implements EventLoopGroup {
         logger.info("TcpIpConnectionManager configured with Spinning IO-threading model: "
                 + "1 input thread and 1 output thread");
         inputThread.start();
-        outThread.start();
+        outputThread.start();
     }
 
     @Override
     public void shutdown() {
         inputThread.shutdown();
-        outThread.shutdown();
+        outputThread.shutdown();
+    }
+
+    private class ChannelCloseListenerImpl implements ChannelCloseListener {
+        @Override
+        public void onClose(Channel channel) {
+            SpinningChannel spinningChannel = (SpinningChannel) channel;
+
+            metricsRegistry.deregister(spinningChannel.getReader());
+            metricsRegistry.deregister(spinningChannel.getWriter());
+
+            outputThread.unregister(spinningChannel.getWriter());
+            inputThread.unregister(spinningChannel.getReader());
+        }
     }
 }

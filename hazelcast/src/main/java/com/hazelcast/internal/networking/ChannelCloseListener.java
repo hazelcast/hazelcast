@@ -16,7 +16,17 @@
 
 package com.hazelcast.internal.networking;
 
-public interface IOOutOfMemoryHandler {
+/**
+ * A listener called when a {@link Channel} is closed.
+ *
+ * One of the potential usages is to release resources attached to a channel e.g. deregistration of metrics.
+ */
+public interface ChannelCloseListener {
 
-    void handle(OutOfMemoryError error);
+    /**
+     * Called when the channel is closed.
+     *
+     * @param channel the channel closed.
+     */
+    void onClose(Channel channel);
 }
