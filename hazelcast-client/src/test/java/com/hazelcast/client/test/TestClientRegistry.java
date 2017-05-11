@@ -352,7 +352,7 @@ class TestClientRegistry {
         @Override
         public String toString() {
             return "MockedClientConnection{"
-                    + ", localAddress=" + localAddress
+                    + "localAddress=" + localAddress
                     + ", super=" + super.toString()
                     + '}';
         }
