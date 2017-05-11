@@ -40,7 +40,6 @@ import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.exception.RetryableHazelcastException;

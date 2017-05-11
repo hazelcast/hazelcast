@@ -37,13 +37,13 @@ public class IndexImpl implements Index {
 
     public static final NullObject NULL = new NullObject();
 
-    private final IndexStore indexStore;
-    private final String attributeName;
-    private final boolean ordered;
+    protected final InternalSerializationService ss;
 
     private volatile TypeConverter converter;
 
-    protected final InternalSerializationService ss;
+    private final IndexStore indexStore;
+    private final String attributeName;
+    private final boolean ordered;
     private final Extractors extractors;
 
     public IndexImpl(String attributeName, boolean ordered, InternalSerializationService ss, Extractors extractors) {

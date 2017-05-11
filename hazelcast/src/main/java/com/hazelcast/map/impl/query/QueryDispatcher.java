@@ -84,7 +84,7 @@ final class QueryDispatcher {
     }
 
     private List<Future<Result>> dispatchFullQueryOnLocalMemberOnQueryThread(Query query) {
-        Operation operation = new QueryOperation(query);
+        Operation operation = mapServiceContext.getMapOperationProvider(query.getMapName()).createQueryOperation(query);
         Future<Result> result = operationService.invokeOnTarget(
                 MapService.SERVICE_NAME, operation, nodeEngine.getThisAddress());
         return singletonList(result);
@@ -94,7 +94,7 @@ final class QueryDispatcher {
         Collection<Member> members = clusterService.getMembers(DATA_MEMBER_SELECTOR);
         List<Future<Result>> futures = new ArrayList<Future<Result>>(members.size());
         for (Member member : members) {
-            Operation operation = new QueryOperation(query);
+            Operation operation = mapServiceContext.getMapOperationProvider(query.getMapName()).createQueryOperation(query);
             Future<Result> future = operationService.invokeOnTarget(
                     MapService.SERVICE_NAME, operation, member.getAddress());
             futures.add(future);
@@ -116,7 +116,7 @@ final class QueryDispatcher {
     }
 
     protected Future<Result> dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(Query query, int partitionId) {
-        Operation op = new QueryPartitionOperation(query);
+        Operation op = mapServiceContext.getMapOperationProvider(query.getMapName()).createQueryPartitionOperation(query);
         op.setPartitionId(partitionId);
         try {
             return operationService.invokeOnPartition(MapService.SERVICE_NAME, op, partitionId);
