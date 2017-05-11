@@ -29,6 +29,7 @@ import net.bytebuddy.jar.asm.Opcodes;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.utility.JavaModule;
 import org.junit.After;
+import org.junit.AssumptionViolatedException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.internal.runners.statements.RunAfters;
@@ -396,12 +397,15 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
             try {
                 next.evaluate();
             } catch (Throwable e) {
-                System.err.println("THREAD DUMP FOR TEST FAILURE: \"" + e.getMessage() + "\" at \"" + method.getName() + "\"\n");
-                try {
-                    System.err.println(generateThreadDump());
-                } catch (Throwable t) {
-                    System.err.println("Unable to get thread dump!");
-                    e.printStackTrace();
+                if (!isJUnitAssumeException(e)) {
+                    System.err.println("THREAD DUMP FOR TEST FAILURE: \"" + e.getMessage()
+                            + "\" at \"" + method.getName() + "\"\n");
+                    try {
+                        System.err.println(generateThreadDump());
+                    } catch (Throwable t) {
+                        System.err.println("Unable to get thread dump!");
+                        e.printStackTrace();
+                    }
                 }
                 errors.add(e);
             } finally {
@@ -414,6 +418,10 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
                 }
             }
             MultipleFailureException.assertEmpty(errors);
+        }
+
+        private boolean isJUnitAssumeException(Throwable e) {
+            return e instanceof AssumptionViolatedException;
         }
     }
 
