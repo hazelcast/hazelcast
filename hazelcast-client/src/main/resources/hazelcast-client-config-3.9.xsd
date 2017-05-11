@@ -459,7 +459,13 @@
             <xs:element name="serializers" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:choice minOccurs="1" maxOccurs="unbounded">
-                        <xs:element name="global-serializer" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="global-serializer" type="global-serializer" minOccurs="0" maxOccurs="1">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Global serializer class to be registered if no other serializer is applicable.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
                         <xs:element name="serializer" type="serializer" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:choice>
                 </xs:complexType>
@@ -478,7 +484,20 @@
         <xs:attribute name="class-name" type="xs:string" use="required"/>
         <xs:attribute name="type-class" type="xs:string" use="required"/>
     </xs:complexType>
-
+    <xs:complexType name="global-serializer">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="override-java-serialization" type="xs:boolean" default="false" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Java Serializable and Externalizable is prior to global serializer by default. If set true
+                            the Java serialization step assumed to be handled by the global serializer.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
     <xs:complexType name="socket-interceptor">
         <xs:all>
             <xs:element name="class-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
