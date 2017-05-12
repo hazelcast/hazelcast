@@ -22,13 +22,13 @@ import com.hazelcast.jet.function.DistributedFunction;
 import javax.annotation.Nonnull;
 
 /**
- * See {@link com.hazelcast.jet.Processors#writeSystemOut()}
+ * See {@link com.hazelcast.jet.Processors#writeLogger()}
  */
-public class WriteSystemOutP extends AbstractProcessor {
+public class WriteLoggerP extends AbstractProcessor {
 
     private DistributedFunction<Object, String> toStringF;
 
-    public WriteSystemOutP(DistributedFunction<Object, String> toStringF) {
+    public WriteLoggerP(DistributedFunction<Object, String> toStringF) {
         this.toStringF = toStringF;
     }
 

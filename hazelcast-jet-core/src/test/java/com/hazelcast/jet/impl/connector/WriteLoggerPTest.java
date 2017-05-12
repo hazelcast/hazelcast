@@ -34,12 +34,12 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class WriteSystemOutPTest {
+public class WriteLoggerPTest {
 
     @Test
     public void test() {
         // Given
-        Processor p = Processors.writeSystemOut().get();
+        Processor p = Processors.writeLogger().get();
         ArrayDequeInbox inbox = new ArrayDequeInbox();
         Outbox outbox = mock(Outbox.class);
         ILogger logger = mock(ILogger.class);

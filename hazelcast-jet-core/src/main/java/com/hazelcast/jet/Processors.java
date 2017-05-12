@@ -22,6 +22,7 @@ import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedFunctions;
 import com.hazelcast.jet.function.DistributedIntFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedSupplier;
@@ -33,13 +34,12 @@ import com.hazelcast.jet.impl.connector.StreamFilesP;
 import com.hazelcast.jet.impl.connector.StreamTextSocketP;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
-import com.hazelcast.jet.impl.connector.WriteSystemOutP;
+import com.hazelcast.jet.impl.connector.WriteLoggerP;
 import com.hazelcast.jet.impl.util.PeekWrappedP;
 import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
 import com.hazelcast.jet.impl.util.WrappingProcessorSupplier;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
@@ -72,11 +72,11 @@ public final class Processors {
 
     /**
      * Returns a meta-supplier of processors that will fetch entries from the
-     * Hazelcast {@code IMap} with the specified name and will emit them as {@code Map.Entry}.
-     * The processors will only access data local to the member and,
-     * if {@code localParallelism} for the vertex is above one,
-     * processors will divide the labor within the member so that
-     * each one gets a subset of all local partitions to read.
+     * Hazelcast {@code IMap} with the specified name and will emit them as
+     * {@code Map.Entry}. The processors will only access data local to the
+     * member and, if {@code localParallelism} for the vertex is above one,
+     * processors will divide the labor within the member so that each one gets
+     * a subset of all local partitions to read.
      * <p>
      * The number of Hazelcast partitions should be configured to at least
      * {@code localParallelism * clusterSize}, otherwise some processors will have
@@ -92,8 +92,8 @@ public final class Processors {
 
     /**
      * Returns a meta-supplier of processors that will fetch entries from a
-     * Hazelcast {@code IMap} in a remote cluster.
-     * Processors will emit the entries as {@code Map.Entry}.
+     * Hazelcast {@code IMap} in a remote cluster. Processors will emit the
+     * entries as {@code Map.Entry}.
      * <p>
      * If the underlying map is concurrently being modified, there are no guarantees
      * given with respect to missing or duplicate items.
@@ -104,8 +104,8 @@ public final class Processors {
     }
 
     /**
-     * Returns a processor supplier that will put data into a Hazelcast {@code IMap}.
-     * Processors expect items of type {@code Map.Entry}.
+     * Returns a processor supplier that will put data into a Hazelcast {@code
+     * IMap}. Processors expect items of type {@code Map.Entry}.
      */
     @Nonnull
     public static ProcessorSupplier writeMap(@Nonnull String mapName) {
@@ -113,9 +113,9 @@ public final class Processors {
     }
 
     /**
-     * Returns a processor supplier that will put data into a Hazelcast {@code IMap} in
-     * a remote cluster.
-     * Processors expect items of type {@code Map.Entry}.
+     * Returns a processor supplier that will put data into a Hazelcast {@code
+     * IMap} in a remote cluster. Processors expect items of type {@code
+     * Map.Entry}.
      */
     @Nonnull
     public static ProcessorSupplier writeMap(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
@@ -124,18 +124,18 @@ public final class Processors {
 
     /**
      * Returns a meta-supplier of processors that will fetch entries from the
-     * Hazelcast {@code ICache} with the specified name and will emit them as {@code Cache.Entry}.
-     * The processors will only access data local to the member and,
-     * if {@code localParallelism} for the vertex is above one,
-     * processors will divide the labor within the member so that
-     * each one gets a subset of all local partitions to read.
+     * Hazelcast {@code ICache} with the specified name and will emit them as
+     * {@code Cache.Entry}. The processors will only access data local to the
+     * member and, if {@code localParallelism} for the vertex is above one,
+     * processors will divide the labor within the member so that each one gets
+     * a subset of all local partitions to read.
      * <p>
      * The number of Hazelcast partitions should be configured to at least
-     * {@code localParallelism * clusterSize}, otherwise some processors will have
-     * no partitions assigned to them.
+     * {@code localParallelism * clusterSize}, otherwise some processors will
+     * have no partitions assigned to them.
      * <p>
-     * If the underlying cache is concurrently being modified, there are no guarantees
-     * given with respect to missing or duplicate items.
+     * If the underlying cache is concurrently being modified, there are no
+     * guarantees given with respect to missing or duplicate items.
      */
     @Nonnull
     public static ProcessorMetaSupplier readCache(@Nonnull String cacheName) {
@@ -144,11 +144,11 @@ public final class Processors {
 
     /**
      * Returns a meta-supplier of processors that will fetch entries from a
-     * Hazelcast {@code ICache} in a remote cluster.
-     * Processors will emit the entries as {@code Cache.Entry}.
+     * Hazelcast {@code ICache} in a remote cluster. Processors will emit the
+     * entries as {@code Cache.Entry}.
      * <p>
-     * If the underlying cache is concurrently being modified, there are no guarantees
-     * given with respect to missing or duplicate items.
+     * If the underlying cache is concurrently being modified, there are no
+     * guarantees given with respect to missing or duplicate items.
      */
     @Nonnull
     public static ProcessorMetaSupplier readCache(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
@@ -156,8 +156,8 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processors that will put data into a Hazelcast {@code ICache}.
-     * Processors expect items of type {@code Map.Entry}
+     * Returns a supplier of processors that will put data into a Hazelcast
+     * {@code ICache}. Processors expect items of type {@code Map.Entry}
      */
     @Nonnull
     public static ProcessorSupplier writeCache(@Nonnull String cacheName) {
@@ -165,9 +165,9 @@ public final class Processors {
     }
 
     /**
-     * Returns a processor supplier that will put data into a Hazelcast {@code ICache} in
-     * a remote cluster.
-     * Processors expect items of type {@code Map.Entry}.
+     * Returns a processor supplier that will put data into a Hazelcast {@code
+     * ICache} in a remote cluster. Processors expect items of type {@code
+     * Map.Entry}.
      */
     @Nonnull
     public static ProcessorSupplier writeCache(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
@@ -175,10 +175,9 @@ public final class Processors {
     }
 
     /**
-     * Returns a meta-supplier of processors that emit items retrieved from an IMDG IList.
-     * <p>
-     * Note, that all elements from the list are emitted on single member, as the IMDG's list
-     * structure isn't distributed.
+     * Returns a meta-supplier of processors that emit items retrieved from an
+     * IMDG IList. Note that all elements from the list are emitted on a single
+     * member &mdash; the one where the entire list is stored by the IMDG.
      */
     @Nonnull
     public static ProcessorMetaSupplier readList(@Nonnull String listName) {
@@ -186,11 +185,10 @@ public final class Processors {
     }
 
     /**
-     * Returns a meta-supplier of processors that emit items retrieved from an IMDG IList
-     * in a remote cluster.
-     * <p>
-     * Note, that all elements from the list are emitted on single member, as the IMDG's list
-     * structure isn't distributed.
+     * Returns a meta-supplier of processors that emit items retrieved from an
+     * IMDG IList in a remote cluster. Note that all elements from the list are
+     * emitted on a single member &mdash; the one where the entire list is
+     * stored by the IMDG.
      */
     @Nonnull
     public static ProcessorMetaSupplier readList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
@@ -198,7 +196,8 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processors that write received items to an IMDG IList.
+     * Returns a supplier of processors that write received items to an IMDG
+     * {@code IList}.
      */
     @Nonnull
     public static ProcessorSupplier writeList(@Nonnull String listName) {
@@ -206,8 +205,8 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processors that write received items to an IMDG IList in
-     * a remote cluster.
+     * Returns a supplier of processors that write received items to an IMDG
+     * {@code IList} in a remote cluster.
      */
     @Nonnull
     public static ProcessorSupplier writeList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
@@ -216,12 +215,12 @@ public final class Processors {
 
 
     /**
-     * Returns a supplier of processor which drains all items from
-     * an inbox to a intermediate buffer and then flushes that buffer.
+     * Returns a supplier of processor which drains all items from the inbox
+     * to an intermediate buffer and then flushes the buffer. This is a useful
+     * building block to implement sinks with explicit control over buffering
+     * and flushing.
      *
-     * Useful for implementing sinks where the data should only be flushed
-     * after the inbox has been drained.
-     *  @param <B> type of buffer
+     * @param <B> type of buffer
      * @param <T> type of received item
      * @param newBuffer supplies the buffer. Supplier argument is the global processor index
      * @param addToBuffer adds item to buffer
@@ -237,16 +236,16 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processor which drains all items from
-     * an inbox to a intermediate buffer and then flushes that buffer.
+     * Returns a supplier of processor which drains all items from the inbox
+     * to an intermediate buffer and then flushes the buffer. The buffer will
+     * be disposed via {@code disposeBuffer} once the processor is completed.
+     * <p>
+     * This is a useful building block to implement sinks with explicit control
+     * over buffering and flushing.
      *
-     * The buffer will be disposed via {@code disposeBuffer} once the processor
-     * is completed
-     * Useful for implementing sinks where the data should only be flushed
-     * after the inbox has been drained.
-     *  @param <B> type of buffer
+     * @param <B> type of buffer
      * @param <T> type of received item
-     * @param newBuffer supplies the buffer. Supplier argument is the global processor index
+     * @param newBuffer supplies the buffer. Supplier argument is the global processor index.
      * @param addToBuffer adds item to buffer
      * @param flushBuffer flushes the buffer
      * @param disposeBuffer disposes of the buffer
@@ -262,7 +261,8 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processors that connect to specified socket and write the items as text
+     * Returns a supplier of processors that connect to specified socket and
+     * write the items as text.
      */
     public static DistributedSupplier<Processor> writeSocket(@Nonnull String host, int port) {
         return writeBuffered(
@@ -279,7 +279,8 @@ public final class Processors {
     }
 
     /**
-     * Create processor with UTF-8 character set.
+     * Creates a socket source using the UTF-8 character set.
+     *
      * @see #streamTextSocket(String, int, Charset)
      */
     @Nonnull
@@ -288,15 +289,16 @@ public final class Processors {
     }
 
     /**
-     * A reader that connects to a specified socket and reads and emits text line by line.
-     * This processor expects a server-side socket to be available to connect to.
+     * A source that connects to a specified socket and reads and emits text
+     * line by line. This processor expects a server-side socket to be
+     * available to connect to.
      * <p>
-     * Each processor instance will create a socket connection to the configured [host:port],
-     * so there will be {@code clusterSize * localParallelism} connections. The server
-     * should do the load-balancing.
+     * Each processor instance will create a socket connection to the configured
+     * [host:port], so there will be {@code clusterSize * localParallelism}
+     * connections. The server should do the load-balancing.
      * <p>
-     * The processor will complete, when the socket is closed by the server. No reconnection
-     * is attempted.
+     * The processor will complete when the socket is closed by the server.
+     * No reconnection is attempted.
      *
      * @param host The host name to connect to
      * @param port The port number to connect to
@@ -310,8 +312,8 @@ public final class Processors {
     }
 
     /**
-     * Convenience for {@link #readFiles(String, Charset, String)} with default
-     * charset (UTF-8) and default glob (match all files).
+     * Convenience for {@link #readFiles(String, Charset, String)} with the
+     * default charset (UTF-8) and the default glob pattern (match all files).
      */
     @Nonnull
     public static ProcessorSupplier readFiles(@Nonnull String directory) {
@@ -319,15 +321,21 @@ public final class Processors {
     }
 
     /**
-     * A processor that emits lines from all files in a directory (but not its
+     * A source that emits lines from all files in a directory (but not its
      * subdirectories), or only the files matching the supplied {@code glob}
-     * expression. The files must not change while being read; if they do, the
+     * pattern. The files must not change while being read; if they do, the
      * behavior is unspecified. There will be no indication which file a
      * particular line comes from.
      * <p>
      * The same pathname should be available on all members, but it should not
      * contain the same files &mdash; (e.g., it shouldn't resolve to a
      * directory shared over the network).
+     * <p>
+     * Since the work of this processor is file IO-intensive, {@link
+     * Vertex#localParallelism(int) local parallelism} of the vertex should be
+     * set according to the performance characteristics of the underlying
+     * storage system. Typical values are in the range of 1 to 4. If just a
+     * single file is read, it is always read by single thread.
      *
      * @param directory parent directory of the files
      * @param charset charset to use to decode the files
@@ -343,20 +351,19 @@ public final class Processors {
     }
 
     /**
-     * Convenience for {@link #streamFiles(String, Charset, String)} with
-     * default charset (UTF-8) and default glob (match all files).
+     * Convenience for {@link #streamFiles(String, Charset, String)} with the
+     * default charset (UTF-8) and the default glob pattern (match all files).
      */
     public static ProcessorSupplier streamFiles(@Nonnull String watchedDirectory) {
         return streamFiles(watchedDirectory, StandardCharsets.UTF_8, "*");
     }
 
     /**
-     * A source processor that generates a stream of lines of text coming from
-     * files in the watched directory (but not its subdirectories). It will
-     * pick up both newly created files and content appended to pre-existing
-     * files. It processor expects the file content not to change once
-     * appended. There will be no indication which file a particular line comes
-     * from.
+     * A source that generates a stream of lines of text coming from files in
+     * the watched directory (but not its subdirectories). It will pick up both
+     * newly created files and content appended to pre-existing files. It
+     * expects the file content not to change once appended. There will be no
+     * indication which file a particular line comes from.
      * <p>
      * The processor will scan pre-existing files for file sizes on startup and
      * process them from that position. It will ignore the first line if the
@@ -367,10 +374,14 @@ public final class Processors {
      * contain the same files &mdash; (e.g., it shouldn't resolve to a
      * directory shared over the network).
      * <p>
-     * Multiple processor instances read multiple files in parallel. Single
-     * file is always read by one processor instance. When a change is detected
-     * the file is opened, appended lines are read and file is closed. This
-     * process is repeated as necessary.
+     * Since the work of this processor is file IO-intensive, {@link
+     * Vertex#localParallelism(int) local parallelism} of the vertex should be
+     * set according to the performance characteristics of the underlying
+     * storage system. Typical values are in the range of 1 to 4. If just a
+     * single file is read, it is always read by single thread.
+     * <p>
+     * When a change is detected the file is opened, appended lines are read
+     * and file is closed. This process is repeated as necessary.
      * <p>
      * The processor completes when the directory is deleted. However, in order
      * to delete the directory, all files in it must be deleted and if you
@@ -378,12 +389,21 @@ public final class Processors {
      * an {@code IOException}. The directory must be deleted on all nodes.
      * <p>
      * Any {@code IOException} will cause the job to fail.
-     * <p>
-     * <strong>Note:</strong> the underlying JDK API, {@link
-     * java.nio.file.WatchService}, has a history of unreliability and this
-     * processor may experience infinite blocking, missed, or duplicate events
-     * as a result. Such problems may be resolved by upgrading the JRE to the
-     * latest version.
+     *
+     * <h3>Limitation on Windows</h3>
+     * On Windows the {@code WatchService} is not notified of appended lines
+     * until the file is closed. If the writer keeps the file open while
+     * appending (which is typical), the processor may fail to observe the
+     * changes. It will be notified if any process tries to open that file,
+     * such as looking at the file in Explorer. This holds for Windows 10 with
+     * the NTFS file system and might change in future. You are advised to do
+     * your own testing on your target Windows platform.
+     *
+     * <h3>Use the latest JRE</h3>
+     * The underlying JDK API ({@link java.nio.file.WatchService}) has a
+     * history of unreliability and this processor may experience infinite
+     * blocking, missed, or duplicate events as a result. Such problems may be
+     * resolved by upgrading the JRE to the latest version.
      *
      * @param watchedDirectory The directory where we watch files
      * @param charset charset to use to decode the files
@@ -399,28 +419,29 @@ public final class Processors {
 
     /**
      * Convenience for {@link #writeFile(String, DistributedFunction, Charset,
-     * boolean)} with UTF-8 charset and with overwriting of existing files.
+     * boolean)} with the UTF-8 charset and with overwriting of existing files.
      *
      * @param directoryName directory to create the files in. Will be created,
      *                      if it doesn't exist. Must be the same on all nodes.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeFile(@Nonnull String directoryName) {
-        return writeFile(directoryName, null, null, false);
+        return writeFile(directoryName, Object::toString, StandardCharsets.UTF_8, false);
     }
 
     /**
      * Convenience for {@link #writeFile(String, DistributedFunction, Charset,
-     * boolean)} with UTF-8 charset and with overwriting of existing files.
+     * boolean)} with the UTF-8 charset and with overwriting of existing files.
      *
      * @param directoryName directory to create the files in. Will be created,
      *                      if it doesn't exist. Must be the same on all nodes.
+     * @param toStringF a function to convert items to String (a formatter).
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeFile(
-            @Nonnull String directoryName, @Nullable DistributedFunction<T, String> toStringF
+            @Nonnull String directoryName, @Nonnull DistributedFunction<T, String> toStringF
     ) {
-        return writeFile(directoryName, toStringF, null, false);
+        return writeFile(directoryName, toStringF, StandardCharsets.UTF_8, false);
     }
 
     /**
@@ -428,8 +449,8 @@ public final class Processors {
      * file on each member. {@code item.toString()} is written to the file,
      * followed by a platform-specific line separator.
      * <p>
-     * The same file must be available for writing on all nodes. The file on
-     * each node will contain part of the data processed on that member.
+     * The same pathname must be available for writing on all nodes. The file
+     * on each node will contain part of the data processed on that member.
      * <p>
      * Since the work of this processor is file IO-intensive, {@link
      * Vertex#localParallelism(int) local parallelism} of the vertex should be
@@ -438,27 +459,25 @@ public final class Processors {
      *
      * @param directoryName directory to create the files in. Will be created,
      *                      if it doesn't exist. Must be the same on all nodes.
-     * @param toStringF A function to convert items to String (a formatter), or
-     *                {@code null} to use {@code toString()}
-     * @param charset charset used to encode the file output, or {@code null}
-     *                to use UTF-8
+     * @param toStringF a function to convert items to String (a formatter)
+     * @param charset charset used to encode the file output
      * @param append whether to append or overwrite the file
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeFile(
             @Nonnull String directoryName,
-            @Nullable DistributedFunction<T, String> toStringF,
-            @Nullable Charset charset,
+            @Nonnull DistributedFunction<T, String> toStringF,
+            @Nonnull Charset charset,
             boolean append
     ) {
-        return WriteFileP.supplier(directoryName, toStringF, charset == null ? null : charset.name(), append);
+        return WriteFileP.supplier(directoryName, toStringF, charset.name(), append);
     }
 
     /**
-     * Returns a supplier of processor which, for each received item, emits the result
-     * of applying the given mapping function to it. If the result is {@code null},
-     * nothing will be emitted. Therefore this processor can be used to implement
-     * filtering semantics as well.
+     * Returns a supplier of processor which, for each received item, emits the
+     * result of applying the given mapping function to it. If the result is
+     * {@code null}, nothing will be emitted. Therefore this processor can be
+     * used to implement filtering semantics as well.
      *
      * @param mapper the mapping function
      * @param <T> type of received item
@@ -843,33 +862,36 @@ public final class Processors {
     }
 
     /**
-     * Convenience for {@link #writeSystemOut(DistributedFunction)} without format.
+     * Convenience for {@link #writeLogger(DistributedFunction)} without format.
      * It will use {@link Object#toString()}.
      */
     @Nonnull
-    public static DistributedSupplier<Processor> writeSystemOut() {
-        return writeSystemOut(Object::toString);
+    public static DistributedSupplier<Processor> writeLogger() {
+        return writeLogger(Object::toString);
     }
 
     /**
-     * Returns a supplier of processors, that sends all events to logger on the
-     * INFO level.
+     * Returns a supplier of processors that logs all items at the INFO level.
+     * {@link Punctuation} items are not logged.
      * <p>
-     * Note, that the event will be logged on the nodes, not on the client.
-     * Useful for testing.
+     * Note that the event will be logged on the cluster members, not on the
+     * client, so it's primarily meant for testing.
+     * <p>
+     * {@link Vertex#localParallelism(int)} Local parallelism} of 1 is
+     * recommended for this vertex.
      *
-     * @param toStringF Function to convert item to String, if {@code null},
-     *                  {@link Object#toString()} is used.
+     * @param toStringF Function to convert item to String.
      */
     @Nonnull
-    public static DistributedSupplier<Processor> writeSystemOut(
+    public static DistributedSupplier<Processor> writeLogger(
             @Nonnull DistributedFunction<Object, String> toStringF
     ) {
-        return () -> new WriteSystemOutP(toStringF);
+        return () -> new WriteLoggerP(toStringF);
     }
 
     /**
-     * See {@link #peekInput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)}
+     * See {@link #peekInput(DistributedFunction, DistributedPredicate,
+     * ProcessorMetaSupplier)}
      */
     @Nonnull
     public static DistributedSupplier<Processor> peekInput(@Nonnull DistributedSupplier<Processor> wrapped) {
@@ -877,7 +899,8 @@ public final class Processors {
     }
 
     /**
-     * See {@link #peekInput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)}
+     * See {@link #peekInput(DistributedFunction, DistributedPredicate,
+     * ProcessorMetaSupplier)}
      */
     @Nonnull
     public static DistributedSupplier<Processor> peekInput(
@@ -888,7 +911,8 @@ public final class Processors {
     }
 
     /**
-     * See {@link #peekInput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)}
+     * See {@link #peekInput(DistributedFunction, DistributedPredicate,
+     * ProcessorMetaSupplier)}
      */
     @Nonnull
     public static ProcessorSupplier peekInput(@Nonnull ProcessorSupplier wrapped) {
@@ -896,7 +920,8 @@ public final class Processors {
     }
 
     /**
-     * See {@link #peekInput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)}
+     * See {@link #peekInput(DistributedFunction, DistributedPredicate,
+     * ProcessorMetaSupplier)}
      */
     @Nonnull
     public static ProcessorSupplier peekInput(
@@ -908,7 +933,8 @@ public final class Processors {
     }
 
     /**
-     * See {@link #peekInput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)}
+     * See {@link #peekInput(DistributedFunction, DistributedPredicate,
+     * ProcessorMetaSupplier)}
      */
     @Nonnull
     public static ProcessorMetaSupplier peekInput(@Nonnull ProcessorMetaSupplier wrapped) {
@@ -916,17 +942,17 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier, that wraps the provided {@link
-     * ProcessorMetaSupplier}, so that all input events are logged, when they
-     * are removed from the {@link Inbox}. Events are logged at the INFO level
-     * to the following logger: {@link PeekWrappedP}.
+     * Returns a meta-supplier that will add logging to the created processors.
+     * Each item the processor removes from the inbox will be logged. Items are
+     * logged at the INFO level to the following logging category: {@link
+     * PeekWrappedP}.
      *
-     * @param toStringF Function to convert items to String, if {@code null},
-     *                  {@link Object#toString()} is used.
-     * @param shouldLogF Function to filter logged items. If {@code null}, all
-     *                   items are logged. <b>Warning:</b> Function will see
-     *                   both items and {@link Punctuation}
-     * @param wrapped The wrapped supplier.
+     * @param toStringF function that returns the string representation of the item
+     * @param shouldLogF function to filter logged items. Use
+     *                   {@link DistributedFunctions#alwaysTrue()} if you don't want to filter.
+     *                   <b>Warning:</b> The function will see all items, including {@link
+     *                   Punctuation}s.
+     * @param wrapped The wrapped meta-supplier.
      *
      * @see #peekOutput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
      */
@@ -940,7 +966,8 @@ public final class Processors {
     }
 
     /**
-     * See {@link #peekOutput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)}
+     * See {@link #peekOutput(DistributedFunction, DistributedPredicate,
+     * ProcessorMetaSupplier)}
      */
     @Nonnull
     public static DistributedSupplier<Processor> peekOutput(@Nonnull DistributedSupplier<Processor> wrapped) {
@@ -948,7 +975,8 @@ public final class Processors {
     }
 
     /**
-     * See {@link #peekOutput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)}
+     * See {@link #peekOutput(DistributedFunction, DistributedPredicate,
+     * ProcessorMetaSupplier)}
      */
     @Nonnull
     public static DistributedSupplier<Processor> peekOutput(
@@ -967,7 +995,8 @@ public final class Processors {
     }
 
     /**
-     * See {@link #peekOutput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)}
+     * See {@link #peekOutput(DistributedFunction, DistributedPredicate,
+     * ProcessorMetaSupplier)}
      */
     @Nonnull
     public static ProcessorSupplier peekOutput(
@@ -979,7 +1008,8 @@ public final class Processors {
     }
 
     /**
-     * See {@link #peekOutput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)}
+     * See {@link #peekOutput(DistributedFunction, DistributedPredicate,
+     * ProcessorMetaSupplier)}
      */
     @Nonnull
     public static ProcessorMetaSupplier peekOutput(@Nonnull ProcessorMetaSupplier wrapped) {
@@ -987,17 +1017,17 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier, that wraps the provided {@link
-     * ProcessorMetaSupplier}, so that all output events are logged, when they
-     * are accepted by the {@link Outbox}. Events are logged at the INFO level
-     * to the following logger: {@link PeekWrappedP}.
+     * Returns a meta-supplier that will add logging to the created processors.
+     * Each item the processor adds to the outbox will be logged. Items are
+     * logged at the INFO level to the following logging category: {@link
+     * PeekWrappedP}.
      *
-     * @param toStringF Function to convert items to String, if {@code null},
-     *                  {@link Object#toString()} is used.
-     * @param shouldLogF Function to filter logged items. If {@code null}, all
-     *                   items are logged. <b>Warning:</b> Function will see
-     *                   both items and {@link Punctuation}
-     * @param wrapped The wrapped supplier.
+     * @param toStringF Function to convert items to String.
+     * @param shouldLogF function to filter logged items. Use
+     *                   {@link DistributedFunctions#alwaysTrue()} if you don't want to filter.
+     *                   <b>Warning:</b> The function will see all items, including {@link
+     *                   Punctuation}s.
+     * @param wrapped The wrapped meta-supplier.
      *
      * @see #peekInput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
      */
