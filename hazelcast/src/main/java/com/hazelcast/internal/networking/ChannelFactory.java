@@ -23,5 +23,11 @@ import java.nio.channels.SocketChannel;
  */
 public interface ChannelFactory {
 
+    /**
+     * Creates the Channel.
+     *
+     * Currently this interface is suboptimal. It imposes a SocketChanel as a basis. Probably once the TLS is integrated
+     * directly in the pipeline of the Channel, this whole factory can be dropped.
+     */
     Channel create(SocketChannel channel, boolean client, boolean directBuffer) throws Exception;
 }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.networking;
 
-import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.ascii.TextChannelInboundHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 

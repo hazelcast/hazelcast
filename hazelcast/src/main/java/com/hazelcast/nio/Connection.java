@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.net.InetAddress;
@@ -128,7 +129,7 @@ public interface Connection {
      * If the Connection is already closed, the call is ignored. So it can safely be called multiple times.
      *
      * @param reason the reason this connection is going to be closed. Is allowed to be null.
-     * @param cause the Throwable responsible for closing this connection. Is allowed to be null.
+     * @param cause  the Throwable responsible for closing this connection. Is allowed to be null.
      */
     void close(String reason, Throwable cause);
 

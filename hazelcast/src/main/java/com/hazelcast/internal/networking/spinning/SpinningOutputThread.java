@@ -26,22 +26,21 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
 
 public class SpinningOutputThread extends Thread {
 
-    private static final SocketWriters SHUTDOWN = new SocketWriters();
-    private static final AtomicReferenceFieldUpdater<SpinningOutputThread, SocketWriters> CONNECTION_HANDLERS
-            = newUpdater(SpinningOutputThread.class, SocketWriters.class, "socketWriters");
+    private static final ChannelWriters SHUTDOWN = new ChannelWriters();
+    private static final AtomicReferenceFieldUpdater<SpinningOutputThread, ChannelWriters> CONNECTION_HANDLERS
+            = newUpdater(SpinningOutputThread.class, ChannelWriters.class, "channelWriters");
 
-    private volatile SocketWriters socketWriters;
+    private volatile ChannelWriters channelWriters = new ChannelWriters();
 
     public SpinningOutputThread(String hzName) {
         super(ThreadUtil.createThreadName(hzName, "out-thread"));
-        this.socketWriters = new SocketWriters();
     }
 
     void addConnection(ChannelConnection connection) {
         SpinningChannelWriter writer = (SpinningChannelWriter) connection.getChannelWriter();
 
         for (; ; ) {
-            SocketWriters current = socketWriters;
+            ChannelWriters current = channelWriters;
             if (current == SHUTDOWN) {
                 return;
             }
@@ -52,7 +51,7 @@ public class SpinningOutputThread extends Thread {
             arraycopy(current.writers, 0, newWriters, 0, length);
             newWriters[length] = writer;
 
-            SocketWriters update = new SocketWriters(newWriters);
+            ChannelWriters update = new ChannelWriters(newWriters);
             if (CONNECTION_HANDLERS.compareAndSet(this, current, update)) {
                 return;
             }
@@ -60,15 +59,15 @@ public class SpinningOutputThread extends Thread {
     }
 
     void removeConnection(ChannelConnection connection) {
-        SpinningChannelWriter writeHandlers = (SpinningChannelWriter) connection.getChannelWriter();
+        SpinningChannelWriter writer = (SpinningChannelWriter) connection.getChannelWriter();
 
         for (; ; ) {
-            SocketWriters current = socketWriters;
+            ChannelWriters current = channelWriters;
             if (current == SHUTDOWN) {
                 return;
             }
 
-            int indexOf = current.indexOf(writeHandlers);
+            int indexOf = current.indexOf(writer);
             if (indexOf == -1) {
                 return;
             }
@@ -84,7 +83,7 @@ public class SpinningOutputThread extends Thread {
                 }
             }
 
-            SocketWriters update = new SocketWriters(newWriters);
+            ChannelWriters update = new ChannelWriters(newWriters);
             if (CONNECTION_HANDLERS.compareAndSet(this, current, update)) {
                 return;
             }
@@ -92,20 +91,20 @@ public class SpinningOutputThread extends Thread {
     }
 
     public void shutdown() {
-        socketWriters = SHUTDOWN;
+        channelWriters = SHUTDOWN;
         interrupt();
     }
 
     @Override
     public void run() {
         for (; ; ) {
-            SocketWriters handlers = socketWriters;
+            ChannelWriters writers = channelWriters;
 
-            if (handlers == SHUTDOWN) {
+            if (writers == SHUTDOWN) {
                 return;
             }
 
-            for (SpinningChannelWriter writer : handlers.writers) {
+            for (SpinningChannelWriter writer : writers.writers) {
                 try {
                     writer.write();
                 } catch (Throwable t) {
@@ -115,14 +114,14 @@ public class SpinningOutputThread extends Thread {
         }
     }
 
-    private static class SocketWriters {
+    private static class ChannelWriters {
         final SpinningChannelWriter[] writers;
 
-        SocketWriters() {
+        ChannelWriters() {
             this(new SpinningChannelWriter[0]);
         }
 
-        SocketWriters(SpinningChannelWriter[] writers) {
+        ChannelWriters(SpinningChannelWriter[] writers) {
             this.writers = writers;
         }
 

@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
-
-import com.hazelcast.spi.annotation.PrivateApi;
+package com.hazelcast.internal.networking;
 
 /**
- * Represents something that can be written to a {@link com.hazelcast.nio.Connection}.
+ * Represents something that can be written to a {@link Channel}
  *
  * There are different types of OutboundFrame:
  * <ol>
- *     <li>Packet: for member to member and old-client to member communication</li>
- *     <li>TextMessage: for memcached and rest communication</li>
- *     <li>ClientMessage: for the new client to member communication</li>
+ * <li>Packet: for member to member and old-client to member communication</li>
+ * <li>TextMessage: for memcached and rest communication</li>
+ * <li>ClientMessage: for the new client to member communication</li>
  * </ol>
  *
  * Till so far, all communication over a single connection, will be of a single Frame-class. E.g. member
@@ -34,9 +32,8 @@ import com.hazelcast.spi.annotation.PrivateApi;
  * There is no need for an InboundFrame interface.
  *
  * @see com.hazelcast.nio.serialization.Data
- * @see Connection#write(OutboundFrame)
+ * @see Channel#write(OutboundFrame)
  */
-@PrivateApi
 public interface OutboundFrame {
 
     /**

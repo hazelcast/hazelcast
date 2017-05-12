@@ -21,8 +21,8 @@ import com.hazelcast.client.impl.protocol.util.ClientProtocolBuffer;
 import com.hazelcast.client.impl.protocol.util.MessageFlyweight;
 import com.hazelcast.client.impl.protocol.util.SafeBuffer;
 import com.hazelcast.client.impl.protocol.util.UnsafeBuffer;
+import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.OutboundFrame;
 
 import java.nio.ByteBuffer;
 

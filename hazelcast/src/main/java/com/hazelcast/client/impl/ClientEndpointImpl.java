@@ -65,7 +65,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         this.connection = connection;
         if (connection instanceof TcpIpConnection) {
             TcpIpConnection tcpIpConnection = (TcpIpConnection) connection;
-            socketAddress = tcpIpConnection.getChannel().getRemoteSocketAddress();
+            socketAddress = tcpIpConnection.getRemoteSocketAddress();
         } else {
             socketAddress = null;
         }

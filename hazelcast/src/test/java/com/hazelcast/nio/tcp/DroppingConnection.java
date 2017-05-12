@@ -16,11 +16,11 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
