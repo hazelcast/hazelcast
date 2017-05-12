@@ -96,8 +96,7 @@ public interface WindowOperation<T, A, R> extends Serializable {
      * frames into sliding window and <i>deduct</i> old frames, as the window
      * slides. Without it, we always have to combine all frames for each window
      * slide, which gets worse, when the window is sled by small increments
-     * (with regard to window length). For tumbling windows, it makes no
-     * difference.
+     * (with regard to window length). For tumbling windows, it is never used.
      */
     @Nullable
     DistributedBinaryOperator<A> deductAccumulatorF();
@@ -112,22 +111,23 @@ public interface WindowOperation<T, A, R> extends Serializable {
     /**
      * Returns a new {@code WindowOperation} object composed from the provided
      * primitives.
-     *  @param <T> the type of the stream item
+     *
+     * @param <T> the type of the stream item
      * @param <A> the type of the accumulator
      * @param <R> the type of the final result
+     *
      * @param createAccumulatorF see {@link #createAccumulatorF()}()
      * @param accumulateItemF see {@link #accumulateItemF()}
      * @param combineAccumulatorsF see {@link #combineAccumulatorsF()}
      * @param deductAccumulatorF see {@link #deductAccumulatorF()}
      * @param finishAccumulationF see {@link #finishAccumulationF()}
-*
      */
     @Nonnull
-    static <T, A, R> WindowOperation<T, A, R> of(DistributedSupplier<A> createAccumulatorF,
-                                                 DistributedBiFunction<A, T, A> accumulateItemF,
-                                                 DistributedBinaryOperator<A> combineAccumulatorsF,
-                                                 DistributedBinaryOperator<A> deductAccumulatorF,
-                                                 DistributedFunction<A, R> finishAccumulationF
+    static <T, A, R> WindowOperation<T, A, R> of(@Nonnull DistributedSupplier<A> createAccumulatorF,
+                                                 @Nonnull DistributedBiFunction<A, T, A> accumulateItemF,
+                                                 @Nonnull DistributedBinaryOperator<A> combineAccumulatorsF,
+                                                 @Nullable DistributedBinaryOperator<A> deductAccumulatorF,
+                                                 @Nonnull DistributedFunction<A, R> finishAccumulationF
     ) {
         Objects.requireNonNull(createAccumulatorF);
         Objects.requireNonNull(accumulateItemF);
@@ -144,7 +144,7 @@ public interface WindowOperation<T, A, R> extends Serializable {
      * of a sliding window computation, see {@link #deductAccumulatorF()}
      */
     @Nonnull
-    static <T, A, R> WindowOperation<T, A, R> fromCollector(DistributedCollector<T, A, R> c) {
+    static <T, A, R> WindowOperation<T, A, R> fromCollector(@Nonnull DistributedCollector<T, A, R> c) {
         return of(c.supplier(),
                 (a, v) -> {
                     c.accumulator().accept(a, v);

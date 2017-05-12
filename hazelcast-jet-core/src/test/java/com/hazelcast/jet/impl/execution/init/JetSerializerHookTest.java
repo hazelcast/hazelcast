@@ -20,6 +20,8 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.jet.accumulator.DoubleAccumulator;
 import com.hazelcast.jet.accumulator.LinTrendAccumulator;
 import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.accumulator.LongDoubleAccumulator;
+import com.hazelcast.jet.accumulator.LongLongAccumulator;
 import com.hazelcast.jet.accumulator.MutableReference;
 import com.hazelcast.jet.windowing.TimestampedEntry;
 import com.hazelcast.nio.serialization.Data;
@@ -64,7 +66,9 @@ public class JetSerializerHookTest {
                 new DoubleAccumulator(3),
                 new MutableReference<>("foo"),
                 new LinTrendAccumulator(7,
-                        BigInteger.valueOf(9), BigInteger.valueOf(11), BigInteger.valueOf(13), BigInteger.valueOf(15))
+                        BigInteger.valueOf(9), BigInteger.valueOf(11), BigInteger.valueOf(13), BigInteger.valueOf(15)),
+                new LongLongAccumulator(2, 3),
+                new LongDoubleAccumulator(3, 4.5)
         );
     }
 

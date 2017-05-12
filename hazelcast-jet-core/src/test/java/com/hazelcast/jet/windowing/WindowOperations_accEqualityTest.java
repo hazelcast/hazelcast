@@ -29,9 +29,16 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static com.hazelcast.jet.function.DistributedComparator.naturalOrder;
+import static com.hazelcast.jet.windowing.WindowOperations.allOf;
+import static com.hazelcast.jet.windowing.WindowOperations.averagingDouble;
+import static com.hazelcast.jet.windowing.WindowOperations.averagingLong;
 import static com.hazelcast.jet.windowing.WindowOperations.counting;
 import static com.hazelcast.jet.windowing.WindowOperations.linearTrend;
+import static com.hazelcast.jet.windowing.WindowOperations.maxBy;
+import static com.hazelcast.jet.windowing.WindowOperations.minBy;
 import static com.hazelcast.jet.windowing.WindowOperations.reducing;
+import static com.hazelcast.jet.windowing.WindowOperations.summingToDouble;
 import static com.hazelcast.jet.windowing.WindowOperations.summingToLong;
 import static org.junit.Assert.assertEquals;
 
@@ -47,8 +54,14 @@ public class WindowOperations_accEqualityTest {
     public static Collection<WindowOperation<?, ?, ?>> data() {
         return Arrays.asList(
                 counting(),
-                summingToLong(),
+                summingToLong(Long::longValue),
+                summingToDouble(Double::doubleValue),
+                averagingLong(Long::longValue),
+                averagingDouble(Double::doubleValue),
+                minBy(naturalOrder()),
+                maxBy(naturalOrder()),
                 linearTrend(x -> 1L, x -> 1L),
+                allOf(counting(), summingToLong(Long::longValue)),
                 reducing(1, null, null, null)
         );
     }

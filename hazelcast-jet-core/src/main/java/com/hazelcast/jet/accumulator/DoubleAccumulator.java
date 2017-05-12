@@ -68,4 +68,28 @@ public class DoubleAccumulator {
     public String toString() {
         return "DoubleAccumulator(" + value + ')';
     }
+
+    /**
+     * Adds the value of to this objects' value.
+     */
+    public  DoubleAccumulator add(double v) {
+        value += v;
+        return this;
+    }
+
+    /**
+     * Adds the value of the supplied accumulator to this one.
+     */
+    public DoubleAccumulator add(DoubleAccumulator that) {
+        value += that.value;
+        return this;
+    }
+
+    /**
+     * Subtracts the value of the supplied accumulator from this one.
+     */
+    public DoubleAccumulator subtract(DoubleAccumulator that) {
+        value -= that.value;
+        return this;
+    }
 }

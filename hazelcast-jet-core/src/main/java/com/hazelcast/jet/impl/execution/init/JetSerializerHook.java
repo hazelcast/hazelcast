@@ -20,6 +20,8 @@ import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.jet.accumulator.DoubleAccumulator;
 import com.hazelcast.jet.accumulator.LinTrendAccumulator;
 import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.accumulator.LongDoubleAccumulator;
+import com.hazelcast.jet.accumulator.LongLongAccumulator;
 import com.hazelcast.jet.accumulator.MutableReference;
 import com.hazelcast.jet.windowing.TimestampedEntry;
 import com.hazelcast.nio.ObjectDataInput;
@@ -52,6 +54,8 @@ public final class JetSerializerHook {
     public static final int DOUBLE_ACC = -305;
     public static final int MUTABLE_REFERENCE = -306;
     public static final int LIN_REG_ACC = -307;
+    public static final int LONG_LONG_ACC = -308;
+    public static final int LONG_DOUBLE_ACC = -309;
 
     // reserved for hadoop module: -380 to -390
 
@@ -341,6 +345,82 @@ public final class JetSerializerHook {
                         bytes[i] = in.readByte();
                     }
                     return new BigInteger(bytes);
+                }
+            };
+        }
+
+        @Override
+        public boolean isOverwritable() {
+            return true;
+        }
+    }
+
+    public static final class LongLongAccSerializer implements SerializerHook<LongLongAccumulator> {
+
+        @Override
+        public Class<LongLongAccumulator> getSerializationType() {
+            return LongLongAccumulator.class;
+        }
+
+        @Override
+        public Serializer createSerializer() {
+            return new StreamSerializer<LongLongAccumulator>() {
+                @Override
+                public int getTypeId() {
+                    return LONG_LONG_ACC;
+                }
+
+                @Override
+                public void destroy() {
+                }
+
+                @Override
+                public void write(ObjectDataOutput out, LongLongAccumulator object) throws IOException {
+                    out.writeLong(object.getValue1());
+                    out.writeLong(object.getValue2());
+                }
+
+                @Override
+                public LongLongAccumulator read(ObjectDataInput in) throws IOException {
+                    return new LongLongAccumulator(in.readLong(), in.readLong());
+                }
+            };
+        }
+
+        @Override
+        public boolean isOverwritable() {
+            return true;
+        }
+    }
+
+    public static final class LongDoubleAccSerializer implements SerializerHook<LongDoubleAccumulator> {
+
+        @Override
+        public Class<LongDoubleAccumulator> getSerializationType() {
+            return LongDoubleAccumulator.class;
+        }
+
+        @Override
+        public Serializer createSerializer() {
+            return new StreamSerializer<LongDoubleAccumulator>() {
+                @Override
+                public int getTypeId() {
+                    return LONG_DOUBLE_ACC;
+                }
+
+                @Override
+                public void destroy() {
+                }
+
+                @Override
+                public void write(ObjectDataOutput out, LongDoubleAccumulator object) throws IOException {
+                    out.writeLong(object.getValue1());
+                    out.writeDouble(object.getValue2());
+                }
+
+                @Override
+                public LongDoubleAccumulator read(ObjectDataInput in) throws IOException {
+                    return new LongDoubleAccumulator(in.readLong(), in.readDouble());
                 }
             };
         }

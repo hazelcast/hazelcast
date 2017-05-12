@@ -16,14 +16,20 @@
 
 package com.hazelcast.jet.windowing;
 
+import com.hazelcast.jet.accumulator.DoubleAccumulator;
 import com.hazelcast.jet.accumulator.LinTrendAccumulator;
 import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.accumulator.LongDoubleAccumulator;
+import com.hazelcast.jet.accumulator.LongLongAccumulator;
 import com.hazelcast.jet.accumulator.MutableReference;
 import com.hazelcast.jet.function.DistributedBinaryOperator;
+import com.hazelcast.jet.function.DistributedComparator;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedToDoubleFunction;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
@@ -40,6 +46,7 @@ public final class WindowOperations {
     /**
      * Returns an operation that tracks the count of items in the window.
      */
+    @Nonnull
     public static WindowOperation<Object, LongAccumulator, Long> counting() {
         return WindowOperation.of(
                 LongAccumulator::new,
@@ -51,26 +58,154 @@ public final class WindowOperations {
     }
 
     /**
-     * Returns an operation that tracks the sum of {@code Long}-typed items in
-     * the window.
+     * Returns an operation that tracks the sum of the quantity returned by
+     * {@code mapToLongF} applied to each item in the window.
+     *
+     * @param <T> Input item type
      */
-    public static WindowOperation<Long, LongAccumulator, Long> summingToLong() {
-        return WindowOperations.summingToLong(Long::longValue);
+    @Nonnull
+    public static <T> WindowOperation<T, LongAccumulator, Long> summingToLong(
+            @Nonnull DistributedToLongFunction<T> mapToLongF
+    ) {
+        return WindowOperation.of(
+                LongAccumulator::new,
+                (a, item) -> a.addExact(mapToLongF.applyAsLong(item)),
+                LongAccumulator::addExact,
+                LongAccumulator::subtractExact,
+                LongAccumulator::get
+        );
     }
 
     /**
      * Returns an operation that tracks the sum of the quantity returned by
-     * {@code getValueF} applied to each item in the window.
+     * {@code mapToDoubleF} applied to each item in the window.
+     *
+     * @param <T> Input item type
      */
-    public static <T> WindowOperation<T, LongAccumulator, Long> summingToLong(
-            @Nonnull DistributedToLongFunction<T> getValueF
+    @Nonnull
+    public static <T> WindowOperation<T, DoubleAccumulator, Double> summingToDouble(
+            @Nonnull DistributedToDoubleFunction<T> mapToDoubleF
     ) {
         return WindowOperation.of(
-                LongAccumulator::new,
-                (a, item) -> a.addExact(getValueF.applyAsLong(item)),
-                LongAccumulator::addExact,
-                LongAccumulator::subtractExact,
-                LongAccumulator::get
+                DoubleAccumulator::new,
+                (a, item) -> a.add(mapToDoubleF.applyAsDouble(item)),
+                DoubleAccumulator::add,
+                DoubleAccumulator::subtract,
+                DoubleAccumulator::get
+        );
+    }
+
+    /**
+     * Returns an operation that returns the minimum item, according the given
+     * {@code comparator}.
+     * <p>
+     * The implementation doesn't have the <i>deduction function </i>. {@link
+     * WindowOperation#deductAccumulatorF() See note here}.
+     *
+     * @param <T> Input item type
+     */
+    @Nonnull
+    public static <T> WindowOperation<T, MutableReference<T>, T> minBy(
+            @Nonnull DistributedComparator<? super T> comparator
+    ) {
+        return maxBy(comparator.reversed());
+    }
+
+    /**
+     * Returns an operation that returns the maximum item, according the given
+     * {@code comparator}.
+     * <p>
+     * The implementation doesn't have the <i>deduction function </i>. {@link
+     * WindowOperation#deductAccumulatorF() See note here}.
+     *
+     * @param <T> Input item type
+     */
+    @Nonnull
+    public static <T> WindowOperation<T, MutableReference<T>, T> maxBy(
+            @Nonnull DistributedComparator<? super T> comparator
+    ) {
+        return WindowOperation.of(
+                MutableReference::new,
+                (a, i) -> {
+                    if (a.get() == null || comparator.compare(i, a.get()) > 0) {
+                        a.set(i);
+                    }
+                    return a;
+                },
+                (a1, a2) -> {
+                    if (comparator.compare(a1.get(), a2.get()) < 0) {
+                        a1.set(a2.get());
+                    }
+                    return a1;
+                },
+                null,
+                MutableReference::get
+        );
+    }
+
+    /**
+     * Returns an operation that calculates the arithmetic mean of {@code long}
+     * values returned by the {@code mapToLongF} function.
+     *
+     * @param <T> Input item type
+     */
+    @Nonnull
+    public static <T> WindowOperation<T, LongLongAccumulator, Double> averagingLong(
+            @Nonnull DistributedToLongFunction<T> mapToLongF
+    ) {
+        // accumulator.value1 is count
+        // accumulator.value2 is sum
+        return WindowOperation.of(
+                LongLongAccumulator::new,
+                (a, i) -> {
+                    a.setValue1(a.getValue1() + 1);
+                    a.setValue2(a.getValue2() + mapToLongF.applyAsLong(i));
+                    return a;
+                },
+                (a1, a2) -> {
+                    a1.setValue1(a1.getValue1() + a2.getValue1());
+                    a1.setValue2(a1.getValue2() + a2.getValue2());
+                    return a1;
+                },
+                (a1, a2) -> {
+                    a1.setValue1(a1.getValue1() - a2.getValue1());
+                    a1.setValue2(a1.getValue2() - a2.getValue2());
+                    return a1;
+                },
+                a -> (double) a.getValue2() / a.getValue1()
+        );
+    }
+
+    /**
+     * Returns an operation that calculates the arithmetic mean of {@code double}
+     * values returned by the {@code mapToDoubleF} function.
+     *
+     * @param <T> Input item type
+     */
+    @Nonnull
+    public static <T> WindowOperation<T, LongDoubleAccumulator, Double> averagingDouble(
+            @Nonnull DistributedToDoubleFunction<T> mapToDoubleF
+    ) {
+        // accumulator.value1 is count
+        // accumulator.value2 is sum
+        return WindowOperation.of(
+                LongDoubleAccumulator::new,
+                (a, i) -> {
+                    a.setValue1(a.getValue1() + 1);
+                    a.setValue2(a.getValue2() + mapToDoubleF.applyAsDouble(i));
+                    return a;
+                },
+                (a1, a2) -> {
+                    a1.setValue1(a1.getValue1() + a2.getValue1());
+                    a1.setValue2(a1.getValue2() + a2.getValue2());
+                    return a1;
+                },
+                (a1, a2) -> {
+                    a1.setValue1(a1.getValue1() - a2.getValue1());
+                    a1.setValue2(a1.getValue2() - a2.getValue2());
+                    return a1;
+                },
+                a -> a.getValue2() / a.getValue1()
         );
     }
 
@@ -81,6 +216,7 @@ public final class WindowOperations {
      * {@code x}, where {@code x} and {@code y} are {@code long} quantities
      * extracted from each item by the two provided functions.
      */
+    @Nonnull
     public static <T> WindowOperation<T, LinTrendAccumulator, Double> linearTrend(
             @Nonnull DistributedToLongFunction<T> getX,
             @Nonnull DistributedToLongFunction<T> getY
@@ -102,9 +238,9 @@ public final class WindowOperations {
      *
      * @param operations Operations to calculate.
      */
-    @SafeVarargs
+    @SafeVarargs @Nonnull
     public static <T> WindowOperation<T, List<Object>, List<Object>> allOf(
-            WindowOperation<? super T, ?, ?> ... operations
+            @Nonnull WindowOperation<? super T, ?, ?> ... operations
     ) {
         WindowOperation[] untypedOps = operations;
 
@@ -179,11 +315,12 @@ public final class WindowOperations {
      * @param <T> type of the stream item
      * @param <U> type of the reduced result
      */
+    @Nonnull
     public static <T, U> WindowOperation<T, MutableReference<U>, U> reducing(
-            U identity,
-            DistributedFunction<? super T, ? extends U> mapF,
-            DistributedBinaryOperator<U> combineF,
-            DistributedBinaryOperator<U> deductF
+            @Nonnull U identity,
+            @Nonnull DistributedFunction<? super T, ? extends U> mapF,
+            @Nonnull DistributedBinaryOperator<U> combineF,
+            @Nullable DistributedBinaryOperator<U> deductF
     ) {
         return new WindowOperationImpl<>(
                 () -> new MutableReference<>(identity),
