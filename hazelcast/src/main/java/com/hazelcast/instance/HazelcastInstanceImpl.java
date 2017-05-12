@@ -55,7 +55,6 @@ import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
-import com.hazelcast.internal.diagnostics.HealthMonitor;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
@@ -110,8 +109,6 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
 
     final ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
 
-    final HealthMonitor healthMonitor;
-
     final HazelcastInstanceCacheManager hazelcastCacheManager;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
@@ -141,7 +138,6 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
             managementService = new ManagementService(this);
             initManagedContext(configuredManagedContext);
 
-            this.healthMonitor = new HealthMonitor(node).start();
             this.hazelcastCacheManager = new HazelcastInstanceCacheManager(this);
             ClassLoader classLoader = node.getConfigClassLoader();
             if (classLoader instanceof HazelcastInstanceAware) {
