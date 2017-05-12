@@ -70,7 +70,7 @@ import static java.lang.String.format;
  * If this is master node, it will handle join request and notify all other members
  * about newly joined member.
  */
-@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:npathcomplexity"})
 public class ClusterJoinManager {
 
     private static final int CLUSTER_OPERATION_RETRY_COUNT = 100;
@@ -512,7 +512,10 @@ public class ClusterJoinManager {
                 return;
             }
 
-            assert !node.getThisAddress().equals(masterAddress) : "Received my address as master address from " + callerAddress;
+            if (node.getThisAddress().equals(masterAddress)) {
+                logger.warning("Received my address as master address from " + callerAddress);
+                return;
+            }
 
             Address currentMaster = clusterService.getMasterAddress();
             if (currentMaster == null || currentMaster.equals(masterAddress)) {
@@ -612,6 +615,11 @@ public class ClusterJoinManager {
             return;
         }
 
+        if (masterAddress.equals(target)) {
+            logger.fine("Cannot send master answer to " + target + " since it is the known master");
+            return;
+        }
+
         MasterResponseOp op = new MasterResponseOp(masterAddress);
         nodeEngine.getOperationService().send(op, target);
     }
@@ -648,10 +656,9 @@ public class ClusterJoinManager {
             return true;
         }
 
-        // remove old member and process join request:
-        // - if this node is master OR
-        // - if requesting address is equal to master node's address, that means the master node somehow disconnected
-        //   and wants to join back, so drop old member and process join request if this node becomes master
+        // If I am the master, I will just suspect from the target. If it sends a new join request, it will be processed.
+        // If I am not the current master, I can turn into the new master and start the claim process
+        // after I suspect from the target.
         if (clusterService.isMaster() || target.equals(clusterService.getMasterAddress())) {
             String msg = format("New join request has been received from an existing endpoint %s."
                     + " Removing old member and processing join request...", member);
@@ -665,7 +672,6 @@ public class ClusterJoinManager {
                 }
                 node.connectionManager.registerConnection(target, connection);
             }
-            return false;
         }
         return true;
     }
