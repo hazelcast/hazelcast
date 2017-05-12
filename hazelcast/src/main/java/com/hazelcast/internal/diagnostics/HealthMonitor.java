@@ -25,6 +25,7 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.util.EmptyStatement;
 
 import java.util.logging.Level;
 
@@ -104,6 +105,21 @@ public class HealthMonitor {
         monitorThread.start();
         logger.finest("HealthMonitor started");
         return this;
+    }
+
+    public void stop() {
+        if (monitorLevel == OFF) {
+            return;
+        }
+
+        monitorThread.interrupt();
+        try {
+            monitorThread.join();
+        } catch (InterruptedException e) {
+            EmptyStatement.ignore(e);
+        }
+        logger.finest("HealthMonitor stopped");
+        return;
     }
 
     private HealthMonitorLevel getHealthMonitorLevel() {
