@@ -59,7 +59,7 @@ public class ChangeClusterStateOperation extends AbstractOperation implements Al
     public void run() throws Exception {
         ClusterServiceImpl service = getService();
         ClusterStateManager clusterStateManager = service.getClusterStateManager();
-        getLogger().info("Changing cluster state state to " + newState + ", Initiator: " + initiator);
+        getLogger().info("Changing cluster state to " + newState + ", Initiator: " + initiator);
         clusterStateManager.commitClusterState(newState, initiator, txnId);
     }
 

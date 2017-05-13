@@ -43,27 +43,60 @@ import static java.util.Collections.sort;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * Responsible for gradual cleanup of expired entries in partitions.
- * By using these system properties, one can accelerate or slow down background expiration process.
+ * This class is responsible for gradual cleanup of expired entries. For this purpose it uses a background task.
+ * <p>
+ * This background task can be accelerated or can be slowed down by using the system properties below:
+ * <p>
+ * <ul>
  * <li>
- * <ul>{@value SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS}</ul>
- * <ul>{@value SYS_PROP_EXPIRATION_CLEANUP_PERCENTAGE}</ul>
- * <ul>{@value SYS_PROP_EXPIRATION_CLEANUP_OPERATION_COUNT}</ul>
+ * {@value com.hazelcast.map.impl.eviction.ExpirationManager#SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS}: A new round is
+ * started after this period of seconds.
+ * Default value is {@value com.hazelcast.map.impl.eviction.ExpirationManager#DEFAULT_EXPIRATION_TASK_PERIOD_SECONDS}
+ * seconds. So every {@value com.hazelcast.map.impl.eviction.ExpirationManager#DEFAULT_EXPIRATION_TASK_PERIOD_SECONDS}
+ * seconds there will be a new round.
  * </li>
+ * <li>
+ * {@value com.hazelcast.map.impl.eviction.ExpirationManager#SYS_PROP_EXPIRATION_CLEANUP_PERCENTAGE}: Scannable percentage
+ * of entries in a maps' partition in each round.
+ * Default percentage is {@value com.hazelcast.map.impl.eviction.ExpirationManager#DEFAULT_EXPIRATION_CLEANUP_PERCENTAGE}%.
+ * </li>
+ * <li>
+ * {@value com.hazelcast.map.impl.eviction.ExpirationManager#SYS_PROP_EXPIRATION_CLEANUP_OPERATION_COUNT}: Number of
+ * scannable partitions in each round. No default value exists. Dynamically calculated against partition-count or
+ * partition-thread-count.
+ * </li>
+ * </ul>
+ * <p>
+ * These parameters can be set node-wide or system-wide
+ * <p>
+ * Node-wide setting example:
+ * <pre>
+ *          Config config = new Config();
+ *          config.setProperty(
+ *          {@value com.hazelcast.map.impl.eviction.ExpirationManager#SYS_PROP_EXPIRATION_CLEANUP_OPERATION_COUNT}, "3");
+ *          Hazelcast.newHazelcastInstance(config);
+ *      </pre>
+ * </p>
+ * <p>
+ * System-wide setting example:
+ * <pre>
+ *       System.setProperty(
+ *       {@value com.hazelcast.map.impl.eviction.ExpirationManager#SYS_PROP_EXPIRATION_CLEANUP_OPERATION_COUNT}, "3");
+ *   </pre>
+ * </p>
  *
  * @since 3.3
  */
 public final class ExpirationManager {
 
-    // These are `default` for testing purposes.
-    static final String SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS = "hazelcast.internal.map.expiration.task.period.seconds";
-    static final String SYS_PROP_EXPIRATION_CLEANUP_PERCENTAGE = "hazelcast.internal.map.expiration.cleanup.percentage";
+    public static final int DEFAULT_EXPIRATION_TASK_PERIOD_SECONDS = 5;
+    public static final int DEFAULT_EXPIRATION_CLEANUP_PERCENTAGE = 10;
+    public static final int DIFFERENCE_BETWEEN_TWO_SUBSEQUENT_PARTITION_CLEANUP_MILLIS = 1000;
+    public static final String SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS = "hazelcast.internal.map.expiration.task.period.seconds";
+    public static final String SYS_PROP_EXPIRATION_CLEANUP_PERCENTAGE = "hazelcast.internal.map.expiration.cleanup.percentage";
     @SuppressWarnings("checkstyle:linelength")
-    static final String SYS_PROP_EXPIRATION_CLEANUP_OPERATION_COUNT = "hazelcast.internal.map.expiration.cleanup.operation.count";
+    public static final String SYS_PROP_EXPIRATION_CLEANUP_OPERATION_COUNT = "hazelcast.internal.map.expiration.cleanup.operation.count";
 
-    private static final int DEFAULT_EXPIRATION_TASK_PERIOD_SECONDS = 5;
-    private static final int DEFAULT_EXPIRATION_CLEANUP_PERCENTAGE = 10;
-    private static final int DIFFERENCE_BETWEEN_TWO_SUBSEQUENT_PARTITION_CLEANUP_MILLIS = 1000;
 
     private final MapServiceContext mapServiceContext;
     private final IPartitionService partitionService;
