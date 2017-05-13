@@ -24,11 +24,11 @@ import com.hazelcast.internal.networking.ChannelConnection;
 import com.hazelcast.internal.networking.ChannelReader;
 import com.hazelcast.internal.networking.ChannelWriter;
 import com.hazelcast.internal.networking.EventLoopGroup;
+import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.OutboundFrame;
 
 import java.io.EOFException;
 import java.net.InetAddress;

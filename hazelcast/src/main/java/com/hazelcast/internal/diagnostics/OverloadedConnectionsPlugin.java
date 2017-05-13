@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.networking.nio.NioChannelWriter;
 import com.hazelcast.internal.networking.spinning.SpinningChannelWriter;
 import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;

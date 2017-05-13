@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.networking;
 
-import com.hazelcast.nio.OutboundFrame;
-
 import java.nio.ByteBuffer;
 
 /**
@@ -42,7 +40,7 @@ public interface ChannelOutboundHandler<F extends OutboundFrame> {
      * it needs to continue.
      *
      * @param frame the Frame to write
-     * @param dst            the destination ByteBuffer
+     * @param dst   the destination ByteBuffer
      * @return true if the Frame is completely written
      * @throws Exception if something fails while writing to ByteBuffer. When an exception is thrown, the TcpIpConnection is
      *                   closed. There is no point continuing with a potentially corrupted stream.

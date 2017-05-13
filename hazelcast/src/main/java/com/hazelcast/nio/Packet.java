@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.spi.annotation.PrivateApi;
 
@@ -52,7 +53,9 @@ public final class Packet extends HeapData implements OutboundFrame {
 
     // 1. URGENT flag
 
-    /** Marks the packet as Urgent  */
+    /**
+     * Marks the packet as Urgent
+     */
     public static final int FLAG_URGENT = 1 << 4;
 
 
@@ -65,31 +68,42 @@ public final class Packet extends HeapData implements OutboundFrame {
     // These are given below. The enum Packet.Type should be used to encode/decode the type from the
     // header flags bitfield.
 
-    /** Packet type bit 0. Historically the OPERATION type flag. */
+    /**
+     * Packet type bit 0. Historically the OPERATION type flag.
+     */
     private static final int FLAG_TYPE0 = 1 << 0;
-    /** Packet type bit 1. Historically the EVENT type flag. */
+    /**
+     * Packet type bit 1. Historically the EVENT type flag.
+     */
     private static final int FLAG_TYPE1 = 1 << 2;
-    /** Packet type bit 2. Historically the BIND type flag. */
+    /**
+     * Packet type bit 2. Historically the BIND type flag.
+     */
     private static final int FLAG_TYPE2 = 1 << 5;
 
     // 3. Type-specific flags. Same bits can be reused within each type
 
     // 3.a Operation packet flags
 
-    /** Marks an Operation packet as Response */
+    /**
+     * Marks an Operation packet as Response
+     */
     public static final int FLAG_OP_RESPONSE = 1 << 1;
-    /** Marks an Operation packet as Operation control (like invocation-heartbeats) */
+    /**
+     * Marks an Operation packet as Operation control (like invocation-heartbeats)
+     */
     public static final int FLAG_OP_CONTROL = 1 << 6;
 
 
     // 3.b Jet packet flags
 
-    /** Marks a Jet packet as Flow control */
+    /**
+     * Marks a Jet packet as Flow control
+     */
     public static final int FLAG_JET_FLOW_CONTROL = 1 << 1;
 
 
     //            END OF HEADER FLAG SECTION
-
 
 
     private static final int HEADER_SIZE = BYTE_SIZE_IN_BYTES + SHORT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES;
@@ -227,6 +241,7 @@ public final class Packet extends HeapData implements OutboundFrame {
     /**
      * Writes the packet data to the supplied {@code ByteBuffer}, up to the buffer's limit. If it returns {@code false},
      * it should be called again to write the remaining data.
+     *
      * @param dst the destination byte buffer
      * @return {@code true} if all the packet's data is now written out; {@code false} otherwise.
      */
@@ -250,6 +265,7 @@ public final class Packet extends HeapData implements OutboundFrame {
     /**
      * Reads the packet data from the supplied {@code ByteBuffer}. The buffer may not contain the complete packet.
      * If this method returns {@code false}, it should be called again to read more packet data.
+     *
      * @param src the source byte buffer
      * @return {@code true} if all the packet's data is now read; {@code false} otherwise.
      */
@@ -472,15 +488,15 @@ public final class Packet extends HeapData implements OutboundFrame {
             final int ordinal = ordinal();
             assert ordinal < 8 : "Ordinal out of range for member " + name() + ": " + ordinal;
             return (ordinal & 0x01)
-                 | (ordinal & 0x02) << 1
-                 | (ordinal & 0x04) << 3;
+                    | (ordinal & 0x02) << 1
+                    | (ordinal & 0x04) << 3;
         }
 
         @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
         private static int headerDecode(int flags) {
             return (flags & FLAG_TYPE0)
-                 | (flags & FLAG_TYPE1) >> 1
-                 | (flags & FLAG_TYPE2) >> 3;
+                    | (flags & FLAG_TYPE1) >> 1
+                    | (flags & FLAG_TYPE2) >> 3;
         }
     }
 }
