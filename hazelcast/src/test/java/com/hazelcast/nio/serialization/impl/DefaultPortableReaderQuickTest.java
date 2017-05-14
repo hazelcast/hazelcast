@@ -19,6 +19,7 @@ package com.hazelcast.nio.serialization.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
@@ -391,7 +392,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
         EntryStealingProcessor processor = new EntryStealingProcessor(portable.toString());
         map.executeOnEntries(processor);
 
-        SerializationServiceV1 ss = (SerializationServiceV1) hz.getSerializationService();
+        InternalSerializationService ss = hz.getSerializationService();
         return ss.createPortableReader(processor.stolenEntryData);
     }
 
