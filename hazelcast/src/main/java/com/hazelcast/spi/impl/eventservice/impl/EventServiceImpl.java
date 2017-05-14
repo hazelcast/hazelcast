@@ -62,6 +62,7 @@ import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Service responsible for routing and dispatching local and remote events and keeping track of listener
@@ -111,12 +112,6 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      */
     private static final int SEND_RETRY_COUNT = 50;
     /**
-     * The timeout in seconds for the synchronous remote events.
-     *
-     * @see #sendEvent(Address, EventEnvelope, int)
-     */
-    private static final int SEND_EVENT_TIMEOUT_SECONDS = 5;
-    /**
      * The timeout in seconds for registering a listener registration on other
      * nodes of the cluster. This is used when the registration is not local.
      */
@@ -159,6 +154,8 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     @Probe(name = "syncDeliveryFailureCount")
     private final MwCounter syncDeliveryFailureCount = newMwCounter();
 
+    private  final int sendEventSyncTimeoutMillis;
+
     private final InternalSerializationService serializationService;
     private final int eventSyncFrequency;
 
@@ -179,6 +176,9 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         } catch (Exception e) {
             eventSyncFrequency = EVENT_SYNC_FREQUENCY;
         }
+
+        this.sendEventSyncTimeoutMillis = hazelcastProperties.getInteger(GroupProperty.EVENT_SYNC_TIMEOUT_MILLIS);
+
         this.eventSyncFrequency = eventSyncFrequency;
 
         this.eventExecutor = new StripedExecutor(
@@ -521,7 +521,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
                     .createInvocationBuilder(serviceName, op, subscriber)
                     .setTryCount(SEND_RETRY_COUNT).invoke();
             try {
-                f.get(SEND_EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                f.get(sendEventSyncTimeoutMillis, MILLISECONDS);
             } catch (Exception e) {
                 syncDeliveryFailureCount.inc();
                 if (logger.isFinestEnabled()) {
