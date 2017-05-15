@@ -27,6 +27,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -40,7 +41,6 @@ public class HotRestartStateImplTest {
         deserialized.fromJson(state.toJson());
 
         assertEquals(backupTaskStatus, deserialized.getBackupTaskStatus());
-        assertEquals(false, deserialized.isHotBackupEnabled());
+        assertFalse(deserialized.isHotBackupEnabled());
     }
-
 }

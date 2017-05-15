@@ -689,11 +689,11 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 txMap.put("3", "3");
                 map2.put("4", "4");
                 assertTrue(txMap.remove("1", "1"));
-                assertEquals(false, txMap.remove("2", "1"));
+                assertFalse(txMap.remove("2", "1"));
                 assertEquals("1", map1.get("1"));
                 assertEquals(null, txMap.get("1"));
                 assertTrue(txMap.remove("2", "2"));
-                assertEquals(false, txMap.remove("5", "2"));
+                assertFalse(txMap.remove("5", "2"));
                 assertEquals(2, txMap.size());
                 return true;
             }
@@ -906,8 +906,8 @@ public class MapTransactionTest extends HazelcastTestSupport {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 assertTrue(txMap.replace("1", "1", "11"));
-                assertEquals(false, txMap.replace("5", "5", "55"));
-                assertEquals(false, txMap.replace("2", "1", "22"));
+                assertFalse(txMap.replace("5", "5", "55"));
+                assertFalse(txMap.replace("2", "1", "22"));
                 assertEquals("1", map1.get("1"));
                 assertEquals("11", txMap.get("1"));
                 assertEquals("2", map1.get("2"));
@@ -974,14 +974,13 @@ public class MapTransactionTest extends HazelcastTestSupport {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 txMap.delete("1");
-                assertEquals(false, txMap.containsKey("1"));
+                assertFalse(txMap.containsKey("1"));
                 assertTrue(map.containsKey("1"));
                 return true;
             }
         });
         assertTrue(b);
     }
-
 
     @Test
     // TODO: @mm - Review following case...

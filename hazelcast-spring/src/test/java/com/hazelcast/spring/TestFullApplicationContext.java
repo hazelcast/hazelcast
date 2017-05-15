@@ -496,7 +496,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(testReliableTopic);
         assertEquals("testReliableTopic", testReliableTopic.getName());
         assertEquals(1, testReliableTopic.getMessageListenerConfigs().size());
-        assertEquals(false, testReliableTopic.isStatisticsEnabled());
+        assertFalse(testReliableTopic.isStatisticsEnabled());
         ListenerConfig listenerConfig = testReliableTopic.getMessageListenerConfigs().get(0);
         assertEquals("com.hazelcast.spring.DummyMessageListener", listenerConfig.getClassName());
         assertEquals(10, testReliableTopic.getReadBatchSize());
@@ -553,7 +553,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("testTopic", testTopicConfig.getName());
         assertEquals(1, testTopicConfig.getMessageListenerConfigs().size());
         assertTrue(testTopicConfig.isGlobalOrderingEnabled());
-        assertEquals(false, testTopicConfig.isStatisticsEnabled());
+        assertFalse(testTopicConfig.isStatisticsEnabled());
         ListenerConfig listenerConfig = testTopicConfig.getMessageListenerConfigs().get(0);
         assertEquals("com.hazelcast.spring.DummyMessageListener", listenerConfig.getClassName());
     }
@@ -595,7 +595,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("testExec2", testExec2Config.getName());
         assertEquals(5, testExec2Config.getPoolSize());
         assertEquals(300, testExec2Config.getQueueCapacity());
-        assertEquals(false, testExec2Config.isStatisticsEnabled());
+        assertFalse(testExec2Config.isStatisticsEnabled());
     }
 
     @Test
@@ -632,7 +632,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertFalse(networkConfig.getJoin().getMulticastConfig().isEnabled());
         assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds(), 8);
         assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeToLive(), 16);
-        assertEquals(false, networkConfig.getJoin().getMulticastConfig().isLoopbackModeEnabled());
+        assertFalse(networkConfig.getJoin().getMulticastConfig().isLoopbackModeEnabled());
         Set<String> tis = networkConfig.getJoin().getMulticastConfig().getTrustedInterfaces();
         assertEquals(1, tis.size());
         assertEquals("10.10.10.*", tis.iterator().next());
@@ -858,7 +858,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testSerializationConfig() {
         SerializationConfig serializationConfig = config.getSerializationConfig();
         assertEquals(ByteOrder.BIG_ENDIAN, serializationConfig.getByteOrder());
-        assertEquals(false, serializationConfig.isCheckClassDefErrors());
+        assertFalse(serializationConfig.isCheckClassDefErrors());
         assertEquals(13, serializationConfig.getPortableVersion());
 
         Map<Integer, String> dataSerializableFactoryClasses

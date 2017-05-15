@@ -308,7 +308,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         assertEquals(expectedResult, result, 0);
         assertTrue(future.isDone());
-        assertEquals(false, future.isCancelled());
+        assertFalse(future.isCancelled());
     }
 
     @Test
@@ -334,7 +334,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         assertEquals(expectedResult, resultFromOriginalTask, 0);
         assertEquals(expectedResult, resultFromMigratedTask, 0);
         assertTrue(future.isDone());
-        assertEquals(false, future.isCancelled());
+        assertFalse(future.isCancelled());
     }
 
     @Test
@@ -412,7 +412,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         assertEquals(expectedResult, result, 0);
         assertTrue(future.isDone());
-        assertEquals(false, future.isCancelled());
+        assertFalse(future.isCancelled());
     }
 
     @Test(expected = DuplicateTaskException.class)

@@ -173,11 +173,11 @@ public class TestClientApplicationContext {
         SerializationConfig serConf = config3.getSerializationConfig();
 
         assertEquals(ByteOrder.BIG_ENDIAN, serConf.getByteOrder());
-        assertEquals(false, serConf.isAllowUnsafe());
-        assertEquals(false, serConf.isCheckClassDefErrors());
-        assertEquals(false, serConf.isEnableCompression());
-        assertEquals(false, serConf.isEnableSharedObject());
-        assertEquals(false, serConf.isUseNativeByteOrder());
+        assertFalse(serConf.isAllowUnsafe());
+        assertFalse(serConf.isCheckClassDefErrors());
+        assertFalse(serConf.isEnableCompression());
+        assertFalse(serConf.isEnableSharedObject());
+        assertFalse(serConf.isUseNativeByteOrder());
         assertEquals(10, serConf.getPortableVersion());
 
         Map<Integer, String> map1 = serConf.getDataSerializableFactoryClasses();
@@ -280,11 +280,11 @@ public class TestClientApplicationContext {
         SerializationConfig serConf = config7.getSerializationConfig();
 
         assertEquals(ByteOrder.BIG_ENDIAN, serConf.getByteOrder());
-        assertEquals(false, serConf.isAllowUnsafe());
+        assertFalse(serConf.isAllowUnsafe());
         assertTrue(serConf.isCheckClassDefErrors());
-        assertEquals(false, serConf.isEnableCompression());
+        assertFalse(serConf.isEnableCompression());
         assertTrue(serConf.isEnableSharedObject());
-        assertEquals(false, serConf.isUseNativeByteOrder());
+        assertFalse(serConf.isUseNativeByteOrder());
         assertEquals(0, serConf.getPortableVersion());
     }
 

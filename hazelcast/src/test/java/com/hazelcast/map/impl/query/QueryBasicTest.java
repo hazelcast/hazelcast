@@ -77,7 +77,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         Config config = getConfig();
         HazelcastProperties properties = new HazelcastProperties(config);
         boolean parallelEvaluation = properties.getBoolean(GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION);
-        assertEquals(false, parallelEvaluation);
+        assertFalse(parallelEvaluation);
     }
 
     @Test(timeout = 1000 * 60)

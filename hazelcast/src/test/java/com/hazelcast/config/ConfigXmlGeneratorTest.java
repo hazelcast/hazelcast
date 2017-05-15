@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -78,7 +79,7 @@ public class ConfigXmlGeneratorTest {
 
         ReplicatedMapConfig xmlReplicatedMapConfig = xmlConfig.getReplicatedMapConfig("replicated-map-name");
         assertEquals("replicated-map-name", xmlReplicatedMapConfig.getName());
-        assertEquals(false, xmlReplicatedMapConfig.isStatisticsEnabled());
+        assertFalse(xmlReplicatedMapConfig.isStatisticsEnabled());
         assertEquals(128, xmlReplicatedMapConfig.getConcurrencyLevel());
         assertEquals("com.hazelcast.entrylistener", xmlReplicatedMapConfig.getListenerConfigs().get(0).getClassName());
     }
