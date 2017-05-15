@@ -42,6 +42,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -74,7 +75,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         }
 
         assertEquals(6, map.size());
-        assertEquals(null, map.get(1));
+        assertNull(map.get(1));
         assertEquals(map.get(2), "ISTANBUL:");
         assertEquals(map.get(3), "TOKYO:");
         assertEquals(map.get(4), "LONDON:");
@@ -85,14 +86,14 @@ public class InterceptorTest extends HazelcastTestSupport {
         map.removeInterceptor(id);
         map.put(8, "Moscow");
 
-        assertEquals(map.get(8), "Moscow");
-        assertEquals(map.get(1), null);
+        assertNull(map.get(1));
         assertEquals(map.get(2), "ISTANBUL");
         assertEquals(map.get(3), "TOKYO");
         assertEquals(map.get(4), "LONDON");
         assertEquals(map.get(5), "PARIS");
         assertEquals(map.get(6), "CAIRO");
         assertEquals(map.get(7), "HONG KONG");
+        assertEquals(map.get(8), "Moscow");
     }
 
     @Test

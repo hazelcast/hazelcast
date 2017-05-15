@@ -47,6 +47,7 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -220,7 +221,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
                 Message<String> message = listener.messages.get(0);
 
                 assertEquals(messageStr, message.getMessageObject());
-                assertEquals(null, message.getPublishingMember());
+                assertNull(message.getPublishingMember());
 
                 long actualPublishTime = message.getPublishTime();
                 assertTrue(actualPublishTime >= beforePublishTime);

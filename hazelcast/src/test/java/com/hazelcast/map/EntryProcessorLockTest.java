@@ -165,7 +165,7 @@ public class EntryProcessorLockTest extends HazelcastTestSupport {
         assertEquals(LockAwareLazyMapEntry.class, deserializedEntry.getClass());
         assertEquals("key", deserializedEntry.getKey());
         assertEquals("value", deserializedEntry.getValue());
-        assertEquals(null, deserializedEntry.isLocked());
+        assertNull(deserializedEntry.isLocked());
     }
 
     private static class TestNonOffloadableEntryProcessor implements EntryProcessor {

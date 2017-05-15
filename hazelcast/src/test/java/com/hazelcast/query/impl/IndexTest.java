@@ -503,7 +503,7 @@ public class IndexTest {
 
         records = getRecordMap(index, 555L);
         assertNotNull(records);
-        assertEquals(null, records.get(5L));
+        assertNull(records.get(5L));
         assertEquals(record50, records.get(toData(50L)));
         assertEquals(1, index.getRecords(555L).size());
         assertEquals(2, index.getSubRecordsBetween(55L, 555L).size());

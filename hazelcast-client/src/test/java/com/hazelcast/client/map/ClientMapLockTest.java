@@ -43,6 +43,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -277,7 +278,7 @@ public class ClientMapLockTest {
         map.unlock(key);
 
         assertFalse(map.isLocked(key));
-        assertEquals(null, map.get(key));
+        assertNull(map.get(key));
     }
 
     @Test
@@ -292,7 +293,7 @@ public class ClientMapLockTest {
         map.unlock(key);
 
         assertFalse(map.isLocked(key));
-        assertEquals(null, map.get(key));
+        assertNull(map.get(key));
     }
 
     @Test
@@ -307,7 +308,7 @@ public class ClientMapLockTest {
         map.unlock(key);
 
         assertFalse(map.isLocked(key));
-        assertEquals(null, map.get(key));
+        assertNull(map.get(key));
     }
 
     @Test
@@ -389,7 +390,7 @@ public class ClientMapLockTest {
         }.start();
 
         removeWhileLocked.await();
-        assertEquals(null, map.get(key));
+        assertNull(map.get(key));
         checkingKey.countDown();
     }
 

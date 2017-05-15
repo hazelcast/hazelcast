@@ -39,6 +39,7 @@ import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.isA;
+import static org.junit.Assert.assertNull;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
@@ -187,7 +188,7 @@ public class ExtractorHelperTest {
         assertEquals("123", extractArgumentsFromAttributeName("car.wheel[123]"));
         assertEquals(".';'.", extractArgumentsFromAttributeName("car.wheel[.';'.]"));
         assertEquals("", extractArgumentsFromAttributeName("car.wheel[]"));
-        assertEquals(null, extractArgumentsFromAttributeName("car.wheel"));
+        assertNull(extractArgumentsFromAttributeName("car.wheel"));
     }
 
     @Test(expected = IllegalArgumentException.class)

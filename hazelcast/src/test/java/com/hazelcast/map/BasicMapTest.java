@@ -758,7 +758,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         IMap<Integer, Object> map = getInstance().getMap("testGetPutRemoveAsync");
         Future<Object> future = map.putAsync(1, 1);
         try {
-            assertEquals(null, future.get());
+            assertNull(future.get());
             assertEquals(1, map.putAsync(1, 2).get());
             assertEquals(2, map.getAsync(1).get());
             assertEquals(2, map.removeAsync(1).get());

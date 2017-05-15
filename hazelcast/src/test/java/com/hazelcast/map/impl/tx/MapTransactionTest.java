@@ -651,19 +651,19 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 assertEquals("1", txMap.remove("1"));
                 assertEquals("2", map1.remove("2"));
                 assertEquals("1", map1.get("1"));
-                assertEquals(null, txMap.get("1"));
-                assertEquals(null, txMap.remove("2"));
+                assertNull(txMap.get("1"));
+                assertNull(txMap.remove("2"));
                 assertEquals(2, txMap.size());
                 return true;
             }
         });
         assertTrue(b);
 
-        assertEquals(null, map1.get("1"));
-        assertEquals(null, map2.get("1"));
+        assertNull(map1.get("1"));
+        assertNull(map2.get("1"));
 
-        assertEquals(null, map1.get("2"));
-        assertEquals(null, map2.get("2"));
+        assertNull(map1.get("2"));
+        assertNull(map2.get("2"));
 
         assertEquals("3", map1.get("3"));
         assertEquals("3", map2.get("3"));
@@ -691,7 +691,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 assertTrue(txMap.remove("1", "1"));
                 assertFalse(txMap.remove("2", "1"));
                 assertEquals("1", map1.get("1"));
-                assertEquals(null, txMap.get("1"));
+                assertNull(txMap.get("1"));
                 assertTrue(txMap.remove("2", "2"));
                 assertFalse(txMap.remove("5", "2"));
                 assertEquals(2, txMap.size());
@@ -700,11 +700,11 @@ public class MapTransactionTest extends HazelcastTestSupport {
         });
         assertTrue(b);
 
-        assertEquals(null, map1.get("1"));
-        assertEquals(null, map2.get("1"));
+        assertNull(map1.get("1"));
+        assertNull(map2.get("1"));
 
-        assertEquals(null, map1.get("2"));
-        assertEquals(null, map2.get("2"));
+        assertNull(map1.get("2"));
+        assertNull(map2.get("2"));
 
         assertEquals("3", map1.get("3"));
         assertEquals("3", map2.get("3"));
@@ -747,7 +747,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 txMap.delete("1");
                 map2.delete("2");
                 assertEquals("1", map1.get("1"));
-                assertEquals(null, txMap.get("1"));
+                assertNull(txMap.get("1"));
                 txMap.delete("2");
                 assertEquals(2, txMap.size());
                 return true;
@@ -755,11 +755,11 @@ public class MapTransactionTest extends HazelcastTestSupport {
         });
         assertTrue(b);
 
-        assertEquals(null, map1.get("1"));
-        assertEquals(null, map2.get("1"));
+        assertNull(map1.get("1"));
+        assertNull(map2.get("1"));
 
-        assertEquals(null, map1.get("2"));
-        assertEquals(null, map2.get("2"));
+        assertNull(map1.get("2"));
+        assertNull(map2.get("2"));
 
         assertEquals("3", map1.get("3"));
         assertEquals("3", map2.get("3"));

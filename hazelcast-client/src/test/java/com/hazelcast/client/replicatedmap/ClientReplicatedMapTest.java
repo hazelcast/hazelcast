@@ -490,7 +490,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(null, replicatedMap1.get(1));
+                assertNull(replicatedMap1.get(1));
             }
         });
     }
