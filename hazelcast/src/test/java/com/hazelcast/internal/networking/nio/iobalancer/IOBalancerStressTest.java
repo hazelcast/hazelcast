@@ -110,7 +110,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
                 NioChannelReader socketReader = (NioChannelReader) connection.getChannelReader();
                 if (socketReader.getOwner() == in) {
-                    sb.append("\t" + socketReader + " eventCount:" + socketReader.getEventCount() + "\n");
+                    sb.append("\t" + socketReader + " eventCount:" + socketReader.getLoad() + "\n");
                 }
             }
         }
@@ -121,7 +121,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
                 NioChannelWriter socketWriter = (NioChannelWriter) connection.getChannelWriter();
                 if (socketWriter.getOwner() == in) {
-                    sb.append("\t" + socketWriter + " eventCount:" + socketWriter.getEventCount() + "\n");
+                    sb.append("\t" + socketWriter + " eventCount:" + socketWriter.getLoad() + "\n");
                 }
             }
         }
@@ -154,7 +154,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         MigratableHandler activeHandler = iterator.next();
         if (handlers.size() == 2) {
             MigratableHandler deadHandler = iterator.next();
-            if (activeHandler.getEventCount() < deadHandler.getEventCount()) {
+            if (activeHandler.getLoad() < deadHandler.getLoad()) {
                 MigratableHandler tmp = deadHandler;
                 deadHandler = activeHandler;
                 activeHandler = tmp;
@@ -163,11 +163,11 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             // the maximum number of events seen on the dead connection is 3. 10 should be save to assume the
             // connection is dead.
             assertTrue("at most 10 event should have been received, number of events received:"
-                    + deadHandler.getEventCount(), deadHandler.getEventCount() < 10);
+                    + deadHandler.getLoad(), deadHandler.getLoad() < 10);
         }
 
-        assertTrue("activeHandlerEvent count should be at least 1000, but was:" + activeHandler.getEventCount(),
-                activeHandler.getEventCount() > 1000);
+        assertTrue("activeHandlerEvent count should be at least 1000, but was:" + activeHandler.getLoad(),
+                activeHandler.getLoad() > 1000);
     }
 
     private void add(Map<NioThread, Set<MigratableHandler>> handlersPerSelector, MigratableHandler handler) {

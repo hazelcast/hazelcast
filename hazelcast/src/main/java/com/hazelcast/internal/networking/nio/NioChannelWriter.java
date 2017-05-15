@@ -96,7 +96,7 @@ public final class NioChannelWriter
     }
 
     @Override
-    public long getEventCount() {
+    public long getLoad() {
         switch (LOAD_TYPE) {
             case 0:
                 return handleCount.get();

@@ -163,7 +163,7 @@ class LoadTracker {
     }
 
     private long getEventCountSinceLastCheck(MigratableHandler handler) {
-        long eventCount = handler.getEventCount();
+        long eventCount = handler.getLoad();
         Long lastEventCount = lastEventCounter.getAndSet(handler, eventCount);
         return eventCount - lastEventCount;
     }

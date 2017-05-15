@@ -56,14 +56,14 @@ public class LoadTrackerTest {
     @Test
     public void testUpdateImbalance() throws Exception {
         MigratableHandler selector1Handler1 = mock(MigratableHandler.class);
-        when(selector1Handler1.getEventCount()).thenReturn(0L)
+        when(selector1Handler1.getLoad()).thenReturn(0L)
                 .thenReturn(100L);
         when(selector1Handler1.getOwner())
                 .thenReturn(selector1);
         loadTracker.addHandler(selector1Handler1);
 
         MigratableHandler selector2Handler1 = mock(MigratableHandler.class);
-        when(selector2Handler1.getEventCount())
+        when(selector2Handler1.getLoad())
                 .thenReturn(0L)
                 .thenReturn(200L);
         when(selector2Handler1.getOwner())
@@ -71,7 +71,7 @@ public class LoadTrackerTest {
         loadTracker.addHandler(selector2Handler1);
 
         MigratableHandler selector2Handler3 = mock(MigratableHandler.class);
-        when(selector2Handler3.getEventCount())
+        when(selector2Handler3.getLoad())
                 .thenReturn(0L)
                 .thenReturn(100L);
         when(selector2Handler3.getOwner())
@@ -94,17 +94,17 @@ public class LoadTrackerTest {
     public void testUpdateImbalance_notUsingSingleHandlerSelectorAsSource() throws Exception {
         MigratableHandler selector1Handler1 = mock(MigratableHandler.class);
         // the first selector has a handler with a large number of events
-        when(selector1Handler1.getEventCount()).thenReturn(10000L);
+        when(selector1Handler1.getLoad()).thenReturn(10000L);
         when(selector1Handler1.getOwner()).thenReturn(selector1);
         loadTracker.addHandler(selector1Handler1);
 
         MigratableHandler selector2Handler = mock(MigratableHandler.class);
-        when(selector2Handler.getEventCount()).thenReturn(200L);
+        when(selector2Handler.getLoad()).thenReturn(200L);
         when(selector2Handler.getOwner()).thenReturn(selector2);
         loadTracker.addHandler(selector2Handler);
 
         MigratableHandler selector2Handler2 = mock(MigratableHandler.class);
-        when(selector2Handler2.getEventCount()).thenReturn(200L);
+        when(selector2Handler2.getLoad()).thenReturn(200L);
         when(selector2Handler2.getOwner()).thenReturn(selector2);
         loadTracker.addHandler(selector2Handler2);
 
