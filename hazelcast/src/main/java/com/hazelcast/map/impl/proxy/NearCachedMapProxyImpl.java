@@ -78,6 +78,10 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
     }
 
+    public NearCache<Object, Object> getNearCache() {
+        return nearCache;
+    }
+
     @Override
     public void initialize() {
         super.initialize();
@@ -484,16 +488,6 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         return cachedValue != null ? cachedValue : value;
     }
 
-    private boolean cachingAllowedFor(Data key) {
-        return cacheLocalEntries || !isOwn(key);
-    }
-
-    private boolean isOwn(Data key) {
-        int partitionId = partitionService.getPartitionId(key);
-        Address partitionOwner = partitionService.getPartitionOwner(partitionId);
-        return thisAddress.equals(partitionOwner);
-    }
-
     private Object getCachedValue(Data key, boolean deserializeValue) {
         Object value = nearCache.get(key);
         if (value == null) {
@@ -513,8 +507,14 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         return nearCache.tryReserveForUpdate(key);
     }
 
-    public NearCache<Object, Object> getNearCache() {
-        return nearCache;
+    private boolean cachingAllowedFor(Data key) {
+        return cacheLocalEntries || !isOwn(key);
+    }
+
+    private boolean isOwn(Data key) {
+        int partitionId = partitionService.getPartitionId(key);
+        Address partitionOwner = partitionService.getPartitionOwner(partitionId);
+        return thisAddress.equals(partitionOwner);
     }
 
     private void addNearCacheInvalidateListener() {
