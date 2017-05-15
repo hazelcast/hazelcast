@@ -160,7 +160,13 @@ public class ClusterHeartbeatManager {
 
         try {
             if (!clusterService.isJoined()) {
-                logger.fine("Ignoring heartbeat of sender: " + senderMembersViewMetadata + ", because node is not joined!");
+                if (clusterService.getThisUuid().equals(receiverUuid)) {
+                    logger.fine("Ignoring heartbeat of sender: " + senderMembersViewMetadata + ", because node is not joined!");
+                } else {
+                    logger.fine("Sending explicit suspicion to " + senderAddress + " for heartbeat " + senderMembersViewMetadata
+                            + ", because this node has received an invalid heartbeat before it joins to the cluster");
+                    clusterService.sendExplicitSuspicion(senderMembersViewMetadata);
+                }
                 return;
             }
 

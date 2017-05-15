@@ -67,6 +67,11 @@ public class MembershipManagerCompat {
 
         clusterServiceLock.lock();
         try {
+            if (!clusterService.isJoined()) {
+                logger.fine("Cannot remove " + deadAddress + " with uuid: " + uuid + " because this node is not joined...");
+                return;
+            }
+
             MemberImpl member = membershipManager.getMember(deadAddress);
             if (member == null || (uuid != null && !uuid.equals(member.getUuid()))) {
                 if (logger.isFineEnabled()) {
