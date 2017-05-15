@@ -373,22 +373,26 @@ abstract class MapProxySupport<K, V>
     }
 
     protected Data putInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        MapOperation operation = operationProvider.createPutOperation(name, key, value, getTimeInMillis(ttl, timeunit));
+        long timeInMillis = getTimeInMillis(ttl, timeunit);
+        MapOperation operation = operationProvider.createPutOperation(name, key, value, timeInMillis);
         return (Data) invokeOperation(key, operation);
     }
 
     protected boolean tryPutInternal(Data key, Data value, long timeout, TimeUnit timeunit) {
-        MapOperation operation = operationProvider.createTryPutOperation(name, key, value, getTimeInMillis(timeout, timeunit));
+        long timeInMillis = getTimeInMillis(timeout, timeunit);
+        MapOperation operation = operationProvider.createTryPutOperation(name, key, value, timeInMillis);
         return (Boolean) invokeOperation(key, operation);
     }
 
     protected Data putIfAbsentInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        MapOperation operation = operationProvider.createPutIfAbsentOperation(name, key, value, getTimeInMillis(ttl, timeunit));
+        long timeInMillis = getTimeInMillis(ttl, timeunit);
+        MapOperation operation = operationProvider.createPutIfAbsentOperation(name, key, value, timeInMillis);
         return (Data) invokeOperation(key, operation);
     }
 
     protected void putTransientInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        MapOperation operation = operationProvider.createPutTransientOperation(name, key, value, getTimeInMillis(ttl, timeunit));
+        long timeInMillis = getTimeInMillis(ttl, timeunit);
+        MapOperation operation = operationProvider.createPutTransientOperation(name, key, value, timeInMillis);
         invokeOperation(key, operation);
     }
 
@@ -821,7 +825,7 @@ abstract class MapProxySupport<K, V>
                 checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
                 checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
 
-                Data keyData = toData(entry.getKey(), partitionStrategy);
+                Data keyData = toDataWithStrategy(entry.getKey());
                 int partitionId = partitionService.getPartitionId(keyData);
                 MapEntries entries = entriesPerPartition[partitionId];
                 if (entries == null) {

@@ -67,7 +67,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
 
@@ -85,6 +84,7 @@ import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.QueryResultUtils.transformToSet;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequests.newQueryCacheRequest;
+import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
@@ -356,7 +356,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         List<Object> resultingKeyValuePairs = new ArrayList<Object>(2 * keys.size());
         getAllObjectInternal(requestedKeys, resultingKeyValuePairs);
 
-        Map<K, V> result = MapUtil.createHashMap(keys.size());
+        Map<K, V> result = createHashMap(keys.size());
         for (int i = 0; i < resultingKeyValuePairs.size(); ) {
             K key = toObject(resultingKeyValuePairs.get(i++));
             V value = toObject(resultingKeyValuePairs.get(i++));
@@ -482,7 +482,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        return addEntryListenerInternal(listener, toData(key, partitionStrategy), includeValue);
+        return addEntryListenerInternal(listener, toDataWithStrategy(key), includeValue);
     }
 
     @Override
@@ -490,7 +490,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        return addEntryListenerInternal(listener, toData(key, partitionStrategy), includeValue);
+        return addEntryListenerInternal(listener, toDataWithStrategy(key), includeValue);
     }
 
     @Override
@@ -498,7 +498,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
-        return addEntryListenerInternal(listener, predicate, toData(key, partitionStrategy), includeValue);
+        return addEntryListenerInternal(listener, predicate, toDataWithStrategy(key), includeValue);
     }
 
     @Override
@@ -506,7 +506,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
-        return addEntryListenerInternal(listener, predicate, toData(key, partitionStrategy), includeValue);
+        return addEntryListenerInternal(listener, predicate, toDataWithStrategy(key), includeValue);
     }
 
     @Override
@@ -551,7 +551,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
     public EntryView<K, V> getEntryView(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        SimpleEntryView<K, V> entryViewInternal = (SimpleEntryView<K, V>) getEntryViewInternal(toData(key, partitionStrategy));
+        SimpleEntryView<K, V> entryViewInternal = (SimpleEntryView<K, V>) getEntryViewInternal(toDataWithStrategy(key));
         if (entryViewInternal == null) {
             return null;
         }
@@ -565,7 +565,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
     public boolean evict(Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        return evictInternal(toData(key, partitionStrategy));
+        return evictInternal(toDataWithStrategy(key));
     }
 
     @Override
@@ -695,7 +695,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        Data result = executeOnKeyInternal(toData(key, partitionStrategy), entryProcessor);
+        Data result = executeOnKeyInternal(toDataWithStrategy(key), entryProcessor);
         return toObject(result);
     }
 
@@ -709,7 +709,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         }
         Set<Data> dataKeys = new HashSet<Data>(keys.size());
         for (K key : keys) {
-            dataKeys.add(toData(key, partitionStrategy));
+            dataKeys.add(toDataWithStrategy(key));
         }
         return executeOnKeysInternal(dataKeys, entryProcessor);
     }
@@ -745,7 +745,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
             return emptyMap();
         }
 
-        Map<K, Object> resultingMap = MapUtil.createHashMap(result.size() / 2);
+        Map<K, Object> resultingMap = createHashMap(result.size() / 2);
         for (int i = 0; i < result.size(); ) {
             Data key = result.get(i++);
             Data value = result.get(i++);
@@ -874,11 +874,11 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
     protected Object invoke(Operation operation, int partitionId) throws Throwable {
         Future future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
         Object response = future.get();
-        Object returnObj = toObject(response);
-        if (returnObj instanceof Throwable) {
-            throw (Throwable) returnObj;
+        Object result = toObject(response);
+        if (result instanceof Throwable) {
+            throw (Throwable) result;
         }
-        return returnObj;
+        return result;
     }
 
     public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {

@@ -61,8 +61,8 @@ import static java.util.Collections.emptyMap;
  */
 public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
-    private boolean cacheLocalEntries;
-    private boolean invalidateOnChange;
+    private final boolean cacheLocalEntries;
+    private final boolean invalidateOnChange;
 
     private MapNearCacheManager mapNearCacheManager;
     private NearCache<Object, Object> nearCache;
@@ -72,18 +72,18 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     public NearCachedMapProxyImpl(String name, MapService mapService, NodeEngine nodeEngine, MapConfig mapConfig) {
         super(name, mapService, nodeEngine, mapConfig);
+
+        NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
+        cacheLocalEntries = nearCacheConfig.isCacheLocalEntries();
+        invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
     }
 
     @Override
     public void initialize() {
         super.initialize();
 
-        NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
-        cacheLocalEntries = nearCacheConfig.isCacheLocalEntries();
-        invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
-
         mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
-        nearCache = mapNearCacheManager.getOrCreateNearCache(name, nearCacheConfig);
+        nearCache = mapNearCacheManager.getOrCreateNearCache(name, mapConfig.getNearCacheConfig());
         if (invalidateOnChange) {
             addNearCacheInvalidateListener();
         }
