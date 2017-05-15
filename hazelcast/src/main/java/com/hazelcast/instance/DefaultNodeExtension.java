@@ -29,7 +29,6 @@ import com.hazelcast.hotrestart.NoOpHotRestartService;
 import com.hazelcast.hotrestart.NoopInternalHotRestartService;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
-import com.hazelcast.internal.cluster.impl.EchoNoCopyByteArrayProcessor;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
@@ -308,13 +307,13 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public ByteArrayProcessor createMulticastInputProcessor() {
-        return new EchoNoCopyByteArrayProcessor();
+    public ByteArrayProcessor createMulticastInputProcessor(IOService ioService) {
+        return null;
     }
 
     @Override
-    public ByteArrayProcessor createMulticastOutputProcessor() {
-        return new EchoNoCopyByteArrayProcessor();
+    public ByteArrayProcessor createMulticastOutputProcessor(IOService ioService) {
+        return null;
     }
 
     // obtain cluster version, if already initialized (not null)

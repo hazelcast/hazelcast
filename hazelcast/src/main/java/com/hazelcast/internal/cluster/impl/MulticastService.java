@@ -25,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.NodeIOService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.util.ByteArrayProcessor;
@@ -76,8 +77,9 @@ public final class MulticastService implements Runnable {
         this.node = node;
         this.multicastSocket = multicastSocket;
 
-        this.inputProcessor = node.getNodeExtension().createMulticastInputProcessor();
-        this.outputProcessor = node.getNodeExtension().createMulticastOutputProcessor();
+        NodeIOService nodeIOService = new NodeIOService(node, node.nodeEngine);
+        this.inputProcessor = node.getNodeExtension().createMulticastInputProcessor(nodeIOService);
+        this.outputProcessor = node.getNodeExtension().createMulticastOutputProcessor(nodeIOService);
 
         this.sendOutput = node.getSerializationService().createObjectDataOutput(SEND_OUTPUT_SIZE);
 
@@ -220,13 +222,14 @@ public final class MulticastService implements Runnable {
                 final int offset = datagramPacketReceive.getOffset();
                 final int length = datagramPacketReceive.getLength();
 
-                final BufferObjectDataInput input = node.getSerializationService()
-                                                        .createObjectDataInput(inputProcessor.process(data, offset, length));
+                final byte[] processed = inputProcessor != null ? inputProcessor.process(data, offset, length) : data;
+                final BufferObjectDataInput input = node.getSerializationService().createObjectDataInput(processed);
+                if (inputProcessor == null) {
+                    // If pre-processed the offset is already taken into account.
+                    input.position(offset);
+                }
 
                 final byte packetVersion = input.readByte();
-                // TODO need a way to differentiate between encrypted incoming byte stream and not.
-                // eg. If local node has encryption disabled, and receives encrypted datagram from remote encrypted node
-                // then the packet version identifier as expected is wrong, and the warning is misleading.
                 if (packetVersion != Packet.VERSION) {
                     logger.warning("Received a JoinRequest with a different packet version, or encrypted. "
                             + "Verify that the sender Node, doesn't have symmetric-encryption on. This -> "
@@ -274,7 +277,8 @@ public final class MulticastService implements Runnable {
             try {
                 out.writeByte(Packet.VERSION);
                 out.writeObject(joinMessage);
-                datagramPacketSend.setData(outputProcessor.process(out.toByteArray()));
+                byte[] processed = outputProcessor != null ? outputProcessor.process(out.toByteArray()) : out.toByteArray();
+                datagramPacketSend.setData(processed);
                 multicastSocket.send(datagramPacketSend);
                 out.clear();
             } catch (IOException e) {

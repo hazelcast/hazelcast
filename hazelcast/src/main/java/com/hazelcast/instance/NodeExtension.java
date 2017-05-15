@@ -235,8 +235,8 @@ public interface NodeExtension {
     TimedMemberStateFactory createTimedMemberStateFactory(HazelcastInstanceImpl instance);
 
     /** Returns a byte array processor for incoming data on the Multicast joiner */
-    ByteArrayProcessor createMulticastInputProcessor();
+    ByteArrayProcessor createMulticastInputProcessor(IOService ioService);
 
     /** Returns a byte array processor for outgoing data on the Multicast joiner */
-    ByteArrayProcessor createMulticastOutputProcessor();
+    ByteArrayProcessor createMulticastOutputProcessor(IOService ioService);
 }

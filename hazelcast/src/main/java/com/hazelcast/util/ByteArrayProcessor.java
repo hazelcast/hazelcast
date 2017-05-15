@@ -22,10 +22,10 @@ package com.hazelcast.util;
  */
 public interface ByteArrayProcessor {
 
-    byte[] process(final byte[] src);
+    byte[] process(byte[] src);
 
-    byte[] process(final byte[] src, final int offset, final int length);
+    byte[] process(byte[] src, int offset, int length);
 
-    byte[] process(final byte[] src, final int offset, final int length, final byte[] dst);
+    byte[] process(byte[] src, int offset, int length, byte[] dst);
 
 }
