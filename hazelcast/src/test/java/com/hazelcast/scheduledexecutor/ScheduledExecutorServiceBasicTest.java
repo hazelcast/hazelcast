@@ -307,7 +307,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         double result = future.get();
 
         assertEquals(expectedResult, result, 0);
-        assertEquals(true, future.isDone());
+        assertTrue(future.isDone());
         assertEquals(false, future.isCancelled());
     }
 
@@ -333,7 +333,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         assertEquals(expectedResult, resultFromOriginalTask, 0);
         assertEquals(expectedResult, resultFromMigratedTask, 0);
-        assertEquals(true, future.isDone());
+        assertTrue(future.isDone());
         assertEquals(false, future.isCancelled());
     }
 
@@ -392,8 +392,8 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         runsCountLatch.await(15, SECONDS);
 
-        assertEquals(true, future.isDone());
-        assertEquals(true, future.isCancelled());
+        assertTrue(future.isDone());
+        assertTrue(future.isCancelled());
     }
 
     @Test
@@ -411,7 +411,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         double result = future.get();
 
         assertEquals(expectedResult, result, 0);
-        assertEquals(true, future.isDone());
+        assertTrue(future.isDone());
         assertEquals(false, future.isCancelled());
     }
 
@@ -791,7 +791,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         IScheduledFuture<Double> future = executorService.scheduleOnMember(new PlainCallableTask(),
                 member, delay, SECONDS);
 
-        assertEquals(true, future.getHandler().isAssignedToMember());
+        assertTrue(future.getHandler().isAssignedToMember());
         assertEquals(25.0, future.get(), 0);
     }
 

@@ -216,7 +216,7 @@ public class TestClientApplicationContext {
         assertEquals(70, nearCacheConfig.getMaxIdleSeconds());
         assertEquals(EvictionPolicy.LRU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
         assertEquals(4000, nearCacheConfig.getEvictionConfig().getSize());
-        assertEquals(true, nearCacheConfig.isInvalidateOnChange());
+        assertTrue(nearCacheConfig.isInvalidateOnChange());
         assertEquals(CACHE_ON_UPDATE, nearCacheConfig.getLocalUpdatePolicy());
     }
 
@@ -281,9 +281,9 @@ public class TestClientApplicationContext {
 
         assertEquals(ByteOrder.BIG_ENDIAN, serConf.getByteOrder());
         assertEquals(false, serConf.isAllowUnsafe());
-        assertEquals(true, serConf.isCheckClassDefErrors());
+        assertTrue(serConf.isCheckClassDefErrors());
         assertEquals(false, serConf.isEnableCompression());
-        assertEquals(true, serConf.isEnableSharedObject());
+        assertTrue(serConf.isEnableSharedObject());
         assertEquals(false, serConf.isUseNativeByteOrder());
         assertEquals(0, serConf.getPortableVersion());
     }

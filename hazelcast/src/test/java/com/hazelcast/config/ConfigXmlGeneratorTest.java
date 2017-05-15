@@ -130,7 +130,7 @@ public class ConfigXmlGeneratorTest {
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         NativeMemoryConfig xmlNativeMemoryConfig = xmlConfig.getNativeMemoryConfig();
-        assertEquals(true, xmlNativeMemoryConfig.isEnabled());
+        assertTrue(xmlNativeMemoryConfig.isEnabled());
         assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, nativeMemoryConfig.getAllocatorType());
         assertEquals(12.5, nativeMemoryConfig.getMetadataSpacePercentage(), 0.0001);
         assertEquals(50, nativeMemoryConfig.getMinBlockSize());

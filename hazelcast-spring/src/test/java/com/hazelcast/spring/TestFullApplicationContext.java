@@ -552,7 +552,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(testTopicConfig);
         assertEquals("testTopic", testTopicConfig.getName());
         assertEquals(1, testTopicConfig.getMessageListenerConfigs().size());
-        assertEquals(true, testTopicConfig.isGlobalOrderingEnabled());
+        assertTrue(testTopicConfig.isGlobalOrderingEnabled());
         assertEquals(false, testTopicConfig.isStatisticsEnabled());
         ListenerConfig listenerConfig = testTopicConfig.getMessageListenerConfigs().get(0);
         assertEquals("com.hazelcast.spring.DummyMessageListener", listenerConfig.getClassName());
@@ -589,7 +589,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("testExec", testExecConfig.getName());
         assertEquals(2, testExecConfig.getPoolSize());
         assertEquals(100, testExecConfig.getQueueCapacity());
-        assertEquals(true, testExecConfig.isStatisticsEnabled());
+        assertTrue(testExecConfig.isStatisticsEnabled());
         ExecutorConfig testExec2Config = config.getExecutorConfig("testExec2");
         assertNotNull(testExec2Config);
         assertEquals("testExec2", testExec2Config.getName());
@@ -936,7 +936,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(quorumConfig);
         assertEquals("my-quorum", quorumConfig.getName());
         assertEquals("com.hazelcast.spring.DummyQuorumFunction", quorumConfig.getQuorumFunctionClassName());
-        assertEquals(true, quorumConfig.isEnabled());
+        assertTrue(quorumConfig.isEnabled());
         assertEquals(2, quorumConfig.getSize());
         assertEquals(2, quorumConfig.getListenerConfigs().size());
         assertEquals(QuorumType.READ, quorumConfig.getType());

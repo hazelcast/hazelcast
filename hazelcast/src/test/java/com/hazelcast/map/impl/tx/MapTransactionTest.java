@@ -219,8 +219,8 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 assertEquals("value", txMap2.put(key, "value2"));
                 assertEquals("value2", txMap2.get(key));
 
-                assertEquals(true, txMap1.containsKey(key));
-                assertEquals(true, txMap2.containsKey(key));
+                assertTrue(txMap1.containsKey(key));
+                assertTrue(txMap2.containsKey(key));
 
                 assertNull(h1.getMap(map1).get(key));
                 assertNull(h1.getMap(map2).get(key));
@@ -688,11 +688,11 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 txMap.put("3", "3");
                 map2.put("4", "4");
-                assertEquals(true, txMap.remove("1", "1"));
+                assertTrue(txMap.remove("1", "1"));
                 assertEquals(false, txMap.remove("2", "1"));
                 assertEquals("1", map1.get("1"));
                 assertEquals(null, txMap.get("1"));
-                assertEquals(true, txMap.remove("2", "2"));
+                assertTrue(txMap.remove("2", "2"));
                 assertEquals(false, txMap.remove("5", "2"));
                 assertEquals(2, txMap.size());
                 return true;
@@ -905,7 +905,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
-                assertEquals(true, txMap.replace("1", "1", "11"));
+                assertTrue(txMap.replace("1", "1", "11"));
                 assertEquals(false, txMap.replace("5", "5", "55"));
                 assertEquals(false, txMap.replace("2", "1", "22"));
                 assertEquals("1", map1.get("1"));
@@ -975,7 +975,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 txMap.delete("1");
                 assertEquals(false, txMap.containsKey("1"));
-                assertEquals(true, map.containsKey("1"));
+                assertTrue(map.containsKey("1"));
                 return true;
             }
         });
