@@ -1199,7 +1199,7 @@ abstract class MapProxySupport<K, V>
 
         @Override
         public Data apply(K key) {
-            return toData(key);
+            return toDataWithStrategy(key);
         }
     }
 }
