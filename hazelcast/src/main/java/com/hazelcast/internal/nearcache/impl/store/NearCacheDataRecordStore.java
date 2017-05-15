@@ -68,6 +68,8 @@ public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore
         return REFERENCE_SIZE
                 // reference to "value" field
                 + REFERENCE_SIZE
+                // reference MetaDataContainer
+                + REFERENCE_SIZE
                 // "uuid" ref size + 2 long in uuid
                 + REFERENCE_SIZE + (2 * (Long.SIZE / Byte.SIZE))
                 // heap cost of this value data

@@ -275,7 +275,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
                     return null;
                 }
 
-                if (staleReadDetector.isStaleRead(key, record)) {
+                if (staleReadDetector.isStaleRead(record)) {
                     remove(key);
                     return null;
                 }
@@ -437,8 +437,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         record.setCreationTime(Clock.currentTimeMillis());
         MetaDataContainer metaDataContainer = staleReadDetector.getMetaDataContainer(key);
         if (metaDataContainer != null) {
-            record.setUuid(metaDataContainer.getUuid());
-            record.setInvalidationSequence(metaDataContainer.getSequence());
+            record.setMetaDataContainer(metaDataContainer);
         }
     }
 

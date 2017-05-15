@@ -27,20 +27,14 @@ public class StaleReadDetectorImpl implements StaleReadDetector {
     private final RepairingHandler repairingHandler;
     private final MinimalPartitionService partitionService;
 
-    public StaleReadDetectorImpl(RepairingHandler repairingHandler, MinimalPartitionService partitionService) {
+    StaleReadDetectorImpl(RepairingHandler repairingHandler, MinimalPartitionService partitionService) {
         this.repairingHandler = repairingHandler;
         this.partitionService = partitionService;
     }
 
     @Override
-    public boolean isStaleRead(Object key, NearCacheRecord record) {
-        MetaDataContainer latestMetaData = repairingHandler.getMetaDataContainer(getPartition(key));
-
-        if (!record.hasSameUuid(latestMetaData.getUuid())) {
-            return true;
-        }
-
-        return record.getInvalidationSequence() < latestMetaData.getStaleSequence();
+    public boolean isStaleRead(NearCacheRecord record) {
+        return record.isStaleRead();
     }
 
     @Override
