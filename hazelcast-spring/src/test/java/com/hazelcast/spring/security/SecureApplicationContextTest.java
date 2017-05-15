@@ -37,8 +37,6 @@ import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -51,7 +49,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"secure-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
-public class TestSecureApplicationContext {
+public class SecureApplicationContextTest {
 
     @Resource
     private Config config;
