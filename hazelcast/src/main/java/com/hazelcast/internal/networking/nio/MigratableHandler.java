@@ -45,10 +45,10 @@ public interface MigratableHandler {
     NioThread getOwner();
 
     /**
-     * Get number of events recorded by the current handler. It can be used to calculate whether
+     * Get 'load' recorded by the current handler. It can be used to calculate whether
      * this handler should be migrated to a different {@link NioThread}
      *
-     * @return total number of events recorded by this handler
+     * @return total load recorded by this handler
      */
-    long getEventCount();
+    long getLoad();
 }

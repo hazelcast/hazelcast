@@ -41,12 +41,12 @@ class LoadImbalance {
     NioThread destinationSelector;
 
     private final Map<NioThread, Set<MigratableHandler>> selectorToHandlers;
-    private final ItemCounter<MigratableHandler> handlerEventsCounter;
+    private final ItemCounter<MigratableHandler> handlerLoadCounter;
 
     LoadImbalance(Map<NioThread, Set<MigratableHandler>> selectorToHandlers,
-                  ItemCounter<MigratableHandler> handlerEventsCounter) {
+                  ItemCounter<MigratableHandler> handlerLoadCounter) {
         this.selectorToHandlers = selectorToHandlers;
-        this.handlerEventsCounter = handlerEventsCounter;
+        this.handlerLoadCounter = handlerLoadCounter;
     }
 
     /**
@@ -61,7 +61,7 @@ class LoadImbalance {
      * @param handler
      * @return number of events recorded by the handler
      */
-    long getEventCount(MigratableHandler handler) {
-        return handlerEventsCounter.get(handler);
+    long getLoad(MigratableHandler handler) {
+        return handlerLoadCounter.get(handler);
     }
 }

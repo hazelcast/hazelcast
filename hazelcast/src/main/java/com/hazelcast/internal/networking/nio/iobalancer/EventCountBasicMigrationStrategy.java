@@ -81,7 +81,7 @@ class EventCountBasicMigrationStrategy implements MigrationStrategy {
         MigratableHandler candidate = null;
         long eventCountInSelectedHandler = 0;
         for (MigratableHandler handler : candidates) {
-            long eventCount = imbalance.getEventCount(handler);
+            long eventCount = imbalance.getLoad(handler);
             if (eventCount > eventCountInSelectedHandler) {
                 if (eventCount < migrationThreshold) {
                     eventCountInSelectedHandler = eventCount;
