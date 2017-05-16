@@ -56,11 +56,49 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
      */
     protected static final String DEFAULT_NEAR_CACHE_NAME = "defaultNearCache";
 
-    private static final AtomicInteger SERIALIZE_COUNT = new AtomicInteger();
-    private static final AtomicInteger DESERIALIZE_COUNT = new AtomicInteger();
+    /**
+     * Array filled with 1 ints.
+     */
+    protected static final int[] INT_ARRAY_1 = {1, 1, 1};
 
-    private static final AtomicReference<List<String>> SERIALIZE_STACKTRACE = new AtomicReference<List<String>>();
-    private static final AtomicReference<List<String>> DESERIALIZE_STACKTRACE = new AtomicReference<List<String>>();
+    /**
+     * Array filled with 0 ints.
+     */
+    protected static final int[] INT_ARRAY_0 = {0, 0, 0};
+
+    private static final AtomicInteger KEY_SERIALIZE_COUNT = new AtomicInteger();
+    private static final AtomicInteger KEY_DESERIALIZE_COUNT = new AtomicInteger();
+    private static final AtomicInteger VALUE_SERIALIZE_COUNT = new AtomicInteger();
+    private static final AtomicInteger VALUE_DESERIALIZE_COUNT = new AtomicInteger();
+
+    private static final AtomicReference<List<String>> KEY_SERIALIZE_STACKTRACE = new AtomicReference<List<String>>();
+    private static final AtomicReference<List<String>> KEY_DESERIALIZE_STACKTRACE = new AtomicReference<List<String>>();
+    private static final AtomicReference<List<String>> VALUE_SERIALIZE_STACKTRACE = new AtomicReference<List<String>>();
+    private static final AtomicReference<List<String>> VALUE_DESERIALIZE_STACKTRACE = new AtomicReference<List<String>>();
+
+    /**
+     * An array with the expected number of key serializations for a {@link DataStructureAdapter#put}
+     * and two {@link DataStructureAdapter#get(Object)} calls for the given {@link NearCacheConfig}.
+     */
+    protected int[] expectedKeySerializationCounts;
+
+    /**
+     * An array with the expected number of key deserializations for a {@link DataStructureAdapter#put}
+     * and two {@link DataStructureAdapter#get(Object)} calls for the given {@link NearCacheConfig}.
+     */
+    protected int[] expectedKeyDeserializationCounts;
+
+    /**
+     * An array with the expected number of value serializations for a {@link DataStructureAdapter#put}
+     * and two {@link DataStructureAdapter#get(Object)} calls for the given {@link NearCacheConfig}.
+     */
+    protected int[] expectedValueSerializationCounts;
+
+    /**
+     * An array with the expected number of value deserializations for a {@link DataStructureAdapter#put}
+     * and two {@link DataStructureAdapter#get(Object)} calls for the given {@link NearCacheConfig}.
+     */
+    protected int[] expectedValueDeserializationCounts;
 
     /**
      * The {@link NearCacheConfig} used by the Near Cache tests.
@@ -68,22 +106,6 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
      * Needs to be set by the implementations of this class in their {@link org.junit.Before} methods.
      */
     protected NearCacheConfig nearCacheConfig;
-
-    /**
-     * An array with the expected number of serializations for a {@link DataStructureAdapter#put}
-     * and two {@link DataStructureAdapter#get(Object)} calls for the given {@link NearCacheConfig}.
-     *
-     * @return an array with expected serialization counts
-     */
-    protected abstract int[] getExpectedSerializationCounts();
-
-    /**
-     * An array with the expected number of deserializations for a {@link DataStructureAdapter#put}
-     * and two {@link DataStructureAdapter#get(Object)} calls for the given {@link NearCacheConfig}.
-     *
-     * @return an array with expected deserialization counts
-     */
-    protected abstract int[] getExpectedDeserializationCounts();
 
     /**
      * Creates the {@link NearCacheTestContext} used by the Near Cache tests.
@@ -96,10 +118,15 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
 
     @Before
     public final void initStates() {
-        DESERIALIZE_COUNT.set(0);
-        SERIALIZE_COUNT.set(0);
-        SERIALIZE_STACKTRACE.set(new CopyOnWriteArrayList<String>());
-        DESERIALIZE_STACKTRACE.set(new CopyOnWriteArrayList<String>());
+        KEY_SERIALIZE_COUNT.set(0);
+        KEY_DESERIALIZE_COUNT.set(0);
+        VALUE_SERIALIZE_COUNT.set(0);
+        VALUE_DESERIALIZE_COUNT.set(0);
+
+        KEY_SERIALIZE_STACKTRACE.set(new CopyOnWriteArrayList<String>());
+        KEY_DESERIALIZE_STACKTRACE.set(new CopyOnWriteArrayList<String>());
+        VALUE_SERIALIZE_STACKTRACE.set(new CopyOnWriteArrayList<String>());
+        VALUE_DESERIALIZE_STACKTRACE.set(new CopyOnWriteArrayList<String>());
     }
 
     /**
@@ -107,22 +134,53 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
      */
     @Test
     public void testSerializationCounts() {
-        NearCacheTestContext<String, SerializationCountingData, NK, NV> context = createContext();
+        NearCacheTestContext<KeySerializationCountingData, ValueSerializationCountingData, NK, NV> context = createContext();
 
-        String key = randomString();
-        SerializationCountingData value = new SerializationCountingData();
+        KeySerializationCountingData key = new KeySerializationCountingData();
+        ValueSerializationCountingData value = new ValueSerializationCountingData();
 
         context.nearCacheAdapter.put(key, value);
         if (isCacheOnUpdate(nearCacheConfig)) {
             assertNearCacheSizeEventually(context, 1);
         }
-        assertAndReset("put()", getExpectedSerializationCounts()[0], getExpectedDeserializationCounts()[0]);
+        assertAndReset("put()", 0);
 
         context.nearCacheAdapter.get(key);
-        assertAndReset("first get()", getExpectedSerializationCounts()[1], getExpectedDeserializationCounts()[1]);
+        assertAndReset("first get()", 1);
 
         context.nearCacheAdapter.get(key);
-        assertAndReset("second get()", getExpectedSerializationCounts()[2], getExpectedDeserializationCounts()[2]);
+        assertAndReset("second get()", 2);
+    }
+
+    private void assertAndReset(String label, int index) {
+        int expectedKeySerializeCount = expectedKeySerializationCounts[index];
+        int expectedKeyDeserializeCount = expectedKeyDeserializationCounts[index];
+        int expectedValueSerializeCount = expectedValueSerializationCounts[index];
+        int expectedValueDeserializeCount = expectedValueDeserializationCounts[index];
+
+        int actualKeySerializeCount = KEY_SERIALIZE_COUNT.getAndSet(0);
+        int actualKeyDeserializeCount = KEY_DESERIALIZE_COUNT.getAndSet(0);
+        int actualValueSerializeCount = VALUE_SERIALIZE_COUNT.getAndSet(0);
+        int actualValueDeserializeCount = VALUE_DESERIALIZE_COUNT.getAndSet(0);
+
+        List<String> keySerializeStackTrace = KEY_SERIALIZE_STACKTRACE.getAndSet(new CopyOnWriteArrayList<String>());
+        List<String> keyDeserializeStackTrace = KEY_DESERIALIZE_STACKTRACE.getAndSet(new CopyOnWriteArrayList<String>());
+        List<String> valueSerializeStackTrace = VALUE_SERIALIZE_STACKTRACE.getAndSet(new CopyOnWriteArrayList<String>());
+        List<String> valueDeserializeStackTrace = VALUE_DESERIALIZE_STACKTRACE.getAndSet(new CopyOnWriteArrayList<String>());
+
+        assertEquals(format("key serializeCount on %s: expected %d, but was %d%n%s",
+                label, expectedKeySerializeCount, actualKeySerializeCount, keySerializeStackTrace),
+                expectedKeySerializeCount, actualKeySerializeCount);
+        assertEquals(format("key deserializeCount on %s: expected %d, but was %d%n%s",
+                label, expectedKeyDeserializeCount, actualKeyDeserializeCount, keyDeserializeStackTrace),
+                expectedKeyDeserializeCount, actualKeyDeserializeCount);
+
+        assertEquals(format("value serializeCount on %s: expected %d, but was %d%n%s",
+                label, expectedValueSerializeCount, actualValueSerializeCount, valueSerializeStackTrace),
+                expectedValueSerializeCount, actualValueSerializeCount);
+        assertEquals(format("value deserializeCount on %s: expected %d, but was %d%n%s",
+                label, expectedValueDeserializeCount, actualValueDeserializeCount, valueDeserializeStackTrace),
+                expectedValueDeserializeCount, actualValueDeserializeCount);
     }
 
     /**
@@ -131,37 +189,41 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
      * @param serializationConfig the given {@link SerializationConfig} for the {@link DataStructureAdapter}
      */
     protected static void prepareSerializationConfig(SerializationConfig serializationConfig) {
-        ClassDefinition classDefinition = new ClassDefinitionBuilder(SerializationCountingData.FACTORY_ID,
-                SerializationCountingData.CLASS_ID).build();
-        serializationConfig.addClassDefinition(classDefinition);
+        ClassDefinition keyClassDefinition = new ClassDefinitionBuilder(KeySerializationCountingData.FACTORY_ID,
+                KeySerializationCountingData.CLASS_ID).build();
+        serializationConfig.addClassDefinition(keyClassDefinition);
 
-        serializationConfig.addPortableFactory(SerializationCountingData.FACTORY_ID, new PortableFactory() {
+        ClassDefinition valueClassDefinition = new ClassDefinitionBuilder(ValueSerializationCountingData.FACTORY_ID,
+                ValueSerializationCountingData.CLASS_ID).build();
+        serializationConfig.addClassDefinition(valueClassDefinition);
+
+        serializationConfig.addPortableFactory(KeySerializationCountingData.FACTORY_ID, new PortableFactory() {
             @Override
             public Portable create(int classId) {
-                return new SerializationCountingData();
+                return new KeySerializationCountingData();
+            }
+        });
+        serializationConfig.addPortableFactory(ValueSerializationCountingData.FACTORY_ID, new PortableFactory() {
+            @Override
+            public Portable create(int classId) {
+                return new ValueSerializationCountingData();
             }
         });
     }
 
-    private static void assertAndReset(String label, int serializeCount, int deserializeCount) {
-        int actualSerializeCount = SERIALIZE_COUNT.getAndSet(0);
-        int actualDeserializeCount = DESERIALIZE_COUNT.getAndSet(0);
-        List<String> serializeStackTrace = SERIALIZE_STACKTRACE.getAndSet(new CopyOnWriteArrayList<String>());
-        List<String> deserializeStackTrace = DESERIALIZE_STACKTRACE.getAndSet(new CopyOnWriteArrayList<String>());
-        assertEquals(format("serializeCount on %s: expected %d, but was %d%n%s",
-                label, serializeCount, actualSerializeCount, serializeStackTrace),
-                serializeCount, actualSerializeCount);
-        assertEquals(format("deserializeCount on %s: expected %d, but was %d%n%s",
-                label, deserializeCount, actualDeserializeCount, deserializeStackTrace),
-                deserializeCount, actualDeserializeCount);
+    private static String getStackTrace(String message) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        new HazelcastSerializationException(message).printStackTrace(pw);
+        return sw.toString();
     }
 
-    private static class SerializationCountingData implements Portable {
+    private static class KeySerializationCountingData implements Portable {
 
         private static int FACTORY_ID = 1;
         private static int CLASS_ID = 1;
 
-        SerializationCountingData() {
+        KeySerializationCountingData() {
         }
 
         @Override
@@ -176,21 +238,45 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            SERIALIZE_COUNT.incrementAndGet();
-            SERIALIZE_STACKTRACE.get().add(getStackTrace("invoked serialization"));
+            KEY_SERIALIZE_COUNT.incrementAndGet();
+            KEY_SERIALIZE_STACKTRACE.get().add(getStackTrace("invoked key serialization"));
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            DESERIALIZE_COUNT.incrementAndGet();
-            DESERIALIZE_STACKTRACE.get().add(getStackTrace("invoked deserialization"));
+            KEY_DESERIALIZE_COUNT.incrementAndGet();
+            KEY_DESERIALIZE_STACKTRACE.get().add(getStackTrace("invoked key deserialization"));
+        }
+    }
+
+    private static class ValueSerializationCountingData implements Portable {
+
+        private static int FACTORY_ID = 2;
+        private static int CLASS_ID = 2;
+
+        ValueSerializationCountingData() {
         }
 
-        private static String getStackTrace(String message) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            new HazelcastSerializationException(message).printStackTrace(pw);
-            return sw.toString();
+        @Override
+        public int getFactoryId() {
+            return FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return CLASS_ID;
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer) throws IOException {
+            VALUE_SERIALIZE_COUNT.incrementAndGet();
+            VALUE_SERIALIZE_STACKTRACE.get().add(getStackTrace("invoked value serialization"));
+        }
+
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+            VALUE_DESERIALIZE_COUNT.incrementAndGet();
+            VALUE_DESERIALIZE_STACKTRACE.get().add(getStackTrace("invoked value deserialization"));
         }
     }
 }

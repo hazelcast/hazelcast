@@ -58,34 +58,50 @@ import static java.util.Arrays.asList;
 public class ClientMapNearCacheSerializationCountTest extends AbstractNearCacheSerializationCountTest<Data, String> {
 
     @Parameter
-    public int[] expectedSerializationCounts;
+    public int[] keySerializationCounts;
 
     @Parameter(value = 1)
-    public int[] expectedDeserializationCounts;
+    public int[] keyDeserializationCounts;
 
     @Parameter(value = 2)
-    public InMemoryFormat mapInMemoryFormat;
+    public int[] valueSerializationCounts;
 
     @Parameter(value = 3)
+    public int[] valueDeserializationCounts;
+
+    @Parameter(value = 4)
+    public InMemoryFormat mapInMemoryFormat;
+
+    @Parameter(value = 5)
     public InMemoryFormat nearCacheInMemoryFormat;
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @Parameters(name = "mapFormat:{2} nearCacheFormat:{3}")
+    @Parameters(name = "mapFormat:{4} nearCacheFormat:{5}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, null,},
-                {new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, BINARY,},
-                {new int[]{1, 0, 0}, new int[]{0, 1, 0}, BINARY, OBJECT,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, null,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, null,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, BINARY,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, BINARY,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 0, 0}, new int[]{0, 1, 0}, BINARY, OBJECT,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 0, 0}, new int[]{0, 1, 0}, BINARY, OBJECT,},
 
-                {new int[]{1, 1, 1}, new int[]{1, 1, 1}, OBJECT, null,},
-                {new int[]{1, 1, 0}, new int[]{1, 1, 1}, OBJECT, BINARY,},
-                {new int[]{1, 1, 0}, new int[]{1, 1, 0}, OBJECT, OBJECT,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 1, 1}, new int[]{1, 1, 1}, OBJECT, null,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 1, 1}, new int[]{1, 1, 1}, OBJECT, null,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 1, 0}, new int[]{1, 1, 1}, OBJECT, BINARY,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 1, 0}, new int[]{1, 1, 1}, OBJECT, BINARY,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 1, 0}, new int[]{1, 1, 0}, OBJECT, OBJECT,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 1, 0}, new int[]{1, 1, 0}, OBJECT, OBJECT,},
         });
     }
 
     @Before
     public void setUp() {
+        expectedKeySerializationCounts = keySerializationCounts;
+        expectedKeyDeserializationCounts = keyDeserializationCounts;
+        expectedValueSerializationCounts = valueSerializationCounts;
+        expectedValueDeserializationCounts = valueDeserializationCounts;
         if (nearCacheInMemoryFormat != null) {
             nearCacheConfig = createNearCacheConfig(nearCacheInMemoryFormat);
         }
@@ -94,16 +110,6 @@ public class ClientMapNearCacheSerializationCountTest extends AbstractNearCacheS
     @After
     public void tearDown() {
         hazelcastFactory.shutdownAll();
-    }
-
-    @Override
-    protected int[] getExpectedSerializationCounts() {
-        return expectedSerializationCounts;
-    }
-
-    @Override
-    protected int[] getExpectedDeserializationCounts() {
-        return expectedDeserializationCounts;
     }
 
     @Override

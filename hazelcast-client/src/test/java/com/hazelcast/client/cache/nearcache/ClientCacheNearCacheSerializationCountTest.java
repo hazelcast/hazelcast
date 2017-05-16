@@ -56,6 +56,8 @@ import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
+import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
 import static java.util.Arrays.asList;
 
@@ -68,41 +70,51 @@ import static java.util.Arrays.asList;
 public class ClientCacheNearCacheSerializationCountTest extends AbstractNearCacheSerializationCountTest<Data, String> {
 
     @Parameter
-    public int[] expectedSerializationCounts;
+    public int[] keySerializationCounts;
 
     @Parameter(value = 1)
-    public int[] expectedDeserializationCounts;
+    public int[] keyDeserializationCounts;
 
     @Parameter(value = 2)
-    public InMemoryFormat cacheInMemoryFormat;
+    public int[] valueSerializationCounts;
 
     @Parameter(value = 3)
-    public InMemoryFormat nearCacheInMemoryFormat;
+    public int[] valueDeserializationCounts;
 
     @Parameter(value = 4)
+    public InMemoryFormat cacheInMemoryFormat;
+
+    @Parameter(value = 5)
+    public InMemoryFormat nearCacheInMemoryFormat;
+
+    @Parameter(value = 6)
     public LocalUpdatePolicy localUpdatePolicy;
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @Parameters(name = "cacheFormat:{2} nearCacheFormat:{3} localUpdatePolicy:{4}")
+    @Parameters(name = "cacheFormat:{4} nearCacheFormat:{5} localUpdatePolicy:{6}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, null, null,},
-                {new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, BINARY, LocalUpdatePolicy.INVALIDATE,},
-                {new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, BINARY, LocalUpdatePolicy.CACHE_ON_UPDATE,},
-                {new int[]{1, 0, 0}, new int[]{0, 1, 0}, BINARY, OBJECT, LocalUpdatePolicy.INVALIDATE,},
-                {new int[]{1, 0, 0}, new int[]{0, 0, 0}, BINARY, OBJECT, LocalUpdatePolicy.CACHE_ON_UPDATE,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, null, null,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, BINARY, INVALIDATE,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, BINARY, CACHE_ON_UPDATE,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 0, 0}, new int[]{0, 1, 0}, BINARY, OBJECT, INVALIDATE,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 0, 0}, new int[]{0, 0, 0}, BINARY, OBJECT, CACHE_ON_UPDATE,},
 
-                {new int[]{1, 1, 1}, new int[]{1, 1, 1}, OBJECT, null, null,},
-                {new int[]{1, 1, 0}, new int[]{1, 1, 1}, OBJECT, BINARY, LocalUpdatePolicy.INVALIDATE,},
-                {new int[]{1, 0, 0}, new int[]{1, 1, 1}, OBJECT, BINARY, LocalUpdatePolicy.CACHE_ON_UPDATE,},
-                {new int[]{1, 1, 0}, new int[]{1, 1, 0}, OBJECT, OBJECT, LocalUpdatePolicy.INVALIDATE,},
-                {new int[]{1, 0, 0}, new int[]{1, 0, 0}, OBJECT, OBJECT, LocalUpdatePolicy.CACHE_ON_UPDATE,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 1, 1}, new int[]{1, 1, 1}, OBJECT, null, null,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 1, 0}, new int[]{1, 1, 1}, OBJECT, BINARY, INVALIDATE,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 0, 0}, new int[]{1, 1, 1}, OBJECT, BINARY, CACHE_ON_UPDATE,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 1, 0}, new int[]{1, 1, 0}, OBJECT, OBJECT, INVALIDATE,},
+                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 0, 0}, new int[]{1, 0, 0}, OBJECT, OBJECT, CACHE_ON_UPDATE,},
         });
     }
 
     @Before
     public void setUp() {
+        expectedKeySerializationCounts = keySerializationCounts;
+        expectedKeyDeserializationCounts = keyDeserializationCounts;
+        expectedValueSerializationCounts = valueSerializationCounts;
+        expectedValueDeserializationCounts = valueDeserializationCounts;
         if (nearCacheInMemoryFormat != null) {
             nearCacheConfig = createNearCacheConfig(nearCacheInMemoryFormat)
                     .setLocalUpdatePolicy(localUpdatePolicy);
@@ -112,16 +124,6 @@ public class ClientCacheNearCacheSerializationCountTest extends AbstractNearCach
     @After
     public void tearDown() {
         hazelcastFactory.shutdownAll();
-    }
-
-    @Override
-    protected int[] getExpectedSerializationCounts() {
-        return expectedSerializationCounts;
-    }
-
-    @Override
-    protected int[] getExpectedDeserializationCounts() {
-        return expectedDeserializationCounts;
     }
 
     @Override
