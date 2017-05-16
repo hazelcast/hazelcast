@@ -22,9 +22,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalida
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.map.impl.nearcache.invalidation.InvalidationListener;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
-import com.hazelcast.spi.EventFilter;
 
-import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class MapInvalidationListener implements NearCacheInvalidationListener, InvalidationListener {
@@ -54,15 +52,8 @@ public class MapInvalidationListener implements NearCacheInvalidationListener, I
 
     public static NearCacheInvalidationListener createInvalidationEventHandler(IMap memberMap) {
         InvalidationListener invalidationListener = new MapInvalidationListener();
-        ((NearCachedMapProxyImpl) memberMap).addNearCacheInvalidationListener(invalidationListener, new TrueEventFilter());
+        ((NearCachedMapProxyImpl) memberMap).addNearCacheInvalidationListener(invalidationListener);
 
         return (NearCacheInvalidationListener) invalidationListener;
-    }
-
-    private static class TrueEventFilter implements EventFilter, Serializable {
-        @Override
-        public boolean eval(Object event) {
-            return true;
-        }
     }
 }

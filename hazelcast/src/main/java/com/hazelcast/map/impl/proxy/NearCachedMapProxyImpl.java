@@ -517,14 +517,14 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         return thisAddress.equals(partitionOwner);
     }
 
-    public String addNearCacheInvalidationListener(InvalidationListener listener, EventFilter eventFilter) {
+    public String addNearCacheInvalidationListener(InvalidationListener listener) {
+        EventFilter eventFilter = new UuidFilter(localMemberUuid);
         return mapServiceContext.addEventListener(listener, eventFilter, name);
     }
 
     private void registerInvalidationListener() {
         repairingHandler = mapNearCacheManager.newRepairingHandler(name, nearCache);
-        EventFilter eventFilter = new UuidFilter(getNodeEngine().getLocalMember().getUuid());
-        invalidationListenerId = addNearCacheInvalidationListener(new NearCacheInvalidationListener(), eventFilter);
+        invalidationListenerId = addNearCacheInvalidationListener(new NearCacheInvalidationListener());
     }
 
     private final class NearCacheInvalidationListener implements InvalidationListener {
