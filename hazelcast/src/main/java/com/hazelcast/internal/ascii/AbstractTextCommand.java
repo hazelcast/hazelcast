@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.ascii;
 
-import com.hazelcast.nio.ascii.TextChannelInboundHandler;
-import com.hazelcast.nio.ascii.TextChannelOutboundHandler;
+import com.hazelcast.nio.ascii.TextCommandDecoder;
+import com.hazelcast.nio.ascii.TextCommandEncoder;
 
 public abstract class AbstractTextCommand implements TextCommand {
     protected final TextCommandConstants.TextCommandType type;
-    private TextChannelInboundHandler readHandler;
-    private TextChannelOutboundHandler writeHandler;
+    private TextCommandDecoder readHandler;
+    private TextCommandEncoder writeHandler;
     private long requestId = -1;
 
     protected AbstractTextCommand(TextCommandConstants.TextCommandType type) {
@@ -35,12 +35,12 @@ public abstract class AbstractTextCommand implements TextCommand {
     }
 
     @Override
-    public TextChannelInboundHandler getReadHandler() {
+    public TextCommandDecoder getReadHandler() {
         return readHandler;
     }
 
     @Override
-    public TextChannelOutboundHandler getWriteHandler() {
+    public TextCommandEncoder getWriteHandler() {
         return writeHandler;
     }
 
@@ -50,7 +50,7 @@ public abstract class AbstractTextCommand implements TextCommand {
     }
 
     @Override
-    public void init(TextChannelInboundHandler textReadHandler, long requestId) {
+    public void init(TextCommandDecoder textReadHandler, long requestId) {
         this.readHandler = textReadHandler;
         this.requestId = requestId;
         this.writeHandler = textReadHandler.getTextWriteHandler();

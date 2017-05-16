@@ -18,7 +18,7 @@ package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.internal.ascii.NoOpCommand;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.ascii.TextChannelInboundHandler;
+import com.hazelcast.nio.ascii.TextCommandDecoder;
 import com.hazelcast.util.StringUtil;
 
 import java.nio.ByteBuffer;
@@ -36,10 +36,10 @@ public class HttpPostCommand extends HttpCommand {
     private ByteBuffer data;
     private ByteBuffer line = ByteBuffer.allocate(CAPACITY);
     private String contentType;
-    private final TextChannelInboundHandler readHandler;
+    private final TextCommandDecoder readHandler;
     private boolean chunked;
 
-    public HttpPostCommand(TextChannelInboundHandler readHandler, String uri) {
+    public HttpPostCommand(TextCommandDecoder readHandler, String uri) {
         super(HTTP_POST, uri);
         this.readHandler = readHandler;
     }

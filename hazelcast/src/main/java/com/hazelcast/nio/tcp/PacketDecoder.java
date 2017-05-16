@@ -25,14 +25,14 @@ import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 import java.nio.ByteBuffer;
 
 /**
- * The {@link ChannelInboundHandler} for member to member communication.
+ * The {@link ChannelInboundHandler} that decodes packet; for member to member communication.
  *
  * It reads as many packets from the src ByteBuffer as possible, and each of the Packets is send to the {@link PacketDispatcher}.
  *
  * @see PacketDispatcher
- * @see MemberChannelOutboundHandler
+ * @see PacketEncoder
  */
-public class MemberChannelInboundHandler implements ChannelInboundHandler {
+public class PacketDecoder implements ChannelInboundHandler {
 
     protected final TcpIpConnection connection;
     protected Packet packet;
@@ -41,7 +41,7 @@ public class MemberChannelInboundHandler implements ChannelInboundHandler {
     private final Counter normalPacketsRead;
     private final Counter priorityPacketsRead;
 
-    public MemberChannelInboundHandler(TcpIpConnection connection, PacketDispatcher packetDispatcher) {
+    public PacketDecoder(TcpIpConnection connection, PacketDispatcher packetDispatcher) {
         this.connection = connection;
         this.packetDispatcher = packetDispatcher;
         ChannelReader channelReader = connection.getChannelReader();

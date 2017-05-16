@@ -59,7 +59,7 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
 
 @PrivateApi
-public class TextChannelInboundHandler implements ChannelInboundHandler {
+public class TextCommandDecoder implements ChannelInboundHandler {
 
     private static final Map<String, CommandParser> MAP_COMMAND_PARSERS = new HashMap<String, CommandParser>();
 
@@ -94,7 +94,7 @@ public class TextChannelInboundHandler implements ChannelInboundHandler {
     private boolean commandLineRead;
     private TextCommand command;
     private final TextCommandService textCommandService;
-    private final TextChannelOutboundHandler textWriteHandler;
+    private final TextCommandEncoder textWriteHandler;
     private final TcpIpConnection connection;
     private final boolean restEnabled;
     private final boolean memcacheEnabled;
@@ -103,10 +103,10 @@ public class TextChannelInboundHandler implements ChannelInboundHandler {
     private long requestIdGen;
     private final ILogger logger;
 
-    public TextChannelInboundHandler(TcpIpConnection connection) {
+    public TextCommandDecoder(TcpIpConnection connection) {
         IOService ioService = connection.getConnectionManager().getIoService();
         this.textCommandService = ioService.getTextCommandService();
-        this.textWriteHandler = (TextChannelOutboundHandler) connection.getChannelWriter().getOutboundHandler();
+        this.textWriteHandler = (TextCommandEncoder) connection.getChannelWriter().getOutboundHandler();
         this.connection = connection;
         this.memcacheEnabled = ioService.isMemcacheEnabled();
         this.restEnabled = ioService.isRestEnabled();
@@ -244,7 +244,7 @@ public class TextChannelInboundHandler implements ChannelInboundHandler {
         }
     }
 
-    public TextChannelOutboundHandler getTextWriteHandler() {
+    public TextCommandEncoder getTextWriteHandler() {
         return textWriteHandler;
     }
 

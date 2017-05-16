@@ -19,7 +19,7 @@ package com.hazelcast.internal.ascii.rest;
 import com.hazelcast.internal.ascii.CommandParser;
 import com.hazelcast.internal.ascii.TextCommand;
 import com.hazelcast.internal.ascii.memcache.ErrorCommand;
-import com.hazelcast.nio.ascii.TextChannelInboundHandler;
+import com.hazelcast.nio.ascii.TextCommandDecoder;
 
 import java.util.StringTokenizer;
 
@@ -28,7 +28,7 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 public class HttpPostCommandParser implements CommandParser {
 
     @Override
-    public TextCommand parser(TextChannelInboundHandler readHandler, String cmd, int space) {
+    public TextCommand parser(TextCommandDecoder readHandler, String cmd, int space) {
         StringTokenizer st = new StringTokenizer(cmd);
         st.nextToken();
         String uri;
