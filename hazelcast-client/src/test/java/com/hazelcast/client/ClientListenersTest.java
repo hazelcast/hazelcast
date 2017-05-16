@@ -59,6 +59,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertTrue;
 
@@ -218,17 +219,16 @@ public class ClientListenersTest extends HazelcastTestSupport {
 
     @Test
     public void testLifecycleListener_registeredViaClassName() {
-        assertTrue(StaticListener.calledAtLeastOnce);
+        assertTrue(StaticListener.CALLED_AT_LEAST_ONCE.get());
     }
 
     public static class StaticListener implements LifecycleListener {
-        private static volatile boolean calledAtLeastOnce;
+
+        private static final AtomicBoolean CALLED_AT_LEAST_ONCE = new AtomicBoolean();
 
         @Override
         public void stateChanged(LifecycleEvent event) {
-            calledAtLeastOnce = true;
+            CALLED_AT_LEAST_ONCE.set(true);
         }
     }
-
-
 }

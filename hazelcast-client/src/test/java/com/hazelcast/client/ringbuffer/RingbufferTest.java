@@ -44,7 +44,7 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class RingbufferTest extends HazelcastTestSupport {
 
-    public static int CAPACITY = 10;
+    public static final int CAPACITY = 10;
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastInstance client;

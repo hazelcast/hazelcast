@@ -21,7 +21,6 @@ import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IList;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -55,7 +54,7 @@ public class ClientTimeoutTest {
         clientConfig.getGroupConfig().setName("dev").setPassword("dev-pass");
         clientConfig.getNetworkConfig().addAddress("8.8.8.8:5701");
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-        IList<Object> list = client.getList("test");
+        client.getList("test");
     }
 
     @Test

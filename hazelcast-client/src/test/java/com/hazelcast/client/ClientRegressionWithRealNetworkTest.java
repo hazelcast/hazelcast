@@ -57,7 +57,7 @@ public class ClientRegressionWithRealNetworkTest extends HazelcastTestSupport {
         final Config config2 = new Config();
         config2.getGroupConfig().setName("bar");
         config2.getNetworkConfig().setPort(5702);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config2);
+        Hazelcast.newHazelcastInstance(config2);
 
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.getGroupConfig().setName("bar");
@@ -84,7 +84,7 @@ public class ClientRegressionWithRealNetworkTest extends HazelcastTestSupport {
             public void run() {
                 ClientConfig config = new ClientConfig();
                 config.getNetworkConfig().setConnectionAttemptLimit(10);
-                HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
+                HazelcastClient.newHazelcastClient(config);
                 clientLatch.countDown();
             }
         });

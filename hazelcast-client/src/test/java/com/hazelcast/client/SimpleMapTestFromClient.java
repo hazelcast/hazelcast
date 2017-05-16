@@ -23,7 +23,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.spi.properties.GroupProperty;
 import org.junit.Ignore;
 
-import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
@@ -37,12 +36,6 @@ public class SimpleMapTestFromClient {
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
         GroupProperty.PHONE_HOME_ENABLED.setSystemProperty("false");
         GroupProperty.SOCKET_BIND_ANY.setSystemProperty("false");
-
-        Random rand = new Random();
-        int g1 = rand.nextInt(255);
-        int g2 = rand.nextInt(255);
-        int g3 = rand.nextInt(255);
-//        System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
     }
 
     public static int THREAD_COUNT = 40;
@@ -54,8 +47,8 @@ public class SimpleMapTestFromClient {
 
     public static void main(String[] args) {
         final ClientConfig clientConfig = new ClientConfig();
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         final Stats stats = new Stats();
         if (args != null && args.length > 0) {

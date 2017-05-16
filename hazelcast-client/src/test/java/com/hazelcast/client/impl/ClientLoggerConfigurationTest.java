@@ -41,8 +41,7 @@ import static org.junit.Assert.assertSame;
 @Category({QuickTest.class})
 public class ClientLoggerConfigurationTest extends HazelcastTestSupport {
 
-    private static TestHazelcastFactory hazelcastFactory;
-    private static HazelcastInstance client;
+    private TestHazelcastFactory hazelcastFactory;
 
     @Rule
     public SaveLoggingPropertiesRule saveLoggingPropertiesRule = new SaveLoggingPropertiesRule();
@@ -78,14 +77,13 @@ public class ClientLoggerConfigurationTest extends HazelcastTestSupport {
         cg.setProperty("hazelcast.logging.type", "jdk");
         hazelcastFactory.newHazelcastInstance(cg);
 
-
         ClientConfig config = new ClientConfig();
         if (programmaticConfiguration) {
             config.setProperty("hazelcast.logging.type", "log4j2");
         } else {
             System.setProperty("hazelcast.logging.type", "log4j2");
         }
-        client = hazelcastFactory.newHazelcastClient(config);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
 
         ILogger clientLogger = client.getLoggingService().getLogger("loggerName");
         // this part is fragile.

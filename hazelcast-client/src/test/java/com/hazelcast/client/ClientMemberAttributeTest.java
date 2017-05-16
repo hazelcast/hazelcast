@@ -29,7 +29,6 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -120,7 +119,6 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         JoinConfig join = c.getNetworkConfig().getJoin();
         join.getTcpIpConfig().addMember("127.0.0.1").setEnabled(true);
         join.getMulticastConfig().setEnabled(false);
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance(c);
         Member m1 = h1.getCluster().getLocalMember();
@@ -153,7 +151,6 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         }
 
         assertTrue(found);
-
     }
 
     @Test(timeout = 120000)
