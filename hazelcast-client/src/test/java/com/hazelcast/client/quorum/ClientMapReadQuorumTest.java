@@ -49,11 +49,6 @@ public class ClientMapReadQuorumTest extends HazelcastTestSupport {
     private static final String QUORUM_ID = "threeNodeQuorumRule";
 
     static PartitionedCluster cluster;
-    static IMap<Object, Object> map1;
-    static IMap<Object, Object> map2;
-    static IMap<Object, Object> map3;
-    static IMap<Object, Object> map4;
-    static IMap<Object, Object> map5;
 
     static HazelcastInstance c1;
     static HazelcastInstance c2;
@@ -62,6 +57,12 @@ public class ClientMapReadQuorumTest extends HazelcastTestSupport {
     static HazelcastInstance c5;
 
     private static TestHazelcastFactory factory;
+
+    IMap<Object, Object> map1;
+    IMap<Object, Object> map2;
+    IMap<Object, Object> map3;
+    IMap<Object, Object> map4;
+    IMap<Object, Object> map5;
 
     @BeforeClass
     public static void initialize() throws Exception {
@@ -118,14 +119,14 @@ public class ClientMapReadQuorumTest extends HazelcastTestSupport {
 
     @Test
     public void testGetAsyncOperationSuccessfulWhenQuorumSizeMet() throws Exception {
-        Future<Object> foo = map1.getAsync("foo");
-        foo.get();
+        Future<Object> future = map1.getAsync("foo");
+        future.get();
     }
 
     @Test(expected = ExecutionException.class)
     public void testGetAsyncOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        Future<Object> foo = map4.getAsync("foo");
-        foo.get();
+        Future<Object> future = map4.getAsync("foo");
+        future.get();
     }
 
     @Test

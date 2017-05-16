@@ -51,21 +51,23 @@ public class MapReadWriteQuorumTest {
     private static final String QUORUM_ID = "threeNodeQuorumRule";
 
     static PartitionedCluster cluster;
-    static IMap<Object, Object> map1;
-    static IMap<Object, Object> map2;
-    static IMap<Object, Object> map3;
-    static IMap<Object, Object> map4;
-    static IMap<Object, Object> map5;
+
+    IMap<Object, Object> map1;
+    IMap<Object, Object> map2;
+    IMap<Object, Object> map3;
+    IMap<Object, Object> map5;
+    IMap<Object, Object> map4;
 
     @BeforeClass
-    public static void initialize() throws Exception {
+    public static void initialize() {
         QuorumConfig quorumConfig = new QuorumConfig();
         quorumConfig.setName(QUORUM_ID);
         quorumConfig.setEnabled(true);
         quorumConfig.setSize(3);
         MapConfig mapConfig = new MapConfig(MAP_NAME_PREFIX + "*");
         mapConfig.setQuorumName(QUORUM_ID);
-        cluster = new PartitionedCluster(new TestHazelcastInstanceFactory()).partitionFiveMembersThreeAndTwo(mapConfig, quorumConfig);
+        cluster = new PartitionedCluster(new TestHazelcastInstanceFactory())
+                .partitionFiveMembersThreeAndTwo(mapConfig, quorumConfig);
     }
 
     @Before
@@ -125,14 +127,14 @@ public class MapReadWriteQuorumTest {
 
     @Test
     public void testPutAsyncOperationSuccessfulWhenQuorumSizeMet() throws Exception {
-        Future<Object> foo = map1.putAsync("foo", "bar");
-        foo.get();
+        Future<Object> future = map1.putAsync("foo", "bar");
+        future.get();
     }
 
     @Test(expected = ExecutionException.class)
     public void testPutAsyncOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        Future<Object> foo = map4.putAsync("foo", "bar");
-        foo.get();
+        Future<Object> future = map4.putAsync("foo", "bar");
+        future.get();
     }
 
     @Test
@@ -161,14 +163,14 @@ public class MapReadWriteQuorumTest {
 
     @Test
     public void testGetAsyncOperationSuccessfulWhenQuorumSizeMet() throws Exception {
-        Future<Object> foo = map1.getAsync("foo");
-        foo.get();
+        Future<Object> future = map1.getAsync("foo");
+        future.get();
     }
 
     @Test(expected = ExecutionException.class)
     public void testGetAsyncOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        Future<Object> foo = map4.getAsync("foo");
-        foo.get();
+        Future<Object> future = map4.getAsync("foo");
+        future.get();
     }
 
     @Test
@@ -217,14 +219,14 @@ public class MapReadWriteQuorumTest {
 
     @Test
     public void testRemoveAsyncOperationSuccessfulWhenQuorumSizeMet() throws Exception {
-        Future<Object> foo = map1.removeAsync("foo");
-        foo.get();
+        Future<Object> future = map1.removeAsync("foo");
+        future.get();
     }
 
     @Test(expected = ExecutionException.class)
     public void testRemoveAsyncOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        Future<Object> foo = map4.removeAsync("foo");
-        foo.get();
+        Future<Object> future = map4.removeAsync("foo");
+        future.get();
     }
 
     @Test
@@ -443,13 +445,13 @@ public class MapReadWriteQuorumTest {
 
     @Test
     public void testSubmitToKeyOperationSuccessfulWhenQuorumSizeMet() throws Exception {
-        Future foo = map1.submitToKey("foo", new TestLoggingEntryProcessor());
-        foo.get();
+        Future future = map1.submitToKey("foo", new TestLoggingEntryProcessor());
+        future.get();
     }
 
     @Test(expected = ExecutionException.class)
     public void testSubmitToKeyOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        Future foo = map4.submitToKey("foo", new TestLoggingEntryProcessor());
-        foo.get();
+        Future future = map4.submitToKey("foo", new TestLoggingEntryProcessor());
+        future.get();
     }
 }

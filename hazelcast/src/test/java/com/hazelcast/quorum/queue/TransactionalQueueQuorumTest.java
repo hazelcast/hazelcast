@@ -31,31 +31,34 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.util.Arrays;
 import java.util.Collection;
 
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
+import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class TransactionalQueueQuorumTest extends AbstractQueueQuorumTest {
 
-    @Parameterized.Parameter(0)
+    @Parameter
     public TransactionOptions options;
 
-    @Parameterized.Parameters(name = "Executing: {0}")
+    @Parameters(name = "Executing: {0}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(
+        return asList(
                 new Object[]{TransactionOptions.getDefault().setTransactionType(ONE_PHASE)},
                 new Object[]{TransactionOptions.getDefault().setTransactionType(TWO_PHASE)}
         );
     }
 
     @BeforeClass
-    public static void initialize() throws Exception {
+    public static void initialize() {
         initializeFiveMemberCluster(QuorumType.READ_WRITE, 3);
         q4.add("foo");
         addQueueData(q4);

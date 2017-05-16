@@ -32,7 +32,7 @@ import org.junit.runner.RunWith;
 public class LockReadWriteQuorumTest extends AbstractLockQuorumTest {
 
     @BeforeClass
-    public static void initialize() throws Exception {
+    public static void initialize() {
         initializeFiveMemberCluster(QuorumType.READ_WRITE, 3);
         cluster.splitFiveMembersThreeAndTwo();
     }

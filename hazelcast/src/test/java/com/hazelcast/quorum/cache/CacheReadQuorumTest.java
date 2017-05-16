@@ -63,7 +63,7 @@ public class CacheReadQuorumTest {
     private ICache<Integer, String> cache5;
 
     @BeforeClass
-    public static void initialize() throws Exception {
+    public static void initialize() {
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
         cacheConfig.setName(CACHE_NAME_PREFIX + "*");
         cacheConfig.setQuorumName(QUORUM_ID);
@@ -144,14 +144,14 @@ public class CacheReadQuorumTest {
 
     @Test
     public void testGetAsyncOperationSuccessfulWhenQuorumSizeMet() throws Exception {
-        Future<String> foo = cache1.getAsync(1);
-        foo.get();
+        Future<String> future = cache1.getAsync(1);
+        future.get();
     }
 
     @Test(expected = ExecutionException.class)
     public void testGetAsyncOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        Future<String> foo = cache4.getAsync(1);
-        foo.get();
+        Future<String> future = cache4.getAsync(1);
+        future.get();
     }
 
     @Test
