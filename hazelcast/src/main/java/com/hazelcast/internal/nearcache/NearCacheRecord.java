@@ -88,27 +88,6 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
     boolean isIdleAt(long maxIdleMilliSeconds, long now);
 
     /**
-     * @return last known invalidation sequence at time of this records' creation
-     */
-    long getInvalidationSequence();
-
-    /**
-     * @param sequence last known invalidation sequence at time of this records' creation
-     */
-    void setInvalidationSequence(long sequence);
-
-    /**
-     * @param uuid last known uuid of invalidation source at time of this records' creation
-     */
-    void setUuid(UUID uuid);
-
-    /**
-     * @return {@code true} if supplied uuid equals existing one, otherwise and when one of supplied
-     * or existing is null returns {@code false}
-     */
-    boolean hasSameUuid(UUID uuid);
-
-    /**
      * @return current state of this record.
      */
     long getRecordState();
@@ -120,4 +99,35 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
      * the actual value was not equal to the expected value.
      */
     boolean casRecordState(long expect, long update);
+
+    /**
+     * @return the partition ID of this record
+     */
+    int getPartitionId();
+
+    /**
+     * @param partitionId the partition ID of this record
+     */
+    void setPartitionId(int partitionId);
+
+    /**
+     * @return last known invalidation sequence at time of this records' creation
+     */
+    long getInvalidationSequence();
+
+    /**
+     * @param sequence last known invalidation sequence at time of this records' creation
+     */
+    void setInvalidationSequence(long sequence);
+
+    /**
+     * @param uuid last known UUID of invalidation source at time of this records' creation
+     */
+    void setUuid(UUID uuid);
+
+    /**
+     * @return {@code true} if supplied uuid equals existing one, otherwise and when one of supplied
+     * or existing is null returns {@code false}
+     */
+    boolean hasSameUuid(UUID uuid);
 }
