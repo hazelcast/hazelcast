@@ -395,7 +395,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
             }
         });
 
-        assertTrue(completed.await(3, TimeUnit.SECONDS));
+        assertTrue("completed.await() didn't finish in 3 seconds", completed.await(3, TimeUnit.SECONDS));
 
         // can't get replaced keys from client-2
         for (int i : loadKeys) {
