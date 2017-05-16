@@ -95,17 +95,17 @@ public class ClientCacheNearCacheSerializationCountTest extends AbstractNearCach
     @Parameters(name = "cacheFormat:{4} nearCacheFormat:{5} localUpdatePolicy:{6}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, null, null,},
-                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, BINARY, INVALIDATE,},
-                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, BINARY, CACHE_ON_UPDATE,},
-                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 0, 0}, new int[]{0, 1, 0}, BINARY, OBJECT, INVALIDATE,},
-                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 0, 0}, new int[]{0, 0, 0}, BINARY, OBJECT, CACHE_ON_UPDATE,},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, null, null},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, BINARY, INVALIDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, BINARY, CACHE_ON_UPDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), BINARY, OBJECT, INVALIDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 0, 0), BINARY, OBJECT, CACHE_ON_UPDATE},
 
-                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 1, 1}, new int[]{1, 1, 1}, OBJECT, null, null,},
-                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 1, 0}, new int[]{1, 1, 1}, OBJECT, BINARY, INVALIDATE,},
-                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 0, 0}, new int[]{1, 1, 1}, OBJECT, BINARY, CACHE_ON_UPDATE,},
-                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 1, 0}, new int[]{1, 1, 0}, OBJECT, OBJECT, INVALIDATE,},
-                {INT_ARRAY_1, INT_ARRAY_0, new int[]{1, 0, 0}, new int[]{1, 0, 0}, OBJECT, OBJECT, CACHE_ON_UPDATE,},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 1), newInt(1, 1, 1), OBJECT, null, null},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 1), OBJECT, BINARY, INVALIDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(1, 1, 1), OBJECT, BINARY, CACHE_ON_UPDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 0), OBJECT, OBJECT, INVALIDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(1, 0, 0), OBJECT, OBJECT, CACHE_ON_UPDATE},
         });
     }
 
