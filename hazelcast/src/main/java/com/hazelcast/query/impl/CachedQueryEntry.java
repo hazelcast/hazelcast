@@ -17,9 +17,15 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.impl.getters.Extractors;
+
+import java.io.IOException;
 
 /**
  * Entry of the Query.
@@ -27,7 +33,7 @@ import com.hazelcast.query.impl.getters.Extractors;
  * @param <K> key
  * @param <V> value
  */
-public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
+public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements IdentifiedDataSerializable {
 
     protected Data keyData;
     protected Data valueData;
@@ -139,4 +145,37 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
     public int hashCode() {
         return keyData.hashCode();
     }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.CACHED_QUERY_ENTRY;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeData(keyData);
+        out.writeByte(valueData != null ? 0 : 1);
+        if (valueData != null) {
+            out.writeData(valueData);
+        } else {
+            out.writeObject(valueObject);
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        keyData = in.readData();
+        byte b = in.readByte();
+        if (b == 0) {
+            valueData = in.readData();
+        } else {
+            valueObject = in.readObject();
+        }
+    }
+
 }
