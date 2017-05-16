@@ -211,6 +211,34 @@ public class ProcessorsTest {
         testAccumulate(p, a_listResultTester());
     }
 
+    @Test
+    public void countDistinct() {
+        final Processor p = processorFrom(Processors.countDistinct());
+        testCountDistinct(p);
+    }
+
+    @Test
+    public void countDistinctKeyExtractor() {
+        final Processor p = processorFrom(Processors.countDistinct((Integer i) -> i + 1));
+        testCountDistinct(p);
+    }
+
+    private void testCountDistinct(Processor p) {
+        // Given
+        inbox.add(1);
+        inbox.add(1);
+        inbox.add(2);
+        inbox.add(2);
+        p.process(0, inbox);
+
+        // When
+        final boolean done = p.complete();
+        // Then
+        assertTrue(done);
+        assertEquals(1, bucket.size());
+        assertEquals(2L, bucket.remove());
+    }
+
     private static TwinConsumer<String> ga_stringResultTester() {
         final Set<String> expected = new HashSet<>(asList("1:[1, 1]", "2:[2, 2]"));
         return (String result1, String result2) -> assertEquals(expected, new HashSet<>(asList(result1, result2)));

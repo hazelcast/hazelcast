@@ -57,6 +57,7 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.jet.Traversers.lazy;
 import static com.hazelcast.jet.Traversers.traverseStream;
+import static com.hazelcast.jet.function.DistributedFunction.identity;
 import static com.hazelcast.jet.function.DistributedFunctions.alwaysTrue;
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
@@ -362,7 +363,7 @@ public final class Processors {
      * A source that generates a stream of lines of text coming from files in
      * the watched directory (but not its subdirectories). It will pick up both
      * newly created files and content appended to pre-existing files. It
-     * expects the file content not to change once appended. There will be no
+     * expects the file content not to change once appended. There is no
      * indication which file a particular line comes from.
      * <p>
      * The processor will scan pre-existing files for file sizes on startup and
@@ -608,7 +609,7 @@ public final class Processors {
             @Nonnull DistributedSupplier<? extends A> supplier,
             @Nonnull DistributedBiFunction<? super A, ? super T, ? extends A> accumulator
     ) {
-        return groupAndAccumulate(DistributedFunction.identity(), supplier, accumulator);
+        return groupAndAccumulate(identity(), supplier, accumulator);
     }
 
     /**
@@ -695,7 +696,7 @@ public final class Processors {
             @Nonnull DistributedSupplier<? extends A> supplier,
             @Nonnull DistributedBiConsumer<? super A, ? super T> collector
     ) {
-        return groupAndCollect(DistributedFunction.identity(), supplier, collector);
+        return groupAndCollect(identity(), supplier, collector);
     }
 
     /**
@@ -801,11 +802,27 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of {@link CountDistinctP} processors.
+     * Returns a supplier of processors with the following semantics:
+     * <ul><li>
+     *     Accepts items of type {@code T}.
+     * </li><li>
+     *     Computes the key of type {@code K} by applying the key extractor
+     *     to the item.
+     * </li><li>
+     *     Maintains a set of all seen keys.
+     * </li><li>
+     *     Emits the size of the set (the number of seen distinct keys) as a
+     *     {@code Long} value.
+     * </li></ul>
      *
-     * @param keyExtractor the key extractor function
+     * To work properly the vertex has to be connected to upstream vertex by an
+     * edge that is defined as {@link Edge#allToOne() all-to-one} and {@link
+     * Edge#distributed() distributed}.
+     *
+     * @param keyExtractor function to extract key from input item
      * @param <T> received item type
      * @param <K> key type
+     * @see #countDistinct()
      */
     @Nonnull
     public static <T, K> DistributedSupplier<Processor> countDistinct(@Nonnull DistributedFunction<T, K> keyExtractor) {
@@ -819,7 +836,7 @@ public final class Processors {
      */
     @Nonnull
     public static DistributedSupplier<Processor> countDistinct() {
-        return () -> new CountDistinctP<>(x -> x);
+        return countDistinct(identity());
     }
 
     /**
@@ -1128,37 +1145,16 @@ public final class Processors {
         }
     }
 
-    /**
-     * Processor with the following semantics:
-     * <ul><li>
-     *     Accepts items of type {@code T}.
-     * </li><li>
-     *     Computes the key of type {@code K} by applying the key extractor
-     *     to the item.
-     * </li><li>
-     *     Maintains a set of all seen keys.
-     * </li><li>
-     *     Emits the size of the set (the number of seen distinct keys) as a
-     *     {@code Long} value.
-     * </li></ul>
-     *
-     * @param <T> type of received item
-     * @param <K> type of grouping key
-     */
     private static class CountDistinctP<T, K> extends AbstractProcessor {
         private final DistributedFunction<T, K> extractKey;
         private final Set<K> seenItems = new HashSet<>();
 
-        /**
-         * Constructs the processor with the given key extractor function.
-         */
         CountDistinctP(@Nonnull DistributedFunction<T, K> extractKey) {
             this.extractKey = extractKey;
         }
 
         @Override
         protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-            assert ordinal == 0;
             seenItems.add(extractKey.apply((T) item));
             return true;
         }

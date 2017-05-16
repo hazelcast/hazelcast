@@ -130,8 +130,8 @@ public final class PunctuationPolicies {
      * disruptions in the functioning of this policy.
      * <p>
      * In most cases the {@link #limitingLagAndLull(long, long)
-     * cappingTimestampLagAndLull} policy should be preferred; this is a
-     * backup option for cases where some substreams may never see an event.
+     * limitingLagAndLull} policy should be preferred; this is a backup option
+     * for cases where some substreams may never see an event.
      *
      * @param timestampLag maximum difference between the top observed timestamp
      *                     and the punctuation
