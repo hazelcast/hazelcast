@@ -25,6 +25,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -34,7 +35,7 @@ public class StringPartitioningStrategyTest {
     public void testGetBaseName() {
         assertEquals("foo", getBaseName("foo"));
         assertEquals("", getBaseName(""));
-        assertEquals(null, getBaseName(null));
+        assertNull(getBaseName(null));
         assertEquals("foo", getBaseName("foo@bar"));
         assertEquals("foo", getBaseName("foo@"));
         assertEquals("", getBaseName("@bar"));
@@ -45,7 +46,7 @@ public class StringPartitioningStrategyTest {
     public void testGetPartitionKey() {
         assertEquals("foo", getPartitionKey("foo"));
         assertEquals("", getPartitionKey(""));
-        assertEquals(null, getPartitionKey(null));
+        assertNull(getPartitionKey(null));
         assertEquals("bar", getPartitionKey("foo@bar"));
         assertEquals("", getPartitionKey("foo@"));
         assertEquals("bar", getPartitionKey("@bar"));

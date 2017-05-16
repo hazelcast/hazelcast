@@ -56,8 +56,8 @@ public class ScheduledExecutorServiceSlowTest
         double result = future.get();
 
         assertEquals(expectedResult, result, 0);
-        assertEquals(true, future.isDone());
-        assertEquals(false, future.isCancelled());
+        assertTrue(future.isDone());
+        assertFalse(future.isCancelled());
     }
 
     @Test

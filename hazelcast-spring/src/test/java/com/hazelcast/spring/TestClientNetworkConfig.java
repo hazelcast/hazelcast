@@ -36,6 +36,7 @@ import javax.annotation.Resource;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -78,7 +79,7 @@ public class TestClientNetworkConfig {
     public void smokeSocketInterceptor() {
         ClientConfig config = client.getClientConfig();
         SocketInterceptorConfig socketInterceptorConfig = config.getNetworkConfig().getSocketInterceptorConfig();
-        assertEquals(false, socketInterceptorConfig.isEnabled());
+        assertFalse(socketInterceptorConfig.isEnabled());
         assertEquals(DummySocketInterceptor.class.getName(), socketInterceptorConfig.getClassName());
     }
 

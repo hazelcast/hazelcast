@@ -51,6 +51,7 @@ import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
@@ -336,7 +337,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         Object result = map.executeOnKey(key, new EntryIncOffloadableReadOnlyNoReturnValue());
         assertEquals(expectedValue, map.get(key));
         assertBackupEventually(instances[1], MAP_NAME, key, isBackup() ? expectedValue : null);
-        assertEquals(null, result);
+        assertNull(result);
 
         instances[0].shutdown();
         assertEquals(expectedValue, map.get(key));

@@ -32,6 +32,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -147,14 +148,13 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
             }
         });
 
-
         client.shutdown();
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(null, clientEngine1.getOwnerUuid(clientUuid));
-                assertEquals(null, clientEngine2.getOwnerUuid(clientUuid));
+                assertNull(clientEngine1.getOwnerUuid(clientUuid));
+                assertNull(clientEngine2.getOwnerUuid(clientUuid));
             }
         });
     }
@@ -220,8 +220,8 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(null, clientEngine2.getOwnerUuid(clientUuid));
-                assertEquals(null, clientEngine3.getOwnerUuid(clientUuid));
+                assertNull(clientEngine2.getOwnerUuid(clientUuid));
+                assertNull(clientEngine3.getOwnerUuid(clientUuid));
             }
         });
     }

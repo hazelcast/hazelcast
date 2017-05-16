@@ -89,7 +89,7 @@ public class LegacyClientConditionTest extends HazelcastTestSupport {
         assertOpenEventually(threadGetTheLock);
 
         lock.lock();
-        assertEquals(true, lock.isLocked());
+        assertTrue(lock.isLocked());
         condition.signal();
         lock.unlock();
         t.join();

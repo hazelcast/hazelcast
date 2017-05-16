@@ -518,7 +518,7 @@ public class HazelcastOSGiInstanceTest {
 
         when(mockHazelcastInstance.removeDistributedObjectListener("my-registration-id")).thenReturn(true);
 
-        assertEquals(true, hazelcastOSGiInstance.removeDistributedObjectListener("my-registration-id"));
+        assertTrue(hazelcastOSGiInstance.removeDistributedObjectListener("my-registration-id"));
 
         verify(mockHazelcastInstance).removeDistributedObjectListener("my-registration-id");
     }

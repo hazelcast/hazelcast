@@ -222,11 +222,11 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("com.hazelcast.examples.GlobalSerializerFactory", globalSerializerConfig.getClassName());
 
         assertEquals(ByteOrder.BIG_ENDIAN, serializationConfig.getByteOrder());
-        assertEquals(true, serializationConfig.isCheckClassDefErrors());
-        assertEquals(false, serializationConfig.isAllowUnsafe());
-        assertEquals(false, serializationConfig.isEnableCompression());
-        assertEquals(true, serializationConfig.isEnableSharedObject());
-        assertEquals(true, serializationConfig.isUseNativeByteOrder());
+        assertTrue(serializationConfig.isCheckClassDefErrors());
+        assertFalse(serializationConfig.isAllowUnsafe());
+        assertFalse(serializationConfig.isEnableCompression());
+        assertTrue(serializationConfig.isEnableSharedObject());
+        assertTrue(serializationConfig.isUseNativeByteOrder());
     }
 
     @Test

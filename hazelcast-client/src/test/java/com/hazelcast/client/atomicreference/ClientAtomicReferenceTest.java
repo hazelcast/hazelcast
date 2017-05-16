@@ -183,13 +183,13 @@ public class ClientAtomicReferenceTest extends HazelcastTestSupport {
     @Test
     public void apply() {
         assertEquals("null", clientReference.apply(new AppendFunction("")));
-        assertEquals(null, clientReference.get());
+        assertNull(clientReference.get());
 
         clientReference.set("foo");
         assertEquals("foobar", clientReference.apply(new AppendFunction("bar")));
         assertEquals("foo", clientReference.get());
 
-        assertEquals(null, clientReference.apply(new NullFunction()));
+        assertNull(clientReference.apply(new NullFunction()));
         assertEquals("foo", clientReference.get());
     }
 
@@ -201,14 +201,14 @@ public class ClientAtomicReferenceTest extends HazelcastTestSupport {
     @Test
     public void alter() {
         clientReference.alter(new NullFunction());
-        assertEquals(null, clientReference.get());
+        assertNull(clientReference.get());
 
         clientReference.set("foo");
         clientReference.alter(new AppendFunction("bar"));
         assertEquals("foobar", clientReference.get());
 
         clientReference.alter(new NullFunction());
-        assertEquals(null, clientReference.get());
+        assertNull(clientReference.get());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -219,14 +219,14 @@ public class ClientAtomicReferenceTest extends HazelcastTestSupport {
     @Test
     public void alterAndGet() {
         assertNull(clientReference.alterAndGet(new NullFunction()));
-        assertEquals(null, clientReference.get());
+        assertNull(clientReference.get());
 
         clientReference.set("foo");
         assertEquals("foobar", clientReference.alterAndGet(new AppendFunction("bar")));
         assertEquals("foobar", clientReference.get());
 
-        assertEquals(null, clientReference.alterAndGet(new NullFunction()));
-        assertEquals(null, clientReference.get());
+        assertNull(clientReference.alterAndGet(new NullFunction()));
+        assertNull(clientReference.get());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -237,14 +237,14 @@ public class ClientAtomicReferenceTest extends HazelcastTestSupport {
     @Test
     public void getAndAlter() {
         assertNull(clientReference.getAndAlter(new NullFunction()));
-        assertEquals(null, clientReference.get());
+        assertNull(clientReference.get());
 
         clientReference.set("foo");
         assertEquals("foo", clientReference.getAndAlter(new AppendFunction("bar")));
         assertEquals("foobar", clientReference.get());
 
         assertEquals("foobar", clientReference.getAndAlter(new NullFunction()));
-        assertEquals(null, clientReference.get());
+        assertNull(clientReference.get());
     }
 
     private static class AppendFunction implements IFunction<String, String> {

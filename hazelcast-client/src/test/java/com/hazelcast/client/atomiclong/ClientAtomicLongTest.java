@@ -158,7 +158,7 @@ public class ClientAtomicLongTest extends HazelcastTestSupport {
         });
         if (cdl.await(15, TimeUnit.SECONDS)) {
             assertEquals(1, ref.get());
-            assertEquals(false, failed.get());
+            assertFalse(failed.get());
         } else {
             fail("Timeout after 15 seconds");
         }

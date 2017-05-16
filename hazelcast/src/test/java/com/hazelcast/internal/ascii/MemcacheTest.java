@@ -318,7 +318,7 @@ public class MemcacheTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(null, client.get(key));
+                assertNull(client.get(key));
             }
         });
     }

@@ -31,6 +31,7 @@ import java.nio.ByteBuffer;
 import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -52,7 +53,7 @@ public abstract class HyperLogLogEncoderAbstractTest {
 
     @Test
     public void add() {
-        assertEquals(true, encoder.add(1000L));
+        assertTrue(encoder.add(1000L));
         assertEquals(1L, encoder.estimate());
     }
 

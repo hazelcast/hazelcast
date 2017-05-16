@@ -71,6 +71,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -503,7 +504,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(null, map.get("a"));
+                assertNull(map.get("a"));
             }
         });
     }

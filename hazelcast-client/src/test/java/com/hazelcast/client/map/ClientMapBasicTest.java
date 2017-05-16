@@ -210,7 +210,7 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
         String result = map.put(key, value, 1, TimeUnit.SECONDS);
         assertNull(result);
         sleepSeconds(2);
-        assertEquals(null, map.get(key));
+        assertNull(map.get(key));
     }
 
     @Test
@@ -224,7 +224,7 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
         String result = map.put(key, newValue, 1, TimeUnit.SECONDS);
         assertEquals(oldValue, result);
         sleepSeconds(2);
-        assertEquals(null, map.get(key));
+        assertNull(map.get(key));
     }
 
     @Test
@@ -235,7 +235,7 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
 
         Future result = map.putAsync(key, value);
 
-        assertEquals(null, result.get());
+        assertNull(result.get());
         assertEquals(value, map.get(key));
     }
 
@@ -277,7 +277,7 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
 
         Future result = map.putAsync(key, value, 5, TimeUnit.MINUTES);
 
-        assertEquals(null, result.get());
+        assertNull(result.get());
         assertEquals(value, map.get(key));
     }
 
@@ -302,9 +302,9 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
         String value = "Val";
 
         Future result = map.putAsync(key, value, 1, TimeUnit.SECONDS);
-        assertEquals(null, result.get());
+        assertNull(result.get());
         sleepSeconds(2);
-        assertEquals(null, map.get(key));
+        assertNull(map.get(key));
     }
 
     @Test
@@ -319,7 +319,7 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
 
         assertEquals(oldValue, result.get());
         sleepSeconds(2);
-        assertEquals(null, map.get(key));
+        assertNull(map.get(key));
     }
 
     @Test
@@ -377,7 +377,7 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
         Future<Void> result = map.setAsync(key, value, 1, TimeUnit.SECONDS);
         result.get();
         assertOpenEventually(latch);
-        assertEquals(null, map.get(key));
+        assertNull(map.get(key));
     }
 
     @Test
@@ -397,7 +397,7 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
         Future<Void> result = map.setAsync(key, newValue, 1, TimeUnit.SECONDS);
         result.get();
         assertOpenEventually(latch);
-        assertEquals(null, map.get(key));
+        assertNull(map.get(key));
     }
 
     @Test
@@ -448,7 +448,7 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
 
         String result = map.putIfAbsent(key, value);
 
-        assertEquals(null, result);
+        assertNull(result);
         assertEquals(value, map.get(key));
     }
 
@@ -487,7 +487,7 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
 
         String result = map.putIfAbsent(key, value, 5, TimeUnit.MINUTES);
 
-        assertEquals(null, result);
+        assertNull(result);
         assertEquals(value, map.get(key));
     }
 
@@ -500,8 +500,8 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
         String result = map.putIfAbsent(key, value, 1, TimeUnit.SECONDS);
         sleepSeconds(2);
 
-        assertEquals(null, result);
-        assertEquals(null, map.get(key));
+        assertNull(result);
+        assertNull(map.get(key));
     }
 
     @Test
@@ -626,7 +626,7 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
     @Test
     public void testGet_whenKeyAbsent() {
         IMap<String, String> map = client.getMap(randomString());
-        assertEquals(null, map.get("NOT_THERE"));
+        assertNull(map.get("NOT_THERE"));
     }
 
     @Test(expected = NullPointerException.class)
@@ -651,7 +651,7 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
         IMap<String, String> map = client.getMap(randomString());
 
         Future result = map.getAsync("NOT_THERE");
-        assertEquals(null, result.get());
+        assertNull(result.get());
     }
 
     @Test(expected = NullPointerException.class)
@@ -700,7 +700,7 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
 
         map.set(key, val, 1, TimeUnit.SECONDS);
         sleepSeconds(2);
-        assertEquals(null, map.get(key));
+        assertNull(map.get(key));
     }
 
     @Test
@@ -713,7 +713,7 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
         map.set(key, oldValue);
         map.set(key, newValue, 1, TimeUnit.SECONDS);
         sleepSeconds(2);
-        assertEquals(null, map.get(key));
+        assertNull(map.get(key));
     }
 
     @Test
@@ -781,7 +781,7 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
         Future result = map.removeAsync(key);
 
         assertEquals(value, result.get());
-        assertEquals(null, map.get(key));
+        assertNull(map.get(key));
     }
 
     @Test
@@ -789,7 +789,7 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
         IMap<String, String> map = client.getMap(randomString());
 
         Future result = map.removeAsync("NOT_THERE");
-        assertEquals(null, result.get());
+        assertNull(result.get());
     }
 
     @Test(expected = NullPointerException.class)
@@ -869,7 +869,7 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
         map.put(key, value);
         boolean result = map.evict(key);
         assertTrue(result);
-        assertEquals(null, map.get(key));
+        assertNull(map.get(key));
     }
 
     @Test
@@ -993,7 +993,7 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
 
         map.putTransient(key, value, 1, TimeUnit.SECONDS);
         sleepSeconds(2);
-        assertEquals(null, map.get(key));
+        assertNull(map.get(key));
     }
 
     @Test
@@ -1018,7 +1018,7 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
         map.put(key, oldValue);
         map.putTransient(key, newValue, 1, TimeUnit.SECONDS);
         sleepSeconds(2);
-        assertEquals(null, map.get(key));
+        assertNull(map.get(key));
     }
 
     @Test
@@ -1026,7 +1026,7 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
         IMap<String, String> map = client.getMap(randomString());
         EntryView view = map.getEntryView("NOT_THERE");
 
-        assertEquals(null, view);
+        assertNull(view);
     }
 
     @Test

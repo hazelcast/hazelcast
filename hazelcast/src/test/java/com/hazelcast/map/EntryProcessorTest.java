@@ -732,8 +732,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         map.executeOnKey(2, entryProcessor);
         map.executeOnEntries(entryProcessor);
 
-        assertEquals(null, map.get(1));
-        assertEquals(null, map.get(2));
+        assertNull(map.get(1));
+        assertNull(map.get(2));
         assertEquals(1, map.size());
     }
 
@@ -792,7 +792,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         map.executeOnKey(1, new ValueSetterEntryProcessor(null));
 
         assertEquals((Integer) 1, map.get(2));
-        assertEquals(null, map.get(1));
+        assertNull(map.get(1));
         assertTrue(latch.await(100, TimeUnit.SECONDS));
         assertEquals(2, addCount.get());
         assertEquals(3, updateCount.get());

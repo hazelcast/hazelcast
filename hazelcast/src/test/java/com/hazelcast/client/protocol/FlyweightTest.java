@@ -32,6 +32,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Flyweight Tests
@@ -140,7 +141,7 @@ public class FlyweightTest {
     public void shouldDecodeBoolean() {
         flyweight.set(true);
         flyweight.index(0);
-        assertEquals(true, flyweight.getBoolean());
+        assertTrue(flyweight.getBoolean());
         assertEquals(1, flyweight.index());
     }
 
@@ -156,7 +157,6 @@ public class FlyweightTest {
 
     @Test
     public void shouldDecodeByteArray() {
-
         flyweight.set(DATA);
         flyweight.index(0);
 
@@ -181,5 +181,4 @@ public class FlyweightTest {
         flyweight.set(true);
         flyweight.set(DATA);
     }
-
 }

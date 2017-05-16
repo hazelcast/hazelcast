@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -78,7 +79,7 @@ public class ConfigXmlGeneratorTest {
 
         ReplicatedMapConfig xmlReplicatedMapConfig = xmlConfig.getReplicatedMapConfig("replicated-map-name");
         assertEquals("replicated-map-name", xmlReplicatedMapConfig.getName());
-        assertEquals(false, xmlReplicatedMapConfig.isStatisticsEnabled());
+        assertFalse(xmlReplicatedMapConfig.isStatisticsEnabled());
         assertEquals(128, xmlReplicatedMapConfig.getConcurrencyLevel());
         assertEquals("com.hazelcast.entrylistener", xmlReplicatedMapConfig.getListenerConfigs().get(0).getClassName());
     }
@@ -130,7 +131,7 @@ public class ConfigXmlGeneratorTest {
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         NativeMemoryConfig xmlNativeMemoryConfig = xmlConfig.getNativeMemoryConfig();
-        assertEquals(true, xmlNativeMemoryConfig.isEnabled());
+        assertTrue(xmlNativeMemoryConfig.isEnabled());
         assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, nativeMemoryConfig.getAllocatorType());
         assertEquals(12.5, nativeMemoryConfig.getMetadataSpacePercentage(), 0.0001);
         assertEquals(50, nativeMemoryConfig.getMinBlockSize());
