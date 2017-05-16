@@ -16,12 +16,13 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.client.impl.protocol.util.ClientMessageChannelInboundHandler;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.ChannelReader;
-import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.ChannelWriter;
 import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.logging.ILogger;
@@ -58,7 +59,7 @@ public class MemberChannelInitializer implements ChannelInitializer<TcpIpConnect
     @Override
     public InitResult<ChannelInboundHandler> initInbound(TcpIpConnection connection, ChannelReader reader) throws IOException {
         TcpIpConnectionManager connectionManager = connection.getConnectionManager();
-        IOService ioService = connectionManager.getIoService();
+        final IOService ioService = connectionManager.getIoService();
 
         Channel channel = reader.getChannel();
         ByteBuffer protocolBuffer = getProtocolBuffer(channel);
@@ -94,7 +95,9 @@ public class MemberChannelInitializer implements ChannelInitializer<TcpIpConnect
         } else if (CLIENT_BINARY_NEW.equals(protocol)) {
             inputBuffer = initInputBuffer(connection, ioService.getSocketClientReceiveBufferSize());
             channelWriter.setProtocol(CLIENT_BINARY_NEW);
-            inboundHandler = new ClientChannelInboundHandler(reader.getNormalFramesReadCounter(), connection, ioService);
+            inboundHandler = new ClientMessageChannelInboundHandler(
+                    reader.getNormalFramesReadCounter(),
+                    new MessageHandlerImpl(connection, ioService.getClientEngine()));
         } else {
             inputBuffer = initInputBuffer(connection, ioService.getSocketReceiveBufferSize());
             channelWriter.setProtocol(TEXT);

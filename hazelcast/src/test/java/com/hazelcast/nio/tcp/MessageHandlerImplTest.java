@@ -16,7 +16,9 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.util.ClientMessageChannelInboundHandler;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOService;
@@ -38,19 +40,23 @@ import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientChannelInboundHandlerTest {
+public class MessageHandlerImplTest {
 
-    private ClientChannelInboundHandler readHandler;
+    private MessageHandlerImpl messageHandler;
     private IOService ioService;
     private Connection connection;
     private SwCounter counter;
+    private ClientMessageChannelInboundHandler inboundHandler;
+    private ClientEngine clientEngine;
 
     @Before
     public void setup() throws IOException {
         ioService = mock(IOService.class);
         connection = mock(Connection.class);
         counter = SwCounter.newSwCounter();
-        readHandler = new ClientChannelInboundHandler(counter, connection, ioService);
+        clientEngine = mock(ClientEngine.class);
+        messageHandler = new MessageHandlerImpl(connection, clientEngine);
+        inboundHandler = new ClientMessageChannelInboundHandler(counter, messageHandler);
     }
 
     @Test
@@ -65,8 +71,8 @@ public class ClientChannelInboundHandlerTest {
         message.writeTo(bb);
         bb.flip();
 
-        readHandler.onRead(bb);
+        inboundHandler.onRead(bb);
 
-        verify(ioService).handleClientMessage(any(ClientMessage.class), eq(connection));
+        verify(clientEngine).handleClientMessage(any(ClientMessage.class), eq(connection));
     }
 }
