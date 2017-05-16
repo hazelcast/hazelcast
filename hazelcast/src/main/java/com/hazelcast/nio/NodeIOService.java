@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.ClientEngine;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
@@ -27,10 +27,10 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
-import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelFactory;
+import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -118,8 +118,8 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public void handleClientMessage(ClientMessage cm, Connection connection) {
-        node.clientEngine.handleClientMessage(cm, connection);
+    public ClientEngine getClientEngine() {
+        return node.clientEngine;
     }
 
     @Override

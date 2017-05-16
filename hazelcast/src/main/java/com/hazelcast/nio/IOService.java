@@ -16,14 +16,14 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.ClientEngine;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.internal.networking.ChannelInboundHandler;
-import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.networking.ChannelFactory;
+import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -56,7 +56,7 @@ public interface IOService {
 
     SSLConfig getSSLConfig();
 
-    void handleClientMessage(ClientMessage cm, Connection connection);
+    ClientEngine getClientEngine();
 
     TextCommandService getTextCommandService();
 
