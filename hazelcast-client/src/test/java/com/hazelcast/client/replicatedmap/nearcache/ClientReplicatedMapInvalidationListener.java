@@ -22,14 +22,14 @@ import com.hazelcast.client.proxy.ClientReplicatedMapProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.internal.nearcache.InvalidationListener;
+import com.hazelcast.internal.nearcache.NearCacheInvalidationListener;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.concurrent.atomic.AtomicLong;
 
 class ClientReplicatedMapInvalidationListener
         extends ReplicatedMapAddNearCacheEntryListenerCodec.AbstractEventHandler
-        implements InvalidationListener, EventHandler<ClientMessage> {
+        implements NearCacheInvalidationListener, EventHandler<ClientMessage> {
 
     private final AtomicLong invalidationCount = new AtomicLong();
     private final ReplicatedMap clientMap;
@@ -75,8 +75,8 @@ class ClientReplicatedMapInvalidationListener
     public void onListenerRegister() {
     }
 
-    static InvalidationListener createInvalidationEventHandler(ReplicatedMap clientMap) {
-        InvalidationListener invalidationListener = new ClientReplicatedMapInvalidationListener(clientMap);
+    static NearCacheInvalidationListener createInvalidationEventHandler(ReplicatedMap clientMap) {
+        NearCacheInvalidationListener invalidationListener = new ClientReplicatedMapInvalidationListener(clientMap);
         ((ClientReplicatedMapProxy) clientMap).addNearCacheInvalidationListener((EventHandler) invalidationListener);
 
         return invalidationListener;

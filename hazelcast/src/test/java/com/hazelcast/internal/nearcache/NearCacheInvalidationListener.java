@@ -19,7 +19,7 @@ package com.hazelcast.internal.nearcache;
 /**
  * Listener for Near Cache invalidations.
  */
-public interface InvalidationListener {
+public interface NearCacheInvalidationListener {
 
     long getInvalidationCount();
 
