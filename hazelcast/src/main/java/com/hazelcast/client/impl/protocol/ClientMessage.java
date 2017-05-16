@@ -113,7 +113,7 @@ public class ClientMessage
 
     protected void wrapForEncode(ClientProtocolBuffer buffer, int offset) {
         ensureHeaderSize(offset, buffer.capacity());
-        super.wrap(buffer, offset);
+        super.wrap(buffer.byteArray(), offset, USE_UNSAFE);
         setDataOffset(HEADER_SIZE);
         setFrameLength(HEADER_SIZE);
         index(getDataOffset());
@@ -129,7 +129,7 @@ public class ClientMessage
 
     protected void wrapForDecode(ClientProtocolBuffer buffer, int offset) {
         ensureHeaderSize(offset, buffer.capacity());
-        super.wrap(buffer, offset);
+        super.wrap(buffer.byteArray(), offset, USE_UNSAFE);
         index(getDataOffset());
     }
 
@@ -332,11 +332,7 @@ public class ClientMessage
             if (frameLength < HEADER_SIZE) {
                 throw new IllegalArgumentException("Client message frame length cannot be smaller than header size.");
             }
-            if (USE_UNSAFE) {
-                wrap(new UnsafeBuffer(new byte[frameLength]), 0);
-            } else {
-                wrap(new SafeBuffer(new byte[frameLength]), 0);
-            }
+            wrap(new byte[frameLength], 0, USE_UNSAFE);
         }
         frameLength = frameLength > 0 ? frameLength : getFrameLength();
         accumulate(src, frameLength - index());

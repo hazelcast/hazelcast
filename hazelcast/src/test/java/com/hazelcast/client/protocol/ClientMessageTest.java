@@ -299,7 +299,7 @@ public class ClientMessageTest {
 
         @Override
         protected void wrapForEncode(ClientProtocolBuffer buffer, int offset) {
-            super.wrap(buffer, offset);
+            super.wrap(buffer.byteArray(), offset, true);
             setDataOffset(THE_NEW_HEADER_SIZE);
             setFrameLength(THE_NEW_HEADER_SIZE);
             index(getDataOffset());

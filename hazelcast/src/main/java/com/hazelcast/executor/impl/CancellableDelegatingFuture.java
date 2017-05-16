@@ -38,7 +38,6 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
     private final String uuid;
     private final int partitionId;
     private final Address target;
-    private volatile boolean cancelled;
 
     CancellableDelegatingFuture(InternalCompletableFuture future, NodeEngine nodeEngine, String uuid, int partitionId) {
         super(future, nodeEngine.getSerializationService());
@@ -67,24 +66,22 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        if (isDone() || cancelled) {
+        if (isDone()) {
             return false;
         }
 
         Future<Boolean> f = invokeCancelOperation(mayInterruptIfRunning);
+        boolean cancelSuccessful = false;
         try {
-            Boolean b = f.get();
-            if (b != null && b) {
-                complete(new CancellationException());
-                cancelled = true;
-                return true;
-            }
-            return false;
+            cancelSuccessful = f.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         } catch (Exception e) {
             throw rethrow(e);
-        } finally {
-            completeWithDefault();
         }
+
+        complete(new CancellationException());
+        return cancelSuccessful;
     }
 
     private Future<Boolean> invokeCancelOperation(boolean mayInterruptIfRunning) {
@@ -100,8 +97,4 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
         return builder.invoke();
     }
 
-    @Override
-    public boolean isCancelled() {
-        return cancelled;
-    }
 }
