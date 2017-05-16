@@ -79,13 +79,13 @@ public class ClientReplicatedMapNearCacheSerializationCountTest extends Abstract
     @Parameters(name = "replicatedMapFormat:{4} nearCacheFormat:{5}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {new int[]{1, 1, 1}, new int[]{0, 0, 0}, new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, null,},
-                {new int[]{1, 1, 0}, new int[]{0, 0, 0}, new int[]{1, 1, 0}, new int[]{0, 1, 1}, BINARY, BINARY,},
-                {new int[]{1, 1, 0}, new int[]{0, 0, 0}, new int[]{1, 0, 0}, new int[]{0, 1, 0}, BINARY, OBJECT,},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, null},
+                {newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 1, 0), newInt(0, 1, 1), BINARY, BINARY},
+                {newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), BINARY, OBJECT},
 
-                {new int[]{1, 1, 1}, new int[]{1, 1, 1}, new int[]{1, 0, 0}, new int[]{1, 0, 0}, OBJECT, null,},
-                {new int[]{1, 1, 0}, new int[]{1, 1, 0}, new int[]{1, 0, 0}, new int[]{1, 0, 0}, OBJECT, BINARY,},
-                {new int[]{1, 1, 0}, new int[]{1, 1, 0}, new int[]{1, 0, 0}, new int[]{1, 0, 0}, OBJECT, OBJECT,},
+                {newInt(1, 1, 1), newInt(1, 1, 1), newInt(1, 0, 0), newInt(1, 0, 0), OBJECT, null},
+                {newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 0, 0), newInt(1, 0, 0), OBJECT, BINARY},
+                {newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 0, 0), newInt(1, 0, 0), OBJECT, OBJECT},
         });
     }
 

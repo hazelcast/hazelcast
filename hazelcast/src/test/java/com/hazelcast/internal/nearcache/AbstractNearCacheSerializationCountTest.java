@@ -56,16 +56,6 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
      */
     protected static final String DEFAULT_NEAR_CACHE_NAME = "defaultNearCache";
 
-    /**
-     * Array filled with 1 ints.
-     */
-    protected static final int[] INT_ARRAY_1 = {1, 1, 1};
-
-    /**
-     * Array filled with 0 ints.
-     */
-    protected static final int[] INT_ARRAY_0 = {0, 0, 0};
-
     private static final AtomicInteger KEY_SERIALIZE_COUNT = new AtomicInteger();
     private static final AtomicInteger KEY_DESERIALIZE_COUNT = new AtomicInteger();
     private static final AtomicInteger VALUE_SERIALIZE_COUNT = new AtomicInteger();
@@ -181,6 +171,18 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
         assertEquals(format("value deserializeCount on %s: expected %d, but was %d%n%s",
                 label, expectedValueDeserializeCount, actualValueDeserializeCount, valueDeserializeStackTrace),
                 expectedValueDeserializeCount, actualValueDeserializeCount);
+    }
+
+    /**
+     * Creates an {@code int[]} for the expected (de)serialization count parameterization.
+     *
+     * @param put       expected count for the put() (de)serialization
+     * @param firstGet  expected count for the first get() (de)serialization
+     * @param secondGet expected count for the second get() (de)serialization
+     * @return the {@code int[]} with the expected (de)serialization counts
+     */
+    protected static int[] newInt(int put, int firstGet, int secondGet) {
+        return new int[]{put, firstGet, secondGet};
     }
 
     /**
