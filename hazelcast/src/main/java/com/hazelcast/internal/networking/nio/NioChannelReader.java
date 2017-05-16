@@ -172,6 +172,23 @@ public final class NioChannelReader
     }
 
     @Override
+    public void publish() {
+        if (Thread.currentThread() != ioThread) {
+            return;
+        }
+
+        ioThread.bytesTransceived += bytesRead.get() - bytesReadLastPublish;
+        ioThread.framesTransceived += normalFramesRead.get() - normalFramesReadLastPublish;
+        ioThread.priorityFramesTransceived += priorityFramesRead.get() - priorityFramesReadLastPublish;
+        ioThread.handleCount += handleCount.get() - handleCountLastPublish;
+
+        bytesReadLastPublish = bytesRead.get();
+        normalFramesReadLastPublish = normalFramesRead.get();
+        priorityFramesReadLastPublish = priorityFramesRead.get();
+        handleCountLastPublish = handleCount.get();
+    }
+
+    @Override
     public void close() {
         ioThread.addTaskAndWakeup(new Runnable() {
             @Override
@@ -220,22 +237,5 @@ public final class NioChannelReader
                 onFailure(t);
             }
         }
-    }
-
-    @Override
-    public void publish() {
-        if (Thread.currentThread() != ioThread) {
-            return;
-        }
-
-        ioThread.bytesTransceived += bytesRead.get() - bytesReadLastPublish;
-        ioThread.framesTransceived += normalFramesRead.get() - normalFramesReadLastPublish;
-        ioThread.priorityFramesTransceived += priorityFramesRead.get() - priorityFramesReadLastPublish;
-        ioThread.handleCount += handleCount.get() - handleCountLastPublish;
-
-        bytesReadLastPublish = bytesRead.get();
-        normalFramesReadLastPublish = normalFramesRead.get();
-        priorityFramesReadLastPublish = priorityFramesRead.get();
-        handleCountLastPublish = handleCount.get();
     }
 }
