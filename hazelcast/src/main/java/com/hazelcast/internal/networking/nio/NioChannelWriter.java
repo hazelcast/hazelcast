@@ -405,7 +405,7 @@ public final class NioChannelWriter
 
     @Override
     public String toString() {
-        return connection + ".socketWriter";
+        return connection + ".channelWriter";
     }
 
     /**

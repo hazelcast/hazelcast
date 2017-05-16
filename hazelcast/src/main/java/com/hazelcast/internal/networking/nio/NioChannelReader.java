@@ -212,7 +212,7 @@ public final class NioChannelReader
 
     @Override
     public String toString() {
-        return connection + ".socketReader";
+        return connection + ".channelReader";
     }
 
     private class StartMigrationTask implements Runnable {
