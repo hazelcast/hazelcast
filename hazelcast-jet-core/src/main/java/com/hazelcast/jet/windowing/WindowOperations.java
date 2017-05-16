@@ -30,7 +30,7 @@ import com.hazelcast.jet.function.DistributedToLongFunction;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -251,7 +251,7 @@ public final class WindowOperations {
                         res[i] = untypedOps[i].createAccumulatorF().get();
                     }
                     // wrap to List to have equals() implemented
-                    return Arrays.asList(res);
+                    return toArrayList(res);
                 },
                 (accs, item) -> {
                     for (int i = 0; i < untypedOps.length; i++) {
@@ -279,9 +279,17 @@ public final class WindowOperations {
                     for (int i = 0; i < untypedOps.length; i++) {
                         res[i] = untypedOps[i].finishAccumulationF().apply(accs.get(i));
                     }
-                    return Arrays.asList(res);
+                    return toArrayList(res);
                 }
         );
+    }
+
+    private static <T> ArrayList<T> toArrayList(T[] array) {
+        ArrayList<T> res = new ArrayList<>(array.length);
+        for (T t : array) {
+            res.add(t);
+        }
+        return res;
     }
 
     /**

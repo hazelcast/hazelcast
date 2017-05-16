@@ -53,7 +53,7 @@ public final class JetSerializerHook {
     public static final int LONG_ACC = -304;
     public static final int DOUBLE_ACC = -305;
     public static final int MUTABLE_REFERENCE = -306;
-    public static final int LIN_REG_ACC = -307;
+    public static final int LIN_TREND_ACC = -307;
     public static final int LONG_LONG_ACC = -308;
     public static final int LONG_DOUBLE_ACC = -309;
 
@@ -309,7 +309,7 @@ public final class JetSerializerHook {
         }
     }
 
-    public static final class LinRegAccSerializer implements SerializerHook<LinTrendAccumulator> {
+    public static final class LinTrendAccSerializer implements SerializerHook<LinTrendAccumulator> {
 
         @Override
         public Class<LinTrendAccumulator> getSerializationType() {
@@ -321,7 +321,7 @@ public final class JetSerializerHook {
             return new StreamSerializer<LinTrendAccumulator>() {
                 @Override
                 public int getTypeId() {
-                    return LIN_REG_ACC;
+                    return LIN_TREND_ACC;
                 }
 
                 @Override

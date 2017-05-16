@@ -4,7 +4,7 @@ com.hazelcast.jet.impl.execution.init.JetSerializerHook$TimestampedEntrySerializ
 com.hazelcast.jet.impl.execution.init.JetSerializerHook$LongAccSerializer
 com.hazelcast.jet.impl.execution.init.JetSerializerHook$DoubleAccSerializer
 com.hazelcast.jet.impl.execution.init.JetSerializerHook$MutableReferenceSerializer
-com.hazelcast.jet.impl.execution.init.JetSerializerHook$LinRegAccSerializer
+com.hazelcast.jet.impl.execution.init.JetSerializerHook$LinTrendAccSerializer
 com.hazelcast.jet.impl.execution.init.JetSerializerHook$LongLongAccSerializer
 com.hazelcast.jet.impl.execution.init.JetSerializerHook$LongDoubleAccSerializer
 com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject$Hook
