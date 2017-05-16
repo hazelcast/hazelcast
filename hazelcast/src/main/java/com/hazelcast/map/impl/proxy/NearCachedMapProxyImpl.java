@@ -89,7 +89,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
         nearCache = mapNearCacheManager.getOrCreateNearCache(name, mapConfig.getNearCacheConfig());
         if (invalidateOnChange) {
-            addNearCacheInvalidateListener();
+            registerInvalidationListener();
         }
     }
 
@@ -517,10 +517,14 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         return thisAddress.equals(partitionOwner);
     }
 
-    private void addNearCacheInvalidateListener() {
+    public String addNearCacheInvalidationListener(InvalidationListener listener, EventFilter eventFilter) {
+        return mapServiceContext.addEventListener(listener, eventFilter, name);
+    }
+
+    private void registerInvalidationListener() {
         repairingHandler = mapNearCacheManager.newRepairingHandler(name, nearCache);
         EventFilter eventFilter = new UuidFilter(getNodeEngine().getLocalMember().getUuid());
-        invalidationListenerId = mapServiceContext.addEventListener(new NearCacheInvalidationListener(), eventFilter, name);
+        invalidationListenerId = addNearCacheInvalidationListener(new NearCacheInvalidationListener(), eventFilter);
     }
 
     private final class NearCacheInvalidationListener implements InvalidationListener {

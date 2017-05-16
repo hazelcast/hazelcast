@@ -49,7 +49,7 @@ public class NearCacheTestContextBuilder<K, V, NK, NV> extends HazelcastTestSupp
 
     private boolean hasLocalData;
     private DataStructureLoader loader;
-    private InvalidationListener invalidationListener;
+    private NearCacheInvalidationListener invalidationListener;
 
     public NearCacheTestContextBuilder(NearCacheConfig nearCacheConfig, SerializationService serializationService) {
         this.nearCacheConfig = nearCacheConfig;
@@ -106,7 +106,7 @@ public class NearCacheTestContextBuilder<K, V, NK, NV> extends HazelcastTestSupp
         return this;
     }
 
-    public NearCacheTestContextBuilder<K, V, NK, NV> setInvalidationListener(InvalidationListener invalidationListener) {
+    public NearCacheTestContextBuilder<K, V, NK, NV> setInvalidationListener(NearCacheInvalidationListener invalidationListener) {
         this.invalidationListener = invalidationListener;
         return this;
     }

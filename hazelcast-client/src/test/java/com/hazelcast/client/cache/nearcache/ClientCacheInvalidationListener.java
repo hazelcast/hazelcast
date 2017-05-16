@@ -21,7 +21,7 @@ import com.hazelcast.client.cache.impl.NearCachedClientCacheProxy;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.internal.nearcache.InvalidationListener;
+import com.hazelcast.internal.nearcache.NearCacheInvalidationListener;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 class ClientCacheInvalidationListener
         extends CacheAddNearCacheInvalidationListenerCodec.AbstractEventHandler
-        implements InvalidationListener, EventHandler<ClientMessage> {
+        implements NearCacheInvalidationListener, EventHandler<ClientMessage> {
 
     private final AtomicLong invalidationCount = new AtomicLong();
 
@@ -63,10 +63,10 @@ class ClientCacheInvalidationListener
     public void onListenerRegister() {
     }
 
-    static InvalidationListener createInvalidationEventHandler(ICache clientCache) {
+    static NearCacheInvalidationListener createInvalidationEventHandler(ICache clientCache) {
         EventHandler invalidationListener = new ClientCacheInvalidationListener();
         ((NearCachedClientCacheProxy) clientCache).addNearCacheInvalidationListener(invalidationListener);
 
-        return (InvalidationListener) invalidationListener;
+        return (NearCacheInvalidationListener) invalidationListener;
     }
 }
