@@ -107,7 +107,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         if (nearCacheConfig != null) {
             nearCache = getContext().getNearCacheManager().getOrCreateNearCache(name, nearCacheConfig);
             if (nearCacheConfig.isInvalidateOnChange()) {
-                addNearCacheInvalidateListener();
+                registerInvalidationListener();
             }
         }
     }
@@ -436,10 +436,14 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         return new ReplicatedMapEventHandler(listener);
     }
 
-    private void addNearCacheInvalidateListener() {
+
+    public String addNearCacheInvalidationListener(EventHandler handler) {
+        return registerListener(createNearCacheInvalidationListenerCodec(), handler);
+    }
+
+    private void registerInvalidationListener() {
         try {
-            EventHandler handler = new ReplicatedMapAddNearCacheEventHandler();
-            invalidationListenerId = registerListener(createNearCacheInvalidationListenerCodec(), handler);
+            invalidationListenerId = addNearCacheInvalidationListener(new ReplicatedMapAddNearCacheEventHandler());
         } catch (Exception e) {
             ILogger logger = getContext().getLoggingService().getLogger(ClientReplicatedMapProxy.class);
             logger.severe("-----------------\nNear Cache is not initialized!\n-----------------", e);
