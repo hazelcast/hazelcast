@@ -35,6 +35,7 @@ import javax.cache.configuration.Configuration;
 import javax.cache.spi.CachingProvider;
 
 import static com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheEvictionChecker.calculateMaxPartitionSize;
+import static java.lang.Integer.parseInt;
 import static org.junit.Assert.assertEquals;
 
 public abstract class CacheTestSupport extends HazelcastTestSupport {
@@ -134,7 +135,7 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
         if (node != null) {
             return node.getProperties().getInteger(GroupProperty.PARTITION_COUNT);
         }
-        return Integer.valueOf(GroupProperty.PARTITION_COUNT.getDefaultValue());
+        return parseInt(GroupProperty.PARTITION_COUNT.getDefaultValue());
     }
 
     protected void assertThatNoCacheEvictionHappened(ICache cache) {

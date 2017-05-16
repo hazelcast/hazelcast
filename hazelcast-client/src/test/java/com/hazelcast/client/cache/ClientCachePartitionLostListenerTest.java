@@ -205,7 +205,7 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
         });
     }
 
-    private class EventCollectingCachePartitionLostListener
+    private static class EventCollectingCachePartitionLostListener
             implements CachePartitionLostListener {
 
         private final List<CachePartitionLostEvent> events = Collections.synchronizedList(new LinkedList<CachePartitionLostEvent>());
@@ -224,5 +224,4 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
             }
         }
     }
-
 }
