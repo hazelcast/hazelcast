@@ -111,11 +111,25 @@ public class CachedExecutorServiceDelegateTest {
         int maxPoolSize = 3;
         ManagedExecutorService executorService = newManagedExecutorService(maxPoolSize, 100);
 
-        for (int i = 0; i < maxPoolSize * 2; i++) {
-            executeInfinitelyRunningTask(executorService);
-        }
+        final CountDownLatch startLatch = new CountDownLatch(maxPoolSize);
+        final CountDownLatch finishLatch = new CountDownLatch(1);
 
-        assertEquals(maxPoolSize, executorService.getPoolSize());
+        try {
+            for (int i = 0; i < maxPoolSize * 2; i++) {
+                executorService.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        startLatch.countDown();
+                        assertOpenEventually(finishLatch);
+                    }
+                });
+            }
+            assertOpenEventually(startLatch);
+
+            assertEquals(maxPoolSize, executorService.getPoolSize());
+        } finally {
+            finishLatch.countDown();
+        }
     }
 
     @Test
@@ -374,15 +388,6 @@ public class CachedExecutorServiceDelegateTest {
                 return null;
             }
         }), 1, TimeUnit.SECONDS);
-    }
-
-    private void executeInfinitelyRunningTask(ExecutorService executorService) {
-        executorService.execute(new Runnable() {
-            @Override
-            public void run() {
-                LockSupport.park();
-            }
-        });
     }
 
     private CountDownLatch startLongRunningTask(ExecutorService executorService) {
