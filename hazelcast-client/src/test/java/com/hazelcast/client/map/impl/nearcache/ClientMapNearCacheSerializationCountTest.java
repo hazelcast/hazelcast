@@ -70,29 +70,46 @@ public class ClientMapNearCacheSerializationCountTest extends AbstractNearCacheS
     public int[] valueDeserializationCounts;
 
     @Parameter(value = 4)
-    public InMemoryFormat mapInMemoryFormat;
+    public boolean invalidateOnChange;
 
     @Parameter(value = 5)
+    public InMemoryFormat mapInMemoryFormat;
+
+    @Parameter(value = 6)
     public InMemoryFormat nearCacheInMemoryFormat;
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @Parameters(name = "mapFormat:{4} nearCacheFormat:{5}")
+    @Parameters(name = "invalidateOnChange:{4} mapFormat:{5} nearCacheFormat:{6}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, null},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, null},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, BINARY},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, BINARY},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), BINARY, OBJECT},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), BINARY, OBJECT},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), true, BINARY, null},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), true, BINARY, null},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), true, BINARY, BINARY},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), true, BINARY, BINARY},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), true, BINARY, OBJECT},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), true, BINARY, OBJECT},
 
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 1), newInt(1, 1, 1), OBJECT, null},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 1), newInt(1, 1, 1), OBJECT, null},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 1), OBJECT, BINARY},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 1), OBJECT, BINARY},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 0), OBJECT, OBJECT},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 0), OBJECT, OBJECT},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), false, BINARY, null},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), false, BINARY, null},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), false, BINARY, BINARY},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), false, BINARY, BINARY},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), false, BINARY, OBJECT},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), false, BINARY, OBJECT},
+
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 1), newInt(1, 1, 1), true, OBJECT, null},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 1), newInt(1, 1, 1), true, OBJECT, null},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 1), true, OBJECT, BINARY},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 1), true, OBJECT, BINARY},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 0), true, OBJECT, OBJECT},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 0), true, OBJECT, OBJECT},
+
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 1), newInt(1, 1, 1), false, OBJECT, null},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 1), newInt(1, 1, 1), false, OBJECT, null},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 1), false, OBJECT, BINARY},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 1), false, OBJECT, BINARY},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 0), false, OBJECT, OBJECT},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 0), false, OBJECT, OBJECT},
         });
     }
 
@@ -103,7 +120,8 @@ public class ClientMapNearCacheSerializationCountTest extends AbstractNearCacheS
         expectedValueSerializationCounts = valueSerializationCounts;
         expectedValueDeserializationCounts = valueDeserializationCounts;
         if (nearCacheInMemoryFormat != null) {
-            nearCacheConfig = createNearCacheConfig(nearCacheInMemoryFormat);
+            nearCacheConfig = createNearCacheConfig(nearCacheInMemoryFormat)
+                    .setInvalidateOnChange(invalidateOnChange);
         }
     }
 

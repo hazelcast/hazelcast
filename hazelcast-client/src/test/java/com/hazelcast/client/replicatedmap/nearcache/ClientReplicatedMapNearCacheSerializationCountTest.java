@@ -96,7 +96,9 @@ public class ClientReplicatedMapNearCacheSerializationCountTest extends Abstract
         expectedValueSerializationCounts = valueSerializationCounts;
         expectedValueDeserializationCounts = valueDeserializationCounts;
         if (nearCacheInMemoryFormat != null) {
-            nearCacheConfig = createNearCacheConfig(nearCacheInMemoryFormat);
+            nearCacheConfig = createNearCacheConfig(nearCacheInMemoryFormat)
+                    // we have to disable invalidations, otherwise there will be an non-deterministic serialization in a listener
+                    .setInvalidateOnChange(false);
         }
     }
 
