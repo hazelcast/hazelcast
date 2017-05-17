@@ -96,9 +96,9 @@ public class TxnMapNearCacheSerializationCountTest extends AbstractNearCacheSeri
         expectedValueDeserializationCounts = valueDeserializationCounts;
         if (nearCacheInMemoryFormat != null) {
             nearCacheConfig = createNearCacheConfig(nearCacheInMemoryFormat)
-                    .setCacheLocalEntries(true)
-                    // we have to configure invalidation, otherwise the Near Cache in the TransactionalMap will not be used
-                    .setInvalidateOnChange(true);
+                    // we have to enable invalidations, otherwise the Near Cache in the TransactionalMap will not be used
+                    .setInvalidateOnChange(true)
+                    .setCacheLocalEntries(true);
         }
     }
 
