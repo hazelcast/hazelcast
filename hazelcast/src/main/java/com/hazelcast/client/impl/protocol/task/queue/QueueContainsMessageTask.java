@@ -33,7 +33,7 @@ import java.util.Collection;
 import java.util.HashSet;
 
 /**
- * Client Protocol Task for handling messages with type id:
+ * Client Protocol Task for handling messages with type ID:
  * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_CONTAINS}
  */
 public class QueueContainsMessageTask
