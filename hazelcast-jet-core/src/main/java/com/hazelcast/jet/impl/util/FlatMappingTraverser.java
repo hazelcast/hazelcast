@@ -20,13 +20,19 @@ import com.hazelcast.jet.Traverser;
 
 import java.util.function.Function;
 
-import static com.hazelcast.jet.Traversers.newNullTraverser;
-
 /**
  * A flat-mapping decorator over a traverser.
  */
 public class FlatMappingTraverser<T, R> implements Traverser<R> {
-    private static final Traverser NULL_TRAVERSER = newNullTraverser();
+
+    // Do not replace with lambda as we rely on the NULL_TRAVERSER to be our
+    // own unique instance, which is not guaranteed with lambda.
+    private static final Traverser NULL_TRAVERSER = new Traverser() {
+        @Override
+        public Object next() {
+            return null;
+        }
+    };
 
     private final Traverser<T> wrapped;
     private final Function<? super T, ? extends Traverser<? extends R>> mapper;

@@ -34,14 +34,11 @@ public final class Traversers {
     }
 
     /**
-     * Returns an empty traverser equivalent to {@code () -> null}, but with
-     * guaranteed unique identity. Such a traverser is useful in a <em>null
-     * object</em> pattern, which relies on identity checks with {@code ==}
-     * against a private object.
+     * Returns a traverser that always returns null.
      */
     @Nonnull
-    public static <T> Traverser<T> newNullTraverser() {
-        return new NullTraverser<>();
+    public static <T> Traverser<T> empty() {
+        return () -> null;
     }
 
     /**
@@ -180,13 +177,6 @@ public final class Traversers {
         @Override
         public T next() {
             return i < array.length && i >= 0 ? array[i++] : null;
-        }
-    }
-
-    private static final class NullTraverser<T> implements Traverser<T> {
-        @Override
-        public T next() {
-            return null;
         }
     }
 }

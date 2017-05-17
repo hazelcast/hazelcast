@@ -19,11 +19,12 @@ package com.hazelcast.jet.windowing;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Punctuation;
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.Traversers.ResettableSingletonTraverser;
 
 import javax.annotation.Nonnull;
 import java.util.function.ToLongFunction;
+
+import static com.hazelcast.jet.Traversers.empty;
 
 /**
  * A processor that inserts punctuation into a data stream. See
@@ -39,7 +40,6 @@ public class InsertPunctuationP<T> extends AbstractProcessor {
     private final ToLongFunction<T> extractTimestampF;
     private final PunctuationPolicy punctuationPolicy;
     private final ResettableSingletonTraverser<Object> singletonTraverser;
-    private final Traverser<Object> nullTraverser = Traversers.newNullTraverser();
     private final FlatMapper<Object, Object> flatMapper;
 
     private long currPunc = Long.MIN_VALUE;
@@ -79,7 +79,7 @@ public class InsertPunctuationP<T> extends AbstractProcessor {
         long timestamp = extractTimestampF.applyAsLong((T) item);
         if (timestamp < currPunc) {
             // drop late event
-            return nullTraverser;
+            return empty();
         }
         long newPunc = punctuationPolicy.reportEvent(timestamp);
         singletonTraverser.accept(item);
