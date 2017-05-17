@@ -175,7 +175,6 @@ abstract class MapProxySupport<K, V>
     protected final SerializationService serializationService;
     protected final boolean statisticsEnabled;
     protected final MapConfig mapConfig;
-    protected final String localMemberUuid;
 
     // not final for testing purposes
     protected MapOperationProvider operationProvider;
@@ -202,8 +201,6 @@ abstract class MapProxySupport<K, V>
         this.serializationService = nodeEngine.getSerializationService();
         this.thisAddress = nodeEngine.getClusterService().getThisAddress();
         this.statisticsEnabled = mapConfig.isStatisticsEnabled();
-        // it is safe to cache local member uuid here because cluster start must be already completed
-        this.localMemberUuid = mapServiceContext.getNodeEngine().getLocalMember().getUuid();
 
         this.putAllBatchSize = properties.getInteger(MAP_PUT_ALL_BATCH_SIZE);
         this.putAllInitialSizeFactor = properties.getFloat(MAP_PUT_ALL_INITIAL_SIZE_FACTOR);
