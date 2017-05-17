@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.proxy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalidation;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
@@ -60,6 +61,7 @@ import static java.util.Collections.emptyMap;
  */
 public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
+    private final ClusterService clusterService;
     private final boolean cacheLocalEntries;
     private final boolean invalidateOnChange;
     private final boolean serializeKeys;
@@ -72,6 +74,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     public NearCachedMapProxyImpl(String name, MapService mapService, NodeEngine nodeEngine, MapConfig mapConfig) {
         super(name, mapService, nodeEngine, mapConfig);
+
+        clusterService = nodeEngine.getClusterService();
 
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
         cacheLocalEntries = nearCacheConfig.isCacheLocalEntries();
@@ -551,7 +555,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     private boolean cachingAllowedFor(Object key) {
-        return cacheLocalEntries || !isOwn(key);
+        return cacheLocalEntries || clusterService.getLocalMember().isLiteMember() || !isOwn(key);
     }
 
     private boolean isOwn(Object key) {
