@@ -82,45 +82,41 @@ public class ClientCacheNearCacheSerializationCountTest extends AbstractNearCach
     public int[] valueDeserializationCounts;
 
     @Parameter(value = 4)
-    public boolean invalidateOnChange;
-
-    @Parameter(value = 5)
     public InMemoryFormat cacheInMemoryFormat;
 
-    @Parameter(value = 6)
+    @Parameter(value = 5)
     public InMemoryFormat nearCacheInMemoryFormat;
+
+    @Parameter(value = 6)
+    public Boolean invalidateOnChange;
 
     @Parameter(value = 7)
     public LocalUpdatePolicy localUpdatePolicy;
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @Parameters(name = "invalidateOnChange:{4} cacheFormat:{5} nearCacheFormat:{6} localUpdatePolicy:{7}")
+    @Parameters(name = "cacheFormat:{4} nearCacheFormat:{5} invalidateOnChange:{6} localUpdatePolicy:{7}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), true, BINARY, null, null},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), true, BINARY, BINARY, INVALIDATE},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), true, BINARY, BINARY, CACHE_ON_UPDATE},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), true, BINARY, OBJECT, INVALIDATE},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 0, 0), true, BINARY, OBJECT, CACHE_ON_UPDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, null, null, null},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, BINARY, true, INVALIDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, BINARY, true, CACHE_ON_UPDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, BINARY, false, INVALIDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, BINARY, false, CACHE_ON_UPDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), BINARY, OBJECT, true, INVALIDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 0, 0), BINARY, OBJECT, true, CACHE_ON_UPDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), BINARY, OBJECT, false, INVALIDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 0, 0), BINARY, OBJECT, false, CACHE_ON_UPDATE},
 
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), false, BINARY, null, null},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), false, BINARY, BINARY, INVALIDATE},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), false, BINARY, BINARY, CACHE_ON_UPDATE},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), false, BINARY, OBJECT, INVALIDATE},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 0, 0), false, BINARY, OBJECT, CACHE_ON_UPDATE},
-
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 1), newInt(1, 1, 1), true, OBJECT, null, null},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 1), true, OBJECT, BINARY, INVALIDATE},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(1, 1, 1), true, OBJECT, BINARY, CACHE_ON_UPDATE},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 0), true, OBJECT, OBJECT, INVALIDATE},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(1, 0, 0), true, OBJECT, OBJECT, CACHE_ON_UPDATE},
-
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 1), newInt(1, 1, 1), false, OBJECT, null, null},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 1), false, OBJECT, BINARY, INVALIDATE},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(1, 1, 1), false, OBJECT, BINARY, CACHE_ON_UPDATE},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 0), false, OBJECT, OBJECT, INVALIDATE},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(1, 0, 0), false, OBJECT, OBJECT, CACHE_ON_UPDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 1), newInt(1, 1, 1), OBJECT, null, null, null},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 1), OBJECT, BINARY, true, INVALIDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(1, 1, 1), OBJECT, BINARY, true, CACHE_ON_UPDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 1), OBJECT, BINARY, false, INVALIDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(1, 1, 1), OBJECT, BINARY, false, CACHE_ON_UPDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 0), OBJECT, OBJECT, true, INVALIDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(1, 0, 0), OBJECT, OBJECT, true, CACHE_ON_UPDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 0), OBJECT, OBJECT, false, INVALIDATE},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(1, 0, 0), OBJECT, OBJECT, false, CACHE_ON_UPDATE},
         });
     }
 
