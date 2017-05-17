@@ -140,9 +140,15 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
         return future.get();
     }
 
+    void stopForMigration() {
+        // Result is not set, allowing task to get re-scheduled, if/when needed.
+        this.isTaskOwner = false;
+        this.future.cancel(true);
+        this.future = null;
+    }
+
     boolean cancel(boolean mayInterrupt)
             throws ExecutionException, InterruptedException {
-
         if (!resultRef.compareAndSet(null, new ScheduledTaskResult(true)) || future == null) {
             return false;
         }

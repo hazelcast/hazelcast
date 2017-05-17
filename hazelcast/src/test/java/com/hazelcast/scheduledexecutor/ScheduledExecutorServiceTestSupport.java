@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitionAware;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
@@ -46,14 +47,14 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         return createClusterWithCount(count, new Config());
     }
 
-    public HazelcastInstance[] createClusterWithCount(int count, Config config) {
+    HazelcastInstance[] createClusterWithCount(int count, Config config) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance[] instances = factory.newInstances(config, count);
         waitAllForSafeState(instances);
         return instances;
     }
 
-    public int countScheduledTasksOn(IScheduledExecutorService scheduledExecutorService) {
+    int countScheduledTasksOn(IScheduledExecutorService scheduledExecutorService) {
         Map<Member, List<IScheduledFuture<Double>>> allScheduled = scheduledExecutorService.getAllScheduledFutures();
 
         int total = 0;
@@ -239,10 +240,10 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
 
         private int delta = 0;
 
-        public PlainCallableTask() {
+        PlainCallableTask() {
         }
 
-        public PlainCallableTask(int delta) {
+        PlainCallableTask(int delta) {
             this.delta = delta;
         }
 
@@ -256,7 +257,7 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
 
     static class EchoTask implements Runnable, Serializable {
 
-        public EchoTask() {
+        EchoTask() {
         }
 
         @Override
@@ -312,40 +313,13 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
-    static class PlainPartitionAwareRunnableTask
-            implements Runnable, Serializable, PartitionAware<String>, HazelcastInstanceAware {
-
-        private final String latchName;
-
-        private transient HazelcastInstance instance;
-
-        public PlainPartitionAwareRunnableTask(String latchName) {
-            this.latchName = latchName;
-        }
-
-        @Override
-        public void run() {
-            this.instance.getCountDownLatch(latchName).countDown();
-        }
-
-        @Override
-        public String getPartitionKey() {
-            return "TestKey";
-        }
-
-        @Override
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.instance = hazelcastInstance;
-        }
-    }
-
     public static class HazelcastInstanceAwareRunnable
             implements Callable<Boolean>, HazelcastInstanceAware, Serializable, NamedTask {
 
         private transient volatile HazelcastInstance instance;
         private final String name;
 
-        public HazelcastInstanceAwareRunnable(String name) {
+        HazelcastInstanceAwareRunnable(String name) {
             this.name = name;
         }
 
@@ -362,6 +336,46 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         @Override
         public Boolean call() {
             return (instance != null);
+        }
+    }
+
+    public static class AllTasksRunningWithinNumOfNodes extends AssertTask {
+
+        private final IScheduledExecutorService scheduler;
+
+        private final int expectedNodesWithTasks;
+
+        AllTasksRunningWithinNumOfNodes(IScheduledExecutorService scheduler, int expectedNodesWithTasks) {
+            this.scheduler = scheduler;
+            this.expectedNodesWithTasks = expectedNodesWithTasks;
+        }
+
+        @Override
+        public void run()
+                throws Exception {
+
+            int actualNumOfNodesWithTasks = 0;
+            Map<Member, List<IScheduledFuture<Object>>> allScheduledFutures = scheduler.getAllScheduledFutures();
+            for (Member member : allScheduledFutures.keySet()) {
+                if (!allScheduledFutures.get(member).isEmpty()) {
+                    actualNumOfNodesWithTasks++;
+                }
+            }
+            if (actualNumOfNodesWithTasks != expectedNodesWithTasks) {
+                throw new IllegalStateException("Actual nodes with tasks: " + actualNumOfNodesWithTasks + ". "
+                        + "Expected: " + expectedNodesWithTasks);
+            }
+
+            for (List<IScheduledFuture<Object>> futures : allScheduledFutures.values()) {
+                for (IScheduledFuture future : futures) {
+                    if (future.isCancelled()) {
+                        throw new IllegalStateException("Scheduled task: " + future.getHandler().getTaskName()
+                                + " is cancelled.");
+                    } else if (future.getStats().getTotalRuns() == 0) {
+                        throw new AssertionError();
+                    }
+                }
+            }
         }
     }
 }
