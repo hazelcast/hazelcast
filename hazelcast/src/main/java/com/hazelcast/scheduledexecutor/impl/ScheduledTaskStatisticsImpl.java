@@ -39,11 +39,11 @@ public class ScheduledTaskStatisticsImpl
 
     private long lastRunEnd;
 
-    private long lastIdleTime;
+    private long lastIdleDuration;
 
-    private long totalRunTime;
+    private long totalRunDuration;
 
-    private long totalIdleTime;
+    private long totalIdleDuration;
 
     public ScheduledTaskStatisticsImpl() {
     }
@@ -57,9 +57,9 @@ public class ScheduledTaskStatisticsImpl
     public ScheduledTaskStatisticsImpl(long runs, long lastIdleTimeNanos, long totalRunTimeNanos,
                                        long totalIdleTimeNanos) {
         this.runs = runs;
-        this.lastIdleTime = lastIdleTimeNanos;
-        this.totalRunTime = totalRunTimeNanos;
-        this.totalIdleTime = totalIdleTimeNanos;
+        this.lastIdleDuration = lastIdleTimeNanos;
+        this.totalRunDuration = totalRunTimeNanos;
+        this.totalIdleDuration = totalIdleTimeNanos;
     }
 
     ScheduledTaskStatisticsImpl(long createdAt, long runs, long firstRunStartNanos, long lastRunStartNanos,
@@ -70,9 +70,9 @@ public class ScheduledTaskStatisticsImpl
         this.firstRunStart = firstRunStartNanos;
         this.lastRunStart = lastRunStartNanos;
         this.lastRunEnd = lastRunEndNanos;
-        this.lastIdleTime = lastIdleTimeNanos;
-        this.totalRunTime = totalRunTimeNanos;
-        this.totalIdleTime = totalIdleTimeNanos;
+        this.lastIdleDuration = lastIdleTimeNanos;
+        this.totalRunDuration = totalRunTimeNanos;
+        this.totalIdleDuration = totalIdleTimeNanos;
     }
 
     @Override
@@ -88,17 +88,17 @@ public class ScheduledTaskStatisticsImpl
 
     @Override
     public long getLastIdleTime(TimeUnit unit) {
-        return unit.convert(lastIdleTime, MEASUREMENT_UNIT);
+        return unit.convert(lastIdleDuration, MEASUREMENT_UNIT);
     }
 
     @Override
     public long getTotalIdleTime(TimeUnit unit) {
-        return unit.convert(totalIdleTime, MEASUREMENT_UNIT);
+        return unit.convert(totalIdleDuration, MEASUREMENT_UNIT);
     }
 
     @Override
     public long getTotalRunTime(TimeUnit unit) {
-        return unit.convert(totalRunTime, MEASUREMENT_UNIT);
+        return unit.convert(totalRunDuration, MEASUREMENT_UNIT);
     }
 
 
@@ -116,18 +116,18 @@ public class ScheduledTaskStatisticsImpl
     public void writeData(ObjectDataOutput out)
             throws IOException {
         out.writeLong(runs);
-        out.writeLong(lastIdleTime);
-        out.writeLong(totalIdleTime);
-        out.writeLong(totalRunTime);
+        out.writeLong(lastIdleDuration);
+        out.writeLong(totalIdleDuration);
+        out.writeLong(totalRunDuration);
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
         runs = in.readLong();
-        lastIdleTime = in.readLong();
-        totalIdleTime = in.readLong();
-        totalRunTime = in.readLong();
+        lastIdleDuration = in.readLong();
+        totalIdleDuration = in.readLong();
+        totalRunDuration = in.readLong();
     }
 
     @Override
@@ -139,8 +139,8 @@ public class ScheduledTaskStatisticsImpl
     public void onBeforeRun() {
         long now = System.nanoTime();
         this.lastRunStart = now;
-        this.lastIdleTime = now - (lastRunEnd != 0L ? lastRunEnd : createdAt);
-        this.totalIdleTime += lastIdleTime;
+        this.lastIdleDuration = now - (lastRunEnd != 0L ? lastRunEnd : createdAt);
+        this.totalIdleDuration += lastIdleDuration;
 
         if (this.firstRunStart == 0L) {
             this.firstRunStart = this.lastRunStart;
@@ -155,7 +155,7 @@ public class ScheduledTaskStatisticsImpl
 
         this.lastRunEnd = now;
         this.runs++;
-        this.totalRunTime += lastRunTime;
+        this.totalRunDuration += lastRunTime;
 
     }
 
@@ -165,8 +165,10 @@ public class ScheduledTaskStatisticsImpl
 
     @Override
     public String toString() {
-        return "ScheduledTaskStatisticsImpl{ runs=" + runs + ", createdAt="
-                + createdAt + ", firstRunStart=" + firstRunStart + ", lastRunStart=" + lastRunStart + ", lastRunEnd=" + lastRunEnd
-                + ", lastIdleTime=" + lastIdleTime + ", totalRunTime=" + totalRunTime + ", totalIdleTime=" + totalIdleTime + '}';
+        return "ScheduledTaskStatisticsImpl{runs=" + runs
+                + ", lastIdleDuration=" + lastIdleDuration
+                + ", totalRunDuration=" + totalRunDuration
+                + ", totalIdleDuration=" + totalIdleDuration
+                + '}';
     }
 }
