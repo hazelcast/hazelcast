@@ -470,11 +470,11 @@ public abstract class HazelcastTestSupport {
     }
 
     // ##################################
-    // ########## partition id ##########
+    // ########## partition ID ##########
     // ##################################
 
     /**
-     * Gets a partition id owned by this particular member.
+     * Gets a partition ID owned by this particular member.
      */
     public static int getPartitionId(HazelcastInstance hz) {
         warmUpPartitions(hz);
