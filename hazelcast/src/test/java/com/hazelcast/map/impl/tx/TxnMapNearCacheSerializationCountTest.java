@@ -108,6 +108,12 @@ public class TxnMapNearCacheSerializationCountTest extends AbstractNearCacheSeri
     }
 
     @Override
+    protected void addConfiguration(StringBuilder config) {
+        appendConfig(config, mapInMemoryFormat);
+        config.append(nearCacheInMemoryFormat);
+    }
+
+    @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
         Config configWithNearCache = getConfig(true);
         Config config = getConfig(false);

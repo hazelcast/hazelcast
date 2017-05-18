@@ -108,6 +108,12 @@ public class ClientReplicatedMapNearCacheSerializationCountTest extends Abstract
     }
 
     @Override
+    protected void addConfiguration(StringBuilder config) {
+        appendConfig(config, replicatedMapInMemoryFormat);
+        config.append(nearCacheInMemoryFormat);
+    }
+
+    @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
         Config config = getConfig();
         config.getReplicatedMapConfig(DEFAULT_NEAR_CACHE_NAME)

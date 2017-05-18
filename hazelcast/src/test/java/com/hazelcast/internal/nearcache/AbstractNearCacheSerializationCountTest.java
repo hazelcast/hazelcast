@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
 import static java.lang.String.format;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Contains the logic code for unified Near Cache serialization count tests.
@@ -96,6 +96,13 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
      * Needs to be set by the implementations of this class in their {@link org.junit.Before} methods.
      */
     protected NearCacheConfig nearCacheConfig;
+
+    /**
+     * Adds the test configuration to the given {@link StringBuilder}.
+     *
+     * @param config the {@link StringBuilder}
+     */
+    protected abstract void addConfiguration(StringBuilder config);
 
     /**
      * Creates the {@link NearCacheTestContext} used by the Near Cache tests.
@@ -158,19 +165,32 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
         List<String> valueSerializeStackTrace = VALUE_SERIALIZE_STACKTRACE.getAndSet(new CopyOnWriteArrayList<String>());
         List<String> valueDeserializeStackTrace = VALUE_DESERIALIZE_STACKTRACE.getAndSet(new CopyOnWriteArrayList<String>());
 
-        assertEquals(format("key serializeCount on %s: expected %d, but was %d%n%s",
-                label, expectedKeySerializeCount, actualKeySerializeCount, keySerializeStackTrace),
-                expectedKeySerializeCount, actualKeySerializeCount);
-        assertEquals(format("key deserializeCount on %s: expected %d, but was %d%n%s",
-                label, expectedKeyDeserializeCount, actualKeyDeserializeCount, keyDeserializeStackTrace),
-                expectedKeyDeserializeCount, actualKeyDeserializeCount);
+        StringBuilder config = new StringBuilder();
+        appendIntArrays(config, expectedKeySerializationCounts);
+        appendIntArrays(config, expectedKeyDeserializationCounts);
+        appendIntArrays(config, expectedValueSerializationCounts);
+        appendIntArrays(config, expectedValueDeserializationCounts);
+        addConfiguration(config);
 
-        assertEquals(format("value serializeCount on %s: expected %d, but was %d%n%s",
-                label, expectedValueSerializeCount, actualValueSerializeCount, valueSerializeStackTrace),
-                expectedValueSerializeCount, actualValueSerializeCount);
-        assertEquals(format("value deserializeCount on %s: expected %d, but was %d%n%s",
-                label, expectedValueDeserializeCount, actualValueDeserializeCount, valueDeserializeStackTrace),
-                expectedValueDeserializeCount, actualValueDeserializeCount);
+        assertTrue(format("key serializeCount on %s: expected %d, but was %d%n%s%n%s%n%s",
+                label, expectedKeySerializeCount, actualKeySerializeCount,
+                config, createPointer(true, true, index), keySerializeStackTrace),
+                expectedKeySerializeCount == actualKeySerializeCount);
+
+        assertTrue(format("key deserializeCount on %s: expected %d, but was %d%n%s%n%s%n%s",
+                label, expectedKeyDeserializeCount, actualKeyDeserializeCount,
+                config, createPointer(true, false, index), keyDeserializeStackTrace),
+                expectedKeyDeserializeCount == actualKeyDeserializeCount);
+
+        assertTrue(format("value serializeCount on %s: expected %d, but was %d%n%s%n%s%n%s",
+                label, expectedValueSerializeCount, actualValueSerializeCount,
+                config, createPointer(false, true, index), valueSerializeStackTrace),
+                expectedValueSerializeCount == actualValueSerializeCount);
+
+        assertTrue(format("value deserializeCount on %s: expected %d, but was %d%n%s%n%s%n%s",
+                label, expectedValueDeserializeCount, actualValueDeserializeCount,
+                config, createPointer(false, false, index), valueDeserializeStackTrace),
+                expectedValueDeserializeCount == actualValueDeserializeCount);
     }
 
     /**
@@ -211,6 +231,44 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
                 return new ValueSerializationCountingData();
             }
         });
+    }
+
+    /**
+     * Appends a configuration to the given {@link StringBuilder} and adds a delimiter.
+     *
+     * @param config the {@link StringBuilder}
+     * @param option the option to add
+     */
+    protected static void appendConfig(StringBuilder config, Object option) {
+        config.append(option).append(", ");
+    }
+
+    private static void appendIntArrays(StringBuilder sb, int[] intArray) {
+        String delimiter = "";
+        sb.append("newInt(");
+        for (int count : intArray) {
+            sb.append(delimiter).append(count);
+            delimiter = ", ";
+        }
+        sb.append("), ");
+    }
+
+    private static String createPointer(boolean isKey, boolean isSerialization, int index) {
+        int arrayWidth = 17;
+        int offset = 7;
+        if (!isKey) {
+            offset += 2 * arrayWidth;
+        }
+        if (!isSerialization) {
+            offset += arrayWidth;
+        }
+        offset += index * 3;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < offset; i++) {
+            sb.append(" ");
+        }
+        sb.append("↑");
+        return sb.toString();
     }
 
     private static String getStackTrace(String message) {
