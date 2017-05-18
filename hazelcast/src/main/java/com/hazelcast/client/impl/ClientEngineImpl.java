@@ -75,9 +75,11 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -586,6 +588,32 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         resultMap.put(ClientType.OTHER, numberOfOtherClients);
 
         return resultMap;
+    }
+
+    @Override
+    public List<Map.Entry<String, List<Map.Entry<String, String>>>> getClientStatistics() {
+        Collection<ClientEndpoint> clientEndpoints = endpointManager.getEndpoints();
+        List<Map.Entry<String, List<Map.Entry<String, String>>>> statsList = new ArrayList<Map.Entry<String, List<Map.Entry<String, String>>>>(
+                clientEndpoints.size());
+        for (final ClientEndpoint e : clientEndpoints) {
+            statsList.add(new Map.Entry<String, List<Map.Entry<String, String>>>() {
+                @Override
+                public String getKey() {
+                    return e.getUuid();
+                }
+
+                @Override
+                public List<Map.Entry<String, String>> getValue() {
+                    return e.getClientStatistics();
+                }
+
+                @Override
+                public List<Map.Entry<String, String>> setValue(List<Map.Entry<String, String>> value) {
+                    return null;
+                }
+            });
+        }
+        return statsList;
     }
 
     private static class PriorityPartitionSpecificRunnable implements PartitionSpecificRunnable, UrgentSystemOperation {

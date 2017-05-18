@@ -33,6 +33,7 @@ import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
+import com.hazelcast.client.impl.statistics.Statistics;
 import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
 import com.hazelcast.client.spi.ClientClusterService;
@@ -189,6 +190,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final DiscoveryService discoveryService;
     private final LoggingService loggingService;
     private final MetricsRegistryImpl metricsRegistry;
+    private final Statistics statistics;
     private final Diagnostics diagnostics;
     private final SerializationService serializationService;
     private final ClientICacheManager hazelcastCacheManager;
@@ -250,6 +252,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         lockReferenceIdGenerator = new ClientLockReferenceIdGenerator();
         nearCacheManager = clientExtension.createNearCacheManager();
         clientExceptionFactory = initClientExceptionFactory();
+
+        statistics = new Statistics(this);
     }
 
     private Diagnostics initDiagnostics() {
@@ -428,6 +432,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         listenerService.start();
         loadBalancer.init(getCluster(), config);
         partitionService.start();
+        statistics.start();
         clientExtension.afterStart(this);
     }
 

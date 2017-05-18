@@ -25,6 +25,8 @@ import com.hazelcast.transaction.TransactionContext;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
@@ -105,6 +107,17 @@ public interface ClientEndpoint extends Client {
      *
      * @param version The version string as obtained from the environment
      */
-    void setClientVersion(String version);
+    void setClientVersion(java.lang.String version);
 
+    /**
+     * Updates to the latest client statistics
+     * @param stats The latest statistics retrieved from the client
+     */
+    void setClientStatictics(List<Map.Entry<String, String>> stats);
+
+    /**
+     *
+     * @return JSON formatted statistics string for the client
+     */
+    List<Map.Entry<String, String>> getClientStatistics();
 }

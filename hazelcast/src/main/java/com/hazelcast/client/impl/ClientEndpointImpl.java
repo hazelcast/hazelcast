@@ -35,6 +35,8 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -50,6 +52,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
             = new ConcurrentHashMap<String, TransactionContext>();
     private final ConcurrentHashMap<String, Callable> removeListenerActions = new ConcurrentHashMap<String, Callable>();
     private final SocketAddress socketAddress;
+    private final long creationTime;
 
     private LoginContext loginContext;
     private ClientPrincipal principal;
@@ -59,6 +62,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private int clientVersion;
     private String clientVersionString;
     private long authenticationCorrelationId;
+    private volatile List<Map.Entry<String, String>> stats;
 
     public ClientEndpointImpl(ClientEngineImpl clientEngine, Connection connection) {
         this.clientEngine = clientEngine;
@@ -71,6 +75,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         }
         this.clientVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
         this.clientVersionString = "Unknown";
+        this.creationTime = System.currentTimeMillis();
     }
 
     @Override
@@ -133,6 +138,19 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     public void setClientVersion(String version) {
         clientVersionString = version;
         clientVersion = BuildInfo.calculateVersion(version);
+    }
+
+    @Override
+    public void setClientStatictics(List<Map.Entry<String, String>> stats) {
+        // Add server side stats
+        addServerSideClientStats(stats);
+
+        this.stats = stats;
+    }
+
+    @Override
+    public List<Map.Entry<String, String>> getClientStatistics() {
+        return stats;
     }
 
     @Override
@@ -254,6 +272,65 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         return clientEngine.getLogger(getClass());
     }
 
+    private void addServerSideClientStats(final List<Map.Entry<String, String>> stats) {
+        stats.add(new Map.Entry<String, String>() {
+            @Override
+            public String getKey() {
+                return "/ClusterConnectionTimestamp";
+            }
+
+            @Override
+            public String getValue() {
+                return Long.toString(creationTime);
+            }
+
+            @Override
+            public String setValue(String value) {
+                return null;
+            }
+        });
+
+        stats.add(new Map.Entry<String, String>() {
+            @Override
+            public String getKey() {
+                return "/ClientType";
+            }
+
+            @Override
+            public String getValue() {
+                return getClientType().toString();
+            }
+
+            @Override
+            public String setValue(String value) {
+                return null;
+            }
+        });
+
+        if (clientEngine.getSecurityContext() != null) {
+            final Credentials credentials = getCredentials();
+            if (null != credentials) {
+                stats.add(new Map.Entry<String, String>() {
+                    @Override
+                    public String getKey() {
+                        return "/Credentials";
+                    }
+
+                    @Override
+                    public String getValue() {
+                        return credentials.toString();
+                    }
+
+                    @Override
+                    public String setValue(String value) {
+                        return null;
+                    }
+                });
+            }
+        }
+
+    }
+
     @Override
     public String toString() {
         return "ClientEndpoint{"
@@ -262,6 +339,8 @@ public final class ClientEndpointImpl implements ClientEndpoint {
                 + ", firstConnection=" + firstConnection
                 + ", authenticated=" + authenticated
                 + ", clientVersion=" + clientVersionString
+                + ", creationTime=" + creationTime
+                + ", latest statistics=" + stats
                 + '}';
     }
 
