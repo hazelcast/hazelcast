@@ -19,6 +19,7 @@ package com.hazelcast.internal.nearcache.impl.invalidation;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -45,16 +46,20 @@ public final class RepairingHandler {
     private final String localUuid;
     private final String name;
     private final NearCache nearCache;
+    private final boolean serializeKeys;
+    private final SerializationService serializationService;
     private final MinimalPartitionService partitionService;
     private final int partitionCount;
     private final MetaDataContainer[] metaDataContainers;
 
     public RepairingHandler(ILogger logger, String localUuid, String name, NearCache nearCache,
-                            MinimalPartitionService partitionService) {
+                            SerializationService serializationService, MinimalPartitionService partitionService) {
         this.logger = logger;
         this.localUuid = localUuid;
         this.name = name;
         this.nearCache = nearCache;
+        this.serializeKeys = nearCache.isSerializeKeys();
+        this.serializationService = serializationService;
         this.partitionService = partitionService;
         this.partitionCount = partitionService.getPartitionCount();
         this.metaDataContainers = createMetadataContainers(partitionCount);
@@ -89,7 +94,7 @@ public final class RepairingHandler {
             if (key == null) {
                 nearCache.clear();
             } else {
-                nearCache.remove(key);
+                nearCache.remove(serializeKeys ? key : serializationService.toObject(key));
             }
         }
 

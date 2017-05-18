@@ -92,6 +92,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     private String name = "default";
     private InMemoryFormat inMemoryFormat = DEFAULT_MEMORY_FORMAT;
+    private boolean serializeKeys = true;
     private boolean invalidateOnChange = true;
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
     private int maxIdleSeconds = DEFAULT_MAX_IDLE_SECONDS;
@@ -163,19 +164,20 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
     }
 
     public NearCacheConfig(NearCacheConfig config) {
-        name = config.name;
-        inMemoryFormat = config.inMemoryFormat;
-        invalidateOnChange = config.invalidateOnChange;
-        timeToLiveSeconds = config.timeToLiveSeconds;
-        maxIdleSeconds = config.maxIdleSeconds;
-        maxSize = config.maxSize;
-        evictionPolicy = config.evictionPolicy;
+        this.name = config.name;
+        this.inMemoryFormat = config.inMemoryFormat;
+        this.serializeKeys = config.serializeKeys;
+        this.invalidateOnChange = config.invalidateOnChange;
+        this.timeToLiveSeconds = config.timeToLiveSeconds;
+        this.maxIdleSeconds = config.maxIdleSeconds;
+        this.maxSize = config.maxSize;
+        this.evictionPolicy = config.evictionPolicy;
         // EvictionConfig is not allowed to be null
         if (config.evictionConfig != null) {
             this.evictionConfig = config.evictionConfig;
         }
-        cacheLocalEntries = config.cacheLocalEntries;
-        localUpdatePolicy = config.localUpdatePolicy;
+        this.cacheLocalEntries = config.cacheLocalEntries;
+        this.localUpdatePolicy = config.localUpdatePolicy;
         // NearCachePreloaderConfig is not allowed to be null
         if (config.preloaderConfig != null) {
             this.preloaderConfig = config.preloaderConfig;
@@ -257,6 +259,26 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
         checkNotNull(inMemoryFormat, "In-Memory format cannot be null!");
 
         this.inMemoryFormat = InMemoryFormat.valueOf(inMemoryFormat);
+        return this;
+    }
+
+    /**
+     * Checks if the Near Cache key is stored in serialized format or by-reference.
+     *
+     * @return {@code true} if the key is stored in serialized format, {@code false} if stored by-reference.
+     */
+    public boolean isSerializeKeys() {
+        return serializeKeys;
+    }
+
+    /**
+     * Sets if the Near Cache key is stored in serialized format or by-reference.
+     *
+     * @param serializeKeys {@code true} if the key is stored in serialized format, {@code false} if stored by-reference
+     * @return this Near Cache config instance
+     */
+    public NearCacheConfig setSerializeKeys(boolean serializeKeys) {
+        this.serializeKeys = serializeKeys;
         return this;
     }
 

@@ -57,6 +57,11 @@ public class NearCacheConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
+    public void setSerializeKeysOnReadOnlyNearCacheConfigShouldFail() {
+        getReadOnlyConfig().setSerializeKeys(true);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
     public void setInvalidateOnChangeOnReadOnlyNearCacheConfigShouldFail() {
         getReadOnlyConfig().setInvalidateOnChange(true);
     }
