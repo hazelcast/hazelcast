@@ -20,6 +20,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InitializingObject;
 
 /**
@@ -69,10 +70,11 @@ public interface NearCache<K, V> extends InitializingObject {
     /**
      * Puts (associates) a value with the given {@code key}.
      *
-     * @param key   the key of the value will be stored
-     * @param value the value will be stored
+     * @param key     the key of the value will be stored
+     * @param keyData the key as {@link Data} of the value will be stored
+     * @param value   the value will be stored
      */
-    void put(K key, V value);
+    void put(K key, Data keyData, V value);
 
     /**
      * Removes the value associated with the given {@code key}.
@@ -168,10 +170,11 @@ public interface NearCache<K, V> extends InitializingObject {
      * <p>
      * If one thread takes reservation, only that thread can update the key.
      *
-     * @param key key to be reserved for update
+     * @param key     key to be reserved for update
+     * @param keyData key to be reserved for update as {@link Data}
      * @return reservation ID if reservation succeeds, else returns {@link NearCacheRecord#NOT_RESERVED}
      */
-    long tryReserveForUpdate(K key);
+    long tryReserveForUpdate(K key, Data keyData);
 
     /**
      * Tries to update reserved key with supplied value. If update happens, value is published.

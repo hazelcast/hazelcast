@@ -23,6 +23,7 @@ import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
@@ -104,7 +105,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         // show that NearCache delegates put call to wrapped NearCacheRecordStore
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             String value = "Record-" + i;
-            nearCache.put(i, value);
+            nearCache.put(i, null, value);
             assertEquals((Integer) i, managedNearCacheRecordStore.latestKeyOnPut);
             assertEquals(value, managedNearCacheRecordStore.latestValueOnPut);
         }
@@ -233,7 +234,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         ManagedNearCacheRecordStore managedNearCacheRecordStore = createManagedNearCacheRecordStore();
         NearCache<Integer, String> nearCache = createNearCache(DEFAULT_NEAR_CACHE_NAME, managedNearCacheRecordStore);
 
-        nearCache.put(1, "1");
+        nearCache.put(1, null, "1");
 
         // show that NearCache checks eviction from specified NearCacheRecordStore
         assertTrue(managedNearCacheRecordStore.doEvictionIfRequiredCalled);
@@ -286,7 +287,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         }
 
         @Override
-        public void put(Integer key, String value) {
+        public void put(Integer key, Data keyData, String value) {
             if (expectedKeyValueMappings == null) {
                 throw new IllegalStateException("Near-Cache is already destroyed");
             }
@@ -387,7 +388,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         }
 
         @Override
-        public long tryReserveForUpdate(Integer key) {
+        public long tryReserveForUpdate(Integer key, Data keyData) {
             return NOT_RESERVED;
         }
 

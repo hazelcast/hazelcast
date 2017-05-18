@@ -52,7 +52,6 @@ import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
-import static java.util.Collections.emptyMap;
 
 /**
  * A server-side {@code IMap} implementation which is fronted by a Near Cache.
@@ -110,8 +109,9 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         }
 
         try {
-            long reservationId = tryReserveForUpdate(key);
-            value = (V) super.getInternal(key);
+            Data keyData = toDataWithStrategy(key);
+            long reservationId = tryReserveForUpdate(key, keyData);
+            value = (V) super.getInternal(keyData);
             if (reservationId != NOT_RESERVED) {
                 value = (V) tryPublishReserved(key, value, reservationId);
             }
@@ -131,10 +131,11 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
             return new CompletedFuture<Data>(serializationService, value, executionService.getExecutor(ASYNC_EXECUTOR));
         }
 
-        final long reservationId = tryReserveForUpdate(ncKey);
+        final Data keyData = toDataWithStrategy(key);
+        final long reservationId = tryReserveForUpdate(ncKey, keyData);
         InternalCompletableFuture<Data> future;
         try {
-            future = super.getAsyncInternal(ncKey);
+            future = super.getAsyncInternal(keyData);
         } catch (Throwable t) {
             invalidateNearCache(ncKey);
             throw rethrow(t);
@@ -371,48 +372,83 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     @Override
     protected void getAllInternal(Set<K> keys, List<Data> dataKeys, List<Object> resultingKeyValuePairs) {
+        Map<Object, Data> keyMap = null;
         if (serializeKeys) {
-            toDataCollection(keys, dataKeys);
+            keyMap = toDataKeys(keys, dataKeys);
         }
         Collection ncKeys = serializeKeys ? dataKeys : new ArrayList<K>(keys);
 
-        getCachedValues(ncKeys, resultingKeyValuePairs);
+        populateResultFromNearCache(ncKeys, resultingKeyValuePairs);
         if (ncKeys.isEmpty()) {
             return;
         }
 
-        Map<Object, Long> reservations = emptyMap();
+        if (!serializeKeys) {
+            keyMap = toDataKeys(ncKeys, dataKeys);
+        }
+
+        Map<Object, Long> reservations = getNearCacheReservations(ncKeys, keyMap);
         try {
-            reservations = tryReserveForUpdate(ncKeys);
             int currentSize = resultingKeyValuePairs.size();
-
             super.getAllInternal(keys, dataKeys, resultingKeyValuePairs);
-
-            for (int i = currentSize; i < resultingKeyValuePairs.size(); ) {
-                Object key = toNearCacheKeyWithStrategy(resultingKeyValuePairs.get(i++));
-                Data value = toData(resultingKeyValuePairs.get(i++));
-
-                Long reservationId = reservations.get(key);
-                if (reservationId != null) {
-                    Object cachedValue = tryPublishReserved(key, value, reservationId);
-                    resultingKeyValuePairs.set(i - 1, cachedValue);
-                    reservations.remove(key);
-                }
-            }
+            populateResultFromRemote(currentSize, resultingKeyValuePairs, reservations);
         } finally {
             releaseReservedKeys(reservations);
         }
     }
 
-    private Map<Object, Long> tryReserveForUpdate(Collection keys) {
-        Map<Object, Long> reservedKeys = createHashMap(keys.size());
+    private Map<Object, Data> toDataKeys(Collection<?> keys, Collection<Data> dataKeys) {
+        Map<Object, Data> keyMap = createHashMap(keys.size());
         for (Object key : keys) {
-            long reservationId = tryReserveForUpdate(key);
-            if (reservationId != NOT_RESERVED) {
-                reservedKeys.put(key, reservationId);
+            Data keyData = toDataWithStrategy(key);
+            keyMap.put(key, keyData);
+            dataKeys.add(keyData);
+        }
+        return keyMap;
+    }
+
+    private void populateResultFromNearCache(Collection keys, List<Object> resultingKeyValuePairs) {
+        Iterator iterator = keys.iterator();
+        while (iterator.hasNext()) {
+            Object key = iterator.next();
+            Object value = getCachedValue(key, true);
+            if (value != null && value != NOT_CACHED) {
+                resultingKeyValuePairs.add(toObject(key));
+                resultingKeyValuePairs.add(toObject(value));
+                iterator.remove();
             }
         }
-        return reservedKeys;
+    }
+
+    private Map<Object, Long> getNearCacheReservations(Collection<?> nearCacheKeys, Map<Object, Data> keyMap) {
+        Map<Object, Long> reservations = createHashMap(nearCacheKeys.size());
+        for (Object key : nearCacheKeys) {
+            Data keyData = serializeKeys ? (Data) key : keyMap.get(key);
+            long reservationId = tryReserveForUpdate(key, keyData);
+            if (reservationId != NOT_RESERVED) {
+                reservations.put(key, reservationId);
+            }
+        }
+        return reservations;
+    }
+
+    private void populateResultFromRemote(int currentSize, List<Object> resultingKeyValuePairs, Map<Object, Long> reservations) {
+        for (int i = currentSize; i < resultingKeyValuePairs.size(); i += 2) {
+            Data keyData = (Data) resultingKeyValuePairs.get(i);
+            Data valueData = (Data) resultingKeyValuePairs.get(i + 1);
+
+            Object ncKey = serializeKeys ? keyData : toObject(keyData);
+            if (!serializeKeys) {
+                resultingKeyValuePairs.set(i, ncKey);
+            }
+
+            Long reservationId = reservations.get(ncKey);
+            if (reservationId != null) {
+                Object cachedValue = tryPublishReserved(ncKey, valueData, reservationId);
+                resultingKeyValuePairs.set(i + 1, cachedValue);
+                reservations.remove(ncKey);
+            }
+        }
     }
 
     private void releaseReservedKeys(Map<Object, Long> reservationResults) {
@@ -508,21 +544,6 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         return super.preDestroy();
     }
 
-    private void getCachedValues(Collection keys, List<Object> resultingKeyValuePairs) {
-        Iterator iterator = keys.iterator();
-        while (iterator.hasNext()) {
-            Object key = iterator.next();
-            Object value = getCachedValue(key, true);
-            if (value == null || value == NOT_CACHED) {
-                continue;
-            }
-            resultingKeyValuePairs.add(toObject(key));
-            resultingKeyValuePairs.add(toObject(value));
-
-            iterator.remove();
-        }
-    }
-
     protected void invalidateNearCache(Object key) {
         if (key == null) {
             return;
@@ -550,19 +571,18 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         return deserializeValue ? toObject(value) : value;
     }
 
-    private long tryReserveForUpdate(Object key) {
-        if (!cachingAllowedFor(key)) {
+    private long tryReserveForUpdate(Object key, Data keyData) {
+        if (!cachingAllowedFor(keyData)) {
             return NOT_RESERVED;
         }
-        return nearCache.tryReserveForUpdate(key);
+        return nearCache.tryReserveForUpdate(key, keyData);
     }
 
-    private boolean cachingAllowedFor(Object key) {
-        return cacheLocalEntries || clusterService.getLocalMember().isLiteMember() || !isOwn(key);
+    private boolean cachingAllowedFor(Data keyData) {
+        return cacheLocalEntries || clusterService.getLocalMember().isLiteMember() || !isOwn(keyData);
     }
 
-    private boolean isOwn(Object key) {
-        key = toNearCacheKeyWithStrategy(key);
+    private boolean isOwn(Data key) {
         int partitionId = partitionService.getPartitionId(key);
         return partitionService.isPartitionOwner(partitionId);
     }

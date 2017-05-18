@@ -54,6 +54,7 @@ public class NearCacheStatsStressTest extends HazelcastTestSupport {
     final int keySpace = 1000;
     final TestHazelcastFactory factory = new TestHazelcastFactory();
     final AtomicBoolean stop = new AtomicBoolean(false);
+
     InternalSerializationService ss;
     NearCache nearCache;
 
@@ -115,7 +116,7 @@ public class NearCacheStatsStressTest extends HazelcastTestSupport {
         public void run() {
             while (!stop.get()) {
                 Data keyData = getKeyData();
-                long reservationId = nearCache.tryReserveForUpdate(keyData);
+                long reservationId = nearCache.tryReserveForUpdate(keyData, keyData);
                 if (reservationId != NOT_RESERVED) {
                     nearCache.tryPublishReserved(keyData, keyData, reservationId, false);
                 }
@@ -132,7 +133,4 @@ public class NearCacheStatsStressTest extends HazelcastTestSupport {
             }
         }
     }
-
 }
-
-

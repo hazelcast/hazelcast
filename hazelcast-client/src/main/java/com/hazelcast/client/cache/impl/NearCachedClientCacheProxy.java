@@ -60,7 +60,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.hazelcast.cache.impl.CacheProxyUtil.NULL_KEY_IS_NOT_ALLOWED;
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE;
@@ -70,7 +69,6 @@ import static com.hazelcast.instance.BuildInfo.calculateVersion;
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
-import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkTrue;
@@ -82,8 +80,7 @@ import static java.lang.String.format;
  * @param <K> the type of key.
  * @param <V> the type of value.
  */
-@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling",
-        "checkstyle:classfanoutcomplexity", "checkstyle:anoninnerlength"})
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:anoninnerlength"})
 public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
     // eventually consistent Near Cache can only be used with server versions >= 3.8
@@ -136,10 +133,11 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
 
         try {
-            long reservationId = nearCache.tryReserveForUpdate(key);
-            value = super.getSyncInternal(key, expiryPolicy);
+            Data keyData = toData(key);
+            long reservationId = nearCache.tryReserveForUpdate(key, keyData);
+            value = super.getSyncInternal(keyData, expiryPolicy);
             if (reservationId != NOT_RESERVED) {
-                value = tryPublishReserved(key, value, reservationId);
+                value = (V) tryPublishReserved(key, value, reservationId);
             }
             return value;
         } catch (Throwable throwable) {
@@ -159,9 +157,10 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         }
 
         try {
-            long reservationId = nearCache.tryReserveForUpdate(key);
+            Data keyData = toData(key);
+            long reservationId = nearCache.tryReserveForUpdate(key, keyData);
             GetAsyncCallback getAsyncCallback = new GetAsyncCallback(key, reservationId, callback);
-            return super.getAsyncInternal(key, expiryPolicy, getAsyncCallback);
+            return super.getAsyncInternal(keyData, expiryPolicy, getAsyncCallback);
         } catch (Throwable t) {
             invalidateNearCache(key);
             throw rethrow(t);
@@ -173,7 +172,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         try {
             super.onPutSyncInternal(key, value, keyData, valueData);
         } finally {
-            cacheOrInvalidate(serializeKeys ? keyData : key, value, valueData);
+            cacheOrInvalidate(serializeKeys ? keyData : key, keyData, value, valueData);
         }
     }
 
@@ -182,7 +181,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         try {
             super.onPutIfAbsentSyncInternal(key, value, keyData, valueData);
         } finally {
-            cacheOrInvalidate(serializeKeys ? keyData : key, value, valueData);
+            cacheOrInvalidate(serializeKeys ? keyData : key, keyData, value, valueData);
         }
     }
 
@@ -191,8 +190,8 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                                               ClientDelegatingFuture<Boolean> delegatingFuture,
                                               ExecutionCallback<Boolean> callback) {
         Object callbackKey = serializeKeys ? keyData : key;
-        CacheOrInvalidateCallback<Boolean> wrapped = new CacheOrInvalidateCallback<Boolean>(callbackKey, value, valueData,
-                callback);
+        CacheOrInvalidateCallback<Boolean> wrapped = new CacheOrInvalidateCallback<Boolean>(callbackKey, keyData, value,
+                valueData, callback);
         super.onPutIfAbsentAsyncInternal(key, value, keyData, valueData, delegatingFuture, wrapped);
     }
 
@@ -201,7 +200,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                                                            ClientInvocationFuture invocationFuture,
                                                            OneShotExecutionCallback<V> callback) {
         Object callbackKey = serializeKeys ? keyData : key;
-        PutAsyncOneShotCallback wrapped = new PutAsyncOneShotCallback(callbackKey, value, valueData, callback);
+        PutAsyncOneShotCallback wrapped = new PutAsyncOneShotCallback(callbackKey, keyData, value, valueData, callback);
         return super.wrapPutAsyncFuture(key, value, keyData, valueData, invocationFuture, wrapped);
     }
 
@@ -219,7 +218,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     protected <T> void onReplaceInternalAsync(K key, V value, Data keyData, Data valueData,
                                               ClientDelegatingFuture<T> delegatingFuture, ExecutionCallback<T> callback) {
         Object callbackKey = serializeKeys ? keyData : key;
-        CacheOrInvalidateCallback<T> wrapped = new CacheOrInvalidateCallback<T>(callbackKey, value, valueData, callback);
+        CacheOrInvalidateCallback<T> wrapped = new CacheOrInvalidateCallback<T>(callbackKey, keyData, value, valueData, callback);
         super.onReplaceInternalAsync(key, value, keyData, valueData, delegatingFuture, wrapped);
     }
 
@@ -227,115 +226,131 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     protected <T> void onReplaceAndGetAsync(K key, V value, Data keyData, Data valueData,
                                             ClientDelegatingFuture<T> delegatingFuture, ExecutionCallback<T> callback) {
         Object callbackKey = serializeKeys ? keyData : key;
-        CacheOrInvalidateCallback<T> wrapped = new CacheOrInvalidateCallback<T>(callbackKey, value, valueData, callback);
+        CacheOrInvalidateCallback<T> wrapped = new CacheOrInvalidateCallback<T>(callbackKey, keyData, value, valueData, callback);
         super.onReplaceAndGetAsync(key, value, keyData, valueData, delegatingFuture, wrapped);
     }
 
     @Override
-    protected List<Map.Entry<Data, Data>> getAllInternal(Set<? extends K> keys, Collection<Data> dataKeys,
-                                                         ExpiryPolicy expiryPolicy, Map<K, V> resultMap, long startNanos) {
+    protected void getAllInternal(Set<? extends K> keys, Collection<Data> dataKeys, ExpiryPolicy expiryPolicy,
+                                  List<Object> resultingKeyValuePairs, long startNanos) {
+        Map<Object, Data> keyMap = null;
         if (serializeKeys) {
-            objectToDataCollection(keys, dataKeys, getSerializationService(), NULL_KEY_IS_NOT_ALLOWED);
+            keyMap = toDataKeys(keys, dataKeys);
         }
-        Collection<?> keySet = serializeKeys ? dataKeys : new ArrayList<Object>(keys);
-        populateResultFromNearCache(keySet, resultMap);
-        if (keySet.isEmpty()) {
-            return null;
+        Collection<?> ncKeys = serializeKeys ? dataKeys : new ArrayList<Object>(keys);
+
+        populateResultFromNearCache(ncKeys, resultingKeyValuePairs);
+        if (ncKeys.isEmpty()) {
+            return;
         }
 
-        Map<Object, Long> reservations = createHashMap(keys.size());
-        for (Object key : keySet) {
-            long reservationId = tryReserveForUpdate(key);
-            if (reservationId != NOT_RESERVED) {
-                reservations.put(key, reservationId);
-            }
+        if (!serializeKeys) {
+            keyMap = toDataKeys(ncKeys, dataKeys);
         }
 
+        Map<Object, Long> reservations = getNearCacheReservations(ncKeys, keyMap);
         try {
-            List<Map.Entry<Data, Data>> response = super.getAllInternal(keys, dataKeys, expiryPolicy, resultMap, startNanos);
-            populateResultFromRemote(resultMap, reservations, response);
-            return response;
+            int currentSize = resultingKeyValuePairs.size();
+            super.getAllInternal(keys, dataKeys, expiryPolicy, resultingKeyValuePairs, startNanos);
+            populateResultFromRemote(currentSize, resultingKeyValuePairs, reservations);
         } finally {
             releaseRemainingReservedKeys(reservations);
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private void populateResultFromNearCache(Collection<?> keys, Map<K, V> result) {
+    private Map<Object, Data> toDataKeys(Collection<?> keys, Collection<Data> dataKeys) {
+        Map<Object, Data> keyMap = createHashMap(keys.size());
+        for (Object key : keys) {
+            Data keyData = toData(key);
+            keyMap.put(key, keyData);
+            dataKeys.add(keyData);
+        }
+        return keyMap;
+    }
+
+    private void populateResultFromNearCache(Collection<?> keys, List<Object> resultingKeyValuePairs) {
         Iterator<?> iterator = keys.iterator();
         while (iterator.hasNext()) {
             Object key = iterator.next();
             Object cached = getCachedValue(key, true);
             if (cached != NOT_CACHED) {
-                result.put((K) (serializeKeys ? toObject(key) : key), (V) cached);
+                resultingKeyValuePairs.add(key);
+                resultingKeyValuePairs.add(cached);
                 iterator.remove();
             }
         }
     }
 
-    private void populateResultFromRemote(Map<K, V> resultMap, Map<Object, Long> reservations,
-                                          List<Map.Entry<Data, Data>> response) {
-        if (serializeKeys) {
-            for (Map.Entry<Data, Data> entry : response) {
-                Data keyData = entry.getKey();
-                Long reservationId = reservations.get(keyData);
-                if (reservationId != null) {
-                    K key = toObject(keyData);
-                    V remoteValue = resultMap.get(key);
-                    V cachedValue = tryPublishReserved(keyData, remoteValue, reservationId);
-                    V newValue = toObject(cachedValue);
-                    resultMap.put(key, newValue);
-                    reservations.remove(keyData);
-                }
+    private Map<Object, Long> getNearCacheReservations(Collection<?> nearCacheKeys, Map<Object, Data> keyMap) {
+        Map<Object, Long> reservations = createHashMap(nearCacheKeys.size());
+        for (Object key : nearCacheKeys) {
+            Data keyData = serializeKeys ? (Data) key : keyMap.get(key);
+            long reservationId = tryReserveForUpdate(key, keyData);
+            if (reservationId != NOT_RESERVED) {
+                reservations.put(key, reservationId);
             }
-        } else {
-            for (Map.Entry<K, V> entry : resultMap.entrySet()) {
-                K key = entry.getKey();
-                V value = entry.getValue();
-                Long reservationId = reservations.get(key);
-                if (reservationId != null) {
-                    V cachedValue = tryPublishReserved(key, value, reservationId);
-                    V newValue = toObject(cachedValue);
-                    resultMap.put(key, newValue);
-                    reservations.remove(key);
-                }
+        }
+        return reservations;
+    }
+
+    private void populateResultFromRemote(int currentSize, List<Object> resultingKeyValuePairs, Map<Object, Long> reservations) {
+        for (int i = currentSize; i < resultingKeyValuePairs.size(); i += 2) {
+            Data keyData = (Data) resultingKeyValuePairs.get(i);
+            Data valueData = (Data) resultingKeyValuePairs.get(i + 1);
+
+            Object ncKey = serializeKeys ? keyData : toObject(keyData);
+            if (!serializeKeys) {
+                resultingKeyValuePairs.set(i, ncKey);
+            }
+
+            Long reservationId = reservations.get(ncKey);
+            if (reservationId != null) {
+                Object cachedValue = tryPublishReserved(ncKey, valueData, reservationId);
+                resultingKeyValuePairs.set(i + 1, cachedValue);
+                reservations.remove(ncKey);
             }
         }
     }
 
     @Override
-    protected void putAllInternal(Map<? extends K, ? extends V> map, ExpiryPolicy expiryPolicy,
+    protected void putAllInternal(Map<? extends K, ? extends V> map, ExpiryPolicy expiryPolicy, Map<Object, Data> keyMap,
                                   List<Map.Entry<Data, Data>>[] entriesPerPartition, long startNanos) {
         try {
-            super.putAllInternal(map, expiryPolicy, entriesPerPartition, startNanos);
-            cacheOrInvalidate(map, entriesPerPartition, true);
+            if (!serializeKeys) {
+                keyMap = createHashMap(map.size());
+            }
+            super.putAllInternal(map, expiryPolicy, keyMap, entriesPerPartition, startNanos);
+            cacheOrInvalidate(map, keyMap, entriesPerPartition, true);
         } catch (Throwable t) {
-            cacheOrInvalidate(map, entriesPerPartition, false);
+            cacheOrInvalidate(map, keyMap, entriesPerPartition, false);
             throw rethrow(t);
         }
     }
 
-    private void cacheOrInvalidate(Map<? extends K, ? extends V> map, List<Map.Entry<Data, Data>>[] entriesPerPartition,
-                                   boolean isCacheOrInvalidate) {
+    private void cacheOrInvalidate(Map<? extends K, ? extends V> map, Map<Object, Data> keyMap,
+                                   List<Map.Entry<Data, Data>>[] entriesPerPartition, boolean isCacheOrInvalidate) {
         if (serializeKeys) {
             for (int partitionId = 0; partitionId < entriesPerPartition.length; partitionId++) {
                 List<Map.Entry<Data, Data>> entries = entriesPerPartition[partitionId];
                 if (entries != null) {
                     for (Map.Entry<Data, Data> entry : entries) {
+                        Data key = entry.getKey();
                         if (isCacheOrInvalidate) {
-                            cacheOrInvalidate(entry.getKey(), null, entry.getValue());
+                            // FIXME: the null value produces an unwanted deserialization if Near Cache in-memory format is OBJECT
+                            cacheOrInvalidate(key, key, null, entry.getValue());
                         } else {
-                            invalidateNearCache(entry.getKey());
+                            invalidateNearCache(key);
                         }
                     }
                 }
             }
         } else {
             for (Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
+                K key = entry.getKey();
                 if (isCacheOrInvalidate) {
-                    cacheOrInvalidate(entry.getKey(), entry.getValue(), null);
+                    cacheOrInvalidate(key, keyMap.get(key), entry.getValue(), null);
                 } else {
-                    invalidateNearCache(entry.getKey());
+                    invalidateNearCache(key);
                 }
             }
         }
@@ -460,10 +475,10 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     }
 
     @SuppressWarnings("unchecked")
-    private void cacheOrInvalidate(Object key, V value, Data valueData) {
+    private void cacheOrInvalidate(Object key, Data keyData, V value, Data valueData) {
         if (cacheOnUpdate) {
             V valueToStore = (V) nearCache.selectToSave(valueData, value);
-            nearCache.put(key, valueToStore);
+            nearCache.put(key, keyData, valueToStore);
         } else {
             invalidateNearCache(key);
         }
@@ -475,8 +490,8 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         nearCache.remove(key);
     }
 
-    private long tryReserveForUpdate(Object key) {
-        return nearCache.tryReserveForUpdate(key);
+    private long tryReserveForUpdate(Object key, Data keyData) {
+        return nearCache.tryReserveForUpdate(key, keyData);
     }
 
     /**
@@ -488,8 +503,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
      * @param deserialize   deserialize returned value
      * @return last known value for the key
      */
-    @SuppressWarnings("unchecked")
-    private V tryPublishReserved(Object key, V remoteValue, long reservationId, boolean deserialize) {
+    private Object tryPublishReserved(Object key, Object remoteValue, long reservationId, boolean deserialize) {
         assert remoteValue != NOT_CACHED;
 
         // caching null value is not supported for ICache Near Cache
@@ -499,14 +513,14 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
             return null;
         }
 
-        V cachedValue = null;
+        Object cachedValue = null;
         if (reservationId != NOT_RESERVED) {
-            cachedValue = (V) nearCache.tryPublishReserved(key, remoteValue, reservationId, deserialize);
+            cachedValue = nearCache.tryPublishReserved(key, remoteValue, reservationId, deserialize);
         }
         return cachedValue == null ? remoteValue : cachedValue;
     }
 
-    private V tryPublishReserved(Object key, V remoteValue, long reservationId) {
+    private Object tryPublishReserved(Object key, Object remoteValue, long reservationId) {
         return tryPublishReserved(key, remoteValue, reservationId, true);
     }
 
@@ -659,12 +673,15 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     private final class PutAsyncOneShotCallback extends OneShotExecutionCallback<V> {
 
         private final Object key;
+        private final Data keyData;
         private final V newValue;
         private final Data newValueData;
         private final OneShotExecutionCallback<V> statsCallback;
 
-        private PutAsyncOneShotCallback(Object key, V newValue, Data newValueData, OneShotExecutionCallback<V> callback) {
+        private PutAsyncOneShotCallback(Object key, Data keyData, V newValue, Data newValueData,
+                                        OneShotExecutionCallback<V> callback) {
             this.key = key;
+            this.keyData = keyData;
             this.newValue = newValue;
             this.newValueData = newValueData;
             this.statsCallback = callback;
@@ -677,7 +694,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                     statsCallback.onResponseInternal(response);
                 }
             } finally {
-                cacheOrInvalidate(key, newValue, newValueData);
+                cacheOrInvalidate(key, keyData, newValue, newValueData);
             }
         }
 
@@ -696,12 +713,14 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     private final class CacheOrInvalidateCallback<T> implements ExecutionCallback<T> {
 
         private final Object key;
+        private final Data keyData;
         private final V value;
         private final Data valueData;
         private final ExecutionCallback<T> callback;
 
-        CacheOrInvalidateCallback(Object key, V value, Data valueData, ExecutionCallback<T> callback) {
+        CacheOrInvalidateCallback(Object key, Data keyData, V value, Data valueData, ExecutionCallback<T> callback) {
             this.key = key;
+            this.keyData = keyData;
             this.value = value;
             this.valueData = valueData;
             this.callback = callback;
@@ -714,7 +733,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                     callback.onResponse(response);
                 }
             } finally {
-                cacheOrInvalidate(key, value, valueData);
+                cacheOrInvalidate(key, keyData, value, valueData);
             }
         }
 

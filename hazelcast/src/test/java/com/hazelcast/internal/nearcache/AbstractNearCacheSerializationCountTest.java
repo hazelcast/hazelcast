@@ -158,12 +158,12 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
                 assumeThatMethodIsAvailable(DataStructureMethods.PUT_ALL);
                 break;
             default:
-                fail("Unsupported method " + testMethod);
+                fail("Unsupported method: " + testMethod);
         }
 
         NearCacheTestContext<KeySerializationCountingData, ValueSerializationCountingData, NK, NV> context = createContext();
-        KeySerializationCountingData key = new KeySerializationCountingData();
-        ValueSerializationCountingData value = new ValueSerializationCountingData();
+        KeySerializationCountingData key = new KeySerializationCountingData("myKey");
+        ValueSerializationCountingData value = new ValueSerializationCountingData("myValue");
 
         switch (testMethod) {
             case GET:
@@ -265,11 +265,11 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
      */
     protected static void prepareSerializationConfig(SerializationConfig serializationConfig) {
         ClassDefinition keyClassDefinition = new ClassDefinitionBuilder(KeySerializationCountingData.FACTORY_ID,
-                KeySerializationCountingData.CLASS_ID).build();
+                KeySerializationCountingData.CLASS_ID).addUTFField("id").build();
         serializationConfig.addClassDefinition(keyClassDefinition);
 
         ClassDefinition valueClassDefinition = new ClassDefinitionBuilder(ValueSerializationCountingData.FACTORY_ID,
-                ValueSerializationCountingData.CLASS_ID).build();
+                ValueSerializationCountingData.CLASS_ID).addUTFField("id").build();
         serializationConfig.addClassDefinition(valueClassDefinition);
 
         serializationConfig.addPortableFactory(KeySerializationCountingData.FACTORY_ID, new PortableFactory() {
@@ -298,7 +298,13 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
         private static int FACTORY_ID = 1;
         private static int CLASS_ID = 1;
 
+        private String id;
+
         KeySerializationCountingData() {
+        }
+
+        KeySerializationCountingData(String id) {
+            this.id = id;
         }
 
         @Override
@@ -313,14 +319,34 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
+            writer.writeUTF("id", id);
             KEY_SERIALIZE_COUNT.incrementAndGet();
-            KEY_SERIALIZE_STACKTRACE.get().add(getStackTrace("invoked key serialization"));
+            KEY_SERIALIZE_STACKTRACE.get().add(getStackTrace("invoked key serialization for " + id));
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
+            id = reader.readUTF("id");
             KEY_DESERIALIZE_COUNT.incrementAndGet();
-            KEY_DESERIALIZE_STACKTRACE.get().add(getStackTrace("invoked key deserialization"));
+            KEY_DESERIALIZE_STACKTRACE.get().add(getStackTrace("invoked key deserialization for " + id));
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof KeySerializationCountingData)) {
+                return false;
+            }
+
+            KeySerializationCountingData that = (KeySerializationCountingData) o;
+            return id != null ? id.equals(that.id) : that.id == null;
+        }
+
+        @Override
+        public int hashCode() {
+            return id != null ? id.hashCode() : 0;
         }
     }
 
@@ -329,7 +355,13 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
         private static int FACTORY_ID = 2;
         private static int CLASS_ID = 2;
 
+        private String id;
+
         ValueSerializationCountingData() {
+        }
+
+        ValueSerializationCountingData(String id) {
+            this.id = id;
         }
 
         @Override
@@ -344,14 +376,34 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
+            writer.writeUTF("id", id);
             VALUE_SERIALIZE_COUNT.incrementAndGet();
-            VALUE_SERIALIZE_STACKTRACE.get().add(getStackTrace("invoked value serialization"));
+            VALUE_SERIALIZE_STACKTRACE.get().add(getStackTrace("invoked value serialization for " + id));
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
+            id = reader.readUTF("id");
             VALUE_DESERIALIZE_COUNT.incrementAndGet();
-            VALUE_DESERIALIZE_STACKTRACE.get().add(getStackTrace("invoked value deserialization"));
+            VALUE_DESERIALIZE_STACKTRACE.get().add(getStackTrace("invoked value deserialization for " + id));
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof ValueSerializationCountingData)) {
+                return false;
+            }
+
+            ValueSerializationCountingData that = (ValueSerializationCountingData) o;
+            return id != null ? id.equals(that.id) : that.id == null;
+        }
+
+        @Override
+        public int hashCode() {
+            return id != null ? id.hashCode() : 0;
         }
     }
 }

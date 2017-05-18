@@ -220,15 +220,22 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             return emptyMap();
         }
 
+        int keysSize = keys.size();
         List<Data> dataKeys = new ArrayList<Data>(keys.size());
-        Map<K, V> resultMap = createHashMap(keys.size());
-        getAllInternal(keys, dataKeys, expiryPolicy, resultMap, startNanos);
+        List<Object> resultingKeyValuePairs = new ArrayList<Object>(keysSize * 2);
+        getAllInternal(keys, dataKeys, expiryPolicy, resultingKeyValuePairs, startNanos);
 
-        return resultMap;
+        Map<K, V> result = createHashMap(keys.size());
+        for (int i = 0; i < resultingKeyValuePairs.size(); ) {
+            K key = toObject(resultingKeyValuePairs.get(i++));
+            V value = toObject(resultingKeyValuePairs.get(i++));
+            result.put(key, value);
+        }
+        return result;
     }
 
-    protected List<Map.Entry<Data, Data>> getAllInternal(Set<? extends K> keys, Collection<Data> dataKeys,
-                                                         ExpiryPolicy expiryPolicy, Map<K, V> resultMap, long startNanos) {
+    protected void getAllInternal(Set<? extends K> keys, Collection<Data> dataKeys, ExpiryPolicy expiryPolicy,
+                                  List<Object> resultingKeyValuePairs, long startNanos) {
         if (dataKeys.isEmpty()) {
             objectToDataCollection(keys, dataKeys, getSerializationService(), NULL_KEY_IS_NOT_ALLOWED);
         }
@@ -238,18 +245,14 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         ClientMessage responseMessage = invoke(request);
 
         List<Map.Entry<Data, Data>> response = CacheGetAllCodec.decodeResponse(responseMessage).response;
-        for (Map.Entry<Data, Data> dataEntry : response) {
-            K key = toObject(dataEntry.getKey());
-            V value = toObject(dataEntry.getValue());
-
-            resultMap.put(key, value);
+        for (Map.Entry<Data, Data> entry : response) {
+            resultingKeyValuePairs.add(entry.getKey());
+            resultingKeyValuePairs.add(entry.getValue());
         }
 
         if (statisticsEnabled) {
             statsHandler.onBatchGet(startNanos, response.size());
         }
-
-        return response;
     }
 
     @Override
@@ -263,6 +266,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void putAll(Map<? extends K, ? extends V> map, ExpiryPolicy expiryPolicy) {
         long startNanos = nowInNanosOrDefault();
         ensureOpen();
@@ -270,14 +274,14 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         if (map.isEmpty()) {
             return;
         }
-        putAllInternal(map, expiryPolicy, new List[partitionCount], startNanos);
+        putAllInternal(map, expiryPolicy, null, new List[partitionCount], startNanos);
     }
 
-    protected void putAllInternal(Map<? extends K, ? extends V> map, ExpiryPolicy expiryPolicy,
+    protected void putAllInternal(Map<? extends K, ? extends V> map, ExpiryPolicy expiryPolicy, Map<Object, Data> keyMap,
                                   List<Map.Entry<Data, Data>>[] entriesPerPartition, long startNanos) {
         try {
             // first we fill entry set per partition
-            groupDataToPartitions(map, getContext().getPartitionService(), entriesPerPartition);
+            groupDataToPartitions(map, getContext().getPartitionService(), keyMap, entriesPerPartition);
             // then we invoke the operations and sync on completion of these operations
             putToAllPartitionsAndWaitForCompletion(entriesPerPartition, expiryPolicy, startNanos);
         } catch (Exception t) {
@@ -286,7 +290,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
     }
 
     private void groupDataToPartitions(Map<? extends K, ? extends V> map, ClientPartitionService partitionService,
-                                       List<Map.Entry<Data, Data>>[] entriesPerPartition) {
+                                       Map<Object, Data> keyMap, List<Map.Entry<Data, Data>>[] entriesPerPartition) {
         for (Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
             K key = entry.getKey();
             V value = entry.getValue();
@@ -295,13 +299,16 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             Data keyData = toData(key);
             Data valueData = toData(value);
 
+            if (keyMap != null) {
+                keyMap.put(key, keyData);
+            }
+
             int partitionId = partitionService.getPartitionId(keyData);
             List<Map.Entry<Data, Data>> entries = entriesPerPartition[partitionId];
             if (entries == null) {
                 entries = new ArrayList<Map.Entry<Data, Data>>();
                 entriesPerPartition[partitionId] = entries;
             }
-
             entries.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyData, valueData));
         }
     }

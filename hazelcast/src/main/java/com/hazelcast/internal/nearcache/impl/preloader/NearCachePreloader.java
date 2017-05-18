@@ -91,7 +91,6 @@ public class NearCachePreloader<K> {
     private final String nearCacheName;
     private final NearCacheStatsImpl nearCacheStats;
     private final SerializationService serializationService;
-    private final boolean serializeKeys;
 
     private final NearCachePreloaderLock lock;
     private final File storeFile;
@@ -101,12 +100,10 @@ public class NearCachePreloader<K> {
     private int lastKeyCount;
 
     public NearCachePreloader(String nearCacheName, NearCachePreloaderConfig preloaderConfig,
-                              NearCacheStatsImpl nearCacheStats, SerializationService serializationService,
-                              boolean serializeKeys) {
+                              NearCacheStatsImpl nearCacheStats, SerializationService serializationService) {
         this.nearCacheName = nearCacheName;
         this.nearCacheStats = nearCacheStats;
         this.serializationService = serializationService;
-        this.serializeKeys = serializeKeys;
 
         String filename = getFilename(preloaderConfig.getDirectory(), nearCacheName);
         this.lock = new NearCachePreloaderLock(logger, filename + ".lock");
@@ -224,7 +221,7 @@ public class NearCachePreloader<K> {
                 break;
             }
             Data key = new HeapData(payload);
-            builder.add(serializeKeys ? key : serializationService.toObject(key));
+            builder.add(serializationService.toObject(key));
             if (builder.size() == LOAD_BATCH_SIZE) {
                 adapter.getAll(builder.build());
                 builder = InflatableSet.newBuilder(LOAD_BATCH_SIZE);

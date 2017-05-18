@@ -36,7 +36,7 @@ import java.io.File;
 
 import static com.hazelcast.internal.nearcache.AbstractNearCachePreloaderTest.KeyType.INTEGER;
 import static com.hazelcast.internal.nearcache.AbstractNearCachePreloaderTest.KeyType.STRING;
-import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheRecord;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getNearCacheKey;
@@ -359,6 +359,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     }
 
     private static void assertNearCacheContent(NearCacheTestContext<?, ?, ?, ?> context, int keyCount, KeyType keyType) {
+        InMemoryFormat inMemoryFormat = context.nearCacheConfig.getInMemoryFormat();
         for (int i = 0; i < keyCount; i++) {
             Object key = createKey(keyType, i);
             Object nearCacheKey = getNearCacheKey(context, key);
@@ -366,11 +367,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
             String value = context.serializationService.toObject(getValueFromNearCache(context, nearCacheKey));
             assertEquals("value-" + i, value);
 
-            NearCacheRecord record = getRecordFromNearCache(context, nearCacheKey);
-            if (record != null) {
-                assertEquals(format("The NearCacheRecord for key %d should be READ_PERMITTED (%s)", i, record),
-                        READ_PERMITTED, record.getRecordState());
-            }
+            assertNearCacheRecord(getRecordFromNearCache(context, nearCacheKey), i, inMemoryFormat);
         }
     }
 }

@@ -83,7 +83,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     protected final SerializationService serializationService;
     protected final ClassLoader classLoader;
     protected final NearCacheStatsImpl nearCacheStats;
-    protected final IFunction<K, R> reserveForUpdate = new ReserveForUpdateFunction();
 
     protected final boolean evictionDisabled;
 
@@ -152,7 +151,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     protected abstract V recordToValue(R record);
 
-    protected abstract R getOrCreateToReserve(K key);
+    protected abstract R getOrCreateToReserve(K key, Data keyData);
 
     protected abstract V updateAndGetReserved(K key, V value, long reservationId, boolean deserialize);
 
@@ -274,12 +273,10 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
                 if (record.getRecordState() != READ_PERMITTED) {
                     return null;
                 }
-
                 if (staleReadDetector.isStaleRead(key, record)) {
                     remove(key);
                     return null;
                 }
-
                 if (isRecordExpired(record)) {
                     remove(key);
                     onExpire(key, record);
@@ -302,7 +299,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     @Override
-    public void put(K key, V value) {
+    public void put(K key, Data keyData, V value) {
         checkAvailable();
         // if there is no eviction configured we return if the Near Cache is full and it's a new key
         // (we have to check the key, otherwise we might lose updates on existing keys)
@@ -314,7 +311,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         R oldRecord = null;
         try {
             record = valueToRecord(value);
-            onRecordCreate(key, record);
+            onRecordCreate(key, keyData, record);
             oldRecord = putRecord(key, record);
             if (oldRecord == null) {
                 nearCacheStats.incrementOwnedEntryCount();
@@ -393,7 +390,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     @Override
-    public long tryReserveForUpdate(K key) {
+    public long tryReserveForUpdate(K key, Data keyData) {
         checkAvailable();
         // if there is no eviction configured we return if the Near Cache is full and it's a new key
         // (we have to check the key, otherwise we might lose updates on existing keys)
@@ -401,7 +398,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
             return NOT_RESERVED;
         }
 
-        R reservedRecord = getOrCreateToReserve(key);
+        R reservedRecord = getOrCreateToReserve(key, keyData);
         long reservationId = nextReservationId();
         if (reservedRecord.casRecordState(RESERVED, reservationId)) {
             return reservationId;
@@ -411,8 +408,13 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     @Override
-    public V tryPublishReserved(K key, final V value, final long reservationId, boolean deserialize) {
+    public V tryPublishReserved(K key, V value, long reservationId, boolean deserialize) {
         return updateAndGetReserved(key, value, reservationId, deserialize);
+    }
+
+    protected void onRecordCreate(K key, Data keyData, R record) {
+        record.setCreationTime(Clock.currentTimeMillis());
+        initInvalidationMetaData(record, key, keyData);
     }
 
     protected R updateReservedRecordInternal(K key, V value, R reservedRecord, long reservationId) {
@@ -433,9 +435,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         record.incrementAccessHit();
     }
 
-    private void onRecordCreate(K key, R record) {
-        record.setCreationTime(Clock.currentTimeMillis());
-        int partitionId = staleReadDetector.getPartitionId(key);
+    private void initInvalidationMetaData(R record, K key, Data keyData) {
+        int partitionId = staleReadDetector.getPartitionId(keyData == null ? toData(key) : keyData);
         MetaDataContainer metaDataContainer = staleReadDetector.getMetaDataContainer(partitionId);
         if (metaDataContainer != null) {
             record.setPartitionId(partitionId);
@@ -449,13 +450,21 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     @SerializableByConvention
-    private class ReserveForUpdateFunction implements IFunction<K, R> {
+    @SuppressWarnings("WeakerAccess")
+    protected class ReserveForUpdateFunction implements IFunction<K, R> {
+
+        private final Data keyData;
+
+        public ReserveForUpdateFunction(Data keyData) {
+            this.keyData = keyData;
+        }
+
         @Override
         public R apply(K key) {
             R record = null;
             try {
                 record = valueToRecord(null);
-                onRecordCreate(key, record);
+                onRecordCreate(key, keyData, record);
                 record.casRecordState(READ_PERMITTED, RESERVED);
             } catch (Throwable throwable) {
                 onPutError(key, null, record, null, throwable);

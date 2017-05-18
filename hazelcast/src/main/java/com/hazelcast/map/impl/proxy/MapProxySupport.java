@@ -739,8 +739,8 @@ abstract class MapProxySupport<K, V>
             for (Object response : responses.values()) {
                 MapEntries entries = toObject(response);
                 for (int i = 0; i < entries.size(); i++) {
-                    resultingKeyValuePairs.add(toObject(entries.getKey(i)));
-                    resultingKeyValuePairs.add(toObject(entries.getValue(i)));
+                    resultingKeyValuePairs.add(entries.getKey(i));
+                    resultingKeyValuePairs.add(entries.getValue(i));
                 }
             }
             localMapStats.incrementGets(dataKeys.size(), System.currentTimeMillis() - time);
