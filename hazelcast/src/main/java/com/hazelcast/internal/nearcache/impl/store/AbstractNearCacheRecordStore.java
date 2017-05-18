@@ -223,20 +223,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         }
     }
 
-    protected void onRecordCreate(K key, R record) {
-        record.setCreationTime(Clock.currentTimeMillis());
-        MetaDataContainer metaDataContainer = staleReadDetector.getMetaDataContainer(key);
-        if (metaDataContainer != null) {
-            record.setUuid(metaDataContainer.getUuid());
-            record.setInvalidationSequence(metaDataContainer.getSequence());
-        }
-    }
-
-    protected void onRecordAccess(R record) {
-        record.setAccessTime(Clock.currentTimeMillis());
-        record.incrementAccessHit();
-    }
-
     @SuppressWarnings("unused")
     protected void onGet(K key, V value, R record) {
     }
@@ -364,26 +350,14 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     public void clear() {
         checkAvailable();
 
-        clearRecords();
+        records.clear();
         nearCacheStats.setOwnedEntryCount(0);
         nearCacheStats.setOwnedEntryMemoryCost(0L);
-    }
-
-    protected void clearRecords() {
-        records.clear();
     }
 
     @Override
     public void destroy() {
-        checkAvailable();
-
-        destroyStore();
-        nearCacheStats.setOwnedEntryCount(0);
-        nearCacheStats.setOwnedEntryMemoryCost(0L);
-    }
-
-    protected void destroyStore() {
-        clearRecords();
+        clear();
     }
 
     @Override
@@ -454,7 +428,21 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         return reservedRecord;
     }
 
-    protected long nextReservationId() {
+    private void onRecordAccess(R record) {
+        record.setAccessTime(Clock.currentTimeMillis());
+        record.incrementAccessHit();
+    }
+
+    private void onRecordCreate(K key, R record) {
+        record.setCreationTime(Clock.currentTimeMillis());
+        MetaDataContainer metaDataContainer = staleReadDetector.getMetaDataContainer(key);
+        if (metaDataContainer != null) {
+            record.setUuid(metaDataContainer.getUuid());
+            record.setInvalidationSequence(metaDataContainer.getSequence());
+        }
+    }
+
+    private long nextReservationId() {
         return RESERVATION_ID.incrementAndGet(this);
     }
 
