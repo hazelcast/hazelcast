@@ -116,6 +116,13 @@ public class LiteMemberMapNearCacheSerializationCountTest extends AbstractNearCa
     }
 
     @Override
+    protected void addConfiguration(StringBuilder config) {
+        appendConfig(config, mapInMemoryFormat);
+        appendConfig(config, nearCacheInMemoryFormat);
+        config.append(invalidateOnChange);
+    }
+
+    @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(createConfig(nearCacheConfig, false));
         HazelcastInstance liteMember = hazelcastFactory.newHazelcastInstance(createConfig(nearCacheConfig, true));

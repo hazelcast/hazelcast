@@ -139,6 +139,14 @@ public class ClientCacheNearCacheSerializationCountTest extends AbstractNearCach
     }
 
     @Override
+    protected void addConfiguration(StringBuilder config) {
+        appendConfig(config, cacheInMemoryFormat);
+        appendConfig(config, nearCacheInMemoryFormat);
+        appendConfig(config, invalidateOnChange);
+        config.append(localUpdatePolicy);
+    }
+
+    @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
         Config config = getConfig();
         prepareSerializationConfig(config.getSerializationConfig());
