@@ -29,18 +29,22 @@ public final class SSLConfig {
     private Properties properties = new Properties();
 
     /**
-     * Returns the name of the {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation class.
+     * Returns the name of the implementation class.
      *
-     * @return the name of the {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation class
+     * Class can either be an  {@link com.hazelcast.nio.ssl.SSLContextFactory} or {@link com.hazelcast.nio.ssl.SSLEngineFactory}.
+     *
+     * @return the name implementation class.
      */
     public String getFactoryClassName() {
         return factoryClassName;
     }
 
     /**
-     * Sets the name for the {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation class.
+     * Sets the name for the implementation class.
      *
-     * @param factoryClassName the name of the {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation class to set
+     * Class can either be an  {@link com.hazelcast.nio.ssl.SSLContextFactory} or {@link com.hazelcast.nio.ssl.SSLEngineFactory}.
+     *
+     * @param factoryClassName the name implementation class.
      */
     public SSLConfig setFactoryClassName(String factoryClassName) {
         this.factoryClassName = factoryClassName;
@@ -67,9 +71,12 @@ public final class SSLConfig {
     }
 
     /**
-     * Sets the {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation object.
+     * Sets the implementation object.
      *
-     * @param factoryImplementation the factory {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation object
+     * Object must be instance of an {@link com.hazelcast.nio.ssl.SSLContextFactory} or
+     * {@link com.hazelcast.nio.ssl.SSLEngineFactory}.
+     *
+     * @param factoryImplementation the implementation object.
      * @return this SSLConfig instance
      */
     public SSLConfig setFactoryImplementation(Object factoryImplementation) {
@@ -78,9 +85,11 @@ public final class SSLConfig {
     }
 
     /**
-     * Returns the factory {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation object.
+     * Returns the factory implementation object.
      *
-     * @return the factory {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation object
+     * Object is instance of an {@link com.hazelcast.nio.ssl.SSLContextFactory} or {@link com.hazelcast.nio.ssl.SSLEngineFactory}.
+     *
+     * @return the factory implementation object
      */
     public Object getFactoryImplementation() {
         return factoryImplementation;

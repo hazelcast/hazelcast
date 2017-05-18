@@ -31,9 +31,10 @@ import java.security.cert.CertificateException;
 import java.util.Properties;
 
 /**
- * Abstract SSLContextFactory that create the logic for KeyManager and TrustManager.
+ * A support class for {@link SSLEngineFactory} and {@link SSLContextFactory} implementation that takes care of
+ * the logic for KeyManager and TrustManager.
  */
-public abstract class AbstractSSLContextFactory implements SSLContextFactory {
+abstract class SSLEngineFactorySupport {
 
     public static final String JAVA_NET_SSL_PREFIX = "javax.net.ssl.";
 
