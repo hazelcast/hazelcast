@@ -16,22 +16,28 @@
 
 package com.hazelcast.nio.ssl;
 
-import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import java.util.Properties;
 
-public class BasicSSLContextFactory extends SSLEngineFactorySupport implements SSLContextFactory {
+/**
+ * The {@link SSLEngineFactory} is responsible for creating an SSLEngine instance.
+ */
+public interface SSLEngineFactory {
 
-    private SSLContext sslContext;
+    /**
+     * Initializes this class with config from {@link com.hazelcast.config.SSLConfig}
+     *
+     * @param properties properties form config
+     * @throws Exception
+     */
+    void init(Properties properties) throws Exception;
 
-    @Override
-    public void init(Properties properties) throws Exception {
-        load(properties);
-        sslContext = SSLContext.getInstance(protocol);
-        sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-    }
 
-    @Override
-    public SSLContext getSSLContext() {
-        return sslContext;
-    }
+    /**
+     * Creates a SSLEngine.
+     *
+     * @param clientMode if the SSLEngine should be in client mode, or server-mode. See {@link SSLEngine#getUseClientMode()}.
+     * @return the created SSLEngine.
+     */
+    SSLEngine create(boolean clientMode);
 }
