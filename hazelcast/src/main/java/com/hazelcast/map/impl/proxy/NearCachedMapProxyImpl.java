@@ -110,9 +110,10 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
         try {
             long reservationId = tryReserveForUpdate(key);
-            value = (V) super.getInternal(key);
+            Data keyData = toDataWithStrategy(key);
+            value = (V) super.getInternal(keyData);
             if (reservationId != NOT_RESERVED) {
-                value = (V) tryPublishReserved(key, value, reservationId);
+                value = (V) tryPublishReserved(key, keyData, value, reservationId);
             }
             return value;
         } catch (Throwable throwable) {
@@ -131,9 +132,10 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         }
 
         final long reservationId = tryReserveForUpdate(ncKey);
+        final Data keyData = toDataWithStrategy(key);
         InternalCompletableFuture<Data> future;
         try {
-            future = super.getAsyncInternal(ncKey);
+            future = super.getAsyncInternal(keyData);
         } catch (Throwable t) {
             invalidateNearCache(ncKey);
             throw rethrow(t);
@@ -143,7 +145,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
             future.andThen(new ExecutionCallback<Data>() {
                 @Override
                 public void onResponse(Data value) {
-                    nearCache.tryPublishReserved(ncKey, value, reservationId, false);
+                    nearCache.tryPublishReserved(ncKey, keyData, value, reservationId, false);
                 }
 
                 @Override
@@ -385,11 +387,12 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
             for (int i = currentSize; i < resultingKeyValuePairs.size(); ) {
                 Object key = toNearCacheKeyWithStrategy(resultingKeyValuePairs.get(i++));
-                Data value = toData(resultingKeyValuePairs.get(i++));
+                Data keyData = toDataWithStrategy(key);
+                Data valueData = toData(resultingKeyValuePairs.get(i++));
 
                 Long reservationId = reservations.get(key);
                 if (reservationId != null) {
-                    Object cachedValue = tryPublishReserved(key, value, reservationId);
+                    Object cachedValue = tryPublishReserved(key, keyData, valueData, reservationId);
                     resultingKeyValuePairs.set(i - 1, cachedValue);
                     reservations.remove(key);
                 }
@@ -524,11 +527,11 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         nearCache.remove(key);
     }
 
-    private Object tryPublishReserved(Object key, Object value, long reservationId) {
+    private Object tryPublishReserved(Object key, Data keyData, Object value, long reservationId) {
         assert value != NOT_CACHED;
 
         // `value` is cached even if it's null
-        Object cachedValue = nearCache.tryPublishReserved(key, value, reservationId, true);
+        Object cachedValue = nearCache.tryPublishReserved(key, keyData, value, reservationId, true);
         return cachedValue != null ? cachedValue : value;
     }
 

@@ -20,6 +20,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InitializingObject;
 
 /**
@@ -69,10 +70,11 @@ public interface NearCache<K, V> extends InitializingObject {
     /**
      * Puts (associates) a value with the given {@code key}.
      *
-     * @param key   the key of the value will be stored
-     * @param value the value will be stored
+     * @param key     the key of the value will be stored
+     * @param keyData the key as {@link Data} of the value will be stored
+     * @param value   the value will be stored
      */
-    void put(K key, V value);
+    void put(K key, Data keyData, V value);
 
     /**
      * Removes the value associated with the given {@code key}.
@@ -183,5 +185,5 @@ public interface NearCache<K, V> extends InitializingObject {
      * @param deserialize   eagerly deserialize returning value
      * @return associated value if deserialize is {@code true} and update succeeds, otherwise returns null
      */
-    V tryPublishReserved(K key, V value, long reservationId, boolean deserialize);
+    V tryPublishReserved(K key, Data keyData, V value, long reservationId, boolean deserialize);
 }

@@ -191,7 +191,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
             ReplicatedMapGetCodec.ResponseParameters result = ReplicatedMapGetCodec.decodeResponse(response);
             V value = toObject(result.response);
-            tryPublishReserved(key, value, reservationId);
+            tryPublishReserved(key, keyData, value, reservationId);
             return value;
         } catch (Throwable t) {
             invalidate(key);
@@ -506,12 +506,12 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         return toObject(value);
     }
 
-    private void tryPublishReserved(K key, V value, long reservationId) {
+    private void tryPublishReserved(K key, Data keyData, V value, long reservationId) {
         if (nearCache == null) {
             return;
         }
         if (reservationId != NOT_RESERVED) {
-            nearCache.tryPublishReserved(key, value, reservationId, false);
+            nearCache.tryPublishReserved(key, keyData, value, reservationId, false);
         }
     }
 

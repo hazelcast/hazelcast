@@ -147,11 +147,11 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     }
 
     @Override
-    protected V updateAndGetReserved(K key, final V value, final long reservationId, boolean deserialize) {
+    protected V updateAndGetReserved(K key, final Data keyData, final V value, final long reservationId, boolean deserialize) {
         R existingRecord = records.applyIfPresent(key, new IBiFunction<K, R, R>() {
             @Override
             public R apply(K key, R reservedRecord) {
-                return updateReservedRecordInternal(key, value, reservedRecord, reservationId);
+                return updateReservedRecordInternal(key, keyData, value, reservedRecord, reservationId);
             }
         });
 

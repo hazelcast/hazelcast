@@ -131,9 +131,10 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
         try {
             long reservationId = nearCache.tryReserveForUpdate(key);
-            value = (V) super.getInternal(key);
+            Data keyData = toData(key);
+            value = (V) super.getInternal(keyData);
             if (reservationId != NOT_RESERVED) {
-                value = (V) tryPublishReserved(key, value, reservationId);
+                value = (V) tryPublishReserved(key, keyData, value, reservationId);
             }
             return value;
         } catch (Throwable throwable) {
@@ -152,9 +153,10 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
 
         final long reservationId = nearCache.tryReserveForUpdate(key);
+        final Data keyData = toData(key);
         ICompletableFuture<V> future;
         try {
-            future = super.getAsyncInternal(key);
+            future = super.getAsyncInternal(keyData);
         } catch (Throwable t) {
             invalidateNearCache(key);
             throw rethrow(t);
@@ -164,7 +166,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             ((ClientDelegatingFuture) future).andThenInternal(new ExecutionCallback<Object>() {
                 @Override
                 public void onResponse(Object value) {
-                    nearCache.tryPublishReserved(key, value, reservationId, false);
+                    nearCache.tryPublishReserved(key, keyData, value, reservationId, false);
                 }
 
                 @Override
@@ -413,7 +415,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
                     Object key = serializeKeys ? dataKey : toObject(dataKey);
                     Long reservationId = reservations.get(key);
                     if (reservationId != null) {
-                        Object cachedValue = tryPublishReserved(key, dataValue, reservationId);
+                        Object cachedValue = tryPublishReserved(key, dataKey, dataValue, reservationId);
                         result.put((K) (serializeKeys ? toObject(key) : key), (V) toObject(cachedValue));
                         reservations.remove(key);
                     }
@@ -548,10 +550,10 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         super.onShutdown();
     }
 
-    private Object tryPublishReserved(Object key, Object value, long reservationId) {
+    private Object tryPublishReserved(Object key, Data keyData, Object value, long reservationId) {
         assert value != NOT_CACHED;
 
-        Object cachedValue = nearCache.tryPublishReserved(key, value, reservationId, true);
+        Object cachedValue = nearCache.tryPublishReserved(key, keyData, value, reservationId, true);
         return cachedValue != null ? cachedValue : value;
     }
 

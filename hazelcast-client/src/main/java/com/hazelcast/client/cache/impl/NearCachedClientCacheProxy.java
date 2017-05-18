@@ -137,9 +137,10 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
         try {
             long reservationId = nearCache.tryReserveForUpdate(key);
-            value = super.getSyncInternal(key, expiryPolicy);
+            Data keyData = toData(key);
+            value = super.getSyncInternal(keyData, expiryPolicy);
             if (reservationId != NOT_RESERVED) {
-                value = tryPublishReserved(key, value, reservationId);
+                value = tryPublishReserved(key, keyData, value, reservationId);
             }
             return value;
         } catch (Throwable throwable) {
@@ -160,8 +161,9 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
         try {
             long reservationId = nearCache.tryReserveForUpdate(key);
-            GetAsyncCallback getAsyncCallback = new GetAsyncCallback(key, reservationId, callback);
-            return super.getAsyncInternal(key, expiryPolicy, getAsyncCallback);
+            Data keyData = toData(key);
+            GetAsyncCallback getAsyncCallback = new GetAsyncCallback(key, keyData, reservationId, callback);
+            return super.getAsyncInternal(keyData, expiryPolicy, getAsyncCallback);
         } catch (Throwable t) {
             invalidateNearCache(key);
             throw rethrow(t);
@@ -173,7 +175,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         try {
             super.onPutSyncInternal(key, value, keyData, valueData);
         } finally {
-            cacheOrInvalidate(serializeKeys ? keyData : key, valueData, value);
+            cacheOrInvalidate(keyData, serializeKeys ? keyData : key, valueData, value);
         }
     }
 
@@ -182,7 +184,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         try {
             super.onPutIfAbsentSyncInternal(key, value, keyData, valueData);
         } finally {
-            cacheOrInvalidate(serializeKeys ? keyData : key, valueData, value);
+            cacheOrInvalidate(keyData, serializeKeys ? keyData : key, valueData, value);
         }
     }
 
@@ -191,8 +193,8 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                                               ClientDelegatingFuture<Boolean> delegatingFuture,
                                               ExecutionCallback<Boolean> callback) {
         Object callbackKey = serializeKeys ? keyData : key;
-        CacheOrInvalidateCallback<Boolean> wrapped = new CacheOrInvalidateCallback<Boolean>(callbackKey, valueData, value,
-                callback);
+        CacheOrInvalidateCallback<Boolean> wrapped = new CacheOrInvalidateCallback<Boolean>(callbackKey, keyData, valueData,
+                value, callback);
         super.onPutIfAbsentAsyncInternal(key, value, keyData, valueData, delegatingFuture, wrapped);
     }
 
@@ -201,8 +203,8 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                                                            ClientInvocationFuture invocationFuture,
                                                            OneShotExecutionCallback<V> callback) {
         Object callbackKey = serializeKeys ? keyData : key;
-        PutAsyncOneShotCallback nearCachePopulator = new PutAsyncOneShotCallback(callbackKey, valueData, value, callback);
-        return super.wrapPutAsyncFuture(key, value, keyData, valueData, invocationFuture, nearCachePopulator);
+        PutAsyncOneShotCallback putAsyncCallback = new PutAsyncOneShotCallback(callbackKey, keyData, valueData, value, callback);
+        return super.wrapPutAsyncFuture(key, value, keyData, valueData, invocationFuture, putAsyncCallback);
     }
 
     @Override
@@ -219,7 +221,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     protected <T> void onReplaceInternalAsync(K key, V value, Data keyData, Data valueData,
                                               ClientDelegatingFuture<T> delegatingFuture, ExecutionCallback<T> callback) {
         Object callbackKey = serializeKeys ? keyData : key;
-        CacheOrInvalidateCallback<T> wrapped = new CacheOrInvalidateCallback<T>(callbackKey, valueData, value, callback);
+        CacheOrInvalidateCallback<T> wrapped = new CacheOrInvalidateCallback<T>(callbackKey, keyData, valueData, value, callback);
         super.onReplaceInternalAsync(key, value, keyData, valueData, delegatingFuture, wrapped);
     }
 
@@ -227,7 +229,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     protected <T> void onReplaceAndGetAsync(K key, V value, Data keyData, Data valueData,
                                             ClientDelegatingFuture<T> delegatingFuture, ExecutionCallback<T> callback) {
         Object callbackKey = serializeKeys ? keyData : key;
-        CacheOrInvalidateCallback<T> wrapped = new CacheOrInvalidateCallback<T>(callbackKey, valueData, value, callback);
+        CacheOrInvalidateCallback<T> wrapped = new CacheOrInvalidateCallback<T>(callbackKey, keyData, valueData, value, callback);
         super.onReplaceAndGetAsync(key, value, keyData, valueData, delegatingFuture, wrapped);
     }
 
@@ -282,7 +284,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                 if (reservationId != null) {
                     K key = toObject(keyData);
                     V remoteValue = resultMap.get(key);
-                    V cachedValue = tryPublishReserved(keyData, remoteValue, reservationId);
+                    V cachedValue = tryPublishReserved(keyData, keyData, remoteValue, reservationId);
                     V newValue = toObject(cachedValue);
                     resultMap.put(key, newValue);
                     reservations.remove(keyData);
@@ -294,7 +296,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                 V value = entry.getValue();
                 Long reservationId = reservations.get(key);
                 if (reservationId != null) {
-                    V cachedValue = tryPublishReserved(key, value, reservationId);
+                    V cachedValue = tryPublishReserved(key, toData(key), value, reservationId);
                     V newValue = toObject(cachedValue);
                     resultMap.put(key, newValue);
                     reservations.remove(key);
@@ -323,7 +325,8 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                 if (entries != null) {
                     for (Map.Entry<Data, Data> entry : entries) {
                         if (isCacheOrInvalidate) {
-                            cacheOrInvalidate(entry.getKey(), entry.getValue(), null);
+                            Data key = entry.getKey();
+                            cacheOrInvalidate(key, key, entry.getValue(), null);
                         } else {
                             invalidateNearCache(entry.getKey());
                         }
@@ -333,7 +336,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         } else {
             for (Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
                 if (isCacheOrInvalidate) {
-                    cacheOrInvalidate(entry.getKey(), null, entry.getValue());
+                    cacheOrInvalidate(null, entry.getKey(), null, entry.getValue());
                 } else {
                     invalidateNearCache(entry.getKey());
                 }
@@ -460,10 +463,10 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     }
 
     @SuppressWarnings("unchecked")
-    private void cacheOrInvalidate(Object key, Data valueData, V value) {
+    private void cacheOrInvalidate(Data keyData, Object key, Data valueData, V value) {
         if (cacheOnUpdate) {
             V valueToStore = (V) nearCache.selectToSave(valueData, value);
-            nearCache.put(key, valueToStore);
+            nearCache.put(key, keyData, valueToStore);
         } else {
             invalidateNearCache(key);
         }
@@ -489,7 +492,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
      * @return last known value for the key
      */
     @SuppressWarnings("unchecked")
-    private V tryPublishReserved(Object key, V remoteValue, long reservationId, boolean deserialize) {
+    private V tryPublishReserved(Object key, Data keyData, V remoteValue, long reservationId, boolean deserialize) {
         assert remoteValue != NOT_CACHED;
 
         // caching null value is not supported for ICache Near Cache
@@ -501,13 +504,13 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
 
         V cachedValue = null;
         if (reservationId != NOT_RESERVED) {
-            cachedValue = (V) nearCache.tryPublishReserved(key, remoteValue, reservationId, deserialize);
+            cachedValue = (V) nearCache.tryPublishReserved(key, keyData, remoteValue, reservationId, deserialize);
         }
         return cachedValue == null ? remoteValue : cachedValue;
     }
 
-    private V tryPublishReserved(Object key, V remoteValue, long reservationId) {
-        return tryPublishReserved(key, remoteValue, reservationId, true);
+    private V tryPublishReserved(Object key, Data keyData, V remoteValue, long reservationId) {
+        return tryPublishReserved(key, keyData, remoteValue, reservationId, true);
     }
 
     private void releaseRemainingReservedKeys(Map<Object, Long> reservedKeys) {
@@ -624,11 +627,13 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     private final class GetAsyncCallback implements ExecutionCallback<V> {
 
         private final Object key;
+        private final Data keyData;
         private final long reservationId;
         private final ExecutionCallback<V> callback;
 
-        GetAsyncCallback(Object key, long reservationId, ExecutionCallback<V> callback) {
+        GetAsyncCallback(Object key, Data keyData, long reservationId, ExecutionCallback<V> callback) {
             this.key = key;
+            this.keyData = keyData;
             this.reservationId = reservationId;
             this.callback = callback;
         }
@@ -640,7 +645,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                     callback.onResponse(valueData);
                 }
             } finally {
-                tryPublishReserved(key, valueData, reservationId, false);
+                tryPublishReserved(key, keyData, valueData, reservationId, false);
             }
         }
 
@@ -659,12 +664,15 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     private final class PutAsyncOneShotCallback extends OneShotExecutionCallback<V> {
 
         private final Object key;
+        private final Data keyData;
         private final Data newValueData;
         private final V newValue;
         private final OneShotExecutionCallback<V> statsCallback;
 
-        private PutAsyncOneShotCallback(Object key, Data newValueData, V newValue, OneShotExecutionCallback<V> callback) {
+        private PutAsyncOneShotCallback(Object key, Data keyData, Data newValueData, V newValue,
+                                        OneShotExecutionCallback<V> callback) {
             this.key = key;
+            this.keyData = keyData;
             this.newValueData = newValueData;
             this.newValue = newValue;
             this.statsCallback = callback;
@@ -677,7 +685,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                     statsCallback.onResponseInternal(response);
                 }
             } finally {
-                cacheOrInvalidate(key, newValueData, newValue);
+                cacheOrInvalidate(keyData, key, newValueData, newValue);
             }
         }
 
@@ -696,11 +704,13 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     private final class CacheOrInvalidateCallback<T> implements ExecutionCallback<T> {
 
         private final Object key;
+        private final Data keyData;
         private final Data valueData;
         private final V value;
         private final ExecutionCallback<T> callback;
 
-        CacheOrInvalidateCallback(Object key, Data valueData, V value, ExecutionCallback<T> callback) {
+        CacheOrInvalidateCallback(Object key, Data keyData, Data valueData, V value, ExecutionCallback<T> callback) {
+            this.keyData = keyData;
             this.callback = callback;
             this.key = key;
             this.valueData = valueData;
@@ -714,7 +724,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                     callback.onResponse(response);
                 }
             } finally {
-                cacheOrInvalidate(key, valueData, value);
+                cacheOrInvalidate(keyData, key, valueData, value);
             }
         }
 
