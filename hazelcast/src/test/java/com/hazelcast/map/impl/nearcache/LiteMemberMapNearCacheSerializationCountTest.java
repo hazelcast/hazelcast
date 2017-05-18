@@ -28,6 +28,7 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
+import com.hazelcast.internal.nearcache.NearCacheSerializationCountConfigBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -116,10 +117,10 @@ public class LiteMemberMapNearCacheSerializationCountTest extends AbstractNearCa
     }
 
     @Override
-    protected void addConfiguration(StringBuilder config) {
-        appendConfig(config, mapInMemoryFormat);
-        appendConfig(config, nearCacheInMemoryFormat);
-        config.append(invalidateOnChange);
+    protected void addConfiguration(NearCacheSerializationCountConfigBuilder configBuilder) {
+        configBuilder.append(mapInMemoryFormat);
+        configBuilder.append(nearCacheInMemoryFormat);
+        configBuilder.append(invalidateOnChange);
     }
 
     @Override

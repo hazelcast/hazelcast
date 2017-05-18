@@ -26,6 +26,7 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
+import com.hazelcast.internal.nearcache.NearCacheSerializationCountConfigBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -108,9 +109,9 @@ public class TxnMapNearCacheSerializationCountTest extends AbstractNearCacheSeri
     }
 
     @Override
-    protected void addConfiguration(StringBuilder config) {
-        appendConfig(config, mapInMemoryFormat);
-        config.append(nearCacheInMemoryFormat);
+    protected void addConfiguration(NearCacheSerializationCountConfigBuilder configBuilder) {
+        configBuilder.append(mapInMemoryFormat);
+        configBuilder.append(nearCacheInMemoryFormat);
     }
 
     @Override
