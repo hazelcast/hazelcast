@@ -16,8 +16,6 @@
 
 package com.hazelcast.nio.ssl;
 
-import com.hazelcast.nio.IOUtil;
-
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
@@ -29,6 +27,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.Properties;
+
+import static com.hazelcast.nio.IOUtil.closeResource;
 
 /**
  * A support class for {@link SSLEngineFactory} and {@link SSLContextFactory} implementation that takes care of
@@ -61,8 +61,12 @@ abstract class SSLEngineFactorySupport {
     private TrustManagerFactory loadTrustManagerFactory(KeyStore ts, String trustStore,
                                                         String trustStorePassword, String trustManagerAlgorithm)
             throws NoSuchAlgorithmException, IOException, CertificateException, KeyStoreException {
+        if (trustStore == null) {
+            return null;
+        }
+
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(trustManagerAlgorithm);
-        char[] passPhrase = trustStorePassword != null ? trustStorePassword.toCharArray() : null;
+        char[] passPhrase = trustStorePassword == null ? null : trustStorePassword.toCharArray();
         loadKeyStore(ts, passPhrase, trustStore);
         tmf.init(ts);
         return tmf;
@@ -71,8 +75,13 @@ abstract class SSLEngineFactorySupport {
     private KeyManagerFactory loadKeyManagerFactory(KeyStore ks, String keyStorePassword, String keyStore,
                                                     String keyManagerAlgorithm)
             throws NoSuchAlgorithmException, IOException, CertificateException, KeyStoreException, UnrecoverableKeyException {
+
+        if (keyStore == null) {
+            return null;
+        }
+
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyManagerAlgorithm);
-        char[] passPhrase = keyStorePassword != null ? keyStorePassword.toCharArray() : null;
+        char[] passPhrase = keyStorePassword == null ? null : keyStorePassword.toCharArray();
         loadKeyStore(ks, passPhrase, keyStore);
         kmf.init(ks, passPhrase);
         return kmf;
@@ -80,11 +89,11 @@ abstract class SSLEngineFactorySupport {
 
     private void loadKeyStore(KeyStore ks, char[] passPhrase, String keyStoreFile)
             throws IOException, NoSuchAlgorithmException, CertificateException {
-        final InputStream in = new FileInputStream(keyStoreFile);
+        InputStream in = new FileInputStream(keyStoreFile);
         try {
             ks.load(in, passPhrase);
         } finally {
-            IOUtil.closeResource(in);
+            closeResource(in);
         }
     }
 
