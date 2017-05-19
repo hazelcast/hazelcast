@@ -40,6 +40,14 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
     V get(K key);
 
     /**
+     * Gets the record associated with the given {@code key}.
+     *
+     * @param key the key from which to get the associated {@link NearCacheRecord}.
+     * @return the {@link NearCacheRecord} associated with the given {@code key}.
+     */
+    NearCacheRecord getRecord(K key);
+
+    /**
      * Puts (associates) a value with the given {@code key}.
      *
      * @param key   the key to which the given value will be associated.

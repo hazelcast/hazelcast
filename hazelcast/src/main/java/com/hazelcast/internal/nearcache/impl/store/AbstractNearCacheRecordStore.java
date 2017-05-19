@@ -134,6 +134,9 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         return staleReadDetector;
     }
 
+    @Override
+    public abstract R getRecord(K key);
+
     protected abstract EvictionChecker createNearCacheEvictionChecker(EvictionConfig evictionConfig,
                                                                       NearCacheConfig nearCacheConfig);
 
@@ -148,9 +151,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     protected abstract void updateRecordValue(R record, V value);
 
     protected abstract V recordToValue(R record);
-
-    // public for tests
-    public abstract R getRecord(K key);
 
     protected abstract R getOrCreateToReserve(K key);
 
