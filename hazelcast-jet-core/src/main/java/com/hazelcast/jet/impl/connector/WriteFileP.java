@@ -36,7 +36,7 @@ import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 /**
  * @see com.hazelcast.jet.Processors#writeFile(String,
- * com.hazelcast.jet.DistributedFunction, Charset, boolean)
+ * com.hazelcast.jet.function.DistributedFunction, Charset, boolean)
  */
 public final class WriteFileP {
 
@@ -44,7 +44,7 @@ public final class WriteFileP {
 
     /**
      * Use {@link com.hazelcast.jet.Processors#writeFile(String,
-     * com.hazelcast.jet.DistributedFunction, Charset, boolean)}
+     * com.hazelcast.jet.function.DistributedFunction, Charset, boolean)}
      */
     public static <T> ProcessorMetaSupplier supplier(
             @Nonnull String directoryName,

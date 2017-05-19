@@ -894,7 +894,7 @@ public final class Processors {
      * Note that the event will be logged on the cluster members, not on the
      * client, so it's primarily meant for testing.
      * <p>
-     * {@link Vertex#localParallelism(int)} Local parallelism} of 1 is
+     * {@link Vertex#localParallelism(int) Local parallelism} of 1 is
      * recommended for this vertex.
      *
      * @param toStringF Function to convert item to String.
@@ -964,11 +964,12 @@ public final class Processors {
      * logged at the INFO level to the following logging category: {@link
      * PeekWrappedP}.
      *
+     * <b>Warning:</b> The {@code toStringF} and {@code shouldLogF} functions
+     * will see all items, including {@link Punctuation}s.
+     *
      * @param toStringF function that returns the string representation of the item
      * @param shouldLogF function to filter logged items. Use
      *                   {@link DistributedFunctions#alwaysTrue()} if you don't want to filter.
-     *                   <b>Warning:</b> The function will see all items, including {@link
-     *                   Punctuation}s.
      * @param wrapped The wrapped meta-supplier.
      *
      * @see #peekOutput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
@@ -1039,11 +1040,12 @@ public final class Processors {
      * logged at the INFO level to the following logging category: {@link
      * PeekWrappedP}.
      *
+     * <b>Warning:</b> The {@code toStringF} and {@code shouldLogF} functions
+     * will see all items, including {@link Punctuation}s.
+     *
      * @param toStringF Function to convert items to String.
      * @param shouldLogF function to filter logged items. Use
      *                   {@link DistributedFunctions#alwaysTrue()} if you don't want to filter.
-     *                   <b>Warning:</b> The function will see all items, including {@link
-     *                   Punctuation}s.
      * @param wrapped The wrapped meta-supplier.
      *
      * @see #peekInput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)

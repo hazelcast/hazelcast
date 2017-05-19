@@ -45,7 +45,7 @@ public interface Inbox {
 
     /**
      * Retrieves and removes the head of this inbox.  This method differs from
-     * {@link #poll poll} only in that it throws an exception if the inbox is empty.
+     * {@link #poll} only in that it throws an exception if the inbox is empty.
      *
      * @throws NoSuchElementException if this inbox is empty
      */

@@ -65,7 +65,7 @@ public abstract class AbstractProcessor implements Processor {
     private Object pendingItem;
 
     /**
-     * Specifies what this processor's {@link #isCooperative} method will return.
+     * Specifies what this processor's {@link #isCooperative()} method will return.
      * The method will have no effect if called after the processor has been
      * submitted to the execution service; therefore it should be called from the
      * {@link ProcessorSupplier} that creates it.
@@ -94,7 +94,7 @@ public abstract class AbstractProcessor implements Processor {
      * Method that can be overridden to perform any necessary initialization
      * for the processor. It is called exactly once and strictly before any of
      * the processing methods ({@link #process(int, Inbox) process()} and
-     * {@link #complete() complete()}), but after the outbox {@link #getLogger()
+     * {@link #complete()}), but after the outbox and {@link #getLogger()
      * logger} have been initialized.
      *
      * @param context the {@link Context context} associated with this processor
@@ -372,8 +372,8 @@ public abstract class AbstractProcessor implements Processor {
      * retained by the caller and passed again in the subsequent invocation of
      * this method, so as to resume emitting where it left off.
      * <p>
-     * For simplified usage from {@link #tryProcess(int, Object) tryProcess()}
-     * methods, see {@link FlatMapper}.
+     * For simplified usage from {@link #tryProcess(int, Object)
+     * tryProcess(ordinal, item)} methods, see {@link FlatMapper}.
      *
      * @param ordinal ordinal of the target bucket
      * @param traverser traverser over items to emit
@@ -412,8 +412,8 @@ public abstract class AbstractProcessor implements Processor {
      * retained by the caller and passed again in the subsequent invocation of
      * this method, so as to resume emitting where it left off.
      * <p>
-     * For simplified usage from {@link #tryProcess(int, Object) tryProcess()}
-     * methods, see {@link FlatMapper}.
+     * For simplified usage from {@link #tryProcess(int, Object)
+     * tryProcess(ordinal, item)} methods, see {@link FlatMapper}.
      *
      * @param ordinals ordinals of the target bucket
      * @param traverser traverser over items to emit
@@ -471,11 +471,11 @@ public abstract class AbstractProcessor implements Processor {
 
     /**
      * A helper that simplifies the implementation of {@link #tryProcess(int,
-     * Object) tryProcess()} for emitting collections. User supplies a {@code
-     * mapper} which takes an item and returns a traverser over all output
-     * items that should be emitted. The {@link #tryProcess(Object)} method
-     * obtains and passes the traverser to {@link #emitFromTraverser(int,
-     * Traverser)}.
+     * Object) tryProcess(ordinal, item)} for emitting collections. User
+     * supplies a {@code mapper} which takes an item and returns a traverser
+     * over all output items that should be emitted. The {@link
+     * #tryProcess(Object)} method obtains and passes the traverser to {@link
+     * #emitFromTraverser(int, Traverser)}.
      *
      * Example:
      * <pre>

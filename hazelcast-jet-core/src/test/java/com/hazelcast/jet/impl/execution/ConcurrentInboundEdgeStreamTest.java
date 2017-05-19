@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.execution;
 
-import com.hazelcast.internal.util.concurrent.update.ConcurrentConveyor;
-import com.hazelcast.internal.util.concurrent.update.OneToOneConcurrentArrayQueue;
+import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
+import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
