@@ -18,8 +18,6 @@ package classloading;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -27,13 +25,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Set;
+
+import static java.lang.String.format;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ThreadLeakTest extends HazelcastTestSupport {
-
-    protected static final ILogger LOGGER = Logger.getLogger(ThreadLeakTest.class);
 
     @Test
     public void testThreadLeak() {
@@ -46,18 +46,21 @@ public class ThreadLeakTest extends HazelcastTestSupport {
     }
 
     public static void assertHazelcastThreadShutdown(Set<Thread> oldThreads) {
-        Set<Thread> diff = Thread.getAllStackTraces().keySet();
+        Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
+        Set<Thread> diff = stackTraces.keySet();
         diff.removeAll(oldThreads);
         if (diff.isEmpty()) {
             return;
         }
 
-        LOGGER.warning("There are still Hazelcast threads running after shutdown: " + diff);
+        StringBuilder sb = new StringBuilder("There are still Hazelcast threads running after shutdown!\n");
         for (Thread thread : diff) {
-            if (!thread.isInterrupted() && thread.getState() != Thread.State.TERMINATED) {
-                LOGGER.warning("Thread is not interrupted and not TERMINATED: " + thread);
-            }
+            String stackTrace = Arrays.toString(stackTraces.get(thread));
+            sb.append(format("  -> %s (id: %s) (group: %s) (daemon: %b) (alive: %b) (interrupted: %b) (state: %s)%n%s",
+                    thread.getName(), thread.getId(), thread.getThreadGroup().getName(), thread.isDaemon(), thread.isAlive(),
+                    thread.isInterrupted(), thread.getState(), stackTrace));
         }
+        System.err.println(sb.toString());
 
         Thread[] threads = new Thread[diff.size()];
         diff.toArray(threads);
