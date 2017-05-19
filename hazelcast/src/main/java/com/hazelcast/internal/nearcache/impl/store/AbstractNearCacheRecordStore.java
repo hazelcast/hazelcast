@@ -154,7 +154,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     protected abstract R getOrCreateToReserve(K key);
 
-    protected abstract V updateAndGetReserved(K key, final V value, final long reservationId, boolean deserialize);
+    protected abstract V updateAndGetReserved(K key, V value, long reservationId, boolean deserialize);
 
     protected abstract R putRecord(K key, R record);
 
