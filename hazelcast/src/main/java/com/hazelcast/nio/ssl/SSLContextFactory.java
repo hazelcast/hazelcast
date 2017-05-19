@@ -21,6 +21,8 @@ import java.util.Properties;
 
 /**
  * Factory class for creating {@link javax.net.ssl.SSLContext}
+ *
+ * @deprecated since Hazelcast 3.9. Use the {@link SSLEngineFactory} instead.
  */
 public interface SSLContextFactory {
 
