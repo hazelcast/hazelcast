@@ -52,8 +52,9 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertThatMemo
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertThatMemoryCostsAreZero;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assumeThatLocalUpdatePolicyIsCacheOnUpdate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assumeThatLocalUpdatePolicyIsInvalidate;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getFromNearCache;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getValueFromNearCache;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getFuture;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getNearCacheKey;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.setEvictionConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.waitUntilLoaded;
@@ -1016,7 +1017,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
             assertNull("Expected null from near cached data structure for key " + i, context.nearCacheAdapter.get(i));
 
             // fetch internal value directly from Near Cache
-            NV value = getFromNearCache(context, i);
+            NV value = getValueFromNearCache(context, getNearCacheKey(context, i));
             if (value != null) {
                 // the internal value should either be `null` or `CACHED_AS_NULL`
                 assertEquals("Expected CACHED_AS_NULL in Near Cache for key " + i, NearCache.CACHED_AS_NULL, value);

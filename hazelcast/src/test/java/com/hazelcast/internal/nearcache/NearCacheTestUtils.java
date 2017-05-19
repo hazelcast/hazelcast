@@ -28,6 +28,8 @@ import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
 import com.hazelcast.internal.adapter.MethodAvailableMatcher;
 import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
+import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
+import com.hazelcast.internal.nearcache.impl.store.AbstractNearCacheRecordStore;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.monitor.NearCacheStats;
@@ -44,8 +46,10 @@ import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
+import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeThat;
@@ -126,6 +130,18 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     }
 
     /**
+     * Returns the key used by internally by the NearCache, depending on the data structure and key serialization.
+     *
+     * @param context the {@link NearCacheTestContext} to retrieve the Near Cache from
+     * @param key     the key in the user format
+     * @return the key in the Near Cache format
+     */
+    public static Object getNearCacheKey(NearCacheTestContext<?, ?, ?, ?> context, Object key) {
+        boolean isReplicatedMap = context.nearCacheAdapter instanceof ReplicatedMapDataStructureAdapter;
+        return isReplicatedMap ? key : context.serializationService.toData(key);
+    }
+
+    /**
      * Returns a value directly from the Near Cache.
      *
      * @param context the {@link NearCacheTestContext} to retrieve the Near Cache from
@@ -135,11 +151,22 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      * @return the value of the given key from the Near Cache
      */
     @SuppressWarnings("unchecked")
-    public static <NK, NV> NV getFromNearCache(NearCacheTestContext<?, ?, NK, NV> context, Object key) {
-        // the ReplicatedMap already uses keys by-reference
-        boolean isReplicatedMap = context.nearCacheAdapter instanceof ReplicatedMapDataStructureAdapter;
-        Object nearCacheKey = isReplicatedMap ? key : context.serializationService.toData(key);
-        return context.nearCache.get((NK) nearCacheKey);
+    public static <NK, NV> NV getValueFromNearCache(NearCacheTestContext<?, ?, NK, NV> context, Object key) {
+        return context.nearCache.get((NK) key);
+    }
+
+    /**
+     * Returns a {@link NearCacheRecord} directly from the Near Cache.
+     *
+     * @param context the {@link NearCacheTestContext} to retrieve the Near Cache from
+     * @param key     the key to get the value from
+     * @return the {@link NearCacheRecord} of the given key from the Near Cache
+     */
+    @SuppressWarnings("unchecked")
+    public static NearCacheRecord getRecordFromNearCache(NearCacheTestContext<?, ?, ?, ?> context, Object key) {
+        DefaultNearCache nearCache = (DefaultNearCache) context.nearCache;
+        AbstractNearCacheRecordStore nearCacheRecordStore = (AbstractNearCacheRecordStore) nearCache.getNearCacheRecordStore();
+        return nearCacheRecordStore.getRecord(key);
     }
 
     /**
@@ -202,8 +229,15 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      */
     public static void assertNearCacheContent(NearCacheTestContext<Integer, String, ?, ?> context, int size) {
         for (int i = 0; i < size; i++) {
-            String value = context.serializationService.toObject(getFromNearCache(context, i));
+            Object key = getNearCacheKey(context, i);
+
+            String value = context.serializationService.toObject(getValueFromNearCache(context, key));
             assertEquals("value-" + i, value);
+
+            NearCacheRecord record = getRecordFromNearCache(context, key);
+            assertNotNull(format("The NearCacheRecord for key %d should exist", i), record);
+            assertEquals(format("The NearCacheRecord for key %d should be READ_PERMITTED (%s)", i, record),
+                    READ_PERMITTED, record.getRecordState());
         }
     }
 
