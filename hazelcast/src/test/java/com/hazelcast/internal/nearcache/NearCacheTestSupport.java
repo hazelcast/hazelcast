@@ -281,6 +281,11 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         }
 
         @Override
+        public NearCacheRecord getRecord(Integer key) {
+            return null;
+        }
+
+        @Override
         public void put(Integer key, String value) {
             if (expectedKeyValueMappings == null) {
                 throw new IllegalStateException("Near-Cache is already destroyed");

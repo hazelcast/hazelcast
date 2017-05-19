@@ -29,7 +29,6 @@ import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
 import com.hazelcast.internal.adapter.MethodAvailableMatcher;
 import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
-import com.hazelcast.internal.nearcache.impl.store.AbstractNearCacheRecordStore;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.monitor.NearCacheStats;
@@ -49,7 +48,6 @@ import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UP
 import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeThat;
@@ -160,12 +158,12 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      *
      * @param context the {@link NearCacheTestContext} to retrieve the Near Cache from
      * @param key     the key to get the value from
-     * @return the {@link NearCacheRecord} of the given key from the Near Cache
+     * @return the {@link NearCacheRecord} of the given key from the Near Cache or {@code null} if record store cannot be casted
      */
     @SuppressWarnings("unchecked")
     public static NearCacheRecord getRecordFromNearCache(NearCacheTestContext<?, ?, ?, ?> context, Object key) {
         DefaultNearCache nearCache = (DefaultNearCache) context.nearCache;
-        AbstractNearCacheRecordStore nearCacheRecordStore = (AbstractNearCacheRecordStore) nearCache.getNearCacheRecordStore();
+        NearCacheRecordStore nearCacheRecordStore = nearCache.getNearCacheRecordStore();
         return nearCacheRecordStore.getRecord(key);
     }
 
@@ -235,9 +233,10 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
             assertEquals("value-" + i, value);
 
             NearCacheRecord record = getRecordFromNearCache(context, key);
-            assertNotNull(format("The NearCacheRecord for key %d should exist", i), record);
-            assertEquals(format("The NearCacheRecord for key %d should be READ_PERMITTED (%s)", i, record),
-                    READ_PERMITTED, record.getRecordState());
+            if (record != null) {
+                assertEquals(format("The NearCacheRecord for key %d should be READ_PERMITTED (%s)", i, record),
+                        READ_PERMITTED, record.getRecordState());
+            }
         }
     }
 

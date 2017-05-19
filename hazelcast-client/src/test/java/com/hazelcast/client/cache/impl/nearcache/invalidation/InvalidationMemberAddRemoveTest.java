@@ -30,11 +30,12 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
+import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
-import com.hazelcast.internal.nearcache.impl.store.AbstractNearCacheRecordStore;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -197,7 +198,7 @@ public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport 
                 Data keyData = getSerializationService(serverInstance).toData(i);
                 int partitionId = partitionService.getPartitionId(keyData);
 
-                AbstractNearCacheRecordStore nearCacheRecordStore = getAbstractNearCacheRecordStore();
+                NearCacheRecordStore nearCacheRecordStore = getNearCacheRecordStore();
                 NearCacheRecord record = nearCacheRecordStore.getRecord(keyData);
                 long recordSequence = record == null ? NO_SEQUENCE : record.getInvalidationSequence();
 
@@ -215,9 +216,10 @@ public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport 
                 return cacheEventHandler.getMetaDataGenerator();
             }
 
-            private AbstractNearCacheRecordStore getAbstractNearCacheRecordStore() {
-                DefaultNearCache defaultNearCache = (DefaultNearCache) ((NearCachedClientCacheProxy) clientCache).getNearCache().unwrap(DefaultNearCache.class);
-                return (AbstractNearCacheRecordStore) defaultNearCache.getNearCacheRecordStore();
+            private NearCacheRecordStore getNearCacheRecordStore() {
+                NearCache nearCache = ((NearCachedClientCacheProxy) clientCache).getNearCache();
+                DefaultNearCache defaultNearCache = (DefaultNearCache) nearCache.unwrap(DefaultNearCache.class);
+                return defaultNearCache.getNearCacheRecordStore();
             }
         });
     }

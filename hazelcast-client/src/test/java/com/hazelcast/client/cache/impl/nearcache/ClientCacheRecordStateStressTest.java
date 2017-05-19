@@ -26,8 +26,8 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
+import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
-import com.hazelcast.internal.nearcache.impl.store.AbstractNearCacheRecordStore;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -201,7 +201,7 @@ public class ClientCacheRecordStateStressTest extends HazelcastTestSupport {
     private void assertFinalRecordStateIsReadPermitted(Cache clientCache, InternalSerializationService serializationService) {
         NearCachedClientCacheProxy proxy = (NearCachedClientCacheProxy) clientCache;
         DefaultNearCache nearCache = (DefaultNearCache) proxy.getNearCache().unwrap(DefaultNearCache.class);
-        AbstractNearCacheRecordStore nearCacheRecordStore = (AbstractNearCacheRecordStore) nearCache.getNearCacheRecordStore();
+        NearCacheRecordStore nearCacheRecordStore = nearCache.getNearCacheRecordStore();
 
         for (int i = 0; i < KEY_SPACE; i++) {
             Data key = serializationService.toData(i);
