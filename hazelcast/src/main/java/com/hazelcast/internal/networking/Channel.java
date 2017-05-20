@@ -36,6 +36,33 @@ import java.util.concurrent.ConcurrentMap;
  *
  * In the future we should get rid of this class and rely on {@link ChannelInboundHandler}/{@link ChannelOutboundHandler}
  * chaining to add encryption. This will remove more artifacts from the architecture that can't carry their weight.
+ *
+ * <h1>Future note</h1>
+ * Below you can find some notes about the future of the Channel. This will hopefully act as a guide how to move forward.
+ *
+ * <h2>Fragmentation</h2>
+ * Packets are currently not fragmented, meaning that they are send as 1 atomic unit and this can cause a 2 way communication
+ * blackout for operations (since either operation or response can get blocked). Fragmentation needs to be added to make sure
+ * the system doesn't suffer from head of line blocking.
+ *
+ * <h2>Ordering</h2>
+ * In a channel messages don't need to be ordered. Currently they are, but as soon as we add packet fragmentation, packets
+ * can get out of order. Under certain conditions you want to keep ordering, e.g. for events. In this case it should be possible
+ * to have multiple streams in a channel. Within a stream there will be ordering.
+ *
+ * <h2>Reliability</h2>
+ * A channel doesn't provide reliability. TCP/IP does provide reliability, but 1: who says we want to keep using TCP/IP, but
+ * if a TCP/IP connection is lost and needs to be re-established, packets are lost. Reliability can be added, just like TCP/IP
+ * adds it; we don't discard the data until it has been acknowledged.
+ *
+ * <h2>Flow and congestion control</h2>
+ * On the Channel level we have no flow of congestion control; frames are always accepted no matter if on the sending side
+ * the write-queue is overloaded, or on the receiving side the system is overloaded (e.g. many pending operations on the
+ * operation queue). Just like with TCP/IP, flow and congestion control should be added.
+ *
+ * <h2>UDP</h2>
+ * With ordering, reliability and flow and congestion control in place, we can ask ourselves the question if UDP is not a
+ * more practical solution.
  */
 public interface Channel extends Closeable {
 
