@@ -277,8 +277,11 @@ public final class Packet extends HeapData implements OutboundFrame {
 
             byte version = src.get();
             if (VERSION != version) {
-                throw new IllegalArgumentException("Packet versions are not matching! Expected -> "
-                        + VERSION + ", Incoming -> " + version);
+                throw new IllegalArgumentException(
+                        "Packet version mismatch; the incoming packet version doesn't match expected packet version,"
+                                + " incoming packet version: " + version
+                                + " expected packet version: " + VERSION + '.'
+                                + " If the incoming version is negative or very large, it could indicate a corrupted stream.");
             }
 
             flags = src.getChar();
