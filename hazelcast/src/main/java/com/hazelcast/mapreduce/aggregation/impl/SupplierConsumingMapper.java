@@ -17,9 +17,8 @@
 package com.hazelcast.mapreduce.aggregation.impl;
 
 import com.hazelcast.mapreduce.Context;
-import com.hazelcast.mapreduce.Mapper;
+import com.hazelcast.mapreduce.aggregation.AbstractSupplyingMapper;
 import com.hazelcast.mapreduce.aggregation.Supplier;
-import com.hazelcast.mapreduce.impl.task.DefaultContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -38,27 +37,19 @@ import java.io.IOException;
 @SuppressFBWarnings("SE_NO_SERIALVERSIONID")
 @BinaryInterface
 class SupplierConsumingMapper<Key, ValueIn, ValueOut>
-        implements Mapper<Key, ValueIn, Key, ValueOut>, IdentifiedDataSerializable {
-
-    private transient SimpleEntry<Key, ValueIn> entry = new SimpleEntry<Key, ValueIn>();
-
-    private Supplier<Key, ValueIn, ValueOut> supplier;
+        extends AbstractSupplyingMapper<Key, ValueIn, Key, ValueOut> implements IdentifiedDataSerializable {
 
     SupplierConsumingMapper() {
     }
 
     SupplierConsumingMapper(Supplier<Key, ValueIn, ValueOut> supplier) {
-        this.supplier = supplier;
+        super(supplier);
     }
 
     @Override
-    public void map(Key key, ValueIn value, Context<Key, ValueOut> context) {
-        entry.setKey(key);
-        entry.setValue(value);
-        entry.setSerializationService(((DefaultContext) context).getSerializationService());
-        ValueOut valueOut = supplier.apply(entry);
-        if (valueOut != null) {
-            context.emit(key, valueOut);
+    protected void mapSupplied(Key key, ValueOut supplied, Context<Key, ValueOut> context) {
+        if (supplied != null) {
+            context.emit(key, supplied);
         }
     }
 
