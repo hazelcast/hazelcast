@@ -25,12 +25,15 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import static java.util.Collections.EMPTY_LIST;
+import static java.util.Collections.EMPTY_SET;
+
 public class QueryResultCollection<E> extends AbstractSet<E> {
 
-    private final Collection<QueryResultRow> rows;
     private final SerializationService serializationService;
     private final IterationType iterationType;
     private final boolean binary;
+    private Collection<QueryResultRow> rows;
 
     public QueryResultCollection(SerializationService serializationService, IterationType iterationType, boolean binary,
                                  boolean unique) {
@@ -38,9 +41,9 @@ public class QueryResultCollection<E> extends AbstractSet<E> {
         this.iterationType = iterationType;
         this.binary = binary;
         if (unique) {
-            rows = new HashSet<QueryResultRow>();
+            rows = EMPTY_SET;
         } else {
-            rows = new ArrayList<QueryResultRow>();
+            rows = EMPTY_LIST;
         }
     }
 
@@ -61,6 +64,17 @@ public class QueryResultCollection<E> extends AbstractSet<E> {
     }
 
     public void addAllRows(Collection<QueryResultRow> collection) {
+
+        if (this.rows == EMPTY_SET) {
+            this.rows = new HashSet<QueryResultRow>(collection);
+            return;
+        }
+
+        if (this.rows == EMPTY_LIST) {
+            this.rows = new ArrayList<QueryResultRow>(collection);
+            return;
+        }
+
         rows.addAll(collection);
     }
 
