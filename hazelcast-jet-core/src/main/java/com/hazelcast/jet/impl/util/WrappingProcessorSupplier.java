@@ -18,10 +18,10 @@ package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.function.DistributedFunction;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
-import java.util.function.Function;
 
 import static java.util.stream.Collectors.toList;
 
@@ -31,9 +31,11 @@ import static java.util.stream.Collectors.toList;
  */
 public final class WrappingProcessorSupplier implements ProcessorSupplier {
     private ProcessorSupplier wrapped;
-    private Function<Processor, Processor> wrapperSupplier;
+    private DistributedFunction<Processor, Processor> wrapperSupplier;
 
-    public WrappingProcessorSupplier(ProcessorSupplier wrapped, Function<Processor, Processor> wrapperSupplier) {
+    public WrappingProcessorSupplier(ProcessorSupplier wrapped,
+                                     DistributedFunction<Processor, Processor> wrapperSupplier
+    ) {
         this.wrapped = wrapped;
         this.wrapperSupplier = wrapperSupplier;
     }

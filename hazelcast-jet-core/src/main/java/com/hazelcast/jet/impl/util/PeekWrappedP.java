@@ -94,16 +94,19 @@ public final class PeekWrappedP implements Processor {
         return wrappedProcessor.complete();
     }
 
-    private boolean log(Object object) {
-        if (shouldLogF.test(object)) {
+    private void log(Object object) {
+        // null object can come from poll()
+        if (object != null && shouldLogF.test(object)) {
             logger.info(toStringF.apply(object));
         }
-        return true;
     }
 
     private class LoggingInbox implements Inbox {
 
         private Inbox wrappedInbox;
+
+        /** A flag, whether the last peeked item was already logged */
+        private boolean wasLogged;
 
         @Override
         public boolean isEmpty() {
@@ -112,17 +115,28 @@ public final class PeekWrappedP implements Processor {
 
         @Override
         public Object peek() {
-            return wrappedInbox.peek();
+            Object res = wrappedInbox.peek();
+            if (!wasLogged && res != null) {
+                log(res);
+                wasLogged = true;
+            }
+            return res;
         }
 
         @Override
         public Object poll() {
-            return log(wrappedInbox.poll());
+            Object res = wrappedInbox.poll();
+            if (!wasLogged && res != null) {
+                log(res);
+            }
+            wasLogged = false;
+            return res;
         }
 
         @Override
         public Object remove() {
-            return log(wrappedInbox.remove());
+            wasLogged = false;
+            return wrappedInbox.remove();
         }
     }
 
@@ -140,14 +154,20 @@ public final class PeekWrappedP implements Processor {
 
         @Override
         public boolean offer(int ordinal, @Nonnull Object item) {
-            return wrappedOutbox.offer(ordinal, item)
-                    && log(item);
+            if (wrappedOutbox.offer(ordinal, item)) {
+                log(item);
+                return true;
+            }
+            return false;
         }
 
         @Override
         public boolean offer(int[] ordinals, @Nonnull Object item) {
-            return wrappedOutbox.offer(ordinals, item)
-                    && log(item);
+            if (wrappedOutbox.offer(ordinals, item)) {
+                log(item);
+                return true;
+            }
+            return false;
         }
     }
 }

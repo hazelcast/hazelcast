@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.util;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.nio.Address;
 
 import javax.annotation.Nonnull;
@@ -32,10 +33,10 @@ import java.util.function.Function;
  */
 public final class WrappingProcessorMetaSupplier implements ProcessorMetaSupplier {
     private ProcessorMetaSupplier wrapped;
-    private Function<Processor, Processor> wrapperSupplier;
+    private DistributedFunction<Processor, Processor> wrapperSupplier;
 
     public WrappingProcessorMetaSupplier(ProcessorMetaSupplier wrapped,
-                                         Function<Processor, Processor> wrapperSupplier) {
+                                         DistributedFunction<Processor, Processor> wrapperSupplier) {
         this.wrapped = wrapped;
         this.wrapperSupplier = wrapperSupplier;
     }
