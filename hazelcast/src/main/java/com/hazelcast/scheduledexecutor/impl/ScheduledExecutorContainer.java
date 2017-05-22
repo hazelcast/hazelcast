@@ -291,9 +291,7 @@ public class ScheduledExecutorContainer {
                     // to the Executor's Future, hence, we have no access on the runner thread to interrupt. In this case
                     // the line below is only cancelling future runs.
                     try {
-                        descriptor.cancel(true);
-                        descriptor.setScheduledFuture(null);
-                        descriptor.setTaskOwner(false);
+                        descriptor.stopForMigration();
                     } catch (Exception ex) {
                         throw rethrow(ex);
                     }

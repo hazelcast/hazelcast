@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
@@ -28,6 +29,8 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.scheduledexecutor.TaskUtils.named;
+import static java.lang.String.valueOf;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -370,4 +373,29 @@ public class ScheduledExecutorServiceSlowTest
         assertTrue(future.isDone());
     }
 
+    @Test
+    public void reschedulingAfterMigration_whenCurrentNodePreviouslyOwnedTask() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance first = factory.newHazelcastInstance();
+
+        int tasksCount = 1000;
+        final IScheduledExecutorService scheduler = first.getScheduledExecutorService("scheduler");
+        for (int i = 1; i <= tasksCount; i++) {
+            scheduler.scheduleAtFixedRate(named(valueOf(i), new EchoTask()), 5, 10, SECONDS);
+        }
+
+        assertTrueEventually(new AllTasksRunningWithinNumOfNodes(scheduler, 1));
+
+        // Start a second member
+        HazelcastInstance second = factory.newHazelcastInstance();
+        waitAllForSafeState(first, second);
+
+        assertTrueEventually(new AllTasksRunningWithinNumOfNodes(scheduler, 2));
+
+        // Kill the second member, tasks should now get rescheduled back in first member
+        second.getLifecycleService().terminate();
+        waitAllForSafeState(first);
+
+        assertTrueEventually(new AllTasksRunningWithinNumOfNodes(scheduler, 1));
+    }
 }
