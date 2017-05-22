@@ -21,16 +21,17 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheEventHandler;
 import com.hazelcast.cache.impl.CachePartitionSegment;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -52,18 +53,17 @@ public class CacheNearCacheStateHolder implements IdentifiedDataSerializable {
         this.cacheReplicationOperation = cacheReplicationOperation;
     }
 
-    public void prepare(CachePartitionSegment segment) {
+    void prepare(CachePartitionSegment segment, Collection<ServiceNamespace> namespaces) {
         ICacheService cacheService = segment.getCacheService();
         MetaDataGenerator metaData = getPartitionMetaDataGenerator(cacheService);
 
         int partitionId = segment.getPartitionId();
         partitionUuid = metaData.getUuidOrNull(partitionId);
 
-        cacheNameSequencePairs = new ArrayList(segment.getCacheConfigs().size());
-        Iterator<ICacheRecordStore> iter = segment.recordStoreIterator();
-        while (iter.hasNext()) {
-            ICacheRecordStore cacheRecordStore = iter.next();
-            String cacheName = cacheRecordStore.getName();
+        cacheNameSequencePairs = new ArrayList(namespaces.size());
+        for (ServiceNamespace namespace : namespaces) {
+            ObjectNamespace ns = (ObjectNamespace) namespace;
+            String cacheName = ns.getObjectName();
 
             cacheNameSequencePairs.add(cacheName);
             cacheNameSequencePairs.add(metaData.currentSequence(cacheName, partitionId));

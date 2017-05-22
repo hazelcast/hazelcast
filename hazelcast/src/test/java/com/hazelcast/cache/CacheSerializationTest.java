@@ -33,6 +33,7 @@ import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -54,6 +55,7 @@ import javax.cache.configuration.MutableConfiguration;
 import javax.cache.spi.CachingProvider;
 import java.lang.reflect.Field;
 import java.net.UnknownHostException;
+import java.util.Collection;
 
 import static org.junit.Assert.assertEquals;
 
@@ -130,7 +132,10 @@ public class CacheSerializationTest extends HazelcastTestSupport {
             for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
                 CachePartitionSegment segment = cacheService.getSegment(partitionId);
 
-                CacheReplicationOperation operation = new CacheReplicationOperation(segment, 1);
+                int replicaIndex = 1;
+                Collection<ServiceNamespace> namespaces = segment.getAllNamespaces(replicaIndex);
+                CacheReplicationOperation operation = new CacheReplicationOperation();
+                operation.prepare(segment, namespaces, replicaIndex);
                 Data serialized = service.toData(operation);
                 try {
                     service.toObject(serialized);

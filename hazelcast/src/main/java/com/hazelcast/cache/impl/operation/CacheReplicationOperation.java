@@ -26,11 +26,15 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -53,25 +57,35 @@ import java.util.Map;
  */
 public class CacheReplicationOperation extends Operation implements IdentifiedDataSerializable {
 
-    protected final Map<String, Map<Data, CacheRecord>> data = new HashMap<String, Map<Data, CacheRecord>>();
-    protected final List<CacheConfig> configs = new ArrayList<CacheConfig>();
-    protected final CacheNearCacheStateHolder nearCacheStateHolder = new CacheNearCacheStateHolder(this);
+    private final List<CacheConfig> configs = new ArrayList<CacheConfig>();
+    private final Map<String, Map<Data, CacheRecord>> data = new HashMap<String, Map<Data, CacheRecord>>();
+    private final CacheNearCacheStateHolder nearCacheStateHolder = new CacheNearCacheStateHolder(this);
 
     public CacheReplicationOperation() {
     }
 
-    public CacheReplicationOperation(CachePartitionSegment segment, int replicaIndex) {
-        Iterator<ICacheRecordStore> iter = segment.recordStoreIterator();
-        while (iter.hasNext()) {
-            ICacheRecordStore cacheRecordStore = iter.next();
-            CacheConfig cacheConfig = cacheRecordStore.getConfig();
-            if (cacheConfig.getAsyncBackupCount() + cacheConfig.getBackupCount() >= replicaIndex) {
-                data.put(cacheRecordStore.getName(), cacheRecordStore.getReadOnlyRecords());
+    public final void prepare(CachePartitionSegment segment, Collection<ServiceNamespace> namespaces,
+            int replicaIndex) {
+
+        for (ServiceNamespace namespace : namespaces) {
+            ObjectNamespace ns = (ObjectNamespace) namespace;
+            ICacheRecordStore recordStore = segment.getRecordStore(ns.getObjectName());
+            if (recordStore == null) {
+                continue;
+            }
+
+            CacheConfig cacheConfig = recordStore.getConfig();
+            if (cacheConfig.getTotalBackupCount() >= replicaIndex) {
+                storeRecordsToReplicate(recordStore);
             }
         }
 
         configs.addAll(segment.getCacheConfigs());
-        nearCacheStateHolder.prepare(segment);
+        nearCacheStateHolder.prepare(segment, namespaces);
+    }
+
+    protected void storeRecordsToReplicate(ICacheRecordStore recordStore) {
+        data.put(recordStore.getName(), recordStore.getReadOnlyRecords());
     }
 
     @Override
@@ -182,7 +196,11 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
     }
 
     public boolean isEmpty() {
-        return (configs == null || configs.isEmpty()) && (data == null || data.isEmpty());
+        return configs.isEmpty() && data.isEmpty();
+    }
+
+    Collection<CacheConfig> getConfigs() {
+        return Collections.unmodifiableCollection(configs);
     }
 
     @Override

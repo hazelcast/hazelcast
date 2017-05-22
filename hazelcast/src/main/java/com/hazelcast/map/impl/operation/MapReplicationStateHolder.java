@@ -28,9 +28,12 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -63,19 +66,25 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
         this.mapReplicationOperation = mapReplicationOperation;
     }
 
-    void prepare(PartitionContainer container, int replicaIndex) {
-        data = new HashMap<String, Set<RecordReplicationInfo>>(container.getMaps().size());
-        loaded = new HashMap<String, Boolean>(container.getMaps().size());
-        for (Map.Entry<String, RecordStore> entry : container.getMaps().entrySet()) {
-            RecordStore recordStore = entry.getValue();
+    void prepare(PartitionContainer container, Collection<ServiceNamespace> namespaces, int replicaIndex) {
+        data = new HashMap<String, Set<RecordReplicationInfo>>(namespaces.size());
+        loaded = new HashMap<String, Boolean>(namespaces.size());
+        for (ServiceNamespace namespace : namespaces) {
+            ObjectNamespace mapNamespace = (ObjectNamespace) namespace;
+            String mapName = mapNamespace.getObjectName();
+            RecordStore recordStore = container.getRecordStore(mapName);
+            if (recordStore == null) {
+                continue;
+            }
 
             MapContainer mapContainer = recordStore.getMapContainer();
             MapConfig mapConfig = mapContainer.getMapConfig();
             if (mapConfig.getTotalBackupCount() < replicaIndex) {
                 continue;
             }
+
             MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
-            String mapName = entry.getKey();
+
             loaded.put(mapName, recordStore.isLoaded());
             // now prepare data to migrate records
             Set<RecordReplicationInfo> recordSet = new HashSet<RecordReplicationInfo>(recordStore.size());

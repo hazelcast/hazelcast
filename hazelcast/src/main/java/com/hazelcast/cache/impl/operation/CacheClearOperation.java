@@ -22,7 +22,9 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.partition.IPartitionService;
 
@@ -35,7 +37,7 @@ import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAIL
  */
 public class CacheClearOperation
         extends PartitionWideCacheOperation
-        implements BackupAwareOperation, MutatingOperation {
+        implements BackupAwareOperation, ServiceNamespaceAware, MutatingOperation {
 
     private transient ICacheRecordStore cache;
 
@@ -102,4 +104,13 @@ public class CacheClearOperation
         return new CacheClearBackupOperation(name);
     }
 
+    @Override
+    public ObjectNamespace getServiceNamespace() {
+        ICacheRecordStore recordStore = cache;
+        if (recordStore == null) {
+            ICacheService service = getService();
+            recordStore = service.getOrCreateRecordStore(name, getPartitionId());
+        }
+        return recordStore.getObjectNamespace();
+    }
 }

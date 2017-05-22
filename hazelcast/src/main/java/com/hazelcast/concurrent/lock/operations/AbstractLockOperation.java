@@ -28,6 +28,8 @@ import com.hazelcast.spi.NamedOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.ServiceNamespaceAware;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -36,7 +38,8 @@ import static com.hazelcast.concurrent.lock.ObjectNamespaceSerializationHelper.r
 import static com.hazelcast.concurrent.lock.ObjectNamespaceSerializationHelper.writeNamespaceCompatibly;
 
 public abstract class AbstractLockOperation extends Operation
-        implements PartitionAwareOperation, IdentifiedDataSerializable, NamedOperation, Versioned {
+        implements PartitionAwareOperation, IdentifiedDataSerializable, NamedOperation,
+        ServiceNamespaceAware, Versioned {
 
     public static final int ANY_THREAD = 0;
 
@@ -131,6 +134,11 @@ public abstract class AbstractLockOperation extends Operation
     @Override
     public String getName() {
         return namespace.getObjectName();
+    }
+
+    @Override
+    public ServiceNamespace getServiceNamespace() {
+        return namespace;
     }
 
     @Override

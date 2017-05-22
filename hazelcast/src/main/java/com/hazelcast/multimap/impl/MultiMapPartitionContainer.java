@@ -17,11 +17,15 @@
 package com.hazelcast.multimap.impl;
 
 import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -51,7 +55,7 @@ public class MultiMapPartitionContainer {
         return container;
     }
 
-    public MultiMapContainer getCollectionContainer(String name) {
+    public MultiMapContainer getMultiMapContainer(String name) {
         MultiMapContainer container = containerMap.get(name);
         if (container != null) {
             container.access();
@@ -64,7 +68,7 @@ public class MultiMapPartitionContainer {
         return containerMap.containsKey(name);
     }
 
-    void destroyCollection(String name) {
+    void destroyMultiMap(String name) {
         final MultiMapContainer container = containerMap.remove(name);
         if (container != null) {
             container.destroy();
@@ -84,6 +88,21 @@ public class MultiMapPartitionContainer {
             DistributedObjectNamespace namespace = new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name);
             lockService.clearLockStore(partitionId, namespace);
         }
+    }
+
+    public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
+        Collection<ServiceNamespace> namespaces = new HashSet<ServiceNamespace>();
+
+        for (MultiMapContainer container : containerMap.values()) {
+            MultiMapConfig mapConfig = container.getConfig();
+            if (mapConfig.getTotalBackupCount() < replicaIndex) {
+                continue;
+            }
+
+            namespaces.add(container.getObjectNamespace());
+        }
+
+        return namespaces;
     }
 
     void destroy() {

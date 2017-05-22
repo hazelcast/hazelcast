@@ -26,16 +26,18 @@ import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
+import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider;
-import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.util.Clock;
@@ -87,6 +89,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected final EvictionChecker evictionChecker;
     protected final EvictionPolicyEvaluator<Data, R> evictionPolicyEvaluator;
     protected final SamplingEvictionStrategy<Data, R, CRM> evictionStrategy;
+    protected final ObjectNamespace objectNamespace;
     protected final boolean wanReplicationEnabled;
     protected final boolean disablePerEntryInvalidationEvents;
     protected CRM records;
@@ -147,6 +150,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         evictionChecker = createCacheEvictionChecker(evictionConfig.getSize(), evictionConfig.getMaximumSizePolicy());
         evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
         evictionStrategy = createEvictionStrategy(evictionConfig);
+        objectNamespace = new DistributedObjectNamespace(ICacheService.SERVICE_NAME, name);
 
         injectDependencies(evictionPolicyEvaluator.getEvictionPolicyComparator());
         registerResourceIfItIsClosable(cacheWriter);
@@ -1508,5 +1512,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public boolean isWanReplicationEnabled() {
         return wanReplicationEnabled;
+    }
+
+    @Override
+    public ObjectNamespace getObjectNamespace() {
+        return objectNamespace;
     }
 }

@@ -29,9 +29,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
+import java.util.Collection;
 
 import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 
@@ -50,10 +52,18 @@ public class MapReplicationOperation extends Operation implements MutatingOperat
 
     public MapReplicationOperation(PartitionContainer container, int partitionId, int replicaIndex) {
         setPartitionId(partitionId).setReplicaIndex(replicaIndex);
+        Collection<ServiceNamespace> namespaces = container.getAllNamespaces(replicaIndex);
+        this.mapReplicationStateHolder.prepare(container, namespaces, replicaIndex);
+        this.writeBehindStateHolder.prepare(container, namespaces, replicaIndex);
+        this.mapNearCacheStateHolder.prepare(container, namespaces, replicaIndex);
+    }
 
-        mapReplicationStateHolder.prepare(container, replicaIndex);
-        writeBehindStateHolder.prepare(container, replicaIndex);
-        mapNearCacheStateHolder.prepare(container, replicaIndex);
+    public MapReplicationOperation(PartitionContainer container, Collection<ServiceNamespace> namespaces,
+                                   int partitionId, int replicaIndex) {
+        setPartitionId(partitionId).setReplicaIndex(replicaIndex);
+        this.mapReplicationStateHolder.prepare(container, namespaces, replicaIndex);
+        this.writeBehindStateHolder.prepare(container, namespaces, replicaIndex);
+        this.mapNearCacheStateHolder.prepare(container, namespaces, replicaIndex);
     }
 
     @Override

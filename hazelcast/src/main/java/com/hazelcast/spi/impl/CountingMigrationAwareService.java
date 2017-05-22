@@ -16,37 +16,56 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.spi.FragmentedMigrationAwareService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.ServiceNamespace;
 
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A {@link MigrationAwareService} that delegates to another {@link MigrationAwareService} and keeps track of the number of
  * migrations concerning the partition owner (either as current or new replica index) currently in-flight.
  */
-public class CountingMigrationAwareService implements MigrationAwareService {
+public class CountingMigrationAwareService implements FragmentedMigrationAwareService {
 
     static final int PRIMARY_REPLICA_INDEX = 0;
     static final int IN_FLIGHT_MIGRATION_STAMP = -1;
 
-    private final MigrationAwareService migrationAwareService;
+    private final FragmentedMigrationAwareService migrationAwareService;
     // number of started migrations on the partition owner
     private final AtomicInteger ownerMigrationsStarted;
     // number of completed migrations on the partition owner
     private final AtomicInteger ownerMigrationsCompleted;
 
-    public CountingMigrationAwareService(MigrationAwareService migrationAwareService) {
+    public CountingMigrationAwareService(FragmentedMigrationAwareService migrationAwareService) {
         this.migrationAwareService = migrationAwareService;
         this.ownerMigrationsStarted = new AtomicInteger();
         this.ownerMigrationsCompleted = new AtomicInteger();
     }
 
     @Override
+    public Collection<ServiceNamespace> getAllServiceNamespaces(PartitionReplicationEvent event) {
+        return migrationAwareService.getAllServiceNamespaces(event);
+    }
+
+    @Override
+    public boolean isKnownServiceNamespace(ServiceNamespace namespace) {
+        return migrationAwareService.isKnownServiceNamespace(namespace);
+    }
+
+    @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         return migrationAwareService.prepareReplicationOperation(event);
+    }
+
+    @Override
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event,
+            Collection<ServiceNamespace> namespaces) {
+        return migrationAwareService.prepareReplicationOperation(event, namespaces);
     }
 
     @Override

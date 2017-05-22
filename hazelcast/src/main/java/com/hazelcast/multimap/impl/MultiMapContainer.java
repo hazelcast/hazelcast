@@ -20,6 +20,7 @@ import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DistributedObjectNamespace;
+import com.hazelcast.spi.ObjectNamespace;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -46,6 +47,8 @@ public class MultiMapContainer extends MultiMapContainerSupport {
 
     private final long creationTime;
 
+    private final ObjectNamespace objectNamespace;
+
     private long idGen;
 
     // these fields are volatile since they can be read by other threads than the partition-thread
@@ -59,6 +62,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null : lockService.createLockStore(partitionId, lockNamespace);
         this.creationTime = currentTimeMillis();
+        this.objectNamespace = new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name);
     }
 
     public boolean canAcquireLock(Data dataKey, String caller, long threadId) {
@@ -210,5 +214,9 @@ public class MultiMapContainer extends MultiMapContainerSupport {
 
     public long getLockedCount() {
         return lockStore.getLockedKeys().size();
+    }
+
+    public ObjectNamespace getObjectNamespace() {
+        return objectNamespace;
     }
 }

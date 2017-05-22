@@ -25,11 +25,11 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.ClientAwareService;
+import com.hazelcast.spi.FragmentedMigrationAwareService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
 import com.hazelcast.spi.MembershipAwareService;
 import com.hazelcast.spi.MembershipServiceEvent;
-import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
@@ -38,6 +38,7 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
@@ -57,7 +58,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 @SuppressWarnings("checkstyle:methodcount")
 public final class LockServiceImpl implements LockService, ManagedService, RemoteService, MembershipAwareService,
-        MigrationAwareService, ClientAwareService, QuorumAwareService {
+        FragmentedMigrationAwareService, ClientAwareService, QuorumAwareService {
 
     private static final Object NULL_OBJECT = new Object();
 
@@ -236,6 +237,18 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
     }
 
     @Override
+    public Collection<ServiceNamespace> getAllServiceNamespaces(PartitionReplicationEvent event) {
+        int partitionId = event.getPartitionId();
+        LockStoreContainer container = containers[partitionId];
+        return container.getAllNamespaces(event.getReplicaIndex());
+    }
+
+    @Override
+    public boolean isKnownServiceNamespace(ServiceNamespace namespace) {
+        return namespace instanceof ObjectNamespace;
+    }
+
+    @Override
     public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {
     }
 
@@ -245,11 +258,17 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         LockStoreContainer container = containers[partitionId];
         int replicaIndex = event.getReplicaIndex();
         LockReplicationOperation op = new LockReplicationOperation(container, partitionId, replicaIndex);
-        if (op.isEmpty()) {
-            return null;
-        } else {
-            return op;
-        }
+        return op.isEmpty() ? null : op;
+    }
+
+    @Override
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event,
+            Collection<ServiceNamespace> namespaces) {
+        int partitionId = event.getPartitionId();
+        LockStoreContainer container = containers[partitionId];
+        int replicaIndex = event.getReplicaIndex();
+        LockReplicationOperation op = new LockReplicationOperation(container, partitionId, replicaIndex, namespaces);
+        return op.isEmpty() ? null : op;
     }
 
     @Override

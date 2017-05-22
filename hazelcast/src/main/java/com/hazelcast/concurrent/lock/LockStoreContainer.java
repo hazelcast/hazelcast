@@ -19,6 +19,7 @@ package com.hazelcast.concurrent.lock;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -28,6 +29,8 @@ import com.hazelcast.util.scheduler.ScheduleType;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -72,7 +75,7 @@ public final class LockStoreContainer {
         return ConcurrencyUtil.getOrPutIfAbsent(lockStores, namespace, lockStoreConstructor);
     }
 
-    LockStoreImpl getLockStore(ObjectNamespace namespace) {
+    public LockStoreImpl getLockStore(ObjectNamespace namespace) {
         return lockStores.get(namespace);
     }
 
@@ -102,5 +105,16 @@ public final class LockStoreContainer {
         LockEvictionProcessor entryProcessor = new LockEvictionProcessor(nodeEngine, namespace);
         TaskScheduler globalScheduler = nodeEngine.getExecutionService().getGlobalTaskScheduler();
         return EntryTaskSchedulerFactory.newScheduler(globalScheduler, entryProcessor, ScheduleType.FOR_EACH);
+    }
+
+    public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
+        Set<ServiceNamespace> namespaces = new HashSet<ServiceNamespace>();
+        for (LockStoreImpl lockStore : lockStores.values()) {
+            if (lockStore.getTotalBackupCount() < replicaIndex) {
+                continue;
+            }
+            namespaces.add(lockStore.getNamespace());
+        }
+        return namespaces;
     }
 }

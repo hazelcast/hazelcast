@@ -28,7 +28,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
@@ -39,7 +41,7 @@ import java.io.IOException;
  */
 abstract class AbstractCacheOperation
         extends AbstractNamedOperation
-        implements PartitionAwareOperation, IdentifiedDataSerializable {
+        implements PartitionAwareOperation, ServiceNamespaceAware, IdentifiedDataSerializable {
 
     protected Data key;
     protected Object response;
@@ -104,6 +106,16 @@ abstract class AbstractCacheOperation
             return;
         }
         super.logError(e);
+    }
+
+    @Override
+    public ObjectNamespace getServiceNamespace() {
+        ICacheRecordStore recordStore = cache;
+        if (recordStore == null) {
+            ICacheService service = getService();
+            recordStore = service.getOrCreateRecordStore(name, getPartitionId());
+        }
+        return recordStore.getObjectNamespace();
     }
 
     @Override

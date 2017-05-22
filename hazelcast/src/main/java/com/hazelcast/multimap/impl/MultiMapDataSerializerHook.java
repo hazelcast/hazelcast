@@ -27,7 +27,7 @@ import com.hazelcast.multimap.impl.operations.EntrySetOperation;
 import com.hazelcast.multimap.impl.operations.EntrySetResponse;
 import com.hazelcast.multimap.impl.operations.GetAllOperation;
 import com.hazelcast.multimap.impl.operations.KeySetOperation;
-import com.hazelcast.multimap.impl.operations.MultiMapMigrationOperation;
+import com.hazelcast.multimap.impl.operations.MultiMapReplicationOperation;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.multimap.impl.operations.PutBackupOperation;
@@ -110,7 +110,7 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
     public static final int MULTIMAP_TRANSACTION_LOG_RECORD = 42;
     public static final int MULTIMAP_EVENT_FILTER = 43;
     public static final int MULTIMAP_RECORD = 44;
-    public static final int MULTIMAP_MIGRATION_OPERATION = 45;
+    public static final int MULTIMAP_REPLICATION_OPERATION = 45;
     public static final int MULTIMAP_RESPONSE = 46;
     public static final int ENTRY_SET_RESPONSE = 47;
 
@@ -289,9 +289,9 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
                 return new MultiMapRecord();
             }
         };
-        constructors[MULTIMAP_MIGRATION_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[MULTIMAP_REPLICATION_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MultiMapMigrationOperation();
+                return new MultiMapReplicationOperation();
             }
         };
         constructors[MULTIMAP_RESPONSE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

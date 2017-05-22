@@ -31,6 +31,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
@@ -65,14 +67,20 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
         this.mapReplicationOperation = mapReplicationOperation;
     }
 
-    void prepare(PartitionContainer container, int replicaIndex) {
-        int size = container.getMaps().size();
+    void prepare(PartitionContainer container, Collection<ServiceNamespace> namespaces, int replicaIndex) {
+        int size = namespaces.size();
 
         flushSequences = new HashMap<String, Queue<WriteBehindStore.Sequence>>(size);
         delayedEntries = new HashMap<String, List<DelayedEntry>>(size);
 
-        for (Map.Entry<String, RecordStore> entry : container.getMaps().entrySet()) {
-            RecordStore recordStore = entry.getValue();
+        for (ServiceNamespace namespace : namespaces) {
+            ObjectNamespace mapNamespace = (ObjectNamespace) namespace;
+            String mapName = mapNamespace.getObjectName();
+            RecordStore recordStore = container.getRecordStore(mapName);
+            if (recordStore == null) {
+                continue;
+            }
+
             MapContainer mapContainer = recordStore.getMapContainer();
             MapConfig mapConfig = mapContainer.getMapConfig();
             if (mapConfig.getTotalBackupCount() < replicaIndex
@@ -87,13 +95,10 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
                 continue;
             }
 
-            String mapName = entry.getKey();
-
             delayedEntries.put(mapName, entries);
             flushSequences.put(mapName, new ArrayDeque<WriteBehindStore.Sequence>(mapDataStore.getFlushSequences()));
         }
     }
-
 
     void applyState() {
         for (Map.Entry<String, List<DelayedEntry>> entry : delayedEntries.entrySet()) {

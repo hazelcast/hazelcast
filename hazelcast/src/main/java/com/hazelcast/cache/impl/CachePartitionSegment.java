@@ -17,10 +17,12 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -130,5 +132,15 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
                 }
             }
         }
+    }
+
+   public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
+        Collection<ServiceNamespace> namespaces = new HashSet<ServiceNamespace>();
+        for (ICacheRecordStore recordStore : recordStores.values()) {
+            if (recordStore.getConfig().getTotalBackupCount() >= replicaIndex) {
+                namespaces.add(recordStore.getObjectNamespace());
+            }
+        }
+        return namespaces;
     }
 }
