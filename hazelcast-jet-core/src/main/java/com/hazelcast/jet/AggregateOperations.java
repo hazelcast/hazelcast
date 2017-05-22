@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.windowing;
+package com.hazelcast.jet;
 
 import com.hazelcast.jet.accumulator.DoubleAccumulator;
 import com.hazelcast.jet.accumulator.LinTrendAccumulator;
@@ -27,6 +27,7 @@ import com.hazelcast.jet.function.DistributedComparator;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedToDoubleFunction;
 import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.impl.AggregateOperationImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -38,17 +39,17 @@ import java.util.stream.Stream;
  * Utility class with factory methods for several useful windowing
  * operations.
  */
-public final class WindowOperations {
+public final class AggregateOperations {
 
-    private WindowOperations() {
+    private AggregateOperations() {
     }
 
     /**
      * Returns an operation that tracks the count of items in the window.
      */
     @Nonnull
-    public static WindowOperation<Object, LongAccumulator, Long> counting() {
-        return WindowOperation.of(
+    public static AggregateOperation<Object, LongAccumulator, Long> counting() {
+        return AggregateOperation.of(
                 LongAccumulator::new,
                 (a, item) -> a.addExact(1),
                 LongAccumulator::addExact,
@@ -64,10 +65,10 @@ public final class WindowOperations {
      * @param <T> Input item type
      */
     @Nonnull
-    public static <T> WindowOperation<T, LongAccumulator, Long> summingToLong(
+    public static <T> AggregateOperation<T, LongAccumulator, Long> summingToLong(
             @Nonnull DistributedToLongFunction<T> mapToLongF
     ) {
-        return WindowOperation.of(
+        return AggregateOperation.of(
                 LongAccumulator::new,
                 (a, item) -> a.addExact(mapToLongF.applyAsLong(item)),
                 LongAccumulator::addExact,
@@ -83,10 +84,10 @@ public final class WindowOperations {
      * @param <T> Input item type
      */
     @Nonnull
-    public static <T> WindowOperation<T, DoubleAccumulator, Double> summingToDouble(
+    public static <T> AggregateOperation<T, DoubleAccumulator, Double> summingToDouble(
             @Nonnull DistributedToDoubleFunction<T> mapToDoubleF
     ) {
-        return WindowOperation.of(
+        return AggregateOperation.of(
                 DoubleAccumulator::new,
                 (a, item) -> a.add(mapToDoubleF.applyAsDouble(item)),
                 DoubleAccumulator::add,
@@ -100,12 +101,12 @@ public final class WindowOperations {
      * {@code comparator}.
      * <p>
      * The implementation doesn't have the <i>deduction function </i>. {@link
-     * WindowOperation#deductAccumulatorF() See note here}.
+     * AggregateOperation#deductAccumulatorF() See note here}.
      *
      * @param <T> Input item type
      */
     @Nonnull
-    public static <T> WindowOperation<T, MutableReference<T>, T> minBy(
+    public static <T> AggregateOperation<T, MutableReference<T>, T> minBy(
             @Nonnull DistributedComparator<? super T> comparator
     ) {
         return maxBy(comparator.reversed());
@@ -116,27 +117,25 @@ public final class WindowOperations {
      * {@code comparator}.
      * <p>
      * The implementation doesn't have the <i>deduction function </i>. {@link
-     * WindowOperation#deductAccumulatorF() See note here}.
+     * AggregateOperation#deductAccumulatorF() See note here}.
      *
      * @param <T> Input item type
      */
     @Nonnull
-    public static <T> WindowOperation<T, MutableReference<T>, T> maxBy(
+    public static <T> AggregateOperation<T, MutableReference<T>, T> maxBy(
             @Nonnull DistributedComparator<? super T> comparator
     ) {
-        return WindowOperation.of(
+        return AggregateOperation.of(
                 MutableReference::new,
                 (a, i) -> {
                     if (a.get() == null || comparator.compare(i, a.get()) > 0) {
                         a.set(i);
                     }
-                    return a;
                 },
                 (a1, a2) -> {
                     if (comparator.compare(a1.get(), a2.get()) < 0) {
                         a1.set(a2.get());
                     }
-                    return a1;
                 },
                 null,
                 MutableReference::get
@@ -150,12 +149,12 @@ public final class WindowOperations {
      * @param <T> Input item type
      */
     @Nonnull
-    public static <T> WindowOperation<T, LongLongAccumulator, Double> averagingLong(
+    public static <T> AggregateOperation<T, LongLongAccumulator, Double> averagingLong(
             @Nonnull DistributedToLongFunction<T> mapToLongF
     ) {
         // accumulator.value1 is count
         // accumulator.value2 is sum
-        return WindowOperation.of(
+        return AggregateOperation.of(
                 LongLongAccumulator::new,
                 (a, i) -> {
                     if (a.getValue1() == Long.MAX_VALUE) {
@@ -164,17 +163,14 @@ public final class WindowOperations {
                     }
                     a.setValue1(a.getValue1() + 1);
                     a.setValue2(Math.addExact(a.getValue2(), mapToLongF.applyAsLong(i)));
-                    return a;
                 },
                 (a1, a2) -> {
                     a1.setValue1(Math.addExact(a1.getValue1(), a2.getValue1()));
                     a1.setValue2(Math.addExact(a1.getValue2(), a2.getValue2()));
-                    return a1;
                 },
                 (a1, a2) -> {
                     a1.setValue1(Math.subtractExact(a1.getValue1(), a2.getValue1()));
                     a1.setValue2(Math.subtractExact(a1.getValue2(), a2.getValue2()));
-                    return a1;
                 },
                 a -> (double) a.getValue2() / a.getValue1()
         );
@@ -187,12 +183,12 @@ public final class WindowOperations {
      * @param <T> Input item type
      */
     @Nonnull
-    public static <T> WindowOperation<T, LongDoubleAccumulator, Double> averagingDouble(
+    public static <T> AggregateOperation<T, LongDoubleAccumulator, Double> averagingDouble(
             @Nonnull DistributedToDoubleFunction<T> mapToDoubleF
     ) {
         // accumulator.value1 is count
         // accumulator.value2 is sum
-        return WindowOperation.of(
+        return AggregateOperation.of(
                 LongDoubleAccumulator::new,
                 (a, i) -> {
                     if (a.getValue1() == Long.MAX_VALUE) {
@@ -201,17 +197,14 @@ public final class WindowOperations {
                     }
                     a.setValue1(a.getValue1() + 1);
                     a.setValue2(a.getValue2() + mapToDoubleF.applyAsDouble(i));
-                    return a;
                 },
                 (a1, a2) -> {
                     a1.setValue1(Math.addExact(a1.getValue1(), a2.getValue1()));
                     a1.setValue2(a1.getValue2() + a2.getValue2());
-                    return a1;
                 },
                 (a1, a2) -> {
                     a1.setValue1(Math.subtractExact(a1.getValue1(), a2.getValue1()));
                     a1.setValue2(a1.getValue2() - a2.getValue2());
-                    return a1;
                 },
                 a -> a.getValue2() / a.getValue1()
         );
@@ -225,11 +218,11 @@ public final class WindowOperations {
      * extracted from each item by the two provided functions.
      */
     @Nonnull
-    public static <T> WindowOperation<T, LinTrendAccumulator, Double> linearTrend(
+    public static <T> AggregateOperation<T, LinTrendAccumulator, Double> linearTrend(
             @Nonnull DistributedToLongFunction<T> getX,
             @Nonnull DistributedToLongFunction<T> getY
     ) {
-        return WindowOperation.of(
+        return AggregateOperation.of(
                 LinTrendAccumulator::new,
                 (a, item) -> a.accumulate(getX.applyAsLong(item), getY.applyAsLong(item)),
                 LinTrendAccumulator::combine,
@@ -247,12 +240,12 @@ public final class WindowOperations {
      * @param operations Operations to calculate.
      */
     @SafeVarargs @Nonnull
-    public static <T> WindowOperation<T, List<Object>, List<Object>> allOf(
-            @Nonnull WindowOperation<? super T, ?, ?> ... operations
+    public static <T> AggregateOperation<T, List<Object>, List<Object>> allOf(
+            @Nonnull AggregateOperation<? super T, ?, ?>... operations
     ) {
-        WindowOperation[] untypedOps = operations;
+        AggregateOperation[] untypedOps = operations;
 
-        return WindowOperation.of(
+        return AggregateOperation.of(
                 () -> {
                     Object[] res = new Object[untypedOps.length];
                     for (int i = 0; i < untypedOps.length; i++) {
@@ -263,24 +256,21 @@ public final class WindowOperations {
                 },
                 (accs, item) -> {
                     for (int i = 0; i < untypedOps.length; i++) {
-                        accs.set(i, untypedOps[i].accumulateItemF().apply(accs.get(i), item));
+                        untypedOps[i].accumulateItemF().accept(accs.get(i), item);
                     }
-                    return accs;
                 },
                 (accs1, accs2) -> {
                     for (int i = 0; i < untypedOps.length; i++) {
-                        accs1.set(i, untypedOps[i].combineAccumulatorsF().apply(accs1.get(i), accs2.get(i)));
+                        untypedOps[i].combineAccumulatorsF().accept(accs1.get(i), accs2.get(i));
                     }
-                    return accs1;
                 },
-                // we support deduct, only if all operations do
+                // we can support deduct only if all operations do
                 Stream.of(untypedOps).allMatch(o -> o.deductAccumulatorF() != null)
                         ? (accs1, accs2) -> {
                             for (int i = 0; i < untypedOps.length; i++) {
-                                    accs1.set(i, untypedOps[i].deductAccumulatorF().apply(accs1.get(i), accs2.get(i)));
-                                }
-                                return accs1;
+                                untypedOps[i].deductAccumulatorF().accept(accs1.get(i), accs2.get(i));
                             }
+                        }
                         : null,
                 accs -> {
                     Object[] res = new Object[untypedOps.length];
@@ -332,13 +322,13 @@ public final class WindowOperations {
      * @param <U> type of the reduced result
      */
     @Nonnull
-    public static <T, U> WindowOperation<T, MutableReference<U>, U> reducing(
+    public static <T, U> AggregateOperation<T, MutableReference<U>, U> reducing(
             @Nonnull U identity,
             @Nonnull DistributedFunction<? super T, ? extends U> mapF,
             @Nonnull DistributedBinaryOperator<U> combineF,
             @Nullable DistributedBinaryOperator<U> deductF
     ) {
-        return new WindowOperationImpl<>(
+        return new AggregateOperationImpl<>(
                 () -> new MutableReference<>(identity),
                 (a, t) -> a.set(combineF.apply(a.get(), mapF.apply(t))),
                 (a, b) -> a.set(combineF.apply(a.get(), b.get())),

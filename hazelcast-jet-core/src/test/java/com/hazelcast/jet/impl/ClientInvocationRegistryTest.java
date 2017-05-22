@@ -77,7 +77,7 @@ public class ClientInvocationRegistryTest {
 
         private ExecutionCallback<V> andThenCallback;
 
-        private MockFuture() {
+        MockFuture() {
             super((Executor) null, null);
         }
 

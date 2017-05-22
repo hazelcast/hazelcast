@@ -284,7 +284,7 @@ public class CancellationTest extends JetTestSupport {
 
     private static class FaultyProcessor extends AbstractProcessor {
 
-        static volatile boolean failNow = false;
+        static volatile boolean failNow;
 
         private final RuntimeException e;
 

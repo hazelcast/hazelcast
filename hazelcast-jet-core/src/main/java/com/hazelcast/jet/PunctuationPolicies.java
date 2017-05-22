@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.windowing;
+package com.hazelcast.jet;
 
 import com.hazelcast.jet.function.DistributedLongSupplier;
 import com.hazelcast.jet.impl.util.TimestampHistory;

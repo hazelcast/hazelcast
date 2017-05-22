@@ -60,10 +60,10 @@ import static org.mockito.Mockito.mock;
 @RunWith(HazelcastSerialClassRunner.class)
 public class ExecutionServiceTest extends JetTestSupport {
 
-    private final Consumer<CompletionStage<Void>> doneCallback = noopConsumer();
-
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
+
+    private final Consumer<CompletionStage<Void>> doneCallback = noopConsumer();
 
     private ExecutionService es;
     private ClassLoader classLoaderMock;
@@ -186,7 +186,7 @@ public class ExecutionServiceTest extends JetTestSupport {
     }
 
     @Test
-    public void when_nonBlockingTaskletIsCancelled_then_completesEarly() throws ExecutionException, InterruptedException {
+    public void when_nonBlockingTaskletIsCancelled_then_completesEarly() throws Exception {
         // Given
         final List<MockTasklet> tasklets =
                 Stream.generate(() -> new MockTasklet().callsBeforeDone(Integer.MAX_VALUE))
@@ -222,7 +222,7 @@ public class ExecutionServiceTest extends JetTestSupport {
     }
 
     @Test
-    public void when_blockingSleepingTaskletIsCancelled_then_completeEarly() throws ExecutionException, InterruptedException {
+    public void when_blockingSleepingTaskletIsCancelled_then_completeEarly() throws Exception {
         // Given
         final List<MockTasklet> tasklets =
                 Stream.generate(() -> new MockTasklet().sleeping().callsBeforeDone(Integer.MAX_VALUE))
@@ -239,7 +239,7 @@ public class ExecutionServiceTest extends JetTestSupport {
     }
 
     @Test
-    public void when_nonBlockingCancelled_then_doneCallBackFiredAfterActualDone() throws ExecutionException, InterruptedException {
+    public void when_nonBlockingCancelled_then_doneCallBackFiredAfterActualDone() throws Exception {
         // Given
         CountDownLatch proceedLatch = new CountDownLatch(1);
         final List<MockTasklet> tasklets =

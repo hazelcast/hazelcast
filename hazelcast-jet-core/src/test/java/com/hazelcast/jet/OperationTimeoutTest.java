@@ -16,11 +16,6 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
-import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;

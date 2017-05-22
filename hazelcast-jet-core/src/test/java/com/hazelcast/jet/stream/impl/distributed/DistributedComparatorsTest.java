@@ -27,7 +27,8 @@ import static com.hazelcast.jet.function.DistributedComparator.nullsFirst;
 import static com.hazelcast.jet.function.DistributedComparator.nullsLast;
 import static com.hazelcast.jet.stream.impl.distributed.DistributedComparators.NATURAL_ORDER_COMPARATOR;
 import static com.hazelcast.jet.stream.impl.distributed.DistributedComparators.REVERSE_ORDER_COMPARATOR;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)

@@ -50,6 +50,7 @@ public class CooperativeProcessorTaskletTest {
 
     private static final int MOCK_INPUT_SIZE = 10;
     private static final int CALL_COUNT_LIMIT = 10;
+
     private List<Object> mockInput;
     private List<InboundEdgeStream> instreams;
     private List<OutboundEdgeStream> outstreams;
@@ -214,9 +215,9 @@ public class CooperativeProcessorTaskletTest {
     }
 
     private static class PassThroughProcessor implements Processor {
-        private Outbox outbox;
         int nullaryProcessCallCountdown;
         int itemsToEmitInComplete;
+        private Outbox outbox;
 
         @Override
         public void init(@Nonnull Outbox outbox, @Nonnull Context context) {

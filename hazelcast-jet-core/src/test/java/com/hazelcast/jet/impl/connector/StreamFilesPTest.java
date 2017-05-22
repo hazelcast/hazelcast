@@ -50,8 +50,11 @@ import static org.mockito.Mockito.when;
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class StreamFilesPTest extends JetTestSupport {
+
     private static final long LINE_COUNT = 1_000;
     private static final int ASSERT_COUNT_TIMEOUT_SECONDS = 10;
+
+    @Rule public TestName testName = new TestName();
 
     private File workDir;
     private StreamFilesP processor;
@@ -61,8 +64,6 @@ public class StreamFilesPTest extends JetTestSupport {
 
     private volatile int fileOffsetsSize;
     private volatile boolean completedNormally;
-
-    @Rule public TestName testName = new TestName();
 
     @Before
     public void before() throws Exception {

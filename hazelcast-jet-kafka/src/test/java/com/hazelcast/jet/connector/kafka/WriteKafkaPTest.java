@@ -16,17 +16,14 @@
 
 package com.hazelcast.jet.connector.kafka;
 
-
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.Assert;
 import org.junit.Test;
@@ -52,7 +49,7 @@ public class WriteKafkaPTest extends KafkaTestSupport {
         String brokerConnectionString = createKafkaCluster();
 
         final String topic = randomName();
-        createTopic(topic, 1, 1);
+        createTopic(topic);
         JetInstance instance = createJetMember();
 
         int messageCount = 20;

@@ -16,12 +16,14 @@
     <suppress checks="JavadocMethod" files="JetException\.java"/>
     <suppress checks="Javadoc(Package|Type|Method|Variable)" files="SerializerHook"/>
     <suppress checks="Javadoc(Package|Type|Method|Variable)" files="[\\/](impl|internal)[\\/]"/>
-    <suppress checks="Javadoc(Package|Type|Method|Variable)" files="[\\/]jet[\\/]cascading[\\/]"/>
-
-    <!-- The Distributed class contains many nested types -->
-    <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]jet[\\/]Distributed\.java$"/>
 
     <!-- Generated code in Client Protocol Templates -->
     <suppress checks="LineLength|MethodName|MethodCount|ParameterNumber|WhitespaceAround"
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]template[\\/].*Template\.java$"/>
+
+    <!-- Suppress checks for test code -->
+    <suppress checks="Javadoc" files="/src/test/"/>
+    <suppress checks="Name" files="/src/test/"/>
+    <suppress checks="MagicNumber" files="/src/test/"/>
+    <suppress checks="VisibilityModifier" files="/src/test/"/>
 </suppressions>

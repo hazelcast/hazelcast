@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.windowing;
+package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.jet.Punctuation;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
+import com.hazelcast.jet.StreamingTestSupport;
+import com.hazelcast.jet.TimestampedEntry;
+import com.hazelcast.jet.WindowingProcessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -32,25 +35,26 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.windowing.WindowOperations.summingToLong;
+import static com.hazelcast.jet.AggregateOperations.summingToLong;
+import static com.hazelcast.jet.WindowDefinition.slidingWindowDef;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class WindowingProcessors_slidingWindowStage1Test extends StreamingTestSupport {
+public class SlidingWindowP_stage1Test extends StreamingTestSupport {
 
     private static final long KEY = 77L;
-    private WindowingProcessor<Entry<Long, Long>, Long, ?> processor;
+    private SlidingWindowP<Entry<Long, Long>, Long, ?> processor;
 
     @Before
     @SuppressWarnings("unchecked")
     public void before() {
-        processor = (WindowingProcessor<Entry<Long, Long>, Long, ?>) WindowingProcessors.slidingWindowStage1(
+        processor = (SlidingWindowP<Entry<Long, Long>, Long, ?>) WindowingProcessors.slidingWindowStage1(
                 x -> KEY,
                 Entry::getKey,
-                new WindowDefinition(4, 0, 4),
+                slidingWindowDef(16, 4),
                 summingToLong(Entry<Long, Long>::getValue)
         ).get();
         processor.init(outbox, mock(Context.class));
@@ -58,8 +62,8 @@ public class WindowingProcessors_slidingWindowStage1Test extends StreamingTestSu
 
     @After
     public void after() {
-        assertTrue("map not empty after emitting everything: " + processor.tsToKeyToFrame,
-                processor.tsToKeyToFrame.isEmpty());
+        assertTrue("map not empty after emitting everything: " + processor.tsToKeyToAcc,
+                processor.tsToKeyToAcc.isEmpty());
     }
 
     @Test

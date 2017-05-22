@@ -14,16 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.windowing;
+package com.hazelcast.jet;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestSupport;
-import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.Processors.NoopP;
-import com.hazelcast.jet.Vertex;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -41,17 +35,17 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
+import static com.hazelcast.jet.AggregateOperations.counting;
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.Processors.writeList;
-import static com.hazelcast.jet.windowing.PunctuationPolicies.limitingLagAndLull;
-import static com.hazelcast.jet.windowing.StreamingTestSupport.streamToString;
-import static com.hazelcast.jet.windowing.WindowDefinition.slidingWindowDef;
-import static com.hazelcast.jet.windowing.WindowOperations.counting;
-import static com.hazelcast.jet.windowing.WindowingProcessors.insertPunctuation;
-import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindowSingleStage;
-import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindowStage1;
-import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindowStage2;
+import static com.hazelcast.jet.PunctuationPolicies.limitingLagAndLull;
+import static com.hazelcast.jet.StreamingTestSupport.streamToString;
+import static com.hazelcast.jet.WindowDefinition.slidingWindowDef;
+import static com.hazelcast.jet.WindowingProcessors.insertPunctuation;
+import static com.hazelcast.jet.WindowingProcessors.slidingWindowSingleStage;
+import static com.hazelcast.jet.WindowingProcessors.slidingWindowStage1;
+import static com.hazelcast.jet.WindowingProcessors.slidingWindowStage2;
+import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
@@ -88,10 +82,10 @@ public class WindowingProcessors_integrationTest extends JetTestSupport {
 
     private void runTest(List<MockEvent> sourceEvents, List<TimestampedEntry<String, Long>> expectedOutput)
             throws Exception {
-        JetInstance instance = super.createJetMember();
+        JetInstance instance = createJetMember();
 
         WindowDefinition wDef = slidingWindowDef(2000, 1000);
-        WindowOperation<Object, ?, Long> counting = counting();
+        AggregateOperation<Object, ?, Long> counting = counting();
 
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", streamList(sourceEvents)).localParallelism(1);
@@ -103,20 +97,20 @@ public class WindowingProcessors_integrationTest extends JetTestSupport {
         dag.edge(between(source, insertPP).oneToMany());
 
         if (singleStageProcessor) {
-            Vertex sliwp = dag.newVertex("sliwp", slidingWindowSingleStage(
+            Vertex slidingWin = dag.newVertex("slidingWin", slidingWindowSingleStage(
                     MockEvent::getKey, MockEvent::getTimestamp, wDef, counting));
             dag
-                    .edge(between(insertPP, sliwp).partitioned(MockEvent::getKey).distributed())
-                    .edge(between(sliwp, sink).oneToMany());
+                    .edge(between(insertPP, slidingWin).partitioned(MockEvent::getKey).distributed())
+                    .edge(between(slidingWin, sink).oneToMany());
 
         } else {
-            Vertex gbfp = dag.newVertex("gbfp", slidingWindowStage1(
+            Vertex groupByFrame = dag.newVertex("groupByFrame", slidingWindowStage1(
                     MockEvent::getKey, MockEvent::getTimestamp, wDef, counting));
-            Vertex sliwp = dag.newVertex("sliwp", slidingWindowStage2(wDef, counting));
+            Vertex slidingWin = dag.newVertex("slidingWin", slidingWindowStage2(wDef, counting));
             dag
-                    .edge(between(insertPP, gbfp).partitioned(MockEvent::getKey))
-                    .edge(between(gbfp, sliwp).partitioned(entryKey()).distributed())
-                    .edge(between(sliwp, sink).oneToMany());
+                    .edge(between(insertPP, groupByFrame).partitioned(MockEvent::getKey))
+                    .edge(between(groupByFrame, slidingWin).partitioned(entryKey()).distributed())
+                    .edge(between(slidingWin, sink).oneToMany());
         }
 
         instance.newJob(dag).execute();
@@ -148,7 +142,7 @@ public class WindowingProcessors_integrationTest extends JetTestSupport {
         private final long timestamp;
         private final long value;
 
-        private MockEvent(String key, long timestamp, long value) {
+        MockEvent(String key, long timestamp, long value) {
             this.key = key;
             this.timestamp = timestamp;
             this.value = value;

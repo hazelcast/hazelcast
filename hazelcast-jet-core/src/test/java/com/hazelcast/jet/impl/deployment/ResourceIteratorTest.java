@@ -108,7 +108,8 @@ public class ResourceIteratorTest {
                     }
                     assertEquals("offsets not in sequence", lastOffset, rp.getOffset());
                     lastOffset += rp.getBytes().length;
-                    assertEquals("contents don't match", contents[fileIndex].substring(rp.getOffset(), lastOffset), new String(rp.getBytes()));
+                    assertEquals("contents don't match", contents[fileIndex].substring(rp.getOffset(), lastOffset),
+                            new String(rp.getBytes()));
                 }
                 assertEquals("not all config files read", lastIndex, numFiles - 1);
                 assertEquals("config not fully read", contents[lastIndex].length(), lastOffset);

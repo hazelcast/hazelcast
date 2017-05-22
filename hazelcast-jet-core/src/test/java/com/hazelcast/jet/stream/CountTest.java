@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.core.IList;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

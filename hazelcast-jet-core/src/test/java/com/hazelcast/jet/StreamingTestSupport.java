@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.windowing;
+package com.hazelcast.jet;
 
-import com.hazelcast.jet.Punctuation;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
 import com.hazelcast.jet.impl.util.ProgressTracker;
@@ -27,15 +26,15 @@ import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 
-class StreamingTestSupport {
-    ArrayDequeInbox inbox = new ArrayDequeInbox();
-    ArrayDequeOutbox outbox = new ArrayDequeOutbox(new int[] {1024}, new ProgressTracker());
+public class StreamingTestSupport {
+    public ArrayDequeInbox inbox = new ArrayDequeInbox();
+    public ArrayDequeOutbox outbox = new ArrayDequeOutbox(new int[] {1024}, new ProgressTracker());
 
-    static Punctuation punc(long timestamp) {
+    protected static Punctuation punc(long timestamp) {
         return new Punctuation(timestamp);
     }
 
-    void assertOutbox(List<?> items) {
+    protected void assertOutbox(List<?> items) {
         String expected = streamToString(items.stream());
         String actual = streamToString(outbox.queueWithOrdinal(0).stream());
         outbox.queueWithOrdinal(0).clear();
@@ -49,7 +48,7 @@ class StreamingTestSupport {
                 .collect(Collectors.joining("\n"));
     }
 
-    Object pollOutbox() {
+    protected Object pollOutbox() {
         return outbox.queueWithOrdinal(0).poll();
     }
 }

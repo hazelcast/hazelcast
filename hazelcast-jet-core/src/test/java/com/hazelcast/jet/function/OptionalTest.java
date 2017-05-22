@@ -37,10 +37,10 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 public class OptionalTest {
 
-    private DistributedOptional<Integer> optional = DistributedOptional.of(123456);
-
     @Rule
     public ExpectedException exception = ExpectedException.none();
+
+    private DistributedOptional<Integer> optional = DistributedOptional.of(123456);
 
     @Test
     public void testIfPresent() {

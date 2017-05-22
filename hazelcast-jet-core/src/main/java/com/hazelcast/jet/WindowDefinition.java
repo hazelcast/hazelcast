@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.windowing;
+package com.hazelcast.jet;
 
 import com.hazelcast.util.Preconditions;
 
@@ -113,7 +113,7 @@ public class WindowDefinition implements Serializable {
      * timestamp. If there is no such {@code long} value, returns {@code
      * Long.MIN_VALUE}.
      */
-    long floorFrameTs(long timestamp) {
+    public long floorFrameTs(long timestamp) {
         return subtractClamped(timestamp, floorMod(
                 (timestamp >= Long.MIN_VALUE + frameOffset ? timestamp : timestamp + frameLength) - frameOffset,
                 frameLength
@@ -124,7 +124,7 @@ public class WindowDefinition implements Serializable {
      * Returns the lowest frame timestamp greater than the given timestamp. If
      * there is no such {@code long} value, returns {@code Long.MAX_VALUE}.
      */
-    long higherFrameTs(long timestamp) {
+    public long higherFrameTs(long timestamp) {
         long tsPlusFrame = timestamp + frameLength;
         return sumHadOverflow(timestamp, frameLength, tsPlusFrame)
                 ? addClamped(floorFrameTs(timestamp), frameLength)

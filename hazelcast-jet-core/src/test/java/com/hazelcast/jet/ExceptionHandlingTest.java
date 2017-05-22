@@ -38,11 +38,11 @@ import static com.hazelcast.jet.TestUtil.executeAndPeel;
 @RunWith(HazelcastParallelClassRunner.class)
 public class ExceptionHandlingTest extends JetTestSupport {
 
-    private JetInstance instance;
-    private JetTestInstanceFactory factory;
-
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
+
+    private JetInstance instance;
+    private JetTestInstanceFactory factory;
 
     @Before
     public void setupFactory() {

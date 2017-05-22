@@ -70,7 +70,8 @@ public class DecoratorTest {
         assertDecorator(IMap.class, IStreamMap.class, m -> new MapDecorator<>(m, instance));
     }
 
-    private <D, E extends D> void assertDecorator(Class<D> decorated, Class<E> decorator, Function<D, E> supplier) throws Exception {
+    private <D, E extends D> void assertDecorator(Class<D> decorated, Class<E> decorator, Function<D, E> supplier)
+    throws Exception {
         for (Method method : decorated.getMethods()) {
             if (EXCEPTIONS.contains(method.getName())) {
                 continue;

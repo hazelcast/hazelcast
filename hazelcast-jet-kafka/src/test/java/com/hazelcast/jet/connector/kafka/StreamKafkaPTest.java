@@ -52,8 +52,8 @@ public class StreamKafkaPTest extends KafkaTestSupport {
 
         final String topic1 = randomString();
         final String topic2 = randomString();
-        createTopic(topic1, 1, 1);
-        createTopic(topic2, 1, 1);
+        createTopic(topic1);
+        createTopic(topic2);
 
         int messageCount = 20;
         JetInstance instance = createJetMember();

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.windowing;
+package com.hazelcast.jet;
 
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -29,29 +29,29 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static com.hazelcast.jet.AggregateOperations.allOf;
+import static com.hazelcast.jet.AggregateOperations.averagingDouble;
+import static com.hazelcast.jet.AggregateOperations.averagingLong;
+import static com.hazelcast.jet.AggregateOperations.counting;
+import static com.hazelcast.jet.AggregateOperations.linearTrend;
+import static com.hazelcast.jet.AggregateOperations.maxBy;
+import static com.hazelcast.jet.AggregateOperations.minBy;
+import static com.hazelcast.jet.AggregateOperations.reducing;
+import static com.hazelcast.jet.AggregateOperations.summingToDouble;
+import static com.hazelcast.jet.AggregateOperations.summingToLong;
 import static com.hazelcast.jet.function.DistributedComparator.naturalOrder;
-import static com.hazelcast.jet.windowing.WindowOperations.allOf;
-import static com.hazelcast.jet.windowing.WindowOperations.averagingDouble;
-import static com.hazelcast.jet.windowing.WindowOperations.averagingLong;
-import static com.hazelcast.jet.windowing.WindowOperations.counting;
-import static com.hazelcast.jet.windowing.WindowOperations.linearTrend;
-import static com.hazelcast.jet.windowing.WindowOperations.maxBy;
-import static com.hazelcast.jet.windowing.WindowOperations.minBy;
-import static com.hazelcast.jet.windowing.WindowOperations.reducing;
-import static com.hazelcast.jet.windowing.WindowOperations.summingToDouble;
-import static com.hazelcast.jet.windowing.WindowOperations.summingToLong;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-public class WindowOperations_accEqualityTest {
+public class AggregateOperations_accEqualityTest {
 
     @Parameter
-    public WindowOperation<?, ?, ?> operation;
+    public AggregateOperation<?, ?, ?> operation;
 
     @Parameters
-    public static Collection<WindowOperation<?, ?, ?>> data() {
+    public static Collection<AggregateOperation<?, ?, ?>> data() {
         return Arrays.asList(
                 counting(),
                 summingToLong(Long::longValue),

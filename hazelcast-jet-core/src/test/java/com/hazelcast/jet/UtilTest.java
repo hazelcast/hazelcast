@@ -25,7 +25,7 @@ import org.junit.runner.RunWith;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Util.entry;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)

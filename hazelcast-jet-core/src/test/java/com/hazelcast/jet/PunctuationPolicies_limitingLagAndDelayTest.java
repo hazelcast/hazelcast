@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.windowing;
+package com.hazelcast.jet;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -22,12 +22,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.windowing.PunctuationPolicies.limitingLagAndDelay;
+import static com.hazelcast.jet.PunctuationPolicies.limitingLagAndDelay;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class LimitingLagAndDelayTest {
+public class PunctuationPolicies_limitingLagAndDelayTest {
 
     private static final int MAX_RETAIN_MS = 8;
     private static final int TIMESTAMP_LAG = 8;

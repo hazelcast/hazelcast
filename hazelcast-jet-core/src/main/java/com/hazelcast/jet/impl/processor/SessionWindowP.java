@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.windowing;
+package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.Punctuation;
+import com.hazelcast.jet.Session;
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.function.DistributedBinaryOperator;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.DistributedToLongFunction;
-import com.hazelcast.jet.Punctuation;
-import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.stream.DistributedCollector;
 
 import javax.annotation.Nonnull;
@@ -44,9 +45,10 @@ import static java.lang.System.arraycopy;
 
 /**
  * Session window processor. See {@link
- * WindowingProcessors#sessionWindow(long, DistributedToLongFunction, DistributedFunction,
- * DistributedCollector) sessionWindow(sessionTimeout, extractTimestampF,
- * extractKeyF, collector)} for documentation.
+ *      com.hazelcast.jet.WindowingProcessors#sessionWindow(long,
+ *      DistributedToLongFunction, DistributedFunction, DistributedCollector)
+ * sessionWindow(sessionTimeout, getTimestampF, getKeyF, collector)}
+ * for documentation.
  *
  * @param <T> type of the stream item
  * @param <K> type of the extracted grouping key
@@ -60,22 +62,22 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
     SortedMap<Long, Set<K>> deadlineToKeys = new TreeMap<>();
 
     private final long sessionTimeout;
-    private final DistributedToLongFunction<? super T> extractTimestampF;
-    private final DistributedFunction<? super T, K> extractKeyF;
+    private final DistributedToLongFunction<? super T> getTimestampF;
+    private final DistributedFunction<? super T, K> getKeyF;
     private final DistributedSupplier<A> newAccumulatorF;
     private final BiConsumer<? super A, ? super T> accumulateF;
     private final DistributedFunction<A, R> finishAccumulationF;
     private final DistributedBinaryOperator<A> combineAccF;
     private final FlatMapper<Punctuation, Session<K, R>> expiredSessionFlatmapper;
 
-    SessionWindowP(
+    public SessionWindowP(
             long sessionTimeout,
-            DistributedToLongFunction<? super T> extractTimestampF,
-            DistributedFunction<? super T, K> extractKeyF,
+            DistributedToLongFunction<? super T> getTimestampF,
+            DistributedFunction<? super T, K> getKeyF,
             DistributedCollector<? super T, A, R> collector
     ) {
-        this.extractTimestampF = extractTimestampF;
-        this.extractKeyF = extractKeyF;
+        this.getTimestampF = getTimestampF;
+        this.getKeyF = getKeyF;
         this.newAccumulatorF = collector.supplier();
         this.accumulateF = collector.accumulator();
         this.combineAccF = collector.combiner();
@@ -87,8 +89,8 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
     @Override
     protected boolean tryProcess0(@Nonnull Object item) {
         final T event = (T) item;
-        final long timestamp = extractTimestampF.applyAsLong(event);
-        K key = extractKeyF.apply(event);
+        final long timestamp = getTimestampF.applyAsLong(event);
+        K key = getKeyF.apply(event);
         keyToWindows.computeIfAbsent(key, k -> new Windows())
                     .addEvent(key, timestamp, event);
         return true;

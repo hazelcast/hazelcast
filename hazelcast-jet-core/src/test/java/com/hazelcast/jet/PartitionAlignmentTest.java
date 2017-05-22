@@ -72,14 +72,17 @@ public class PartitionAlignmentTest {
         final int localProcessorCount = PARTITION_COUNT / 4;
         final List<Integer> items = range(0, ITEM_COUNT).boxed().collect(toList());
         final DistributedSupplier<Processor> supplierOfListProducer = () -> new ListSource(items);
-        final Partitioner partitioner = (item, partitionCount) -> (int) item % partitionCount;
+        final Partitioner<Integer> partitioner = (item, partitionCount) -> item % partitionCount;
 
         final DAG dag = new DAG();
 
-        final Vertex distributedProducer = dag.newVertex("distributedProducer", supplierOfListProducer).localParallelism(1);
-        final Vertex localProducer = dag.newVertex("localProducer", supplierOfListProducer).localParallelism(1);
+        final Vertex distributedProducer = dag.newVertex("distributedProducer", supplierOfListProducer)
+                                              .localParallelism(1);
+        final Vertex localProducer = dag.newVertex("localProducer", supplierOfListProducer)
+                                        .localParallelism(1);
         final Vertex processor = dag.newVertex("processor", Counter::new).localParallelism(localProcessorCount);
-        final Vertex consumer = dag.newVertex("consumer", writeList("numbers")).localParallelism(1);
+        final Vertex consumer = dag.newVertex("consumer", writeList("numbers"))
+                                   .localParallelism(1);
 
         dag.edge(between(distributedProducer, processor).partitioned(wholeItem(), partitioner).distributed())
            .edge(from(localProducer).to(processor, 1).partitioned(wholeItem(), partitioner))

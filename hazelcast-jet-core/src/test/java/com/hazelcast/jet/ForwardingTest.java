@@ -183,7 +183,7 @@ public class ForwardingTest extends JetTestSupport {
 
     @SafeVarargs
     private static <T> Set<T> setOf(Collection<T>... collections) {
-        HashSet<T> set = new HashSet<>();
+        Set<T> set = new HashSet<>();
         for (Collection<T> collection : collections) {
             set.addAll(collection);
         }

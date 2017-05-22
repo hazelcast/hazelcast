@@ -51,8 +51,9 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 public class StreamTextSocketPTest extends JetTestSupport {
 
-    private final static String HOST = "localhost";
-    private final static int PORT = 8888;
+    private static final String HOST = "localhost";
+    private static final int PORT = 8888;
+
     private JetTestInstanceFactory factory;
     private JetInstance instance;
 

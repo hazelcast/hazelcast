@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.util;
+package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Outbox;

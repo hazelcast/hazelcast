@@ -95,7 +95,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
         executeAndPeel(getJetInstance().newJob(dag, jobConfig));
     }
 
-    protected Object createIsolatedNode(Thread thread, FilteringClassLoader cl) throws Exception {
+    static Object createIsolatedNode(Thread thread, FilteringClassLoader cl) throws Exception {
         thread.setContextClassLoader(cl);
         Class<?> jetConfigClazz = cl.loadClass("com.hazelcast.jet.config.JetConfig");
         Class<?> hazelcastConfigClazz = cl.loadClass("com.hazelcast.config.Config");

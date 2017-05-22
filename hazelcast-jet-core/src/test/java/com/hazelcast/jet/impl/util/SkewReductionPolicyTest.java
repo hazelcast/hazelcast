@@ -60,7 +60,7 @@ public class SkewReductionPolicyTest {
         srp.observePunc(2, 1);
         assertQueuesOrdered();
         // all queue puncs become equal
-        for (int i = 0; i< srp.drainOrderToQIdx.length; i++) {
+        for (int i = 0; i < srp.drainOrderToQIdx.length; i++) {
             srp.observePunc(i, 6);
             assertQueuesOrdered();
         }

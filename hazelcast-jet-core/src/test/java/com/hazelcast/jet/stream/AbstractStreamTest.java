@@ -35,15 +35,10 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -55,16 +50,17 @@ import static org.junit.Assert.fail;
 public abstract class AbstractStreamTest extends JetTestSupport {
 
     public static final int COUNT = 10000;
-    public static final int NODE_COUNT = 2;
 
-    protected static JetInstance client;
     protected static JetInstance instance;
+
+    private static final int NODE_COUNT = 2;
+
+    private static JetInstance client;
     private static JetInstance[] instances;
     private static JetTestInstanceFactory factory = new JetTestInstanceFactory();
 
     private static final TestMode MEMBER_TEST_MODE = new TestMode("member", () -> instance);
     private static final TestMode CLIENT_TEST_MODE = new TestMode("client", () -> client);
-
 
     @Parameter
     public TestMode testMode;
@@ -77,7 +73,7 @@ public abstract class AbstractStreamTest extends JetTestSupport {
     }
 
     @BeforeClass
-    public static void setupCluster() throws InterruptedException, ExecutionException {
+    public static void setupCluster() throws Exception {
         // configure the engine to have a sane thread count
         int parallelism = Runtime.getRuntime().availableProcessors() / NODE_COUNT / 2;
         JetConfig config = new JetConfig();
@@ -132,7 +128,7 @@ public abstract class AbstractStreamTest extends JetTestSupport {
         return getList(testMode.getInstance());
     }
 
-    private static JetInstance createCluster(int nodeCount, JetConfig config) throws ExecutionException, InterruptedException {
+    private static JetInstance createCluster(int nodeCount, JetConfig config) throws Exception {
         factory = new JetTestInstanceFactory();
         instances = new JetInstance[nodeCount];
         for (int i = 0; i < nodeCount; i++) {

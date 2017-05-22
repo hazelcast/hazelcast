@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.windowing;
+package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Punctuation;
+import com.hazelcast.jet.PunctuationPolicy;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers.ResettableSingletonTraverser;
 
@@ -28,7 +29,7 @@ import static com.hazelcast.jet.Traversers.empty;
 
 /**
  * A processor that inserts punctuation into a data stream. See
- * {@link WindowingProcessors#insertPunctuation(
+ * {@link com.hazelcast.jet.WindowingProcessors#insertPunctuation(
  *      com.hazelcast.jet.function.DistributedToLongFunction,
  *      com.hazelcast.jet.function.DistributedSupplier)
  * WindowingProcessors.insertPunctuation()}.
@@ -37,7 +38,7 @@ import static com.hazelcast.jet.Traversers.empty;
  */
 public class InsertPunctuationP<T> extends AbstractProcessor {
 
-    private final ToLongFunction<T> extractTimestampF;
+    private final ToLongFunction<T> getTimestampF;
     private final PunctuationPolicy punctuationPolicy;
     private final ResettableSingletonTraverser<Object> singletonTraverser;
     private final FlatMapper<Object, Object> flatMapper;
@@ -45,13 +46,13 @@ public class InsertPunctuationP<T> extends AbstractProcessor {
     private long currPunc = Long.MIN_VALUE;
 
     /**
-     * @param extractTimestampF function that extracts the timestamp from the item
+     * @param getTimestampF function that extracts the timestamp from the item
      * @param punctuationPolicy the punctuation policy
      */
-    InsertPunctuationP(@Nonnull ToLongFunction<T> extractTimestampF,
+    public InsertPunctuationP(@Nonnull ToLongFunction<T> getTimestampF,
                        @Nonnull PunctuationPolicy punctuationPolicy
     ) {
-        this.extractTimestampF = extractTimestampF;
+        this.getTimestampF = getTimestampF;
         this.punctuationPolicy = punctuationPolicy;
         this.flatMapper = flatMapper(this::traverser);
         this.singletonTraverser = new ResettableSingletonTraverser<>();
@@ -76,7 +77,7 @@ public class InsertPunctuationP<T> extends AbstractProcessor {
     }
 
     private Traverser<Object> traverser(Object item) {
-        long timestamp = extractTimestampF.applyAsLong((T) item);
+        long timestamp = getTimestampF.applyAsLong((T) item);
         if (timestamp < currPunc) {
             // drop late event
             return empty();

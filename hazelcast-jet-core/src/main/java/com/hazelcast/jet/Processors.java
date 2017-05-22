@@ -35,7 +35,7 @@ import com.hazelcast.jet.impl.connector.StreamTextSocketP;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
 import com.hazelcast.jet.impl.connector.WriteLoggerP;
-import com.hazelcast.jet.impl.util.PeekWrappedP;
+import com.hazelcast.jet.impl.processor.PeekWrappedP;
 import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
 import com.hazelcast.jet.impl.util.WrappingProcessorSupplier;
 
@@ -826,7 +826,10 @@ public final class Processors {
      */
     @Nonnull
     public static <T, K> DistributedSupplier<Processor> countDistinct(@Nonnull DistributedFunction<T, K> keyExtractor) {
-        return () -> new CountDistinctP<>(keyExtractor);
+        return Processors.<T, Set<K>, Long>collect(
+                HashSet<K>::new,
+                (acc, item) -> acc.add(keyExtractor.apply(item)),
+                acc -> (long) acc.size());
     }
 
     /**
@@ -1144,26 +1147,6 @@ public final class Processors {
             final A acc = groups.computeIfAbsent(keyExtractor.apply((T) item), k -> supplier.get());
             collector.accept(acc, (T) item);
             return true;
-        }
-    }
-
-    private static class CountDistinctP<T, K> extends AbstractProcessor {
-        private final DistributedFunction<T, K> extractKey;
-        private final Set<K> seenItems = new HashSet<>();
-
-        CountDistinctP(@Nonnull DistributedFunction<T, K> extractKey) {
-            this.extractKey = extractKey;
-        }
-
-        @Override
-        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-            seenItems.add(extractKey.apply((T) item));
-            return true;
-        }
-
-        @Override
-        public boolean complete() {
-            return tryEmit((long) seenItems.size());
         }
     }
 }

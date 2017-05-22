@@ -64,7 +64,7 @@ public class DeploymentTest extends AbstractDeploymentTest {
         }
     }
 
-    protected void shutdownIsolatedNode() {
+    private void shutdownIsolatedNode() {
         if (isolatedNode == null) {
             return;
         }

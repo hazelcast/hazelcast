@@ -41,10 +41,13 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 public class ConcurrentInboundEdgeStreamTest {
 
+    private static final Object senderGone = new Object();
+
     @Rule
     public ExpectedException exception = ExpectedException.none();
-    private static final Object senderGone = new Object();
-    private OneToOneConcurrentArrayQueue<Object> q1, q2;
+
+    private OneToOneConcurrentArrayQueue<Object> q1;
+    private OneToOneConcurrentArrayQueue<Object> q2;
     private ConcurrentInboundEdgeStream stream;
 
     @Before

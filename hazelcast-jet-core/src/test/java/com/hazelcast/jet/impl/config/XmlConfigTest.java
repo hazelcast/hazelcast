@@ -56,7 +56,8 @@ public class XmlConfigTest {
         JetConfig jetConfig = XmlJetConfigBuilder.getConfig(new Properties());
 
         // Then
-        assertEquals(Runtime.getRuntime().availableProcessors(), jetConfig.getInstanceConfig().getCooperativeThreadCount());
+        assertEquals(Runtime.getRuntime().availableProcessors(),
+                jetConfig.getInstanceConfig().getCooperativeThreadCount());
         assertEquals(DEFAULT_FLOW_CONTROL_PERIOD_MS, jetConfig.getInstanceConfig().getFlowControlPeriodMs());
         assertDefaultMemberConfig(jetConfig.getHazelcastConfig());
     }
@@ -189,10 +190,11 @@ public class XmlConfigTest {
 
     private static void assertDefaultMemberConfig(Config config) {
         assertThat(config, not(nullValue()));
-    	assertThat(config.getGroupConfig().getName(), not(equalTo(TEST_XML_2_GROUP_NAME)));
+        assertThat(config.getGroupConfig().getName(), not(equalTo(TEST_XML_2_GROUP_NAME)));
     }
+
     private static void assertXmlMemberConfig(Config config) {
         assertThat(config, not(nullValue()));
-    	assertThat(config.getGroupConfig().getName(), equalTo(TEST_XML_2_GROUP_NAME));
+        assertThat(config.getGroupConfig().getName(), equalTo(TEST_XML_2_GROUP_NAME));
     }
 }

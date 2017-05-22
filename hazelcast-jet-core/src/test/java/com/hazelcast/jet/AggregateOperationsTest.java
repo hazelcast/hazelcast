@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.windowing;
+package com.hazelcast.jet;
 
 import com.hazelcast.jet.accumulator.DoubleAccumulator;
 import com.hazelcast.jet.accumulator.LinTrendAccumulator;
@@ -22,9 +22,6 @@ import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.accumulator.LongDoubleAccumulator;
 import com.hazelcast.jet.accumulator.LongLongAccumulator;
 import com.hazelcast.jet.accumulator.MutableReference;
-import com.hazelcast.jet.function.DistributedBinaryOperator;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -33,21 +30,22 @@ import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 import java.util.Map.Entry;
-import java.util.function.BiFunction;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
+import static com.hazelcast.jet.AggregateOperations.allOf;
+import static com.hazelcast.jet.AggregateOperations.averagingDouble;
+import static com.hazelcast.jet.AggregateOperations.averagingLong;
+import static com.hazelcast.jet.AggregateOperations.counting;
+import static com.hazelcast.jet.AggregateOperations.linearTrend;
+import static com.hazelcast.jet.AggregateOperations.maxBy;
+import static com.hazelcast.jet.AggregateOperations.minBy;
+import static com.hazelcast.jet.AggregateOperations.reducing;
+import static com.hazelcast.jet.AggregateOperations.summingToDouble;
+import static com.hazelcast.jet.AggregateOperations.summingToLong;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.function.DistributedComparator.naturalOrder;
-import static com.hazelcast.jet.windowing.WindowOperations.allOf;
-import static com.hazelcast.jet.windowing.WindowOperations.averagingDouble;
-import static com.hazelcast.jet.windowing.WindowOperations.averagingLong;
-import static com.hazelcast.jet.windowing.WindowOperations.counting;
-import static com.hazelcast.jet.windowing.WindowOperations.linearTrend;
-import static com.hazelcast.jet.windowing.WindowOperations.maxBy;
-import static com.hazelcast.jet.windowing.WindowOperations.minBy;
-import static com.hazelcast.jet.windowing.WindowOperations.reducing;
-import static com.hazelcast.jet.windowing.WindowOperations.summingToDouble;
-import static com.hazelcast.jet.windowing.WindowOperations.summingToLong;
 import static java.util.function.Function.identity;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -56,7 +54,7 @@ import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class WindowOperationsTest {
+public class AggregateOperationsTest {
     @Test
     public void when_counting() {
         validateOp(counting(), LongAccumulator::get,
@@ -124,53 +122,54 @@ public class WindowOperationsTest {
     @Test
     public void when_linearTrend() {
         // Given
-        WindowOperation<Entry<Long, Long>, LinTrendAccumulator, Double> op = linearTrend(Entry::getKey, Entry::getValue);
-        DistributedSupplier<LinTrendAccumulator> newF = op.createAccumulatorF();
-        BiFunction<LinTrendAccumulator, Entry<Long, Long>, LinTrendAccumulator> accF = op.accumulateItemF();
-        DistributedBinaryOperator<LinTrendAccumulator> combineF = op.combineAccumulatorsF();
-        DistributedBinaryOperator<LinTrendAccumulator> deductF = op.deductAccumulatorF();
-        DistributedFunction<LinTrendAccumulator, Double> finishF = op.finishAccumulationF();
+        AggregateOperation<Entry<Long, Long>, LinTrendAccumulator, Double> op =
+                linearTrend(Entry::getKey, Entry::getValue);
+        Supplier<LinTrendAccumulator> newF = op.createAccumulatorF();
+        BiConsumer<LinTrendAccumulator, Entry<Long, Long>> accF = op.accumulateItemF();
+        BiConsumer<LinTrendAccumulator, LinTrendAccumulator> combineF = op.combineAccumulatorsF();
+        BiConsumer<LinTrendAccumulator, LinTrendAccumulator> deductF = op.deductAccumulatorF();
+        Function<LinTrendAccumulator, Double> finishF = op.finishAccumulationF();
         assertNotNull(deductF);
 
         // When
         LinTrendAccumulator a1 = newF.get();
-        accF.apply(a1, entry(1L, 3L));
-        accF.apply(a1, entry(2L, 5L));
+        accF.accept(a1, entry(1L, 3L));
+        accF.accept(a1, entry(2L, 5L));
         assertEquals(2.0, finishF.apply(a1), Double.MIN_VALUE);
 
         LinTrendAccumulator a2 = newF.get();
-        accF.apply(a2, entry(5L, 11L));
-        accF.apply(a2, entry(6L, 13L));
+        accF.accept(a2, entry(5L, 11L));
+        accF.accept(a2, entry(6L, 13L));
         assertEquals(2.0, finishF.apply(a2), Double.MIN_VALUE);
 
-        LinTrendAccumulator combined = combineF.apply(a1, a2);
-        assertEquals(2.0, finishF.apply(combined), Double.MIN_VALUE);
+        combineF.accept(a1, a2);
+        assertEquals(2.0, finishF.apply(a1), Double.MIN_VALUE);
 
-        LinTrendAccumulator deducted = deductF.apply(combined, a2);
-        assertEquals(2.0, finishF.apply(combined), Double.MIN_VALUE);
+        deductF.accept(a1, a2);
+        assertEquals(2.0, finishF.apply(a1), Double.MIN_VALUE);
 
-        Double result = finishF.apply(deducted);
+        Double result = finishF.apply(a1);
         assertEquals(Double.valueOf(2), result);
 
         // When
-        a1 = newF.get();
+        LinTrendAccumulator acc = newF.get();
         // Then
-        assertTrue("NaN expected if nothing accumulated", Double.isNaN(finishF.apply(a1)));
+        assertTrue("NaN expected if nothing accumulated", Double.isNaN(finishF.apply(acc)));
 
         // When
-        a1 = accF.apply(a1, entry(2L, 1L));
+        accF.accept(acc, entry(2L, 1L));
         // Then
-        assertTrue("NaN expected if just single point accumulated", Double.isNaN(finishF.apply(a1)));
+        assertTrue("NaN expected if just single point accumulated", Double.isNaN(finishF.apply(acc)));
 
         // When
-        a1 = accF.apply(a1, entry(2L, 1L));
+        accF.accept(acc, entry(2L, 1L));
         // Then
-        assertTrue("NaN expected if all data points are equal", Double.isNaN(finishF.apply(a1)));
+        assertTrue("NaN expected if all data points are equal", Double.isNaN(finishF.apply(acc)));
 
         // When
-        a1 = accF.apply(a1, entry(2L, 2L));
+        accF.accept(acc, entry(2L, 2L));
         // Then
-        assertTrue("NaN expected if all data points have same x value", Double.isNaN(finishF.apply(a1)));
+        assertTrue("NaN expected if all data points have same x value", Double.isNaN(finishF.apply(acc)));
     }
 
     @Test
@@ -181,7 +180,7 @@ public class WindowOperationsTest {
     }
 
     private static <T, A, X, R> void validateOp(
-            WindowOperation<T, A, R> op,
+            AggregateOperation<T, A, R> op,
             Function<A, X> getAccValF,
             T item1,
             T item2,
@@ -190,15 +189,15 @@ public class WindowOperationsTest {
             R expectFinished
     ) {
         // Given
-        DistributedBinaryOperator<A> deductAccF = op.deductAccumulatorF();
+        BiConsumer<A, A> deductAccF = op.deductAccumulatorF();
         assertNotNull(deductAccF);
 
         // When
         A acc1 = op.createAccumulatorF().get();
-        acc1 = op.accumulateItemF().apply(acc1, item1);
+        op.accumulateItemF().accept(acc1, item1);
 
         A acc2 = op.createAccumulatorF().get();
-        acc2 = op.accumulateItemF().apply(acc2, item2);
+        op.accumulateItemF().accept(acc2, item2);
 
         // Checks must be made early because combine/deduct
         // are allowed to be destructive ops
@@ -207,30 +206,30 @@ public class WindowOperationsTest {
         assertEquals("accumulated", expectAcced1, getAccValF.apply(acc1));
 
         // When
-        A combined = op.combineAccumulatorsF().apply(acc1, acc2);
+        op.combineAccumulatorsF().accept(acc1, acc2);
         // Then
-        assertEquals("combined", expectCombined, getAccValF.apply(combined));
+        assertEquals("combined", expectCombined, getAccValF.apply(acc1));
 
         // When
-        R finished = op.finishAccumulationF().apply(combined);
+        R finished = op.finishAccumulationF().apply(acc1);
         // Then
         assertEquals("finished", expectFinished, finished);
 
         // When
-        combined = deductAccF.apply(combined, acc2);
+        deductAccF.accept(acc1, acc2);
         // Then
-        assertEquals("deducted", expectAcced1, getAccValF.apply(combined));
+        assertEquals("deducted", expectAcced1, getAccValF.apply(acc1));
 
         // When - accumulate both items into single accumulator
         acc1 = op.createAccumulatorF().get();
-        acc1 = op.accumulateItemF().apply(acc1, item1);
-        acc1 = op.accumulateItemF().apply(acc1, item2);
+        op.accumulateItemF().accept(acc1, item1);
+        op.accumulateItemF().accept(acc1, item2);
         // Then
         assertEquals("accumulated", expectCombined, getAccValF.apply(acc1));
     }
 
     private static <T, A, X, R> void validateOpWithoutDeduct(
-            WindowOperation<T, A, R> op,
+            AggregateOperation<T, A, R> op,
             Function<A, X> getAccValF,
             T item1,
             T item2,
@@ -243,10 +242,10 @@ public class WindowOperationsTest {
 
         // When
         A acc1 = op.createAccumulatorF().get();
-        acc1 = op.accumulateItemF().apply(acc1, item1);
+        op.accumulateItemF().accept(acc1, item1);
 
         A acc2 = op.createAccumulatorF().get();
-        acc2 = op.accumulateItemF().apply(acc2, item2);
+        op.accumulateItemF().accept(acc2, item2);
 
         // Checks must be made early because combine/deduct
         // are allowed to be destructive ops
@@ -255,19 +254,19 @@ public class WindowOperationsTest {
         assertEquals("accumulated", expectAcced, getAccValF.apply(acc1));
 
         // When
-        A combined = op.combineAccumulatorsF().apply(acc1, acc2);
+        op.combineAccumulatorsF().accept(acc1, acc2);
         // Then
-        assertEquals("combined", expectCombined, getAccValF.apply(combined));
+        assertEquals("combined", expectCombined, getAccValF.apply(acc1));
 
         // When
-        R finished = op.finishAccumulationF().apply(combined);
+        R finished = op.finishAccumulationF().apply(acc1);
         // Then
         assertEquals("finished", expectFinished, finished);
 
         // When - accumulate both items into single accumulator
         acc1 = op.createAccumulatorF().get();
-        acc1 = op.accumulateItemF().apply(acc1, item1);
-        acc1 = op.accumulateItemF().apply(acc1, item2);
+        op.accumulateItemF().accept(acc1, item1);
+        op.accumulateItemF().accept(acc1, item2);
         // Then
         assertEquals("accumulated", expectCombined, getAccValF.apply(acc1));
     }

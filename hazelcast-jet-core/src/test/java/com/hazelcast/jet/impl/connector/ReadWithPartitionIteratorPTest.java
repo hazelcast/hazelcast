@@ -52,7 +52,8 @@ public class ReadWithPartitionIteratorPTest {
                 iterate(51, 52, 53),
                 iterate(71, 72, 73),
         };
-        ReadWithPartitionIteratorP<Entry<Integer, Integer>> r = new ReadWithPartitionIteratorP<>(p -> content[p], partitions);
+        ReadWithPartitionIteratorP<Entry<Integer, Integer>> r =
+                new ReadWithPartitionIteratorP<>(p -> content[p], partitions);
         ArrayDequeOutbox outbox = new ArrayDequeOutbox(new int[]{3}, new ProgressTracker());
         Queue<Object> bucket = outbox.queueWithOrdinal(0);
         r.init(outbox, mock(Processor.Context.class));

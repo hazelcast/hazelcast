@@ -189,9 +189,8 @@
         <!-- Checks for blocks. You know, those {}'s         -->
         <!-- See http://checkstyle.sf.net/config_blocks.html -->
         <module name="AvoidNestedBlocks"/>
-        <module name="EmptyBlock">
-            <property name="option" value="text"/>
-            <property name="tokens" value="LITERAL_CATCH"/>
+        <module name="EmptyCatchBlock">
+            <property name="exceptionVariableName" value="expected|ignored"/>
         </module>
         <module name="LeftCurly"/>
         <module name="NeedBraces"/>

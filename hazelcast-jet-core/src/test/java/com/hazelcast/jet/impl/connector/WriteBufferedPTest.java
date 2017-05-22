@@ -45,7 +45,7 @@ public class WriteBufferedPTest {
                 index -> new ArrayList<>(),
                 List::add,
                 list -> assertEquals(ENTRY_COUNT, list.size()),
-                map -> {}
+                map -> { }
         );
         p.init(mock(Outbox.class), mock(Context.class));
 

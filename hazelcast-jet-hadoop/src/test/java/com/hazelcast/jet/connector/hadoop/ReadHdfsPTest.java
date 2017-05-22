@@ -80,31 +80,28 @@ public class ReadHdfsPTest extends JetTestSupport {
     @Parameterized.Parameter(1)
     public DistributedBiFunction mapper;
 
+    private JobConf jobConf;
+    private JetInstance instance;
+    private Set<Path> paths = new HashSet<>();
+
     @Parameterized.Parameters(name = "Executing: {0} {1}")
     public static Collection<Object[]> parameters() {
         DistributedBiFunction defaultMapper = Util::entry;
         DistributedBiFunction mapper = (k, v) -> v.toString();
-
         return Arrays.asList(
-                new Object[]{TextInputFormat.class, defaultMapper}, //
-                new Object[]{TextInputFormat.class, mapper}, //
-                new Object[]{SequenceFileInputFormat.class, defaultMapper}, //
-                new Object[]{SequenceFileInputFormat.class, mapper} //
+                new Object[]{TextInputFormat.class, defaultMapper},
+                new Object[]{TextInputFormat.class, mapper},
+                new Object[]{SequenceFileInputFormat.class, defaultMapper},
+                new Object[]{SequenceFileInputFormat.class, mapper}
         );
     }
 
     @BeforeClass
     public static void setupClass() {
         ENTRIES = range(0, 4)
-                .mapToObj(i -> "key-" + i + " value-" + i + "\n")
-                .toArray(i -> new String[i]);
+                .mapToObj(i -> "key-" + i + " value-" + i + '\n')
+                .toArray(String[]::new);
     }
-
-    private JobConf jobConf;
-
-    private JetInstance instance;
-
-    private Set<Path> paths = new HashSet<>();
 
     @Before
     public void setup() throws IOException {

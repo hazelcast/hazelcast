@@ -181,7 +181,8 @@ public class WriteFilePTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", () -> new SlowSourceP(semaphore, numItems))
                 .localParallelism(1);
-        Vertex sink = dag.newVertex("sink", writeFile(directory.toString(), Object::toString, StandardCharsets.UTF_8, false))
+        Vertex sink = dag.newVertex("sink",
+                writeFile(directory.toString(), Object::toString, StandardCharsets.UTF_8, false))
                 .localParallelism(1);
         dag.edge(between(source, sink));
 
@@ -223,7 +224,8 @@ public class WriteFilePTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex reader = dag.newVertex("reader", readList(list.getName()))
                 .localParallelism(1);
-        Vertex writer = dag.newVertex("writer", writeFile(myFile.toString(), Object::toString, StandardCharsets.UTF_8, false))
+        Vertex writer = dag.newVertex("writer",
+                writeFile(myFile.toString(), Object::toString, StandardCharsets.UTF_8, false))
                 .localParallelism(1);
         dag.edge(between(reader, writer));
         addItemsToList(0, 10);

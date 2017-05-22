@@ -137,7 +137,7 @@ public class ProcessorsTest {
 
     @Test
     public void groupAndAccumulateNoFinisher() {
-        final Processor p = processorFrom(Processors.<Integer, List<Integer>> groupAndAccumulate(
+        final Processor p = processorFrom(Processors.<Integer, List<Integer>>groupAndAccumulate(
                 Object::toString,
                 ArrayList::new,
                 (list, i) -> { list.add(i); return list; }
@@ -147,7 +147,7 @@ public class ProcessorsTest {
 
     @Test
     public void groupAndCollectNoFinisher() {
-        final Processor p = processorFrom(Processors.<Integer, List<Integer>> groupAndCollect(
+        final Processor p = processorFrom(Processors.<Integer, List<Integer>>groupAndCollect(
                 Object::toString,
                 ArrayList::new,
                 List::add
@@ -157,7 +157,7 @@ public class ProcessorsTest {
 
     @Test
     public void groupAndAccumulateNoExtractorNoFinisher() {
-        final Processor p = processorFrom(Processors.<Integer, List<Integer>> groupAndAccumulate(
+        final Processor p = processorFrom(Processors.<Integer, List<Integer>>groupAndAccumulate(
                 ArrayList::new,
                 (list, i) -> { list.add(i); return list; }
         ));
@@ -166,7 +166,7 @@ public class ProcessorsTest {
 
     @Test
     public void groupAndCollectNoExtractorNoFinisher() {
-        final Processor p = processorFrom(Processors.<Integer, List<Integer>> groupAndCollect(
+        final Processor p = processorFrom(Processors.<Integer, List<Integer>>groupAndCollect(
                 ArrayList::new,
                 List::add
         ));

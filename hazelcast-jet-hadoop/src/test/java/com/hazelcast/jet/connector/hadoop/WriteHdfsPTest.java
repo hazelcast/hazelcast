@@ -47,7 +47,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Edge.between;
@@ -55,6 +54,7 @@ import static com.hazelcast.jet.Processors.readMap;
 import static com.hazelcast.jet.Processors.writeList;
 import static com.hazelcast.jet.connector.hadoop.ReadHdfsP.readHdfs;
 import static com.hazelcast.jet.connector.hadoop.WriteHdfsP.writeHdfs;
+import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
@@ -83,7 +83,8 @@ public class WriteHdfsPTest extends JetTestSupport {
         JetInstance instance = createJetMember();
         createJetMember();
 
-        Map<IntWritable, IntWritable> map = IntStream.range(0, messageCount).boxed().collect(Collectors.toMap(IntWritable::new, IntWritable::new));
+        Map<IntWritable, IntWritable> map = IntStream.range(0, messageCount).boxed()
+                                                     .collect(toMap(IntWritable::new, IntWritable::new));
         instance.getMap(mapName).putAll(map);
 
         DAG dag = new DAG();

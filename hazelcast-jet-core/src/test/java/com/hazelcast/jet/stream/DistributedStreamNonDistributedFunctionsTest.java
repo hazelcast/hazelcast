@@ -17,8 +17,6 @@
 package com.hazelcast.jet.stream;
 
 
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedToDoubleFunction;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,8 +27,10 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 import java.util.stream.DoubleStream;
@@ -50,139 +50,117 @@ public class DistributedStreamNonDistributedFunctionsTest extends AbstractStream
 
     @Test
     public void map() {
-        DistributedFunction<Integer, String> f = (DistributedFunction<Integer, String> & Serializable) Object::toString;
-        stream.map(f);
+        stream.map((Function<Integer, String> & Serializable) Object::toString);
     }
 
     @Test
     public void flatMap() {
-        java.util.function.Function<Integer, Stream<? extends Integer>> f =
-                (java.util.function.Function<Integer, Stream<? extends Integer>> & Serializable) Stream::of;
-        stream.flatMap(f);
+        stream.flatMap((Function<Integer, Stream<? extends Integer>> & Serializable) Stream::of);
     }
 
     @Test
     public void collect2() {
-        Supplier<Integer[]> supplier = (Supplier<Integer[]> & Serializable) () -> new Integer[]{0};
-        BiConsumer<Integer[], Integer> accumulator = (BiConsumer<Integer[], Integer> & Serializable) (r, e) -> r[0] += e;
-        BiConsumer<Integer[], Integer[]> combiner = (BiConsumer<Integer[], Integer[]> & Serializable) (a, b) -> a[0] += b[0];
-        stream.collect(supplier,
-                accumulator,
-                combiner);
+        stream.collect(
+                (Supplier<Integer[]> & Serializable) () -> new Integer[]{0},
+                (BiConsumer<Integer[], Integer> & Serializable) (r, e) -> r[0] += e,
+                (BiConsumer<Integer[], Integer[]> & Serializable) (a, b) -> a[0] += b[0]);
     }
 
     @Test
     public void forEach() {
-        Consumer<Integer> action = (Consumer<Integer> & Serializable) v -> {};
-        stream.forEach(action);
+        stream.forEach((Consumer<Integer> & Serializable) v -> { });
     }
 
     @Test
     public void forEachOrdered() {
-        Consumer<Integer> action = (Consumer<Integer> & Serializable) v -> {};
-        stream.forEachOrdered(action);
+        stream.forEachOrdered((Consumer<Integer> & Serializable) v -> { });
     }
 
     @Test
     public void allMatch() {
-        Predicate<Integer> predicate = (Predicate<Integer> & Serializable) m -> true;
-        stream.allMatch(predicate);
+        stream.allMatch((Predicate<Integer> & Serializable) m -> true);
     }
 
     @Test
     public void anyMatch() {
-        Predicate<Integer> predicate = (Predicate<Integer> & Serializable) m -> true;
-        stream.anyMatch(predicate);
+        stream.anyMatch((Predicate<Integer> & Serializable) m -> true);
     }
 
     @Test
     public void noneMatch() {
-        Predicate<Integer> predicate = (Predicate<Integer> & Serializable) m -> true;
-        stream.noneMatch(predicate);
+        stream.noneMatch((Predicate<Integer> & Serializable) m -> true);
     }
 
     @Test
     public void filter() {
-        Predicate<Integer> predicate = (Predicate<Integer> & Serializable) m -> true;
-        stream.filter(predicate);
+        stream.filter((Predicate<Integer> & Serializable) m -> true);
     }
 
     @Test
     public void mapToInt() {
-        ToIntFunction<Integer> mapper = (ToIntFunction<Integer> & Serializable) m -> m;
-        stream.mapToInt(mapper);
+        stream.mapToInt((ToIntFunction<Integer> & Serializable) m -> m);
     }
 
     @Test
     public void mapToDouble() {
-        DistributedToDoubleFunction<Integer> mapper = (DistributedToDoubleFunction<Integer> & Serializable) m -> m;
-        stream.mapToDouble(mapper);
+        stream.mapToDouble((ToDoubleFunction<Integer> & Serializable) m -> m);
     }
 
     @Test
     public void mapToLong() {
-        ToLongFunction<Integer> mapper = (ToLongFunction<Integer> & Serializable) m -> (long) m;
-        stream.mapToLong(mapper);
+        stream.mapToLong((ToLongFunction<Integer> & Serializable) m -> (long) m);
     }
 
     @Test
     public void flatMapToInt() {
-        java.util.function.Function<Integer, IntStream> function = (java.util.function.Function<Integer, IntStream> & Serializable) IntStream::of;
-        stream.flatMapToInt(function);
+        stream.flatMapToInt((Function<Integer, IntStream> & Serializable) IntStream::of);
     }
 
     @Test
     public void flatMapToDouble() {
-        java.util.function.Function<Integer, DoubleStream> function = (java.util.function.Function<Integer, DoubleStream> & Serializable) DoubleStream::of;
-        stream.flatMapToDouble(function);
+        stream.flatMapToDouble((Function<Integer, DoubleStream> & Serializable) DoubleStream::of);
     }
 
     @Test
     public void flatMapToLong() {
-        java.util.function.Function<Integer, LongStream> function = (java.util.function.Function<Integer, LongStream> & Serializable) LongStream::of;
-        stream.flatMapToLong(function);
+        stream.flatMapToLong((Function<Integer, LongStream> & Serializable) LongStream::of);
     }
 
     @Test
     public void max() {
-        Comparator<Integer> comparator = (Comparator<Integer> & Serializable) Integer::compareTo;
-        stream.max(comparator);
+        stream.max((Comparator<Integer> & Serializable) Integer::compareTo);
     }
 
     @Test
     public void min() {
-        Comparator<Integer> comparator = (Comparator<Integer> & Serializable) Integer::compareTo;
-        stream.min(comparator);
+        stream.min((Comparator<Integer> & Serializable) Integer::compareTo);
     }
 
     @Test
     public void peek() {
-        Consumer<Integer> action = (Consumer<Integer> & Serializable) v -> {};
-        stream.peek(action);
+        stream.peek((Consumer<Integer> & Serializable) v -> { });
     }
 
     @Test
     public void reduce() {
-        BinaryOperator<Integer> accumulator = (BinaryOperator<Integer> & Serializable) (l, r) -> l + r;
-        stream.reduce(accumulator);
+        stream.reduce((BinaryOperator<Integer> & Serializable) (l, r) -> l + r);
     }
 
     @Test
     public void reduce2() {
-        BinaryOperator<Integer> accumulator = (BinaryOperator<Integer> & Serializable) (l, r) -> l + r;
-        stream.reduce(0, accumulator);
+        stream.reduce(0, (BinaryOperator<Integer> & Serializable) (l, r) -> l + r);
     }
 
     @Test
     public void reduce3() {
-        BiFunction<Integer, Integer, Integer> accumulator = (BiFunction<Integer, Integer, Integer> & Serializable) (l, r) -> l + r;
-        BinaryOperator<Integer> combiner = (BinaryOperator<Integer> & Serializable) (l, r) -> l + r;
-        stream.reduce(0, accumulator, combiner);
+        stream.reduce(
+                0,
+                (BiFunction<Integer, Integer, Integer> & Serializable) (l, r) -> l + r,
+                (BinaryOperator<Integer> & Serializable) (l1, r1) -> l1 + r1);
     }
 
     @Test
     public void sorted() {
-        Comparator<Integer> comparator = (Comparator<Integer> & Serializable) Integer::compareTo;
-        stream.sorted(comparator);
+        stream.sorted((Comparator<Integer> & Serializable) Integer::compareTo);
     }
 }

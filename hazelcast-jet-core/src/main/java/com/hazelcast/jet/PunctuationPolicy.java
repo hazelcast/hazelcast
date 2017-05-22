@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.windowing;
+package com.hazelcast.jet;
 
 /**
  * A policy object that decides on the punctuation in a single data
@@ -89,12 +89,12 @@ public interface PunctuationPolicy {
      * ({@link WindowingProcessors#slidingWindowStage1(
      *      com.hazelcast.jet.function.DistributedFunction,
      *      com.hazelcast.jet.function.DistributedToLongFunction,
-     *      WindowDefinition, WindowOperation)
+     *      WindowDefinition, AggregateOperation)
      * slidingWindowStage1} or
      * {@link WindowingProcessors#slidingWindowSingleStage(
      *      com.hazelcast.jet.function.DistributedFunction,
      *      com.hazelcast.jet.function.DistributedToLongFunction,
-     *      WindowDefinition, WindowOperation)
+     *      WindowDefinition, AggregateOperation)
      * slidingWindowSingleStage}).
      */
     default PunctuationPolicy throttleByFrame(WindowDefinition winDef) {

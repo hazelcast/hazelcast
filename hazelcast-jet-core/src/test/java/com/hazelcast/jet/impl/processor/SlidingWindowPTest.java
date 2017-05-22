@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.windowing;
+package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.AggregateOperation;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Processor.Context;
+import com.hazelcast.jet.StreamingTestSupport;
+import com.hazelcast.jet.TimestampedEntry;
+import com.hazelcast.jet.WindowDefinition;
 import com.hazelcast.jet.accumulator.LongAccumulator;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -43,8 +45,9 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindowSingleStage;
-import static com.hazelcast.jet.windowing.WindowingProcessors.slidingWindowStage2;
+import static com.hazelcast.jet.WindowDefinition.slidingWindowDef;
+import static com.hazelcast.jet.WindowingProcessors.slidingWindowSingleStage;
+import static com.hazelcast.jet.WindowingProcessors.slidingWindowStage2;
 import static java.util.Arrays.asList;
 import static java.util.Collections.shuffle;
 import static java.util.Collections.singletonList;
@@ -52,19 +55,10 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-/**
- * This one tests:
- * <ul><li>
- *     {@link WindowingProcessors#slidingWindowStage2(WindowDefinition, WindowOperation)}
- * </li><li>
- *     {@link WindowingProcessors#slidingWindowSingleStage(DistributedFunction, DistributedToLongFunction,
- *     WindowDefinition, WindowOperation)}
- * </ul>
- */
 @RunWith(Parameterized.class)
 @Category({QuickTest.class, ParallelTest.class})
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-public class WindowingProcessors_slidingWindowTest extends StreamingTestSupport {
+public class SlidingWindowPTest extends StreamingTestSupport {
 
     private static final Long KEY = 77L;
 
@@ -72,49 +66,39 @@ public class WindowingProcessors_slidingWindowTest extends StreamingTestSupport 
     public boolean hasDeduct;
 
     @Parameter(1)
-    public boolean mutateAccumulator;
-
-    @Parameter(2)
     public boolean singleStageProcessor;
 
-    @Parameters(name = "hasDeduct={0}, mutateAccumulator={1}, singleStageProcessor={2}")
+    private SlidingWindowP<?, ?, Long> processor;
+
+    @Parameters(name = "hasDeduct={0}, singleStageProcessor={1}")
     public static Collection<Object[]> parameters() {
-        return IntStream.range(0, 8)
-                        .mapToObj(i -> new Boolean[]{(i & 4) == 4, (i & 2) == 2, (i & 1) == 1})
+        return IntStream.range(0, 4)
+                        .mapToObj(i -> new Boolean[]{(i & 2) == 2, (i & 1) == 1})
                         .collect(toList());
     }
 
-    private WindowingProcessor<?, ?, Long> processor;
-
     @Before
     public void before() {
-        WindowDefinition windowDef = new WindowDefinition(1, 0, 4);
-        WindowOperation<Entry<?, Long>, LongAccumulator, Long> operation;
+        WindowDefinition windowDef = slidingWindowDef(4, 1);
+        AggregateOperation<Entry<?, Long>, LongAccumulator, Long> operation;
 
-        operation = mutateAccumulator
-                ? WindowOperation.of(
+        operation = AggregateOperation.of(
                     LongAccumulator::new,
                     (acc, item) -> acc.addExact(item.getValue()),
                     LongAccumulator::addExact,
                     hasDeduct ? LongAccumulator::subtractExact : null,
-                    LongAccumulator::get)
-                : WindowOperation.of(
-                    LongAccumulator::new,
-                    (acc, item) -> new LongAccumulator(acc.get() + item.getValue()),
-                    (acc1, acc2) -> new LongAccumulator(acc1.get() + acc2.get()),
-                    hasDeduct ? (acc1, acc2) -> new LongAccumulator(acc1.get() - acc2.get()) : null,
                     LongAccumulator::get);
 
         DistributedSupplier<Processor> procSupplier = singleStageProcessor
                 ? slidingWindowSingleStage(t -> KEY, Entry<Long, Long>::getKey, windowDef, operation)
                 : slidingWindowStage2(windowDef, operation);
-        processor = (WindowingProcessor<?, ?, Long>) procSupplier.get();
+        processor = (SlidingWindowP<?, ?, Long>) procSupplier.get();
         processor.init(outbox, mock(Context.class));
     }
 
     @After
     public void after() {
-        assertTrue("tsToKeyToFrame is not empty: " + processor.tsToKeyToFrame, processor.tsToKeyToFrame.isEmpty());
+        assertTrue("tsToKeyToFrame is not empty: " + processor.tsToKeyToAcc, processor.tsToKeyToAcc.isEmpty());
         assertTrue("slidingWindow is not empty: " + processor.slidingWindow, processor.slidingWindow.isEmpty());
     }
 

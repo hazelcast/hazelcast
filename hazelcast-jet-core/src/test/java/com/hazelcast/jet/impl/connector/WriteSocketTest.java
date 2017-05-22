@@ -43,13 +43,12 @@ import static java.util.stream.IntStream.range;
 @RunWith(HazelcastSerialClassRunner.class)
 public class WriteSocketTest extends JetTestSupport {
 
-    private final static String HOST = "localhost";
-    private final static int PORT = 8787;
-    private final static int ITEM_COUNT = 1000;
+    private static final String HOST = "localhost";
+    private static final int PORT = 8787;
+    private static final int ITEM_COUNT = 1000;
 
     @Test
     public void test() throws Exception {
-
         ServerSocket socket = new ServerSocket(PORT);
         CountDownLatch latch = new CountDownLatch(ITEM_COUNT);
         new Thread(() -> uncheckRun(() -> {

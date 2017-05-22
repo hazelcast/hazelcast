@@ -57,11 +57,6 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 public class Processors_peekTest {
 
-    private ArrayDequeInbox inbox;
-    private ArrayDequeOutbox outbox;
-    private Processor.Context context;
-    private ILogger logger;
-
     @Parameter
     public DistributedFunction<Object, String> toStringF;
 
@@ -70,6 +65,11 @@ public class Processors_peekTest {
 
     @Parameter(2)
     public Class<Processor> processor;
+
+    private ArrayDequeInbox inbox;
+    private ArrayDequeOutbox outbox;
+    private Processor.Context context;
+    private ILogger logger;
 
     @Parameters(name = "toStringF={0}, shouldLogF={1}, processor={2}")
     public static Collection<Object[]> parameters() {
@@ -100,9 +100,10 @@ public class Processors_peekTest {
     public void when_peekInput_SupplierProcessor() {
         // Given
         DistributedSupplier<Processor> passThroughPSupplier = procSupplier();
-        Processor wrappedP =
-                (toStringF == null ? peekInput(passThroughPSupplier) : peekInput(toStringF, shouldLogF, passThroughPSupplier))
-                        .get();
+        Processor wrappedP = (toStringF == null
+                ? peekInput(passThroughPSupplier)
+                : peekInput(toStringF, shouldLogF, passThroughPSupplier)
+        ).get();
         wrappedP.init(outbox, context);
 
         // When+Then
@@ -113,9 +114,10 @@ public class Processors_peekTest {
     public void when_peekInput_ProcessorSupplier() {
         // Given
         ProcessorSupplier passThroughPSupplier = ProcessorSupplier.of(procSupplier());
-        Processor wrappedP =
-                (toStringF == null ? peekInput(passThroughPSupplier) : peekInput(toStringF, shouldLogF, passThroughPSupplier))
-                        .get(1).iterator().next();
+        Processor wrappedP = (toStringF == null
+                ? peekInput(passThroughPSupplier)
+                : peekInput(toStringF, shouldLogF, passThroughPSupplier)
+        ).get(1).iterator().next();
         wrappedP.init(outbox, context);
 
         // When+Then
@@ -127,9 +129,10 @@ public class Processors_peekTest {
         // Given
         ProcessorMetaSupplier passThroughPSupplier = ProcessorMetaSupplier.of(procSupplier());
         Address address = new Address();
-        Processor wrappedP =
-                (toStringF == null ? peekInput(passThroughPSupplier) : peekInput(toStringF, shouldLogF, passThroughPSupplier))
-                    .get(Collections.singletonList(address)).apply(address).get(1).iterator().next();
+        Processor wrappedP = (toStringF == null
+                ? peekInput(passThroughPSupplier)
+                : peekInput(toStringF, shouldLogF, passThroughPSupplier)
+        ).get(Collections.singletonList(address)).apply(address).get(1).iterator().next();
         wrappedP.init(outbox, context);
 
         // When+Then
@@ -140,9 +143,10 @@ public class Processors_peekTest {
     public void when_peekOutput_SupplierProcessor() {
         // Given
         DistributedSupplier<Processor> passThroughPSupplier = procSupplier();
-        Processor wrappedP =
-                (toStringF == null ? peekInput(passThroughPSupplier) : peekOutput(toStringF, shouldLogF, passThroughPSupplier))
-                        .get();
+        Processor wrappedP = (toStringF == null
+                ? peekInput(passThroughPSupplier)
+                : peekOutput(toStringF, shouldLogF, passThroughPSupplier)
+        ).get();
 
         wrappedP.init(outbox, context);
 
@@ -154,9 +158,10 @@ public class Processors_peekTest {
     public void when_peekOutput_ProcessorSupplier() {
         // Given
         ProcessorSupplier passThroughPSupplier = ProcessorSupplier.of(procSupplier());
-        Processor wrappedP =
-                (toStringF == null ? peekInput(passThroughPSupplier) : peekOutput(toStringF, shouldLogF, passThroughPSupplier))
-                        .get(1).iterator().next();
+        Processor wrappedP = (toStringF == null
+                ? peekInput(passThroughPSupplier)
+                : peekOutput(toStringF, shouldLogF, passThroughPSupplier)
+        ).get(1).iterator().next();
         wrappedP.init(outbox, context);
 
         // When+Then
@@ -168,9 +173,10 @@ public class Processors_peekTest {
         // Given
         ProcessorMetaSupplier passThroughPSupplier = ProcessorMetaSupplier.of(procSupplier());
         Address address = new Address();
-        Processor wrappedP =
-                (toStringF == null ? peekInput(passThroughPSupplier) : peekOutput(toStringF, shouldLogF, passThroughPSupplier))
-                    .get(Collections.singletonList(address)).apply(address).get(1).iterator().next();
+        Processor wrappedP = (toStringF == null
+                ? peekInput(passThroughPSupplier)
+                : peekOutput(toStringF, shouldLogF, passThroughPSupplier)
+        ).get(Collections.singletonList(address)).apply(address).get(1).iterator().next();
         wrappedP.init(outbox, context);
 
         // When+Then
@@ -196,13 +202,10 @@ public class Processors_peekTest {
     }
 
     private String format(int s) {
-        if (toStringF == null)
-            return String.valueOf(s);
-        else
-            return toStringF.apply(s);
+        return toStringF == null ? String.valueOf(s) : toStringF.apply(s);
     }
 
-    static abstract class TestProcessor implements Processor {
+    abstract static class TestProcessor implements Processor {
         protected Outbox outbox;
 
         @Override

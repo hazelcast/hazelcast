@@ -50,6 +50,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.Processors.writeList;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -181,7 +182,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
         File subdir = new File(directory, "subdir");
         assertTrue(subdir.mkdir());
         File fileInSubdir = new File(subdir, randomName());
-        appendToFile(fileInSubdir, IntStream.range(0, 5000).mapToObj(String::valueOf).collect(Collectors.toList()).toArray(new String[0]));
+        appendToFile(fileInSubdir, IntStream.range(0, 5000).mapToObj(String::valueOf).toArray(String[]::new));
 
         // move the file to watchedDirectory
         File file = new File(directory, fileInSubdir.getName());
@@ -260,8 +261,9 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
                     bw.flush();
                     osw.flush();
                     fos.flush();
-                    if (random.nextInt(100) < 5)
-                        LockSupport.parkNanos(1_000_000); // 1ms
+                    if (random.nextInt(100) < 5) {
+                        LockSupport.parkNanos(MILLISECONDS.toNanos(1));
+                    }
                 }
             } catch (IOException e) {
                 throw sneakyThrow(e);

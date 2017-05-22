@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.HazelcastInstanceImpl;
@@ -60,22 +59,25 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
 
     static final int PARALLELISM = 4;
     static final int NODE_COUNT = 4;
-
     private static final int[] DEFAULT_BRAINS = new int[]{1, 2};
     private static final int DEFAULT_ITERATION_COUNT = 1;
+
+    private static final SplitBrainAction BLOCK_COMMUNICATION = JetSplitBrainTestSupport::blockCommunicationBetween;
+    private static final SplitBrainAction UNBLOCK_COMMUNICATION = JetSplitBrainTestSupport::unblockCommunicationBetween;
+    private static final SplitBrainAction CLOSE_CONNECTION = (h1, h2) ->
+            closeConnectionBetween(h1.getHazelcastInstance(), h2.getHazelcastInstance());
+    private static final SplitBrainAction UNBLACKLIST_MEMBERS = JetSplitBrainTestSupport::unblacklistJoinerBetween;
+
+
     private JetInstance[] instances;
     private int[] brains;
 
     /**
-     * If new nodes have been created during split brain via {@link #createHazelcastInstanceInBrain(int)}, then their joiners
+     * If new nodes have been created during split brain via
+     * {@link #createHazelcastInstanceInBrain(int)}, then their joiners
      * are initialized with the other brain's addresses being blacklisted.
      */
-    private boolean unblacklistHint = false;
-
-    private static final SplitBrainAction BLOCK_COMMUNICATION = JetSplitBrainTestSupport::blockCommunicationBetween;
-    private static final SplitBrainAction UNBLOCK_COMMUNICATION = JetSplitBrainTestSupport::unblockCommunicationBetween;
-    private static final SplitBrainAction CLOSE_CONNECTION = (h1, h2) -> closeConnectionBetween(h1.getHazelcastInstance(), h2.getHazelcastInstance());
-    private static final SplitBrainAction UNBLACKLIST_MEMBERS = JetSplitBrainTestSupport::unblacklistJoinerBetween;
+    private boolean unblacklistHint;
 
     @Before
     public final void setUpInternals() {
@@ -123,7 +125,8 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
     }
 
     /**
-     * Override this method to execute initialization that may be required before instantiating the cluster. This is the
+     * Override this method to execute initialization that may be required
+     * before instantiating the cluster. This is the
      * first method executed by {@code @Before SplitBrainTestSupport.setupInternals}.
      */
     protected void onBeforeSetup() {
@@ -131,7 +134,8 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
     }
 
     /**
-     * Called when a cluster is fully formed. You can use this method for test initialization, data load, etc.
+     * Called when a cluster is fully formed. You can use this method for
+     * test initialization, data load, etc.
      *
      * @param instances all Hazelcast instances in your cluster
      */
@@ -147,7 +151,8 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
     }
 
     /**
-     * Called just after the original cluster was healed again. This is likely the place for various asserts.
+     * Called just after the original cluster was healed again.
+     * This is likely the place for various asserts.
      *
      * @param instances all Hazelcast instances in your cluster
      */
@@ -156,12 +161,16 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
     }
 
     /**
-     * Indicates whether test should fail when cluster does not include all original members after communications are unblocked.
+     * Indicates whether test should fail when cluster does not include
+     * all original members after communications are unblocked.
      * <p>
-     * Override this method when it is expected that after communications are unblocked some members will not rejoin the cluster.
-     * When overriding this method, it may be desirable to add some wait time to allow the split brain handler to execute.
+     * Override this method when it is expected that after communications are
+     * unblocked some members will not rejoin the cluster. When overriding this
+     * method, it may be desirable to add some wait time to allow the split
+     * brain handler to execute.
      *
-     * @return {@code true} if the test should fail when not all original members rejoin after split brain is
+     * @return {@code true} if the test should fail when not all original members rejoin
+     *         after split brain is
      * healed, otherwise {@code false}.
      */
     protected boolean shouldAssertAllNodesRejoined() {
@@ -190,13 +199,14 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
 
 
     /**
-     * Starts a new {@code JetInstance} which is only able to communicate with members on one of the two brains.
+     * Starts a new {@code JetInstance} which is only able to communicate
+     * with members on one of the two brains.
      *
-     * @param brain index of brain to start a new instance in (0 to start instance in first brain or 1 to start instance in
-     *              second brain)
-     * @return a HazelcastInstance whose {@code MockJoiner} has blacklisted the other brain's members and its connection
-     * manager blocks connections to other brain's members
-     * @see TestHazelcastInstanceFactory#newHazelcastInstance(Address, Config, Address[])
+     * @param brain index of brain to start a new instance in (0 to start instance in first
+     *              brain or 1 to start instance in second brain)
+     * @return a HazelcastInstance whose {@code MockJoiner} has blacklisted the other brain's
+     *         members and its connection manager blocks connections to other brain's members
+     * @see TestHazelcastInstanceFactory#newHazelcastInstance(Address, com.hazelcast.config.Config, Address[])
      */
     protected JetInstance createHazelcastInstanceInBrain(int brain) {
         Address newMemberAddress = nextAddress();
@@ -360,7 +370,7 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
         void apply(JetInstance h1, JetInstance h2);
     }
 
-    protected class Brains {
+    static final class Brains {
         private final JetInstance[] firstHalf;
         private final JetInstance[] secondHalf;
 
@@ -369,11 +379,11 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
             this.secondHalf = secondHalf;
         }
 
-        public JetInstance[] getFirstHalf() {
+        JetInstance[] getFirstHalf() {
             return firstHalf;
         }
 
-        public JetInstance[] getSecondHalf() {
+        JetInstance[] getSecondHalf() {
             return secondHalf;
         }
     }
