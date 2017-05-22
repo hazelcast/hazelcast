@@ -64,7 +64,8 @@ public class InternalMigrationListenerTest extends HazelcastTestSupport {
         final List<MigrationProgressNotification> notifications = listener.getNotifications();
 
         int partition0Events = 0, partition1Events = 0;
-        assertEquals(6, notifications.size());
+        // 3 event for migration = START -> COMPLETE -> COMMIT/ROLLBACK
+        assertEquals("Migration Notifications: " + notifications, PARTITION_COUNT * 3, notifications.size());
 
         for (MigrationProgressNotification n : notifications) {
             if (n.migrationInfo.getPartitionId() == 0) {
