@@ -57,7 +57,7 @@ public class ThreadLeakTest extends HazelcastTestSupport {
         for (Thread thread : diff) {
             String stackTrace = Arrays.toString(stackTraces.get(thread));
             sb.append(format("  -> %s (id: %s) (group: %s) (daemon: %b) (alive: %b) (interrupted: %b) (state: %s)%n%s",
-                    thread.getName(), thread.getId(), thread.getThreadGroup().getName(), thread.isDaemon(), thread.isAlive(),
+                    thread.getName(), thread.getId(), getThreadGroupName(thread), thread.isDaemon(), thread.isAlive(),
                     thread.isInterrupted(), thread.getState(), stackTrace));
         }
         System.err.println(sb.toString());
@@ -66,5 +66,10 @@ public class ThreadLeakTest extends HazelcastTestSupport {
         diff.toArray(threads);
 
         assertJoinable(threads);
+    }
+
+    private static String getThreadGroupName(Thread thread) {
+        ThreadGroup threadGroup = thread.getThreadGroup();
+        return (threadGroup == null) ? "stopped" : threadGroup.getName();
     }
 }
