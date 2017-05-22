@@ -158,18 +158,22 @@ public final class WindowOperations {
         return WindowOperation.of(
                 LongLongAccumulator::new,
                 (a, i) -> {
+                    if (a.getValue1() == Long.MAX_VALUE) {
+                        // this is a bit faster overflow check when we know that we are adding 1
+                        throw new ArithmeticException("long overflow");
+                    }
                     a.setValue1(a.getValue1() + 1);
-                    a.setValue2(a.getValue2() + mapToLongF.applyAsLong(i));
+                    a.setValue2(Math.addExact(a.getValue2(), mapToLongF.applyAsLong(i)));
                     return a;
                 },
                 (a1, a2) -> {
-                    a1.setValue1(a1.getValue1() + a2.getValue1());
-                    a1.setValue2(a1.getValue2() + a2.getValue2());
+                    a1.setValue1(Math.addExact(a1.getValue1(), a2.getValue1()));
+                    a1.setValue2(Math.addExact(a1.getValue2(), a2.getValue2()));
                     return a1;
                 },
                 (a1, a2) -> {
-                    a1.setValue1(a1.getValue1() - a2.getValue1());
-                    a1.setValue2(a1.getValue2() - a2.getValue2());
+                    a1.setValue1(Math.subtractExact(a1.getValue1(), a2.getValue1()));
+                    a1.setValue2(Math.subtractExact(a1.getValue2(), a2.getValue2()));
                     return a1;
                 },
                 a -> (double) a.getValue2() / a.getValue1()
@@ -191,17 +195,21 @@ public final class WindowOperations {
         return WindowOperation.of(
                 LongDoubleAccumulator::new,
                 (a, i) -> {
+                    if (a.getValue1() == Long.MAX_VALUE) {
+                        // this is a bit faster overflow check when we know that we are adding 1
+                        throw new ArithmeticException("long overflow");
+                    }
                     a.setValue1(a.getValue1() + 1);
                     a.setValue2(a.getValue2() + mapToDoubleF.applyAsDouble(i));
                     return a;
                 },
                 (a1, a2) -> {
-                    a1.setValue1(a1.getValue1() + a2.getValue1());
+                    a1.setValue1(Math.addExact(a1.getValue1(), a2.getValue1()));
                     a1.setValue2(a1.getValue2() + a2.getValue2());
                     return a1;
                 },
                 (a1, a2) -> {
-                    a1.setValue1(a1.getValue1() - a2.getValue1());
+                    a1.setValue1(Math.subtractExact(a1.getValue1(), a2.getValue1()));
                     a1.setValue2(a1.getValue2() - a2.getValue2());
                     return a1;
                 },

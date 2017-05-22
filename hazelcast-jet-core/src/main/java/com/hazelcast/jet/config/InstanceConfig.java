@@ -48,7 +48,7 @@ public class InstanceConfig {
      * Returns the number of cooperative execution threads.
      */
     public int getCooperativeThreadCount() {
-        return cooperativeThreadCount;
+        return  cooperativeThreadCount;
     }
 
     /**
