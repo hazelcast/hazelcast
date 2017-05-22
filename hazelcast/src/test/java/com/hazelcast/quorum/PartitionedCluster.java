@@ -151,7 +151,7 @@ public class PartitionedCluster {
         h4 = factory.newHazelcastInstance(config);
         h5 = factory.newHazelcastInstance(config);
 
-        assertClusterSize(5, h1, h4);
+        assertClusterSize(5, h1, h5);
         assertClusterSizeEventually(5, h2, h3, h4);
     }
 
