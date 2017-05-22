@@ -150,7 +150,7 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
         }
     }
 
-    private void patchSlidingWindow(BiConsumer<A, A> patchOp, Map<Object, A> patchingFrame) {
+    private void patchSlidingWindow(BiConsumer<? super A, ? super A> patchOp, Map<Object, A> patchingFrame) {
         if (patchingFrame == null) {
             return;
         }

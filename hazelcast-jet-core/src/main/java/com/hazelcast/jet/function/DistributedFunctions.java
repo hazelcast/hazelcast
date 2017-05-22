@@ -63,9 +63,9 @@ public final class DistributedFunctions {
     }
 
     /**
-     * Returns a function that always returns the {@link #CONSTANT_KEY}. This is
-     * useful as a key extractor in group-by operations where no classification
-     * by key is desired.
+     * Returns a function that always evaluates to the {@link #CONSTANT_KEY}.
+     * This is useful as a key extractor in group-by operations where no
+     * classification by key is desired.
      */
     @Nonnull
     public static <T> DistributedFunction<T, String> constantKey() {
@@ -82,7 +82,7 @@ public final class DistributedFunctions {
     }
 
     /**
-     * Returns a predicate that always returns {@code true}.
+     * Returns a predicate that always evaluates to {@code true}.
      */
     @Nonnull
     public static <T> DistributedPredicate<T> alwaysTrue() {
@@ -90,7 +90,7 @@ public final class DistributedFunctions {
     }
 
     /**
-     * Returns a predicate that always returns {@code false}.
+     * Return sa predicate that always evaluates to {@code false}.
      */
     @Nonnull
     public static <T> DistributedPredicate<T> alwaysFalse() {

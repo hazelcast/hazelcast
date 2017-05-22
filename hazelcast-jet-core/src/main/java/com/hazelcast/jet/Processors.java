@@ -19,10 +19,8 @@ package com.hazelcast.jet;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.Traversers.ResettableSingletonTraverser;
 import com.hazelcast.jet.function.DistributedBiConsumer;
-import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedFunctions;
 import com.hazelcast.jet.function.DistributedIntFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedSupplier;
@@ -35,7 +33,10 @@ import com.hazelcast.jet.impl.connector.StreamTextSocketP;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
 import com.hazelcast.jet.impl.connector.WriteLoggerP;
+import com.hazelcast.jet.impl.processor.AggregateP;
+import com.hazelcast.jet.impl.processor.GroupByKeyP;
 import com.hazelcast.jet.impl.processor.PeekWrappedP;
+import com.hazelcast.jet.impl.processor.TransformP;
 import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
 import com.hazelcast.jet.impl.util.WrappingProcessorSupplier;
 
@@ -46,17 +47,9 @@ import java.net.Socket;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.Map.Entry;
 
-import static com.hazelcast.jet.Traversers.lazy;
-import static com.hazelcast.jet.Traversers.traverseStream;
+import static com.hazelcast.jet.WindowingProcessors.withCombiningAccumulate;
 import static com.hazelcast.jet.function.DistributedFunction.identity;
 import static com.hazelcast.jet.function.DistributedFunctions.alwaysTrue;
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
@@ -93,11 +86,11 @@ public final class Processors {
 
     /**
      * Returns a meta-supplier of processor that will fetch entries from a
-     * Hazelcast {@code IMap} in a remote cluster. Processors will emit the
+     * Hazelcast {@code IMap} in a remote cluster. Processor will emit the
      * entries as {@code Map.Entry}.
      * <p>
-     * If the underlying map is concurrently being modified, there are no guarantees
-     * given with respect to missing or duplicate items.
+     * If the underlying map is concurrently modified, there may be missing or
+     * duplicate items.
      */
     @Nonnull
     public static ProcessorMetaSupplier readMap(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
@@ -105,8 +98,8 @@ public final class Processors {
     }
 
     /**
-     * Returns a processor supplier that will put data into a Hazelcast {@code
-     * IMap}. Processors expect items of type {@code Map.Entry}.
+     * Returns a supplier of processor that will put data into a Hazelcast
+     * {@code IMap}. Processor expects items of type {@code Map.Entry}.
      */
     @Nonnull
     public static ProcessorSupplier writeMap(@Nonnull String mapName) {
@@ -114,8 +107,8 @@ public final class Processors {
     }
 
     /**
-     * Returns a processor supplier that will put data into a Hazelcast {@code
-     * IMap} in a remote cluster. Processors expect items of type {@code
+     * Returns a supplier of processor that will put data into a Hazelcast
+     * {@code IMap} in a remote cluster. Processor expects items of type {@code
      * Map.Entry}.
      */
     @Nonnull
@@ -124,7 +117,7 @@ public final class Processors {
     }
 
     /**
-     * Returns a meta-supplier of processors that will fetch entries from the
+     * Returns a meta-supplier of processor that will fetch entries from the
      * Hazelcast {@code ICache} with the specified name and will emit them as
      * {@code Cache.Entry}. The processors will only access data local to the
      * member and, if {@code localParallelism} for the vertex is above one,
@@ -135,8 +128,8 @@ public final class Processors {
      * {@code localParallelism * clusterSize}, otherwise some processors will
      * have no partitions assigned to them.
      * <p>
-     * If the underlying cache is concurrently being modified, there are no
-     * guarantees given with respect to missing or duplicate items.
+     * If the underlying cache is concurrently modified, there may be missing
+     * or duplicate items.
      */
     @Nonnull
     public static ProcessorMetaSupplier readCache(@Nonnull String cacheName) {
@@ -148,8 +141,8 @@ public final class Processors {
      * Hazelcast {@code ICache} in a remote cluster. Processor will emit the
      * entries as {@code Cache.Entry}.
      * <p>
-     * If the underlying cache is concurrently being modified, there are no
-     * guarantees given with respect to missing or duplicate items.
+     * If the underlying cache is concurrently modified, there may be missing
+     * or duplicate items.
      */
     @Nonnull
     public static ProcessorMetaSupplier readCache(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
@@ -158,7 +151,7 @@ public final class Processors {
 
     /**
      * Returns a supplier of processor which will put data into a Hazelcast
-     * {@code ICache}. Processors expect items of type {@code Map.Entry}
+     * {@code ICache}. Processor expects items of type {@code Map.Entry}
      */
     @Nonnull
     public static ProcessorSupplier writeCache(@Nonnull String cacheName) {
@@ -214,9 +207,8 @@ public final class Processors {
         return HazelcastWriters.writeList(listName, clientConfig);
     }
 
-
     /**
-     * Returns a supplier of processor which drains all items from the inbox
+     * Returns a supplier of processor which drains all items from its inbox
      * to an intermediate buffer and then flushes the buffer. This is a useful
      * building block to implement sinks with explicit control over buffering
      * and flushing.
@@ -280,8 +272,8 @@ public final class Processors {
     }
 
     /**
-     * Convenience for  {@link #streamTextSocket(String, int, Charset)} with
-     * UTF-8 character set.
+     * Convenience for {@link #streamTextSocket(String, int, Charset)} with
+     * the UTF-8 character set.
      */
     @Nonnull
     public static DistributedSupplier<Processor> streamTextSocket(@Nonnull String host, int port) {
@@ -305,8 +297,8 @@ public final class Processors {
      * @param charset Character set used to decode the stream
      */
     @Nonnull
-    public static DistributedSupplier<Processor> streamTextSocket(@Nonnull String host, int port,
-                                                                  @Nonnull Charset charset
+    public static DistributedSupplier<Processor> streamTextSocket(
+            @Nonnull String host, int port, @Nonnull Charset charset
     ) {
         return StreamTextSocketP.supplier(host, port, charset.name());
     }
@@ -485,7 +477,7 @@ public final class Processors {
      */
     @Nonnull
     public static <T, R> DistributedSupplier<Processor> map(
-            @Nonnull DistributedFunction<? super T, ? extends R> mapper
+            @Nonnull DistributedFunction<T, R> mapper
     ) {
         return () -> {
             final ResettableSingletonTraverser<R> trav = new ResettableSingletonTraverser<>();
@@ -504,7 +496,7 @@ public final class Processors {
      * @param <T> type of received item
      */
     @Nonnull
-    public static <T> DistributedSupplier<Processor> filter(@Nonnull DistributedPredicate<? super T> predicate) {
+    public static <T> DistributedSupplier<Processor> filter(@Nonnull DistributedPredicate<T> predicate) {
         return () -> {
             final ResettableSingletonTraverser<T> trav = new ResettableSingletonTraverser<>();
             return new TransformP<T, T>(item -> {
@@ -524,326 +516,101 @@ public final class Processors {
      */
     @Nonnull
     public static <T, R> DistributedSupplier<Processor> flatMap(
-            @Nonnull DistributedFunction<? super T, ? extends Traverser<? extends R>> mapper
+            @Nonnull DistributedFunction<T, ? extends Traverser<? extends R>> mapper
     ) {
         return () -> new TransformP<T, R>(mapper);
     }
 
     /**
-     * Returns a supplier of processor with the following semantics:
-     * <ul><li>
-     *     Accepts items of type {@code T}.
-     * </li><li>
-     *     Applies the key extractor to each item and obtains the key of type {@code K}.
-     * </li><li>
-     *     Stores for each key the result of applying the accumulator function to
-     *     the previously accumulated value and the current item. The initial
-     *     accumulated value is obtained from the supplier function.
-     * </li><li>
-     *     When all the input is consumed, begins emitting the accumulated results.
-     * </li><li>
-     *     Emits items of type {@code R} obtained by applying the finisher function
-     *     to each seen key and its accumulated value.
-     * </li></ul>
+     * Returns a supplier of processor that groups items by key and performs
+     * the provided aggregate operation on each group. After exhausting all
+     * its input it emits one {@code Map.Entry<K, R>} per observed key.
      *
-     * @param keyExtractor computes the key from the entry
-     * @param supplier supplies the initial accumulated value
-     * @param accumulator accumulates the result value across all entries under the same key
-     * @param finisher transforms a key and its accumulated value into the item to emit
+     * @param getKeyF computes the key from the entry
+     * @param aggregateOperation the aggregate operation to perform
      * @param <T> type of received item
      * @param <K> type of key
-     * @param <A> type of accumulated value
-     * @param <R> type of emitted item
+     * @param <A> type of accumulator returned from {@code aggregateOperation.
+     *            createAccumulatorF()}
+     * @param <R> type of the finished result returned from {@code aggregateOperation.
+     *            finishAccumulationF()}
      */
     @Nonnull
-    public static <T, K, A, R> DistributedSupplier<Processor> groupAndAccumulate(
-            @Nonnull DistributedFunction<? super T, ? extends K> keyExtractor,
-            @Nonnull DistributedSupplier<? extends A> supplier,
-            @Nonnull DistributedBiFunction<? super A, ? super T, ? extends A> accumulator,
-            @Nonnull DistributedBiFunction<? super K, ? super A, ? extends R> finisher
+    public static <T, K, A, R> DistributedSupplier<Processor> groupAndAggregate(
+            @Nonnull DistributedFunction<? super T, K> getKeyF,
+            @Nonnull AggregateOperation<? super T, A, R> aggregateOperation
     ) {
-        return () -> new GroupAndAccumulateP<>(keyExtractor, supplier, accumulator, finisher);
+        return () -> new GroupByKeyP<>(getKeyF, aggregateOperation);
     }
 
     /**
-     * Convenience over {@link #groupAndAccumulate(DistributedFunction, DistributedSupplier,
-     * DistributedBiFunction, DistributedBiFunction) groupAndAccumulate(keyExtractor,
-     * supplier, accumulator, finisher)} with the constructor of
-     * {@code SimpleImmutableEntry} as the finisher function, which means the
-     * processor emits items of type {@code java.util.Map.Entry<K, A>}. Note that
-     * {@code K} isn't a part of the method's signature since nothing in the
-     * processor depends on it. The receiving processor will in any case have to
-     * perform an unchecked cast to {@code Entry<K, A>}.
+     * Returns a supplier of the first-stage processor in a two-stage
+     * group-and-aggregate setup. The processor groups items by the grouping
+     * key (as obtained from the given key-extracting function) and applies
+     * the {@link AggregateOperation#accumulateItemF() accumulate} aggregation
+     * primitive to each group. After exhausting all its input it emits one
+     * {@code Map.Entry<K, A>} per observed key.
      *
-     * @param keyExtractor computes the key from the entry
-     * @param supplier supplies the initial accumulated value
-     * @param accumulator accumulates the result value across all entries under the same key
-     * @param <T> type of received item
-     * @param <A> type of accumulated value
-     */
-    @Nonnull
-    public static <T, A> DistributedSupplier<Processor> groupAndAccumulate(
-            @Nonnull DistributedFunction<? super T, ?> keyExtractor,
-            @Nonnull DistributedSupplier<? extends A> supplier,
-            @Nonnull DistributedBiFunction<? super A, ? super T, ? extends A> accumulator
-    ) {
-        return groupAndAccumulate(keyExtractor, supplier, accumulator, Util::entry);
-    }
-
-    /**
-     * Convenience over {@link #groupAndAccumulate(DistributedFunction, DistributedSupplier,
-     * DistributedBiFunction, DistributedBiFunction)
-     * groupAndAccumulate(keyExtractor, supplier, accumulator, finisher)} with identity
-     * function as the key extractor and constructor of {@code SimpleImmutableEntry}
-     * as the finisher function, which means the processor emits items of type
-     * {@code java.util.Map.Entry<T, A>}.
-     *
-     * @param supplier supplies the initial accumulated value
-     * @param accumulator accumulates the result value across all entries under the same key
-     * @param <T> type of received item
-     * @param <A> type of accumulated value
-     */
-    @Nonnull
-    public static <T, A> DistributedSupplier<Processor> groupAndAccumulate(
-            @Nonnull DistributedSupplier<? extends A> supplier,
-            @Nonnull DistributedBiFunction<? super A, ? super T, ? extends A> accumulator
-    ) {
-        return groupAndAccumulate(identity(), supplier, accumulator);
-    }
-
-    /**
-     * Returns a supplier of processor with the following semantics:
-     * <ul><li>
-     *     Accepts items of type {@code T}.
-     * </li><li>
-     *     Applies the key extractor to each item and obtains the key of type {@code K}.
-     * </li><li>
-     *     Stores for each seen key an accumulated value container obtained from the
-     *     supplier function.
-     * </li><li>
-     *     For each received item, applies the collector function to the accumulated
-     *     value container and the item.
-     * </li><li>
-     *     When all the input is consumed, begins emitting the accumulated results.
-     * </li><li>
-     *     Emits items of type {@code R} obtained by applying the finisher function
-     *     to each seen key and its accumulated value.
-     * </li></ul>
-     *
-     * @param keyExtractor computes the key from the entry
-     * @param supplier supplies the mutable result container
-     * @param collector collects the results of all entries under the same key
-     *                  into the mutable container
-     * @param finisher transforms a key and its result container into the item to emit
+     * @param getKeyF computes the key from the entry
+     * @param aggregateOperation the aggregate operation to perform
      * @param <T> type of received item
      * @param <K> type of key
-     * @param <A> type of accumulated value
-     * @param <R> type of emitted item
+     * @param <A> type of accumulator returned from {@code aggregateOperation.
+     *            createAccumulatorF()}
      */
     @Nonnull
-    public static <T, K, A, R> DistributedSupplier<Processor> groupAndCollect(
-            @Nonnull DistributedFunction<? super T, ? extends K> keyExtractor,
-            @Nonnull DistributedSupplier<? extends A> supplier,
-            @Nonnull DistributedBiConsumer<? super A, ? super T> collector,
-            @Nonnull DistributedBiFunction<? super K, ? super A, ? extends R> finisher
+    public static <T, K, A> DistributedSupplier<Processor> groupAndAccumulate(
+            @Nonnull DistributedFunction<? super T, K> getKeyF,
+            @Nonnull AggregateOperation<? super T, A, ?> aggregateOperation
     ) {
-        return () -> new GroupAndCollectP<>(keyExtractor, supplier, collector, finisher);
+        return () -> new GroupByKeyP<>(getKeyF, aggregateOperation.withFinish(identity()));
     }
 
     /**
-     * Convenience over {@link #groupAndCollect(DistributedFunction, DistributedSupplier,
-     * DistributedBiConsumer, DistributedBiFunction) groupAndCollect(keyExtractor,
-     * supplier, collector, finisher)} with the constructor of
-     * {@code SimpleImmutableEntry} as the finisher function, which means the
-     * processor emits items of type {@code java.util.Map.Entry<K, A>}. Note that
-     * {@code K} isn't a part of the method's signature since nothing in the
-     * processor depends on it. The receiving processor will in any case have to
-     * perform an unchecked cast to {@code Entry<K, A>}.
+     * Returns a supplier of the second-stage processor in a two-stage
+     * group-and-aggregate setup. It applies the {@link
+     * AggregateOperation#combineAccumulatorsF() combine} aggregation
+     * primitive to the entries received from several upstream instances of
+     * {@link #groupAndAccumulate(DistributedFunction, AggregateOperation)
+     * groupAndAccumulate()}. After exhausting all its input it emits one
+     * {@code Map.Entry<K, R>} per observed key.
      *
-     * @param keyExtractor computes the key from the entry
-     * @param supplier supplies the mutable result container
-     * @param collector collects the results of all entries under the same key
-     *                  into the mutable container
+     * @param aggregateOperation the aggregate operation to perform
+     * @param <A> type of accumulator returned from {@code
+     *            aggregateOperation.createAccumulatorF()}
+     * @param <R> type of the finished result returned from {@code aggregateOperation.
+     *            finishAccumulationF()}
+     */
+    @Nonnull
+    public static <A, R> DistributedSupplier<Processor> combineAndFinish(
+            @Nonnull AggregateOperation<?, A, R> aggregateOperation
+    ) {
+        return () -> new GroupByKeyP<>(Entry::getKey, withCombiningAccumulate(aggregateOperation));
+    }
+
+    /**
+     * Returns a supplier of processor that performs the provided aggregate
+     * operation on all the items it receives. After exhausting all its input
+     * it emits a single item of type {@code R} &mdash;the result of the
+     * aggegate operation.
+     *
+     * @param aggregateOperation the aggregate operation to perform
      * @param <T> type of received item
-     * @param <A> type of result container
+     * @param <A> type of accumulator returned from {@code
+     *            aggregateOperation.createAccumulatorF()}
+     * @param <R> type of the finished result returned from {@code aggregateOperation.
+     *            finishAccumulationF()}
      */
     @Nonnull
-    public static <T, A> DistributedSupplier<Processor> groupAndCollect(
-            @Nonnull DistributedFunction<? super T, ?> keyExtractor,
-            @Nonnull DistributedSupplier<? extends A> supplier,
-            @Nonnull DistributedBiConsumer<? super A, ? super T> collector
+    public static <T, A, R> DistributedSupplier<Processor> aggregate(
+            @Nonnull AggregateOperation<T, A, R> aggregateOperation
     ) {
-        return groupAndCollect(keyExtractor, supplier, collector, Util::entry);
+        return () -> new AggregateP<>(aggregateOperation);
     }
 
     /**
-     * Convenience over {@link #groupAndCollect(DistributedFunction, DistributedSupplier,
-     * DistributedBiConsumer, DistributedBiFunction)
-     * groupAndCollect(keyExtractor, supplier, collector, finisher)} with identity
-     * function as the key extractor and constructor of {@code SimpleImmutableEntry}
-     * as the finisher function, which means the processor emits items of type
-     * {@code java.util.Map.Entry<T, A>}.
-     *
-     * @param supplier supplies the mutable result container
-     * @param collector collects the results of all entries under the same key
-     *                  into the mutable container
-     * @param <T> type of received item
-     * @param <A> type of accumulated value
-     */
-    @Nonnull
-    public static <T, A> DistributedSupplier<Processor> groupAndCollect(
-            @Nonnull DistributedSupplier<? extends A> supplier,
-            @Nonnull DistributedBiConsumer<? super A, ? super T> collector
-    ) {
-        return groupAndCollect(identity(), supplier, collector);
-    }
-
-    /**
-     * Returns a supplier of processor with the following semantics:
-     * <ul><li>
-     *     Calls the {@code supplier} function to obtain the initial accumulated value.
-     * </li><li>
-     *     Accepts items of type {@code T}.
-     * </li><li>
-     *     Stores the result of applying the {@code accumulator} function to the previously
-     *     accumulated value and the current item.
-     * </li><li>
-     *     When all the input is consumed, emits the result as a single item of type
-     *     {@code R}, obtained by applying the {@code finisher} function to the
-     *     accumulated value.
-     * </li></ul>
-     *
-     * @param supplier supplies the initial accumulated value
-     * @param accumulator accumulates the result value across all the input items
-     * @param finisher transforms the accumulated value into the item to emit
-     * @param <T> type of received item
-     * @param <A> type of accumulated value
-     * @param <R> type of emitted item
-     */
-    @Nonnull
-    public static <T, A, R> DistributedSupplier<Processor> accumulate(
-            @Nonnull DistributedSupplier<? extends A> supplier,
-            @Nonnull DistributedBiFunction<? super A, ? super T, ? extends A> accumulator,
-            @Nonnull DistributedFunction<? super A, ? extends R> finisher
-    ) {
-        return groupAndAccumulate(x -> true, supplier, accumulator, (dummyTrueBoolean, a) -> finisher.apply(a));
-    }
-
-    /**
-     * Convenience over {@link #accumulate(DistributedSupplier, DistributedBiFunction,
-     * DistributedFunction) accumulate(supplier, accumulator, finisher)}
-     * with identity function as the finisher, which means the processor emits an
-     * item of type {@code A}.
-     *
-     * @param supplier supplies the initial accumulated value
-     * @param accumulator accumulates the result value across all the input items
-     * @param <T> type of received item
-     * @param <A> type of accumulated value
-     */
-    @Nonnull
-    public static <T, A> DistributedSupplier<Processor> accumulate(
-            @Nonnull DistributedSupplier<? extends A> supplier,
-            @Nonnull DistributedBiFunction<? super A, ? super T, ? extends A> accumulator
-    ) {
-        return groupAndAccumulate(x -> true, supplier, accumulator, (dummyTrueBoolean, a) -> a);
-    }
-
-    /**
-     * Returns a supplier of processor with the following semantics:
-     * <ul><li>
-     *     Calls the {@code supplier} function to obtain the mutable result container.
-     * </li><li>
-     *     Accepts items of type {@code T}.
-     * </li><li>
-     *     For each received item, calls the {@code collector} function with the
-     *     result container and the current item.
-     * </li><li>
-     *     When all the input is consumed, emits the result as a single item of type
-     *     {@code R}, obtained by applying the {@code finisher} function to the
-     *     result container.
-     * </li></ul>
-     *
-     * @param supplier supplies the mutable result container
-     * @param collector collects the result across all the input items
-     *                  into the result container
-     * @param finisher transforms the result container into the item to emit
-     * @param <T> type of received item
-     * @param <A> type of accumulated value
-     * @param <R> type of emitted item
-     */
-    @Nonnull
-    public static <T, A, R> DistributedSupplier<Processor> collect(
-            @Nonnull DistributedSupplier<? extends A> supplier,
-            @Nonnull DistributedBiConsumer<? super A, ? super T> collector,
-            @Nonnull DistributedFunction<? super A, ? extends R> finisher
-    ) {
-        return groupAndCollect(x -> true, supplier, collector, (dummyTrueBoolean, a) -> finisher.apply(a));
-    }
-
-    /**
-     * Convenience over {@link #collect(DistributedSupplier, DistributedBiConsumer,
-     * DistributedFunction) collect(supplier, collector, finisher)} with
-     * identity function as the finisher, which means the processor emits an
-     * item of type {@code A}.
-     *
-     * @param supplier supplies the mutable result container
-     * @param collector collects the result across all the input items
-     *                  into the result container
-     * @param <T> type of received item
-     * @param <A> type of result container
-     */
-    @Nonnull
-    public static <T, A> DistributedSupplier<Processor> collect(
-            @Nonnull DistributedSupplier<? extends A> supplier,
-            @Nonnull DistributedBiConsumer<? super A, ? super T> collector
-    ) {
-        return groupAndCollect(x -> true, supplier, collector, (dummyTrueBoolean, a) -> a);
-    }
-
-    /**
-     * Returns a supplier of processors with the following semantics:
-     * <ul><li>
-     *     Accepts items of type {@code T}.
-     * </li><li>
-     *     Computes the key of type {@code K} by applying the key extractor
-     *     to the item.
-     * </li><li>
-     *     Maintains a set of all seen keys.
-     * </li><li>
-     *     Emits the size of the set (the number of seen distinct keys) as a
-     *     {@code Long} value.
-     * </li></ul>
-     *
-     * To work properly the vertex has to be connected to upstream vertex by an
-     * edge that is defined as {@link Edge#allToOne() all-to-one} and {@link
-     * Edge#distributed() distributed}.
-     *
-     * @param keyExtractor function to extract key from input item
-     * @param <T> received item type
-     * @param <K> key type
-     * @see #countDistinct()
-     */
-    @Nonnull
-    public static <T, K> DistributedSupplier<Processor> countDistinct(@Nonnull DistributedFunction<T, K> keyExtractor) {
-        return Processors.<T, Set<K>, Long>collect(
-                HashSet<K>::new,
-                (acc, item) -> acc.add(keyExtractor.apply(item)),
-                acc -> (long) acc.size());
-    }
-
-    /**
-     * Convenience over {@link #countDistinct(DistributedFunction)} with identity
-     * function as the key extractor, which means the processor will emit the number
-     * of distinct items it has seen in the input.
-     */
-    @Nonnull
-    public static DistributedSupplier<Processor> countDistinct() {
-        return countDistinct(identity());
-    }
-
-    /**
-     * Returns a supplier of processor that does nothing. It consumes all input
-     * items and is done after that, without emitting anything.
+     * Returns a supplier of processor that consumes all its input (if any) and
+     * does nothing with it. It emits nothing.
      */
     @Nonnull
     public static DistributedSupplier<Processor> noop() {
@@ -851,7 +618,7 @@ public final class Processors {
     }
 
     /**
-     * Decorates a {@code ProcessorSupplier} into one that will declare all its
+     * Decorates a {@code ProcessorSupplier} with one that will declare all its
      * processors non-cooperative. The wrapped supplier must return processors
      * that are {@code instanceof} {@link AbstractProcessor}.
      */
@@ -878,7 +645,7 @@ public final class Processors {
         };
     }
 
-    /** See {@link #noop()} */
+    /** A no-operation processor. See {@link #noop()} */
     private static class NoopP implements Processor {
         @Override
         public void process(int ordinal, @Nonnull Inbox inbox) {
@@ -916,69 +683,18 @@ public final class Processors {
     }
 
     /**
-     * See {@link #peekInput(DistributedFunction, DistributedPredicate,
-     * ProcessorMetaSupplier)}
-     */
-    @Nonnull
-    public static DistributedSupplier<Processor> peekInput(@Nonnull DistributedSupplier<Processor> wrapped) {
-        return peekInput(Object::toString, alwaysTrue(), wrapped);
-    }
-
-    /**
-     * See {@link #peekInput(DistributedFunction, DistributedPredicate,
-     * ProcessorMetaSupplier)}
-     */
-    @Nonnull
-    public static DistributedSupplier<Processor> peekInput(
-            @Nonnull DistributedFunction<Object, String> toStringF,
-            @Nonnull DistributedPredicate<Object> shouldLogF,
-            @Nonnull DistributedSupplier<Processor> wrapped) {
-        return () -> new PeekWrappedP(wrapped.get(), toStringF, shouldLogF, true, false);
-    }
-
-    /**
-     * See {@link #peekInput(DistributedFunction, DistributedPredicate,
-     * ProcessorMetaSupplier)}
-     */
-    @Nonnull
-    public static ProcessorSupplier peekInput(@Nonnull ProcessorSupplier wrapped) {
-        return peekInput(Object::toString, alwaysTrue(), wrapped);
-    }
-
-    /**
-     * See {@link #peekInput(DistributedFunction, DistributedPredicate,
-     * ProcessorMetaSupplier)}
-     */
-    @Nonnull
-    public static ProcessorSupplier peekInput(
-            @Nonnull DistributedFunction<Object, String> toStringF,
-            @Nonnull DistributedPredicate<Object> shouldLogF,
-            @Nonnull ProcessorSupplier wrapped
-    ) {
-        return new WrappingProcessorSupplier(wrapped, p -> new PeekWrappedP(p, toStringF, shouldLogF, true, false));
-    }
-
-    /**
-     * See {@link #peekInput(DistributedFunction, DistributedPredicate,
-     * ProcessorMetaSupplier)}
-     */
-    @Nonnull
-    public static ProcessorMetaSupplier peekInput(@Nonnull ProcessorMetaSupplier wrapped) {
-        return peekInput(Object::toString, alwaysTrue(), wrapped);
-    }
-
-    /**
-     * Returns a meta-supplier that will add logging to the created processors.
-     * Each item the processor removes from the inbox will be logged. Items are
-     * logged at the INFO level to the following logging category: {@link
-     * PeekWrappedP}.
-     *
-     * <b>Warning:</b> The {@code toStringF} and {@code shouldLogF} functions
-     * will see all items, including {@link Punctuation}s.
+     * Returns a meta-supplier that will add logging to the processors created
+     * by the provided meta-supplier. Each item the processor removes from the
+     * inbox will be logged. Items are logged at the INFO level to the
+     * following logging category: {@link PeekWrappedP}.
+     * <p>
+     * <strong>Warning:</strong> The {@code toStringF} and {@code shouldLogF}
+     * functions will see all items, including {@link Punctuation}s.
      *
      * @param toStringF function that returns the string representation of the item
-     * @param shouldLogF function to filter logged items. Use
-     *                   {@link DistributedFunctions#alwaysTrue()} if you don't want to filter.
+     * @param shouldLogF function to filter logged items. {@link
+     *                   com.hazelcast.jet.function.DistributedFunctions#alwaysTrue()} can be
+     *                   used as a pass-through filter when no filtering is needed.
      * @param wrapped The wrapped meta-supplier.
      *
      * @see #peekOutput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
@@ -993,68 +709,82 @@ public final class Processors {
     }
 
     /**
-     * See {@link #peekOutput(DistributedFunction, DistributedPredicate,
-     * ProcessorMetaSupplier)}
+     * Same as {@link #peekInput(DistributedFunction, DistributedPredicate,
+     * ProcessorMetaSupplier) peekInput(toStringF, shouldLogF, metaSupplier)},
+     * but accepts a {@code ProcessorSupplier} instead of a meta-supplier.
      */
     @Nonnull
-    public static DistributedSupplier<Processor> peekOutput(@Nonnull DistributedSupplier<Processor> wrapped) {
-        return peekOutput(Object::toString, alwaysTrue(), wrapped);
-    }
-
-    /**
-     * See {@link #peekOutput(DistributedFunction, DistributedPredicate,
-     * ProcessorMetaSupplier)}
-     */
-    @Nonnull
-    public static DistributedSupplier<Processor> peekOutput(
-            @Nonnull DistributedFunction<Object, String> toStringF,
-            @Nonnull DistributedPredicate<Object> shouldLogF,
-            @Nonnull DistributedSupplier<Processor> wrapped) {
-        return () -> new PeekWrappedP(wrapped.get(), toStringF, shouldLogF, false, true);
-    }
-
-    /**
-     * See {@link #peekOutput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)}
-     */
-    @Nonnull
-    public static ProcessorSupplier peekOutput(@Nonnull ProcessorSupplier wrapped) {
-        return peekOutput(Object::toString, alwaysTrue(), wrapped);
-    }
-
-    /**
-     * See {@link #peekOutput(DistributedFunction, DistributedPredicate,
-     * ProcessorMetaSupplier)}
-     */
-    @Nonnull
-    public static ProcessorSupplier peekOutput(
+    public static ProcessorSupplier peekInput(
             @Nonnull DistributedFunction<Object, String> toStringF,
             @Nonnull DistributedPredicate<Object> shouldLogF,
             @Nonnull ProcessorSupplier wrapped
     ) {
-        return new WrappingProcessorSupplier(wrapped, p -> new PeekWrappedP(p, toStringF, shouldLogF, false, true));
+        return new WrappingProcessorSupplier(wrapped, p -> new PeekWrappedP(p, toStringF, shouldLogF, true, false));
     }
 
     /**
-     * See {@link #peekOutput(DistributedFunction, DistributedPredicate,
-     * ProcessorMetaSupplier)}
+     * Same as {@link #peekInput(DistributedFunction, DistributedPredicate,
+     * ProcessorMetaSupplier) peekInput(toStringF, shouldLogF, metaSupplier)},
+     * but accepts a {@code DistributedSupplier} of processors instead of a
+     * meta-supplier.
      */
     @Nonnull
-    public static ProcessorMetaSupplier peekOutput(@Nonnull ProcessorMetaSupplier wrapped) {
-        return peekOutput(Object::toString, alwaysTrue(), wrapped);
+    public static DistributedSupplier<Processor> peekInput(
+            @Nonnull DistributedFunction<Object, String> toStringF,
+            @Nonnull DistributedPredicate<Object> shouldLogF,
+            @Nonnull DistributedSupplier<Processor> wrapped
+    ) {
+        return () -> new PeekWrappedP(wrapped.get(), toStringF, shouldLogF, true, false);
     }
 
     /**
-     * Returns a meta-supplier that will add logging to the created processors.
-     * Each item the processor adds to the outbox will be logged. Items are
-     * logged at the INFO level to the following logging category: {@link
-     * PeekWrappedP}.
+     * Convenience for {@link #peekInput(DistributedFunction,
+     * DistributedPredicate, ProcessorMetaSupplier) peekInput(toStringF,
+     * shouldLogF, metaSupplier)} with a pass-through filter and {@code
+     * Object#toString} as the formatting function.
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier peekInput(@Nonnull ProcessorMetaSupplier wrapped) {
+        return peekInput(Object::toString, alwaysTrue(), wrapped);
+    }
+
+    /**
+     * Convenience for {@link #peekInput(DistributedFunction,
+     * DistributedPredicate, ProcessorMetaSupplier) peekInput(toStringF,
+     * shouldLogF, metaSupplier)} with a pass-through filter and {@code
+     * Object#toString} as the formatting function. This variant accepts a
+     * {@code ProcessorSupplier} instead of a meta-supplier.
+     */
+    @Nonnull
+    public static ProcessorSupplier peekInput(@Nonnull ProcessorSupplier wrapped) {
+        return peekInput(Object::toString, alwaysTrue(), wrapped);
+    }
+
+    /**
+     * Convenience for {@link #peekInput(DistributedFunction,
+     * DistributedPredicate, ProcessorMetaSupplier) peekInput(toStringF,
+     * shouldLogF, metaSupplier)} with a pass-through filter and {@code
+     * Object#toString} as the formatting function. This variant accepts a
+     * {@code DistributedSupplier} of processors instead of a meta-supplier.
+     */
+    @Nonnull
+    public static DistributedSupplier<Processor> peekInput(@Nonnull DistributedSupplier<Processor> wrapped) {
+        return peekInput(Object::toString, alwaysTrue(), wrapped);
+    }
+
+    /**
+     * Returns a meta-supplier that will add logging to the processors created
+     * by the provided meta-supplier. Each item the processor adds to the
+     * outbox will be logged. Items are logged at the INFO level to the
+     * following logging category: {@link PeekWrappedP}.
+     * <p>
+     * <strong>Warning:</strong> The {@code toStringF} and {@code shouldLogF}
+     * functions will see all items, including {@link Punctuation}s.
      *
-     * <b>Warning:</b> The {@code toStringF} and {@code shouldLogF} functions
-     * will see all items, including {@link Punctuation}s.
-     *
-     * @param toStringF Function to convert items to String.
-     * @param shouldLogF function to filter logged items. Use
-     *                   {@link DistributedFunctions#alwaysTrue()} if you don't want to filter.
+     * @param toStringF function that returns the string representation of the item
+     * @param shouldLogF function to filter logged items. {@link
+     *                   com.hazelcast.jet.function.DistributedFunctions#alwaysTrue()} can be
+     *                   used as a pass-through filter when no filtering is needed.
      * @param wrapped The wrapped meta-supplier.
      *
      * @see #peekInput(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
@@ -1069,90 +799,65 @@ public final class Processors {
     }
 
     /**
-     * Processor which, for each received item, emits all the items from the
-     * traverser returned by the given item-to-traverser function.
-     *
-     * @param <T> received item type
-     * @param <R> emitted item type
+     * Same as {@link #peekOutput(DistributedFunction, DistributedPredicate,
+     * ProcessorMetaSupplier) peekOutput(toStringF, shouldLogF, metaSupplier)},
+     * but accepts a {@code ProcessorSupplier} instead of a meta-supplier.
      */
-    private static class TransformP<T, R> extends AbstractProcessor {
-        private final FlatMapper<T, R> flatMapper;
-
-        /**
-         * Constructs a processor with the given mapping function.
-         */
-        TransformP(@Nonnull DistributedFunction<? super T, ? extends Traverser<? extends R>> mapper) {
-            this.flatMapper = flatMapper(mapper);
-        }
-
-        @Override
-        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-            return flatMapper.tryProcess((T) item);
-        }
+    @Nonnull
+    public static ProcessorSupplier peekOutput(
+            @Nonnull DistributedFunction<Object, String> toStringF,
+            @Nonnull DistributedPredicate<Object> shouldLogF,
+            @Nonnull ProcessorSupplier wrapped
+    ) {
+        return new WrappingProcessorSupplier(wrapped, p -> new PeekWrappedP(p, toStringF, shouldLogF, false, true));
     }
 
-    private abstract static class ReducingProcessorBase<T, K, A, R> extends AbstractProcessor {
-        final Function<? super T, ? extends K> keyExtractor;
-        final Supplier<? extends A> supplier;
-        final Map<K, A> groups = new HashMap<>();
-        final Traverser<R> resultTraverser;
-
-        ReducingProcessorBase(@Nonnull Function<? super T, ? extends K> keyExtractor,
-                              @Nonnull Supplier<? extends A> supplier,
-                              @Nonnull BiFunction<? super K, ? super A, ? extends R> finisher
-        ) {
-            this.keyExtractor = keyExtractor;
-            this.supplier = supplier;
-            this.resultTraverser = lazy(() -> traverseStream(groups
-                    .entrySet().stream()
-                    .map(entry -> finisher.apply(entry.getKey(), entry.getValue()))
-            ));
-        }
-
-        @Override
-        public boolean complete() {
-            return emitFromTraverser(resultTraverser);
-        }
+    /**
+     * Same as {@link #peekOutput(DistributedFunction, DistributedPredicate,
+     * ProcessorMetaSupplier) peekOutput(toStringF, shouldLogF, metaSupplier)},
+     * but accepts a {@code DistributedSupplier} of processors instead of a
+     * meta-supplier.
+     */
+    @Nonnull
+    public static DistributedSupplier<Processor> peekOutput(
+            @Nonnull DistributedFunction<Object, String> toStringF,
+            @Nonnull DistributedPredicate<Object> shouldLogF,
+            @Nonnull DistributedSupplier<Processor> wrapped) {
+        return () -> new PeekWrappedP(wrapped.get(), toStringF, shouldLogF, false, true);
     }
 
-    private static class GroupAndAccumulateP<T, K, A, R> extends ReducingProcessorBase<T, K, A, R> {
-        private final BiFunction<? super A, ? super T, ? extends A> accumulator;
-
-        GroupAndAccumulateP(@Nonnull Function<? super T, ? extends K> keyExtractor,
-                            @Nonnull Supplier<? extends A> supplier,
-                            @Nonnull BiFunction<? super A, ? super T, ? extends A> accumulator,
-                            @Nonnull BiFunction<? super K, ? super A, ? extends R> finisher
-        ) {
-            super(keyExtractor, supplier, finisher);
-            this.accumulator = accumulator;
-        }
-
-        @Override
-        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-            groups.compute(
-                    keyExtractor.apply((T) item),
-                    (x, a) -> accumulator.apply(a != null ? a : supplier.get(), (T) item));
-            return true;
-        }
+    /**
+     * Convenience for {@link #peekOutput(DistributedFunction,
+     * DistributedPredicate, ProcessorMetaSupplier) peekOutput(toStringF,
+     * shouldLogF, metaSupplier} with a pass-through filter and {@code
+     * Object#toString} as the formatting function.
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier peekOutput(@Nonnull ProcessorMetaSupplier wrapped) {
+        return peekOutput(Object::toString, alwaysTrue(), wrapped);
     }
 
-    private static class GroupAndCollectP<T, K, A, R> extends ReducingProcessorBase<T, K, A, R> {
-        private final BiConsumer<? super A, ? super T> collector;
+    /**
+     * Convenience for {@link #peekOutput(DistributedFunction,
+     * DistributedPredicate, ProcessorMetaSupplier) peekOutput(toStringF,
+     * shouldLogF, metaSupplier} with a pass-through filter and {@code
+     * Object#toString} as the formatting function. This variant accepts a
+     * {@code ProcessorSupplier} instead of a meta-supplier.
+     */
+    @Nonnull
+    public static ProcessorSupplier peekOutput(@Nonnull ProcessorSupplier wrapped) {
+        return peekOutput(Object::toString, alwaysTrue(), wrapped);
+    }
 
-        GroupAndCollectP(@Nonnull Function<? super T, ? extends K> keyExtractor,
-                         @Nonnull Supplier<? extends A> supplier,
-                         @Nonnull BiConsumer<? super A, ? super T> collector,
-                         @Nonnull BiFunction<? super K, ? super A, ? extends R> finisher
-        ) {
-            super(keyExtractor, supplier, finisher);
-            this.collector = collector;
-        }
-
-        @Override
-        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-            final A acc = groups.computeIfAbsent(keyExtractor.apply((T) item), k -> supplier.get());
-            collector.accept(acc, (T) item);
-            return true;
-        }
+    /**
+     * Convenience for {@link #peekOutput(DistributedFunction,
+     * DistributedPredicate, ProcessorMetaSupplier) peekOutput(toStringF,
+     * shouldLogF, metaSupplier} with a pass-through filter and {@code
+     * Object#toString} as the formatting function. This variant accepts a
+     * {@code DistributedSupplier} of processors instead of a meta-supplier.
+     */
+    @Nonnull
+    public static DistributedSupplier<Processor> peekOutput(@Nonnull DistributedSupplier<Processor> wrapped) {
+        return peekOutput(Object::toString, alwaysTrue(), wrapped);
     }
 }

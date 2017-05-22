@@ -65,8 +65,8 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
     private final DistributedFunction<? super T, K> getKeyF;
     private final DistributedSupplier<A> newAccumulatorF;
     private final BiConsumer<? super A, ? super T> accumulateF;
-    private final DistributedFunction<A, R> finishAccumulationF;
-    private final DistributedBiConsumer<A, A> combineAccF;
+    private final DistributedFunction<? super A, R> finishAccumulationF;
+    private final DistributedBiConsumer<? super A, ? super A> combineAccF;
     private final FlatMapper<Punctuation, Session<K, R>> expiredSessionFlatmapper;
 
     public SessionWindowP(

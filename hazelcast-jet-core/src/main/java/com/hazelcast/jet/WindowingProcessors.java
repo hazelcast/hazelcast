@@ -25,6 +25,8 @@ import com.hazelcast.jet.impl.processor.SlidingWindowP;
 
 import javax.annotation.Nonnull;
 
+import java.util.Map.Entry;
+
 import static com.hazelcast.jet.TimestampKind.EVENT;
 import static com.hazelcast.jet.function.DistributedFunction.identity;
 
@@ -117,10 +119,10 @@ public final class WindowingProcessors {
     }
 
     /**
-     * A processor that inserts {@link com.hazelcast.jet.Punctuation
-     * punctuation} into a data (sub)stream. The value of the punctuation is
-     * determined by a separate policy object of type {@link
-     * PunctuationPolicy}.
+     * Returns a supplier of processor that inserts
+     * {@link com.hazelcast.jet.Punctuation punctuation} into a data
+     * (sub)stream. The value of the punctuation is determined by a separate
+     * policy object of type {@link PunctuationPolicy}.
      *
      * @param <T> the type of stream item
      */
@@ -133,14 +135,14 @@ public final class WindowingProcessors {
     }
 
     /**
-     * A processor that aggregates events into a sliding window in a single
-     * stage (see the {@link WindowingProcessors class Javadoc} for an
-     * explanation of aggregation stages). The processor groups items by the
-     * grouping key (as obtained from the given key-extracting function) and by
-     * <em>frame</em>, which is a range of timestamps equal to the sliding step.
-     * It emits sliding window results labeled with the timestamp denoting the
-     * window's end time. This timestamp is equal to the exclusive upper bound of
-     * timestamps belonging to the window.
+     * Returns a supplier of processor that aggregates events into a sliding
+     * window in a single stage (see the {@link WindowingProcessors class
+     * Javadoc} for an explanation of aggregation stages). The processor groups
+     * items by the grouping key (as obtained from the given key-extracting
+     * function) and by <em>frame</em>, which is a range of timestamps equal to
+     * the sliding step. It emits sliding window results labeled with the
+     * timestamp denoting the window's end time. This timestamp is equal to the
+     * exclusive upper bound of timestamps belonging to the window.
      * <p>
      * When the processor receives a punctuation with a given {@code puncVal},
      * it emits the result of aggregation for all positions of the sliding
@@ -169,11 +171,15 @@ public final class WindowingProcessors {
     }
 
     /**
-     * The first-stage processor in a two-stage sliding window aggregation
-     * setup (see the {@link WindowingProcessors class Javadoc} for an
-     * explanation of aggregation stages). The processor groups items by the
-     * grouping key (as obtained from the given key-extracting function) and by
-     * <em>frame</em>, which is a range of timestamps equal to the sliding step.
+     * Returns a supplier of the first-stage processor in a two-stage sliding
+     * window aggregation setup (see the {@link WindowingProcessors class
+     * Javadoc} for an explanation of aggregation stages). The processor groups
+     * items by the grouping key (as obtained from the given key-extracting
+     * function) and by <em>frame</em>, which is a range of timestamps equal to
+     * the sliding step. It applies the {@link
+     * AggregateOperation#accumulateItemF() accumulate} aggregation primitive to
+     * each key-frame group.
+     * <p>
      * The frame is identified by the timestamp denoting its end time, which is
      * the exclusive upper bound of its timestamp range. {@link
      * WindowDefinition#higherFrameTs(long)} maps the event timestamp to the
@@ -198,8 +204,6 @@ public final class WindowingProcessors {
             @Nonnull WindowDefinition windowDef,
             @Nonnull AggregateOperation<? super T, A, ?> aggregateOperation
     ) {
-        // use a single-frame window in this stage; the downstream processor
-        // combines the frames into a window with the user-requested size
         WindowDefinition tumblingByFrame = windowDef.toTumblingByFrame();
         return WindowingProcessors.<T, K, A, A>aggregateByKeyAndWindow(
                 getKeyF,
@@ -211,9 +215,9 @@ public final class WindowingProcessors {
     }
 
     /**
-     * The second-stage processor in a two-stage sliding window aggregation
-     * setup (see the {@link WindowingProcessors class Javadoc} for an
-     * explanation of aggregation stages). It applies the
+     * Returns a supplier of the second-stage processor in a two-stage sliding
+     * window aggregation setup (see the {@link WindowingProcessors class
+     * Javadoc} for an explanation of aggregation stages). It applies the
      * {@link AggregateOperation#combineAccumulatorsF() combine} aggregation
      * primitive to frames received from several upstream instances of {@link
      * #groupByFrameAndAccumulate(DistributedFunction, DistributedToLongFunction,
@@ -232,7 +236,8 @@ public final class WindowingProcessors {
      * TimestampedEntry&lt;K, A>} so there is one item per key per window position.
      *
      * @param <A> type of the accumulator
-     * @param <R> type of the finishing function's result
+     * @param <R> type of the finished result returned from {@code aggregateOperation.
+     *            finishAccumulationF()}
      */
     @Nonnull
     public static <K, A, R> DistributedSupplier<Processor> combineToSlidingWindow(
@@ -244,15 +249,14 @@ public final class WindowingProcessors {
                 TimestampedEntry::getTimestamp,
                 TimestampKind.FRAME,
                 windowDef,
-                aggregateOperation.withAccumulate(
-                        (A acc, TimestampedEntry<?, A> tsEntry) ->
-                                aggregateOperation.combineAccumulatorsF().accept(acc, tsEntry.getValue()))
+                withCombiningAccumulate(aggregateOperation)
         );
     }
 
     /**
-     * A processor that performs a general group-by-key-and-window operation and
-     * applies the provided aggregate operation on groups.
+     * Returns a supplier of processor that performs a general
+     * group-by-key-and-window operation and applies the provided aggregate
+     * operation on groups.
      *
      * @param getKeyF function that extracts the grouping key from the input item
      * @param getTimestampF function that extracts the timestamp from the input item
@@ -283,8 +287,9 @@ public final class WindowingProcessors {
     }
 
     /**
-     * Aggregates events into session windows. Events and windows under
-     * different grouping keys are treated independently.
+     * Returns a supplier of processor that aggregates events into session
+     * windows. Events and windows under different grouping keys are treated
+     * independently.
      * <p>
      * The functioning of this processor is easiest to explain in terms of
      * the <em>event interval</em>: the range {@code [timestamp, timestamp +
@@ -313,5 +318,13 @@ public final class WindowingProcessors {
             @Nonnull AggregateOperation<? super T, A, R> aggregateOperation
     ) {
         return () -> new SessionWindowP<>(sessionTimeout, getTimestampF, getKeyF, aggregateOperation);
+    }
+
+    static <A, R> AggregateOperation<Entry<?, A>, A, R> withCombiningAccumulate(
+            @Nonnull AggregateOperation<?, A, R> aggregateOperation
+    ) {
+        return aggregateOperation.withAccumulate(
+                (A acc, Entry<?, A> e) ->
+                        aggregateOperation.combineAccumulatorsF().accept(acc, e.getValue()));
     }
 }

@@ -50,10 +50,12 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.hazelcast.jet.AggregateOperations.counting;
+import static com.hazelcast.jet.AggregateOperations.summingToLong;
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.Processors.flatMap;
-import static com.hazelcast.jet.Processors.groupAndAccumulate;
+import static com.hazelcast.jet.Processors.groupAndAggregate;
 import static com.hazelcast.jet.Processors.noop;
 import static com.hazelcast.jet.Processors.readMap;
 import static com.hazelcast.jet.Processors.writeMap;
@@ -160,22 +162,19 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 })
         );
         // word -> (word, count)
-        Vertex accumulate = dag.newVertex("accumulate",
-                groupAndAccumulate(() -> 0L, (count, x) -> count + 1)
-        );
+        Vertex aggregateStage1 = dag.newVertex("aggregateStage1", groupAndAggregate(wholeItem(), counting()));
         // (word, count) -> (word, count)
-        Vertex combine = dag.newVertex("combine",
-                groupAndAccumulate(Entry<String, Long>::getKey, () -> 0L,
-                        (Long count, Entry<String, Long> wordAndCount) -> count + wordAndCount.getValue()));
+        Vertex aggregateStage2 = dag.newVertex("aggregateStage2",
+                groupAndAggregate(entryKey(), summingToLong(Entry<String, Long>::getValue)));
         Vertex sink = dag.newVertex("sink", writeMap("counts"));
 
         dag.edge(between(source.localParallelism(1), tokenize))
-           .edge(between(tokenize, accumulate)
+           .edge(between(tokenize, aggregateStage1)
                    .partitioned(wholeItem(), HASH_CODE))
-           .edge(between(accumulate, combine)
+           .edge(between(aggregateStage1, aggregateStage2)
                    .distributed()
                    .partitioned(entryKey()))
-           .edge(between(combine, sink.localParallelism(1)));
+           .edge(between(aggregateStage2, sink.localParallelism(1)));
 
         benchmark("jet", () -> uncheckCall(instance.newJob(dag).execute()::get));
         assertCounts(instance.getMap("counts"));

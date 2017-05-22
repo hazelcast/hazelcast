@@ -125,10 +125,10 @@ public class AggregateOperationsTest {
         AggregateOperation<Entry<Long, Long>, LinTrendAccumulator, Double> op =
                 linearTrend(Entry::getKey, Entry::getValue);
         Supplier<LinTrendAccumulator> newF = op.createAccumulatorF();
-        BiConsumer<LinTrendAccumulator, Entry<Long, Long>> accF = op.accumulateItemF();
-        BiConsumer<LinTrendAccumulator, LinTrendAccumulator> combineF = op.combineAccumulatorsF();
-        BiConsumer<LinTrendAccumulator, LinTrendAccumulator> deductF = op.deductAccumulatorF();
-        Function<LinTrendAccumulator, Double> finishF = op.finishAccumulationF();
+        BiConsumer<? super LinTrendAccumulator, Entry<Long, Long>> accF = op.accumulateItemF();
+        BiConsumer<? super LinTrendAccumulator, ? super LinTrendAccumulator> combineF = op.combineAccumulatorsF();
+        BiConsumer<? super LinTrendAccumulator, ? super LinTrendAccumulator> deductF = op.deductAccumulatorF();
+        Function<? super LinTrendAccumulator, Double> finishF = op.finishAccumulationF();
         assertNotNull(deductF);
 
         // When
@@ -189,7 +189,7 @@ public class AggregateOperationsTest {
             R expectFinished
     ) {
         // Given
-        BiConsumer<A, A> deductAccF = op.deductAccumulatorF();
+        BiConsumer<? super A, ? super A> deductAccF = op.deductAccumulatorF();
         assertNotNull(deductAccF);
 
         // When

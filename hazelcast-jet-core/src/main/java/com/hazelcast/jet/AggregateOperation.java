@@ -69,7 +69,7 @@ public interface AggregateOperation<T, A, R> extends Serializable {
      * A primitive that updates the accumulator state to account for a new item.
      */
     @Nonnull
-    DistributedBiConsumer<A, T> accumulateItemF();
+    DistributedBiConsumer<? super A, T> accumulateItemF();
 
     /**
      * A primitive that accepts two accumulators and updates the state of the
@@ -77,7 +77,7 @@ public interface AggregateOperation<T, A, R> extends Serializable {
      * The right-hand accumulator remains unchanged.
      */
     @Nonnull
-    DistributedBiConsumer<A, A> combineAccumulatorsF();
+    DistributedBiConsumer<? super A, ? super A> combineAccumulatorsF();
 
     /**
      * A primitive that accepts two accumulators and updates the state of the
@@ -103,14 +103,14 @@ public interface AggregateOperation<T, A, R> extends Serializable {
      * step, the more pronounced the difference in computation effort will be.
      */
     @Nullable
-    DistributedBiConsumer<A, A> deductAccumulatorF();
+    DistributedBiConsumer<? super A, ? super A> deductAccumulatorF();
 
     /**
      * A primitive that finishes the accumulation process by transforming
      * the accumulator object into the final result.
      */
     @Nonnull
-    DistributedFunction<A, R> finishAccumulationF();
+    DistributedFunction<? super A, R> finishAccumulationF();
 
     /**
      * Returns a copy of this aggregate operation with the {@code finish}
@@ -120,10 +120,10 @@ public interface AggregateOperation<T, A, R> extends Serializable {
      * @param <R1> the result type of the {@code finish} primitive
      */
     default <R1> AggregateOperation<T, A, R1> withFinish(
-            @Nonnull DistributedFunction<A, R1> finishAccumulationF
+            @Nonnull DistributedFunction<? super A, R1> finishAccumulationF
     ) {
-        return of(createAccumulatorF(), accumulateItemF(), combineAccumulatorsF(), deductAccumulatorF(),
-                finishAccumulationF);
+        return of(createAccumulatorF(), accumulateItemF(), combineAccumulatorsF(),
+                deductAccumulatorF(), finishAccumulationF);
     }
 
     /**
@@ -156,10 +156,10 @@ public interface AggregateOperation<T, A, R> extends Serializable {
     @Nonnull
     static <T, A, R> AggregateOperation<T, A, R> of(
             @Nonnull DistributedSupplier<A> createAccumulatorF,
-            @Nonnull DistributedBiConsumer<A, T> accumulateItemF,
-            @Nonnull DistributedBiConsumer<A, A> combineAccumulatorsF,
-            @Nullable DistributedBiConsumer<A, A> deductAccumulatorF,
-            @Nonnull DistributedFunction<A, R> finishAccumulationF
+            @Nonnull DistributedBiConsumer<? super A, T> accumulateItemF,
+            @Nonnull DistributedBiConsumer<? super A, ? super A> combineAccumulatorsF,
+            @Nullable DistributedBiConsumer<? super A, ? super A> deductAccumulatorF,
+            @Nonnull DistributedFunction<? super A, R> finishAccumulationF
     ) {
         Objects.requireNonNull(createAccumulatorF);
         Objects.requireNonNull(accumulateItemF);

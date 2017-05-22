@@ -26,17 +26,17 @@ import javax.annotation.Nullable;
 
 public class AggregateOperationImpl<T, A, R> implements AggregateOperation<T, A, R> {
     private final DistributedSupplier<A> createAccumulatorF;
-    private final DistributedBiConsumer<A, T> accumulateItemF;
-    private final DistributedBiConsumer<A, A> combineAccumulatorsF;
-    private final DistributedBiConsumer<A, A> deductAccumulatorF;
-    private final DistributedFunction<A, R> finishAccumulationF;
+    private final DistributedBiConsumer<? super A, T> accumulateItemF;
+    private final DistributedBiConsumer<? super A, ? super A> combineAccumulatorsF;
+    private final DistributedBiConsumer<? super A, ? super A> deductAccumulatorF;
+    private final DistributedFunction<? super A, R> finishAccumulationF;
 
     public AggregateOperationImpl(
-            DistributedSupplier<A> createAccumulatorF,
-            DistributedBiConsumer<A, T> accumulateItemF,
-            DistributedBiConsumer<A, A> combineAccumulatorsF,
-            DistributedBiConsumer<A, A> deductAccumulatorF,
-            DistributedFunction<A, R> finishAccumulationF
+            @Nonnull DistributedSupplier<A> createAccumulatorF,
+            @Nonnull DistributedBiConsumer<? super A, T> accumulateItemF,
+            @Nonnull DistributedBiConsumer<? super A, ? super A> combineAccumulatorsF,
+            @Nullable DistributedBiConsumer<? super A, ? super A> deductAccumulatorF,
+            @Nonnull DistributedFunction<? super A, R> finishAccumulationF
     ) {
         this.createAccumulatorF = createAccumulatorF;
         this.accumulateItemF = accumulateItemF;
@@ -51,22 +51,22 @@ public class AggregateOperationImpl<T, A, R> implements AggregateOperation<T, A,
     }
 
     @Override @Nonnull
-    public DistributedBiConsumer<A, T> accumulateItemF() {
+    public DistributedBiConsumer<? super A, T> accumulateItemF() {
         return accumulateItemF;
     }
 
     @Override @Nonnull
-    public DistributedBiConsumer<A, A> combineAccumulatorsF() {
+    public DistributedBiConsumer<? super A, ? super A> combineAccumulatorsF() {
         return combineAccumulatorsF;
     }
 
     @Override @Nullable
-    public DistributedBiConsumer<A, A> deductAccumulatorF() {
+    public DistributedBiConsumer<? super A, ? super A> deductAccumulatorF() {
         return deductAccumulatorF;
     }
 
     @Override @Nonnull
-    public DistributedFunction<A, R> finishAccumulationF() {
+    public DistributedFunction<? super A, R> finishAccumulationF() {
         return finishAccumulationF;
     }
 }

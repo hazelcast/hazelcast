@@ -52,6 +52,22 @@ public class LongAccumulator {
     }
 
     /**
+     * Adds the supplied value to this accumulator.
+     */
+    public LongAccumulator add(long value) {
+        this.value += value;
+        return this;
+    }
+
+    /**
+     * Adds the value of the supplied accumulator to this accumulator.
+     */
+    public LongAccumulator add(LongAccumulator that) {
+        this.value += that.value;
+        return this;
+    }
+
+    /**
      * Uses {@link Math#addExact(long, long) Math.addExact()} to add the
      * supplied value to this accumulator.
      */
