@@ -276,7 +276,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         stats.add(new Map.Entry<String, String>() {
             @Override
             public String getKey() {
-                return "/ClusterConnectionTimestamp";
+                return "clusterConnectionTimestamp";
             }
 
             @Override
@@ -293,7 +293,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         stats.add(new Map.Entry<String, String>() {
             @Override
             public String getKey() {
-                return "/ClientType";
+                return "clientType";
             }
 
             @Override
@@ -313,7 +313,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
                 stats.add(new Map.Entry<String, String>() {
                     @Override
                     public String getKey() {
-                        return "/Credentials";
+                        return "credentials";
                     }
 
                     @Override

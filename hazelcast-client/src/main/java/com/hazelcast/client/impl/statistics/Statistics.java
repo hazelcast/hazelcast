@@ -21,13 +21,12 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.StringGauge;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet;
 import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
-import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -38,43 +37,41 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CONNECTED;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-/**
- * Created by ihsan on 15/05/17.
- */
 public class Statistics {
+    public static final String CONFIGURATION_PREFIX = "hazelcast.client.statistics";
+    public final static String NEAR_CACHE_CATEGORY_PREFIX = "nearcache.";
+
     private final boolean enabled;
     private final HazelcastProperties properties;
     private final ILogger logger = Logger.getLogger(this.getClass());
     private final HazelcastClientInstanceImpl client;
-    private final boolean enterprise;
-    public static final String PREFIX = "hazelcast.client.statistics";
 
-    public final static String NEAR_CACHE_CATEGORY_PREFIX = "/nearcache";
+    private final boolean enterprise;
 
     private final MetricsRegistry metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(this.getClass()),
             ProbeLevel.MANDATORY);
-    Map<String, String> staticStats = new HashMap<String, String>(1);
+    private final Map<String, String> staticStats = new HashMap<String, String>(1);
+    PeriodicStatistics periodicStats;
 
     /**
      * Use to enable the client statistics collection.
      * <p/>
      * The default is false.
      */
-    public static final HazelcastProperty ENABLED = new HazelcastProperty(PREFIX + ".enabled", false);
+    public static final HazelcastProperty ENABLED = new HazelcastProperty(CONFIGURATION_PREFIX + ".enabled", false);
 
     /**
      * The period in seconds the statictics runs.
-     * <p>
-     * The StatisticsPlugin periodically sending the client statistics to the owner member
-     * <p>
-     * <p>
-     * If set to 0, the plugin is disabled.
+     * <p/>
+     * The default is 60 seconds.
      */
-    public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty(PREFIX + ".period.seconds", 60, SECONDS);
+    public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty(CONFIGURATION_PREFIX + ".period.seconds", 60, SECONDS);
 
     public Statistics(HazelcastClientInstanceImpl client) {
         this.properties = client.getProperties();
@@ -92,68 +89,34 @@ public class Statistics {
         }
 
         long periodSeconds = properties.getSeconds(PERIOD_SECONDS);
-        if (periodSeconds < 0) {
+        if (periodSeconds <= 0) {
             long defaultValue = Long.parseLong(PERIOD_SECONDS.getDefaultValue());
-            logger.warning(
-                    "Provided client statistics " + PERIOD_SECONDS.getName() + " can not be a negative number. You provided "
-                            + periodSeconds + ". Client will use the default value of " + defaultValue + " instead.");
+            logger.warning("Provided client statistics " + PERIOD_SECONDS.getName()
+                    + " can not be less than or equal to 0. You provided " + periodSeconds
+                    + " seconds as the configuration. Client will use the default value of " + defaultValue + " instead.");
             periodSeconds = defaultValue;
         }
 
-        staticStats.put("/enterprise", Boolean.toString(enterprise));
-        // Register for one time statistics. These are resent only when reconnected to the cluster.
         registerStaticStatistics();
 
         registerPeriodicMetrics();
 
         logger.finest("Client statistics is enabled with period " + periodSeconds + " seconds.");
 
-        // Start task for sending periodic statistics
-        scheduleStatisticsCollection(periodSeconds);
+        schedulePeriodicStatisticsSendTask(periodSeconds);
     }
 
-    private void scheduleStatisticsCollection(long periodSeconds) {
+    private void schedulePeriodicStatisticsSendTask(long periodSeconds) {
         client.getExecutionService().scheduleWithRepetition(new Runnable() {
             @Override
             public void run() {
                 final Map<String, String> stats = new HashMap<String, String>();
 
-                metricsRegistry.render(new ProbeRenderer() {
-                    @Override
-                    public void renderLong(String name, long value) {
-                        stats.put(composeKey(name), Long.toString(value));
-                    }
+                periodicStats.fillMetrics(stats);
 
-                    @Override
-                    public void renderDouble(String name, double value) {
-                        stats.put(composeKey(name), Double.toString(value));
-                    }
-
-                    /**
-                     * Converts keys like runtime.freeMemory to /runtime/freeMemory
-                     * @param name The name of the statistics
-                     * @return The statistics key name as properly formatted
-                     */
-                    private String composeKey(String name) {
-                        return "/" + name.replace('.', '/');
-                    }
-
-                    @Override
-                    public void renderException(String name, Exception e) {
-                        // No intrusive message for client statistics is desired
-                        logger.finest("Exception while processing statistics " + name + ". Error:" + e.getMessage());
-                    }
-
-                    @Override
-                    public void renderNoValue(String name) {
-                    }
-                });
-
-                // put user executor queue size
                 ThreadPoolExecutor userExecutor = (ThreadPoolExecutor) client.getClientExecutionService().getUserExecutor();
-                stats.put("/userExecutor/queueSize", Long.toString(userExecutor.getQueue().size()));
+                stats.put("userExecutor.queueSize", Long.toString(userExecutor.getQueue().size()));
 
-                // addNearCacheStats
                 addNearCachStats(stats);
 
                 sendStats(stats);
@@ -165,37 +128,60 @@ public class Statistics {
         for (NearCache nearCache : client.getNearCacheManager().listAllNearCaches()) {
             String pathPrefix = NEAR_CACHE_CATEGORY_PREFIX;
             String name = nearCache.getName();
-            if (!name.startsWith("/")) {
-                 pathPrefix += "/";
+            if (name.startsWith("/")) {
+                pathPrefix += name.substring(1);
+            } else {
+                pathPrefix += name;
             }
-            pathPrefix += name;
-            if (!name.endsWith("/")) {
-                pathPrefix += "/";
-            }
+            pathPrefix += ".";
+
             NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
-            stats.put(pathPrefix + "CreationTime", Long.toString(nearCacheStats.getCreationTime()));
-            stats.put(pathPrefix + "Evictions", Long.toString(nearCacheStats.getEvictions()));
-            stats.put(pathPrefix + "Hits", Long.toString(nearCacheStats.getHits()));
-            stats.put(pathPrefix + "LastPersistenceDuration", Long.toString(nearCacheStats.getLastPersistenceDuration()));
-            stats.put(pathPrefix + "LastPersistenceKeyCount", Long.toString(nearCacheStats.getLastPersistenceKeyCount()));
-            stats.put(pathPrefix + "LastPersistenceTime", Long.toString(nearCacheStats.getLastPersistenceTime()));
-            stats.put(pathPrefix + "LastPersistenceWrittenBytes", Long.toString(nearCacheStats.getLastPersistenceWrittenBytes()));
-            stats.put(pathPrefix + "Misses", Long.toString(nearCacheStats.getMisses()));
-            stats.put(pathPrefix + "OwnedEntryCount", Long.toString(nearCacheStats.getOwnedEntryCount()));
-            stats.put(pathPrefix + "Expirations", Long.toString(nearCacheStats.getExpirations()));
-            stats.put(pathPrefix + "OwnedEntryMemoryCost", Long.toString(nearCacheStats.getOwnedEntryMemoryCost()));
-            stats.put(pathPrefix + "LastPersistenceFailure", nearCacheStats.getLastPersistenceFailure());
+
+            StringBuffer buffer = new StringBuffer();
+            stats.put(buffer.append(pathPrefix).append("creationTime").toString(),
+                    Long.toString(nearCacheStats.getCreationTime()));
+            buffer.setLength(0);
+            stats.put(buffer.append(pathPrefix).append("evictions").toString(), Long.toString(nearCacheStats.getEvictions()));
+            buffer.setLength(0);
+            stats.put(buffer.append(pathPrefix).append("hits").toString(), Long.toString(nearCacheStats.getHits()));
+            buffer.setLength(0);
+            stats.put(buffer.append(pathPrefix).append("lastPersistenceDuration").toString(),
+                    Long.toString(nearCacheStats.getLastPersistenceDuration()));
+            buffer.setLength(0);
+            stats.put(buffer.append(pathPrefix).append("lastPersistenceKeyCount").toString(),
+                    Long.toString(nearCacheStats.getLastPersistenceKeyCount()));
+            buffer.setLength(0);
+            stats.put(buffer.append(pathPrefix).append("lastPersistenceTime").toString(),
+                    Long.toString(nearCacheStats.getLastPersistenceTime()));
+            buffer.setLength(0);
+            stats.put(buffer.append(pathPrefix).append("lastPersistenceWrittenBytes").toString(),
+                    Long.toString(nearCacheStats.getLastPersistenceWrittenBytes()));
+            buffer.setLength(0);
+            stats.put(buffer.append(pathPrefix).append("misses").toString(), Long.toString(nearCacheStats.getMisses()));
+            buffer.setLength(0);
+            stats.put(buffer.append(pathPrefix).append("ownedEntryCount").toString(),
+                    Long.toString(nearCacheStats.getOwnedEntryCount()));
+            buffer.setLength(0);
+            stats.put(buffer.append(pathPrefix).append("expirations").toString(), Long.toString(nearCacheStats.getExpirations()));
+            buffer.setLength(0);
+            stats.put(buffer.append(pathPrefix).append("ownedEntryMemoryCost").toString(),
+                    Long.toString(nearCacheStats.getOwnedEntryMemoryCost()));
+            buffer.setLength(0);
+            stats.put(buffer.append(pathPrefix).append("lastPersistenceFailure").toString(),
+                    nearCacheStats.getLastPersistenceFailure());
         }
     }
 
     private void registerStaticStatistics() {
+        staticStats.put("enterprise", Boolean.toString(enterprise));
+
         // The client may have already connected, hence, send the stat at least once at startup
         sendStats(staticStats);
 
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
-                if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED.equals(event.getState())) {
+                if (CLIENT_CONNECTED.equals(event.getState())) {
                     sendStats(staticStats);
                 }
             }
@@ -210,7 +196,9 @@ public class Statistics {
                 new ClientInvocation(client, request, ownerConnectionAddress).invoke().get();
             } catch (Exception e) {
                 // suppress exception, do not print too many messages
-                logger.finest("Could not send stats " + e.getMessage());
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Could not send stats ", e);
+                }
             }
         }
     }
@@ -219,17 +207,25 @@ public class Statistics {
         RuntimeMetricSet.register(metricsRegistry);
         OperatingSystemMetricSet.register(metricsRegistry);
 
-        // register user executor queue size
-        metricsRegistry
-                .register("User Executor", "/userExecutor/queueSize", ProbeLevel.MANDATORY, new LongProbeFunction<String>() {
-                    @Override
-                    public long get(String source)
-                            throws Exception {
-                        ThreadPoolExecutor poolExecutor = (ThreadPoolExecutor) client.getClientExecutionService()
-                                                                                     .getUserExecutor();
-                        return poolExecutor.getQueue().size();
-                    }
-                });
+        periodicStats = new PeriodicStatistics(metricsRegistry);
+    }
+
+    class PeriodicStatistics {
+        private final Map<String, StringGauge> allMetrics;
+
+        PeriodicStatistics(final MetricsRegistry metricsRegistry) {
+            Set<String> metricsRegistryNames = metricsRegistry.getNames();
+            allMetrics = new HashMap<String, StringGauge>(metricsRegistryNames.size());
+            for (String name : metricsRegistryNames) {
+                allMetrics.put(name, metricsRegistry.newStringGauge(name));
+            }
+        }
+
+        void fillMetrics(final Map<String, String> metricsMap) {
+            for (Map.Entry<String, StringGauge> entry : allMetrics.entrySet()) {
+                metricsMap.put(entry.getKey(), entry.getValue().read());
+            }
+        }
     }
 
 }

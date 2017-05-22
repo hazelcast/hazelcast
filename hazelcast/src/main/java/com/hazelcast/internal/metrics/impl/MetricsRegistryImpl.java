@@ -19,11 +19,13 @@ package com.hazelcast.internal.metrics.impl;
 import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
+import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.StringGauge;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
@@ -224,6 +226,13 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         checkNotNull(name, "name can't be null");
 
         return new DoubleGaugeImpl(this, name);
+    }
+
+    @Override
+    public StringGauge newStringGauge(final String name) {
+        checkNotNull(name, "name can't be null");
+
+        return new StringGaugeImpl(this, name);
     }
 
     @Override

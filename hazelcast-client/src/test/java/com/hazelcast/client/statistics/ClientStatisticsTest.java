@@ -50,6 +50,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientStatisticsTest
@@ -77,18 +81,18 @@ public class ClientStatisticsTest
         ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
         HashMap<String, String> stats = getStats(client, clientEngine);
 
-        String connStat = stats.get("/ClusterConnectionTimestamp");
-        Assert.assertNotNull(connStat);
+        String connStat = stats.get("clusterConnectionTimestamp");
+        assertNotNull(connStat);
         Long connectionTimeStat = Long.valueOf(connStat);
         // time measured by us after client connection should be greater than the connection time reported by the statistics and
         // the difference should not be more than a statistics collection period
         Assert.assertTrue(clientConnectionTime >= connectionTimeStat
                 && clientConnectionTime - connectionTimeStat < statsPeriodSeconds * 1000);
 
-        String mapHits = stats.get("/nearcache/" + testMapName + "/Hits");
-        Assert.assertNull(mapHits);
-        String cacheHits = stats.get("/nearcache/" + testCacheName + "/Hits");
-        Assert.assertNull(cacheHits);
+        String mapHits = stats.get("nearcache." + testMapName + ".hits");
+        assertNull(mapHits);
+        String cacheHits = stats.get("nearcache." + testCacheName + ".hits");
+        assertNull(cacheHits);
 
         IMap<Integer, Integer> map = client.getMap(testMapName);
 
@@ -96,11 +100,11 @@ public class ClientStatisticsTest
         sleepSeconds(statsPeriodSeconds + 1);
 
         stats = getStats(client, clientEngine);
-        mapHits = stats.get("/nearcache/" + testMapName + "/Hits");
-        Assert.assertNotNull(mapHits);
-        Assert.assertEquals("0", mapHits);
-        cacheHits = stats.get("/nearcache/hz/" + testCacheName + "/Hits");
-        Assert.assertNull(cacheHits);
+        mapHits = stats.get("nearcache." + testMapName + ".hits");
+        assertNotNull(mapHits);
+        assertEquals("0", mapHits);
+        cacheHits = stats.get("nearcache/hz." + testCacheName + ".hits");
+        assertNull(cacheHits);
 
         // produce map and cache stat
         produceSomeStats(hazelcastInstance, client, map);
@@ -109,12 +113,12 @@ public class ClientStatisticsTest
         sleepSeconds(statsPeriodSeconds + 1);
 
         stats = getStats(client, clientEngine);
-        mapHits = stats.get("/nearcache/" + testMapName + "/Hits");
-        Assert.assertNotNull(mapHits);
-        Assert.assertEquals("1", mapHits);
-        cacheHits = stats.get("/nearcache/hz/" + testCacheName + "/Hits");
-        Assert.assertNotNull(cacheHits);
-        Assert.assertEquals("1", cacheHits);
+        mapHits = stats.get("nearcache." + testMapName + ".hits");
+        assertNotNull(mapHits);
+        assertEquals("1", mapHits);
+        cacheHits = stats.get("nearcache.hz/" + testCacheName + ".hits");
+        assertNotNull(cacheHits);
+        assertEquals("1", cacheHits);
     }
 
     @Test
@@ -176,15 +180,15 @@ public class ClientStatisticsTest
 
         ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
         List<Map.Entry<String, List<Map.Entry<String, String>>>> clientStatistics = clientEngine.getClientStatistics();
-        Assert.assertNotNull(clientStatistics);
-        Assert.assertEquals(2, clientStatistics.size());
+        assertNotNull(clientStatistics);
+        assertEquals(2, clientStatistics.size());
         List<String> expectedUUIDs = new ArrayList<String>(2);
         expectedUUIDs.add(client1.getClientClusterService().getLocalClient().getUuid());
         expectedUUIDs.add(client2.getClientClusterService().getLocalClient().getUuid());
         for (Map.Entry<String, List<Map.Entry<String, String>>> clientEntry : clientStatistics) {
             Assert.assertTrue(expectedUUIDs.contains(clientEntry.getKey()));
             List<Map.Entry<String, String>> stats = clientEntry.getValue();
-            Assert.assertNotNull(stats);
+            assertNotNull(stats);
             expectedUUIDs.remove(clientEntry.getKey());
         }
     }
@@ -202,12 +206,12 @@ public class ClientStatisticsTest
     private void produceSomeStats(HazelcastInstance hazelcastInstance, HazelcastClientInstanceImpl client,
                                   IMap<Integer, Integer> map) {
         map.put(5, 10);
-        Assert.assertEquals(10, map.get(5).intValue());
-        Assert.assertEquals(10, map.get(5).intValue());
+        assertEquals(10, map.get(5).intValue());
+        assertEquals(10, map.get(5).intValue());
         ICache<Integer, Integer> cache = createCache(hazelcastInstance, testCacheName, client);
         cache.put(9, 20);
-        Assert.assertEquals(20, cache.get(9).intValue());
-        Assert.assertEquals(20, cache.get(9).intValue());
+        assertEquals(20, cache.get(9).intValue());
+        assertEquals(20, cache.get(9).intValue());
     }
 
     private HazelcastClientInstanceImpl createHazelcastClient() {
@@ -234,10 +238,10 @@ public class ClientStatisticsTest
 
     private HashMap<String, String> getStats(HazelcastClientInstanceImpl client, ClientEngineImpl clientEngine) {
         List<Map.Entry<String, List<Map.Entry<String, String>>>> clientStatistics = clientEngine.getClientStatistics();
-        Assert.assertNotNull(clientStatistics);
-        Assert.assertEquals(1, clientStatistics.size());
+        assertNotNull(clientStatistics);
+        assertEquals(1, clientStatistics.size());
         Map.Entry<String, List<Map.Entry<String, String>>> firstClient = clientStatistics.remove(0);
-        Assert.assertEquals(client.getClientClusterService().getLocalClient().getUuid(), firstClient.getKey());
+        assertEquals(client.getClientClusterService().getLocalClient().getUuid(), firstClient.getKey());
         HashMap<String, String> stats = new HashMap<String, String>();
         for (Map.Entry<String, String> entry : firstClient.getValue()) {
             stats.put(entry.getKey(), entry.getValue());

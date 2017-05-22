@@ -107,7 +107,7 @@ public interface ClientEndpoint extends Client {
      *
      * @param version The version string as obtained from the environment
      */
-    void setClientVersion(java.lang.String version);
+    void setClientVersion(String version);
 
     /**
      * Updates to the latest client statistics

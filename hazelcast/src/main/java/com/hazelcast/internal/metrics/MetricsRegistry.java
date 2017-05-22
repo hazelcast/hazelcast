@@ -86,6 +86,16 @@ public interface MetricsRegistry {
     DoubleGauge newDoubleGauge(String name);
 
     /**
+     * Creates a String probe for a given metric name.
+     *
+     * @param name name of the metric
+     * @return the create StringGauge
+     * @throws NullPointerException if name is null.
+     * @see #newLongGauge(String)#newDoubleGauge(String)
+     */
+    StringGauge newStringGauge(String name);
+
+    /**
      * Gets a set of all current probe names.
      *
      * The returned set is immutable and is a snapshot of the names. So the reader gets a stable view on the names.
