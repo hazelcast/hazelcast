@@ -143,9 +143,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         this.messageTaskFactory = new CompositeMessageTaskFactory(this.nodeEngine);
         this.clientExceptionFactory = initClientExceptionFactory();
         this.endpointRemoveDelaySeconds = node.getProperties().getInteger(GroupProperty.CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS);
-        ClientHeartbeatMonitor heartbeatMonitor = new ClientHeartbeatMonitor(
-                endpointManager, this, nodeEngine.getExecutionService(), node.getProperties());
-        heartbeatMonitor.start();
     }
 
     private ClientExceptionFactory initClientExceptionFactory() {
@@ -356,6 +353,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         node.getConnectionManager().addConnectionListener(connectionListener);
+
+        ClientHeartbeatMonitor heartbeatMonitor = new ClientHeartbeatMonitor(
+                endpointManager, this, nodeEngine.getExecutionService(), node.getProperties());
+        heartbeatMonitor.start();
     }
 
     @Override
