@@ -35,7 +35,6 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.TestPartitionUtils.PartitionReplicaVersionsView;
 import com.hazelcast.util.ExceptionUtil;
 import org.junit.Before;
 import org.junit.runners.Parameterized;
@@ -49,7 +48,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.test.TestPartitionUtils.getPartitionReplicaVersionsView;
+import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionReplicaVersionsView;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
@@ -263,7 +262,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         for (InternalPartition partition : partitions) {
             if (partition.isLocal()) {
                 int partitionId = partition.getPartitionId();
-                long[] replicaVersions = getPartitionReplicaVersionsView(node, partitionId).getVersions().get(namespace);
+                long[] replicaVersions = getPartitionReplicaVersionsView(node, partitionId).getVersions(namespace);
 
                 for (int replica = 1; replica <= actualBackupCount; replica++) {
                     Address address = partition.getReplicaAddress(replica);
@@ -276,7 +275,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
                     assertNotNull(backupNode);
 
                     PartitionReplicaVersionsView backupReplicaVersionsView = getPartitionReplicaVersionsView(backupNode, partitionId);
-                    long[] backupReplicaVersions = backupReplicaVersionsView.getVersions().get(namespace);
+                    long[] backupReplicaVersions = backupReplicaVersionsView.getVersions(namespace);
                     assertNotNull("Versions null on " + backupNode.address + ", partitionId: " + partitionId, backupReplicaVersions);
 
                     for (int i = replica - 1; i < actualBackupCount; i++) {

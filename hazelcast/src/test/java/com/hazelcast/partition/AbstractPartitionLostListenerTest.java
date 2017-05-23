@@ -22,9 +22,11 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.impl.ReplicaFragmentSyncInfo;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.internal.partition.PartitionReplicaVersionsView;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import org.junit.After;
 import org.junit.Before;
@@ -38,10 +40,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 
-import static com.hazelcast.test.TestPartitionUtils.getAllReplicaAddresses;
-import static com.hazelcast.test.TestPartitionUtils.getOngoingReplicaSyncRequests;
-import static com.hazelcast.test.TestPartitionUtils.getOwnedReplicaVersions;
-import static com.hazelcast.test.TestPartitionUtils.getScheduledReplicaSyncRequests;
+import static com.hazelcast.internal.partition.TestPartitionUtils.getAllReplicaAddresses;
+import static com.hazelcast.internal.partition.TestPartitionUtils.getOngoingReplicaSyncRequests;
+import static com.hazelcast.internal.partition.TestPartitionUtils.getOwnedReplicaVersions;
+import static com.hazelcast.internal.partition.TestPartitionUtils.getScheduledReplicaSyncRequests;
 import static junit.framework.TestCase.assertNotNull;
 
 public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSupport {
@@ -184,16 +186,19 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
         }
     }
 
-    final protected void logPartitionState(List<HazelcastInstance> instances) throws InterruptedException {
+    private void logPartitionState(List<HazelcastInstance> instances) throws InterruptedException {
         for (Entry<Integer, List<Address>> entry : getAllReplicaAddresses(instances).entrySet()) {
             System.out.println("PartitionTable >> partitionId=" + entry.getKey() + " table=" + entry.getValue());
         }
 
         for (HazelcastInstance instance : instances) {
             Address address = getNode(instance).getThisAddress();
-            for (Entry<Integer, long[]> entry : getOwnedReplicaVersions(getNode(instance)).entrySet()) {
-                System.out.println("ReplicaVersions >> " + address + " - partitionId=" + entry.getKey()
-                        + " replicaVersions=" + Arrays.toString(entry.getValue()));
+            for (Entry<Integer, PartitionReplicaVersionsView> entry : getOwnedReplicaVersions(getNode(instance)).entrySet()) {
+                PartitionReplicaVersionsView replicaVersionsView = entry.getValue();
+                for (ServiceNamespace namespace : replicaVersionsView.getNamespaces()) {
+                    System.out.println(namespace + " ReplicaVersions >> " + address + " - partitionId=" + entry.getKey()
+                            + " replicaVersions=" + Arrays.toString(replicaVersionsView.getVersions(namespace)));
+                }
             }
 
             for (ReplicaFragmentSyncInfo replicaSyncInfo : getOngoingReplicaSyncRequests(instance)) {

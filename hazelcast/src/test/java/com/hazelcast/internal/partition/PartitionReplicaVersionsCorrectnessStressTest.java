@@ -20,9 +20,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.AbstractPartitionLostListenerTest;
+import com.hazelcast.spi.DistributedObjectNamespace;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.test.TestPartitionUtils;
 import com.hazelcast.test.annotation.SlowTest;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -31,12 +33,15 @@ import org.junit.runners.Parameterized;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import static com.hazelcast.test.TestPartitionUtils.getReplicaAddresses;
-import static com.hazelcast.test.TestPartitionUtils.getDefaultReplicaVersions;
-import static org.junit.Assert.assertArrayEquals;
+import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionReplicaVersionsView;
+import static com.hazelcast.internal.partition.TestPartitionUtils.getReplicaAddresses;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
@@ -45,10 +50,13 @@ import static org.junit.Assert.fail;
 public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractPartitionLostListenerTest {
 
     private static final int ITEM_COUNT_PER_MAP = 10000;
+    private static final int SAFE_STATE_TIMEOUT_SECONDS = 300;
+    private static final long TEST_TIMEOUT_SECONDS = SAFE_STATE_TIMEOUT_SECONDS + 120;
 
     @Parameterized.Parameters(name = "numberOfNodesToCrash:{0},nodeCount:{1},nodeLeaveType:{2}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{{1, 7, NodeLeaveType.SHUTDOWN},
+        return Arrays.asList(new Object[][]{
+                {1, 7, NodeLeaveType.SHUTDOWN},
                 {1, 7, NodeLeaveType.TERMINATE},
                 {3, 7, NodeLeaveType.SHUTDOWN},
                 {3, 7, NodeLeaveType.TERMINATE},
@@ -81,7 +89,7 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
     @Parameterized.Parameter(2)
     public NodeLeaveType nodeLeaveType;
 
-    @Test
+    @Test(timeout = TEST_TIMEOUT_SECONDS * 1000)
     public void testReplicaVersionsWhenNodesCrashSimultaneously() throws InterruptedException {
         List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp();
 
@@ -92,7 +100,7 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
 
         String log = "Surviving: " + survivingInstances + " Terminating: " + terminatingInstances;
 
-        Map<Integer, long[]> replicaVersionsByPartitionId = TestPartitionUtils.getAllReplicaVersions(instances);
+        Map<Integer, PartitionReplicaVersionsView> replicaVersionsByPartitionId = TestPartitionUtils.getAllReplicaVersions(instances);
         Map<Integer, List<Address>> partitionReplicaAddresses = TestPartitionUtils.getAllReplicaAddresses(instances);
         Map<Integer, Integer> minSurvivingReplicaIndexByPartitionId = getMinReplicaIndicesByPartitionId(survivingInstances);
 
@@ -105,7 +113,7 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
 
     private void validateReplicaVersions(String log, int numberOfNodesToCrash,
                                          List<HazelcastInstance> survivingInstances,
-                                         Map<Integer, long[]> replicaVersionsByPartitionId,
+                                         Map<Integer, PartitionReplicaVersionsView> replicaVersionsByPartitionId,
                                          Map<Integer, List<Address>> partitionReplicaAddresses,
                                          Map<Integer, Integer> minSurvivingReplicaIndexByPartitionId)
             throws InterruptedException {
@@ -117,38 +125,67 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
             for (InternalPartition partition : partitionService.getInternalPartitions()) {
                 if (address.equals(partition.getOwnerOrNull())) {
                     int partitionId = partition.getPartitionId();
-                    long[] initialReplicaVersions = replicaVersionsByPartitionId.get(partitionId);
-                    Integer minSurvivingReplicaIndex = minSurvivingReplicaIndexByPartitionId.get(partitionId);
-                    long[] replicaVersions = getDefaultReplicaVersions(getNode(instance), partitionId);
+                    PartitionReplicaVersionsView initialReplicaVersions = replicaVersionsByPartitionId.get(partitionId);
+                    int minSurvivingReplicaIndex = minSurvivingReplicaIndexByPartitionId.get(partitionId);
+                    PartitionReplicaVersionsView
+                            replicaVersions = getPartitionReplicaVersionsView(getNode(instance), partitionId);
                     List<Address> addresses = getReplicaAddresses(instance, partitionId);
 
                     String message = log + " PartitionId: " + partitionId
-                            + " InitialReplicaVersions: " + Arrays.toString(initialReplicaVersions)
-                            + " ReplicaVersions: " + Arrays.toString(replicaVersions)
+                            + " InitialReplicaVersions: " + initialReplicaVersions
+                            + " ReplicaVersions: " + replicaVersions
                             + " SmallestSurvivingReplicaIndex: " + minSurvivingReplicaIndex
                             + " InitialReplicaAddresses: " + partitionReplicaAddresses.get(partitionId)
                             + " Instance: " + address + " CurrentReplicaAddresses: " + addresses;
 
                     if (minSurvivingReplicaIndex <= 1) {
-                        assertArrayEquals(message, initialReplicaVersions, replicaVersions);
+                        assertEquals(message, initialReplicaVersions, replicaVersions);
                     } else if (numberOfNodesToCrash > 1) {
-                        final long[] expected = Arrays.copyOf(initialReplicaVersions, initialReplicaVersions.length);
-
-                        boolean verified;
-                        int i = 1;
-                        do {
-                            verified = Arrays.equals(expected, replicaVersions);
-                            shiftLeft(expected, i, replicaVersions[i - 1]);
-                        } while (i++ <= minSurvivingReplicaIndex && !verified);
-
-                        if (!verified) {
-                            fail(message);
-                        }
+                        verifyReplicaVersions(initialReplicaVersions, replicaVersions, minSurvivingReplicaIndex, message);
                     } else {
                         fail(message);
                     }
                 }
             }
+        }
+    }
+
+    private void verifyReplicaVersions(PartitionReplicaVersionsView initialReplicaVersions,
+            PartitionReplicaVersionsView replicaVersions, int minSurvivingReplicaIndex, String message) {
+
+        Set<String> lostMapNames = new HashSet<String>();
+        for (int i = 0; i < minSurvivingReplicaIndex; i++) {
+            lostMapNames.add(getIthMapName(i));
+        }
+
+        for (ServiceNamespace namespace : initialReplicaVersions.getNamespaces()) {
+            if (replicaVersions.getVersions(namespace) == null) {
+                if (namespace instanceof DistributedObjectNamespace) {
+                    String objectName = ((DistributedObjectNamespace) namespace).getObjectName();
+                    assertThat(objectName, Matchers.isIn(lostMapNames));
+                    continue;
+                } else {
+                    fail("No replica version found for " + namespace);
+                }
+            }
+            verifyReplicaVersions(initialReplicaVersions.getVersions(namespace), replicaVersions.getVersions(namespace),
+                    minSurvivingReplicaIndex, message);
+        }
+    }
+
+    private void verifyReplicaVersions(long[] initialReplicaVersions, long[] replicaVersions,
+            int minSurvivingReplicaIndex, String message) {
+        final long[] expected = Arrays.copyOf(initialReplicaVersions, initialReplicaVersions.length);
+
+        boolean verified;
+        int i = 1;
+        do {
+            verified = Arrays.equals(expected, replicaVersions);
+            shiftLeft(expected, i, replicaVersions[i - 1]);
+        } while (i++ <= minSurvivingReplicaIndex && !verified);
+
+        if (!verified) {
+            fail(message);
         }
     }
 

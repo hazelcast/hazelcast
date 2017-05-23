@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.test;
+package com.hazelcast.internal.partition;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
-import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
@@ -64,37 +61,37 @@ public class TestPartitionUtils {
         return partitionService.getPartitionReplicaStateChecker().getPartitionServiceState();
     }
 
-    // TODO: returning only default replica versions
-    public static Map<Integer, long[]> getAllReplicaVersions(List<HazelcastInstance> instances) throws InterruptedException {
-        Map<Integer, long[]> replicaVersions = new HashMap<Integer, long[]>();
+    public static Map<Integer, PartitionReplicaVersionsView> getAllReplicaVersions(List<HazelcastInstance> instances)
+            throws InterruptedException {
+        Map<Integer, PartitionReplicaVersionsView> replicaVersions =
+                new HashMap<Integer, PartitionReplicaVersionsView>();
         for (HazelcastInstance instance : instances) {
             collectOwnedReplicaVersions(getNode(instance), replicaVersions);
         }
         return replicaVersions;
     }
 
-    // TODO: returning only default replica versions
-    public static Map<Integer, long[]> getOwnedReplicaVersions(Node node) throws InterruptedException {
-        Map<Integer, long[]> ownedReplicaVersions = new HashMap<Integer, long[]>();
+    public static Map<Integer, PartitionReplicaVersionsView> getOwnedReplicaVersions(Node node) throws InterruptedException {
+        Map<Integer, PartitionReplicaVersionsView> ownedReplicaVersions =
+                new HashMap<Integer, PartitionReplicaVersionsView>();
         collectOwnedReplicaVersions(node, ownedReplicaVersions);
         return ownedReplicaVersions;
     }
 
-    // TODO: using only default replica versions
-    private static void collectOwnedReplicaVersions(Node node, Map<Integer, long[]> replicaVersions) throws InterruptedException {
+    private static void collectOwnedReplicaVersions(Node node, Map<Integer, PartitionReplicaVersionsView> replicaVersions)
+            throws InterruptedException {
         InternalPartitionService partitionService = node.getPartitionService();
         Address nodeAddress = node.getThisAddress();
         for (IPartition partition : partitionService.getPartitions()) {
             if (nodeAddress.equals(partition.getOwnerOrNull())) {
                 int partitionId = partition.getPartitionId();
-                replicaVersions.put(partitionId, getDefaultReplicaVersions(node, partitionId));
+                replicaVersions.put(partitionId, getPartitionReplicaVersionsView(node, partitionId));
             }
         }
     }
 
-    // TODO: returning only default replica versions
     public static long[] getDefaultReplicaVersions(Node node, int partitionId) throws InterruptedException {
-        return getPartitionReplicaVersionsView(node, partitionId).getVersions().get(NonFragmentedServiceNamespace.INSTANCE);
+        return getPartitionReplicaVersionsView(node, partitionId).getVersions(NonFragmentedServiceNamespace.INSTANCE);
     }
 
     public static PartitionReplicaVersionsView getPartitionReplicaVersionsView(Node node, int partitionId)
@@ -203,6 +200,10 @@ public class TestPartitionUtils {
                 }
             }
 
+            if (!versionMap.containsKey(NonFragmentedServiceNamespace.INSTANCE)) {
+                versionMap.put(NonFragmentedServiceNamespace.INSTANCE, new long[InternalPartition.MAX_BACKUP_COUNT]);
+            }
+
             replicaVersions = new PartitionReplicaVersionsView(versionMap, dirty);
             latch.countDown();
         }
@@ -217,21 +218,4 @@ public class TestPartitionUtils {
         }
     }
 
-    public static class PartitionReplicaVersionsView {
-        private final Map<ServiceNamespace, long[]> versions;
-        private final Set<ServiceNamespace> dirty;
-
-        PartitionReplicaVersionsView(Map<ServiceNamespace, long[]> replicaVersions, Set<ServiceNamespace> dirty) {
-            this.versions = replicaVersions;
-            this.dirty = dirty;
-        }
-
-        public Map<ServiceNamespace, long[]> getVersions() {
-            return versions;
-        }
-
-        public boolean isDirty(ServiceNamespace ns) {
-            return dirty.contains(ns);
-        }
-    }
 }
