@@ -57,6 +57,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.util.ByteArrayProcessor;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.Preconditions;
@@ -303,6 +304,16 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public String createMemberUuid(Address address) {
         return UuidUtil.createMemberUuid(address);
+    }
+
+    @Override
+    public ByteArrayProcessor createMulticastInputProcessor(IOService ioService) {
+        return null;
+    }
+
+    @Override
+    public ByteArrayProcessor createMulticastOutputProcessor(IOService ioService) {
+        return null;
     }
 
     // obtain cluster version, if already initialized (not null)

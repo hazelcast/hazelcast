@@ -34,6 +34,7 @@ import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.util.ByteArrayProcessor;
 import com.hazelcast.version.Version;
 
 import java.util.Map;
@@ -232,4 +233,10 @@ public interface NodeExtension {
      * @return {@link TimedMemberStateFactory}
      */
     TimedMemberStateFactory createTimedMemberStateFactory(HazelcastInstanceImpl instance);
+
+    /** Returns a byte array processor for incoming data on the Multicast joiner */
+    ByteArrayProcessor createMulticastInputProcessor(IOService ioService);
+
+    /** Returns a byte array processor for outgoing data on the Multicast joiner */
+    ByteArrayProcessor createMulticastOutputProcessor(IOService ioService);
 }

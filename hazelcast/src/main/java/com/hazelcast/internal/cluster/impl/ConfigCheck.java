@@ -37,9 +37,9 @@ import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
  */
 public final class ConfigCheck implements IdentifiedDataSerializable {
 
-    private String groupName;
+    private static final String EMPTY_PWD = "";
 
-    private String groupPassword;
+    private String groupName;
 
     private String joinerType;
 
@@ -69,7 +69,6 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
         GroupConfig groupConfig = config.getGroupConfig();
         if (groupConfig != null) {
             this.groupName = groupConfig.getName();
-            this.groupPassword = config.getGroupConfig().getPassword();
         }
 
         // Partition-group settings
@@ -98,7 +97,6 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
             return false;
         }
 
-        verifyGroupPassword(found);
         verifyJoiner(found);
         verifyPartitionGroup(found);
         verifyPartitionCount(found);
@@ -111,12 +109,6 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
             return false;
         }
         return true;
-    }
-
-    private void verifyGroupPassword(ConfigCheck found) {
-        if (!equals(groupPassword, found.groupPassword)) {
-            throw new ConfigMismatchException("Incompatible group password!");
-        }
     }
 
     private void verifyApplicationValidationToken(ConfigCheck found) {
@@ -179,7 +171,8 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(groupName);
-        out.writeUTF(groupPassword);
+        //TODO @tkountis remove in 4.0
+        out.writeUTF(EMPTY_PWD);
         out.writeUTF(joinerType);
         out.writeBoolean(partitionGroupEnabled);
         if (partitionGroupEnabled) {
@@ -208,7 +201,8 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         groupName = in.readUTF();
-        groupPassword = in.readUTF();
+        //TODO groupPassword/ignored - @tkountis remove in 4.0
+        in.readUTF();
         joinerType = in.readUTF();
         partitionGroupEnabled = in.readBoolean();
         if (partitionGroupEnabled) {

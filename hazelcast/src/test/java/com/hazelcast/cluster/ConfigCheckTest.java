@@ -50,19 +50,6 @@ public class ConfigCheckTest {
     }
 
     @Test
-    public void whenGroupNameSameButPasswordDifferent_thenConfigMismatchException() {
-        Config config1 = new Config();
-        config1.getGroupConfig().setName("group").setPassword("password1");
-        Config config2 = new Config();
-        config2.getGroupConfig().setName("group").setPassword("password2");
-
-        ConfigCheck configCheck1 = new ConfigCheck(config1, "joiner");
-        ConfigCheck configCheck2 = new ConfigCheck(config2, "joiner");
-
-        assertIsCompatibleThrowsConfigMismatchException(configCheck1, configCheck2);
-    }
-
-    @Test
     public void whenJoinerTypeDifferent_thenConfigMismatchException() {
         Config config1 = new Config();
         Config config2 = new Config();
