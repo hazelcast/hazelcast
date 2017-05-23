@@ -58,6 +58,7 @@ public class ExecutionService {
     private final Thread[] cooperativeThreadPool;
     private final String hzInstanceName;
     private final ILogger logger;
+    private final AtomicInteger cooperativeThreadIndex = new AtomicInteger();
 
     private volatile boolean isShutdown;
 
@@ -113,12 +114,12 @@ public class ExecutionService {
         ensureThreadsStarted();
         final List<TaskletTracker>[] trackersByThread = new List[cooperativeWorkers.length];
         Arrays.setAll(trackersByThread, i -> new ArrayList());
-        int i = 0;
         for (Tasklet t : tasklets) {
             t.init(jobFuture);
-            trackersByThread[i++ % trackersByThread.length].add(new TaskletTracker(t, jobFuture, jobClassLoader));
+            trackersByThread[Math.floorMod(cooperativeThreadIndex.getAndIncrement(), trackersByThread.length)]
+                    .add(new TaskletTracker(t, jobFuture, jobClassLoader));
         }
-        for (i = 0; i < trackersByThread.length; i++) {
+        for (int i = 0; i < trackersByThread.length; i++) {
             cooperativeWorkers[i].trackers.addAll(trackersByThread[i]);
         }
         Arrays.stream(cooperativeThreadPool).forEach(LockSupport::unpark);
