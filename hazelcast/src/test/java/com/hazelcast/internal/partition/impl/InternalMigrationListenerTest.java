@@ -21,6 +21,7 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
+import com.hazelcast.internal.partition.impl.MigrationCommitTest.DelayMigrationStart;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -32,6 +33,7 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
 
@@ -46,6 +48,10 @@ public class InternalMigrationListenerTest extends HazelcastTestSupport {
         final Config config1 = new Config();
         config1.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
 
+        // hold the migrations until all nodes join so that there will be no retries / failed migrations etc.
+        final CountDownLatch migrationStartLatch = new CountDownLatch(1);
+        config1.addListenerConfig(new ListenerConfig(new DelayMigrationStart(migrationStartLatch)));
+
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance hz1 = factory.newHazelcastInstance(config1);
         warmUpPartitions(hz1);
@@ -55,6 +61,8 @@ public class InternalMigrationListenerTest extends HazelcastTestSupport {
         config2.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
         config2.addListenerConfig(new ListenerConfig(listener));
         final HazelcastInstance hz2 = factory.newHazelcastInstance(config2);
+
+        migrationStartLatch.countDown();
 
         waitAllForSafeState(hz1, hz2);
 

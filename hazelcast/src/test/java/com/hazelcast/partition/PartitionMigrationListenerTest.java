@@ -17,10 +17,12 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.core.PartitionService;
+import com.hazelcast.internal.partition.impl.MigrationCommitTest.DelayMigrationStart;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -56,18 +58,17 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         final int partitionCount = 10;
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
 
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        // hold the migrations until all nodes join so that there will be no retries / failed migrations etc.
+        final CountDownLatch migrationStartLatch = new CountDownLatch(1);
+        config.addListenerConfig(new ListenerConfig(new DelayMigrationStart(migrationStartLatch)));
 
-        CountDownLatch migrationStartLatch = new CountDownLatch(1);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        warmUpPartitions(instance);
 
         final CountingMigrationListener migrationListener = new CountingMigrationListener(migrationStartLatch, partitionCount);
         instance.getPartitionService().addMigrationListener(migrationListener);
 
-        warmUpPartitions(instance);
-
         final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
-
-        assertNodeStartedEventually(instance2);
 
         migrationStartLatch.countDown();
 
@@ -167,14 +168,11 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
     private static class CountingMigrationListener implements MigrationListener {
 
-        CountDownLatch migrationStartLatch;
-
         AtomicInteger[] migrationStarted;
         AtomicInteger[] migrationCompleted;
         AtomicInteger[] migrationFailed;
 
         CountingMigrationListener(CountDownLatch migrationStartLatch, int partitionCount) {
-            this.migrationStartLatch = migrationStartLatch;
             migrationStarted = new AtomicInteger[partitionCount];
             migrationCompleted = new AtomicInteger[partitionCount];
             migrationFailed = new AtomicInteger[partitionCount];
@@ -187,7 +185,6 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
         @Override
         public void migrationStarted(MigrationEvent migrationEvent) {
-            assertOpenEventually(migrationStartLatch);
             migrationStarted[migrationEvent.getPartitionId()].incrementAndGet();
         }
 
