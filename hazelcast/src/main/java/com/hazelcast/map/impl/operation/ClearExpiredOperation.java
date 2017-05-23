@@ -71,11 +71,24 @@ public class ClearExpiredOperation extends AbstractOperation implements Partitio
 
     @Override
     public void afterRun() throws Exception {
-        final MapService mapService = getService();
+        prepareToNextCleanup();
+    }
+
+    private void prepareToNextCleanup() {
+        MapService mapService = getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(getPartitionId());
+        PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(getPartitionId());
         partitionContainer.setHasRunningCleanup(false);
         partitionContainer.setLastCleanupTime(Clock.currentTimeMillis());
+    }
+
+    @Override
+    public void onExecutionFailure(Throwable e) {
+        try {
+            super.onExecutionFailure(e);
+        } finally {
+            prepareToNextCleanup();
+        }
     }
 
     @Override
