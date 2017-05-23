@@ -121,7 +121,7 @@ public class ManagementCenterService {
         this.taskPollThread = new TaskPollThread();
         this.stateSendThread = new StateSendThread();
         this.prepareStateThread = new PrepareStateThread();
-        this.timedMemberStateFactory = new TimedMemberStateFactory(instance);
+        this.timedMemberStateFactory = instance.node.getNodeExtension().createTimedMemberStateFactory(instance);
         this.identifier = newManagementCenterIdentifier();
 
         if (this.managementCenterConfig.isEnabled()) {

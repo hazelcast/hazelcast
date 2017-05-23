@@ -21,6 +21,7 @@ import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
+import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
@@ -224,4 +225,11 @@ public interface NodeExtension {
      * @return new uuid
      */
     String createMemberUuid(Address address);
+
+    /**
+     * Creates a TimedMemberStateFactory for a given Hazelcast instance
+     * @param instance The instance to associate with the timed member state factory
+     * @return {@link TimedMemberStateFactory}
+     */
+    TimedMemberStateFactory createTimedMemberStateFactory(HazelcastInstanceImpl instance);
 }

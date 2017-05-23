@@ -16,11 +16,19 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.monitor.NodeState;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.util.JsonUtil.getString;
 
@@ -32,16 +40,25 @@ public class NodeStateImpl implements NodeState {
     private Version clusterVersion;
     private MemberVersion memberVersion;
 
+    private Map<String, List<String>> weakConfigs;
+
     public NodeStateImpl() {
     }
 
     public NodeStateImpl(ClusterState clusterState, com.hazelcast.instance.NodeState nodeState,
                          Version clusterVersion, MemberVersion memberVersion) {
+        this(clusterState, nodeState, clusterVersion, memberVersion, Collections.<String, List<String>>emptyMap());
+    }
+
+    public NodeStateImpl(ClusterState clusterState, com.hazelcast.instance.NodeState nodeState,
+                         Version clusterVersion, MemberVersion memberVersion, Map<String, List<String>> weakConfigs) {
         this.clusterState = clusterState;
         this.nodeState = nodeState;
         this.clusterVersion = clusterVersion;
         this.memberVersion = memberVersion;
+        this.weakConfigs = weakConfigs;
     }
+
 
     @Override
     public ClusterState getClusterState() {
@@ -69,9 +86,20 @@ public class NodeStateImpl implements NodeState {
         root.add("nodeState", nodeState.name());
         root.add("clusterVersion", clusterVersion.toString());
         root.add("memberVersion", memberVersion.toString());
+
+        JsonObject weaknesses = new JsonObject();
+        for (Map.Entry<String, List<String>> entry : weakConfigs.entrySet()) {
+            JsonArray values = new JsonArray();
+            for (String value : entry.getValue()) {
+                values.add(value);
+            }
+            weaknesses.add(entry.getKey(), values);
+        }
+        root.add("weakConfigs", weaknesses);
         return root;
     }
 
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
     @Override
     public void fromJson(JsonObject json) {
         String jsonClusterState = getString(json, "clusterState", null);
@@ -89,6 +117,19 @@ public class NodeStateImpl implements NodeState {
         String jsonNodeVersion = getString(json, "memberVersion", null);
         if (jsonNodeState != null) {
             memberVersion = MemberVersion.of(jsonNodeVersion);
+        }
+
+        weakConfigs = new HashMap<String, List<String>>();
+        JsonValue jsonWeakConfigs = json.get("weakConfigs");
+        if (jsonWeakConfigs != null) {
+            JsonObject weakConfigsJsObj = jsonWeakConfigs.asObject();
+            for (JsonObject.Member member : weakConfigsJsObj) {
+                List<String> weaknesses = new ArrayList<String>();
+                for (JsonValue value : member.getValue().asArray()) {
+                    weaknesses.add(value.asString());
+                }
+                weakConfigs.put(member.getName(), weaknesses);
+            }
         }
     }
 
