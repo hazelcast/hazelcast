@@ -14,12 +14,12 @@ package com.hazelcast.client.impl.statistics;/*
  * limitations under the License.
  */
 
+import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -40,12 +40,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CONNECTED;
+import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class Statistics {
     public static final String CONFIGURATION_PREFIX = "hazelcast.client.statistics";
     public final static String NEAR_CACHE_CATEGORY_PREFIX = "nearcache.";
+    public final static String FEATURE_SUPPORTED_SINCE_VERSION_STRING = "3.9";
+    public final static int FEATURE_SUPPORTED_SINCE_VERSION = BuildInfo.calculateVersion(FEATURE_SUPPORTED_SINCE_VERSION_STRING);
 
     private final boolean enabled;
     private final HazelcastProperties properties;
@@ -57,7 +59,7 @@ public class Statistics {
     private final MetricsRegistry metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(this.getClass()),
             ProbeLevel.MANDATORY);
     private final Map<String, String> staticStats = new HashMap<String, String>(1);
-    PeriodicStatistics periodicStats;
+    private PeriodicStatistics periodicStats;
 
     /**
      * Use to enable the client statistics collection.
@@ -97,20 +99,50 @@ public class Statistics {
             periodSeconds = defaultValue;
         }
 
-        registerStaticStatistics();
-
-        registerPeriodicMetrics();
-
-        logger.finest("Client statistics is enabled with period " + periodSeconds + " seconds.");
+        registerStatistics();
 
         schedulePeriodicStatisticsSendTask(periodSeconds);
+
+        logger.info("Client statistics is enabled with period " + periodSeconds + " seconds.");
+    }
+
+    private ClientConnection getOwnerConnection() {
+        Address ownerConnectionAddress = client.getClientClusterService().getOwnerConnectionAddress();
+        if (null == ownerConnectionAddress) {
+            return null;
+        }
+        ClientConnection connection = (ClientConnection) client.getConnectionManager().getConnection(ownerConnectionAddress);
+        if (null == connection) {
+            return null;
+        }
+
+        int serverVersion = connection.getConnectedServerVersion();
+        if (serverVersion < FEATURE_SUPPORTED_SINCE_VERSION) {
+            if (logger.isFinestEnabled()) {
+                logger.finest(format("Client statistics can not be started since current connected owner server version is less than"
+                        + " the minimum supported server version %s", FEATURE_SUPPORTED_SINCE_VERSION_STRING));
+            }
+            return null;
+        }
+
+        return connection;
     }
 
     private void schedulePeriodicStatisticsSendTask(long periodSeconds) {
         client.getExecutionService().scheduleWithRepetition(new Runnable() {
             @Override
             public void run() {
+                ClientConnection ownerConnection = getOwnerConnection();
+                if (null == ownerConnection) {
+                    logger.finest("Can not send client statistics to the server. No owner connection.");
+                    return;
+                }
+
                 final Map<String, String> stats = new HashMap<String, String>();
+
+                stats.put("lastStatisticsCollectionTime", Long.toString(System.currentTimeMillis()));
+
+                stats.putAll(staticStats);
 
                 periodicStats.fillMetrics(stats);
 
@@ -119,7 +151,7 @@ public class Statistics {
 
                 addNearCachStats(stats);
 
-                sendStats(stats);
+                sendStats(stats, ownerConnection);
             }
         }, 0, periodSeconds, SECONDS);
     }
@@ -172,42 +204,25 @@ public class Statistics {
         }
     }
 
-    private void registerStaticStatistics() {
-        staticStats.put("enterprise", Boolean.toString(enterprise));
-
-        // The client may have already connected, hence, send the stat at least once at startup
-        sendStats(staticStats);
-
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (CLIENT_CONNECTED.equals(event.getState())) {
-                    sendStats(staticStats);
-                }
-            }
-        });
-    }
-
-    private void sendStats(Map<String, String> oneTimeStats) {
-        ClientMessage request = ClientStatisticsCodec.encodeRequest(oneTimeStats.entrySet());
-        Address ownerConnectionAddress = client.getClientClusterService().getOwnerConnectionAddress();
-        if (null != ownerConnectionAddress) {
-            try {
-                new ClientInvocation(client, request, ownerConnectionAddress).invoke().get();
-            } catch (Exception e) {
-                // suppress exception, do not print too many messages
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Could not send stats ", e);
-                }
+    private void sendStats(Map<String, String> newStats, ClientConnection ownerConnection) {
+        ClientMessage request = ClientStatisticsCodec.encodeRequest(newStats.entrySet());
+        try {
+            new ClientInvocation(client, request, ownerConnection).invoke();
+        } catch (Exception e) {
+            // suppress exception, do not print too many messages
+            if (logger.isFinestEnabled()) {
+                logger.finest("Could not send stats ", e);
             }
         }
     }
 
-    private void registerPeriodicMetrics() {
+    private void registerStatistics() {
         RuntimeMetricSet.register(metricsRegistry);
         OperatingSystemMetricSet.register(metricsRegistry);
 
         periodicStats = new PeriodicStatistics(metricsRegistry);
+
+        staticStats.put("enterprise", Boolean.toString(enterprise));
     }
 
     class PeriodicStatistics {

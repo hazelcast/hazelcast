@@ -75,6 +75,7 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -596,22 +597,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         List<Map.Entry<String, List<Map.Entry<String, String>>>> statsList = new ArrayList<Map.Entry<String, List<Map.Entry<String, String>>>>(
                 clientEndpoints.size());
         for (final ClientEndpoint e : clientEndpoints) {
-            statsList.add(new Map.Entry<String, List<Map.Entry<String, String>>>() {
-                @Override
-                public String getKey() {
-                    return e.getUuid();
-                }
-
-                @Override
-                public List<Map.Entry<String, String>> getValue() {
-                    return e.getClientStatistics();
-                }
-
-                @Override
-                public List<Map.Entry<String, String>> setValue(List<Map.Entry<String, String>> value) {
-                    return null;
-                }
-            });
+            final List<Map.Entry<String, String>> statistics = e.getClientStatistics();
+            if (null != statistics) {
+                statsList.add(new AbstractMap.SimpleEntry<String, List<Map.Entry<String, String>>>(e.getUuid(), statistics));
+            }
         }
         return statsList;
     }
