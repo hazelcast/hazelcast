@@ -137,7 +137,7 @@ public class Statistics {
 
             NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
 
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder buffer = new StringBuilder();
             stats.put(buffer.append(pathPrefix).append("creationTime").toString(),
                     Long.toString(nearCacheStats.getCreationTime()));
             buffer.setLength(0);
