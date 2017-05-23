@@ -19,15 +19,16 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.PartitionReplicaVersionsView;
 import com.hazelcast.internal.partition.service.TestGetOperation;
 import com.hazelcast.internal.partition.service.TestIncrementOperation;
 import com.hazelcast.internal.partition.service.TestMigrationAwareService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -49,10 +50,11 @@ import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.partition.TestPartitionUtils.getDefaultReplicaVersions;
+import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionReplicaVersionsView;
 import static com.hazelcast.internal.partition.impl.MigrationCommitTest.resetInternalMigrationListener;
 import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
 import static com.hazelcast.spi.partition.MigrationEndpoint.SOURCE;
-import static com.hazelcast.test.TestPartitionUtils.getDefaultReplicaVersions;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -353,8 +355,11 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                long[] replicaVersions = getDefaultReplicaVersions(getNode(factory.getInstance(oldReplicaOwner)), partitionId);
-                assertArrayEquals(new long[InternalPartition.MAX_BACKUP_COUNT], replicaVersions);
+                PartitionReplicaVersionsView replicaVersionsView
+                        = getPartitionReplicaVersionsView(getNode(factory.getInstance(oldReplicaOwner)), partitionId);
+                for (ServiceNamespace namespace : replicaVersionsView.getNamespaces()) {
+                    assertArrayEquals(new long[InternalPartition.MAX_BACKUP_COUNT], replicaVersionsView.getVersions(namespace));
+                }
             }
         });
 
@@ -639,9 +644,11 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
         @Override
         public void run() {
             InternalPartitionServiceImpl partitionService = nodeEngine.getService(InternalPartitionService.SERVICE_NAME);
-            partitionService.getReplicaManager().cancelReplicaSync(partitionId);
-            partitionService.getReplicaManager().clearPartitionReplicaVersions(partitionId,
-                    NonFragmentedServiceNamespace.INSTANCE);
+            PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
+            replicaManager.cancelReplicaSync(partitionId);
+            for (ServiceNamespace namespace : replicaManager.getNamespaces(partitionId)) {
+                replicaManager.clearPartitionReplicaVersions(partitionId, namespace);
+            }
         }
 
         @Override

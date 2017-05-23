@@ -34,9 +34,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.test.TestPartitionUtils.getAllReplicaAddresses;
-import static com.hazelcast.test.TestPartitionUtils.getOngoingReplicaSyncRequests;
-import static com.hazelcast.test.TestPartitionUtils.getScheduledReplicaSyncRequests;
+import static com.hazelcast.internal.partition.TestPartitionUtils.getAllReplicaAddresses;
+import static com.hazelcast.internal.partition.TestPartitionUtils.getOngoingReplicaSyncRequests;
+import static com.hazelcast.internal.partition.TestPartitionUtils.getScheduledReplicaSyncRequests;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

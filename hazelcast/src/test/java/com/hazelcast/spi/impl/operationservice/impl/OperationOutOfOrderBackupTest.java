@@ -46,7 +46,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.test.TestPartitionUtils.getDefaultReplicaVersions;
+import static com.hazelcast.internal.partition.TestPartitionUtils.getDefaultReplicaVersions;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

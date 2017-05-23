@@ -74,7 +74,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.test.TestPartitionUtils.getPartitionServiceState;
+import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.Integer.getInteger;
 import static java.lang.String.format;
