@@ -419,8 +419,6 @@ public final class GroupProperty {
 
     public static final HazelcastProperty ENABLE_JMX
             = new HazelcastProperty("hazelcast.jmx", false);
-    public static final HazelcastProperty ENABLE_JMX_DETAILED
-            = new HazelcastProperty("hazelcast.jmx.detailed", false);
     public static final HazelcastProperty JMX_UPDATE_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.jmx.update.interval.seconds", 5, SECONDS);
 
