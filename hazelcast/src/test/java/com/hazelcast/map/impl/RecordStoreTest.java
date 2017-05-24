@@ -25,7 +25,7 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.SampleObjects;
+import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
@@ -72,7 +72,7 @@ public class RecordStoreTest extends HazelcastTestSupport {
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
         IMap<Object, Object> map = hazelcastInstance.getMap(mapName);
         int key = 1;
-        map.put(key, new SampleObjects.Employee("tom", 24, true, 10));
+        map.put(key, new SampleTestObjects.Employee("tom", 24, true, 10));
         DefaultRecordStore defaultRecordStore = getRecordStore(map, key);
         defaultRecordStore.reset();
         assertNull(map.get(key));

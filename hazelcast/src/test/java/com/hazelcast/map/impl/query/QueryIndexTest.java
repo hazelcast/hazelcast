@@ -21,10 +21,10 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
-import com.hazelcast.query.SampleObjects;
-import com.hazelcast.query.SampleObjects.Employee;
-import com.hazelcast.query.SampleObjects.Value;
-import com.hazelcast.query.SampleObjects.ValueType;
+import com.hazelcast.query.SampleTestObjects;
+import com.hazelcast.query.SampleTestObjects.Employee;
+import com.hazelcast.query.SampleTestObjects.Value;
+import com.hazelcast.query.SampleTestObjects.ValueType;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -70,7 +70,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
     @Test(timeout = 1000 * 60)
     public void testDeletingNonExistingObject() {
         HazelcastInstance instance = createHazelcastInstance();
-        IMap<Integer, SampleObjects.Value> map = instance.getMap(randomMapName());
+        IMap<Integer, SampleTestObjects.Value> map = instance.getMap(randomMapName());
         map.addIndex("name", false);
 
         map.delete(1);
@@ -79,7 +79,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
     @Test(timeout = 1000 * 60)
     public void testInnerIndex() {
         HazelcastInstance instance = createHazelcastInstance();
-        IMap<String, SampleObjects.Value> map = instance.getMap("default");
+        IMap<String, SampleTestObjects.Value> map = instance.getMap("default");
         map.addIndex("name", false);
         map.addIndex("type.typeName", false);
         for (int i = 0; i < 10; i++) {
@@ -87,7 +87,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
             map.put("" + i, v);
         }
         Predicate predicate = new PredicateBuilder().getEntryObject().get("type.typeName").in("type8", "type6");
-        Collection<SampleObjects.Value> values = map.values(predicate);
+        Collection<SampleTestObjects.Value> values = map.values(predicate);
         assertEquals(2, values.size());
         List<String> typeNames = new ArrayList<String>();
         for (Value configObject : values) {
@@ -101,7 +101,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
     @Test(timeout = 1000 * 60)
     public void testInnerIndexSql() {
         HazelcastInstance instance = createHazelcastInstance();
-        IMap<String, SampleObjects.Value> map = instance.getMap("default");
+        IMap<String, SampleTestObjects.Value> map = instance.getMap("default");
         map.addIndex("name", false);
         map.addIndex("type.typeName", false);
         for (int i = 0; i < 4; i++) {
@@ -109,7 +109,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
             map.put("" + i, v);
         }
         Predicate predicate = new SqlPredicate("type.typeName='type1'");
-        Collection<SampleObjects.Value> values = map.values(predicate);
+        Collection<SampleTestObjects.Value> values = map.values(predicate);
         assertEquals(1, values.size());
         List<String> typeNames = new ArrayList<String>();
         for (Value configObject : values) {
@@ -121,7 +121,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
     @Test(timeout = 1000 * 60)
     public void issue685RemoveIndexesOnClear() {
         HazelcastInstance instance = createHazelcastInstance();
-        IMap<String, SampleObjects.Value> map = instance.getMap("default");
+        IMap<String, SampleTestObjects.Value> map = instance.getMap("default");
         map.addIndex("name", true);
         for (int i = 0; i < 4; i++) {
             Value v = new Value("name" + i);
@@ -129,20 +129,20 @@ public class QueryIndexTest extends HazelcastTestSupport {
         }
         map.clear();
         Predicate predicate = new SqlPredicate("name='name0'");
-        Collection<SampleObjects.Value> values = map.values(predicate);
+        Collection<SampleTestObjects.Value> values = map.values(predicate);
         assertEquals(0, values.size());
     }
 
     @Test(timeout = 1000 * 60)
     public void testQueryDoesNotMatchOldResults_whenEntriesAreUpdated() {
         HazelcastInstance instance = createHazelcastInstance();
-        IMap<String, SampleObjects.Value> map = instance.getMap("default");
+        IMap<String, SampleTestObjects.Value> map = instance.getMap("default");
         map.addIndex("name", true);
 
         map.put("0", new Value("name"));
         map.put("0", new Value("newName"));
 
-        Collection<SampleObjects.Value> values = map.values(new SqlPredicate("name='name'"));
+        Collection<SampleTestObjects.Value> values = map.values(new SqlPredicate("name='name'"));
         assertEquals(0, values.size());
     }
 

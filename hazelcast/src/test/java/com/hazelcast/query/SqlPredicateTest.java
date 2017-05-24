@@ -20,20 +20,20 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.query.SampleObjects.Employee;
-import com.hazelcast.query.SampleObjects.ObjectWithBigDecimal;
-import com.hazelcast.query.SampleObjects.ObjectWithBoolean;
-import com.hazelcast.query.SampleObjects.ObjectWithByte;
-import com.hazelcast.query.SampleObjects.ObjectWithChar;
-import com.hazelcast.query.SampleObjects.ObjectWithDate;
-import com.hazelcast.query.SampleObjects.ObjectWithDouble;
-import com.hazelcast.query.SampleObjects.ObjectWithFloat;
-import com.hazelcast.query.SampleObjects.ObjectWithInteger;
-import com.hazelcast.query.SampleObjects.ObjectWithLong;
-import com.hazelcast.query.SampleObjects.ObjectWithShort;
-import com.hazelcast.query.SampleObjects.ObjectWithSqlDate;
-import com.hazelcast.query.SampleObjects.ObjectWithSqlTimestamp;
-import com.hazelcast.query.SampleObjects.ObjectWithUUID;
+import com.hazelcast.query.SampleTestObjects.Employee;
+import com.hazelcast.query.SampleTestObjects.ObjectWithBigDecimal;
+import com.hazelcast.query.SampleTestObjects.ObjectWithBoolean;
+import com.hazelcast.query.SampleTestObjects.ObjectWithByte;
+import com.hazelcast.query.SampleTestObjects.ObjectWithChar;
+import com.hazelcast.query.SampleTestObjects.ObjectWithDate;
+import com.hazelcast.query.SampleTestObjects.ObjectWithDouble;
+import com.hazelcast.query.SampleTestObjects.ObjectWithFloat;
+import com.hazelcast.query.SampleTestObjects.ObjectWithInteger;
+import com.hazelcast.query.SampleTestObjects.ObjectWithLong;
+import com.hazelcast.query.SampleTestObjects.ObjectWithShort;
+import com.hazelcast.query.SampleTestObjects.ObjectWithSqlDate;
+import com.hazelcast.query.SampleTestObjects.ObjectWithSqlTimestamp;
+import com.hazelcast.query.SampleTestObjects.ObjectWithUUID;
 import com.hazelcast.query.impl.DateHelperTest;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -191,11 +191,11 @@ public class SqlPredicateTest {
     @Test
     public void testSql_withEnum() {
         Employee value = createValue();
-        value.setState(SampleObjects.State.STATE2);
+        value.setState(SampleTestObjects.State.STATE2);
         Employee nullNameValue = createValue(null);
 
         assertSqlMatching("state == TestUtil.State.STATE2", value);
-        assertSqlMatching("state == " + SampleObjects.State.STATE2, value);
+        assertSqlMatching("state == " + SampleTestObjects.State.STATE2, value);
         assertSqlNotMatching("state == TestUtil.State.STATE1", value);
         assertSqlNotMatching("state == TestUtil.State.STATE1", nullNameValue);
         assertSqlMatching("state == NULL", nullNameValue);
@@ -247,7 +247,7 @@ public class SqlPredicateTest {
 
     @Test
     public void testSql_withBigInteger() {
-        SampleObjects.ObjectWithBigInteger value = new SampleObjects.ObjectWithBigInteger(new BigInteger("123"));
+        SampleTestObjects.ObjectWithBigInteger value = new SampleTestObjects.ObjectWithBigInteger(new BigInteger("123"));
         assertSqlMatching("attribute > '" + new BigInteger("122") + "'", value);
         assertSqlMatching("attribute >= '" + new BigInteger("123") + "'", value);
         assertSqlMatching("attribute = '" + new BigInteger("123") + "'", value);

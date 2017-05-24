@@ -26,7 +26,7 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
-import com.hazelcast.query.SampleObjects;
+import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -79,7 +79,7 @@ public class ClientMapWithIndexCreationTest extends HazelcastTestSupport {
 
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
 
-        IMap<String, SampleObjects.Employee> test = client.getMap("test");
-        test.put("foo", new SampleObjects.Employee(1, "name", "age", 32, true, 230));
+        IMap<String, SampleTestObjects.Employee> test = client.getMap("test");
+        test.put("foo", new SampleTestObjects.Employee(1, "name", "age", 32, true, 230));
     }
 }

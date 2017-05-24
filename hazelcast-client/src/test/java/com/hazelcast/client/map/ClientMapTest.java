@@ -42,7 +42,7 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.TestSerializationConstants;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SampleObjects;
+import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.impl.predicates.InstanceOfPredicate;
 import com.hazelcast.test.AssertTask;
@@ -157,10 +157,10 @@ public class ClientMapTest extends HazelcastTestSupport {
 
     @Test
     public void testSerializationServiceNullClassLoaderProblem() throws Exception {
-        IMap<Integer, SampleObjects.PortableEmployee> map = client.getMap("test");
+        IMap<Integer, SampleTestObjects.PortableEmployee> map = client.getMap("test");
 
         // If the classloader is null the following call throws NullPointerException
-        map.values(new InstanceOfPredicate(SampleObjects.PortableEmployee.class));
+        map.values(new InstanceOfPredicate(SampleTestObjects.PortableEmployee.class));
     }
 
     @Test
