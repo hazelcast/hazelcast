@@ -35,12 +35,18 @@ import org.junit.runner.RunWith;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * NOTE: This tests needs AWS credentials to be set as environment variables!
+ * <p>
+ * Please set {@code AWS_ACCESS_KEY_ID} and {@code AWS_SECRET_ACCESS_KEY} with the according values.
+ */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({SlowTest.class, ParallelTest.class})
 public class AwsCloudDiscoveryTest {
+
     @Test
     public void testAwsClient_MemberNonDefaultPortConfig() {
-        final Map<String, Comparable> props = new HashMap<String, Comparable>();
+        Map<String, Comparable> props = new HashMap<String, Comparable>();
         props.put(AwsProperties.PORT.getDefinition().key(), "60000");
         props.put(AwsProperties.ACCESS_KEY.getDefinition().key(), System.getenv("AWS_ACCESS_KEY_ID"));
         props.put(AwsProperties.SECRET_KEY.getDefinition().key(), System.getenv("AWS_SECRET_ACCESS_KEY"));
@@ -50,7 +56,7 @@ public class AwsCloudDiscoveryTest {
 
         ClientConfig config = new ClientConfig();
         config.getNetworkConfig().getDiscoveryConfig()
-              .addDiscoveryStrategyConfig(new DiscoveryStrategyConfig(new AwsDiscoveryStrategyFactory(), props));
+                .addDiscoveryStrategyConfig(new DiscoveryStrategyConfig(new AwsDiscoveryStrategyFactory(), props));
 
         config.setProperty(ClientProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
         config.setProperty(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED.getName(), "true");
