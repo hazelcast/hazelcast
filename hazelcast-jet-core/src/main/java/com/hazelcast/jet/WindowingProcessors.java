@@ -17,12 +17,11 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.jet.impl.processor.InsertPunctuationP;
 import com.hazelcast.jet.impl.processor.SessionWindowP;
 import com.hazelcast.jet.impl.processor.SlidingWindowP;
-import com.hazelcast.jet.stream.DistributedCollector;
 
 import javax.annotation.Nonnull;
 
@@ -282,7 +281,7 @@ public final class WindowingProcessors {
             long sessionTimeout,
             @Nonnull DistributedToLongFunction<? super T> getTimestampF,
             @Nonnull DistributedFunction<? super T, K> getKeyF,
-            @Nonnull DistributedCollector<? super T, A, R> aggregateOperation
+            @Nonnull AggregateOperation<? super T, A, R> aggregateOperation
     ) {
         return () -> new SessionWindowP<>(sessionTimeout, getTimestampF, getKeyF, aggregateOperation);
     }

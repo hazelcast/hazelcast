@@ -17,14 +17,14 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.AggregateOperation;
 import com.hazelcast.jet.Punctuation;
 import com.hazelcast.jet.Session;
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.function.DistributedBinaryOperator;
+import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.DistributedToLongFunction;
-import com.hazelcast.jet.stream.DistributedCollector;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -46,9 +46,8 @@ import static java.lang.System.arraycopy;
 /**
  * Session window processor. See {@link
  *      com.hazelcast.jet.WindowingProcessors#sessionWindow(long,
- *      DistributedToLongFunction, DistributedFunction, DistributedCollector)
- * sessionWindow(sessionTimeout, getTimestampF, getKeyF, collector)}
- * for documentation.
+ *      DistributedToLongFunction, DistributedFunction, AggregateOperation)
+ * WindowingProcessors.sessionWindow()} for documentation.
  *
  * @param <T> type of the stream item
  * @param <K> type of the extracted grouping key
@@ -67,21 +66,21 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
     private final DistributedSupplier<A> newAccumulatorF;
     private final BiConsumer<? super A, ? super T> accumulateF;
     private final DistributedFunction<A, R> finishAccumulationF;
-    private final DistributedBinaryOperator<A> combineAccF;
+    private final DistributedBiConsumer<A, A> combineAccF;
     private final FlatMapper<Punctuation, Session<K, R>> expiredSessionFlatmapper;
 
     public SessionWindowP(
             long sessionTimeout,
             DistributedToLongFunction<? super T> getTimestampF,
             DistributedFunction<? super T, K> getKeyF,
-            DistributedCollector<? super T, A, R> collector
+            AggregateOperation<? super T, A, R> aggrOp
     ) {
         this.getTimestampF = getTimestampF;
         this.getKeyF = getKeyF;
-        this.newAccumulatorF = collector.supplier();
-        this.accumulateF = collector.accumulator();
-        this.combineAccF = collector.combiner();
-        this.finishAccumulationF = collector.finisher();
+        this.newAccumulatorF = aggrOp.createAccumulatorF();
+        this.accumulateF = aggrOp.accumulateItemF();
+        this.combineAccF = aggrOp.combineAccumulatorsF();
+        this.finishAccumulationF = aggrOp.finishAccumulationF();
         this.sessionTimeout = sessionTimeout;
         this.expiredSessionFlatmapper = flatMapper(this::expiredSessionTraverser);
     }
@@ -178,7 +177,7 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
                 // both `i` and `i + 1` windows overlap the event interval
                 removeFromDeadlines(key, ends[i]);
                 ends[i] = ends[i + 1];
-                accs[i] = combineAccF.apply(accs[i], accs[i + 1]);
+                combineAccF.accept(accs[i], accs[i + 1]);
                 removeWindow(i + 1);
                 return accs[i];
             }

@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.impl.processor;
 
+import com.hazelcast.jet.AggregateOperations;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Punctuation;
-import com.hazelcast.jet.stream.DistributedCollector;
 import com.hazelcast.jet.Session;
 import com.hazelcast.jet.StreamingTestSupport;
+import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.MutableLong;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,8 +38,8 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static java.util.Arrays.asList;
 import static java.util.Collections.shuffle;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -55,7 +55,7 @@ import static org.mockito.Mockito.mock;
 public class SessionWindowPTest extends StreamingTestSupport {
 
     private static final int SESSION_TIMEOUT = 10;
-    private SessionWindowP<Entry<String, Long>, String, MutableLong, Long> processor;
+    private SessionWindowP<Entry<String, Long>, String, LongAccumulator, Long> processor;
 
     @Before
     public void before() {
@@ -63,12 +63,7 @@ public class SessionWindowPTest extends StreamingTestSupport {
                 SESSION_TIMEOUT,
                 Entry::getValue,
                 entryKey(),
-                DistributedCollector.of(
-                        MutableLong::new,
-                        (acc, e) -> acc.value++,
-                        (a, b) -> MutableLong.valueOf(a.value + b.value),
-                        a -> a.value
-                ));
+                AggregateOperations.counting());
         processor.init(outbox, mock(Processor.Context.class));
     }
 
