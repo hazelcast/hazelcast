@@ -226,6 +226,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
         proxyManager = new ProxyManager(this);
         executionService = initExecutionService();
+        metricsRegistry.collectMetrics(executionService);
         loadBalancer = initLoadBalancer(config);
         transactionManager = new ClientTransactionManagerServiceImpl(this, loadBalancer);
         partitionService = new ClientPartitionServiceImpl(this);

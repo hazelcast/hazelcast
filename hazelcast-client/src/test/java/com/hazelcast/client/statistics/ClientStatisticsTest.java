@@ -93,6 +93,9 @@ public class ClientStatisticsTest
         Assert.assertTrue(clientConnectionTime >= connectionTimeStat
                 && clientConnectionTime - connectionTimeStat < statsPeriodSeconds * 1000);
 
+        String queueSize = stats.get("executionService.userExecutorQueueSize");
+        assertNotNull(queueSize);
+
         String mapHits = stats.get("nearcache." + testMapName + ".hits");
         assertNull(mapHits);
         String cacheHits = stats.get("nearcache." + testCacheName + ".hits");

@@ -145,9 +145,6 @@ public class Statistics {
 
                 periodicStats.fillMetrics(stats);
 
-                ThreadPoolExecutor userExecutor = (ThreadPoolExecutor) client.getClientExecutionService().getUserExecutor();
-                stats.put("userExecutor.queueSize", Long.toString(userExecutor.getQueue().size()));
-
                 addNearCachStats(stats);
 
                 sendStats(stats, ownerConnection);
@@ -156,6 +153,7 @@ public class Statistics {
     }
 
     private void addNearCachStats(Map<String, String> stats) {
+        StringBuilder buffer = new StringBuilder();
         for (NearCache nearCache : client.getNearCacheManager().listAllNearCaches()) {
             String pathPrefix = NEAR_CACHE_CATEGORY_PREFIX;
             String name = nearCache.getName();
@@ -168,7 +166,6 @@ public class Statistics {
 
             NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
 
-            StringBuilder buffer = new StringBuilder();
             stats.put(buffer.append(pathPrefix).append("creationTime").toString(),
                     Long.toString(nearCacheStats.getCreationTime()));
             buffer.setLength(0);
@@ -234,6 +231,7 @@ public class Statistics {
             for (String name : metricNames) {
                 allMetrics.put(name, metricsRegistry.newStringGauge(name));
             }
+            allMetrics.put("executionService.userExecutorQueueSize", metricsRegistry.newStringGauge("executionService.userExecutorQueueSize"));
         }
 
         void fillMetrics(final Map<String, String> metricsMap) {
