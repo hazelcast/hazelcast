@@ -31,9 +31,12 @@ import com.hazelcast.test.TestEnvironment;
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import static java.util.Collections.newSetFromMap;
 
 /**
  * Serialization service that intercepts and samples serialized objects.
@@ -46,29 +49,19 @@ public class SamplingSerializationService implements InternalSerializationServic
 
     static final ConcurrentMap<String, List<byte[]>> SERIALIZED_SAMPLES_PER_CLASS_NAME =
             new ConcurrentHashMap<String, List<byte[]>>(1000);
+    // cache classes for which samples have already been captured
+    static final Set<String> SAMPLED_CLASSES = newSetFromMap(new ConcurrentHashMap<String, Boolean>(1000));
+
     private static final int MAX_SERIALIZED_SAMPLES_PER_CLASS = 5;
-    // utility strings to locate commonly used test classes without "Test" / ".test" in their class name
-    private static final String SAMPLE_OBJECTS_TEST_CLASS_NAME = "com.hazelcast.query.SampleObjects";
-    private static final String COMPLEX_DATA_STRUCTURE_TEST_CLASS_NAME =
-            "com.hazelcast.query.impl.extractor.specification.ComplexDataStructure";
+    // utility strings to locate test classes commonly used as user objects
+    private static final String DUMMY_CLASS_PREFIX = "Dummy";
     private static final String TEST_CLASS_SUFFIX = "Test";
-    private static final String TEST_PACKAGE_INFIX = "Test";
+    private static final String TEST_PACKAGE_INFIX = ".test";
 
     protected final InternalSerializationService delegate;
 
     public SamplingSerializationService(InternalSerializationService delegate) {
         this.delegate = delegate;
-    }
-
-    // record the given object, then return it
-    protected static <T> T sampleObject(T obj, byte[] serializedObject) {
-        if (obj == null)
-            return null;
-
-        if (serializedObject != null && shouldAddSerializedSample(obj)) {
-            addSerializedSample(obj, serializedObject);
-        }
-        return obj;
     }
 
     @Override
@@ -185,6 +178,18 @@ public class SamplingSerializationService implements InternalSerializationServic
         delegate.dispose();
     }
 
+    // record the given object, then return it
+    protected static <T> T sampleObject(T obj, byte[] serializedObject) {
+        if (obj == null) {
+            return null;
+        }
+
+        if (serializedObject != null && shouldAddSerializedSample(obj)) {
+            addSerializedSample(obj, serializedObject);
+        }
+        return obj;
+    }
+
     private static void addSerializedSample(Object obj, byte[] bytes) {
         String className = obj.getClass().getName();
         SERIALIZED_SAMPLES_PER_CLASS_NAME.putIfAbsent(className, new CopyOnWriteArrayList<byte[]>());
@@ -201,6 +206,11 @@ public class SamplingSerializationService implements InternalSerializationServic
         }
 
         String className = klass.getName();
+
+        if (SAMPLED_CLASSES.contains(className)) {
+            return false;
+        }
+
         if (isTestClass(className)) {
             return false;
         }
@@ -216,16 +226,12 @@ public class SamplingSerializationService implements InternalSerializationServic
         if (existingSamples.size() < MAX_SERIALIZED_SAMPLES_PER_CLASS) {
             return true;
         }
+        SAMPLED_CLASSES.add(className);
         return false;
     }
 
     public static boolean isTestClass(String className) {
-        if (className.contains(TEST_CLASS_SUFFIX) || className.contains(TEST_PACKAGE_INFIX)) {
-            return true;
-        }
-
-        if (className.startsWith(SAMPLE_OBJECTS_TEST_CLASS_NAME)
-                || className.startsWith(COMPLEX_DATA_STRUCTURE_TEST_CLASS_NAME)) {
+        if (className.contains(TEST_CLASS_SUFFIX) || className.contains(TEST_PACKAGE_INFIX) || className.contains(DUMMY_CLASS_PREFIX)) {
             return true;
         }
 
