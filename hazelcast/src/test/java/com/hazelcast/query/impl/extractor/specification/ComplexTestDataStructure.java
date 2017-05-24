@@ -35,7 +35,7 @@ import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification
  * Each multi-value attribute is present as both an array and as a collection, for example:
  * limbs_list & limbs_array, so that both extraction in arrays and in collections may be tested.
  */
-public class ComplexDataStructure {
+public class ComplexTestDataStructure {
 
     public static class Person implements Serializable, PortableAware {
         String name;
