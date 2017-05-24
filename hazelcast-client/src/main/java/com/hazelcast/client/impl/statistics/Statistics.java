@@ -22,9 +22,7 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.StringGauge;
-import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet;
 import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
 import com.hazelcast.internal.nearcache.NearCache;
@@ -35,9 +33,10 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static java.lang.String.format;
@@ -56,8 +55,7 @@ public class Statistics {
 
     private final boolean enterprise;
 
-    private final MetricsRegistry metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(this.getClass()),
-            ProbeLevel.MANDATORY);
+    private final MetricsRegistry metricsRegistry;
     private final Map<String, String> staticStats = new HashMap<String, String>(1);
     private PeriodicStatistics periodicStats;
 
@@ -80,6 +78,7 @@ public class Statistics {
         this.enabled = properties.getBoolean(ENABLED);
         this.client = client;
         this.enterprise = BuildInfoProvider.getBuildInfo().isEnterprise();
+        this.metricsRegistry = client.getMetricsRegistry();
     }
 
     /**
@@ -217,8 +216,8 @@ public class Statistics {
     }
 
     private void registerStatistics() {
-        RuntimeMetricSet.register(metricsRegistry);
-        OperatingSystemMetricSet.register(metricsRegistry);
+        // Note that the OperatingSystemMetricSet and RuntimeMetricSet are already registered during client start,
+        // hence we do not re-register
 
         periodicStats = new PeriodicStatistics(metricsRegistry);
 
@@ -229,9 +228,10 @@ public class Statistics {
         private final Map<String, StringGauge> allMetrics;
 
         PeriodicStatistics(final MetricsRegistry metricsRegistry) {
-            Set<String> metricsRegistryNames = metricsRegistry.getNames();
-            allMetrics = new HashMap<String, StringGauge>(metricsRegistryNames.size());
-            for (String name : metricsRegistryNames) {
+            List<String> metricNames = new ArrayList<String>(RuntimeMetricSet.getRegisteredMetricNames());
+            metricNames.addAll(OperatingSystemMetricSet.getRegisteredMetricNames());
+            allMetrics = new HashMap<String, StringGauge>(metricNames.size());
+            for (String name : metricNames) {
                 allMetrics.put(name, metricsRegistry.newStringGauge(name));
             }
         }

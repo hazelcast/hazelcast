@@ -21,6 +21,9 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -29,6 +32,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * A Metric pack for exposing {@link java.lang.Runtime} metrics.
  */
 public final class RuntimeMetricSet {
+    private static final Set<String> registeredMetrics = new HashSet<String>();
 
     private RuntimeMetricSet() {
     }
@@ -52,6 +56,7 @@ public final class RuntimeMetricSet {
                     }
                 }
         );
+        registeredMetrics.add("runtime.freeMemory");
 
         metricsRegistry.register(runtime, "runtime.totalMemory", MANDATORY,
                 new LongProbeFunction<Runtime>() {
@@ -61,6 +66,7 @@ public final class RuntimeMetricSet {
                     }
                 }
         );
+        registeredMetrics.add("runtime.totalMemory");
 
         metricsRegistry.register(runtime, "runtime.maxMemory", MANDATORY,
                 new LongProbeFunction<Runtime>() {
@@ -70,6 +76,7 @@ public final class RuntimeMetricSet {
                     }
                 }
         );
+        registeredMetrics.add("runtime.maxMemory");
 
         metricsRegistry.register(runtime, "runtime.usedMemory", MANDATORY,
                 new LongProbeFunction<Runtime>() {
@@ -79,6 +86,7 @@ public final class RuntimeMetricSet {
                     }
                 }
         );
+        registeredMetrics.add("runtime.usedMemory");
 
         metricsRegistry.register(runtime, "runtime.availableProcessors", MANDATORY,
                 new LongProbeFunction<Runtime>() {
@@ -88,6 +96,7 @@ public final class RuntimeMetricSet {
                     }
                 }
         );
+        registeredMetrics.add("runtime.availableProcessors");
 
         metricsRegistry.register(mxBean, "runtime.uptime", MANDATORY,
                 new LongProbeFunction<RuntimeMXBean>() {
@@ -97,5 +106,10 @@ public final class RuntimeMetricSet {
                     }
                 }
         );
+        registeredMetrics.add("runtime.uptime");
+    }
+
+    public static Set<String> getRegisteredMetricNames() {
+        return Collections.unmodifiableSet(registeredMetrics);
     }
 }
