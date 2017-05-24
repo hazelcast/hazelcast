@@ -71,8 +71,11 @@ public class FirewallingConnectionManager implements ConnectionManager, PacketHa
         return getOrConnect(address);
     }
 
-    public synchronized void block(Address address) {
+    public synchronized void blockNewConnection(Address address) {
         blockedAddresses.add(address);
+    }
+
+    public synchronized void closeActiveConnection(Address address) {
         Connection connection = getConnection(address);
         if (connection != null) {
             connection.close("Blocked by connection manager", null);

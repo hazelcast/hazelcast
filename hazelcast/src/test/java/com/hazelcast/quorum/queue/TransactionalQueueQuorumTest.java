@@ -37,6 +37,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 
+import static com.hazelcast.quorum.PartitionedCluster.QUORUM_ID;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 import static java.util.Arrays.asList;
@@ -62,7 +63,7 @@ public class TransactionalQueueQuorumTest extends AbstractQueueQuorumTest {
         initializeFiveMemberCluster(QuorumType.READ_WRITE, 3);
         q4.add("foo");
         addQueueData(q4);
-        cluster.splitFiveMembersThreeAndTwo();
+        cluster.splitFiveMembersThreeAndTwo(QUORUM_ID);
     }
 
     @AfterClass

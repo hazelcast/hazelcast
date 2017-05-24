@@ -27,6 +27,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.quorum.PartitionedCluster.QUORUM_ID;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class LockReadQuorumTest extends AbstractLockQuorumTest {
@@ -34,7 +36,7 @@ public class LockReadQuorumTest extends AbstractLockQuorumTest {
     @BeforeClass
     public static void initialize() {
         initializeFiveMemberCluster(QuorumType.READ, 3);
-        cluster.splitFiveMembersThreeAndTwo();
+        cluster.splitFiveMembersThreeAndTwo(QUORUM_ID);
     }
 
     @AfterClass

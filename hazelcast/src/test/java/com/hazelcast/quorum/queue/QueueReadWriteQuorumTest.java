@@ -27,6 +27,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.quorum.PartitionedCluster.QUORUM_ID;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class QueueReadWriteQuorumTest extends AbstractQueueQuorumTest {
@@ -35,7 +37,7 @@ public class QueueReadWriteQuorumTest extends AbstractQueueQuorumTest {
     public static void initialize() {
         initializeFiveMemberCluster(QuorumType.READ_WRITE, 3);
         addQueueData(q4);
-        cluster.splitFiveMembersThreeAndTwo();
+        cluster.splitFiveMembersThreeAndTwo(QUORUM_ID);
     }
 
     @AfterClass

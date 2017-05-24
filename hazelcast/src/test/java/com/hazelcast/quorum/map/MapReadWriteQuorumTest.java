@@ -41,6 +41,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.InterceptorTest.SimpleInterceptor;
+import static com.hazelcast.quorum.PartitionedCluster.QUORUM_ID;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -48,7 +49,6 @@ import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 public class MapReadWriteQuorumTest {
 
     private static final String MAP_NAME_PREFIX = "quorum";
-    private static final String QUORUM_ID = "threeNodeQuorumRule";
 
     static PartitionedCluster cluster;
 

@@ -517,6 +517,10 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    public static void suspectMember(HazelcastInstance source, HazelcastInstance target) {
+        suspectMember(getNode(source), getNode(target));
+    }
+
     public static void suspectMember(Node suspectingNode, Node suspectedNode) {
         suspectMember(suspectingNode, suspectedNode, null);
     }

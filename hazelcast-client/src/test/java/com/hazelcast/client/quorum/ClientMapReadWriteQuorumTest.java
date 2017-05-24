@@ -44,13 +44,13 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.quorum.QuorumTestUtil.getClientConfig;
 import static com.hazelcast.map.InterceptorTest.SimpleInterceptor;
+import static com.hazelcast.quorum.PartitionedCluster.QUORUM_ID;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientMapReadWriteQuorumTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME_PREFIX = "quorum";
-    private static final String QUORUM_ID = "threeNodeQuorumRule";
 
     static PartitionedCluster cluster;
 

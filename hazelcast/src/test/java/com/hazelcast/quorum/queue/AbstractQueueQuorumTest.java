@@ -25,12 +25,12 @@ import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.Test;
 
+import static com.hazelcast.quorum.PartitionedCluster.QUORUM_ID;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 
 public abstract class AbstractQueueQuorumTest {
 
     protected static final String QUEUE_NAME_PREFIX = "quorum";
-    protected static final String QUORUM_ID = "threeNodeQuorumRule";
 
     protected static final int QUEUE_DATA_COUNT = 50;
     protected static final String QUEUE_NAME = QUEUE_NAME_PREFIX + randomString();

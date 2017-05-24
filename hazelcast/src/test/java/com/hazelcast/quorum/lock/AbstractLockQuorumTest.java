@@ -29,6 +29,7 @@ import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.quorum.PartitionedCluster.QUORUM_ID;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
@@ -37,7 +38,6 @@ public abstract class AbstractLockQuorumTest {
 
     private static final String LOCK_NAME_PREFIX = "lock";
     private static final String LOCK_NAME = LOCK_NAME_PREFIX + randomString();
-    private static final String QUORUM_ID = "threeNodeQuorumRule";
 
     protected static PartitionedCluster cluster;
 

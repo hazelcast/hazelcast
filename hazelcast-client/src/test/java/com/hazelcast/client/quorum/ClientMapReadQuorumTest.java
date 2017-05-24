@@ -40,13 +40,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.client.quorum.QuorumTestUtil.getClientConfig;
+import static com.hazelcast.quorum.PartitionedCluster.QUORUM_ID;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientMapReadQuorumTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME_PREFIX = "quorum";
-    private static final String QUORUM_ID = "threeNodeQuorumRule";
 
     static PartitionedCluster cluster;
 
