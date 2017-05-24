@@ -63,10 +63,11 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
     private final A emptyAcc;
 
     public SlidingWindowP(
-            WindowDefinition winDef,
-            DistributedToLongFunction<? super T> getFrameTimestampF,
             Function<? super T, ?> getKeyF,
-            AggregateOperation<? super T, A, R> aggrOp) {
+            DistributedToLongFunction<? super T> getFrameTimestampF,
+            WindowDefinition winDef,
+            AggregateOperation<? super T, A, R> aggrOp
+    ) {
         this.wDef = winDef;
         this.getFrameTimestampF = getFrameTimestampF;
         this.getKeyF = getKeyF;

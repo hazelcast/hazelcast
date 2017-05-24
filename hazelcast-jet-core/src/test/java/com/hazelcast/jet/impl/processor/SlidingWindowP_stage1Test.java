@@ -18,11 +18,11 @@ package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.jet.Punctuation;
+import com.hazelcast.jet.StreamingTestSupport;
+import com.hazelcast.jet.TimestampKind;
+import com.hazelcast.jet.TimestampedEntry;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
-import com.hazelcast.jet.StreamingTestSupport;
-import com.hazelcast.jet.TimestampedEntry;
-import com.hazelcast.jet.WindowingProcessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -34,9 +34,10 @@ import org.junit.runner.RunWith;
 import java.util.List;
 import java.util.Map.Entry;
 
-import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.AggregateOperations.summingToLong;
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.WindowDefinition.slidingWindowDef;
+import static com.hazelcast.jet.WindowingProcessors.groupByFrameAndAccumulate;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -51,9 +52,10 @@ public class SlidingWindowP_stage1Test extends StreamingTestSupport {
     @Before
     @SuppressWarnings("unchecked")
     public void before() {
-        processor = (SlidingWindowP<Entry<Long, Long>, Long, ?>) WindowingProcessors.slidingWindowStage1(
+        processor = (SlidingWindowP<Entry<Long, Long>, Long, ?>) groupByFrameAndAccumulate(
                 x -> KEY,
                 Entry::getKey,
+                TimestampKind.EVENT,
                 slidingWindowDef(16, 4),
                 summingToLong(Entry<Long, Long>::getValue)
         ).get();

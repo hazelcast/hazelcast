@@ -41,8 +41,8 @@ import static java.lang.Math.floorMod;
  * between window size and the sliding step.
  * <p>
  * A frame is labelled with its timestamp, which is the first timestamp
- * value beyond the range covered by the frame. In other words, it is the
- * starting timestamp of the next frame or the "closing time" of the frame.
+ * value beyond the range covered by the frame. That timestamp denotes the
+ * exact moment on the event timeline where the frame was closed.
  */
 public class WindowDefinition implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -95,20 +95,6 @@ public class WindowDefinition implements Serializable {
     }
 
     /**
-     * Returns a new window definition where all the frames are shifted by the
-     * given offset. More formally, it specifies the value of the lowest
-     * non-negative frame timestamp.
-     * <p>
-     * Given a tumbling window of {@code windowLength = 4}, with no offset the
-     * windows would cover the timestamps {@code ..., [-4, 0), [0..4), ...}
-     * With {@code offset = 2} they will cover {@code ..., [-2, 2), [2..6),
-     * ...}
-     */
-    public WindowDefinition withOffset(long offset) {
-        return new WindowDefinition(frameLength, offset, windowLength / frameLength);
-    }
-
-    /**
      * Returns the highest frame timestamp less than or equal to the given
      * timestamp. If there is no such {@code long} value, returns {@code
      * Long.MIN_VALUE}.
@@ -132,6 +118,28 @@ public class WindowDefinition implements Serializable {
     }
 
     /**
+     * Returns a new window definition where all the frames are shifted by the
+     * given offset. More formally, it specifies the value of the lowest
+     * non-negative frame timestamp.
+     * <p>
+     * Given a tumbling window of {@code windowLength = 4}, with no offset the
+     * windows would cover the timestamps {@code ..., [-4, 0), [0..4), ...}
+     * With {@code offset = 2} they will cover {@code ..., [-2, 2), [2..6),
+     * ...}
+     */
+    public WindowDefinition withOffset(long offset) {
+        return new WindowDefinition(frameLength, offset, windowLength / frameLength);
+    }
+
+    /**
+     * Converts this definition to one defining a tumbling window of the
+     * same length as this definition's frame.
+     */
+    public WindowDefinition toTumblingByFrame() {
+        return new WindowDefinition(frameLength, frameOffset, 1);
+    }
+
+    /**
      * Returns the definition of a sliding window of length {@code
      * windowLength} that slides by {@code slideBy}. Given {@code
      * windowLength = 4} and {@code slideBy = 2}, the generated windows would
@@ -152,10 +160,11 @@ public class WindowDefinition implements Serializable {
     }
 
     /**
-     * Returns a new tumbling window of length {@code windowLength}. The
-     * tumbling window is a special case of the sliding window with {@code
-     * slideBy = windowLength}. Given {@code windowLength = 4}, the generated
-     * windows would cover timestamps {@code ..., [-4, 0), [0..4), [4..8), ...}
+     * Returns the definition of a tumbling window of length {@code
+     * windowLength}. The tumbling window is a special case of the sliding
+     * window with {@code slideBy = windowLength}. Given {@code
+     * windowLength = 4}, the generated windows would cover timestamps {@code
+     * ..., [-4, 0), [0..4), [4..8), ...}
      */
     public static WindowDefinition tumblingWindowDef(long windowLength) {
         return slidingWindowDef(windowLength, windowLength);

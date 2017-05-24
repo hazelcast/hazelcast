@@ -113,6 +113,33 @@ public interface AggregateOperation<T, A, R> extends Serializable {
     DistributedFunction<A, R> finishAccumulationF();
 
     /**
+     * Returns a copy of this aggregate operation with the {@code finish}
+     * primitive replaced by the supplied one.
+     *
+     * @param finishAccumulationF the {@code finish} primitive to use
+     * @param <R1> the result type of the {@code finish} primitive
+     */
+    default <R1> AggregateOperation<T, A, R1> withFinish(
+            @Nonnull DistributedFunction<A, R1> finishAccumulationF
+    ) {
+        return of(createAccumulatorF(), accumulateItemF(), combineAccumulatorsF(), deductAccumulatorF(),
+                finishAccumulationF);
+    }
+
+    /**
+     * Returns a copy of this aggregate operation with the {@code accumulate}
+     * primitive replaced by the supplied one.
+     *
+     * @param accumulateItemF the {@code combine} primitive to use
+     */
+    default <T1> AggregateOperation<T1, A, R> withAccumulate(
+            @Nonnull DistributedBiConsumer<A, T1> accumulateItemF
+    ) {
+        return of(createAccumulatorF(), accumulateItemF, combineAccumulatorsF(), deductAccumulatorF(),
+                finishAccumulationF());
+    }
+
+    /**
      * Returns a new {@code AggregateOperation} object composed from the provided
      * primitives.
      *

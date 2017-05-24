@@ -20,6 +20,7 @@ import com.hazelcast.jet.AggregateOperation;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.jet.StreamingTestSupport;
+import com.hazelcast.jet.TimestampKind;
 import com.hazelcast.jet.TimestampedEntry;
 import com.hazelcast.jet.WindowDefinition;
 import com.hazelcast.jet.accumulator.LongAccumulator;
@@ -46,8 +47,8 @@ import java.util.stream.LongStream;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.WindowDefinition.slidingWindowDef;
-import static com.hazelcast.jet.WindowingProcessors.slidingWindowSingleStage;
-import static com.hazelcast.jet.WindowingProcessors.slidingWindowStage2;
+import static com.hazelcast.jet.WindowingProcessors.aggregateToSlidingWindow;
+import static com.hazelcast.jet.WindowingProcessors.combineToSlidingWindow;
 import static java.util.Arrays.asList;
 import static java.util.Collections.shuffle;
 import static java.util.Collections.singletonList;
@@ -90,8 +91,13 @@ public class SlidingWindowPTest extends StreamingTestSupport {
                     LongAccumulator::get);
 
         DistributedSupplier<Processor> procSupplier = singleStageProcessor
-                ? slidingWindowSingleStage(t -> KEY, Entry<Long, Long>::getKey, windowDef, operation)
-                : slidingWindowStage2(windowDef, operation);
+                ? aggregateToSlidingWindow(
+                            t -> KEY,
+                            Entry<Long, Long>::getKey,
+                            TimestampKind.EVENT,
+                            windowDef,
+                            operation)
+                : combineToSlidingWindow(windowDef, operation);
         processor = (SlidingWindowP<?, ?, Long>) procSupplier.get();
         processor.init(outbox, mock(Context.class));
     }

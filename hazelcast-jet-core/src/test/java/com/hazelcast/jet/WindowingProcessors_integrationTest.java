@@ -42,9 +42,9 @@ import static com.hazelcast.jet.PunctuationPolicies.limitingLagAndLull;
 import static com.hazelcast.jet.StreamingTestSupport.streamToString;
 import static com.hazelcast.jet.WindowDefinition.slidingWindowDef;
 import static com.hazelcast.jet.WindowingProcessors.insertPunctuation;
-import static com.hazelcast.jet.WindowingProcessors.slidingWindowSingleStage;
-import static com.hazelcast.jet.WindowingProcessors.slidingWindowStage1;
-import static com.hazelcast.jet.WindowingProcessors.slidingWindowStage2;
+import static com.hazelcast.jet.WindowingProcessors.aggregateToSlidingWindow;
+import static com.hazelcast.jet.WindowingProcessors.groupByFrameAndAccumulate;
+import static com.hazelcast.jet.WindowingProcessors.combineToSlidingWindow;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -97,16 +97,16 @@ public class WindowingProcessors_integrationTest extends JetTestSupport {
         dag.edge(between(source, insertPP).oneToMany());
 
         if (singleStageProcessor) {
-            Vertex slidingWin = dag.newVertex("slidingWin", slidingWindowSingleStage(
-                    MockEvent::getKey, MockEvent::getTimestamp, wDef, counting));
+            Vertex slidingWin = dag.newVertex("slidingWin", aggregateToSlidingWindow(
+                    MockEvent::getKey, MockEvent::getTimestamp, TimestampKind.EVENT, wDef, counting));
             dag
                     .edge(between(insertPP, slidingWin).partitioned(MockEvent::getKey).distributed())
                     .edge(between(slidingWin, sink).oneToMany());
 
         } else {
-            Vertex groupByFrame = dag.newVertex("groupByFrame", slidingWindowStage1(
-                    MockEvent::getKey, MockEvent::getTimestamp, wDef, counting));
-            Vertex slidingWin = dag.newVertex("slidingWin", slidingWindowStage2(wDef, counting));
+            Vertex groupByFrame = dag.newVertex("groupByFrame", groupByFrameAndAccumulate(
+                    MockEvent::getKey, MockEvent::getTimestamp, TimestampKind.EVENT, wDef, counting));
+            Vertex slidingWin = dag.newVertex("slidingWin", combineToSlidingWindow(wDef, counting));
             dag
                     .edge(between(insertPP, groupByFrame).partitioned(MockEvent::getKey))
                     .edge(between(groupByFrame, slidingWin).partitioned(entryKey()).distributed())

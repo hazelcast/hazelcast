@@ -25,6 +25,11 @@ import java.util.Map.Entry;
  */
 public final class DistributedFunctions {
 
+    /**
+     * The string key returned by {@link #constantKey()}.
+     */
+    public static final String CONSTANT_KEY = "ALL";
+
     private DistributedFunctions() {
     }
 
@@ -55,6 +60,16 @@ public final class DistributedFunctions {
     @Nonnull
     public static <V> DistributedFunction<Entry<?, V>, V> entryValue() {
         return Map.Entry::getValue;
+    }
+
+    /**
+     * Returns a function that always returns the {@link #CONSTANT_KEY}. This is
+     * useful as a key extractor in group-by operations where no classification
+     * by key is desired.
+     */
+    @Nonnull
+    public static <T> DistributedFunction<T, String> constantKey() {
+        return t -> CONSTANT_KEY;
     }
 
     /**
