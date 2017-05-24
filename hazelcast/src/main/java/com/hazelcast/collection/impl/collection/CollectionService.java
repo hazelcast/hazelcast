@@ -110,7 +110,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
                     .setPartitionId(partitionId)
                     .setService(this)
                     .setNodeEngine(nodeEngine);
-            operationService.execute(operation);
+            operationService.invokeOnPartition(operation);
         }
     }
 
