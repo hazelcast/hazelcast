@@ -16,6 +16,12 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.query.Predicate;
+
+import java.util.Collection;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Base interface for Hazelcast distributed maps.
  *
@@ -54,6 +60,22 @@ public interface BaseMap<K, V> extends DistributedObject {
      * if there was no mapping for {@code key}.
      */
     V put(K key, V value);
+
+    /**
+     * Associates the specified value with the specified key in this map
+     * with a given ttl (time to live) value.
+     * Entry will expire and get evicted after the ttl. If ttl is 0, then
+     * the entry lives forever.
+     *
+     * @param key   The specified key.
+     * @param value The value to associate with the key.
+     * @param ttl      maximum time for this entry to stay in the map
+     *                 0 means infinite.
+     * @param timeunit time unit for the ttl
+     * @return Previous value associated with {@code key} or {@code null}
+     * if there was no mapping for {@code key}.
+     */
+    V put(K key, V value, long ttl, TimeUnit timeunit);
 
     /**
      * Associates the specified value with the specified key in this map.
@@ -172,4 +194,38 @@ public interface BaseMap<K, V> extends DistributedObject {
      * @return the number of entries in this map.
      */
     int size();
+
+    /**
+     * Returns a set clone of the keys contained in this map.
+     *
+     * @return a set clone of the keys contained in this map.
+     */
+    Set<K> keySet();
+
+    /**
+     * Queries the map based on the specified predicate and
+     * returns the keys of matching entries.
+     *
+     * @param predicate specified query criteria.
+     * @return result key set of the query.
+     * @throws NullPointerException if the specified predicate is null.
+     */
+    Set<K> keySet(Predicate predicate);
+
+    /**
+     * Returns a collection clone of the values contained in this map.
+     *
+     * @return a collection clone of the values contained in this map
+     */
+    Collection<V> values();
+
+    /**
+     * Queries the map based on the specified predicate and
+     * returns the values of matching entries.
+     *
+     * @param predicate specified query criteria.
+     * @return result value collection of the query.
+     * @throws NullPointerException if the predicate is null
+     */
+    Collection<V> values(Predicate predicate);
 }
