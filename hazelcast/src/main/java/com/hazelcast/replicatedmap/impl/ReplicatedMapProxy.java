@@ -141,6 +141,16 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     }
 
     @Override
+    protected boolean preDestroy() {
+        if (super.preDestroy()) {
+            ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
+            eventPublishingService.fireMapClearedEvent(size(), name);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public String getName() {
         return name;
     }
