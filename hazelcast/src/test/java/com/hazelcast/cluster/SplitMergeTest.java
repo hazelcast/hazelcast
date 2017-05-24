@@ -130,13 +130,13 @@ public class SplitMergeTest extends HazelcastTestSupport {
         MergeLifecycleListener lifecycleListener = new MergeLifecycleListener();
         h2.getLifecycleService().addLifecycleListener(lifecycleListener);
 
+        // block comm to prevent rejoin
+        blockCommunicationBetween(h1, h2);
+
         // create split
         closeConnectionBetween(h1, h2);
         assertClusterSizeEventually(1, h1);
         assertClusterSizeEventually(1, h2);
-
-        // block comm to prevent rejoin
-        blockCommunicationBetween(h1, h2);
 
         // try merge back
         mergeBack(h2, getAddress(h1));

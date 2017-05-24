@@ -45,6 +45,7 @@ import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.quorum.PartitionedCluster.QUORUM_ID;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -54,7 +55,6 @@ import static org.junit.Assert.assertNull;
 public class CacheWriteQuorumTest {
 
     private static final String CACHE_NAME_PREFIX = "cacheQuorum";
-    private static final String QUORUM_ID = "threeNodeQuorumRule";
 
     private static HazelcastServerCachingProvider cachingProvider1;
     private static HazelcastServerCachingProvider cachingProvider2;

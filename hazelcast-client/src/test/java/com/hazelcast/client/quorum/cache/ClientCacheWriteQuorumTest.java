@@ -46,6 +46,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.client.quorum.QuorumTestUtil.getClientConfig;
+import static com.hazelcast.quorum.PartitionedCluster.QUORUM_ID;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -53,7 +54,6 @@ import static org.junit.Assert.assertNull;
 public class ClientCacheWriteQuorumTest extends HazelcastTestSupport {
 
     private static final String CACHE_NAME_PREFIX = "cacheQuorum";
-    private static final String QUORUM_ID = "threeNodeQuorumRule";
 
     private static PartitionedCluster cluster;
 
@@ -86,7 +86,7 @@ public class ClientCacheWriteQuorumTest extends HazelcastTestSupport {
         cluster = new PartitionedCluster(factory).createFiveMemberCluster(cacheConfig, quorumConfig);
         initializeClients();
         initializeCaches();
-        cluster.splitFiveMembersThreeAndTwo();
+        cluster.splitFiveMembersThreeAndTwo(QUORUM_ID);
         verifyClients();
     }
 

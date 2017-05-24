@@ -758,8 +758,4 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         return factory.getAllHazelcastInstances();
     }
 
-    static void suspectMember(HazelcastInstance suspectingInstance, HazelcastInstance suspectedInstance) {
-        suspectMember(getNode(suspectingInstance), getNode(suspectedInstance));
-    }
-
 }

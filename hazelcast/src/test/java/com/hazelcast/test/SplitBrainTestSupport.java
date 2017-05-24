@@ -225,7 +225,10 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
             if (isInstanceActive(instancesToBlock[i])) {
                 addressesToBlock.add(getAddress(instancesToBlock[i]));
                 // block communication from these instances to the new address
-                getFireWalledConnectionManager(instancesToBlock[i]).block(newMemberAddress);
+
+                FirewallingConnectionManager connectionManager = getFireWalledConnectionManager(instancesToBlock[i]);
+                connectionManager.blockNewConnection(newMemberAddress);
+                connectionManager.closeActiveConnection(newMemberAddress);
             }
         }
         // indicate we need to unblacklist addresses from joiner when split-brain will be healed
@@ -349,21 +352,23 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
     }
 
     public static void blockCommunicationBetween(HazelcastInstance h1, HazelcastInstance h2) {
-        FirewallingConnectionManager h1CM = getFireWalledConnectionManager(h1);
-        FirewallingConnectionManager h2CM = getFireWalledConnectionManager(h2);
-        Node h1Node = getNode(h1);
-        Node h2Node = getNode(h2);
-        h1CM.block(h2Node.getThisAddress());
-        h2CM.block(h1Node.getThisAddress());
+        FirewallingConnectionManager cm1 = getFireWalledConnectionManager(h1);
+        FirewallingConnectionManager cm2 = getFireWalledConnectionManager(h2);
+        Node node1 = getNode(h1);
+        Node node2 = getNode(h2);
+        cm1.blockNewConnection(node2.getThisAddress());
+        cm2.blockNewConnection(node1.getThisAddress());
+        cm1.closeActiveConnection(node2.getThisAddress());
+        cm2.closeActiveConnection(node1.getThisAddress());
     }
 
     public static void unblockCommunicationBetween(HazelcastInstance h1, HazelcastInstance h2) {
-        FirewallingConnectionManager h1CM = getFireWalledConnectionManager(h1);
-        FirewallingConnectionManager h2CM = getFireWalledConnectionManager(h2);
-        Node h1Node = getNode(h1);
-        Node h2Node = getNode(h2);
-        h1CM.unblock(h2Node.getThisAddress());
-        h2CM.unblock(h1Node.getThisAddress());
+        FirewallingConnectionManager cm1 = getFireWalledConnectionManager(h1);
+        FirewallingConnectionManager cm2 = getFireWalledConnectionManager(h2);
+        Node node1 = getNode(h1);
+        Node node2 = getNode(h2);
+        cm1.unblock(node2.getThisAddress());
+        cm2.unblock(node1.getThisAddress());
     }
 
     private static void unblacklistJoinerBetween(HazelcastInstance h1, HazelcastInstance h2) {
