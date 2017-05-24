@@ -18,15 +18,10 @@ package com.hazelcast.replicatedmap;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ReplicatedMapConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.replicatedmap.merge.HigherHitsMapMergePolicy;
 import com.hazelcast.replicatedmap.merge.LatestUpdateMapMergePolicy;
 import com.hazelcast.replicatedmap.merge.PassThroughMergePolicy;
@@ -35,8 +30,8 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -49,6 +44,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.test.SplitBrainTestSupport.blockCommunicationBetween;
+import static com.hazelcast.test.SplitBrainTestSupport.unblockCommunicationBetween;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -57,11 +54,6 @@ import static org.junit.Assert.assertNotNull;
 @Category(NightlyTest.class)
 public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
 
-    @Before
-    @After
-    public void killAllHazelcastInstances() {
-        HazelcastInstanceFactory.terminateAll();
-    }
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object> parameters() {
@@ -77,29 +69,37 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
     @Parameterized.Parameter
     public ReplicatedMapMergePolicyTestCase testCase;
 
+    private TestHazelcastInstanceFactory factory;
+
+    @Before
+    public void init() {
+        factory = createHazelcastInstanceFactory(2);
+    }
+
     @Test
     public void testMapMergePolicy() {
         final String mapName = randomMapName();
         Config config = newConfig(testCase.getMergePolicyClassName(), mapName);
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
 
-        TestMemberShipListener memberShipListener = new TestMemberShipListener(1);
-        h2.getCluster().addMembershipListener(memberShipListener);
         TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1);
         h2.getLifecycleService().addLifecycleListener(lifeCycleListener);
 
         // wait for cluster to be formed before breaking the connection
         waitAllForSafeState(h1, h2);
+
+        blockCommunicationBetween(h1, h2);
         closeConnectionBetween(h1, h2);
 
-        assertOpenEventually(memberShipListener.latch);
         assertClusterSizeEventually(1, h1);
         assertClusterSizeEventually(1, h2);
 
         ReplicatedMap<Object, Object> map1 = h1.getReplicatedMap(mapName);
         ReplicatedMap<Object, Object> map2 = h2.getReplicatedMap(mapName);
         final Map<Object, Object> expectedValues = testCase.populateMaps(map1, map2, h1);
+
+        unblockCommunicationBetween(h1, h2);
 
         assertOpenEventually(lifeCycleListener.latch);
         assertClusterSizeEventually(2, h1, h2);
@@ -140,31 +140,6 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
                 latch.countDown();
             }
         }
-    }
-
-    private class TestMemberShipListener implements MembershipListener {
-
-        final CountDownLatch latch;
-
-        TestMemberShipListener(int countdown) {
-            latch = new CountDownLatch(countdown);
-        }
-
-        @Override
-        public void memberAdded(MembershipEvent membershipEvent) {
-
-        }
-
-        @Override
-        public void memberRemoved(MembershipEvent membershipEvent) {
-            latch.countDown();
-        }
-
-        @Override
-        public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-
-        }
-
     }
 
     private interface ReplicatedMapMergePolicyTestCase {
