@@ -40,8 +40,6 @@ import com.hazelcast.util.Clock;
 
 import java.util.Collection;
 
-import static com.hazelcast.config.InMemoryFormat.NATIVE;
-import static com.hazelcast.internal.nearcache.impl.invalidation.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateTTLMillis;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTL;
@@ -146,12 +144,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         final Indexes indexes = mapContainer.getIndexes(partitionId);
         if (indexes.hasIndex()) {
             Object value = Records.getValueOrCachedValue(record, serializationService);
-            // When using format InMemoryFormat.NATIVE, just copy key & value to heap.
-            if (NATIVE == inMemoryFormat) {
-                dataKey = (Data) copyToHeap(dataKey);
-                value = copyToHeap(value);
-                oldValue = copyToHeap(oldValue);
-            }
             QueryableEntry queryableEntry = mapContainer.newQueryEntry(dataKey, value);
             indexes.saveEntryIndex(queryableEntry, oldValue);
         }
@@ -163,19 +155,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         if (indexes.hasIndex()) {
             Data key = record.getKey();
             Object value = Records.getValueOrCachedValue(record, serializationService);
-            if (NATIVE == inMemoryFormat) {
-                key = (Data) copyToHeap(key);
-                value = copyToHeap(value);
-            }
             indexes.removeEntryIndex(key, value);
-        }
-    }
-
-    protected Object copyToHeap(Object object) {
-        if (object instanceof Data) {
-            return toHeapData(((Data) object));
-        } else {
-            return object;
         }
     }
 
