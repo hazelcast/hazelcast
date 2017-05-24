@@ -332,7 +332,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
                     .setPartitionId(partitionId)
                     .setService(this)
                     .setNodeEngine(nodeEngine);
-            operationService.execute(operation);
+            operationService.invokeOnPartition(operation);
         }
     }
 

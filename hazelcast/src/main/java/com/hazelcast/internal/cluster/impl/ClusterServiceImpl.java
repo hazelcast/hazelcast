@@ -950,7 +950,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public void rollbackTransaction(String transactionId) {
-        logger.info("Rolling back cluster state. Transaction: " + transactionId);
         clusterStateManager.rollbackClusterState(transactionId);
     }
 
