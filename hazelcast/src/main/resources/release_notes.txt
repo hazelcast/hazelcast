@@ -77,6 +77,14 @@ The following are the other improvements performed to solve the enhancement issu
 
 This section lists the fixed issues for Hazelcast 3.7 and 3.7.x releases.
 
+*3.7.8 Fixes*
+
+- When the cluster state is PASSIVE, the background expiration task can get an exception (in ClearExpiredOperation) during execution. But after the cluster state transitions to ACTIVE, it should continue to process. The task's progress conditions should be reset in case of any execution exception. [10636]
+
+*3.7.7 Fixes*
+
+- Servers should throw exception when message type is not known. Client protocol is defined to throw an exception when a client sends a client message with unknown type to server. [10196], [10203]
+
 *3.7.6 Fixes*
 
 - In the case of using multiple lite members with near cache, when a `clear` is called it tries to use the same operation and results in `IllegalStateException`. [9879]
