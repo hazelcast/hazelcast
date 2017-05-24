@@ -23,8 +23,6 @@ import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.StringGauge;
-import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet;
-import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -33,11 +31,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -222,16 +217,31 @@ public class Statistics {
     }
 
     class PeriodicStatistics {
-        private final Map<String, StringGauge> allMetrics;
+        private final String[] STATISTIC_NAMES = {
+                "os.committedVirtualMemorySize",
+                "os.freePhysicalMemorySize",
+                "os.freeSwapSpaceSize",
+                "os.maxFileDescriptorCount",
+                "os.openFileDescriptorCount",
+                "os.processCpuTime",
+                "os.systemLoadAverage",
+                "os.totalPhysicalMemorySize",
+                "os.totalSwapSpaceSize",
+                "runtime.availableProcessors",
+                "runtime.freeMemory",
+                "runtime.maxMemory",
+                "runtime.totalMemory",
+                "runtime.uptime",
+                "runtime.usedMemory",
+                "executionService.userExecutorQueueSize"
+        };
+
+        private final Map<String, StringGauge> allMetrics = new HashMap<String, StringGauge>(STATISTIC_NAMES.length);
 
         PeriodicStatistics(final MetricsRegistry metricsRegistry) {
-            List<String> metricNames = new ArrayList<String>(RuntimeMetricSet.getRegisteredMetricNames());
-            metricNames.addAll(OperatingSystemMetricSet.getRegisteredMetricNames());
-            allMetrics = new HashMap<String, StringGauge>(metricNames.size());
-            for (String name : metricNames) {
+            for (String name : STATISTIC_NAMES) {
                 allMetrics.put(name, metricsRegistry.newStringGauge(name));
             }
-            allMetrics.put("executionService.userExecutorQueueSize", metricsRegistry.newStringGauge("executionService.userExecutorQueueSize"));
         }
 
         void fillMetrics(final Map<String, String> metricsMap) {

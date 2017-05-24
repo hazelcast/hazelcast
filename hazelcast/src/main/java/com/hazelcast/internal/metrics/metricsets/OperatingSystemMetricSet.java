@@ -23,9 +23,6 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -37,7 +34,6 @@ public final class OperatingSystemMetricSet {
 
     private static final double PERCENTAGE_MULTIPLIER = 100d;
     private static final Object[] EMPTY_ARGS = new Object[0];
-    private static final Set<String> registeredMetrics = new HashSet<String>();
 
     private OperatingSystemMetricSet() {
     }
@@ -71,11 +67,6 @@ public final class OperatingSystemMetricSet {
                     }
                 }
         );
-        registeredMetrics.add("os.systemLoadAverage");
-    }
-
-    public static Set<String> getRegisteredMetricNames() {
-        return Collections.unmodifiableSet(registeredMetrics);
     }
 
     // This method doesn't depend on the OperatingSystemMXBean so it can be tested. Due to not knowing
@@ -86,8 +77,6 @@ public final class OperatingSystemMetricSet {
         if (method == null) {
             return;
         }
-
-        registeredMetrics.add(name);
 
         if (long.class.equals(method.getReturnType())) {
             metricsRegistry.register(osBean, name, MANDATORY,
