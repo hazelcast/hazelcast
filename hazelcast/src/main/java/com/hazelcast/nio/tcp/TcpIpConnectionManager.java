@@ -20,8 +20,8 @@ import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.networking.ChannelFactory;
+import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
@@ -54,11 +54,13 @@ import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 
 public class TcpIpConnectionManager implements ConnectionManager, PacketHandler {
 
     private static final int RETRY_NUMBER = 5;
     private static final int DELAY_FACTOR = 100;
+    private static final int SCHEDULER_POOL_SIZE = 4;
 
     final LoggingService loggingService;
 
@@ -111,8 +113,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     @Probe
     private final MwCounter closedCount = newMwCounter();
 
-    private final ScheduledExecutorService scheduler
-            = new ScheduledThreadPoolExecutor(4, new ThreadFactoryImpl("TcpIpConnectionManager-thread-"));
+    private final ScheduledExecutorService scheduler;
 
     // accessed only in synchronized block
     private volatile TcpIpAcceptor acceptor;
@@ -134,6 +135,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         this.channelFactory = ioService.getSocketChannelWrapperFactory();
         this.metricsRegistry = metricsRegistry;
         this.connector = new TcpIpConnector(this);
+        this.scheduler = new ScheduledThreadPoolExecutor(SCHEDULER_POOL_SIZE,
+                new ThreadFactoryImpl(createThreadPoolName(ioService.getHazelcastName(), "TcpIpConnectionManager")));
         metricsRegistry.scanAndRegister(this, "tcp.connection");
     }
 
