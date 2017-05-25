@@ -43,6 +43,7 @@ import com.hazelcast.internal.management.request.GetMapEntryRequest;
 import com.hazelcast.internal.management.request.GetMemberSystemPropertiesRequest;
 import com.hazelcast.internal.management.request.MapConfigRequest;
 import com.hazelcast.internal.management.request.MemberConfigRequest;
+import com.hazelcast.internal.management.request.PromoteMemberRequest;
 import com.hazelcast.internal.management.request.RunGcRequest;
 import com.hazelcast.internal.management.request.ShutdownClusterRequest;
 import com.hazelcast.internal.management.request.ThreadDumpRequest;
@@ -446,6 +447,7 @@ public class ManagementCenterService {
             register(new ForceStartNodeRequest());
             register(new TriggerPartialStartRequest());
             register(new ClearWanQueuesRequest());
+            register(new PromoteMemberRequest());
         }
 
         public void register(ConsoleRequest consoleRequest) {

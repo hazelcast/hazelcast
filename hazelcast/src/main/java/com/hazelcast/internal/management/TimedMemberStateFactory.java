@@ -130,6 +130,7 @@ public class TimedMemberStateFactory {
         timedMemberState.setClusterName(groupConfig.getName());
         SSLConfig sslConfig = instance.getConfig().getNetworkConfig().getSSLConfig();
         timedMemberState.setSslEnabled(sslConfig != null && sslConfig.isEnabled());
+        timedMemberState.setLite(instance.node.isLiteMember());
 
         return timedMemberState;
     }

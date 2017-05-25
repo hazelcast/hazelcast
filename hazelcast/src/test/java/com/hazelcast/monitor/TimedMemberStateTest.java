@@ -58,6 +58,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         timedMemberState.setTime(1827731);
         timedMemberState.setInstanceNames(instanceNames);
         timedMemberState.setSslEnabled(true);
+        timedMemberState.setLite(true);
     }
 
     @Test
@@ -72,6 +73,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         assertContains(cloned.getInstanceNames(), "topicStats");
         assertNotNull(cloned.getMemberState());
         assertTrue(cloned.isSslEnabled());
+        assertTrue(cloned.isLite());
         assertNotNull(cloned.toString());
     }
 
@@ -89,6 +91,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         assertContains(deserialized.getInstanceNames(), "topicStats");
         assertNotNull(deserialized.getMemberState());
         assertTrue(deserialized.isSslEnabled());
+        assertTrue(deserialized.isLite());
         assertNotNull(deserialized.toString());
     }
 

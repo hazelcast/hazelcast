@@ -44,6 +44,7 @@ public final class ConsoleRequestConstants {
     public static final int REQUEST_TYPE_TRIGGER_PARTIAL_START = 39;
     public static final int REQUEST_TYPE_CLEAR_WAN_QUEUES = 40;
     public static final int REQUEST_TYPE_CACHE_ENTRY = 41;
+    public static final int REQUEST_TYPE_PROMOTE_MEMBER = 42;
 
     private ConsoleRequestConstants() {
     }
