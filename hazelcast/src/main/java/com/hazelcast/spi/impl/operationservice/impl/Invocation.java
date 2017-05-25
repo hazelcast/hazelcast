@@ -224,6 +224,18 @@ public abstract class Invocation implements OperationResponseHandler {
      * @return {@code true} if the initialization was a success, {@code false} otherwise
      */
     boolean initInvocationTarget() {
+        // When a cluster is being merged into another one then local node is marked as not-joined and invocations are
+        // notified with MemberLeftException.
+        // We do not want to retry them before the node is joined again because partition table is stale at this point.
+        if (!context.node.joined() && !isJoinOperation(op) && !(op instanceof AllowedDuringPassiveState)) {
+            if (context.logger.isFinestEnabled()) {
+                context.logger.finest("Node is not joined. Re-scheduling " + this
+                        + " to be executed in " + tryPauseMillis + " ms.");
+            }
+            context.executionService.schedule(ASYNC_EXECUTOR, this, tryPauseMillis, MILLISECONDS);
+            return false;
+        }
+
         invTarget = getTarget();
 
         if (invTarget == null) {
