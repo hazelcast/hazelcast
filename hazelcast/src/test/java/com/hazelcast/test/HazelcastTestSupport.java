@@ -25,6 +25,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeExtension;
@@ -135,28 +136,39 @@ public abstract class HazelcastTestSupport {
         if (factory != null) {
             throw new IllegalStateException("Node factory is already created!");
         }
-        return factory = new TestHazelcastInstanceFactory(nodeCount);
+        return factory = createHazelcastInstanceFactory0(nodeCount);
     }
 
     protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory(String... addresses) {
         if (factory != null) {
             throw new IllegalStateException("Node factory is already created!");
         }
-        return factory = new TestHazelcastInstanceFactory(addresses);
+        if (TestEnvironment.isRunningCompatibilityTest()) {
+            throw new UnsupportedOperationException(
+                    "Cannot start a factory with specific addresses when running compatibility tests");
+        } else {
+            return factory = new TestHazelcastInstanceFactory(addresses);
+        }
+
     }
 
     protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory() {
         if (factory != null) {
             throw new IllegalStateException("Node factory is already created!");
         }
-        return factory = new TestHazelcastInstanceFactory();
+        return factory = createHazelcastInstanceFactory0(null);
     }
 
     protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory(int initialPort, String... addresses) {
         if (factory != null) {
             throw new IllegalStateException("Node factory is already created!");
         }
-        return factory = new TestHazelcastInstanceFactory(initialPort, addresses);
+        if (TestEnvironment.isRunningCompatibilityTest()) {
+            throw new UnsupportedOperationException(
+                    "Cannot start a factory with specific addresses when running compatibility tests");
+        } else {
+            return factory = new TestHazelcastInstanceFactory(initialPort, addresses);
+        }
     }
 
     // ###########################################
@@ -1185,5 +1197,23 @@ public abstract class HazelcastTestSupport {
 
     protected MapOperationProvider getMapOperationProvider() {
         return new DefaultMapOperationProvider();
+    }
+
+    private static TestHazelcastInstanceFactory createHazelcastInstanceFactory0(Integer nodeCount) {
+        if (TestEnvironment.isRunningCompatibilityTest() && BuildInfoProvider.BUILD_INFO.isEnterprise()) {
+            Class<? extends TestHazelcastInstanceFactory> compatibilityTestFactoryClass = null;
+            try {
+                compatibilityTestFactoryClass = (Class<? extends TestHazelcastInstanceFactory>)
+                        Class.forName("com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory");
+                // nodeCount is ignored when constructing compatibility test factory
+                Constructor<? extends TestHazelcastInstanceFactory> ctor = compatibilityTestFactoryClass
+                            .getConstructor();
+                return ctor.newInstance();
+            } catch (Exception e) {
+                throw rethrow(e);
+            }
+        } else {
+            return nodeCount == null ? new TestHazelcastInstanceFactory() : new TestHazelcastInstanceFactory(nodeCount);
+        }
     }
 }
