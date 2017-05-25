@@ -447,12 +447,12 @@ public class SqlPredicateTest {
         assertEquals("(active=true AND name=)", sql("active AND name=''"));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidSqlPredicate1() {
         new SqlPredicate("invalid sql");
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidSqlPredicate2() {
         new SqlPredicate("");
     }

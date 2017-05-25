@@ -61,6 +61,12 @@ public class SqlPredicate
     transient Predicate predicate;
     private String sql;
 
+    /**
+     * Creates a new SqlPredicate.
+     *
+     * @param sql the sql query
+     * @throws IllegalArgumentException when the passed query is invalid.
+     */
     public SqlPredicate(String sql) {
         this.sql = sql;
         predicate = createPredicate(sql);
@@ -129,7 +135,7 @@ public class SqlPredicate
                 int start = apoIndex + 1;
                 int end = getApostropheIndexIgnoringDoubles(paramSql, apoIndex + 1);
                 if (end == -1) {
-                    throw new RuntimeException("Missing ' in sql");
+                    throw new IllegalArgumentException("Missing ' in sql");
                 }
                 String phrase = removeEscapes(paramSql.substring(start, end));
 
@@ -148,7 +154,7 @@ public class SqlPredicate
         List<String> sqlTokens = parser.toPrefix(paramSql);
         List<Object> tokens = new ArrayList<Object>(sqlTokens);
         if (tokens.size() == 0) {
-            throw new RuntimeException("Invalid SQL: [" + paramSql + "]");
+            throw new IllegalArgumentException("Invalid SQL: [" + paramSql + "]");
         }
         if (tokens.size() == 1) {
             return eval(tokens.get(0));
@@ -245,13 +251,13 @@ public class SqlPredicate
                         Object second = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, flattenCompound(eval(first), eval(second), OrPredicate.class));
                     } else {
-                        throw new RuntimeException("Unknown token " + token);
+                        throw new IllegalArgumentException("Unknown token " + token);
                     }
                     continue root;
                 }
             }
             if (!foundOperand) {
-                throw new RuntimeException("Invalid SQL: [" + paramSql + "]");
+                throw new IllegalArgumentException("Invalid SQL: [" + paramSql + "]");
             }
         }
         return (Predicate) tokens.get(0);
@@ -259,7 +265,7 @@ public class SqlPredicate
 
     private void validateOperandPosition(int pos) {
         if (pos < 0) {
-            throw new RuntimeException("Invalid SQL: [" + sql + "]");
+            throw new IllegalArgumentException("Invalid SQL: [" + sql + "]");
         }
     }
 
@@ -300,8 +306,7 @@ public class SqlPredicate
         }
     }
 
-    private void readObject(java.io.ObjectInputStream in)
-            throws IOException, ClassNotFoundException {
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         predicate = createPredicate(sql);
     }
 

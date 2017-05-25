@@ -19,7 +19,7 @@ package com.hazelcast.query;
 import com.hazelcast.core.HazelcastException;
 
 /**
- * Exception class for the Query.
+ * Throws when a query fails to be executed.
  */
 public class QueryException extends HazelcastException {
 
