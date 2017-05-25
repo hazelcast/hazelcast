@@ -337,6 +337,10 @@ abstract class MapProxySupport<K, V>
     private Data readBackupDataOrNull(Data key) {
         int partitionId = partitionService.getPartitionId(key);
         IPartition partition = partitionService.getPartition(partitionId, false);
+        // do not read using readBackupData infrastructure if partition owner
+        if (partition.isLocal()) {
+            return null;
+        }
         if (!partition.isOwnerOrBackup(thisAddress)) {
             return null;
         }

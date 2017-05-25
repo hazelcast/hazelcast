@@ -26,16 +26,15 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,9 +44,20 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 public class LocalMapStatsTest extends HazelcastTestSupport {
+
+    @Parameterized.Parameters(name = "readBackupData:{0}")
+    public static Collection<Object[]> parameters() {
+        return Arrays.asList(new Object[][]{
+                {false},
+                {true}
+        });
+    }
+
+    @Parameterized.Parameter(0)
+    public boolean readBackupData;
 
     @Test
     public void testHitsGenerated() throws Exception {
@@ -392,7 +402,10 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     private <K, V> IMap<K, V> getMap() {
-        HazelcastInstance instance = createHazelcastInstance(getConfig());
-        return instance.getMap(randomString());
+        Config config = getConfig();
+        String mapName = randomString();
+        config.getMapConfig(mapName).setReadBackupData(readBackupData);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        return instance.getMap(mapName);
     }
 }
