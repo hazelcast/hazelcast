@@ -18,6 +18,8 @@ package com.hazelcast.test;
 
 public class ExpectedRuntimeException extends RuntimeException {
 
+    private static final long serialVersionUID = 83105880382695411L;
+
     public ExpectedRuntimeException() {
     }
 
