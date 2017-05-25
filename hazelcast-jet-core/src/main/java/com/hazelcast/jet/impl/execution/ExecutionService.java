@@ -116,7 +116,7 @@ public class ExecutionService {
         Arrays.setAll(trackersByThread, i -> new ArrayList());
         for (Tasklet t : tasklets) {
             t.init(jobFuture);
-            trackersByThread[Math.floorMod(cooperativeThreadIndex.getAndIncrement(), trackersByThread.length)]
+            trackersByThread[cooperativeThreadIndex.getAndUpdate(i -> (i + 1) % trackersByThread.length)]
                     .add(new TaskletTracker(t, jobFuture, jobClassLoader));
         }
         for (int i = 0; i < trackersByThread.length; i++) {

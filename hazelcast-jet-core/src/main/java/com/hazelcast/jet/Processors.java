@@ -906,10 +906,11 @@ public final class Processors {
      * recommended for this vertex.
      *
      * @param toStringF Function to convert item to String.
+     * @param <T> input item type
      */
     @Nonnull
-    public static DistributedSupplier<Processor> writeLogger(
-            @Nonnull DistributedFunction<Object, String> toStringF
+    public static <T> DistributedSupplier<Processor> writeLogger(
+            @Nonnull DistributedFunction<T, String> toStringF
     ) {
         return () -> new WriteLoggerP(toStringF);
     }

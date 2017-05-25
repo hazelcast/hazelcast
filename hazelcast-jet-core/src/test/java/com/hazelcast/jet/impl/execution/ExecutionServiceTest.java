@@ -39,6 +39,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -268,6 +269,23 @@ public class ExecutionServiceTest extends JetTestSupport {
         future.get();
     }
 
+    @Test
+    public void when_twoNonBlockingTasklets_then_differentWorker() throws Exception {
+        // Given
+        TaskletAssertingThreadLocal t1 = new TaskletAssertingThreadLocal();
+        TaskletAssertingThreadLocal t2 = new TaskletAssertingThreadLocal();
+        assertTrue(t1.isCooperative());
+
+        // When
+        CompletableFuture<Void> f1 = es.execute(singletonList(t1), doneCallback, classLoaderMock).toCompletableFuture();
+        CompletableFuture<Void> f2 = es.execute(singletonList(t2), doneCallback, classLoaderMock).toCompletableFuture();
+        f1.join();
+        f2.join();
+
+        // Then
+        // -- assertions are inside TaskletAssertingThreadLocal and will fail, if t1 and t2 are running on the same thread
+    }
+
     static class MockTasklet implements Tasklet {
 
         boolean isBlocking;
@@ -354,6 +372,23 @@ public class ExecutionServiceTest extends JetTestSupport {
 
         void assertNotDone() {
             assertNotEquals("Tasklet was done", -1, callsBeforeDone);
+        }
+    }
+
+    private static class TaskletAssertingThreadLocal implements Tasklet {
+
+        private static ThreadLocal<Integer> threadLocal = ThreadLocal.withInitial(() -> 0);
+
+        private int callCount;
+
+        @Nonnull
+        @Override
+        public ProgressState call() {
+            assertEquals("the ThreadLocal was updated from multiple tasklets", callCount, threadLocal.get().intValue());
+            threadLocal.set(threadLocal.get() + 1);
+            callCount++;
+            LockSupport.parkNanos(10_000_000);
+            return callCount > 50 ? DONE : MADE_PROGRESS;
         }
     }
 }

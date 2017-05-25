@@ -24,17 +24,17 @@ import javax.annotation.Nonnull;
 /**
  * See {@link com.hazelcast.jet.Processors#writeLogger()}
  */
-public class WriteLoggerP extends AbstractProcessor {
+public class WriteLoggerP<T> extends AbstractProcessor {
 
-    private DistributedFunction<Object, String> toStringF;
+    private DistributedFunction<T, String> toStringF;
 
-    public WriteLoggerP(DistributedFunction<Object, String> toStringF) {
+    public WriteLoggerP(DistributedFunction<T, String> toStringF) {
         this.toStringF = toStringF;
     }
 
     @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-        getLogger().info(toStringF.apply(item));
+        getLogger().info(toStringF.apply((T) item));
         return true;
     }
 }
