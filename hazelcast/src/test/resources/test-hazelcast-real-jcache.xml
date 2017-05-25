@@ -30,6 +30,8 @@
             <tcp-ip enabled="true">
                 <member>127.0.0.1</member>
             </tcp-ip>
+            <multicast enabled="false">
+            </multicast>
         </join>
     </network>
 
