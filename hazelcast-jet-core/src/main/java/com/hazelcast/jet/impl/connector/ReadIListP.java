@@ -20,12 +20,12 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.Processors.NoopP;
+import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
@@ -114,7 +114,7 @@ public final class ReadIListP extends AbstractProcessor {
                 // return empty producer on all other nodes
                 return c -> {
                     assertCountIsOne(c);
-                    return singletonList(new NoopP());
+                    return singletonList(Processors.noop().get());
                 };
             };
         }

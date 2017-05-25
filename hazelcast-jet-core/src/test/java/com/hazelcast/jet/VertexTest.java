@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -99,6 +98,8 @@ public class VertexTest {
         ProcessorSupplier supplier = fn.apply(address);
         Collection<? extends Processor> processors = supplier.get(1);
         assertEquals(NoopP.class, processors.iterator().next().getClass());
+    }
 
+    private static class NoopP implements Processor {
     }
 }

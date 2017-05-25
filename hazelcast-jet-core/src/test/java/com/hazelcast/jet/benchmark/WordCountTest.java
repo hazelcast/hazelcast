@@ -24,7 +24,6 @@ import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.config.JetConfig;
@@ -55,6 +54,7 @@ import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.Processors.flatMap;
 import static com.hazelcast.jet.Processors.groupAndAccumulate;
+import static com.hazelcast.jet.Processors.noop;
 import static com.hazelcast.jet.Processors.readMap;
 import static com.hazelcast.jet.Processors.writeMap;
 import static com.hazelcast.jet.Util.entry;
@@ -107,7 +107,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         final DAG dag = new DAG();
         Vertex source = dag.newVertex("source",
                 (List<Address> addrs) -> (Address addr) -> ProcessorSupplier.of(
-                        addr.equals(addrs.get(0)) ? MockInputP::new : NoopP::new));
+                        addr.equals(addrs.get(0)) ? MockInputP::new : noop()));
         Vertex sink = dag.newVertex("sink", writeMap("words"));
         dag.edge(between(source.localParallelism(1), sink.localParallelism(1)));
         instance.newJob(dag).execute().get();

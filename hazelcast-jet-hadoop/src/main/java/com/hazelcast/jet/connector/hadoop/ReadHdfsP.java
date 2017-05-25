@@ -18,13 +18,13 @@ package com.hazelcast.jet.connector.hadoop;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.Processors.NoopP;
+import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Util;
+import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -359,7 +359,7 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
             return processorToSplits
                     .values().stream()
                     .map(splits -> splits.isEmpty()
-                            ? new NoopP()
+                            ? Processors.noop().get()
                             : new ReadHdfsP<>(splits.stream()
                             .map(IndexedInputSplit::getSplit)
                             .map(split -> uncheckCall(() ->

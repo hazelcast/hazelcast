@@ -17,7 +17,6 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.Edge.ForwardingPattern;
-import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -25,6 +24,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.Processors.noop;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -43,8 +43,8 @@ public class EdgeTest {
 
     @Before
     public void before() {
-        a = new Vertex(A, NoopP::new);
-        b = new Vertex(B, NoopP::new);
+        a = new Vertex(A, noop());
+        b = new Vertex(B, noop());
     }
 
     @Test

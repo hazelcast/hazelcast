@@ -138,7 +138,7 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
                 .values().stream()
                 .map(partitions -> !partitions.isEmpty()
                         ? new ReadWithPartitionIteratorP<>(partitionToIterator, partitions)
-                        : new Processors.NoopP()
+                        : Processors.noop().get()
                 )
                 .collect(toList());
     }

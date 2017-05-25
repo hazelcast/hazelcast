@@ -72,7 +72,7 @@ public final class Processors {
     }
 
     /**
-     * Returns a meta-supplier of processors that will fetch entries from the
+     * Returns a meta-supplier of processor that will fetch entries from the
      * Hazelcast {@code IMap} with the specified name and will emit them as
      * {@code Map.Entry}. The processors will only access data local to the
      * member and, if {@code localParallelism} for the vertex is above one,
@@ -92,7 +92,7 @@ public final class Processors {
     }
 
     /**
-     * Returns a meta-supplier of processors that will fetch entries from a
+     * Returns a meta-supplier of processor that will fetch entries from a
      * Hazelcast {@code IMap} in a remote cluster. Processors will emit the
      * entries as {@code Map.Entry}.
      * <p>
@@ -144,8 +144,8 @@ public final class Processors {
     }
 
     /**
-     * Returns a meta-supplier of processors that will fetch entries from a
-     * Hazelcast {@code ICache} in a remote cluster. Processors will emit the
+     * Returns a meta-supplier of processor that will fetch entries from a
+     * Hazelcast {@code ICache} in a remote cluster. Processor will emit the
      * entries as {@code Cache.Entry}.
      * <p>
      * If the underlying cache is concurrently being modified, there are no
@@ -157,7 +157,7 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processors that will put data into a Hazelcast
+     * Returns a supplier of processor which will put data into a Hazelcast
      * {@code ICache}. Processors expect items of type {@code Map.Entry}
      */
     @Nonnull
@@ -166,9 +166,9 @@ public final class Processors {
     }
 
     /**
-     * Returns a processor supplier that will put data into a Hazelcast {@code
-     * ICache} in a remote cluster. Processors expect items of type {@code
-     * Map.Entry}.
+     * Returns a supplier of processor which will put data into a Hazelcast
+     * {@code ICache} in a remote cluster. Processor expects items of type
+     * {@code Map.Entry}.
      */
     @Nonnull
     public static ProcessorSupplier writeCache(@Nonnull String cacheName, @Nonnull ClientConfig clientConfig) {
@@ -176,7 +176,7 @@ public final class Processors {
     }
 
     /**
-     * Returns a meta-supplier of processors that emit items retrieved from an
+     * Returns a meta-supplier of processor that emits items retrieved from an
      * IMDG IList. Note that all elements from the list are emitted on a single
      * member &mdash; the one where the entire list is stored by the IMDG.
      */
@@ -186,7 +186,7 @@ public final class Processors {
     }
 
     /**
-     * Returns a meta-supplier of processors that emit items retrieved from an
+     * Returns a meta-supplier of processor that emits items retrieved from an
      * IMDG IList in a remote cluster. Note that all elements from the list are
      * emitted on a single member &mdash; the one where the entire list is
      * stored by the IMDG.
@@ -197,7 +197,7 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processors that write received items to an IMDG
+     * Returns a supplier of processor which writes received items to an IMDG
      * {@code IList}.
      */
     @Nonnull
@@ -206,7 +206,7 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processors that write received items to an IMDG
+     * Returns a supplier of processor which writes received items to an IMDG
      * {@code IList} in a remote cluster.
      */
     @Nonnull
@@ -262,8 +262,8 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processors that connect to specified socket and
-     * write the items as text.
+     * Returns a supplier of processor which connects to specified socket and
+     * writes the items as text.
      */
     public static DistributedSupplier<Processor> writeSocket(@Nonnull String host, int port) {
         return writeBuffered(
@@ -280,9 +280,8 @@ public final class Processors {
     }
 
     /**
-     * Creates a socket source using the UTF-8 character set.
-     *
-     * @see #streamTextSocket(String, int, Charset)
+     * Convenience for  {@link #streamTextSocket(String, int, Charset)} with
+     * UTF-8 character set.
      */
     @Nonnull
     public static DistributedSupplier<Processor> streamTextSocket(@Nonnull String host, int port) {
@@ -290,9 +289,9 @@ public final class Processors {
     }
 
     /**
-     * A source that connects to a specified socket and reads and emits text
-     * line by line. This processor expects a server-side socket to be
-     * available to connect to.
+     * Returns a supplier of processor which connects to a specified socket and
+     * reads and emits text line by line. This processor expects a server-side
+     * socket to be available to connect to.
      * <p>
      * Each processor instance will create a socket connection to the configured
      * [host:port], so there will be {@code clusterSize * localParallelism}
@@ -843,6 +842,15 @@ public final class Processors {
     }
 
     /**
+     * Returns a supplier of processor that does nothing. It consumes all input
+     * items and is done after that, without emitting anything.
+     */
+    @Nonnull
+    public static DistributedSupplier<Processor> noop() {
+        return NoopP::new;
+    }
+
+    /**
      * Decorates a {@code ProcessorSupplier} into one that will declare all its
      * processors non-cooperative. The wrapped supplier must return processors
      * that are {@code instanceof} {@link AbstractProcessor}.
@@ -870,11 +878,8 @@ public final class Processors {
         };
     }
 
-    /**
-     * A processor that does nothing. It consumes all input items and is done
-     * after that, without emitting anything.
-     */
-    public static class NoopP implements Processor {
+    /** See {@link #noop()} */
+    private static class NoopP implements Processor {
         @Override
         public void process(int ordinal, @Nonnull Inbox inbox) {
             inbox.drain(noopConsumer());
@@ -891,7 +896,7 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processors that logs all items at the INFO level.
+     * Returns a supplier of processor that logs all items at the INFO level.
      * {@link Punctuation} items are not logged.
      * <p>
      * Note that the event will be logged on the cluster members, not on the

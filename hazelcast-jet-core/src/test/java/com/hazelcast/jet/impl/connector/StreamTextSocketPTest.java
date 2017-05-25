@@ -22,7 +22,6 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Processors;
-import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -41,6 +40,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.Processors.noop;
 import static com.hazelcast.jet.Processors.streamTextSocket;
 import static com.hazelcast.jet.Processors.writeList;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
@@ -132,7 +132,7 @@ public class StreamTextSocketPTest extends JetTestSupport {
             })).start();
 
             Vertex producer = new Vertex("producer", Processors.streamTextSocket(HOST, PORT)).localParallelism(1);
-            Vertex sink = new Vertex("sink", NoopP::new).localParallelism(1);
+            Vertex sink = new Vertex("sink", noop()).localParallelism(1);
             DAG dag = new DAG()
                     .vertex(producer)
                     .vertex(sink)

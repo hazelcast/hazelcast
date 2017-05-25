@@ -17,7 +17,6 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -37,6 +36,7 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.AggregateOperations.counting;
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.Processors.noop;
 import static com.hazelcast.jet.Processors.writeList;
 import static com.hazelcast.jet.PunctuationPolicies.limitingLagAndLull;
 import static com.hazelcast.jet.StreamingTestSupport.streamToString;
@@ -133,7 +133,7 @@ public class WindowingProcessors_integrationTest extends JetTestSupport {
     private static ProcessorMetaSupplier streamList(List<?> sourceList) {
         return addresses -> address -> count ->
                 IntStream.range(0, count)
-                        .mapToObj(i -> i == 0 ? new StreamListP(sourceList) : new NoopP())
+                        .mapToObj(i -> i == 0 ? new StreamListP(sourceList) : noop().get())
                         .collect(toList());
     }
 

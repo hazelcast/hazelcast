@@ -16,10 +16,9 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.jet.TestProcessors.ProcessorThatFailsInComplete;
 import com.hazelcast.jet.TestProcessors.ProcessorThatFailsInInit;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,6 +31,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.Processors.noop;
 import static com.hazelcast.jet.TestUtil.executeAndPeel;
 
 @Category(QuickTest.class)
@@ -103,7 +103,7 @@ public class ExceptionHandlingTest extends JetTestSupport {
         DAG dag = new DAG().vertex(new Vertex("faulty",
                 ProcessorMetaSupplier.of(
                         (Address address) -> ProcessorSupplier.of(
-                                address.getPort() == localPort ? NoopP::new : () -> {
+                                address.getPort() == localPort ? noop() : () -> {
                                     throw e;
                                 })
                 )));
