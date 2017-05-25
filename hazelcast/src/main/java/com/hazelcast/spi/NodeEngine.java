@@ -79,6 +79,8 @@ public interface NodeEngine {
      * Gets the SerializationService.
      *
      * @return the SerializationService.
+     * @deprecated since 3.7. Use {@link #toObject(Object)} or {@link #toData(Object)} to (de)serialize. The SerializationService
+     * is an internal API.
      */
     SerializationService getSerializationService();
 
