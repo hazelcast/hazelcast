@@ -26,6 +26,7 @@ import com.hazelcast.spi.annotation.Beta;
  * This interface has been deprecated and will be removed in a future version.
  *
  * @since 3.2
+ * @deprecated since 3.7. The methods will be directly integrated into the {@link IAtomicReference}.
  */
 @Beta
 @Deprecated
