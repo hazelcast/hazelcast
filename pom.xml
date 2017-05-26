@@ -294,6 +294,13 @@
           <excludeFilterFile>${main.basedir}/findbugs/findbugs-exclude.xml</excludeFilterFile>
         </configuration>
       </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>sonar-maven-plugin</artifactId>
+        <version>${maven.sonar.plugin.version}</version>
+      </plugin>
+
     </plugins>
   </build>
 
