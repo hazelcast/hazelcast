@@ -86,6 +86,8 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     // set to true while testing
     private boolean selectorWorkaroundTest;
 
+    private volatile boolean stop;
+
     public NonBlockingIOThread(String threadName,
                                ILogger logger,
                                IOOutOfMemoryHandler oomeHandler) {
@@ -242,7 +244,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     }
 
     private void selectLoop() throws IOException {
-        while (!isInterrupted()) {
+        while (!stop) {
             processTaskQueue();
 
             int selectedKeys = selector.select(SELECT_WAIT_TIME_MILLIS);
@@ -254,7 +256,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
 
     private void selectLoopWithFix() throws IOException {
         int idleCount = 0;
-        while (!isInterrupted()) {
+        while (!stop) {
             processTaskQueue();
 
             long before = currentTimeMillis();
@@ -283,7 +285,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     }
 
     private void selectNowLoop() throws IOException {
-        while (!isInterrupted()) {
+        while (!stop) {
             processTaskQueue();
 
             int selectedKeys = selector.selectNow();
@@ -294,7 +296,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     }
 
     private void processTaskQueue() {
-        while (!isInterrupted()) {
+        while (!stop) {
             Runnable task = taskQueue.poll();
             if (task == null) {
                 return;
@@ -363,6 +365,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     }
 
     public final void shutdown() {
+        stop = true;
         taskQueue.clear();
         interrupt();
     }
