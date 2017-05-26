@@ -48,11 +48,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * This class contains methods be notable for the Queue.
- * such as pool,peek,clear..
- */
-
-/**
  * The {@code QueueContainer} contains the actual queue and provides functionalities such as :
  * <ul>
  * <li>queue functionalities</li>
@@ -80,14 +75,13 @@ public class QueueContainer implements IdentifiedDataSerializable {
     private String name;
 
     private long minAge = Long.MAX_VALUE;
-
     private long maxAge = Long.MIN_VALUE;
-
     private long totalAge;
-
     private long totalAgedCount;
-
     private boolean isEvictionScheduled;
+    // when QueueStore is configured & enabled, stores the last item ID that was bulk-loaded by QueueStore.loadAll
+    // to avoid reloading same items
+    private long lastIdLoaded;
 
     /**
      * The default no-args constructor is only meant for factory usage.
@@ -772,15 +766,21 @@ public class QueueContainer implements IdentifiedDataSerializable {
         if (bulkLoad == 1) {
             item.setData(store.load(item.getItemId()));
         } else if (bulkLoad > 1) {
+            long maxIdToLoad = -1;
             final Iterator<QueueItem> iter = getItemQueue().iterator();
             final HashSet<Long> keySet = new HashSet<Long>(bulkLoad);
 
             keySet.add(item.getItemId());
-            while (keySet.size() < bulkLoad) {
-                keySet.add(iter.next().getItemId());
+            while (keySet.size() < bulkLoad && iter.hasNext()) {
+                final long itemId = iter.next().getItemId();
+                if (itemId > lastIdLoaded) {
+                    keySet.add(itemId);
+                    maxIdToLoad = Math.max(itemId, maxIdToLoad);
+                }
             }
 
             final Map<Long, Data> values = store.loadAll(keySet);
+            lastIdLoaded = maxIdToLoad;
             dataMap.putAll(values);
             item.setData(getDataFromMap(item.getItemId()));
         }
