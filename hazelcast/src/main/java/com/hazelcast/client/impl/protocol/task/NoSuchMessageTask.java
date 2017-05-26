@@ -22,11 +22,7 @@ import com.hazelcast.nio.Connection;
 
 import java.security.Permission;
 
-/**
- *
- */
-public class NoSuchMessageTask
-        extends AbstractMessageTask<ClientMessage> {
+public class NoSuchMessageTask extends AbstractMessageTask<ClientMessage> {
 
     public NoSuchMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -70,7 +66,7 @@ public class NoSuchMessageTask
         return null;
     }
 
-    //Overriding the partition id send from client as it is not recognized
+    // overriding the partition ID send from client as it is not recognized
     @Override
     public int getPartitionId() {
         return -1;

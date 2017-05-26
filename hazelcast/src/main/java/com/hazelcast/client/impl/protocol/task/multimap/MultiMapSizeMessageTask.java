@@ -31,7 +31,7 @@ import java.security.Permission;
 import java.util.Map;
 
 /**
- * Client Protocol Task for handling messages with type id:
+ * Client Protocol Task for handling messages with type ID:
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_SIZE}
  */
 public class MultiMapSizeMessageTask

@@ -47,7 +47,7 @@ import java.util.concurrent.Future;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 /**
- * Client Protocol Task for handling messages with type id:
+ * Client Protocol Task for handling messages with type ID:
  * {@link com.hazelcast.client.impl.protocol.codec.ContinuousQueryMessageType#CONTINUOUSQUERY_PUBLISHERCREATE}
  */
 public class MapPublisherCreateMessageTask
