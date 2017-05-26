@@ -37,4 +37,9 @@ public class WriteLoggerP<T> extends AbstractProcessor {
         getLogger().info(toStringF.apply((T) item));
         return true;
     }
+
+    @Override
+    public boolean isCooperative() {
+        return false;
+    }
 }
