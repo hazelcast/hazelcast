@@ -22,7 +22,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -52,7 +52,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class TransactionQueueTest extends HazelcastTestSupport {
 
@@ -509,6 +509,45 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         Object item = queue.poll(30, SECONDS);
         assertNotNull(item);
         context.commitTransaction();
+    }
+
+    @Test
+    public void transactionShouldBeRolledBack_whenInitiatorTerminatesBeforeCommit() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance master = factory.newHazelcastInstance();
+        HazelcastInstance instance = factory.newHazelcastInstance();
+        warmUpPartitions(instance);
+
+        String name = generateKeyOwnedBy(master);
+        IQueue<Integer> queue = master.getQueue(name);
+        queue.offer(1);
+
+        waitAllForSafeState(master, instance);
+
+        TransactionOptions options =
+                new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.TWO_PHASE);
+
+        TransactionContext context = master.newTransactionContext(options);
+        context.beginTransaction();
+        TransactionalQueue txQueue = context.getQueue(name);
+        txQueue.poll();
+
+        master.getLifecycleService().terminate();
+
+        final IQueue<Integer> queue2 = instance.getQueue(name);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1, queue2.size());
+            }
+        });
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1, queue2.size());
+            }
+        }, 3);
     }
 
     private <E> IQueue<E> getQueue(HazelcastInstance[] instances, String name) {
