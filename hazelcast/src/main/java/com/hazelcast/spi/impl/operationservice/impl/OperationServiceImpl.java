@@ -17,6 +17,8 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberSelector;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterClock;
@@ -53,6 +55,7 @@ import com.hazelcast.util.executor.ManagedExecutorService;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -312,6 +315,27 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
         return new TargetInvocation(invocationContext, op, target, DEFAULT_TRY_COUNT,
                 DEFAULT_TRY_PAUSE_MILLIS, DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT).invoke();
+    }
+
+    @Override
+    public <E> Set<InternalCompletableFuture<E>> invokeOnCluster(OperationFactory operationFactory,
+                                                                 MemberSelector memberSelector) {
+        Collection<Member> members;
+        if (memberSelector == null) {
+            members = nodeEngine.getClusterService().getMembers();
+        } else {
+            members = nodeEngine.getClusterService().getMembers(memberSelector);
+        }
+
+        Set<InternalCompletableFuture<E>> futures = new HashSet<InternalCompletableFuture<E>>(members.size());
+
+        for (Member member : members) {
+            Address target = member.getAddress();
+            Operation operation = operationFactory.createOperation();
+            InternalCompletableFuture<E> future = invokeOnTarget(operation.getServiceName(), operation, target);
+            futures.add(future);
+        }
+        return futures;
     }
 
     @Override

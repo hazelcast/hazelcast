@@ -17,7 +17,12 @@
 package com.hazelcast.config;
 
 import com.hazelcast.durableexecutor.DurableExecutorService;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.annotation.Beta;
+
+import java.io.IOException;
 
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkPositive;
@@ -26,7 +31,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * Contains the configuration for an {@link DurableExecutorService}.
  */
 @Beta
-public class DurableExecutorConfig {
+public class DurableExecutorConfig implements IdentifiedDataSerializable {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -51,7 +56,7 @@ public class DurableExecutorConfig {
 
     private int capacity = DEFAULT_RING_BUFFER_CAPACITY;
 
-    private DurableExecutorConfigReadOnly readOnly;
+    private transient DurableExecutorConfigReadOnly readOnly;
 
     public DurableExecutorConfig() {
     }
@@ -166,6 +171,63 @@ public class DurableExecutorConfig {
             readOnly = new DurableExecutorConfigReadOnly(this);
         }
         return readOnly;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.DURABLE_EXECUTOR_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeInt(poolSize);
+        out.writeInt(durability);
+        out.writeInt(capacity);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        poolSize = in.readInt();
+        durability = in.readInt();
+        capacity = in.readInt();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DurableExecutorConfig that = (DurableExecutorConfig) o;
+        if (poolSize != that.poolSize) {
+            return false;
+        }
+        if (durability != that.durability) {
+            return false;
+        }
+        if (capacity != that.capacity) {
+            return false;
+        }
+        return name.equals(that.name);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + poolSize;
+        result = 31 * result + durability;
+        result = 31 * result + capacity;
+        return result;
     }
 
     private static class DurableExecutorConfigReadOnly extends DurableExecutorConfig {

@@ -18,6 +18,11 @@ package com.hazelcast.config;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
 
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.util.Preconditions.checkHasText;
@@ -27,13 +32,13 @@ import static com.hazelcast.util.Preconditions.checkHasText;
  * with the {@link MapConfig}. The reason to create an map index is to speed up searches for
  * particular map entries.
  */
-public class MapIndexConfig {
+public class MapIndexConfig implements IdentifiedDataSerializable {
 
     private static final ILogger LOG = Logger.getLogger(MapIndexConfig.class);
 
     private String attribute;
     private boolean ordered;
-    private MapIndexConfigReadOnly readOnly;
+    private transient MapIndexConfigReadOnly readOnly;
 
     /**
      * Creates a MapIndexConfig without an attribute and with ordered set to {@code false}.
@@ -138,5 +143,50 @@ public class MapIndexConfig {
             }
         }
         return attribute;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.MAP_INDEX_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(attribute);
+        out.writeBoolean(ordered);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        attribute = in.readUTF();
+        ordered = in.readBoolean();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        MapIndexConfig that = (MapIndexConfig) o;
+        if (ordered != that.ordered) {
+            return false;
+        }
+        return attribute != null ? attribute.equals(that.attribute) : that.attribute == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = attribute != null ? attribute.hashCode() : 0;
+        result = 31 * result + (ordered ? 1 : 0);
+        return result;
     }
 }

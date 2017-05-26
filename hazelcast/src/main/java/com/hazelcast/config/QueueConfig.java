@@ -16,16 +16,23 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
 
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IQueue}.
  */
-public class QueueConfig {
+public class QueueConfig implements IdentifiedDataSerializable {
 
     /**
      * Default value for the maximum size of the Queue.
@@ -56,7 +63,7 @@ public class QueueConfig {
     private QueueStoreConfig queueStoreConfig;
     private boolean statisticsEnabled = true;
     private String quorumName;
-    private QueueConfigReadOnly readOnly;
+    private transient QueueConfigReadOnly readOnly;
 
     public QueueConfig() {
     }
@@ -316,5 +323,94 @@ public class QueueConfig {
                 + ", queueStoreConfig=" + queueStoreConfig
                 + ", statisticsEnabled=" + statisticsEnabled
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.QUEUE_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        writeNullableList(listenerConfigs, out);
+        out.writeInt(backupCount);
+        out.writeInt(asyncBackupCount);
+        out.writeInt(maxSize);
+        out.writeInt(emptyQueueTtl);
+        out.writeObject(queueStoreConfig);
+        out.writeBoolean(statisticsEnabled);
+        out.writeUTF(quorumName);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        listenerConfigs = readNullableList(in);
+        backupCount = in.readInt();
+        asyncBackupCount = in.readInt();
+        maxSize = in.readInt();
+        emptyQueueTtl = in.readInt();
+        queueStoreConfig = in.readObject();
+        statisticsEnabled = in.readBoolean();
+        quorumName = in.readUTF();
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        QueueConfig that = (QueueConfig) o;
+        if (backupCount != that.backupCount) {
+            return false;
+        }
+        if (asyncBackupCount != that.asyncBackupCount) {
+            return false;
+        }
+        if (maxSize != that.maxSize) {
+            return false;
+        }
+        if (emptyQueueTtl != that.emptyQueueTtl) {
+            return false;
+        }
+        if (statisticsEnabled != that.statisticsEnabled) {
+            return false;
+        }
+        if (!name.equals(that.name)) {
+            return false;
+        }
+        if (listenerConfigs != null ? !listenerConfigs.equals(that.listenerConfigs) : that.listenerConfigs != null) {
+            return false;
+        }
+        if (queueStoreConfig != null
+                ? !queueStoreConfig.equals(that.queueStoreConfig) : that.queueStoreConfig != null) {
+            return false;
+        }
+        return quorumName != null ? quorumName.equals(that.quorumName) : that.quorumName == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + (listenerConfigs != null ? listenerConfigs.hashCode() : 0);
+        result = 31 * result + backupCount;
+        result = 31 * result + asyncBackupCount;
+        result = 31 * result + maxSize;
+        result = 31 * result + emptyQueueTtl;
+        result = 31 * result + (queueStoreConfig != null ? queueStoreConfig.hashCode() : 0);
+        result = 31 * result + (statisticsEnabled ? 1 : 0);
+        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        return result;
     }
 }

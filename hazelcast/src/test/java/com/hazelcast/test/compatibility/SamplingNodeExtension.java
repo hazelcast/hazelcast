@@ -22,6 +22,7 @@ import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.networking.ChannelFactory;
@@ -205,5 +206,10 @@ public class SamplingNodeExtension implements NodeExtension {
     @Override
     public ByteArrayProcessor createMulticastOutputProcessor(IOService ioService) {
         return nodeExtension.createMulticastOutputProcessor(ioService);
+    }
+
+    @Override
+    public DynamicConfigListener createDynamicConfigListener() {
+        return nodeExtension.createDynamicConfigListener();
     }
 }

@@ -16,7 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
+
+import java.io.IOException;
 
 import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.isNotNull;
@@ -27,7 +32,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  *
  * @since 3.5
  */
-public class PredicateConfig {
+public class PredicateConfig implements IdentifiedDataSerializable {
 
     protected String className;
 
@@ -35,7 +40,7 @@ public class PredicateConfig {
 
     protected Predicate implementation;
 
-    private PredicateConfigReadOnly readOnly;
+    private transient PredicateConfigReadOnly readOnly;
 
     /**
      * Creates a PredicateConfig without className/implementation.
@@ -198,5 +203,29 @@ public class PredicateConfig {
                 + ", sql='" + sql + '\''
                 + ", implementation=" + implementation
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.PREDICATE_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(className);
+        out.writeUTF(sql);
+        out.writeObject(implementation);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        className = in.readUTF();
+        sql = in.readUTF();
+        implementation = in.readObject();
     }
 }

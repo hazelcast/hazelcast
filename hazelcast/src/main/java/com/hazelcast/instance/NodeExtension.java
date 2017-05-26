@@ -21,6 +21,7 @@ import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.networking.ChannelFactory;
@@ -242,4 +243,11 @@ public interface NodeExtension {
 
     /** Returns a byte array processor for outgoing data on the Multicast joiner */
     ByteArrayProcessor createMulticastOutputProcessor(IOService ioService);
+
+    /**
+     * Creates a listener for changes in dynamic data structure configurations
+     *
+     * @return Listener to be notfied about changes in data structure configurations
+     */
+    DynamicConfigListener createDynamicConfigListener();
 }

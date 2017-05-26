@@ -16,10 +16,16 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
+
 /**
  * Configures the Hot Restart Persistence per Hazelcast data structure.
  */
-public class HotRestartConfig {
+public class HotRestartConfig implements IdentifiedDataSerializable {
 
     private boolean enabled;
     private boolean fsync;
@@ -77,5 +83,50 @@ public class HotRestartConfig {
                 + "enabled=" + enabled
                 + ", fsync=" + fsync
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.HOT_RESTART_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeBoolean(enabled);
+        out.writeBoolean(fsync);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        enabled = in.readBoolean();
+        fsync = in.readBoolean();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        HotRestartConfig that = (HotRestartConfig) o;
+        if (enabled != that.enabled) {
+            return false;
+        }
+        return fsync == that.fsync;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (enabled ? 1 : 0);
+        result = 31 * result + (fsync ? 1 : 0);
+        return result;
     }
 }

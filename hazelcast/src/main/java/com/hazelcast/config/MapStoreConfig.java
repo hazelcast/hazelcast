@@ -16,8 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.properties.GroupProperty;
 
+import java.io.IOException;
 import java.util.Properties;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
@@ -25,7 +29,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for a Map Store.
  */
-public class MapStoreConfig {
+public class MapStoreConfig implements IdentifiedDataSerializable {
     /**
      * Default delay seconds for writing
      */
@@ -48,7 +52,7 @@ public class MapStoreConfig {
     private Object implementation;
     private Object factoryImplementation;
     private Properties properties = new Properties();
-    private MapStoreConfigReadOnly readOnly;
+    private transient MapStoreConfigReadOnly readOnly;
     private InitialLoadMode initialLoadMode = InitialLoadMode.LAZY;
 
     /**
@@ -393,5 +397,44 @@ public class MapStoreConfig {
         result = prime * result + properties.hashCode();
         result = prime * result + (initialLoadMode != null ? initialLoadMode.hashCode() : 0);
         return result;
+    }
+
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.MAP_STORE_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeBoolean(enabled);
+        out.writeBoolean(writeCoalescing);
+        out.writeUTF(className);
+        out.writeUTF(factoryClassName);
+        out.writeInt(writeDelaySeconds);
+        out.writeInt(writeBatchSize);
+        out.writeObject(implementation);
+        out.writeObject(factoryImplementation);
+        out.writeObject(properties);
+        out.writeUTF(initialLoadMode.name());
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        enabled = in.readBoolean();
+        writeCoalescing = in.readBoolean();
+        className = in.readUTF();
+        factoryClassName = in.readUTF();
+        writeDelaySeconds = in.readInt();
+        writeBatchSize = in.readInt();
+        implementation = in.readObject();
+        factoryImplementation = in.readObject();
+        properties = in.readObject();
+        initialLoadMode = InitialLoadMode.valueOf(in.readUTF());
     }
 }

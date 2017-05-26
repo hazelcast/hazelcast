@@ -16,18 +16,24 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.quorum.QuorumFunction;
 import com.hazelcast.quorum.QuorumType;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
 import static com.hazelcast.quorum.QuorumType.READ_WRITE;
 
 /**
  * Contains the configuration for cluster quorum.
  */
-public class QuorumConfig {
+public class QuorumConfig implements IdentifiedDataSerializable {
 
     private String name;
     private boolean enabled;
@@ -141,5 +147,39 @@ public class QuorumConfig {
                 + ", quorumFunctionClassName=" + quorumFunctionClassName
                 + ", quorumFunctionImplementation=" + quorumFunctionImplementation
                 + ", type=" + type + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.QUORUM_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
+        out.writeUTF(name);
+        out.writeBoolean(enabled);
+        out.writeInt(size);
+        writeNullableList(listenerConfigs, out);
+        out.writeUTF(type.name());
+        out.writeUTF(quorumFunctionClassName);
+        out.writeObject(quorumFunctionImplementation);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in)
+            throws IOException {
+        name = in.readUTF();
+        enabled = in.readBoolean();
+        size = in.readInt();
+        listenerConfigs = readNullableList(in);
+        type = QuorumType.valueOf(in.readUTF());
+        quorumFunctionClassName = in.readUTF();
+        quorumFunctionImplementation = in.readObject();
     }
 }

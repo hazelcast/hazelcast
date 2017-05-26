@@ -16,13 +16,19 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
+
 import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Contains the configuration for the {@link com.hazelcast.core.ILock}.
  */
-public class LockConfig {
+public class LockConfig implements IdentifiedDataSerializable {
 
     private String name;
     private String quorumName;
@@ -121,6 +127,51 @@ public class LockConfig {
                 + "name='" + name + '\''
                 + ", quorumName='" + quorumName + '\''
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.LOCK_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeUTF(quorumName);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        quorumName = in.readUTF();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        LockConfig that = (LockConfig) o;
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
+        return quorumName != null ? quorumName.equals(that.quorumName) : that.quorumName == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        return result;
     }
 
     /**

@@ -45,6 +45,7 @@ import com.hazelcast.internal.cluster.impl.MulticastJoiner;
 import com.hazelcast.internal.cluster.impl.MulticastService;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
 import com.hazelcast.internal.diagnostics.HealthMonitor;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -111,7 +112,7 @@ public class Node {
 
     public final HazelcastInstanceImpl hazelcastInstance;
 
-    public final Config config;
+    public final DynamicConfigurationAwareConfig config;
 
     public final NodeEngineImpl nodeEngine;
     public final ClientEngineImpl clientEngine;
@@ -160,7 +161,8 @@ public class Node {
     private final MemberVersion version;
 
     @SuppressWarnings({"checkstyle:executablestatementcount", "checkstyle:methodlength"})
-    public Node(HazelcastInstanceImpl hazelcastInstance, Config config, NodeContext nodeContext) {
+    public Node(HazelcastInstanceImpl hazelcastInstance, Config staticConfig, NodeContext nodeContext) {
+        DynamicConfigurationAwareConfig config = new DynamicConfigurationAwareConfig(staticConfig);
         this.hazelcastInstance = hazelcastInstance;
         this.config = config;
         this.configClassLoader = getConfigClassloader(config);
@@ -200,6 +202,7 @@ public class Node {
             securityContext = config.getSecurityConfig().isEnabled() ? nodeExtension.getSecurityContext() : null;
 
             nodeEngine = new NodeEngineImpl(this);
+            config.setConfigurationService(nodeEngine.getConfigurationService());
             MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
             metricsRegistry.collectMetrics(nodeExtension);
             healthMonitor = new HealthMonitor(this);

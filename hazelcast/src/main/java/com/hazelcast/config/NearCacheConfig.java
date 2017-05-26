@@ -594,4 +594,70 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
     private static int calculateMaxSize(int maxSize) {
         return (maxSize == 0) ? Integer.MAX_VALUE : checkNotNegative(maxSize, "maxSize cannot be negative!");
     }
+
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        NearCacheConfig that = (NearCacheConfig) o;
+
+        if (serializeKeys != that.serializeKeys) {
+            return false;
+        }
+        if (invalidateOnChange != that.invalidateOnChange) {
+            return false;
+        }
+        if (timeToLiveSeconds != that.timeToLiveSeconds) {
+            return false;
+        }
+        if (maxIdleSeconds != that.maxIdleSeconds) {
+            return false;
+        }
+        if (maxSize != that.maxSize) {
+            return false;
+        }
+        if (cacheLocalEntries != that.cacheLocalEntries) {
+            return false;
+        }
+        if (!name.equals(that.name)) {
+            return false;
+        }
+        if (inMemoryFormat != that.inMemoryFormat) {
+            return false;
+        }
+        if (evictionPolicy != null ? !evictionPolicy.equals(that.evictionPolicy) : that.evictionPolicy != null) {
+            return false;
+        }
+        if (evictionConfig != null ? !evictionConfig.equals(that.evictionConfig) : that.evictionConfig != null) {
+            return false;
+        }
+        if (localUpdatePolicy != that.localUpdatePolicy) {
+            return false;
+        }
+        return preloaderConfig != null ? preloaderConfig.equals(that.preloaderConfig) : that.preloaderConfig == null;
+    }
+
+    @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    public int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + inMemoryFormat.hashCode();
+        result = 31 * result + (serializeKeys ? 1 : 0);
+        result = 31 * result + (invalidateOnChange ? 1 : 0);
+        result = 31 * result + timeToLiveSeconds;
+        result = 31 * result + maxIdleSeconds;
+        result = 31 * result + maxSize;
+        result = 31 * result + (evictionPolicy != null ? evictionPolicy.hashCode() : 0);
+        result = 31 * result + (evictionConfig != null ? evictionConfig.hashCode() : 0);
+        result = 31 * result + (cacheLocalEntries ? 1 : 0);
+        result = 31 * result + (localUpdatePolicy != null ? localUpdatePolicy.hashCode() : 0);
+        result = 31 * result + (preloaderConfig != null ? preloaderConfig.hashCode() : 0);
+        return result;
+    }
 }

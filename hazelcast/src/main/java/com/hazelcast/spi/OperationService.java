@@ -16,10 +16,12 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.core.MemberSelector;
 import com.hazelcast.nio.Address;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The OperationService is responsible for executing operations.
@@ -57,6 +59,21 @@ public interface OperationService {
     <E> InternalCompletableFuture<E> invokeOnPartition(Operation op);
 
     <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target);
+
+    /**
+     * Invoke an operation on each member of the cluster selected by the given {@code memberSelector}. Operations
+     * are created by the given {@code operationFactory}. In case of failure to invoke the operation on a member,
+     * no attempt is made to continue invoking the operations on other members (if any are left): the operation may
+     * or may not have been executed on any number of members.
+     *
+     * @param operationFactory  operation factory, creates the {@link Operation}s to be executed. Does not have to be
+     *                          serializable, as it is only used locally.
+     * @param memberSelector    a {@link MemberSelector} to select members on which the operation will be invoked
+     *                          or {@code null} to invoke on all members of the cluster
+     * @param <E>               the return type of the operation response
+     * @return                  set of futures
+     */
+    <E> Set<InternalCompletableFuture<E>> invokeOnCluster(OperationFactory operationFactory, MemberSelector memberSelector);
 
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId);
 

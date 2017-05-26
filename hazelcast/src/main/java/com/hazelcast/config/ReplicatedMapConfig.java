@@ -16,16 +16,23 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.merge.PutIfAbsentMapMergePolicy;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
+
 /**
  * Contains the configuration for an {@link com.hazelcast.core.ReplicatedMap}
  */
-public class ReplicatedMapConfig {
+public class ReplicatedMapConfig implements IdentifiedDataSerializable {
 
     /**
      * Default value of concurrency level
@@ -49,10 +56,14 @@ public class ReplicatedMapConfig {
     public static final String DEFAULT_MERGE_POLICY = PutIfAbsentMapMergePolicy.class.getName();
 
     private String name;
-    private int concurrencyLevel = DEFAULT_CONCURRENCY_LEVEL;
-    private long replicationDelayMillis = DEFAULT_REPLICATION_DELAY_MILLIS;
+    // concurrencyLevel is deprecated and it's not used anymore
+    // it's left just for backwards compatibility -> it's transient
+    private transient int concurrencyLevel = DEFAULT_CONCURRENCY_LEVEL;
+    // replicationDelayMillis is deprecated, unused and hence transient
+    private transient long replicationDelayMillis = DEFAULT_REPLICATION_DELAY_MILLIS;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
-    private ScheduledExecutorService replicatorExecutorService;
+    // replicatorExecutorService is deprecated, unused and hence transient
+    private transient ScheduledExecutorService replicatorExecutorService;
     private boolean asyncFillup = DEFAULT_ASNYC_FILLUP;
     private boolean statisticsEnabled = true;
     private String mergePolicy = DEFAULT_MERGE_POLICY;
@@ -323,5 +334,90 @@ public class ReplicatedMapConfig {
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", mergePolicy='" + mergePolicy + '\''
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.REPLICATED_MAP_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeUTF(inMemoryFormat.name());
+        out.writeBoolean(asyncFillup);
+        out.writeBoolean(statisticsEnabled);
+        out.writeUTF(mergePolicy);
+        writeNullableList(listenerConfigs, out);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
+        asyncFillup = in.readBoolean();
+        statisticsEnabled = in.readBoolean();
+        mergePolicy = in.readUTF();
+        listenerConfigs = readNullableList(in);
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ReplicatedMapConfig that = (ReplicatedMapConfig) o;
+        if (concurrencyLevel != that.concurrencyLevel) {
+            return false;
+        }
+        if (replicationDelayMillis != that.replicationDelayMillis) {
+            return false;
+        }
+        if (asyncFillup != that.asyncFillup) {
+            return false;
+        }
+        if (statisticsEnabled != that.statisticsEnabled) {
+            return false;
+        }
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
+        if (inMemoryFormat != that.inMemoryFormat) {
+            return false;
+        }
+        if (replicatorExecutorService != null
+                ? !replicatorExecutorService.equals(that.replicatorExecutorService)
+                : that.replicatorExecutorService != null) {
+            return false;
+        }
+        if (mergePolicy != null ? !mergePolicy.equals(that.mergePolicy) : that.mergePolicy != null) {
+            return false;
+        }
+        return listenerConfigs != null ? listenerConfigs.equals(that.listenerConfigs) : that.listenerConfigs == null;
+    }
+
+    @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    public int hashCode() {
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + concurrencyLevel;
+        result = 31 * result + (int) (replicationDelayMillis ^ (replicationDelayMillis >>> 32));
+        result = 31 * result + (inMemoryFormat != null ? inMemoryFormat.hashCode() : 0);
+        result = 31 * result + (replicatorExecutorService != null ? replicatorExecutorService.hashCode() : 0);
+        result = 31 * result + (asyncFillup ? 1 : 0);
+        result = 31 * result + (statisticsEnabled ? 1 : 0);
+        result = 31 * result + (mergePolicy != null ? mergePolicy.hashCode() : 0);
+        result = 31 * result + (listenerConfigs != null ? listenerConfigs.hashCode() : 0);
+        return result;
     }
 }

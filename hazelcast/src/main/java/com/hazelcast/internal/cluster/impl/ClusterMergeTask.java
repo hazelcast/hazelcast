@@ -21,6 +21,7 @@ import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -63,7 +64,9 @@ class ClusterMergeTask implements Runnable {
         try {
             resetState();
 
-            Collection<Runnable> tasks = collectMergeTasks();
+            Collection<Runnable> coreTasks = collectMergeTasks(true);
+
+            Collection<Runnable> nonCoreTasks = collectMergeTasks(false);
 
             resetServices();
 
@@ -72,7 +75,8 @@ class ClusterMergeTask implements Runnable {
             finalLifecycleState = getFinalLifecycleState();
 
             if (finalLifecycleState == MERGED) {
-                executeMergeTasks(tasks);
+                executeMergeTasks(coreTasks);
+                executeMergeTasks(nonCoreTasks);
             }
         } finally {
             lifecycleService.fireLifecycleEvent(finalLifecycleState);
@@ -97,17 +101,24 @@ class ClusterMergeTask implements Runnable {
         node.nodeEngine.reset();
     }
 
-    private Collection<Runnable> collectMergeTasks() {
+    private Collection<Runnable> collectMergeTasks(boolean coreServices) {
         // gather merge tasks from services
         Collection<SplitBrainHandlerService> services = node.nodeEngine.getServices(SplitBrainHandlerService.class);
         Collection<Runnable> tasks = new LinkedList<Runnable>();
         for (SplitBrainHandlerService service : services) {
+            if (coreServices != isCoreService(service)) {
+                continue;
+            }
             Runnable runnable = service.prepareMergeRunnable();
             if (runnable != null) {
                 tasks.add(runnable);
             }
         }
         return tasks;
+    }
+
+    private boolean isCoreService(SplitBrainHandlerService service) {
+        return service instanceof CoreService;
     }
 
     private void resetServices() {

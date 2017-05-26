@@ -183,4 +183,27 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
                 + ", size=" + size
                 + '}';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        MaxSizeConfig that = (MaxSizeConfig) o;
+        if (size != that.size) {
+            return false;
+        }
+        return maxSizePolicy == that.maxSizePolicy;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = maxSizePolicy != null ? maxSizePolicy.hashCode() : 0;
+        result = 31 * result + size;
+        return result;
+    }
 }

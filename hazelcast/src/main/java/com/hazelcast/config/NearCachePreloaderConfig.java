@@ -149,6 +149,39 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
         return readOnly;
     }
 
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        NearCachePreloaderConfig that = (NearCachePreloaderConfig) o;
+
+        if (enabled != that.enabled) {
+            return false;
+        }
+        if (storeInitialDelaySeconds != that.storeInitialDelaySeconds) {
+            return false;
+        }
+        if (storeIntervalSeconds != that.storeIntervalSeconds) {
+            return false;
+        }
+        return directory != null ? directory.equals(that.directory) : that.directory == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (enabled ? 1 : 0);
+        result = 31 * result + (directory != null ? directory.hashCode() : 0);
+        result = 31 * result + storeInitialDelaySeconds;
+        result = 31 * result + storeIntervalSeconds;
+        return result;
+    }
+
     /**
      * A readonly version of the {@link NearCachePreloaderConfig}.
      */

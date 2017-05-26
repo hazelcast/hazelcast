@@ -16,7 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.annotation.Beta;
+
+import java.io.IOException;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
@@ -34,7 +39,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * in the cluster and its backup in another member in the cluster.
  */
 @Beta
-public class RingbufferConfig {
+public class RingbufferConfig implements IdentifiedDataSerializable {
 
     /**
      * Default value of capacity of the RingBuffer.
@@ -321,6 +326,83 @@ public class RingbufferConfig {
      */
     public RingbufferConfig getAsReadOnly() {
         return new RingbufferConfigReadonly(this);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.RINGBUFFER_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeInt(capacity);
+        out.writeInt(backupCount);
+        out.writeInt(asyncBackupCount);
+        out.writeInt(timeToLiveSeconds);
+        out.writeUTF(inMemoryFormat.name());
+        out.writeObject(ringbufferStoreConfig);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        capacity = in.readInt();
+        backupCount = in.readInt();
+        asyncBackupCount = in.readInt();
+        timeToLiveSeconds = in.readInt();
+        inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
+        ringbufferStoreConfig = in.readObject();
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        RingbufferConfig that = (RingbufferConfig) o;
+        if (capacity != that.capacity) {
+            return false;
+        }
+        if (backupCount != that.backupCount) {
+            return false;
+        }
+        if (asyncBackupCount != that.asyncBackupCount) {
+            return false;
+        }
+        if (timeToLiveSeconds != that.timeToLiveSeconds) {
+            return false;
+        }
+        if (!name.equals(that.name)) {
+            return false;
+        }
+        if (inMemoryFormat != that.inMemoryFormat) {
+            return false;
+        }
+        return ringbufferStoreConfig != null ? ringbufferStoreConfig.equals(that.ringbufferStoreConfig)
+                : that.ringbufferStoreConfig == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + capacity;
+        result = 31 * result + backupCount;
+        result = 31 * result + asyncBackupCount;
+        result = 31 * result + timeToLiveSeconds;
+        result = 31 * result + (inMemoryFormat != null ? inMemoryFormat.hashCode() : 0);
+        result = 31 * result + (ringbufferStoreConfig != null ? ringbufferStoreConfig.hashCode() : 0);
+        return result;
     }
 
     /**

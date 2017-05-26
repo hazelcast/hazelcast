@@ -278,7 +278,7 @@ public final class FutureUtil {
     }
 
     @PrivateApi
-    public static void waitForever(Collection<Future> futuresToWaitFor, ExceptionHandler exceptionHandler) {
+    public static void waitForever(Collection<? extends Future> futuresToWaitFor, ExceptionHandler exceptionHandler) {
         Collection<Future> futures = new ArrayList<Future>(futuresToWaitFor);
         while (true) {
             Iterator<Future> it = futures.iterator();
@@ -300,17 +300,17 @@ public final class FutureUtil {
     }
 
     @PrivateApi
-    public static void waitForever(Collection<Future> futures) {
+    public static void waitForever(Collection<? extends Future> futures) {
         waitForever(futures, IGNORE_ALL_EXCEPT_LOG_MEMBER_LEFT);
     }
 
     @PrivateApi
-    public static void waitWithDeadline(Collection<Future> futures, long timeout, TimeUnit timeUnit) {
+    public static void waitWithDeadline(Collection<? extends Future> futures, long timeout, TimeUnit timeUnit) {
         waitWithDeadline(futures, timeout, timeUnit, IGNORE_ALL_EXCEPT_LOG_MEMBER_LEFT);
     }
 
     @PrivateApi
-    public static void waitUntilAllRespondedWithDeadline(Collection<Future> futures, long timeout, TimeUnit timeUnit,
+    public static void waitUntilAllRespondedWithDeadline(Collection<? extends Future> futures, long timeout, TimeUnit timeUnit,
                                                          ExceptionHandler exceptionHandler) {
         CollectAllExceptionHandler collector = new CollectAllExceptionHandler(futures.size());
         waitWithDeadline(futures, timeout, timeUnit, collector);
@@ -324,14 +324,14 @@ public final class FutureUtil {
     }
 
     @PrivateApi
-    public static void waitWithDeadline(Collection<Future> futures, long timeout, TimeUnit timeUnit,
+    public static void waitWithDeadline(Collection<? extends Future> futures, long timeout, TimeUnit timeUnit,
                                         ExceptionHandler exceptionHandler) {
 
         waitWithDeadline(futures, timeout, timeUnit, timeout, timeUnit, exceptionHandler);
     }
 
     @PrivateApi
-    public static void waitWithDeadline(Collection<Future> futures, long overallTimeout, TimeUnit overallTimeUnit,
+    public static void waitWithDeadline(Collection<? extends Future> futures, long overallTimeout, TimeUnit overallTimeUnit,
                                         long perFutureTimeout, TimeUnit perFutureTimeUnit) {
 
         waitWithDeadline(futures, overallTimeout, overallTimeUnit, perFutureTimeout, perFutureTimeUnit,
@@ -339,7 +339,7 @@ public final class FutureUtil {
     }
 
     @PrivateApi
-    public static void waitWithDeadline(Collection<Future> futures, long overallTimeout, TimeUnit overallTimeUnit,
+    public static void waitWithDeadline(Collection<? extends Future> futures, long overallTimeout, TimeUnit overallTimeUnit,
                                         long perFutureTimeout, TimeUnit perFutureTimeUnit, ExceptionHandler exceptionHandler) {
 
         // Calculate timeouts for whole operation and per future. If corresponding TimeUnits not set assume

@@ -18,12 +18,18 @@ package com.hazelcast.config;
 
 import com.hazelcast.cache.BuiltInCacheMergePolicies;
 import com.hazelcast.cache.merge.PassThroughCacheMergePolicy;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.partition.IPartition;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
 import static com.hazelcast.util.Preconditions.isNotNull;
@@ -33,7 +39,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * CacheConfig depends on the JCache API. If the JCache API is not in the classpath,
  * you can use CacheSimpleConfig as a communicator between the code and CacheConfig.
  */
-public class CacheSimpleConfig {
+public class CacheSimpleConfig implements IdentifiedDataSerializable {
 
     /**
      * The minimum number of backups.
@@ -94,7 +100,7 @@ public class CacheSimpleConfig {
     private EvictionConfig evictionConfig = new EvictionConfig();
     private WanReplicationRef wanReplicationRef;
 
-    private CacheSimpleConfig readOnly;
+    private transient CacheSimpleConfig readOnly;
 
     private String quorumName;
 
@@ -677,13 +683,196 @@ public class CacheSimpleConfig {
         this.disablePerEntryInvalidationEvents = disablePerEntryInvalidationEvents;
     }
 
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.SIMPLE_CACHE_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeUTF(keyType);
+        out.writeUTF(valueType);
+        out.writeBoolean(statisticsEnabled);
+        out.writeBoolean(managementEnabled);
+        out.writeBoolean(readThrough);
+        out.writeBoolean(writeThrough);
+        out.writeUTF(cacheLoaderFactory);
+        out.writeUTF(cacheWriterFactory);
+        out.writeUTF(cacheLoader);
+        out.writeUTF(cacheWriter);
+        out.writeObject(expiryPolicyFactoryConfig);
+        writeNullableList(cacheEntryListeners, out);
+        out.writeInt(asyncBackupCount);
+        out.writeInt(backupCount);
+        out.writeUTF(inMemoryFormat.name());
+        out.writeObject(evictionConfig);
+        out.writeObject(wanReplicationRef);
+        out.writeUTF(quorumName);
+        writeNullableList(partitionLostListenerConfigs, out);
+        out.writeUTF(mergePolicy);
+        out.writeObject(hotRestartConfig);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        keyType = in.readUTF();
+        valueType = in.readUTF();
+        statisticsEnabled = in.readBoolean();
+        managementEnabled = in.readBoolean();
+        readThrough = in.readBoolean();
+        writeThrough = in.readBoolean();
+        cacheLoaderFactory = in.readUTF();
+        cacheWriterFactory = in.readUTF();
+        cacheLoader = in.readUTF();
+        cacheWriter = in.readUTF();
+        expiryPolicyFactoryConfig = in.readObject();
+        cacheEntryListeners = readNullableList(in);
+        asyncBackupCount = in.readInt();
+        backupCount = in.readInt();
+        inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
+        evictionConfig = in.readObject();
+        wanReplicationRef = in.readObject();
+        quorumName = in.readUTF();
+        partitionLostListenerConfigs = readNullableList(in);
+        mergePolicy = in.readUTF();
+        hotRestartConfig = in.readObject();
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:methodlength"})
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        CacheSimpleConfig that = (CacheSimpleConfig) o;
+
+        if (statisticsEnabled != that.statisticsEnabled) {
+            return false;
+        }
+        if (managementEnabled != that.managementEnabled) {
+            return false;
+        }
+        if (readThrough != that.readThrough) {
+            return false;
+        }
+        if (writeThrough != that.writeThrough) {
+            return false;
+        }
+        if (asyncBackupCount != that.asyncBackupCount) {
+            return false;
+        }
+        if (backupCount != that.backupCount) {
+            return false;
+        }
+        if (disablePerEntryInvalidationEvents != that.disablePerEntryInvalidationEvents) {
+            return false;
+        }
+        if (!name.equals(that.name)) {
+            return false;
+        }
+        if (keyType != null ? !keyType.equals(that.keyType) : that.keyType != null) {
+            return false;
+        }
+        if (valueType != null ? !valueType.equals(that.valueType) : that.valueType != null) {
+            return false;
+        }
+        if (cacheLoaderFactory != null
+                ? !cacheLoaderFactory.equals(that.cacheLoaderFactory) : that.cacheLoaderFactory != null) {
+            return false;
+        }
+        if (cacheWriterFactory != null
+                ? !cacheWriterFactory.equals(that.cacheWriterFactory) : that.cacheWriterFactory != null) {
+            return false;
+        }
+        if (cacheLoader != null ? !cacheLoader.equals(that.cacheLoader) : that.cacheLoader != null) {
+            return false;
+        }
+        if (cacheWriter != null ? !cacheWriter.equals(that.cacheWriter) : that.cacheWriter != null) {
+            return false;
+        }
+        if (expiryPolicyFactoryConfig != null
+                ? !expiryPolicyFactoryConfig.equals(that.expiryPolicyFactoryConfig)
+                : that.expiryPolicyFactoryConfig != null) {
+            return false;
+        }
+        if (cacheEntryListeners != null ? !cacheEntryListeners.equals(that.cacheEntryListeners)
+                : that.cacheEntryListeners != null) {
+            return false;
+        }
+        if (inMemoryFormat != that.inMemoryFormat) {
+            return false;
+        }
+        if (evictionConfig != null ? !evictionConfig.equals(that.evictionConfig) : that.evictionConfig != null) {
+            return false;
+        }
+        if (wanReplicationRef != null ? !wanReplicationRef.equals(that.wanReplicationRef)
+                : that.wanReplicationRef != null) {
+            return false;
+        }
+        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+            return false;
+        }
+        if (partitionLostListenerConfigs != null
+                ? !partitionLostListenerConfigs.equals(that.partitionLostListenerConfigs)
+                : that.partitionLostListenerConfigs != null) {
+            return false;
+        }
+        if (mergePolicy != null ? !mergePolicy.equals(that.mergePolicy) : that.mergePolicy != null) {
+            return false;
+        }
+        return hotRestartConfig != null ? hotRestartConfig.equals(that.hotRestartConfig) : that.hotRestartConfig == null;
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + (keyType != null ? keyType.hashCode() : 0);
+        result = 31 * result + (valueType != null ? valueType.hashCode() : 0);
+        result = 31 * result + (statisticsEnabled ? 1 : 0);
+        result = 31 * result + (managementEnabled ? 1 : 0);
+        result = 31 * result + (readThrough ? 1 : 0);
+        result = 31 * result + (writeThrough ? 1 : 0);
+        result = 31 * result + (cacheLoaderFactory != null ? cacheLoaderFactory.hashCode() : 0);
+        result = 31 * result + (cacheWriterFactory != null ? cacheWriterFactory.hashCode() : 0);
+        result = 31 * result + (cacheLoader != null ? cacheLoader.hashCode() : 0);
+        result = 31 * result + (cacheWriter != null ? cacheWriter.hashCode() : 0);
+        result = 31 * result + (expiryPolicyFactoryConfig != null ? expiryPolicyFactoryConfig.hashCode() : 0);
+        result = 31 * result + (cacheEntryListeners != null ? cacheEntryListeners.hashCode() : 0);
+        result = 31 * result + asyncBackupCount;
+        result = 31 * result + backupCount;
+        result = 31 * result + (inMemoryFormat != null ? inMemoryFormat.hashCode() : 0);
+        result = 31 * result + (evictionConfig != null ? evictionConfig.hashCode() : 0);
+        result = 31 * result + (wanReplicationRef != null ? wanReplicationRef.hashCode() : 0);
+        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (partitionLostListenerConfigs != null ? partitionLostListenerConfigs.hashCode() : 0);
+        result = 31 * result + (mergePolicy != null ? mergePolicy.hashCode() : 0);
+        result = 31 * result + (hotRestartConfig != null ? hotRestartConfig.hashCode() : 0);
+        result = 31 * result + (disablePerEntryInvalidationEvents ? 1 : 0);
+        return result;
+    }
+
     /**
      * Represents configuration for "ExpiryPolicyFactory".
      */
-    public static class ExpiryPolicyFactoryConfig {
+    public static class ExpiryPolicyFactoryConfig implements IdentifiedDataSerializable {
 
-        private final String className;
-        private final TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig;
+        private String className;
+        private TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig;
+
+        public ExpiryPolicyFactoryConfig() {
+        }
 
         public ExpiryPolicyFactoryConfig(String className) {
             this.className = className;
@@ -703,13 +892,64 @@ public class CacheSimpleConfig {
             return timedExpiryPolicyFactoryConfig;
         }
 
+        @Override
+        public int getFactoryId() {
+            return ConfigDataSerializerHook.F_ID;
+        }
+
+        @Override
+        public int getId() {
+            return ConfigDataSerializerHook.SIMPLE_CACHE_CONFIG_EXPIRY_POLICY_FACTORY_CONFIG;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeUTF(className);
+            out.writeObject(timedExpiryPolicyFactoryConfig);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            className = in.readUTF();
+            timedExpiryPolicyFactoryConfig = in.readObject();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            ExpiryPolicyFactoryConfig that = (ExpiryPolicyFactoryConfig) o;
+
+            if (className != null ? !className.equals(that.className) : that.className != null) {
+                return false;
+            }
+            return timedExpiryPolicyFactoryConfig != null
+                    ? timedExpiryPolicyFactoryConfig.equals(that.timedExpiryPolicyFactoryConfig)
+                    : that.timedExpiryPolicyFactoryConfig == null;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = className != null ? className.hashCode() : 0;
+            result = 31 * result + (timedExpiryPolicyFactoryConfig != null ? timedExpiryPolicyFactoryConfig.hashCode() : 0);
+            return result;
+        }
+
         /**
          * Represents configuration for time based "ExpiryPolicyFactory" with duration and time unit.
          */
-        public static class TimedExpiryPolicyFactoryConfig {
+        public static class TimedExpiryPolicyFactoryConfig implements IdentifiedDataSerializable {
 
-            private final ExpiryPolicyType expiryPolicyType;
-            private final DurationConfig durationConfig;
+            private ExpiryPolicyType expiryPolicyType;
+            private DurationConfig durationConfig;
+
+            public TimedExpiryPolicyFactoryConfig() {
+            }
 
             public TimedExpiryPolicyFactoryConfig(ExpiryPolicyType expiryPolicyType,
                                                   DurationConfig durationConfig) {
@@ -725,6 +965,28 @@ public class CacheSimpleConfig {
                 return durationConfig;
             }
 
+            @Override
+            public int getFactoryId() {
+                return ConfigDataSerializerHook.F_ID;
+            }
+
+            @Override
+            public int getId() {
+                return ConfigDataSerializerHook.SIMPLE_CACHE_CONFIG_TIMED_EXPIRY_POLICY_FACTORY_CONFIG;
+            }
+
+            @Override
+            public void writeData(ObjectDataOutput out) throws IOException {
+                out.writeUTF(expiryPolicyType.name());
+                out.writeObject(durationConfig);
+            }
+
+            @Override
+            public void readData(ObjectDataInput in) throws IOException {
+                expiryPolicyType = ExpiryPolicyType.valueOf(in.readUTF());
+                durationConfig = in.readObject();
+            }
+
             /**
              * Represents type of the "TimedExpiryPolicyFactoryConfig".
              */
@@ -735,21 +997,44 @@ public class CacheSimpleConfig {
                  */
                 CREATED,
                 /**
-                 * Expiry policy type for the {@link javax.cache.expiry.CreatedExpiryPolicy}.
+                 * Expiry policy type for the {@link javax.cache.expiry.ModifiedExpiryPolicy}.
                  */
                 MODIFIED,
                 /**
-                 * Expiry policy type for the {@link javax.cache.expiry.CreatedExpiryPolicy}.
+                 * Expiry policy type for the {@link javax.cache.expiry.AccessedExpiryPolicy}.
                  */
                 ACCESSED,
                 /**
-                 * Expiry policy type for the {@link javax.cache.expiry.CreatedExpiryPolicy}.
+                 * Expiry policy type for the {@link javax.cache.expiry.TouchedExpiryPolicy}.
                  */
                 TOUCHED,
                 /**
-                 * Expiry policy type for the {@link javax.cache.expiry.CreatedExpiryPolicy}.
+                 * Expiry policy type for the {@link javax.cache.expiry.EternalExpiryPolicy}.
                  */
                 ETERNAL
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) {
+                    return true;
+                }
+                if (o == null || getClass() != o.getClass()) {
+                    return false;
+                }
+
+                TimedExpiryPolicyFactoryConfig that = (TimedExpiryPolicyFactoryConfig) o;
+                if (expiryPolicyType != that.expiryPolicyType) {
+                    return false;
+                }
+                return durationConfig != null ? durationConfig.equals(that.durationConfig) : that.durationConfig == null;
+            }
+
+            @Override
+            public int hashCode() {
+                int result = expiryPolicyType != null ? expiryPolicyType.hashCode() : 0;
+                result = 31 * result + (durationConfig != null ? durationConfig.hashCode() : 0);
+                return result;
             }
         }
 
@@ -757,10 +1042,14 @@ public class CacheSimpleConfig {
          * Represents duration configuration with duration amount and time unit
          * for the "TimedExpiryPolicyFactoryConfig".
          */
-        public static class DurationConfig {
+        public static class DurationConfig implements IdentifiedDataSerializable {
 
-            private final long durationAmount;
-            private final TimeUnit timeUnit;
+            private long durationAmount;
+            private TimeUnit timeUnit;
+
+            public DurationConfig() {
+
+            }
 
             public DurationConfig(long durationAmount, TimeUnit timeUnit) {
                 this.durationAmount = durationAmount;
@@ -773,6 +1062,52 @@ public class CacheSimpleConfig {
 
             public TimeUnit getTimeUnit() {
                 return timeUnit;
+            }
+
+            @Override
+            public int getFactoryId() {
+                return ConfigDataSerializerHook.F_ID;
+            }
+
+            @Override
+            public int getId() {
+                return ConfigDataSerializerHook.SIMPLE_CACHE_CONFIG_DURATION_CONFIG;
+            }
+
+            @Override
+            public void writeData(ObjectDataOutput out) throws IOException {
+                out.writeLong(durationAmount);
+                out.writeUTF(timeUnit.name());
+            }
+
+            @Override
+            public void readData(ObjectDataInput in) throws IOException {
+                durationAmount = in.readLong();
+                timeUnit = TimeUnit.valueOf(in.readUTF());
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) {
+                    return true;
+                }
+                if (o == null || getClass() != o.getClass()) {
+                    return false;
+                }
+
+                DurationConfig that = (DurationConfig) o;
+
+                if (durationAmount != that.durationAmount) {
+                    return false;
+                }
+                return timeUnit == that.timeUnit;
+            }
+
+            @Override
+            public int hashCode() {
+                int result = (int) (durationAmount ^ (durationAmount >>> 32));
+                result = 31 * result + (timeUnit != null ? timeUnit.hashCode() : 0);
+                return result;
             }
         }
     }

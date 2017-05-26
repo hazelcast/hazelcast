@@ -16,16 +16,23 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
 import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for a {@link com.hazelcast.core.ITopic}.
  */
-public class TopicConfig {
+public class TopicConfig implements IdentifiedDataSerializable {
 
     /**
      * Default global ordering configuration.
@@ -37,7 +44,7 @@ public class TopicConfig {
     private boolean statisticsEnabled = true;
     private boolean multiThreadingEnabled;
     private List<ListenerConfig> listenerConfigs;
-    private TopicConfigReadOnly readOnly;
+    private transient TopicConfigReadOnly readOnly;
 
     /**
      * Creates a TopicConfig.
@@ -237,5 +244,33 @@ public class TopicConfig {
         return "TopicConfig [name=" + name + ", globalOrderingEnabled=" + globalOrderingEnabled
                 + ", multiThreadingEnabled=" + multiThreadingEnabled + ", statisticsEnabled="
                 + statisticsEnabled + "]";
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.TOPIC_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeBoolean(globalOrderingEnabled);
+        out.writeBoolean(statisticsEnabled);
+        out.writeBoolean(multiThreadingEnabled);
+        writeNullableList(listenerConfigs, out);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        globalOrderingEnabled = in.readBoolean();
+        statisticsEnabled = in.readBoolean();
+        multiThreadingEnabled = in.readBoolean();
+        listenerConfigs = readNullableList(in);
     }
 }

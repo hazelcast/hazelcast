@@ -58,4 +58,16 @@ public abstract class EvictionPolicyComparator<K, V, E extends EvictableEntryVie
     @Override
     public abstract int compare(E e1, E e2);
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        return this.getClass().equals(obj.getClass());
+    }
+
+    @Override
+    public int hashCode() {
+        return this.getClass().hashCode();
+    }
 }

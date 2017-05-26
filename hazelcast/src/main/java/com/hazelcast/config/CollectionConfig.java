@@ -16,9 +16,16 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
 
@@ -27,7 +34,8 @@ import static com.hazelcast.util.Preconditions.checkBackupCount;
  *
  * @param <T> Type of Collection such as List, Set
  */
-public abstract class CollectionConfig<T extends CollectionConfig> {
+public abstract class CollectionConfig<T extends CollectionConfig>
+        implements IdentifiedDataSerializable {
 
     /**
      * Default maximum size for the Configuration.
@@ -211,5 +219,70 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
      */
     public void addItemListenerConfig(ItemListenerConfig itemListenerConfig) {
         getItemListenerConfigs().add(itemListenerConfig);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        writeNullableList(listenerConfigs, out);
+        out.writeInt(backupCount);
+        out.writeInt(asyncBackupCount);
+        out.writeInt(maxSize);
+        out.writeBoolean(statisticsEnabled);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        listenerConfigs = readNullableList(in);
+        backupCount = in.readInt();
+        asyncBackupCount = in.readInt();
+        maxSize = in.readInt();
+        statisticsEnabled = in.readBoolean();
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        CollectionConfig<?> that = (CollectionConfig<?>) o;
+        if (backupCount != that.backupCount) {
+            return false;
+        }
+        if (asyncBackupCount != that.asyncBackupCount) {
+            return false;
+        }
+        if (getMaxSize() != that.getMaxSize()) {
+            return false;
+        }
+        if (statisticsEnabled != that.statisticsEnabled) {
+            return false;
+        }
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
+        return getItemListenerConfigs().equals(that.getItemListenerConfigs());
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + getItemListenerConfigs().hashCode();
+        result = 31 * result + backupCount;
+        result = 31 * result + asyncBackupCount;
+        result = 31 * result + getMaxSize();
+        result = 31 * result + (statisticsEnabled ? 1 : 0);
+        return result;
     }
 }

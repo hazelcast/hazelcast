@@ -17,6 +17,10 @@
 package com.hazelcast.config;
 
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
 
 /**
  * Contains the configuration for an Item Listener.
@@ -25,7 +29,7 @@ public class ItemListenerConfig extends ListenerConfig {
 
     private boolean includeValue = true;
 
-    private ItemListenerConfigReadOnly readOnly;
+    private transient ItemListenerConfigReadOnly readOnly;
 
     public ItemListenerConfig() {
     }
@@ -111,5 +115,22 @@ public class ItemListenerConfig extends ListenerConfig {
         int result = super.hashCode();
         result = 31 * result + (includeValue ? 1 : 0);
         return result;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.ITEM_LISTENER_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
+        out.writeBoolean(includeValue);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
+        includeValue = in.readBoolean();
     }
 }

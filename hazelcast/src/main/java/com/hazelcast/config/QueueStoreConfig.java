@@ -18,7 +18,11 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.QueueStore;
 import com.hazelcast.core.QueueStoreFactory;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import java.io.IOException;
 import java.util.Properties;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
@@ -26,7 +30,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 /**
  * Configuration for the {@link QueueStore}.
  */
-public class QueueStoreConfig {
+public class QueueStoreConfig implements IdentifiedDataSerializable {
 
     private boolean enabled = true;
     private String className;
@@ -34,7 +38,7 @@ public class QueueStoreConfig {
     private Properties properties = new Properties();
     private QueueStore storeImplementation;
     private QueueStoreFactory factoryImplementation;
-    private QueueStoreConfigReadOnly readOnly;
+    private transient QueueStoreConfigReadOnly readOnly;
 
     public QueueStoreConfig() {
     }
@@ -130,5 +134,35 @@ public class QueueStoreConfig {
                 + ", className='" + className + '\''
                 + ", properties=" + properties
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.QUEUE_STORE_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeBoolean(enabled);
+        out.writeUTF(className);
+        out.writeUTF(factoryClassName);
+        out.writeObject(properties);
+        out.writeObject(storeImplementation);
+        out.writeObject(factoryImplementation);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        enabled = in.readBoolean();
+        className = in.readUTF();
+        factoryClassName = in.readUTF();
+        properties = in.readObject();
+        storeImplementation = in.readObject();
+        factoryImplementation = in.readObject();
     }
 }
