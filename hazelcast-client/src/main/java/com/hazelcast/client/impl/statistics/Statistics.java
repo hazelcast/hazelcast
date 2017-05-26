@@ -19,6 +19,7 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -28,6 +29,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.Address;
+import com.hazelcast.security.Credentials;
+import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -42,6 +45,9 @@ public class Statistics {
     public final static String NEAR_CACHE_CATEGORY_PREFIX = "nearcache.";
     public final static String FEATURE_SUPPORTED_SINCE_VERSION_STRING = "3.9";
     public final static int FEATURE_SUPPORTED_SINCE_VERSION = BuildInfo.calculateVersion(FEATURE_SUPPORTED_SINCE_VERSION_STRING);
+    private final static char STAT_SEPARATOR = ',';
+    private final static char KEY_VALUE_SEPARATOR = '=';
+    private final static char ESCAPE_CHAR = '\\';
 
     private final boolean enabled;
     private final HazelcastProperties properties;
@@ -51,7 +57,6 @@ public class Statistics {
     private final boolean enterprise;
 
     private final MetricsRegistry metricsRegistry;
-    private final Map<String, String> staticStats = new HashMap<String, String>(1);
     private PeriodicStatistics periodicStats;
 
     /**
@@ -64,9 +69,9 @@ public class Statistics {
     /**
      * The period in seconds the statictics runs.
      * <p/>
-     * The default is 60 seconds.
      */
-    public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty(CONFIGURATION_PREFIX + ".period.seconds", 60, SECONDS);
+    public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty(CONFIGURATION_PREFIX + ".period.seconds", 3,
+            SECONDS);
 
     public Statistics(HazelcastClientInstanceImpl client) {
         this.properties = client.getProperties();
@@ -93,7 +98,9 @@ public class Statistics {
             periodSeconds = defaultValue;
         }
 
-        registerStatistics();
+        // Note that the OperatingSystemMetricSet and RuntimeMetricSet are already registered during client start,
+        // hence we do not re-register
+        periodicStats = new PeriodicStatistics(metricsRegistry);
 
         schedulePeriodicStatisticsSendTask(periodSeconds);
 
@@ -113,8 +120,9 @@ public class Statistics {
         int serverVersion = connection.getConnectedServerVersion();
         if (serverVersion < FEATURE_SUPPORTED_SINCE_VERSION) {
             if (logger.isFinestEnabled()) {
-                logger.finest(format("Client statistics can not be started since current connected owner server version is less than"
-                        + " the minimum supported server version %s", FEATURE_SUPPORTED_SINCE_VERSION_STRING));
+                logger.finest(
+                        format("Client statistics can not be started since current connected owner server version is less than"
+                                + " the minimum supported server version %s", FEATURE_SUPPORTED_SINCE_VERSION_STRING));
             }
             return null;
         }
@@ -132,71 +140,120 @@ public class Statistics {
                     return;
                 }
 
-                final Map<String, String> stats = new HashMap<String, String>();
+                final StringBuilder stats = new StringBuilder();
 
-                stats.put("lastStatisticsCollectionTime", Long.toString(System.currentTimeMillis()));
+                stats.append("lastStatisticsCollectionTime").append(KEY_VALUE_SEPARATOR).append(System.currentTimeMillis());
+                addStat(stats, "enterprise", enterprise);
+                addStat(stats, "clientType", ClientType.JAVA.toString());
+                addStat(stats, "clusterConnectionTimestamp", ownerConnection.getStartTime());
 
-                stats.putAll(staticStats);
+                stats.append(STAT_SEPARATOR).append("clientAddress").append(KEY_VALUE_SEPARATOR)
+                     .append(ownerConnection.getInetAddress().getHostAddress()).append(":").append(ownerConnection.getPort());
+
+                Credentials credentials = client.getCredentials();
+                if (!(credentials instanceof UsernamePasswordCredentials)) {
+                    addStat(stats, "credentials.principal", credentials.getPrincipal());
+                }
 
                 periodicStats.fillMetrics(stats);
 
                 addNearCachStats(stats);
 
-                sendStats(stats, ownerConnection);
+                sendStats(stats.toString(), ownerConnection);
             }
         }, 0, periodSeconds, SECONDS);
     }
 
-    private void addNearCachStats(Map<String, String> stats) {
-        StringBuilder buffer = new StringBuilder();
+    private void addNearCachStats(StringBuilder stats) {
         for (NearCache nearCache : client.getNearCacheManager().listAllNearCaches()) {
-            String pathPrefix = NEAR_CACHE_CATEGORY_PREFIX;
-            String name = nearCache.getName();
-            if (name.startsWith("/")) {
-                pathPrefix += name.substring(1);
-            } else {
-                pathPrefix += name;
-            }
-            pathPrefix += ".";
+            String nearCacheName = nearCache.getName();
+            StringBuilder nearCachNameWithPrefix = getNameWithPrefix(nearCacheName);
+
+            nearCachNameWithPrefix.append('.');
 
             NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
 
-            stats.put(buffer.append(pathPrefix).append("creationTime").toString(),
-                    Long.toString(nearCacheStats.getCreationTime()));
-            buffer.setLength(0);
-            stats.put(buffer.append(pathPrefix).append("evictions").toString(), Long.toString(nearCacheStats.getEvictions()));
-            buffer.setLength(0);
-            stats.put(buffer.append(pathPrefix).append("hits").toString(), Long.toString(nearCacheStats.getHits()));
-            buffer.setLength(0);
-            stats.put(buffer.append(pathPrefix).append("lastPersistenceDuration").toString(),
-                    Long.toString(nearCacheStats.getLastPersistenceDuration()));
-            buffer.setLength(0);
-            stats.put(buffer.append(pathPrefix).append("lastPersistenceKeyCount").toString(),
-                    Long.toString(nearCacheStats.getLastPersistenceKeyCount()));
-            buffer.setLength(0);
-            stats.put(buffer.append(pathPrefix).append("lastPersistenceTime").toString(),
-                    Long.toString(nearCacheStats.getLastPersistenceTime()));
-            buffer.setLength(0);
-            stats.put(buffer.append(pathPrefix).append("lastPersistenceWrittenBytes").toString(),
-                    Long.toString(nearCacheStats.getLastPersistenceWrittenBytes()));
-            buffer.setLength(0);
-            stats.put(buffer.append(pathPrefix).append("misses").toString(), Long.toString(nearCacheStats.getMisses()));
-            buffer.setLength(0);
-            stats.put(buffer.append(pathPrefix).append("ownedEntryCount").toString(),
-                    Long.toString(nearCacheStats.getOwnedEntryCount()));
-            buffer.setLength(0);
-            stats.put(buffer.append(pathPrefix).append("expirations").toString(), Long.toString(nearCacheStats.getExpirations()));
-            buffer.setLength(0);
-            stats.put(buffer.append(pathPrefix).append("ownedEntryMemoryCost").toString(),
-                    Long.toString(nearCacheStats.getOwnedEntryMemoryCost()));
-            buffer.setLength(0);
-            stats.put(buffer.append(pathPrefix).append("lastPersistenceFailure").toString(),
-                    nearCacheStats.getLastPersistenceFailure());
+            String prefix = nearCachNameWithPrefix.toString();
+
+            addStat(stats, prefix, "creationTime", nearCacheStats.getCreationTime());
+            addStat(stats, prefix, "evictions", nearCacheStats.getEvictions());
+            addStat(stats, prefix, "hits", nearCacheStats.getHits());
+            addStat(stats, prefix, "lastPersistenceDuration", nearCacheStats.getLastPersistenceDuration());
+            addStat(stats, prefix, "lastPersistenceKeyCount", nearCacheStats.getLastPersistenceKeyCount());
+            addStat(stats, prefix, "lastPersistenceTime", nearCacheStats.getLastPersistenceTime());
+            addStat(stats, prefix, "lastPersistenceWrittenBytes", nearCacheStats.getLastPersistenceWrittenBytes());
+            addStat(stats, prefix, "misses", nearCacheStats.getMisses());
+            addStat(stats, prefix, "ownedEntryCount", nearCacheStats.getOwnedEntryCount());
+            addStat(stats, prefix, "expirations", nearCacheStats.getExpirations());
+            addStat(stats, prefix, "ownedEntryMemoryCost", nearCacheStats.getOwnedEntryMemoryCost());
+            String persistenceFailure = nearCacheStats.getLastPersistenceFailure();
+            if (persistenceFailure != null && !persistenceFailure.isEmpty()) {
+                addStat(stats, prefix, "lastPersistenceFailure", persistenceFailure);
+            }
         }
     }
 
-    private void sendStats(Map<String, String> newStats, ClientConnection ownerConnection) {
-        ClientMessage request = ClientStatisticsCodec.encodeRequest(newStats.entrySet());
+    private void addStat(StringBuilder stats, String name, long value) {
+        addStat(stats, null, name, value);
+    }
+
+    private void addStat(StringBuilder stats, String keyPrefix, String name, long value) {
+        stats.append(STAT_SEPARATOR);
+        if (null != keyPrefix) {
+            stats.append(keyPrefix);
+        }
+        stats.append(name).append(KEY_VALUE_SEPARATOR).append(value);
+    }
+
+    private void addStat(StringBuilder stats, String name, String value) {
+        addStat(stats, null, name, value);
+    }
+
+    private void addStat(StringBuilder stats, String keyPrefix, String name, String value) {
+        stats.append(STAT_SEPARATOR);
+        if (null != keyPrefix) {
+            stats.append(keyPrefix);
+        }
+        stats.append(name).append(KEY_VALUE_SEPARATOR).append(value);
+    }
+
+    private void addStat(StringBuilder stats, String name, boolean value) {
+        stats.append(STAT_SEPARATOR).append(name).append(KEY_VALUE_SEPARATOR).append(value);
+    }
+
+    private StringBuilder getNameWithPrefix(String name) {
+        StringBuilder escapedName = new StringBuilder(NEAR_CACHE_CATEGORY_PREFIX);
+        int prefixLen = NEAR_CACHE_CATEGORY_PREFIX.length();
+        escapedName.append(name);
+        if (escapedName.charAt(prefixLen) == '/') {
+            escapedName.deleteCharAt(prefixLen);
+        }
+
+        escapeSpecialCharacters(escapedName, prefixLen);
+        return escapedName;
+    }
+
+    public static void escapeSpecialCharacters(StringBuilder buffer, int start) {
+        for (int i = start; i < buffer.length(); ++i) {
+            char c = buffer.charAt(i);
+            if (c == '=' || c == '.' || c == ',' || c == ESCAPE_CHAR) {
+                buffer.insert(i, ESCAPE_CHAR);
+                ++i;
+            }
+        }
+    }
+
+    public static void unescapeSpecialCharacters(StringBuilder buffer, int start) {
+        for (int i = start; i < buffer.length() - 1; ++i) {
+            char c = buffer.charAt(i);
+            if (c == ESCAPE_CHAR ) {
+                buffer.deleteCharAt(i);
+            }
+        }
+    }
+
+    private void sendStats(String newStats, ClientConnection ownerConnection) {
+        ClientMessage request = ClientStatisticsCodec.encodeRequest(newStats);
         try {
             new ClientInvocation(client, request, ownerConnection).invoke();
         } catch (Exception e) {
@@ -207,34 +264,15 @@ public class Statistics {
         }
     }
 
-    private void registerStatistics() {
-        // Note that the OperatingSystemMetricSet and RuntimeMetricSet are already registered during client start,
-        // hence we do not re-register
-
-        periodicStats = new PeriodicStatistics(metricsRegistry);
-
-        staticStats.put("enterprise", Boolean.toString(enterprise));
-    }
-
     class PeriodicStatistics {
-        private final String[] STATISTIC_NAMES = {
-                "os.committedVirtualMemorySize",
-                "os.freePhysicalMemorySize",
-                "os.freeSwapSpaceSize",
-                "os.maxFileDescriptorCount",
-                "os.openFileDescriptorCount",
-                "os.processCpuTime",
-                "os.systemLoadAverage",
-                "os.totalPhysicalMemorySize",
-                "os.totalSwapSpaceSize",
-                "runtime.availableProcessors",
-                "runtime.freeMemory",
-                "runtime.maxMemory",
-                "runtime.totalMemory",
-                "runtime.uptime",
-                "runtime.usedMemory",
-                "executionService.userExecutorQueueSize"
-        };
+        private final String[] STATISTIC_NAMES = {"os.committedVirtualMemorySize", "os.freePhysicalMemorySize",
+                                                  "os.freeSwapSpaceSize", "os.maxFileDescriptorCount",
+                                                  "os.openFileDescriptorCount", "os.processCpuTime",
+                                                  "os.systemLoadAverage", "os.totalPhysicalMemorySize",
+                                                  "os.totalSwapSpaceSize", "runtime.availableProcessors",
+                                                  "runtime.freeMemory", "runtime.maxMemory",
+                                                  "runtime.totalMemory", "runtime.uptime", "runtime.usedMemory",
+                                                  "executionService.userExecutorQueueSize"};
 
         private final Map<String, StringGauge> allMetrics = new HashMap<String, StringGauge>(STATISTIC_NAMES.length);
 
@@ -244,9 +282,10 @@ public class Statistics {
             }
         }
 
-        void fillMetrics(final Map<String, String> metricsMap) {
+        void fillMetrics(final StringBuilder buffer) {
             for (Map.Entry<String, StringGauge> entry : allMetrics.entrySet()) {
-                metricsMap.put(entry.getKey(), entry.getValue().read());
+                buffer.append(STAT_SEPARATOR).append(entry.getKey()).append(KEY_VALUE_SEPARATOR);
+                entry.getValue().read(buffer);
             }
         }
     }

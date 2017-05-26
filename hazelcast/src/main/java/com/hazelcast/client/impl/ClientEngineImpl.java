@@ -592,17 +592,16 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     }
 
     @Override
-    public List<Map.Entry<String, List<Map.Entry<String, String>>>> getClientStatistics() {
+    public Map<String, String> getClientStatistics() {
         Collection<ClientEndpoint> clientEndpoints = endpointManager.getEndpoints();
-        List<Map.Entry<String, List<Map.Entry<String, String>>>> statsList = new ArrayList<Map.Entry<String, List<Map.Entry<String, String>>>>(
-                clientEndpoints.size());
-        for (final ClientEndpoint e : clientEndpoints) {
-            final List<Map.Entry<String, String>> statistics = e.getClientStatistics();
+        Map<String, String> statsMap = new HashMap<String, String>(clientEndpoints.size());
+        for (ClientEndpoint e : clientEndpoints) {
+            String statistics = e.getClientStatistics();
             if (null != statistics) {
-                statsList.add(new AbstractMap.SimpleEntry<String, List<Map.Entry<String, String>>>(e.getUuid(), statistics));
+                statsMap.put(e.getUuid(), statistics);
             }
         }
-        return statsList;
+        return statsMap;
     }
 
     private static class PriorityPartitionSpecificRunnable implements PartitionSpecificRunnable, UrgentSystemOperation {

@@ -62,7 +62,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private int clientVersion;
     private String clientVersionString;
     private long authenticationCorrelationId;
-    private volatile List<Map.Entry<String, String>> stats;
+    private volatile String stats;
 
     public ClientEndpointImpl(ClientEngineImpl clientEngine, Connection connection) {
         this.clientEngine = clientEngine;
@@ -141,15 +141,12 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public void setClientStatictics(List<Map.Entry<String, String>> stats) {
-        // Add server side stats
-        addServerSideClientStats(stats);
-
+    public void setClientStatictics(String stats) {
         this.stats = stats;
     }
 
     @Override
-    public List<Map.Entry<String, String>> getClientStatistics() {
+    public String getClientStatistics() {
         return stats;
     }
 
@@ -270,65 +267,6 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     private ILogger getLogger() {
         return clientEngine.getLogger(getClass());
-    }
-
-    private void addServerSideClientStats(final List<Map.Entry<String, String>> stats) {
-        stats.add(new Map.Entry<String, String>() {
-            @Override
-            public String getKey() {
-                return "clusterConnectionTimestamp";
-            }
-
-            @Override
-            public String getValue() {
-                return Long.toString(creationTime);
-            }
-
-            @Override
-            public String setValue(String value) {
-                return null;
-            }
-        });
-
-        stats.add(new Map.Entry<String, String>() {
-            @Override
-            public String getKey() {
-                return "clientType";
-            }
-
-            @Override
-            public String getValue() {
-                return getClientType().toString();
-            }
-
-            @Override
-            public String setValue(String value) {
-                return null;
-            }
-        });
-
-        if (clientEngine.getSecurityContext() != null) {
-            final Credentials credentials = getCredentials();
-            if (null != credentials) {
-                stats.add(new Map.Entry<String, String>() {
-                    @Override
-                    public String getKey() {
-                        return "credentials";
-                    }
-
-                    @Override
-                    public String getValue() {
-                        return credentials.toString();
-                    }
-
-                    @Override
-                    public String setValue(String value) {
-                        return null;
-                    }
-                });
-            }
-        }
-
     }
 
     @Override

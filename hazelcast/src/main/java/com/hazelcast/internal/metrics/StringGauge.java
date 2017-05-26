@@ -25,12 +25,11 @@ public interface StringGauge
         extends Metric {
 
     /**
-     * Reads the current available value and parses it to String.
+     * Reads the current available value into the provided buffer.
      *
      *
-     * If no probe is available, or there are problems obtaining a value from the probe, null is returned.
+     * If no probe is available, or there are problems obtaining a value from the probe, buffer is not filled
      *
-     * @return the current value.
      */
-    String read();
+    void read(StringBuilder buffer);
 }

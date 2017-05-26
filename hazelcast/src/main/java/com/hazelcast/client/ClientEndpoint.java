@@ -113,11 +113,12 @@ public interface ClientEndpoint extends Client {
      * Updates to the latest client statistics
      * @param stats The latest statistics retrieved from the client
      */
-    void setClientStatictics(List<Map.Entry<String, String>> stats);
+    void setClientStatictics(String stats);
 
     /**
      *
-     * @return JSON formatted statistics string for the client
+     * @return statistics string for the client
+     *
      */
-    List<Map.Entry<String, String>> getClientStatistics();
+    String getClientStatistics();
 }

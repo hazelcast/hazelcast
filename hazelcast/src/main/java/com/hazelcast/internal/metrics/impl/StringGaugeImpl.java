@@ -24,14 +24,12 @@ import com.hazelcast.internal.metrics.StringGauge;
 class StringGaugeImpl
         extends AbstractGauge implements StringGauge {
 
-    private static final String DEFAULT_VALUE = null;
-
     StringGaugeImpl(MetricsRegistryImpl metricsRegistry, String name) {
         super(metricsRegistry, name);
     }
 
     @Override
-    public String read() {
+    public void read(StringBuilder buffer) {
         ProbeInstance probeInstance = getProbeInstance();
 
         ProbeFunction function = null;
@@ -44,21 +42,19 @@ class StringGaugeImpl
 
         if (function == null || source == null) {
             clearProbeInstance();
-            return DEFAULT_VALUE;
         }
 
         try {
             if (function instanceof LongProbeFunction) {
                 LongProbeFunction longFunction = (LongProbeFunction) function;
-                return String.valueOf(longFunction.get(source));
+                buffer.append(longFunction.get(source));
             } else {
                 DoubleProbeFunction doubleFunction = (DoubleProbeFunction) function;
                 double doubleResult = doubleFunction.get(source);
-                return String.valueOf(Math.round(doubleResult));
+                buffer.append(Math.round(doubleResult));
             }
         } catch (Exception e) {
             metricsRegistry.logger.warning("Failed to access probe:" + name, e);
-            return DEFAULT_VALUE;
         }
     }
 }

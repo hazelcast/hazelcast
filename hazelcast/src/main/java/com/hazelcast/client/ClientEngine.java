@@ -84,61 +84,72 @@ public interface ClientEngine {
 
     /**
      *
-     * The statistics key paths can be one of the following (An example for an IMap named StatTestMapName and ICache Named
-     * StatTestCacheName and near cache is configured):
+     * The statistics is a String that is composed of key=value pairs separated by ',' . The following characters are escaped in
+     * IMap and ICache names by the escape character '\' : '=' '.' ',' '\'
      *
-     *   /runtime/maxMemory
-     *   /nearcache/StatTestMapName/LastPersistenceWrittenBytes
-     *   /nearcache/StatTestMapName/Misses
-     *   /nearcache/StatTestMapName/OwnedEntryCount
-     *   /os/systemLoadAverage
-     *   /nearcache/StatTestMapName/LastPersistenceKeyCount
-     *   /nearcache/StatTestMapName/LastPersistenceFailure
-     *   /nearcache/hz/StatTestCacheName/Expirations
-     *   /nearcache/hz/StatTestCacheName/LastPersistenceFailure
-     *   /runtime/availableProcessors
-     *   /runtime/freeMemory
-     *   /nearcache/hz/StatTestCacheName/OwnedEntryCount
-     *   /os/processCpuTime
-     *   /nearcache/StatTestMapName/LastPersistenceTime
-     *   /os/processCpuLoad
-     *   /nearcache/hz/StatTestCacheName/Hits
-     *   /nearcache/StatTestMapName/LastPersistenceDuration
-     *   /nearcache/hz/StatTestCacheName/LastPersistenceDuration
-     *   /nearcache/hz/StatTestCacheName/OwnedEntryMemoryCost
-     *   /os/systemCpuLoad
-     *   /runtime/uptime
-     *   /os/freePhysicalMemorySize
-     *   /os/committedVirtualMemorySize
-     *   /os/maxFileDescriptorCount
-     *   /runtime/usedMemory
-     *   /nearcache/hz/StatTestCacheName/CreationTime
-     *   /nearcache/StatTestMapName/Evictions
-     *   //userExecutor/queueSize
-     *   /os/totalSwapSpaceSize
-     *   /runtime/totalMemory
-     *   /os/openFileDescriptorCount
-     *   /nearcache/StatTestMapName/Expirations
-     *   /nearcache/hz/StatTestCacheName/LastPersistenceKeyCount
-     *   /nearcache/hz/StatTestCacheName/Evictions
-     *   /userExecutor/queueSize
-     *   /os/freeSwapSpaceSize
-     *   /nearcache/StatTestMapName/Hits
-     *   /nearcache/StatTestMapName/OwnedEntryMemoryCost
-     *   /nearcache/hz/StatTestCacheName/Misses
-     *   /nearcache/StatTestMapName/CreationTime
-     *   /nearcache/hz/StatTestCacheName/LastPersistenceWrittenBytes
-     *   /os/totalPhysicalMemorySize
-     *   /nearcache/hz/StatTestCacheName/LastPersistenceTime
-     *   /ClusterConnectionTimestamp
-     *   /ClientType
+     * The statistics key identify the category and name of the statistics. It is formatted as:
+     * mainCategory.subCategory.statisticName
+     *
+     * An e.g. Operating system committedVirtualMemorySize path would be: os.committedVirtualMemorySize
+     *
+     * The statistics key names can be one of the following (Used IMap named <example.fastmap> and ICache Named
+     * <StatTestCacheName> and assuming that the near cache is configured):
+     *
+     * clientType
+     * clusterConnectionTimestamp
+     * credentials.principal
+     * clientAddress
+     * clientName
+     * enterprise
+     * lastStatisticsCollectionTime
+     * nearcache.<example\.fastmap>.creationTime
+     * nearcache.<example\.fastmap>.evictions
+     * nearcache.<example\.fastmap>.expirations
+     * nearcache.<example\.fastmap>.hits
+     * nearcache.<example\.fastmap>.lastPersistenceDuration
+     * nearcache.<example\.fastmap>.lastPersistenceFailure
+     * nearcache.<example\.fastmap>.lastPersistenceKeyCount
+     * nearcache.<example\.fastmap>.lastPersistenceTime
+     * nearcache.<example\.fastmap>.lastPersistenceWrittenBytes
+     * nearcache.<example\.fastmap>.misses
+     * nearcache.<example\.fastmap>.ownedEntryCount
+     * nearcache.<example\.fastmap>.ownedEntryMemoryCost
+     * nearcache.hz/<StatTestCacheName>.creationTime
+     * nearcache.hz/<StatTestCacheName>.evictions
+     * nearcache.hz/<StatTestCacheName>.expirations
+     * nearcache.hz/<StatTestCacheName>.hits
+     * nearcache.hz/<StatTestCacheName>.lastPersistenceDuration
+     * nearcache.hz/<StatTestCacheName>.lastPersistenceFailure
+     * nearcache.hz/<StatTestCacheName>.lastPersistenceKeyCount
+     * nearcache.hz/<StatTestCacheName>.lastPersistenceTime
+     * nearcache.hz/<StatTestCacheName>.lastPersistenceWrittenBytes
+     * nearcache.hz/<StatTestCacheName>.misses
+     * nearcache.hz/<StatTestCacheName>.ownedEntryCount
+     * nearcache.hz/<StatTestCacheName>.ownedEntryMemoryCost
+     * os.committedVirtualMemorySize
+     * os.freePhysicalMemorySize
+     * os.freeSwapSpaceSize
+     * os.maxFileDescriptorCount
+     * os.openFileDescriptorCount
+     * os.processCpuTime
+     * os.systemLoadAverage
+     * os.totalPhysicalMemorySize
+     * os.totalSwapSpaceSize
+     * runtime.availableProcessors
+     * runtime.freeMemory
+     * runtime.maxMemory
+     * runtime.totalMemory
+     * runtime.uptime
+     * runtime.usedMemory
+     * userExecutor.queueSize
      *
      * Not: Please observe that the name for the ICache appears to be the hazelcast instance name "hz" followed by "/" and
-     * followed by the cache name provided in the application which is StatTestCacheName.
+     * followed by the cache name provided which is StatTestCacheName.
      *
-     * @return List of [client UUID String, List of statistics key path and value]
+     *
+     * @return Map of [client UUID String, client statistics String]
      */
-    List<Map.Entry<String, List<Map.Entry<String, String>>>> getClientStatistics();
+    Map<String, String> getClientStatistics();
 
     String getOwnerUuid(String clientUuid);
 
