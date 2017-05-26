@@ -38,7 +38,7 @@ abstract class VersionedObjectDataOutput extends OutputStream implements ObjectD
      * @param version version to set
      */
     @Override
-    public final void setVersion(Version version) {
+    public void setVersion(Version version) {
         this.version = version;
     }
 
@@ -50,7 +50,7 @@ abstract class VersionedObjectDataOutput extends OutputStream implements ObjectD
      * @return the version of Version.UNKNOWN if the version is unknown to the object.
      */
     @Override
-    public final Version getVersion() {
+    public Version getVersion() {
         return version;
     }
 
