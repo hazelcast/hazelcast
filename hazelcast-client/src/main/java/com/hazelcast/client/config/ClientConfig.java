@@ -109,6 +109,8 @@ public class ClientConfig {
 
     private String licenseKey;
 
+    private ClientUserCodeDeploymentConfig userCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+
     public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
         if (configPatternMatcher == null) {
             throw new IllegalArgumentException("ConfigPatternMatcher is not allowed to be null!");
@@ -723,5 +725,26 @@ public class ClientConfig {
 
     public void setInstanceName(String instanceName) {
         this.instanceName = instanceName;
+    }
+
+    /**
+     * Get current configuration of User Code Deployment.
+     *
+     * @return User Code Deployment configuration
+     * @since 3.9
+     */
+    public ClientUserCodeDeploymentConfig getUserCodeDeploymentConfig() {
+        return userCodeDeploymentConfig;
+    }
+
+    /**
+     * Set User Code Deployment configuration
+     *
+     * @param userCodeDeploymentConfig
+     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
+     * @since 3.9
+     */
+    public void setUserCodeDeploymentConfig(ClientUserCodeDeploymentConfig userCodeDeploymentConfig) {
+        this.userCodeDeploymentConfig = userCodeDeploymentConfig;
     }
 }

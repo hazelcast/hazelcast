@@ -51,6 +51,7 @@ import com.hazelcast.client.spi.impl.ClientNonSmartInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientSmartInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientTransactionManagerServiceImpl;
+import com.hazelcast.client.spi.impl.ClientUserCodeDeploymentService;
 import com.hazelcast.client.spi.impl.DefaultAddressProvider;
 import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressProvider;
 import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
@@ -194,10 +195,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final Diagnostics diagnostics;
     private final SerializationService serializationService;
     private final ClientICacheManager hazelcastCacheManager;
-
     private final ClientLockReferenceIdGenerator lockReferenceIdGenerator;
     private final ClientExceptionFactory clientExceptionFactory;
     private final CallIdSequence callIdSequence;
+    private final ClientUserCodeDeploymentService userCodeDeploymentService;
 
     public HazelcastClientInstanceImpl(ClientConfig config,
                                        ClientConnectionManagerFactory clientConnectionManagerFactory,
@@ -213,7 +214,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         String loggingType = config.getProperty(GroupProperty.LOGGING_TYPE.getName());
         loggingService = new ClientLoggingService(groupConfig.getName(),
                 loggingType, BuildInfoProvider.BUILD_INFO, instanceName);
-        clientExtension = createClientInitializer(config.getClassLoader());
+        ClassLoader classLoader = config.getClassLoader();
+        clientExtension = createClientInitializer(classLoader);
         clientExtension.beforeStart(this);
 
         credentials = initCredentials(config);
@@ -253,8 +255,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         lockReferenceIdGenerator = new ClientLockReferenceIdGenerator();
         nearCacheManager = clientExtension.createNearCacheManager();
         clientExceptionFactory = initClientExceptionFactory();
-
         statistics = new Statistics(this);
+        userCodeDeploymentService = new ClientUserCodeDeploymentService(config.getUserCodeDeploymentConfig(), classLoader);
     }
 
     private Diagnostics initDiagnostics() {
@@ -424,17 +426,17 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         metricsRegistry.collectMetrics(listenerService);
 
         try {
+            userCodeDeploymentService.start();
             clusterService.start();
+            proxyManager.init(config);
+            listenerService.start();
+            loadBalancer.init(getCluster(), config);
+            partitionService.start();
+            clientExtension.afterStart(this);
         } catch (Exception e) {
             lifecycleService.shutdown();
             throw rethrow(e);
         }
-        proxyManager.init(config);
-        listenerService.start();
-        loadBalancer.init(getCluster(), config);
-        partitionService.start();
-        statistics.start();
-        clientExtension.afterStart(this);
     }
 
     public MetricsRegistryImpl getMetricsRegistry() {
@@ -682,6 +684,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public SerializationService getSerializationService() {
         return serializationService;
+    }
+
+    public ClientUserCodeDeploymentService getUserCodeDeploymentService() {
+        return userCodeDeploymentService;
     }
 
     public ProxyManager getProxyManager() {

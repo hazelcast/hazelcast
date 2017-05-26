@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.LifecycleServiceImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
@@ -91,10 +92,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     @Override
     public Address getOwnerConnectionAddress() {
         return ownerConnectionAddress;
-    }
-
-    public void setOwnerConnectionAddress(Address ownerConnectionAddress) {
-        this.ownerConnectionAddress = ownerConnectionAddress;
     }
 
     public void shutdown() {
@@ -196,10 +193,14 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                 Address address = new Address(inetSocketAddress);
                 logger.info("Trying to connect to " + address + " as owner member");
                 connection = connectionManager.getOrConnect(address, true);
-                clientMembershipListener.listenMembershipEvents(ownerConnectionAddress);
+                clientMembershipListener.listenMembershipEvents(connection);
+                ClientUserCodeDeploymentService userCodeDeploymentService = client.getUserCodeDeploymentService();
+                userCodeDeploymentService.deploy(client, connection);
+                ownerConnectionAddress = connection.getEndPoint();
+                logger.info("Setting " + connection + " as owner  with principal " + principal);
                 fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
                 return true;
-            } catch (Exception e) {
+            } catch (HazelcastException e) {
                 Level level = e instanceof AuthenticationException ? Level.WARNING : Level.FINEST;
                 logger.log(level, "Exception during initial connection to " + inetSocketAddress, e);
                 if (null != connection) {

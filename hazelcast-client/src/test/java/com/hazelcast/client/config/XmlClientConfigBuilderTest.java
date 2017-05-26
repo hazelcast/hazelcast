@@ -399,6 +399,31 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(EvictionPolicy.RANDOM, getNearCacheEvictionPolicy("random", clientConfig));
     }
 
+    @Test
+    public void testClientUserCodeDeploymentConfig() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<user-code-deployment enabled=\"true\">\n"
+                + "        <jarPaths>\n"
+                + "            <jarPath>/User/test/test.jar</jarPath>\n"
+                + "        </jarPaths>\n"
+                + "        <classNames>\n"
+                + "            <className>test.testClassName</className>\n"
+                + "            <className>test.testClassName2</className>\n"
+                + "        </classNames>\n"
+                + "    </user-code-deployment>"
+                + HAZELCAST_CLIENT_END_TAG;
+        ClientConfig clientConfig = buildConfig(xml);
+        ClientUserCodeDeploymentConfig userCodeDeploymentConfig = clientConfig.getUserCodeDeploymentConfig();
+        assertEquals(true, userCodeDeploymentConfig.isEnabled());
+        List<String> classNames = userCodeDeploymentConfig.getClassNames();
+        assertEquals(2, classNames.size());
+        assertEquals(true, classNames.contains("test.testClassName"));
+        assertEquals(true, classNames.contains("test.testClassName2"));
+        List<String> jarPaths = userCodeDeploymentConfig.getJarPaths();
+        assertEquals(1, jarPaths.size());
+        assertEquals(true, jarPaths.contains("/User/test/test.jar"));
+    }
+
     private EvictionPolicy getNearCacheEvictionPolicy(String mapName, ClientConfig clientConfig) {
         return clientConfig.getNearCacheConfig(mapName).getEvictionConfig().getEvictionPolicy();
     }

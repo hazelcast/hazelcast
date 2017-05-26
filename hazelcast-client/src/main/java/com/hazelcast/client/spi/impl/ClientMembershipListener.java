@@ -135,16 +135,10 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     public void onListenerRegister() {
     }
 
-    void listenMembershipEvents(Address ownerConnectionAddress) throws Exception {
+    void listenMembershipEvents(Connection ownerConnection) throws Exception {
         initialListFetchedLatch = new CountDownLatch(1);
         ClientMessage clientMessage = ClientAddMembershipListenerCodec.encodeRequest(false);
-        Connection connection = connectionManager.getConnection(ownerConnectionAddress);
-        if (connection == null) {
-            throw new IllegalStateException(
-                    "Can not load initial members list because owner connection is null. Address "
-                            + ownerConnectionAddress);
-        }
-        ClientInvocation invocation = new ClientInvocation(client, clientMessage, connection);
+        ClientInvocation invocation = new ClientInvocation(client, clientMessage, ownerConnection);
         invocation.setEventHandler(this);
         invocation.invokeUrgent().get();
         waitInitialMemberListFetched();
