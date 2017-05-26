@@ -492,6 +492,10 @@ public class ClusterHeartbeatManager {
      * @return if the member has been removed
      */
     private boolean removeMemberIfMasterConfirmationExpired(long now, MemberImpl member) {
+        if (clusterService.getClusterJoinManager().isMastershipClaimInProgress()) {
+            return false;
+        }
+
         Long lastConfirmation = masterConfirmationTimes.get(member);
         if (lastConfirmation == null) {
             lastConfirmation = 0L;
