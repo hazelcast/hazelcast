@@ -21,12 +21,14 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.TransactionalList;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionOptions;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -203,6 +205,46 @@ public class TransactionListTest extends HazelcastTestSupport {
         for (int i = 0; i < 10; i++) {
             assertEquals(i, l.get(i));
         }
+    }
+
+    @Test
+    public void transactionShouldBeRolledBack_whenInitiatorTerminatesBeforeCommit() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance master = factory.newHazelcastInstance();
+        HazelcastInstance instance = factory.newHazelcastInstance();
+        warmUpPartitions(instance);
+
+        String name = generateKeyOwnedBy(master);
+        IList<Integer> list = master.getList(name);
+        list.add(1);
+
+        waitAllForSafeState(master, instance);
+
+        TransactionOptions options =
+                new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.TWO_PHASE);
+
+        TransactionContext context = master.newTransactionContext(options);
+        context.beginTransaction();
+        TransactionalList<Integer> txList = context.getList(name);
+        txList.remove(1);
+
+        master.getLifecycleService().terminate();
+
+        final IList<Integer> list2 = instance.getList(name);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1, list2.size());
+            }
+        });
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1, list2.size());
+            }
+        }, 3);
     }
 
 }
