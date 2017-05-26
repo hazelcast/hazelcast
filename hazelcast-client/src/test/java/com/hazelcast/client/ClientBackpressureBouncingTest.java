@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.ClientTestUtil;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientSmartInvocationServiceImpl;
-import com.hazelcast.client.test.bounce.ClientDriverFactory;
+import com.hazelcast.client.test.bounce.MultiSocketClientDriverFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
@@ -59,15 +59,12 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
     private InvocationCheckingThread checkingThread;
 
     @Rule
-    public BounceMemberRule bounceMemberRule = BounceMemberRule.with(new Config()).driverFactory(new ClientDriverFactory() {
-        @Override
-        protected ClientConfig getClientConfig(HazelcastInstance member) {
-            ClientConfig clientConfig = new ClientConfig()
-                    .setProperty(MAX_CONCURRENT_INVOCATIONS.getName(), valueOf(MAX_CONCURRENT_INVOCATION_CONFIG));
-            clientConfig.getNetworkConfig().setRedoOperation(true);
-            return clientConfig;
-        }
-    }).build();
+    public BounceMemberRule bounceMemberRule = BounceMemberRule.with(new Config())
+                                                               .driverFactory(new MultiSocketClientDriverFactory(
+                                                                       new ClientConfig()
+                                                                       .setProperty(MAX_CONCURRENT_INVOCATIONS.getName(),
+                                                                               valueOf(MAX_CONCURRENT_INVOCATION_CONFIG))))
+                                                               .build();
 
     @After
     public void tearDown() throws InterruptedException {

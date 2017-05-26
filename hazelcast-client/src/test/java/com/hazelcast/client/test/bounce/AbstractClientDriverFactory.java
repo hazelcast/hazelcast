@@ -17,21 +17,28 @@
 package com.hazelcast.client.test.bounce;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.bounce.BounceTestConfiguration;
 import com.hazelcast.test.bounce.DriverFactory;
 
-import java.net.InetSocketAddress;
-
 import static com.hazelcast.test.HazelcastTestSupport.waitAllForSafeState;
 
 /**
- * Default client-side test driver factory for bouncing members tests
+ * Abstract client driver factory with customizable client config.
  */
-public class ClientDriverFactory implements DriverFactory {
+public abstract class AbstractClientDriverFactory implements DriverFactory {
+
+    protected ClientConfig clientConfig;
+
+    public AbstractClientDriverFactory() {
+    }
+
+    public AbstractClientDriverFactory(ClientConfig clientConfig) {
+        this.clientConfig = clientConfig;
+    }
+
     @Override
     public HazelcastInstance[] createTestDrivers(BounceMemberRule rule) {
         BounceTestConfiguration testConfiguration = rule.getBounceTestConfig();
@@ -51,20 +58,7 @@ public class ClientDriverFactory implements DriverFactory {
     }
 
     /**
-     * Creates a client config for a unisocket client that connects to the given member only
-     * (to avoid exception as other members are bouncing).
+     * Creates or processes an existing client config, given the cluster's steady member {@code HazelcastInstance}.
      */
-    protected ClientConfig getClientConfig(HazelcastInstance member) {
-        // get client configuration that guarantees our client will connect to the specific member
-        ClientConfig config = new ClientConfig();
-        config.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST.getName(), "false");
-        config.getNetworkConfig().setSmartRouting(false);
-
-        InetSocketAddress socketAddress = member.getCluster().getLocalMember().getSocketAddress();
-
-        config.getNetworkConfig().
-                addAddress(socketAddress.getHostName() + ":" + socketAddress.getPort());
-
-        return config;
-    }
+    protected abstract ClientConfig getClientConfig(HazelcastInstance member);
 }
