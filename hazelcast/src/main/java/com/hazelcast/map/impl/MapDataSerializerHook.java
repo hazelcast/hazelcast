@@ -141,7 +141,6 @@ import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.IndexReplicationInfo;
 import com.hazelcast.util.ConstructorFunction;
 

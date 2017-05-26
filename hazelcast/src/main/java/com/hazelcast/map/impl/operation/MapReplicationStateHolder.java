@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -28,6 +29,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexReplicationInfo;
 import com.hazelcast.query.impl.Indexes;
@@ -49,7 +51,7 @@ import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
  * Holder for raw IMap key-value pairs and their metadata.
  */
 // keep this `protected`, extended in another context.
-public class MapReplicationStateHolder implements IdentifiedDataSerializable {
+public class MapReplicationStateHolder implements IdentifiedDataSerializable, Versioned {
 
     protected Map<String, Set<RecordReplicationInfo>> data;
     // propagates the information if the given record store has been already loaded with map-loaded
@@ -135,7 +137,6 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
                 Set<IndexReplicationInfo> indexInfos = indexEntry.getValue();
                 final String mapName = indexEntry.getKey();
 
-
                 RecordStore recordStore = mapReplicationOperation.getRecordStore(mapName);
                 PartitionContainer container = recordStore.getMapContainer().getMapServiceContext()
                         .getPartitionContainer(mapReplicationOperation.getPartitionId());
@@ -166,13 +167,15 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
             out.writeBoolean(loadedEntry.getValue());
         }
 
-        out.writeInt(indexes.size());
-        for (Map.Entry<String, Set<IndexReplicationInfo>> indexEntry : indexes.entrySet()) {
-            out.writeUTF(indexEntry.getKey());
-            Set<IndexReplicationInfo> indexReplicationInfos = indexEntry.getValue();
-            out.writeInt(indexReplicationInfos.size());
-            for (IndexReplicationInfo indexReplicationInfo : indexReplicationInfos) {
-                out.writeObject(indexReplicationInfo);
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
+            out.writeInt(indexes.size());
+            for (Map.Entry<String, Set<IndexReplicationInfo>> indexEntry : indexes.entrySet()) {
+                out.writeUTF(indexEntry.getKey());
+                Set<IndexReplicationInfo> indexReplicationInfos = indexEntry.getValue();
+                out.writeInt(indexReplicationInfos.size());
+                for (IndexReplicationInfo indexReplicationInfo : indexReplicationInfos) {
+                    out.writeObject(indexReplicationInfo);
+                }
             }
         }
     }
@@ -198,17 +201,19 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
             loaded.put(in.readUTF(), in.readBoolean());
         }
 
-        int indexSize = in.readInt();
-        indexes = new HashMap<String, Set<IndexReplicationInfo>>(indexSize);
-        for (int i = 0; i < indexSize; i++) {
-            String name = in.readUTF();
-            int mapSize = in.readInt();
-            Set<IndexReplicationInfo> indexReplicationInfos = new HashSet<IndexReplicationInfo>(mapSize);
-            for (int j = 0; j < mapSize; j++) {
-                IndexReplicationInfo indexReplicationInfo = in.readObject();
-                indexReplicationInfos.add(indexReplicationInfo);
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
+            int indexSize = in.readInt();
+            indexes = new HashMap<String, Set<IndexReplicationInfo>>(indexSize);
+            for (int i = 0; i < indexSize; i++) {
+                String name = in.readUTF();
+                int mapSize = in.readInt();
+                Set<IndexReplicationInfo> indexReplicationInfos = new HashSet<IndexReplicationInfo>(mapSize);
+                for (int j = 0; j < mapSize; j++) {
+                    IndexReplicationInfo indexReplicationInfo = in.readObject();
+                    indexReplicationInfos.add(indexReplicationInfo);
+                }
+                indexes.put(name, indexReplicationInfos);
             }
-            indexes.put(name, indexReplicationInfos);
         }
     }
 
