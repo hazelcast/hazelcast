@@ -27,7 +27,7 @@ import com.hazelcast.jet.stream.impl.processor.AnyMatchP;
 import java.util.function.Predicate;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.Processors.writeList;
+import static com.hazelcast.jet.processor.Sinks.writeList;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 

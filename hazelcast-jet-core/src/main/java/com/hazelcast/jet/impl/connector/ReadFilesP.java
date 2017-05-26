@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.processor.Sources;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedReader;
@@ -36,7 +37,7 @@ import java.util.stream.StreamSupport;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 
 /**
- * @see com.hazelcast.jet.Processors#readFiles(String, Charset, String)
+ * @see Sources#readFiles(String, Charset, String)
  */
 public class ReadFilesP extends AbstractProcessor {
 
@@ -95,7 +96,7 @@ public class ReadFilesP extends AbstractProcessor {
     }
 
     /**
-     * @see com.hazelcast.jet.Processors#readFiles(String, Charset, String)
+     * @see Sources#readFiles(String, Charset, String)
      */
     public static ProcessorSupplier supplier(@Nonnull String directory, @Nonnull String charset, @Nonnull String glob) {
         return new ProcessorSupplier() {

@@ -31,7 +31,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.Processors.noop;
+import static com.hazelcast.jet.processor.Processors.noop;
 import static com.hazelcast.jet.TestUtil.executeAndPeel;
 
 @Category(QuickTest.class)

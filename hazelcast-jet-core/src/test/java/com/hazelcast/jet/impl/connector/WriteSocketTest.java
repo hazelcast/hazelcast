@@ -34,8 +34,8 @@ import java.net.Socket;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.Processors.readMap;
-import static com.hazelcast.jet.Processors.writeSocket;
+import static com.hazelcast.jet.processor.Sources.readMap;
+import static com.hazelcast.jet.processor.Sinks.writeSocket;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.stream.IntStream.range;
 

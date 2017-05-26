@@ -50,8 +50,8 @@ import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.Processors.readMap;
-import static com.hazelcast.jet.Processors.writeList;
+import static com.hazelcast.jet.processor.Sources.readMap;
+import static com.hazelcast.jet.processor.Sinks.writeList;
 import static com.hazelcast.jet.connector.hadoop.ReadHdfsP.readHdfs;
 import static com.hazelcast.jet.connector.hadoop.WriteHdfsP.writeHdfs;
 import static java.util.stream.Collectors.toMap;

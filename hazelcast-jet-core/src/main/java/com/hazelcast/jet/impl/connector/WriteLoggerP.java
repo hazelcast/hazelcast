@@ -17,12 +17,13 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.processor.DiagnosticProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
 
 import javax.annotation.Nonnull;
 
 /**
- * See {@link com.hazelcast.jet.Processors#writeLogger()}
+ * See {@link DiagnosticProcessors#writeLogger()}
  */
 public class WriteLoggerP<T> extends AbstractProcessor {
 

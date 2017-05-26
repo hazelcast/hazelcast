@@ -19,8 +19,8 @@ package com.hazelcast.jet.impl.processor;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Punctuation;
 import com.hazelcast.jet.PunctuationPolicy;
+import com.hazelcast.jet.ResettableSingletonTraverser;
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.Traversers.ResettableSingletonTraverser;
 
 import javax.annotation.Nonnull;
 import java.util.function.ToLongFunction;
@@ -29,7 +29,7 @@ import static com.hazelcast.jet.Traversers.empty;
 
 /**
  * A processor that inserts punctuation into a data stream. See
- * {@link com.hazelcast.jet.WindowingProcessors#insertPunctuation(
+ * {@link com.hazelcast.jet.processor.Processors#insertPunctuation(
  *      com.hazelcast.jet.function.DistributedToLongFunction,
  *      com.hazelcast.jet.function.DistributedSupplier)
  * WindowingProcessors.insertPunctuation()}.

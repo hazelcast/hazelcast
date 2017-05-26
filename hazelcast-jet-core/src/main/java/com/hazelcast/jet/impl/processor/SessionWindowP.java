@@ -45,7 +45,7 @@ import static java.lang.System.arraycopy;
 
 /**
  * Session window processor. See {@link
- *      com.hazelcast.jet.WindowingProcessors#sessionWindow(long,
+ *      com.hazelcast.jet.processor.Processors#aggregateToSessionWindow(long,
  *      DistributedToLongFunction, DistributedFunction, AggregateOperation)
  * WindowingProcessors.sessionWindow()} for documentation.
  *

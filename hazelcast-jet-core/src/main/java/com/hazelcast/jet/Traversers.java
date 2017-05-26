@@ -20,7 +20,6 @@ import javax.annotation.Nonnull;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Spliterator;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -111,37 +110,6 @@ public final class Traversers {
     @Nonnull
     public static <T> Traverser<T> lazy(@Nonnull Supplier<Traverser<T>> supplierOfTraverser) {
         return new LazyTraverser<>(supplierOfTraverser);
-    }
-
-    /**
-     * Traverses over a single item which can be set from the outside, by using
-     * this traverser as a {@code Consumer<T>}. Another item can be set at any
-     * time and the subsequent {@code next()} call will consume it.
-     *
-     * @param <T> item type
-     */
-    public static class ResettableSingletonTraverser<T> implements Traverser<T>, Consumer<T> {
-        T item;
-
-        @Override
-        public T next() {
-            try {
-                return item;
-            } finally {
-                item = null;
-            }
-        }
-
-        /**
-         * Resets this traverser so that the following {@code next()} call
-         * will return the item supplied here.
-         *
-         * @param item the item to return from {@code next()}
-         */
-        @Override
-        public void accept(T item) {
-            this.item = item;
-        }
     }
 
     private static final class LazyTraverser<T> implements Traverser<T> {

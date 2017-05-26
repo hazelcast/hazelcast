@@ -36,15 +36,15 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.AggregateOperations.counting;
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.Processors.noop;
-import static com.hazelcast.jet.Processors.writeList;
+import static com.hazelcast.jet.processor.Processors.noop;
+import static com.hazelcast.jet.processor.Sinks.writeList;
 import static com.hazelcast.jet.PunctuationPolicies.limitingLagAndLull;
 import static com.hazelcast.jet.StreamingTestSupport.streamToString;
 import static com.hazelcast.jet.WindowDefinition.slidingWindowDef;
-import static com.hazelcast.jet.WindowingProcessors.insertPunctuation;
-import static com.hazelcast.jet.WindowingProcessors.aggregateToSlidingWindow;
-import static com.hazelcast.jet.WindowingProcessors.groupByFrameAndAccumulate;
-import static com.hazelcast.jet.WindowingProcessors.combineToSlidingWindow;
+import static com.hazelcast.jet.processor.Processors.insertPunctuation;
+import static com.hazelcast.jet.processor.Processors.aggregateToSlidingWindow;
+import static com.hazelcast.jet.processor.Processors.accumulateByFrame;
+import static com.hazelcast.jet.processor.Processors.combineToSlidingWindow;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -104,7 +104,7 @@ public class WindowingProcessors_integrationTest extends JetTestSupport {
                     .edge(between(slidingWin, sink).oneToMany());
 
         } else {
-            Vertex groupByFrame = dag.newVertex("groupByFrame", groupByFrameAndAccumulate(
+            Vertex groupByFrame = dag.newVertex("groupByFrame", accumulateByFrame(
                     MockEvent::getKey, MockEvent::getTimestamp, TimestampKind.EVENT, wDef, counting));
             Vertex slidingWin = dag.newVertex("slidingWin", combineToSlidingWindow(wDef, counting));
             dag

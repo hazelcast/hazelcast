@@ -41,8 +41,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.NoSuchElementException;
 
-import static com.hazelcast.jet.Processors.peekInput;
-import static com.hazelcast.jet.Processors.peekOutput;
+import static com.hazelcast.jet.processor.DiagnosticProcessors.peekInput;
+import static com.hazelcast.jet.processor.DiagnosticProcessors.peekOutput;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;

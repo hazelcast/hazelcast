@@ -63,8 +63,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collector;
 
-import static com.hazelcast.jet.Processors.writeCache;
-import static com.hazelcast.jet.Processors.writeMap;
+import static com.hazelcast.jet.processor.Sinks.writeCache;
+import static com.hazelcast.jet.processor.Sinks.writeMap;
 import static com.hazelcast.jet.Util.entry;
 
 /**

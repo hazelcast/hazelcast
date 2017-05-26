@@ -37,7 +37,7 @@ import java.util.Map.Entry;
 import static com.hazelcast.jet.AggregateOperations.summingToLong;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.WindowDefinition.slidingWindowDef;
-import static com.hazelcast.jet.WindowingProcessors.groupByFrameAndAccumulate;
+import static com.hazelcast.jet.processor.Processors.accumulateByFrame;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -52,7 +52,7 @@ public class SlidingWindowP_stage1Test extends StreamingTestSupport {
     @Before
     @SuppressWarnings("unchecked")
     public void before() {
-        processor = (SlidingWindowP<Entry<Long, Long>, Long, ?>) groupByFrameAndAccumulate(
+        processor = (SlidingWindowP<Entry<Long, Long>, Long, ?>) accumulateByFrame(
                 x -> KEY,
                 Entry::getKey,
                 TimestampKind.EVENT,

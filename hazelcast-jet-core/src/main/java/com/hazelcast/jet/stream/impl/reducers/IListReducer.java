@@ -24,7 +24,7 @@ import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.Processors.writeList;
+import static com.hazelcast.jet.processor.Sinks.writeList;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 
 public class IListReducer<T> implements Reducer<T, IStreamList<T>> {

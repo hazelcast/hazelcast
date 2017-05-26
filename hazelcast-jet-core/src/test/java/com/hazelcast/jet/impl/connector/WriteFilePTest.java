@@ -47,8 +47,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.Processors.readList;
-import static com.hazelcast.jet.Processors.writeFile;
+import static com.hazelcast.jet.processor.Sources.readList;
+import static com.hazelcast.jet.processor.Sinks.writeFile;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

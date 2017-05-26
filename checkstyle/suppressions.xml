@@ -22,8 +22,5 @@
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]template[\\/].*Template\.java$"/>
 
     <!-- Suppress checks for test code -->
-    <suppress checks="Javadoc" files="/src/test/"/>
-    <suppress checks="Name" files="/src/test/"/>
-    <suppress checks="MagicNumber" files="/src/test/"/>
-    <suppress checks="VisibilityModifier" files="/src/test/"/>
+    <suppress checks="Javadoc|Name|MagicNumber|VisibilityModifier" files="/src/test/"/>
 </suppressions>

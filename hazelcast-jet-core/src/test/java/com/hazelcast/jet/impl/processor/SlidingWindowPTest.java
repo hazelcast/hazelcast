@@ -47,8 +47,8 @@ import java.util.stream.LongStream;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.WindowDefinition.slidingWindowDef;
-import static com.hazelcast.jet.WindowingProcessors.aggregateToSlidingWindow;
-import static com.hazelcast.jet.WindowingProcessors.combineToSlidingWindow;
+import static com.hazelcast.jet.processor.Processors.aggregateToSlidingWindow;
+import static com.hazelcast.jet.processor.Processors.combineToSlidingWindow;
 import static java.util.Arrays.asList;
 import static java.util.Collections.shuffle;
 import static java.util.Collections.singletonList;

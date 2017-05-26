@@ -54,11 +54,11 @@ import static com.hazelcast.jet.AggregateOperations.counting;
 import static com.hazelcast.jet.AggregateOperations.summingToLong;
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.Partitioner.HASH_CODE;
-import static com.hazelcast.jet.Processors.flatMap;
-import static com.hazelcast.jet.Processors.groupAndAggregate;
-import static com.hazelcast.jet.Processors.noop;
-import static com.hazelcast.jet.Processors.readMap;
-import static com.hazelcast.jet.Processors.writeMap;
+import static com.hazelcast.jet.processor.Processors.flatMap;
+import static com.hazelcast.jet.processor.Processors.aggregateByKey;
+import static com.hazelcast.jet.processor.Processors.noop;
+import static com.hazelcast.jet.processor.Sources.readMap;
+import static com.hazelcast.jet.processor.Sinks.writeMap;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
@@ -162,10 +162,10 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 })
         );
         // word -> (word, count)
-        Vertex aggregateStage1 = dag.newVertex("aggregateStage1", groupAndAggregate(wholeItem(), counting()));
+        Vertex aggregateStage1 = dag.newVertex("aggregateStage1", aggregateByKey(wholeItem(), counting()));
         // (word, count) -> (word, count)
         Vertex aggregateStage2 = dag.newVertex("aggregateStage2",
-                groupAndAggregate(entryKey(), summingToLong(Entry<String, Long>::getValue)));
+                aggregateByKey(entryKey(), summingToLong(Entry<String, Long>::getValue)));
         Vertex sink = dag.newVertex("sink", writeMap("counts"));
 
         dag.edge(between(source.localParallelism(1), tokenize))

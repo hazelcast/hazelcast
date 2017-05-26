@@ -18,7 +18,7 @@ package com.hazelcast.jet.stream.impl.source;
 
 import com.hazelcast.cache.ICache;
 import com.hazelcast.jet.ProcessorMetaSupplier;
-import com.hazelcast.jet.Processors;
+import com.hazelcast.jet.processor.Sources;
 import com.hazelcast.jet.stream.impl.pipeline.AbstractSourcePipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 
@@ -36,7 +36,7 @@ public class CacheSourcePipeline<K, V> extends AbstractSourcePipeline<Entry<K, V
 
     @Override
     protected ProcessorMetaSupplier getSourceMetaSupplier() {
-        return Processors.readCache(cache.getName());
+        return Sources.readCache(cache.getName());
     }
 
     @Override

@@ -39,8 +39,8 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.Processors.readFiles;
-import static com.hazelcast.jet.Processors.writeList;
+import static com.hazelcast.jet.processor.Sources.readFiles;
+import static com.hazelcast.jet.processor.Sinks.writeList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

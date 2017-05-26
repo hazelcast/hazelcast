@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
-import com.hazelcast.jet.Processors;
+import com.hazelcast.jet.processor.Sources;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.Processors.writeList;
+import static com.hazelcast.jet.processor.Sinks.writeList;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
@@ -273,7 +273,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
 
     private DAG buildDag() {
         DAG dag = new DAG();
-        Vertex reader = dag.newVertex("reader", Processors.streamFiles(directory.getPath()))
+        Vertex reader = dag.newVertex("reader", Sources.streamFiles(directory.getPath()))
                            .localParallelism(1);
         Vertex writer = dag.newVertex("writer", writeList(list.getName())).localParallelism(1);
         dag.edge(between(reader, writer));

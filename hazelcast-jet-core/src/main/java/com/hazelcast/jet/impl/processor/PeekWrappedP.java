@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.processor;
 
+import com.hazelcast.jet.processor.DiagnosticProcessors;
 import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
@@ -30,7 +31,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * A wrapper processor to peek at input or output of other processor.
- * See {@link com.hazelcast.jet.Processors#peekInput(DistributedSupplier)}.
+ * See {@link DiagnosticProcessors#peekInput(DistributedSupplier)}.
  */
 public final class PeekWrappedP implements Processor {
 

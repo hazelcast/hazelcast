@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.ProcessorMetaSupplier;
+import com.hazelcast.jet.processor.Sinks;
 import com.hazelcast.jet.function.DistributedFunction;
 
 import javax.annotation.Nonnull;
@@ -35,16 +36,14 @@ import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
 /**
- * @see com.hazelcast.jet.Processors#writeFile(String,
- * com.hazelcast.jet.function.DistributedFunction, Charset, boolean)
+ * @see Sinks#writeFile(String, DistributedFunction, Charset, boolean)
  */
 public final class WriteFileP {
 
     private WriteFileP() { }
 
     /**
-     * Use {@link com.hazelcast.jet.Processors#writeFile(String,
-     * com.hazelcast.jet.function.DistributedFunction, Charset, boolean)}
+     * Use {@link Sinks#writeFile(String, DistributedFunction, Charset, boolean)}
      */
     public static <T> ProcessorMetaSupplier supplier(
             @Nonnull String directoryName,

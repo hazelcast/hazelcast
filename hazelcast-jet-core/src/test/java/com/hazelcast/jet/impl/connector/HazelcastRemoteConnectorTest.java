@@ -23,7 +23,7 @@ import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.JetTestSupport;
-import com.hazelcast.jet.Processors;
+import com.hazelcast.jet.processor.Sinks;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -40,10 +40,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.Processors.readList;
-import static com.hazelcast.jet.Processors.readMap;
-import static com.hazelcast.jet.Processors.writeList;
-import static com.hazelcast.jet.Processors.writeMap;
+import static com.hazelcast.jet.processor.Sources.readList;
+import static com.hazelcast.jet.processor.Sources.readMap;
+import static com.hazelcast.jet.processor.Sinks.writeList;
+import static com.hazelcast.jet.processor.Sinks.writeMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
@@ -112,7 +112,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", readMap("source", clientConfig)).localParallelism(4);
-        Vertex sink = dag.newVertex("sink", Processors.writeList("sink")).localParallelism(1);
+        Vertex sink = dag.newVertex("sink", Sinks.writeList("sink")).localParallelism(1);
         dag.edge(between(source, sink));
 
         executeAndWait(dag);

@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.processor.Sources;
 import com.hazelcast.jet.function.DistributedSupplier;
 
 import javax.annotation.Nonnull;
@@ -31,7 +32,7 @@ import java.util.concurrent.CompletableFuture;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 
 /**
- * @see com.hazelcast.jet.Processors#streamTextSocket(String, int, Charset)
+ * @see Sources#streamTextSocket(String, int, Charset)
  */
 public final class StreamTextSocketP extends AbstractProcessor {
 

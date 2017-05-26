@@ -22,6 +22,7 @@ import com.hazelcast.jet.impl.AggregateOperationImpl;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
 import com.hazelcast.jet.impl.util.ProgressTracker;
+import com.hazelcast.jet.processor.Processors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -116,7 +117,7 @@ public class ProcessorsTest {
 
     @Test
     public void groupAndAggregate() {
-        final Processor p = processorFrom(Processors.groupAndAggregate(Object::toString, aggregateToList()));
+        final Processor p = processorFrom(Processors.aggregateByKey(Object::toString, aggregateToList()));
         // Given
         inbox.add(1);
         inbox.add(1);

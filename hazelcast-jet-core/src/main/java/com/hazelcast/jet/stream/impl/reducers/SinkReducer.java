@@ -20,7 +20,7 @@ import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.Processors;
+import com.hazelcast.jet.processor.Processors;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.DistributedCollector;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
