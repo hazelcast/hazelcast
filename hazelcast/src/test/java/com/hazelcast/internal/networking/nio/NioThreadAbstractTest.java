@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking.nio;
 
-import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
+import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.AssertTask;
@@ -52,7 +52,7 @@ import static org.mockito.Mockito.when;
  */
 public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
 
-    private IOOutOfMemoryHandler oomeHandler;
+    private ChannelErrorHandler errorHandler;
     private ILogger logger;
     private MockSelector selector;
     private SelectionHandler handler;
@@ -61,7 +61,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         logger = Logger.getLogger(NioThread.class);
-        oomeHandler = mock(IOOutOfMemoryHandler.class);
+        errorHandler = mock(ChannelErrorHandler.class);
         selector = new MockSelector();
         handler = mock(SelectionHandler.class);
     }
@@ -84,7 +84,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
     }
 
     private void startThread() {
-        thread = new NioThread("foo", logger, oomeHandler, selectorMode(), selector, null);
+        thread = new NioThread("foo", logger, errorHandler, selectorMode(), selector, null);
         beforeStartThread();
         thread.start();
     }
@@ -169,7 +169,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
             }
         });
 
-        verify(oomeHandler).handle(any(OutOfMemoryError.class));
+        verify(errorHandler).onError(any(NioChannel.class), any(OutOfMemoryError.class));
     }
 
     @Test

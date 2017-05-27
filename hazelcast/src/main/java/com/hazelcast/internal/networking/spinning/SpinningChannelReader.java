@@ -17,23 +17,23 @@
 package com.hazelcast.internal.networking.spinning;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.networking.ChannelConnection;
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
-import com.hazelcast.internal.networking.ChannelReader;
 import com.hazelcast.internal.networking.ChannelInitializer;
-import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 
 import java.io.EOFException;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 
-public class SpinningChannelReader extends AbstractHandler implements ChannelReader {
+public class SpinningChannelReader extends AbstractHandler {
 
     @Probe(name = "bytesRead")
     private final SwCounter bytesRead = newSwCounter();
@@ -46,15 +46,15 @@ public class SpinningChannelReader extends AbstractHandler implements ChannelRea
     private ChannelInboundHandler inboundHandler;
     private ByteBuffer inputBuffer;
 
-    public SpinningChannelReader(ChannelConnection connection,
+    public SpinningChannelReader(Channel channel,
                                  ILogger logger,
-                                 IOOutOfMemoryHandler oomeHandler,
+                                 ChannelErrorHandler errorHandler,
                                  ChannelInitializer initializer) {
-        super(connection, logger, oomeHandler);
+        super(channel, logger, errorHandler);
         this.initializer = initializer;
     }
 
-    @Override
+    //@Override
     public long lastReadTimeMillis() {
         return lastReadTime;
     }
@@ -64,43 +64,27 @@ public class SpinningChannelReader extends AbstractHandler implements ChannelRea
         return max(currentTimeMillis() - lastReadTime, 0);
     }
 
-    @Override
+    //@Override
     public SwCounter getNormalFramesReadCounter() {
         return normalFramesRead;
     }
 
-    @Override
+    //@Override
     public SwCounter getPriorityFramesReadCounter() {
         return priorityFramesRead;
     }
 
-    @Override
-    public void init() {
-        //no-op
-    }
-
-    @Override
-    public void close() {
-        //no-op
-    }
-
     public void read() throws Exception {
-        if (!connection.isAlive()) {
-            socketChannel.closeInbound();
+        if (channel.isClosed()) {
+            channel.closeInbound();
             return;
         }
 
-        if (inboundHandler == null) {
-            InitResult<ChannelInboundHandler> init = initializer.initInbound(connection, this);
-            if (init == null) {
-                // when using SSL, we can read 0 bytes since data read from socket can be handshake frames.
-                return;
-            }
-            this.inboundHandler = init.getHandler();
-            this.inputBuffer = init.getByteBuffer();
+        if (inboundHandler == null && !init()) {
+            return;
         }
 
-        int readBytes = socketChannel.read(inputBuffer);
+        int readBytes = channel.read(inputBuffer);
         if (readBytes <= 0) {
             if (readBytes == -1) {
                 throw new EOFException("Remote socket closed!");
@@ -117,5 +101,16 @@ public class SpinningChannelReader extends AbstractHandler implements ChannelRea
         } else {
             inputBuffer.clear();
         }
+    }
+
+    private boolean init() throws IOException {
+        InitResult<ChannelInboundHandler> init = initializer.initInbound(channel);
+        if (init == null) {
+            // we can't initialize yet
+            return false;
+        }
+        this.inboundHandler = init.getHandler();
+        this.inputBuffer = init.getByteBuffer();
+        return true;
     }
 }

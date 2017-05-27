@@ -16,12 +16,14 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.internal.networking.ChannelReader;
+import com.hazelcast.internal.networking.nio.NioChannel;
+import com.hazelcast.internal.networking.nio.NioChannelReader;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,13 +37,14 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
+@Ignore
 public class MemberChannelInboundHandlerTest extends TcpIpConnection_AbstractTest {
 
     private MockPacketDispatcher dispatcher;
     private MemberChannelInboundHandler readHandler;
     private long oldPriorityPacketsRead;
     private long oldNormalPacketsRead;
-    private ChannelReader channelReader;
+    private NioChannelReader channelReader;
 
     @Before
     public void setup() throws Exception {
@@ -57,7 +60,7 @@ public class MemberChannelInboundHandlerTest extends TcpIpConnection_AbstractTes
         dispatcher = new MockPacketDispatcher();
         readHandler = new MemberChannelInboundHandler(connection, dispatcher);
 
-        channelReader = connection.getChannelReader();
+        channelReader = ((NioChannel)connection.getChannel()).getReader();
         oldNormalPacketsRead = channelReader.getNormalFramesReadCounter().get();
         oldPriorityPacketsRead = channelReader.getPriorityFramesReadCounter().get();
     }

@@ -19,16 +19,24 @@ package com.hazelcast.internal.networking;
 import java.nio.ByteBuffer;
 
 /**
- * Responsible for writing {@link OutboundFrame} to a {@link ByteBuffer}.
+ * Responsible for writing {@link OutboundFrame} to a {@link ByteBuffer}. For example a Packet needs to be written to a socket,
+ * then it is taken from the queue of pending packets, the ChannelOutboundHandler is called with the Packet and the socket buffer
+ * as argument and will then write the content of the packet to the buffer. And on completion, the content of the buffer is
+ * written to the socket.
  *
- * Each {@link ChannelWriter} will have its own {@link ChannelOutboundHandler} instance. Therefor it doesn't need
- * to be thread-safe.
+ * {@link ChannelOutboundHandler} are not expected to be thread-safe; each channel will gets its own instance(s).
+ *
+ * A {@link ChannelOutboundHandler} is constructed through a {@link ChannelInitializer}.
  *
  * For more information about the ChannelOutboundHandler (and handlers in generally), have a look at the
  * {@link ChannelInboundHandler}.
  *
  * @param <F>
  * @see EventLoopGroup
+ * @see ChannelInboundHandler
+ * @see ChannelInitializer
+ * @see ChannelErrorHandler
+ * @see Channel
  */
 public interface ChannelOutboundHandler<F extends OutboundFrame> {
 
@@ -36,14 +44,13 @@ public interface ChannelOutboundHandler<F extends OutboundFrame> {
      * A callback to indicate that the Frame should be written to the destination ByteBuffer.
      *
      * It could be that a Frame is too big to fit into the ByteBuffer in 1 go; in that case this call will be made
-     * for the same Frame multiple times until write returns true. It is up to the Frame to track where
-     * it needs to continue.
+     * for the same Frame multiple times until write returns true.
      *
      * @param frame the Frame to write
      * @param dst   the destination ByteBuffer
      * @return true if the Frame is completely written
-     * @throws Exception if something fails while writing to ByteBuffer. When an exception is thrown, the TcpIpConnection is
-     *                   closed. There is no point continuing with a potentially corrupted stream.
+     * @throws Exception if something fails while writing to ByteBuffer. When an exception is thrown, the
+     *                   {@link ChannelErrorHandler} is called.
      */
     boolean onWrite(F frame, ByteBuffer dst) throws Exception;
 }

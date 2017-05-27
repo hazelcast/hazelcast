@@ -16,8 +16,11 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.internal.networking.ChannelWriter;
-import com.hazelcast.internal.networking.ChannelReader;
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.nio.NioChannel;
+import com.hazelcast.internal.networking.nio.NioChannelReader;
+import com.hazelcast.internal.networking.spinning.SpinningChannel;
+import com.hazelcast.internal.networking.spinning.SpinningChannelReader;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestThread;
@@ -113,25 +116,48 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
         logger.info("expected normal packets: " + expectedNormalPackets);
         logger.info("expected priority packets: " + expectedUrgentPackets);
 
-        final ChannelWriter writer = c.getChannelWriter();
-        final ChannelReader reader = ((TcpIpConnection) connManagerB.getConnection(addressA)).getChannelReader();
+        final TcpIpConnection connection = (TcpIpConnection) connManagerB.getConnection(addressA);
         long start = System.currentTimeMillis();
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                logger.info("writer total frames pending   : " + writer.totalFramesPending());
-                logger.info("writer last write time millis : " + writer.lastWriteTimeMillis());
+                logger.info("writer total frames pending   : " + totalFramesPending(connection));
+                logger.info("writer last write time millis : " + connection.getChannel().lastWriteTimeMillis());
 
-                logger.info("reader total frames handled   : " + reader.getNormalFramesReadCounter().get()
-                        + reader.getPriorityFramesReadCounter().get());
-                logger.info("reader last read time millis  : " + reader.lastReadTimeMillis());
+                logger.info("reader total frames handled   : " + framesRead(connection, false)
+                        + framesRead(connection, true));
+                logger.info("reader last read time millis  : " + connection.getChannel().lastReadTimeMillis());
 
-                assertEquals(expectedNormalPackets, reader.getNormalFramesReadCounter().get());
-                assertEquals(expectedUrgentPackets, reader.getPriorityFramesReadCounter().get());
+                assertEquals(expectedNormalPackets, framesRead(connection, false));
+                assertEquals(expectedUrgentPackets, framesRead(connection, true));
             }
         }, verifyTimeoutInMillis);
         logger.info("Waiting for pending packets to be sent and received finished in "
                 + (System.currentTimeMillis() - start) + " milliseconds");
+    }
+
+    private int totalFramesPending(TcpIpConnection connection) {
+        Channel channel = connection.getChannel();
+        if (channel instanceof NioChannel) {
+            return ((NioChannel) channel).getWriter().totalFramesPending();
+        } else if (channel instanceof SpinningChannel) {
+            return ((SpinningChannel) channel).getWriter().totalFramesPending();
+        } else {
+            throw new RuntimeException();
+        }
+    }
+
+    private long framesRead(TcpIpConnection connection, boolean priority) {
+        Channel channel = connection.getChannel();
+        if (channel instanceof NioChannel) {
+            NioChannelReader reader = ((NioChannel) channel).getReader();
+            return priority ? reader.getPriorityFramesReadCounter().get() : reader.getNormalFramesReadCounter().get();
+        } else if (channel instanceof SpinningChannel) {
+            SpinningChannelReader reader = ((SpinningChannel) channel).getReader();
+            return priority ? reader.getPriorityFramesReadCounter().get() : reader.getNormalFramesReadCounter().get();
+        } else {
+            throw new RuntimeException();
+        }
     }
 
     private void makePayloads(int maxSize) {
@@ -175,13 +201,13 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
     public class WriteThread extends TestThread {
 
         private final Random random = new Random();
-        private final ChannelWriter writeHandler;
+        private final TcpIpConnection c;
         private long normalPackets;
         private long urgentPackets;
 
         public WriteThread(int id, TcpIpConnection c) {
             super("WriteThread-" + id);
-            this.writeHandler = c.getChannelWriter();
+            this.c = c;
         }
 
         @Override
@@ -195,7 +221,7 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
                 } else {
                     normalPackets++;
                 }
-                writeHandler.write(packet);
+                //  writeHandler.write(packet);
 
                 long now = System.currentTimeMillis();
                 if (now > prev + 2000) {
@@ -218,11 +244,11 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
 
             logger.info("Finished, normal packets written: " + normalPackets
                     + " urgent packets written:" + urgentPackets
-                    + " total frames pending:" + writeHandler.totalFramesPending());
+                    + " total frames pending:" + totalFramesPending(c));
         }
 
         private double getUsage() {
-            return 100d * writeHandler.totalFramesPending() / maxPendingPacketCount;
+            return 100d * totalFramesPending(c) / maxPendingPacketCount;
         }
 
         public Packet nextPacket() {

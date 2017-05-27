@@ -16,13 +16,20 @@
 
 package com.hazelcast.internal.networking;
 
-import com.hazelcast.nio.Connection;
+/**
+ * A strategy for controlling what needs to be done in case of an Exception being thrown when the {@link EventLoopGroup} processes
+ * events.
+ *
+ * For example if a connection is making use of the Channel, the Connection could close itself when an error was encountered.
+ */
+public interface ChannelErrorHandler {
 
-public interface ChannelConnection extends Connection {
-
-    ChannelReader getChannelReader();
-
-    ChannelWriter getChannelWriter();
-
-    Channel getChannel();
+    /**
+     * Called when an error happened.
+     *
+     * @param channel the Channel that ran into an error. It could be that the Channel is null if error
+     *                was thrown not related to a particular Channel.
+     * @param cause the Throwable causing problems
+     */
+    void onError(Channel channel, Throwable cause);
 }

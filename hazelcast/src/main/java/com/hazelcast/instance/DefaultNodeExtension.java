@@ -35,6 +35,7 @@ import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.networking.nio.NioChannelFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -48,7 +49,6 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.tcp.MemberChannelInboundHandler;
 import com.hazelcast.nio.tcp.MemberChannelOutboundHandler;
-import com.hazelcast.nio.tcp.PlainChannelFactory;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.SecurityContext;
@@ -197,8 +197,8 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public ChannelFactory getSocketChannelWrapperFactory() {
-        return new PlainChannelFactory();
+    public ChannelFactory getChannelFactory() {
+        return new NioChannelFactory();
     }
 
     @Override
@@ -325,7 +325,7 @@ public class DefaultNodeExtension implements NodeExtension {
         } else {
             String overriddenClusterVersion = node.getProperties().getString(GroupProperty.INIT_CLUSTER_VERSION);
             return (overriddenClusterVersion != null) ? MemberVersion.of(overriddenClusterVersion).asVersion()
-                                                        : node.getVersion().asVersion();
+                    : node.getVersion().asVersion();
         }
     }
 

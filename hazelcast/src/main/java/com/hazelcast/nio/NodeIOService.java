@@ -23,14 +23,12 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
-import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -75,16 +73,6 @@ public class NodeIOService implements IOService {
     @Override
     public boolean isActive() {
         return node.getState() != NodeState.SHUT_DOWN;
-    }
-
-    @Override
-    public IOOutOfMemoryHandler getIoOutOfMemoryHandler() {
-        return new IOOutOfMemoryHandler() {
-            @Override
-            public void handle(OutOfMemoryError error) {
-                OutOfMemoryErrorDispatcher.onOutOfMemory(error);
-            }
-        };
     }
 
     @Override
@@ -321,8 +309,8 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public ChannelFactory getSocketChannelWrapperFactory() {
-        return node.getNodeExtension().getSocketChannelWrapperFactory();
+    public ChannelFactory getChannelFactory() {
+        return node.getNodeExtension().getChannelFactory();
     }
 
     @Override
@@ -331,12 +319,12 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public ChannelInboundHandler createReadHandler(TcpIpConnection connection) {
+    public ChannelInboundHandler createInboundHandler(TcpIpConnection connection) {
         return node.getNodeExtension().createInboundHandler(connection, this);
     }
 
     @Override
-    public ChannelOutboundHandler createWriteHandler(TcpIpConnection connection) {
+    public ChannelOutboundHandler createOutboundHandler(TcpIpConnection connection) {
         return node.getNodeExtension().createOutboundHandler(connection, this);
     }
 

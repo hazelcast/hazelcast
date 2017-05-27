@@ -17,17 +17,13 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.client.impl.protocol.util.ClientMessageChannelInboundHandler;
-import com.hazelcast.config.SSLConfig;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
-import com.hazelcast.internal.networking.ChannelReader;
-import com.hazelcast.internal.networking.ChannelWriter;
 import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.ascii.TextChannelInboundHandler;
 import com.hazelcast.nio.ascii.TextChannelOutboundHandler;
 
@@ -42,27 +38,65 @@ import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.IOUtil.newByteBuffer;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
-import static com.hazelcast.nio.Protocols.TEXT;
 import static com.hazelcast.util.StringUtil.bytesToString;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
-public class MemberChannelInitializer implements ChannelInitializer<TcpIpConnection> {
+
+/**
+ * The {@link ChannelInitializer} that runs on a member. It will identify the channel based on the protocol.
+ *
+ * If the channel is a 'client', it will automatically send the cluster protocol to the other side since both are members. This
+ * way the 'server' knows what it is dealing with.
+ *
+ * If the channel is a 'server', it needs to wait sending any information before the 'client' has send the protocol. If the
+ * 'client' is another member, it receives the cluster protocol. If the client is a true client, we don't send anything.
+ *
+ * If the channel is a 'server' and the client is ASCII client, it will not receive a specific ASCII protocol; if the
+ * first 3 bytes are not a known protocol, it will be interpreted as an ASCII (TextCommand) request.
+ */
+public class MemberChannelInitializer implements ChannelInitializer {
 
     private static final String PROTOCOL_BUFFER = "protocolbuffer";
+    private static final String PROTOCOL = "protocol";
+    private static final String TEXT_OUTBOUND_HANDLER = "outboundHandler";
 
     private final ILogger logger;
+    private final IOService ioService;
 
-    public MemberChannelInitializer(ILogger logger) {
+    public MemberChannelInitializer(ILogger logger, IOService ioService) {
         this.logger = logger;
+        this.ioService = ioService;
     }
 
     @Override
-    public InitResult<ChannelInboundHandler> initInbound(TcpIpConnection connection, ChannelReader reader) throws IOException {
-        TcpIpConnectionManager connectionManager = connection.getConnectionManager();
-        final IOService ioService = connectionManager.getIoService();
+    public InitResult<ChannelInboundHandler> initInbound(Channel channel) throws IOException {
+        String protocol = inboundProtocol(channel);
 
-        Channel channel = reader.getChannel();
-        ByteBuffer protocolBuffer = getProtocolBuffer(channel);
+        InitResult<ChannelInboundHandler> init;
+        if (protocol == null) {
+            // not all protocol data has been received; so return null to indicate that the initialization isn't ready yet.
+            return null;
+        } else if (CLUSTER.equals(protocol)) {
+            init = initInboundClusterProtocol(channel);
+        } else if (CLIENT_BINARY_NEW.equals(protocol)) {
+            init = initInboundClientProtocol(channel);
+        } else {
+            init = initInboundTextProtocol(channel, protocol);
+        }
+
+        // give the writing side a chance to initialize.
+        channel.flush();
+
+        return init;
+    }
+
+    private String inboundProtocol(Channel channel) throws IOException {
+        ConcurrentMap attributeMap = channel.attributeMap();
+        ByteBuffer protocolBuffer = (ByteBuffer) attributeMap.get(PROTOCOL_BUFFER);
+        if (protocolBuffer == null) {
+            protocolBuffer = ByteBuffer.allocate(3);
+            attributeMap.put(PROTOCOL_BUFFER, protocolBuffer);
+        }
 
         int readBytes = channel.read(protocolBuffer);
 
@@ -70,41 +104,29 @@ public class MemberChannelInitializer implements ChannelInitializer<TcpIpConnect
             throw new EOFException("Could not read protocol type!");
         }
 
-        if (readBytes == 0 && isSslEnabled(ioService)) {
-            // when using SSL, we can read 0 bytes since data read from socket can be handshake data.
-            return null;
-        }
-
         if (protocolBuffer.hasRemaining()) {
             // we have not yet received all protocol bytes
             return null;
         }
 
-        // since the protocol is complete; we can remove the protocol-buffer.
+        // Since the protocol is complete; we can remove the protocol-buffer.
         channel.attributeMap().remove(PROTOCOL_BUFFER);
 
-        ChannelInboundHandler inboundHandler;
         String protocol = bytesToString(protocolBuffer.array());
-        ChannelWriter channelWriter = connection.getChannelWriter();
-        ByteBuffer inputBuffer;
-        if (CLUSTER.equals(protocol)) {
-            inputBuffer = initInputBuffer(connection, ioService.getSocketReceiveBufferSize());
-            connection.setType(MEMBER);
-            channelWriter.setProtocol(CLUSTER);
-            inboundHandler = ioService.createReadHandler(connection);
-        } else if (CLIENT_BINARY_NEW.equals(protocol)) {
-            inputBuffer = initInputBuffer(connection, ioService.getSocketClientReceiveBufferSize());
-            channelWriter.setProtocol(CLIENT_BINARY_NEW);
-            inboundHandler = new ClientMessageChannelInboundHandler(
-                    reader.getNormalFramesReadCounter(),
-                    new MessageHandlerImpl(connection, ioService.getClientEngine()));
-        } else {
-            inputBuffer = initInputBuffer(connection, ioService.getSocketReceiveBufferSize());
-            channelWriter.setProtocol(TEXT);
-            inputBuffer.put(protocolBuffer.array());
-            inboundHandler = new TextChannelInboundHandler(connection);
-            connectionManager.incrementTextConnections();
-        }
+
+        // sets the protocol for the outbound initialization
+        channel.attributeMap().put(PROTOCOL, protocol);
+
+        return protocol;
+    }
+
+    private InitResult<ChannelInboundHandler> initInboundClusterProtocol(Channel channel) throws IOException {
+        TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
+        connection.setType(MEMBER);
+
+        ByteBuffer inputBuffer = newInputBuffer(connection.getChannel(), ioService.getSocketReceiveBufferSize());
+
+        ChannelInboundHandler inboundHandler = ioService.createInboundHandler(connection);
 
         if (inboundHandler == null) {
             throw new IOException("Could not initialize ChannelInboundHandler!");
@@ -113,72 +135,118 @@ public class MemberChannelInitializer implements ChannelInitializer<TcpIpConnect
         return new InitResult<ChannelInboundHandler>(inputBuffer, inboundHandler);
     }
 
-    private static ByteBuffer getProtocolBuffer(Channel channel) {
-        ConcurrentMap attributeMap = channel.attributeMap();
-        ByteBuffer protocolBuffer = (ByteBuffer) attributeMap.get(PROTOCOL_BUFFER);
-        if (protocolBuffer == null) {
-            protocolBuffer = ByteBuffer.allocate(3);
-            attributeMap.put(PROTOCOL_BUFFER, protocolBuffer);
-        }
-        return protocolBuffer;
+    private InitResult<ChannelInboundHandler> initInboundClientProtocol(Channel channel) throws IOException {
+        TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
+
+        ByteBuffer inputBuffer = newInputBuffer(channel, ioService.getSocketClientReceiveBufferSize());
+
+        ChannelInboundHandler inboundHandler
+                = new ClientMessageChannelInboundHandler(new MessageHandlerImpl(connection, ioService.getClientEngine()));
+
+        return new InitResult<ChannelInboundHandler>(inputBuffer, inboundHandler);
     }
 
-    private ByteBuffer initInputBuffer(TcpIpConnection connection, int sizeKb) {
-        boolean directBuffer = connection.getConnectionManager().getIoService().useDirectSocketBuffer();
+    private InitResult<ChannelInboundHandler> initInboundTextProtocol(Channel channel, String protocol) {
+        TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
+        TcpIpConnectionManager connectionManager = connection.getConnectionManager();
+        connectionManager.incrementTextConnections();
+
+        TextChannelOutboundHandler outboundHandler = new TextChannelOutboundHandler(connection);
+        channel.attributeMap().put(TEXT_OUTBOUND_HANDLER, outboundHandler);
+
+        ByteBuffer inputBuffer = newInputBuffer(channel, ioService.getSocketReceiveBufferSize());
+        inputBuffer.put(stringToBytes(protocol));
+
+        ChannelInboundHandler inboundHandler = new TextChannelInboundHandler(connection, outboundHandler);
+        return new InitResult<ChannelInboundHandler>(inputBuffer, inboundHandler);
+    }
+
+    private ByteBuffer newInputBuffer(Channel channel, int sizeKb) {
+        boolean directBuffer = ioService.useDirectSocketBuffer();
         int sizeBytes = sizeKb * KILO_BYTE;
 
         ByteBuffer inputBuffer = newByteBuffer(sizeBytes, directBuffer);
 
         try {
-            connection.getChannel().socket().setReceiveBufferSize(sizeBytes);
+            channel.socket().setReceiveBufferSize(sizeBytes);
         } catch (SocketException e) {
-            logger.finest("Failed to adjust TCP receive buffer of " + connection + " to " + sizeBytes + " B.", e);
+            logger.finest("Failed to adjust TCP receive buffer of " + channel + " to " + sizeBytes + " B.", e);
         }
 
         return inputBuffer;
     }
 
-    private static boolean isSslEnabled(IOService ioService) {
-        SSLConfig config = ioService.getSSLConfig();
-        return config != null && config.isEnabled();
-    }
-
+    /**
+     * called when 'client' side member connects; will call with protocol "MEMBER'
+     * indirectly called 'server' side when the 'client' has told the protocol. In this case the protocol is e.g.
+     * CLIENT/MEMBER etc
+     *
+     * Idea: we need to have a way to send a 'task' to a channel e.g. setProtocol.
+     */
     @Override
-    public InitResult<ChannelOutboundHandler> initOutbound(TcpIpConnection connection, ChannelWriter writer, String protocol) {
-        logger.fine("Initializing ChannelWriter ChannelOutboundHandler with " + Protocols.toUserFriendlyString(protocol));
+    public InitResult<ChannelOutboundHandler> initOutbound(Channel channel) {
+        String protocol = outboundProtocol(channel);
 
-        ChannelOutboundHandler handler = newOutboundHandler(connection, protocol);
-        ByteBuffer outputBuffer = newOutputBuffer(connection, protocol);
-        return new InitResult<ChannelOutboundHandler>(outputBuffer, handler);
-    }
-
-    private ChannelOutboundHandler newOutboundHandler(TcpIpConnection connection, String protocol) {
-        if (CLUSTER.equals(protocol)) {
-            IOService ioService = connection.getConnectionManager().getIoService();
-            return ioService.createWriteHandler(connection);
+        if (protocol == null) {
+            // the protocol isn't known yet; so return null to indicate that we can't initialize the channel yet.
+            return null;
+        } else if (CLUSTER.equals(protocol)) {
+            return initOutboundClusterProtocol(channel);
         } else if (CLIENT_BINARY_NEW.equals(protocol)) {
-            return new ClientChannelOutboundHandler();
+            return initOutboundClientProtocol(channel);
         } else {
-            return new TextChannelOutboundHandler(connection);
+            return initOutboundTextProtocol(channel);
         }
     }
 
-    private ByteBuffer newOutputBuffer(TcpIpConnection connection, String protocol) {
-        IOService ioService = connection.getConnectionManager().getIoService();
-        int sizeKb = CLUSTER.equals(protocol)
-                ? ioService.getSocketSendBufferSize()
-                : ioService.getSocketClientSendBufferSize();
+    private String outboundProtocol(Channel channel) {
+        String protocol = (String) channel.attributeMap().get(PROTOCOL);
+
+        if (protocol == null && channel.isClientMode()) {
+            // the other side has not yet identified itself, but we are a 'client' member, so the protocol must be CLUSTER.
+            protocol = CLUSTER;
+        }
+
+        return protocol;
+    }
+
+    private InitResult<ChannelOutboundHandler> initOutboundClusterProtocol(Channel channel) {
+        TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
+
+        ChannelOutboundHandler outboundHandler = ioService.createOutboundHandler(connection);
+
+        ByteBuffer outputBuffer = newOutputBuffer(channel, ioService.getSocketSendBufferSize());
+        // we always send the cluster protocol to a fellow member.
+        outputBuffer.put(stringToBytes(CLUSTER));
+
+        return new InitResult<ChannelOutboundHandler>(outputBuffer, outboundHandler);
+    }
+
+    private InitResult<ChannelOutboundHandler> initOutboundClientProtocol(Channel channel) {
+        ChannelOutboundHandler outboundHandler = new ClientChannelOutboundHandler();
+
+        ByteBuffer outputBuffer = newOutputBuffer(channel, ioService.getSocketClientSendBufferSize());
+
+        return new InitResult<ChannelOutboundHandler>(outputBuffer, outboundHandler);
+    }
+
+    private InitResult<ChannelOutboundHandler> initOutboundTextProtocol(Channel channel) {
+        ChannelOutboundHandler outboundHandler = (ChannelOutboundHandler) channel.attributeMap().get(TEXT_OUTBOUND_HANDLER);
+
+        ByteBuffer outputBuffer = newOutputBuffer(channel, ioService.getSocketClientSendBufferSize());
+
+        return new InitResult<ChannelOutboundHandler>(outputBuffer, outboundHandler);
+    }
+
+    private ByteBuffer newOutputBuffer(Channel channel, int sizeKb) {
         int size = KILO_BYTE * sizeKb;
 
         ByteBuffer outputBuffer = newByteBuffer(size, ioService.useDirectSocketBuffer());
-        if (CLUSTER.equals(protocol)) {
-            outputBuffer.put(stringToBytes(CLUSTER));
-        }
 
         try {
-            connection.getChannel().socket().setSendBufferSize(size);
+            channel.socket().setSendBufferSize(size);
         } catch (SocketException e) {
-            logger.finest("Failed to adjust TCP send buffer of " + connection + " to " + size + " B.", e);
+            logger.finest("Failed to adjust TCP send buffer of " + channel + " to " + size + " B.", e);
         }
 
         return outputBuffer;

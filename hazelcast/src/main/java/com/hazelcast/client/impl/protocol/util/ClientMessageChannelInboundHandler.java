@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.internal.networking.ChannelInboundHandler;
-import com.hazelcast.internal.util.counters.SwCounter;
+import com.hazelcast.internal.networking.nio.ChannelInboundHandlerWithCounters;
 import com.hazelcast.util.collection.Long2ObjectHashMap;
 
 import java.nio.ByteBuffer;
@@ -30,16 +29,14 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.END_FLAG;
 /**
  * Builds {@link ClientMessage}s from byte chunks. Fragmented messages are merged into single messages before processed.
  */
-public class ClientMessageChannelInboundHandler implements ChannelInboundHandler {
+public class ClientMessageChannelInboundHandler extends ChannelInboundHandlerWithCounters {
 
     private final Long2ObjectHashMap<BufferBuilder> builderBySessionIdMap = new Long2ObjectHashMap<BufferBuilder>();
 
     private final MessageHandler delegate;
-    private final SwCounter messageCounter;
     private ClientMessage message = ClientMessage.create();
 
-    public ClientMessageChannelInboundHandler(SwCounter messageCounter, MessageHandler messageHandler) {
-        this.messageCounter = messageCounter;
+    public ClientMessageChannelInboundHandler(MessageHandler messageHandler) {
         this.delegate = messageHandler;
     }
 
@@ -49,7 +46,7 @@ public class ClientMessageChannelInboundHandler implements ChannelInboundHandler
         while (src.hasRemaining()) {
             final boolean complete = message.readFrom(src);
             if (!complete) {
-                messageCounter.inc(messagesCreated);
+                normalPacketsRead.inc(messagesCreated);
                 return;
             }
 
@@ -108,6 +105,4 @@ public class ClientMessageChannelInboundHandler implements ChannelInboundHandler
          */
         void handleMessage(ClientMessage message);
     }
-
-
 }

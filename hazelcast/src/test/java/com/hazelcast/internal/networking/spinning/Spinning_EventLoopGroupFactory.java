@@ -21,6 +21,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.EventLoopGroupFactory;
 import com.hazelcast.nio.tcp.MemberChannelInitializer;
 import com.hazelcast.nio.tcp.MockIOService;
+import com.hazelcast.nio.tcp.TcpIpConnectionChannelErrorHandler;
 
 public class Spinning_EventLoopGroupFactory implements EventLoopGroupFactory {
 
@@ -29,8 +30,9 @@ public class Spinning_EventLoopGroupFactory implements EventLoopGroupFactory {
         LoggingService loggingService = ioService.loggingService;
         return new SpinningEventLoopGroup(
                 loggingService,
-                ioService.getIoOutOfMemoryHandler(),
-                new MemberChannelInitializer(loggingService.getLogger(MemberChannelInitializer.class))
+                metricsRegistry,
+                new TcpIpConnectionChannelErrorHandler(loggingService.getLogger(TcpIpConnectionChannelErrorHandler.class)),
+                new MemberChannelInitializer(loggingService.getLogger(MemberChannelInitializer.class), ioService)
                 , "hz");
     }
 }

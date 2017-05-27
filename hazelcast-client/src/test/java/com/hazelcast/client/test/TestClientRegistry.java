@@ -225,11 +225,6 @@ class TestClientRegistry {
                     localAddress, serverNodeEngine, this);
         }
 
-        @Override
-        public void start() throws IOException {
-            // no init for mock connections
-        }
-
         void handleClientMessage(final ClientMessage clientMessage) {
             executor.executeIncoming(new Runnable() {
                 @Override
