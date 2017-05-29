@@ -33,11 +33,13 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.impl.sequence.CallIdSequence;
 
 import java.io.IOException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Handles the routing of a request from a Hazelcast client.
@@ -117,7 +119,11 @@ public class ClientInvocation implements Runnable {
 
     public ClientInvocationFuture invoke() {
         assert (clientMessage != null);
-        clientMessage.setCorrelationId(callIdSequence.next());
+        try {
+            clientMessage.setCorrelationId(callIdSequence.next());
+        } catch (TimeoutException e) {
+            throw new HazelcastOverloadException("Timed out trying to acquire another call ID.", e);
+        }
         invokeOnSelection();
         return clientInvocationFuture;
     }

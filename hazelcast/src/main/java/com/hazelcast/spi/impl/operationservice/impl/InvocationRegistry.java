@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.spi.impl.sequence.CallIdSequence;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
@@ -107,7 +108,7 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
         final long callId;
         try {
             boolean force = invocation.op.isUrgent() || invocation.isRetryCandidate();
-            callId = callIdSequence.next(force);
+            callId = force ? callIdSequence.forceNext() : callIdSequence.next();
         } catch (TimeoutException e) {
             throw new HazelcastOverloadException("Failed to start invocation due to overload: " + invocation, e);
         }
