@@ -26,8 +26,8 @@ public class SpinningChannel extends AbstractChannel {
     private SpinningChannelReader reader;
     private SpinningChannelWriter writer;
 
-    public SpinningChannel(SocketChannel socketChannel, boolean client) {
-        super(socketChannel, client);
+    public SpinningChannel(SocketChannel socketChannel, boolean clientMode) {
+        super(socketChannel, clientMode);
     }
 
     public void setReader(SpinningChannelReader reader) {

@@ -22,6 +22,7 @@ import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InitResult;
+import com.hazelcast.internal.networking.nio.ChannelInboundHandlerWithCounters;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 
@@ -54,7 +55,6 @@ public class SpinningChannelReader extends AbstractHandler {
         this.initializer = initializer;
     }
 
-    //@Override
     public long lastReadTimeMillis() {
         return lastReadTime;
     }
@@ -64,12 +64,10 @@ public class SpinningChannelReader extends AbstractHandler {
         return max(currentTimeMillis() - lastReadTime, 0);
     }
 
-    //@Override
     public SwCounter getNormalFramesReadCounter() {
         return normalFramesRead;
     }
 
-    //@Override
     public SwCounter getPriorityFramesReadCounter() {
         return priorityFramesRead;
     }
@@ -111,6 +109,13 @@ public class SpinningChannelReader extends AbstractHandler {
         }
         this.inboundHandler = init.getHandler();
         this.inputBuffer = init.getByteBuffer();
+
+        if (inboundHandler instanceof ChannelInboundHandlerWithCounters) {
+            ChannelInboundHandlerWithCounters withCounters = (ChannelInboundHandlerWithCounters) inboundHandler;
+            withCounters.setNormalPacketsRead(normalFramesRead);
+            withCounters.setPriorityPacketsRead(priorityFramesRead);
+        }
+
         return true;
     }
 }

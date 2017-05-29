@@ -26,6 +26,7 @@ import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.nio.NioChannelFactory;
+import com.hazelcast.internal.networking.spinning.SpinningChannelFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
@@ -59,9 +60,10 @@ public class MockIOService implements IOService {
     public final InternalSerializationService serializationService;
     public final LoggingServiceImpl loggingService;
     public final ConcurrentHashMap<Long, DummyPayload> payloads = new ConcurrentHashMap<Long, DummyPayload>();
+    private final ChannelFactory channelFactory;
     public volatile PacketHandler packetHandler;
 
-    public MockIOService(int port) throws Exception {
+    public MockIOService(int port, ChannelFactory channelFactory) throws Exception {
         loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.BUILD_INFO);
         serverSocketChannel = ServerSocketChannel.open();
         ServerSocket serverSocket = serverSocketChannel.socket();
@@ -69,6 +71,7 @@ public class MockIOService implements IOService {
         serverSocket.setSoTimeout(1000);
         serverSocket.bind(new InetSocketAddress("0.0.0.0", port));
         thisAddress = new Address("127.0.0.1", port);
+        this.channelFactory = channelFactory;
         this.serializationService = new DefaultSerializationServiceBuilder()
                 .addDataSerializableFactory(TestDataFactory.FACTORY_ID, new TestDataFactory())
                 .build();
@@ -344,7 +347,7 @@ public class MockIOService implements IOService {
 
     @Override
     public ChannelFactory getChannelFactory() {
-        return new NioChannelFactory();
+        return channelFactory;
     }
 
     @Override

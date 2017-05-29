@@ -40,7 +40,7 @@ import static org.junit.Assert.fail;
 
 public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport {
 
-    protected EventLoopGroupFactory threadingModelFactory = new Select_NioEventLoopGroupFactory();
+    protected EventLoopGroupFactory eventLoopGroupFactory = new Select_NioEventLoopGroupFactory();
 
     protected ILogger logger;
     protected LoggingServiceImpl loggingService;
@@ -109,14 +109,14 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
     }
 
     protected TcpIpConnectionManager newConnectionManager(int port, MetricsRegistry metricsRegistry) throws Exception {
-        MockIOService ioService = new MockIOService(port);
+        MockIOService ioService = new MockIOService(port, eventLoopGroupFactory.createChannelFactory());
 
         return new TcpIpConnectionManager(
                 ioService,
                 ioService.serverSocketChannel,
                 ioService.loggingService,
                 metricsRegistry,
-                threadingModelFactory.create(ioService, metricsRegistry));
+                eventLoopGroupFactory.create(ioService, metricsRegistry));
     }
 
     // ====================== support ========================================

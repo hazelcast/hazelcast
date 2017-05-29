@@ -19,6 +19,7 @@ package com.hazelcast.internal.networking.nio;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
+import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.tcp.EventLoopGroupFactory;
 import com.hazelcast.nio.tcp.MemberChannelInitializer;
@@ -27,6 +28,11 @@ import com.hazelcast.nio.tcp.TcpIpConnectionChannelErrorHandler;
 
 public class SelectWithSelectorFix_NioEventLoopGroupFactory
         implements EventLoopGroupFactory {
+
+    @Override
+    public ChannelFactory createChannelFactory() {
+        return new NioChannelFactory();
+    }
 
     @Override
     public NioEventLoopGroup create(
