@@ -21,40 +21,58 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.jitter.JitterThread;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ThreadLeakTest extends HazelcastTestSupport {
 
+    /**
+     * List of whitelisted classes of threads, which are allowed to be not joinable.
+     * We should not add classes of Hazelcast production code here, just test related classes.
+     */
+    private static final List<Class> THREAD_CLASS_WHITELIST = asList(new Class[]{
+            JitterThread.class
+    });
+
+    Set<Thread> oldThreads;
+
+    @Before
+    public final void getOldThreads() {
+        oldThreads = Thread.getAllStackTraces().keySet();
+    }
+
     @Test
     public void testThreadLeak() {
-        Set<Thread> threads = Thread.getAllStackTraces().keySet();
-
         HazelcastInstance hz = Hazelcast.newHazelcastInstance();
         hz.shutdown();
 
-        assertHazelcastThreadShutdown(threads);
+        assertHazelcastThreadShutdown(oldThreads);
     }
 
     public static void assertHazelcastThreadShutdown(Set<Thread> oldThreads) {
         Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
-        Set<Thread> diff = stackTraces.keySet();
-        diff.removeAll(oldThreads);
-        if (diff.isEmpty()) {
+        Thread[] joinableThreads = getJoinableThreads(oldThreads, stackTraces.keySet());
+        if (joinableThreads.length == 0) {
             return;
         }
 
         StringBuilder sb = new StringBuilder("There are still Hazelcast threads running after shutdown!\n");
-        for (Thread thread : diff) {
+        for (Thread thread : joinableThreads) {
             String stackTrace = Arrays.toString(stackTraces.get(thread));
             sb.append(format("  -> %s (id: %s) (group: %s) (daemon: %b) (alive: %b) (interrupted: %b) (state: %s)%n%s",
                     thread.getName(), thread.getId(), getThreadGroupName(thread), thread.isDaemon(), thread.isAlive(),
@@ -62,10 +80,28 @@ public class ThreadLeakTest extends HazelcastTestSupport {
         }
         System.err.println(sb.toString());
 
-        Thread[] threads = new Thread[diff.size()];
-        diff.toArray(threads);
+        assertJoinable(joinableThreads);
+    }
 
-        assertJoinable(threads);
+    private static Thread[] getJoinableThreads(Set<Thread> oldThreads, Set<Thread> newThreads) {
+        Set<Thread> diff = new HashSet<Thread>(newThreads);
+        diff.removeAll(oldThreads);
+        diff.remove(Thread.currentThread());
+        removeWhitelistedThreadClasses(diff);
+
+        Thread[] joinable = new Thread[diff.size()];
+        diff.toArray(joinable);
+        return joinable;
+    }
+
+    private static void removeWhitelistedThreadClasses(Set<Thread> threads) {
+        Iterator<Thread> iterator = threads.iterator();
+        while (iterator.hasNext()) {
+            Thread thread = iterator.next();
+            if (THREAD_CLASS_WHITELIST.contains(thread.getClass())) {
+                iterator.remove();
+            }
+        }
     }
 
     private static String getThreadGroupName(Thread thread) {
