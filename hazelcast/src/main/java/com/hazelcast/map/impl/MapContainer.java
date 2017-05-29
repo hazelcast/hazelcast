@@ -194,6 +194,9 @@ public class MapContainer {
         return mapServiceContext.getPartitioningStrategy(mapConfig.getName(), mapConfig.getPartitioningStrategyConfig());
     }
 
+    /**
+     * @return the global index, if the global index is in use (on-heap) or null.
+     */
     public Indexes getIndexes() {
         if (globalIndex) {
             return indexes;
@@ -201,6 +204,12 @@ public class MapContainer {
         return null;
     }
 
+    /**
+     *
+     * @return the global index, if the global index is in use (on-heap) or null, or a partitioned-index (off-heap).
+     * @param partitionId partitionId
+     * @return
+     */
     public Indexes getIndexes(int partitionId) {
         if (globalIndex) {
             return indexes;

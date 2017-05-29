@@ -145,10 +145,7 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
             Set<QueryableEntry> querySet = indexes.query(optimizedPredicate);
             return querySet;
         } else {
-            // TODO off-heap (handle index per-partition case)
-            // we can't query off-heap indexes here, since it's an index per partition that needs to be queried
-            // on a partition thread.
-            return Collections.emptySet();
+            throw new IllegalArgumentException("Partitioned index is not supported for on-heap usage");
         }
     }
 
