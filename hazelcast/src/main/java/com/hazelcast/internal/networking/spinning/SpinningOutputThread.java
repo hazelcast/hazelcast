@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.networking.spinning;
 
-import com.hazelcast.internal.networking.ChannelConnection;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -32,13 +31,11 @@ public class SpinningOutputThread extends Thread {
 
     private volatile ChannelWriters channelWriters = new ChannelWriters();
 
-    public SpinningOutputThread(String hzName) {
+    SpinningOutputThread(String hzName) {
         super(ThreadUtil.createThreadName(hzName, "out-thread"));
     }
 
-    void addConnection(ChannelConnection connection) {
-        SpinningChannelWriter writer = (SpinningChannelWriter) connection.getChannelWriter();
-
+    void register(SpinningChannelWriter writer) {
         for (; ; ) {
             ChannelWriters current = channelWriters;
             if (current == SHUTDOWN) {
@@ -58,9 +55,7 @@ public class SpinningOutputThread extends Thread {
         }
     }
 
-    void removeConnection(ChannelConnection connection) {
-        SpinningChannelWriter writer = (SpinningChannelWriter) connection.getChannelWriter();
-
+    void unregister(SpinningChannelWriter writer) {
         for (; ; ) {
             ChannelWriters current = channelWriters;
             if (current == SHUTDOWN) {

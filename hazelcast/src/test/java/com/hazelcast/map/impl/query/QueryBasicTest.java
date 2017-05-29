@@ -32,11 +32,11 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.query.SampleObjects;
-import com.hazelcast.query.SampleObjects.Employee;
-import com.hazelcast.query.SampleObjects.State;
-import com.hazelcast.query.SampleObjects.Value;
-import com.hazelcast.query.SampleObjects.ValueType;
+import com.hazelcast.query.SampleTestObjects;
+import com.hazelcast.query.SampleTestObjects.Employee;
+import com.hazelcast.query.SampleTestObjects.State;
+import com.hazelcast.query.SampleTestObjects.Value;
+import com.hazelcast.query.SampleTestObjects.ValueType;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -143,7 +143,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     @Test(timeout = 1000 * 60)
     public void testInPredicate() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
-        IMap<String, SampleObjects.ValueType> map = instance.getMap("testIteratorContract");
+        IMap<String, SampleTestObjects.ValueType> map = instance.getMap("testIteratorContract");
         map.put("1", new ValueType("one"));
         map.put("2", new ValueType("two"));
         map.put("3", new ValueType("three"));
@@ -153,7 +153,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         map.put("7", new ValueType("seven"));
         Predicate predicate = new SqlPredicate("typeName in ('one','two')");
         for (int i = 0; i < 10; i++) {
-            Collection<SampleObjects.ValueType> values = map.values(predicate);
+            Collection<SampleTestObjects.ValueType> values = map.values(predicate);
             assertEquals(2, values.size());
         }
     }
@@ -178,7 +178,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     @Test(timeout = 1000 * 60)
     public void testIteratorContract() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
-        IMap<String, SampleObjects.ValueType> map = instance.getMap("testIteratorContract");
+        IMap<String, SampleTestObjects.ValueType> map = instance.getMap("testIteratorContract");
         map.put("1", new ValueType("one"));
         map.put("2", new ValueType("two"));
         map.put("3", new ValueType("three"));

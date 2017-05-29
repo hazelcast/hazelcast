@@ -36,6 +36,7 @@ import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
+import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -205,7 +206,8 @@ public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport 
                 MetaDataGenerator metaDataGenerator = getMetaDataGenerator();
                 long memberSequence = metaDataGenerator.currentSequence("/hz/" + DEFAULT_CACHE_NAME, partitionId);
 
-                MetaDataContainer metaDataContainer = nearCacheRecordStore.getStaleReadDetector().getMetaDataContainer(keyData);
+                StaleReadDetector staleReadDetector = nearCacheRecordStore.getStaleReadDetector();
+                MetaDataContainer metaDataContainer = staleReadDetector.getMetaDataContainer(partitionId);
                 return String.format("partition=%d, onRecordSequence=%d, latestSequence=%d, staleSequence=%d, memberSequence=%d",
                         partitionService.getPartitionId(keyData), recordSequence, metaDataContainer.getSequence(),
                         metaDataContainer.getStaleSequence(), memberSequence);

@@ -28,7 +28,7 @@ import java.sql.Timestamp;
 import java.util.Date;
 import java.util.UUID;
 
-public final class SampleObjects {
+public final class SampleTestObjects {
 
     public static class PortableEmployee implements Portable {
 

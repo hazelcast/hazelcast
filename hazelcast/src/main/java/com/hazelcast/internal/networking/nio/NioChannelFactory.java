@@ -14,9 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.networking;
+package com.hazelcast.internal.networking.nio;
 
-public interface IOOutOfMemoryHandler {
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelFactory;
 
-    void handle(OutOfMemoryError error);
+import java.nio.channels.SocketChannel;
+
+public class NioChannelFactory implements ChannelFactory {
+
+    @Override
+    public Channel create(SocketChannel channel, boolean clientMode, boolean directBuffer) throws Exception {
+        return new NioChannel(channel, clientMode);
+    }
 }

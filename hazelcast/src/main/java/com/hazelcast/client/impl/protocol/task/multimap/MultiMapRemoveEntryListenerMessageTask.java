@@ -28,7 +28,7 @@ import com.hazelcast.security.permission.MultiMapPermission;
 import java.security.Permission;
 
 /**
- * Client Protocol Task for handling messages with type id:
+ * Client Protocol Task for handling messages with type ID:
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_REMOVEENTRYLISTENER}
  */
 public class MultiMapRemoveEntryListenerMessageTask

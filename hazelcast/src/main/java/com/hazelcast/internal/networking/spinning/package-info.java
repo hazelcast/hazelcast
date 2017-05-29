@@ -16,5 +16,8 @@
 
 /**
  * Contains the implementation of the {@link com.hazelcast.internal.networking.spinning.SpinningEventLoopGroup}.
+ *
+ * This is purely an experimental implementation for analyzing low latency, throughput using
+ * {@link java.nio.channels.SocketChannel} spinning.
  */
 package com.hazelcast.internal.networking.spinning;

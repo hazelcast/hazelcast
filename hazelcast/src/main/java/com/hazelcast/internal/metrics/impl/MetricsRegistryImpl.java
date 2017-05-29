@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.lang.String.format;
 
 /**
@@ -60,9 +61,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     final ILogger logger;
     final ProbeLevel minimumLevel;
 
-    private final ScheduledExecutorService scheduledExecutorService
-            = new ScheduledThreadPoolExecutor(2, new ThreadFactoryImpl("MetricsRegistry-thread-"));
-
+    private final ScheduledExecutorService scheduledExecutorService;
     private final ConcurrentMap<String, ProbeInstance> probeInstances = new ConcurrentHashMap<String, ProbeInstance>();
     private final ConcurrentMap<Class<?>, SourceMetadata> metadataMap
             = new ConcurrentHashMap<Class<?>, SourceMetadata>();
@@ -81,8 +80,24 @@ public class MetricsRegistryImpl implements MetricsRegistry {
      * @throws NullPointerException if logger or minimumLevel is null
      */
     public MetricsRegistryImpl(ILogger logger, ProbeLevel minimumLevel) {
+        this("default", logger, minimumLevel);
+    }
+
+    /**
+     * Creates a MetricsRegistryImpl instance.
+     *
+     * @param name Name of the registry
+     * @param logger       the ILogger used
+     * @param minimumLevel the minimum ProbeLevel. If a probe is registered with a ProbeLevel lower than the minimum ProbeLevel,
+     *                     then the registration is skipped.
+     * @throws NullPointerException if logger or minimumLevel is null
+     */
+    public MetricsRegistryImpl(String name, ILogger logger, ProbeLevel minimumLevel) {
         this.logger = checkNotNull(logger, "logger can't be null");
         this.minimumLevel = checkNotNull(minimumLevel, "minimumLevel can't be null");
+
+        scheduledExecutorService = new ScheduledThreadPoolExecutor(2,
+                new ThreadFactoryImpl(createThreadPoolName(name, "MetricsRegistry")));
 
         if (logger.isFinestEnabled()) {
             logger.finest("MetricsRegistry minimumLevel:" + minimumLevel);

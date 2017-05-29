@@ -43,7 +43,6 @@ import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientTransactionManagerService;
 import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.spi.impl.AwsAddressProvider;
-import com.hazelcast.client.spi.impl.CallIdSequence;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -111,6 +110,7 @@ import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet;
 import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
 import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.nearcache.NearCacheManager;
+import com.hazelcast.spi.impl.sequence.CallIdSequenceWithoutBackpressure;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -133,6 +133,8 @@ import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
+import com.hazelcast.spi.impl.sequence.CallIdSequence;
+import com.hazelcast.spi.impl.sequence.CallIdSequenceWithBackpressure;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -156,6 +158,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.client.spi.properties.ClientProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
 import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.System.currentTimeMillis;
@@ -230,7 +233,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clusterService = new ClientClusterServiceImpl(this, addressProviders);
 
         int maxAllowedConcurrentInvocations = properties.getInteger(MAX_CONCURRENT_INVOCATIONS);
-        callIdSequence = new CallIdSequence.CallIdSequenceFailFast(maxAllowedConcurrentInvocations);
+        long backofftimeoutMs = properties.getLong(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS);
+        if (maxAllowedConcurrentInvocations == Integer.MAX_VALUE) {
+            callIdSequence = new CallIdSequenceWithoutBackpressure();
+        } else {
+            callIdSequence = new CallIdSequenceWithBackpressure(maxAllowedConcurrentInvocations, backofftimeoutMs);
+        }
 
         invocationService = initInvocationService();
         listenerService = initListenerService();
@@ -253,7 +261,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private MetricsRegistryImpl initMetricsRegistry() {
         ProbeLevel probeLevel = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
         ILogger logger = loggingService.getLogger(MetricsRegistryImpl.class);
-        MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(logger, probeLevel);
+        MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(getName(), logger, probeLevel);
         RuntimeMetricSet.register(metricsRegistry);
         GarbageCollectionMetricSet.register(metricsRegistry);
         OperatingSystemMetricSet.register(metricsRegistry);

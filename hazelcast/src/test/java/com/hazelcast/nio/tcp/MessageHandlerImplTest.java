@@ -56,7 +56,8 @@ public class MessageHandlerImplTest {
         counter = SwCounter.newSwCounter();
         clientEngine = mock(ClientEngine.class);
         messageHandler = new MessageHandlerImpl(connection, clientEngine);
-        inboundHandler = new ClientMessageChannelInboundHandler(counter, messageHandler);
+        inboundHandler = new ClientMessageChannelInboundHandler(messageHandler);
+        inboundHandler.setNormalPacketsRead(counter);
     }
 
     @Test

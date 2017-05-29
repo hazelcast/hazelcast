@@ -31,7 +31,7 @@ import com.hazelcast.spi.Operation;
 import java.security.Permission;
 
 /**
- * Client Protocol Task for handling messages with type id:
+ * Client Protocol Task for handling messages with type ID:
  * {@link com.hazelcast.client.impl.protocol.codec.RingbufferMessageType#RINGBUFFER_READONE}
  */
 public class RingbufferReadOneMessageTask

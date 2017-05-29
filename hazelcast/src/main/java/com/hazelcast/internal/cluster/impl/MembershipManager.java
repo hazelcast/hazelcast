@@ -940,6 +940,7 @@ public class MembershipManager {
                 }
 
                 updateMembers(newMembersView);
+                clusterService.getClusterHeartbeatManager().resetMemberMasterConfirmations();
                 clusterService.getClusterJoinManager().reset();
                 sendMemberListToOthers();
                 logger.info("Mastership is claimed with: " + newMembersView);

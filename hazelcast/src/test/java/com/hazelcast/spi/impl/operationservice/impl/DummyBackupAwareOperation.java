@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-class DummyBackupAwareOperation extends Operation implements BackupAwareOperation {
+public class DummyBackupAwareOperation extends Operation implements BackupAwareOperation {
 
     public static final ConcurrentMap<String, Integer> backupCompletedMap = new ConcurrentHashMap<String, Integer>();
 

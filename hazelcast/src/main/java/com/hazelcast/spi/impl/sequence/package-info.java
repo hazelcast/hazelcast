@@ -14,17 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.tcp;
-
-import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ChannelFactory;
-
-import java.nio.channels.SocketChannel;
-
-public class PlainChannelFactory implements ChannelFactory {
-
-    @Override
-    public Channel create(SocketChannel channel, boolean client, boolean directBuffer) throws Exception {
-        return new PlainChannel(channel);
-    }
-}
+/**
+ * Call ID sequence generators
+ *
+ */
+package com.hazelcast.spi.impl.sequence;

@@ -45,8 +45,8 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -63,6 +63,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -96,12 +97,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     protected volatile boolean alive;
 
-    private final IOOutOfMemoryHandler outOfMemoryHandler = new IOOutOfMemoryHandler() {
-        @Override
-        public void handle(OutOfMemoryError error) {
-            logger.severe(error);
-        }
-    };
+
     private final ILogger logger;
     private final int connectionTimeout;
     private final long heartbeatInterval;
@@ -188,7 +184,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 client.getLoggingService(),
                 client.getMetricsRegistry(),
                 client.getName(),
-                outOfMemoryHandler,
+                new ClientConnectionChannelErrorHandler(),
                 inputThreads,
                 outputThreads,
                 properties.getInteger(ClientProperty.IO_BALANCER_INTERVAL_SECONDS),
@@ -395,18 +391,17 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             HazelcastProperties properties = client.getProperties();
             boolean directBuffer = properties.getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
 
-            Channel channel =
-                    channelFactory.create(socketChannel, true, directBuffer);
+            Channel channel = channelFactory.create(socketChannel, true, directBuffer);
 
             final ClientConnection clientConnection = new ClientConnection(
-                    client, eventLoopGroup, connectionIdGen.incrementAndGet(), channel);
+                    client, connectionIdGen.incrementAndGet(), channel);
             socketChannel.configureBlocking(true);
             if (socketInterceptor != null) {
                 socketInterceptor.onConnect(socket);
             }
-            socketChannel.configureBlocking(eventLoopGroup.isBlocking());
             socket.setSoTimeout(0);
-            clientConnection.start();
+
+            eventLoopGroup.register(channel);
             return clientConnection;
         } catch (Exception e) {
             if (socketChannel != null) {
@@ -695,5 +690,23 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         connectionsInProgress.remove(target);
     }
 
+    private class ClientConnectionChannelErrorHandler implements ChannelErrorHandler {
+        @Override
+        public void onError(Channel channel, Throwable cause) {
+            if (channel == null) {
+                logger.severe(cause);
+            } else {
+                if (cause instanceof OutOfMemoryError) {
+                    logger.severe(cause);
+                }
 
+                ClientConnection connection = (ClientConnection) channel.attributeMap().get(ClientConnection.class);
+                if (cause instanceof EOFException) {
+                    connection.close("Connection closed by the other side", cause);
+                } else {
+                    connection.close("Exception in " + connection + ", thread=" + Thread.currentThread().getName(), cause);
+                }
+            }
+        }
+    }
 }

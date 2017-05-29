@@ -17,10 +17,13 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.EventLoopGroupFactory;
-import com.hazelcast.nio.tcp.MockIOService;
 import com.hazelcast.nio.tcp.MemberChannelInitializer;
+import com.hazelcast.nio.tcp.MockIOService;
+import com.hazelcast.nio.tcp.TcpIpConnectionChannelErrorHandler;
 
 public class Select_NioEventLoopGroupFactory implements EventLoopGroupFactory {
 
@@ -31,10 +34,11 @@ public class Select_NioEventLoopGroupFactory implements EventLoopGroupFactory {
                 loggingService,
                 metricsRegistry,
                 ioService.getHazelcastName(),
-                ioService.getIoOutOfMemoryHandler(), ioService.getInputSelectorThreadCount(),
+                new TcpIpConnectionChannelErrorHandler(loggingService.getLogger(TcpIpConnectionChannelErrorHandler.class)),
+                ioService.getInputSelectorThreadCount(),
                 ioService.getOutputSelectorThreadCount(),
                 ioService.getBalancerIntervalSeconds(),
-                new MemberChannelInitializer(loggingService.getLogger(MemberChannelInitializer.class))
+                new MemberChannelInitializer(loggingService.getLogger(MemberChannelInitializer.class),ioService)
         );
         threadingModel.setSelectorMode(SelectorMode.SELECT);
         return threadingModel;

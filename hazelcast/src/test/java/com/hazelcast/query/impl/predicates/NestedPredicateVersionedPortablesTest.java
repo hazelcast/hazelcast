@@ -65,7 +65,7 @@ public class NestedPredicateVersionedPortablesTest extends HazelcastTestSupport 
                     case 2:
                         return new Limb();
                     default:
-                        throw new IllegalStateException("Wrong class Id");
+                        throw new IllegalStateException("Wrong class ID");
                 }
             }
         });

@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl.operationservice.impl;
+package com.hazelcast.spi.impl.sequence;
 
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.CallIdSequence.CallIdSequenceWithBackpressure;
+import com.hazelcast.spi.impl.operationservice.impl.DummyBackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.impl.DummyOperation;
+import com.hazelcast.spi.impl.operationservice.impl.DummyPriorityOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
@@ -99,7 +101,7 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
 
         long oldLastCallId = sequence.getLastCallId();
         try {
-            sequence.next(false);
+            sequence.next();
             fail();
         } catch (TimeoutException e) {
             // expected
@@ -144,7 +146,7 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
 
     static long nextCallId(CallIdSequence seq, boolean isUrgent) {
         try {
-            return seq.next(isUrgent);
+            return isUrgent ? seq.forceNext() : seq.next();
         } catch (TimeoutException e) {
             throw new RuntimeException(e);
         }

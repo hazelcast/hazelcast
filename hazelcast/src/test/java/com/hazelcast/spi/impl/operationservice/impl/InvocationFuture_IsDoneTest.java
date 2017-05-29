@@ -97,7 +97,7 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
     // needed to have an invocation and this is the easiest way how to get one and do not bother with its result
     private static class GetLostPartitionOperation extends DummyOperation {
         {
-            // we need to set the call-id to prevent running the operation on the calling-thread
+            // we need to set the call ID to prevent running the operation on the calling-thread
             setPartitionId(1);
         }
 

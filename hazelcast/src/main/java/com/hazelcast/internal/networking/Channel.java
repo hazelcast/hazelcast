@@ -16,26 +16,29 @@
 
 package com.hazelcast.internal.networking;
 
+import javax.net.ssl.SSLEngine;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.SocketChannel;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Wraps a {@link java.nio.channels.SocketChannel}.
+ * A Channel is a construct that can send/receive like Packets/ClientMessages etc. Connections use a channel to do the real
+ * work; but there is no dependency of the com.hazelcast.internal.networking to a Connection (no cycles). This means that a
+ * Channel can be used perfectly without Connection.
  *
- * The reason this class exists is because for enterprise encryption. Ideally the SocketChannel should have been decorated
- * with this encryption functionality, but unfortunately that isn't possible with this class.
+ * The standard channel implementation is the {@link com.hazelcast.internal.networking.nio.NioChannel} that uses TCP in
+ * combination with selectors to transport data. In the future also other channel implementations could be added, e.g.
+ * UDP based.
  *
- * That is why a new 'wrapper' interface is introduced which acts like a SocketChannel and the implementations wrap a
- * SocketChannel.
+ * Channel data is read using a {@link ChannelInboundHandler}. E.g data from a socket is received and needs to get processed.
+ * The {@link ChannelInboundHandler} can convert this to e.g. a Packet.
  *
- * In the future we should get rid of this class and rely on {@link ChannelInboundHandler}/{@link ChannelOutboundHandler}
- * chaining to add encryption. This will remove more artifacts from the architecture that can't carry their weight.
+ * Channel data is written using a {@link ChannelOutboundHandler}. E.g. a packet needs to be converted to bytes.
+ *
+ * A Channel gets initialized using the {@link ChannelInitializer}.
  *
  * <h1>Future note</h1>
  * Below you can find some notes about the future of the Channel. This will hopefully act as a guide how to move forward.
@@ -80,6 +83,9 @@ public interface Channel extends Closeable {
      * @see java.nio.channels.SocketChannel#socket()
      *
      * This method will be removed from the interface. Only an explicit cast to NioChannel will expose the Socket.
+     *
+     * It is very important that the socket isn't closed directly; but one goes through the {@link #close()} method so that
+     * interal administration of the channel is in sync with that of the socket.
      */
     Socket socket();
 
@@ -94,34 +100,42 @@ public interface Channel extends Closeable {
     SocketAddress getLocalSocketAddress();
 
     /**
-     * This method will be removed from the interface. Only an explicit cast to NioChannel will expose the SocketChannel.
+     * Returns the last {@link com.hazelcast.util.Clock#currentTimeMillis()} a read of the socket was done.
+     *
+     * @return the last time a read from the socket was done.
      */
-    SocketChannel socketChannel();
+    long lastReadTimeMillis();
 
     /**
+     * Returns the last {@link com.hazelcast.util.Clock#currentTimeMillis()} that a write to the socket completed.
+     *
+     * Writing to the socket doesn't mean that data has been send or received; it means that data was written to the
+     * SocketChannel. It could very well be that this data is stuck somewhere in an io-buffer.
+     *
+     * @return the last time something was written to the socket.
+     */
+    long lastWriteTimeMillis();
+
+    /**
+     * This method will be removed from the Channel in the near future.
+     *
      * @see java.nio.channels.SocketChannel#read(ByteBuffer)
      */
     int read(ByteBuffer dst) throws IOException;
 
     /**
+     * This method will be removed from the Channel in the near future.
+     *
      * @see java.nio.channels.SocketChannel#write(ByteBuffer)
      */
     int write(ByteBuffer src) throws IOException;
 
     /**
-     * @see java.nio.channels.SocketChannel#configureBlocking(boolean)
-     */
-    SelectableChannel configureBlocking(boolean block) throws IOException;
-
-    /**
-     * @see java.nio.channels.SocketChannel#isOpen()
-     */
-    boolean isOpen();
-
-    /**
      * Closes inbound.
      *
      * <p>Not thread safe. Should be called in channel reader thread.</p>
+     *
+     * Method will be removed once the TLS integration doesn't rely on subclassing this channel.
      *
      * @throws IOException
      */
@@ -132,12 +146,61 @@ public interface Channel extends Closeable {
      *
      * <p>Not thread safe. Should be called in channel writer thread.</p>
      *
+     * Method will be removed once the TLS integration doesn't rely on subclassing this channel.
+     *
      * @throws IOException
      */
     void closeOutbound() throws IOException;
 
     /**
-     * @see java.nio.channels.SocketChannel#close()
+     * Closes the Channel.
+     *
+     * When the channel already is closed, the call is ignored.
      */
     void close() throws IOException;
+
+    /**
+     * Checks if this Channel is closed. This method is very cheap to make.
+     *
+     * @return true if closed, false otherwise.
+     */
+    boolean isClosed();
+
+    /**
+     * Adds a ChannelCloseListener.
+     *
+     * @param listener the listener to register.
+     * @throws NullPointerException if listener is null.
+     */
+    void addCloseListener(ChannelCloseListener listener);
+
+    /**
+     * Checks if this side is the Channel is in client mode or server mode.
+     *
+     * A channel is in client-mode if it initiated the connection, and in server-mode if it was the one accepting the connection.
+     *
+     * One of the reasons this property is valuable is for protocol/handshaking so that it is clear distinction between the
+     * side that initiated the connection, or accepted the connection.
+     *
+     * @return true if this channel is in client-mode, false when in server-mode.
+     * @see SSLEngine#getUseClientMode()
+     */
+    boolean isClientMode();
+
+    /**
+     * Queues the {@link OutboundFrame} to be written at some point in the future. No guarantee is made that the
+     * frame actually is going to be written or received.
+     *
+     * @param frame the frame to write.
+     * @return true if the frame was queued; false if rejected.
+     */
+    boolean write(OutboundFrame frame);
+
+    /**
+     * Flushes whatever needs to be written.
+     *
+     * Normally this call doesn't need to be made since {@link #write(OutboundFrame)} write the content; but in case of protocol
+     * and TLS handshaking, such triggers are needed.
+     */
+    void flush();
 }

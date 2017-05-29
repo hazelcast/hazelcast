@@ -23,15 +23,16 @@ import static com.hazelcast.test.jitter.JitterRule.AGGREGATION_INTERVAL_MILLIS;
 import static com.hazelcast.test.jitter.JitterRule.CAPACITY;
 import static com.hazelcast.util.QuickMath.modPowerOfTwo;
 
-public class JitterRecorder {
+class JitterRecorder {
+
     private final AtomicReferenceArray<Slot> slots = new AtomicReferenceArray<Slot>(CAPACITY);
 
-    public void recordPause(long startTimeMillis, long hiccupNanos) {
+    void recordPause(long startTimeMillis, long hiccupNanos) {
         Slot slot = getSlotForTimestamp(startTimeMillis);
         slot.recordHiccup(hiccupNanos);
     }
 
-    public Iterable<Slot> getSlotsBetween(long from, long to) {
+    Iterable<Slot> getSlotsBetween(long from, long to) {
         long firstBucket = getBucket(from);
         int slotIndex = toSlotIndex(firstBucket);
 
@@ -54,9 +55,9 @@ public class JitterRecorder {
     }
 
     private Slot getSlotForTimestamp(long startTime) {
-        //bucket on a linear time-line
+        // bucket on a linear time-line
         long bucket = getBucket(startTime);
-        //slot in a circular buffer
+        // slot in a circular buffer
         int slotIndex = toSlotIndex(bucket);
         Slot slot = slots.get(slotIndex);
         if (isNullOrStale(slot, bucket)) {
@@ -86,5 +87,4 @@ public class JitterRecorder {
         long slotBucket = getBucket(slot.getStartIntervalMillis());
         return slotBucket != currentBucket;
     }
-
 }

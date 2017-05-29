@@ -20,8 +20,8 @@ import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.networking.ChannelFactory;
+import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
@@ -54,11 +54,13 @@ import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 
 public class TcpIpConnectionManager implements ConnectionManager, PacketHandler {
 
     private static final int RETRY_NUMBER = 5;
     private static final int DELAY_FACTOR = 100;
+    private static final int SCHEDULER_POOL_SIZE = 4;
 
     final LoggingService loggingService;
 
@@ -111,8 +113,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     @Probe
     private final MwCounter closedCount = newMwCounter();
 
-    private final ScheduledExecutorService scheduler
-            = new ScheduledThreadPoolExecutor(4, new ThreadFactoryImpl("TcpIpConnectionManager-thread-"));
+    private final ScheduledExecutorService scheduler;
 
     // accessed only in synchronized block
     private volatile TcpIpAcceptor acceptor;
@@ -131,9 +132,11 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         this.serverSocketChannel = serverSocketChannel;
         this.loggingService = loggingService;
         this.logger = loggingService.getLogger(TcpIpConnectionManager.class);
-        this.channelFactory = ioService.getSocketChannelWrapperFactory();
+        this.channelFactory = ioService.getChannelFactory();
         this.metricsRegistry = metricsRegistry;
         this.connector = new TcpIpConnector(this);
+        this.scheduler = new ScheduledThreadPoolExecutor(SCHEDULER_POOL_SIZE,
+                new ThreadFactoryImpl(createThreadPoolName(ioService.getHazelcastName(), "TcpIpConnectionManager")));
         metricsRegistry.scanAndRegister(this, "tcp.connection");
     }
 
@@ -286,9 +289,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         //now you can send anything...
     }
 
-    Channel wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
-        Channel wrapper = channelFactory.create(
-                socketChannel, client, ioService.useDirectSocketBuffer());
+    Channel createChannel(SocketChannel socketChannel, boolean client) throws Exception {
+        Channel wrapper = channelFactory.create(socketChannel, client, ioService.useDirectSocketBuffer());
         acceptedSockets.add(wrapper);
         return wrapper;
     }
@@ -299,23 +301,16 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
                 throw new IllegalStateException("connection manager is not live!");
             }
 
-            TcpIpConnection connection = new TcpIpConnection(
-                    this,
-                    connectionIdGen.incrementAndGet(),
-                    channel,
-                    eventLoopGroup);
+            TcpIpConnection connection = new TcpIpConnection(this, connectionIdGen.incrementAndGet(), channel);
 
             connection.setEndPoint(endpoint);
             activeConnections.add(connection);
-
-            connection.start();
-            eventLoopGroup.onConnectionAdded(connection);
 
             logger.info("Established socket connection between "
                     + channel.getLocalSocketAddress() + " and " + channel.getRemoteSocketAddress());
             openedCount.inc();
 
-            metricsRegistry.collectMetrics(connection);
+            eventLoopGroup.register(channel);
             return connection;
         } finally {
             acceptedSockets.remove(channel);
@@ -367,14 +362,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     public void onConnectionClose(Connection connection) {
         closedCount.inc();
 
-        if (activeConnections.remove(connection)) {
-            // this should not be needed; but some tests are using DroppingConnection which is not a TcpIpConnection.
-            if (connection instanceof TcpIpConnection) {
-                eventLoopGroup.onConnectionRemoved((TcpIpConnection) connection);
-            }
-
-            metricsRegistry.discardMetrics(connection);
-        }
+        activeConnections.remove(connection);
 
         Address endPoint = connection.getEndPoint();
         if (endPoint != null) {

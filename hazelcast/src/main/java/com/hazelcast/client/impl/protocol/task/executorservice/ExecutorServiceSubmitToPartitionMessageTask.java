@@ -45,7 +45,7 @@ public class ExecutorServiceSubmitToPartitionMessageTask
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation op) {
         if (parameters.partitionId == -1) {
-            throw new IllegalArgumentException("Partition id is -1");
+            throw new IllegalArgumentException("Partition ID is -1");
         }
 
         final InternalOperationService operationService = nodeEngine.getOperationService();

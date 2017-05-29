@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl.operationservice.impl;
+package com.hazelcast.spi.impl.sequence;
 
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.CallIdSequence.CallIdSequenceWithoutBackpressure;
+import com.hazelcast.spi.impl.operationservice.impl.DummyBackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.impl.DummyOperation;
+import com.hazelcast.spi.impl.operationservice.impl.DummyPriorityOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.spi.impl.operationservice.impl.CallIdSequenceWithBackpressureTest.nextCallId;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -58,7 +60,7 @@ public class CallIdSequenceWithoutBackpressureTest extends HazelcastTestSupport 
 
     private void next(Operation operation) {
         long oldSequence = sequence.getLastCallId();
-        long result = nextCallId(sequence, operation.isUrgent());
+        long result = CallIdSequenceWithBackpressureTest.nextCallId(sequence, operation.isUrgent());
         assertEquals(oldSequence + 1, result);
         assertEquals(oldSequence + 1, sequence.getLastCallId());
     }
@@ -66,13 +68,13 @@ public class CallIdSequenceWithoutBackpressureTest extends HazelcastTestSupport 
     @Test
     public void whenNextRepeated_thenKeepSucceeding() {
         for (long k = 1; k < 10000; k++) {
-            assertEquals(k, nextCallId(sequence, false));
+            Assert.assertEquals(k, CallIdSequenceWithBackpressureTest.nextCallId(sequence, false));
         }
     }
 
     @Test
     public void complete() {
-        nextCallId(sequence, false);
+        CallIdSequenceWithBackpressureTest.nextCallId(sequence, false);
         long oldSequence = sequence.getLastCallId();
         sequence.complete();
         assertEquals(oldSequence, sequence.getLastCallId());

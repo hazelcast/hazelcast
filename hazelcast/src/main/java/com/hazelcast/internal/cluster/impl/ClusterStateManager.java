@@ -270,6 +270,7 @@ public class ClusterStateManager {
                 return false;
             }
 
+            logger.fine("Rolling back cluster state transaction: " + txnId);
             stateLockRef.set(LockGuard.NOT_LOCKED);
 
             // if state allows join after rollback, then remove all members which left during transaction.

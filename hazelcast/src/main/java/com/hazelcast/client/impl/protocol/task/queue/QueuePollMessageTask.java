@@ -32,7 +32,7 @@ import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Client Protocol Task for handling messages with type id:
+ * Client Protocol Task for handling messages with type ID:
  * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_POLL}
  */
 public class QueuePollMessageTask

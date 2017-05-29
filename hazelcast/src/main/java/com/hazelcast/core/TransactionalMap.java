@@ -137,6 +137,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
      * @throws TransactionTimedOutException if the key could not be locked for update in the transaction timeout
      * @see IMap#put(Object, Object, long, java.util.concurrent.TimeUnit)
      */
+    @Override
     V put(K key, V value, long ttl, TimeUnit timeunit);
 
     /**
@@ -228,6 +229,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
      *
      * @see IMap#keySet()
      */
+    @Override
     Set<K> keySet();
 
     /**
@@ -236,6 +238,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
      * @see IMap#keySet(com.hazelcast.query.Predicate)
      * @throws NullPointerException if the specified predicate is null.
      */
+    @Override
     Set<K> keySet(Predicate predicate);
 
     /**
@@ -243,6 +246,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
      *
      * @see IMap#values()
      */
+    @Override
     Collection<V> values();
 
     /**
@@ -251,5 +255,6 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
      * @see IMap#values(com.hazelcast.query.Predicate)
      * @throws NullPointerException if the specified predicate is null.
      */
+    @Override
     Collection<V> values(Predicate predicate);
 }

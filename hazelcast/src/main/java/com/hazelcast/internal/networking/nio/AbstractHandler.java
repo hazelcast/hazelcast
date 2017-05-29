@@ -18,12 +18,10 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ChannelConnection;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
@@ -41,7 +39,6 @@ public abstract class AbstractHandler
     protected final SwCounter handleCount = newSwCounter();
     protected final ILogger logger;
     protected final Channel channel;
-    protected final ChannelConnection connection;
     protected NioThread ioThread;
     protected SelectionKey selectionKey;
     private final SocketChannel socketChannel;
@@ -56,13 +53,12 @@ public abstract class AbstractHandler
     @Probe
     private final SwCounter migrationCount = newSwCounter();
 
-    public AbstractHandler(ChannelConnection connection,
-                           NioThread ioThread,
-                           int initialOps,
-                           ILogger logger,
-                           IOBalancer ioBalancer) {
-        this.connection = connection;
-        this.channel = connection.getChannel();
+    AbstractHandler(NioChannel channel,
+                    NioThread ioThread,
+                    int initialOps,
+                    ILogger logger,
+                    IOBalancer ioBalancer) {
+        this.channel = channel;
         this.socketChannel = channel.socketChannel();
         this.ioThread = ioThread;
         this.ioThreadId = ioThread.id;
@@ -92,7 +88,20 @@ public abstract class AbstractHandler
         return ioThread;
     }
 
-    protected SelectionKey getSelectionKey() throws IOException {
+    public void start() {
+        ioThread.addTaskAndWakeup(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    getSelectionKey();
+                } catch (Throwable t) {
+                    onFailure(t);
+                }
+            }
+        });
+    }
+
+    SelectionKey getSelectionKey() throws IOException {
         if (selectionKey == null) {
             selectionKey = socketChannel.register(ioThread.getSelector(), initialOps, this);
         }
@@ -120,18 +129,11 @@ public abstract class AbstractHandler
 
     @Override
     public void onFailure(Throwable e) {
-        if (e instanceof OutOfMemoryError) {
-            ioThread.getOomeHandler().handle((OutOfMemoryError) e);
-        }
         if (selectionKey != null) {
             selectionKey.cancel();
         }
 
-        if (e instanceof EOFException) {
-            connection.close("Connection closed by the other side", e);
-        } else {
-            connection.close("Exception in " + getClass().getSimpleName(), e);
-        }
+        ioThread.getErrorHandler().onError(channel, e);
     }
 
     // This method run on the oldOwner NioThread
@@ -139,7 +141,7 @@ public abstract class AbstractHandler
         assert ioThread == Thread.currentThread() : "startMigration can only run on the owning NioThread";
         assert ioThread != newOwner : "newOwner can't be the same as the existing owner";
 
-        if (!channel.isOpen()) {
+        if (!socketChannel.isOpen()) {
             // if the channel is closed, we are done.
             return;
         }
@@ -169,7 +171,7 @@ public abstract class AbstractHandler
 
         ioBalancer.signalMigrationComplete();
 
-        if (!channel.isOpen()) {
+        if (!socketChannel.isOpen()) {
             return;
         }
 

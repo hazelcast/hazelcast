@@ -435,10 +435,12 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     private void onRecordCreate(K key, R record) {
         record.setCreationTime(Clock.currentTimeMillis());
-        MetaDataContainer metaDataContainer = staleReadDetector.getMetaDataContainer(key);
+        int partitionId = staleReadDetector.getPartitionId(key);
+        MetaDataContainer metaDataContainer = staleReadDetector.getMetaDataContainer(partitionId);
         if (metaDataContainer != null) {
-            record.setUuid(metaDataContainer.getUuid());
+            record.setPartitionId(partitionId);
             record.setInvalidationSequence(metaDataContainer.getSequence());
+            record.setUuid(metaDataContainer.getUuid());
         }
     }
 

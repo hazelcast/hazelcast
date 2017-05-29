@@ -41,8 +41,8 @@ import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.SampleObjects;
-import com.hazelcast.query.SampleObjects.Employee;
+import com.hazelcast.query.SampleTestObjects;
+import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
@@ -639,7 +639,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             IMap<Integer, Employee> map = instance1.getMap(MAP_NAME);
             int size = 10;
             for (int i = 0; i < size; i++) {
-                map.put(i, new Employee(i, "", 0, false, 0D, SampleObjects.State.STATE1));
+                map.put(i, new Employee(i, "", 0, false, 0D, SampleTestObjects.State.STATE1));
             }
 
             EntryProcessor entryProcessor = new ChangeStateEntryProcessor();
@@ -648,13 +648,13 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             Map<Integer, Object> res = map.executeOnEntries(entryProcessor, predicate);
 
             for (int i = 0; i < 5; i++) {
-                assertEquals(SampleObjects.State.STATE2, map.get(i).getState());
+                assertEquals(SampleTestObjects.State.STATE2, map.get(i).getState());
             }
             for (int i = 5; i < size; i++) {
-                assertEquals(SampleObjects.State.STATE1, map.get(i).getState());
+                assertEquals(SampleTestObjects.State.STATE1, map.get(i).getState());
             }
             for (int i = 0; i < 5; i++) {
-                assertEquals(((Employee) res.get(i)).getState(), SampleObjects.State.STATE2);
+                assertEquals(((Employee) res.get(i)).getState(), SampleTestObjects.State.STATE2);
             }
         } finally {
             instance1.shutdown();
@@ -671,7 +671,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         @Override
         public Object process(Map.Entry<Integer, Employee> entry) {
             Employee value = entry.getValue();
-            value.setState(SampleObjects.State.STATE2);
+            value.setState(SampleTestObjects.State.STATE2);
             entry.setValue(value);
             return value;
         }
@@ -684,7 +684,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         @Override
         public void processBackup(Map.Entry<Integer, Employee> entry) {
             Employee value = entry.getValue();
-            value.setState(SampleObjects.State.STATE2);
+            value.setState(SampleTestObjects.State.STATE2);
             entry.setValue(value);
         }
     }
@@ -1401,11 +1401,11 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
 
-        IMap<Integer, SampleObjects.ObjectWithInteger> map = node.getMap(MAP_NAME);
+        IMap<Integer, SampleTestObjects.ObjectWithInteger> map = node.getMap(MAP_NAME);
         map.addIndex("attribute", true);
 
         for (int i = 0; i < 1000; i++) {
-            map.put(i, new SampleObjects.ObjectWithInteger(i));
+            map.put(i, new SampleTestObjects.ObjectWithInteger(i));
         }
 
         map.executeOnEntries(new DeleteEntryProcessor(), new SqlPredicate("attribute >=0"));

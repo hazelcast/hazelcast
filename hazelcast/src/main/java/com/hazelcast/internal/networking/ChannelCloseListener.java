@@ -16,13 +16,17 @@
 
 package com.hazelcast.internal.networking;
 
-import com.hazelcast.nio.Connection;
+/**
+ * A listener called when a {@link Channel} is closed.
+ *
+ * One of the potential usages is to release resources attached to a channel e.g. deregistration of metrics.
+ */
+public interface ChannelCloseListener {
 
-public interface ChannelConnection extends Connection {
-
-    ChannelReader getChannelReader();
-
-    ChannelWriter getChannelWriter();
-
-    Channel getChannel();
+    /**
+     * Called when the channel is closed.
+     *
+     * @param channel the channel closed.
+     */
+    void onClose(Channel channel);
 }

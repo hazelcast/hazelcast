@@ -40,7 +40,12 @@ public interface StaleReadDetector {
         }
 
         @Override
-        public MetaDataContainer getMetaDataContainer(Object key) {
+        public int getPartitionId(Object key) {
+            return 0;
+        }
+
+        @Override
+        public MetaDataContainer getMetaDataContainer(int partitionId) {
             return null;
         }
     };
@@ -53,9 +58,11 @@ public interface StaleReadDetector {
      */
     boolean isStaleRead(Object key, NearCacheRecord record);
 
+    int getPartitionId(Object key);
+
     /**
-     * @param key supplied key to get value
+     * @param partitionId supplied partition ID to get value
      * @return {@link MetaDataContainer} for this key
      */
-    MetaDataContainer getMetaDataContainer(Object key);
+    MetaDataContainer getMetaDataContainer(int partitionId);
 }

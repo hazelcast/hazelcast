@@ -23,8 +23,6 @@ import java.nio.ByteBuffer;
 
 /**
  * A {@link ChannelOutboundHandler} for the new-client. It writes ClientMessages to the ByteBuffer.
- *
- * @see MessageHandlerImpl
  */
 public class ClientChannelOutboundHandler implements ChannelOutboundHandler<ClientMessage> {
 

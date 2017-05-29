@@ -16,15 +16,33 @@
 
 package com.hazelcast.internal.networking;
 
-import com.hazelcast.nio.Connection;
-
 import java.io.IOException;
 
-public interface ChannelInitializer<C extends Connection> {
-    /**
-     * Returned value could be null if not enough data is available to determine how to init (e.g. protocol info lacking)
-     */
-    InitResult<ChannelInboundHandler> initInbound(C connection, ChannelReader reader) throws IOException;
+/**
+ * Initializes the Channel when the Channel is used for the first time.
+ */
+public interface ChannelInitializer {
 
-    InitResult<ChannelOutboundHandler> initOutbound(C connection, ChannelWriter writer, String protocol);
+    /**
+     * Called when the Channel receives the first data.
+     *
+     * For the given channel, there will only be a single thread calling this method. But it could be that it is called
+     * concurrently for the same channel with {@link #initOutbound(Channel)}.
+     *
+     * @param channel the {@link Channel} that requires initialization
+     * @return the result of the initialization. Returned value could be null if not enough data is available to determine how
+     * to init (e.g. protocol info lacking). This will probably change once the TLS integration is done through the pipeline.
+     */
+    InitResult<ChannelInboundHandler> initInbound(Channel channel) throws IOException;
+
+    /***
+     * Called when the Channel writes the first data.
+     *
+     * For the given channel, there will only be a single thread calling this method. But it could be that it is called
+     * concurrently for the same channel with {@link #initInbound(Channel)}.
+     *
+     * @param channel the {@link Channel} that requires initialization
+     * @return the result of the initialization.
+     */
+    InitResult<ChannelOutboundHandler> initOutbound(Channel channel);
 }

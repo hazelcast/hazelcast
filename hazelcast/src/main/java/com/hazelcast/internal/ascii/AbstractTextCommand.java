@@ -53,7 +53,7 @@ public abstract class AbstractTextCommand implements TextCommand {
     public void init(TextChannelInboundHandler textReadHandler, long requestId) {
         this.readHandler = textReadHandler;
         this.requestId = requestId;
-        this.writeHandler = textReadHandler.getTextWriteHandler();
+        this.writeHandler = textReadHandler.getOutboundHandler();
     }
 
     @Override

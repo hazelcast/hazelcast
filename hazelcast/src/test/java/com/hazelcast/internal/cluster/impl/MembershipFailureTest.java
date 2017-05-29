@@ -65,6 +65,7 @@ import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -696,12 +697,10 @@ public class MembershipFailureTest extends HazelcastTestSupport {
 
     @Test
     public void test_whenNodesStartedTerminatedConcurrently() throws InterruptedException {
-        Config config = new Config();
-
-        newHazelcastInstance(config);
+        newHazelcastInstance();
 
         for (int i = 0; i < 3; i++) {
-            startInstancesConcurrently(config, 4);
+            startInstancesConcurrently(4);
             terminateRandomInstancesConcurrently(3);
 
             HazelcastInstance[] instances = getAllHazelcastInstances().toArray(new HazelcastInstance[0]);
@@ -714,12 +713,46 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         }
     }
 
-    private void startInstancesConcurrently(final Config config, int count) throws InterruptedException {
+    @Test
+    public void test_shouldNotRemoveMemberBecauseOfMasterConfirmationTimeout_duringMastershipClaim() {
+        Config config = new Config();
+        config.setProperty(GroupProperty.MAX_NO_MASTER_CONFIRMATION_SECONDS.getName(), "5");
+
+        HazelcastInstance member1 = newHazelcastInstance(config);
+        final HazelcastInstance member2 = newHazelcastInstance(config);
+        final HazelcastInstance member3 = newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, member2);
+        assertClusterSize(3, member1, member3);
+
+        dropOperationsBetween(member2, member3, FETCH_MEMBER_LIST_STATE);
+        member1.getLifecycleService().terminate();
+
+        assertTrueEventually(new AssertTask() {
+            final ClusterServiceImpl clusterService = getNode(member2).getClusterService();
+            @Override
+            public void run() throws Exception {
+                assertTrue(clusterService.getClusterJoinManager().isMastershipClaimInProgress());
+            }
+        });
+
+        assertTrueAllTheTime(new AssertTask() {
+            final MembershipManager membershipManager = getNode(member2).getClusterService().getMembershipManager();
+            @Override
+            public void run() throws Exception {
+                Address address = getAddress(member3);
+                assertFalse(membershipManager.isMemberSuspected(address));
+                assertNotNull(membershipManager.getMember(address));
+            }
+        }, 10);
+    }
+
+    private void startInstancesConcurrently(int count) throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(count);
         for (int i = 0; i < count; i++) {
             new Thread() {
                 public void run() {
-                    newHazelcastInstance(config);
+                    newHazelcastInstance();
                     latch.countDown();
                 }
             }.start();
