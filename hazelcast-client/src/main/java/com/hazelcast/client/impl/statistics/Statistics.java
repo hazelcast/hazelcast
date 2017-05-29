@@ -266,7 +266,7 @@ public class Statistics {
 
     /**
      *
-     * @param buffer The string for which the escape character '\' is escaped properly.
+     * @param buffer The string for which the escape character '\' is removed properly.
      * @return The unescaped string
      */
     public static String unescapeSpecialCharacters(String buffer) {
