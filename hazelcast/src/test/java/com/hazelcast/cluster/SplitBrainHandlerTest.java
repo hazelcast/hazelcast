@@ -518,7 +518,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         closeConnectionBetween(data3, lite1);
 
         assertClusterSizeEventually(3, lite1, lite2, data1);
-        assertClusterSize(2, data2, data3);
+        assertClusterSizeEventually(2, data2, data3);
 
         data1.getMap("default").put(1, "cluster1");
         data3.getMap("default").put(1, "cluster2");
