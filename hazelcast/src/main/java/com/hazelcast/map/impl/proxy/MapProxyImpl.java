@@ -837,7 +837,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
                 .iterationType(IterationType.VALUE)
                 .projection(projection)
                 .build();
-        queryEngine.execute(query, Target.ALL_NODES);
         QueryResult result = queryEngine.execute(query, Target.ALL_NODES);
         return QueryResultUtils.transformToSet(serializationService, result, predicate,
                 IterationType.VALUE, false);
