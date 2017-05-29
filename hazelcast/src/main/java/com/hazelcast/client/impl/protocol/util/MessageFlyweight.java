@@ -20,9 +20,7 @@ import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -178,15 +176,14 @@ public class MessageFlyweight {
         return new HeapData(getByteArray());
     }
 
-    public List<Data> getDataList() {
+    public Data getDataReuse() {
         final int length = buffer.getInt(index + offset);
         index += Bits.INT_SIZE_IN_BYTES;
-        final List<Data> result = new ArrayList<Data>();
-        for (int i = 0; i < length; i++) {
-            result.add(getData());
-        }
-        return result;
+        Data data = new HeapData(buffer.byteArray(), index + offset, length);
+        index += length;
+        return data;
     }
+
     //endregion GET Overloads
 
     protected int int32Get(int index) {

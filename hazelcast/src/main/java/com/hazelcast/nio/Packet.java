@@ -116,7 +116,6 @@ public final class Packet extends HeapData implements OutboundFrame {
 
     // These 3 fields are only used during read/write. Otherwise they have no meaning.
     private int valueOffset;
-    private int size;
     private boolean headerComplete;
 
     public Packet() {
@@ -254,8 +253,7 @@ public final class Packet extends HeapData implements OutboundFrame {
             dst.put(VERSION);
             dst.putChar(flags);
             dst.putInt(partitionId);
-            size = totalSize();
-            dst.putInt(size);
+            dst.putInt(totalSize());
             headerComplete = true;
         }
 
@@ -283,7 +281,7 @@ public final class Packet extends HeapData implements OutboundFrame {
 
             flags = src.getChar();
             partitionId = src.getInt();
-            size = src.getInt();
+            length = src.getInt();
             headerComplete = true;
         }
 
@@ -294,13 +292,13 @@ public final class Packet extends HeapData implements OutboundFrame {
 
     private boolean readValue(ByteBuffer src) {
         if (payload == null) {
-            payload = new byte[size];
+            payload = new byte[length];
         }
 
-        if (size > 0) {
+        if (length > 0) {
             int bytesReadable = src.remaining();
 
-            int bytesNeeded = size - valueOffset;
+            int bytesNeeded = length - valueOffset;
 
             boolean done;
             int bytesRead;
@@ -325,12 +323,12 @@ public final class Packet extends HeapData implements OutboundFrame {
     }
 
     private boolean writeValue(ByteBuffer dst) {
-        if (size > 0) {
+        if (length > 0) {
             // the number of bytes that can be written to the bb.
             int bytesWritable = dst.remaining();
 
             // the number of bytes that need to be written.
-            int bytesNeeded = size - valueOffset;
+            int bytesNeeded = length - valueOffset;
 
             int bytesWrite;
             boolean done;

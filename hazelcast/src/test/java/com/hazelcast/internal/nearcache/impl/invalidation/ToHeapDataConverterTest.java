@@ -53,6 +53,16 @@ public class ToHeapDataConverterTest {
     class AnotherDataImpl implements Data {
 
         @Override
+        public Data compact() {
+            return this;
+        }
+
+        @Override
+        public int offset() {
+            return 0;
+        }
+
+        @Override
         public byte[] toByteArray() {
             return new byte[0];
         }

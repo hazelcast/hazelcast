@@ -25,6 +25,21 @@ import com.hazelcast.spi.serialization.SerializationService;
 public interface Data {
 
     /**
+     * if internal byte-buffer contains more data, content from offset is copied to a new array with size totalSize()
+     *
+     * @return compact version of this data. If already compact returns itself.
+     */
+    Data compact();
+
+    /**
+     * toByteArray(); returns internal byte buffer which can contain more data then actual data
+     *
+     * @return offset of actual data starting point on internal byte array, if internal byte-array contains only data
+     * then offset is 0
+     */
+    int offset();
+
+    /**
      * Returns byte array representation of internal binary format.
      *
      * @return binary data
@@ -57,8 +72,8 @@ public interface Data {
      * The reason this method exists instead of relying on the {@link #toByteArray()} is the existence of the NativeMemoryData.
      * With the NativeMemoryData it would lead to a temporary byte-array. This method prevents this temporary byte-array needing
      * to be created.
-      *
-     * @param dest to byte-buffer to write to
+     *
+     * @param dest    to byte-buffer to write to
      * @param destPos the position in the destination buffer.
      */
     void copyTo(byte[] dest, int destPos);

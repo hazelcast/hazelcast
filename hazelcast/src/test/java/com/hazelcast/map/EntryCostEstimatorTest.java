@@ -42,7 +42,7 @@ public class EntryCostEstimatorTest
     protected TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
     // the JVM-independent portion of the cost of Integer key + Long value record is 124 bytes
     // (without taking into account 8 references to key, record and value objects)
-    private static final int JVM_INDEPENDENT_ENTRY_COST_IN_BYTES = 124;
+    private static final int JVM_INDEPENDENT_ENTRY_COST_IN_BYTES = 140;
     // JVM-dependent total cost of entry
     private static final int ENTRY_COST_IN_BYTES = JVM_INDEPENDENT_ENTRY_COST_IN_BYTES + 9 * REFERENCE_COST_IN_BYTES;
 

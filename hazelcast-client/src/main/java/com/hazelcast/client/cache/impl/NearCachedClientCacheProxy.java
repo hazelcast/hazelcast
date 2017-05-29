@@ -399,7 +399,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     @SuppressWarnings("unchecked")
     private void cacheOrInvalidate(Data keyData, Data valueData, V value) {
         if (cacheOnUpdate) {
-            V valueToStore = (V) nearCache.selectToSave(valueData, value);
+            V valueToStore = (V) nearCache.selectToSave(valueData.compact(), value);
             nearCache.put(keyData, valueToStore);
         } else {
             invalidateNearCache(keyData);

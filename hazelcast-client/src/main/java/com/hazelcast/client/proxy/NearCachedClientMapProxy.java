@@ -157,7 +157,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             ((ClientDelegatingFuture) future).andThenInternal(new ExecutionCallback<Data>() {
                 @Override
                 public void onResponse(Data value) {
-                    nearCache.tryPublishReserved(key, value, reservationId, false);
+                    nearCache.tryPublishReserved(key, value.compact(), reservationId, false);
                 }
 
                 @Override
@@ -392,8 +392,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             responses = super.getAllInternal(pIdToKeyData, result);
             for (MapGetAllCodec.ResponseParameters resultParameters : responses) {
                 for (Entry<Data, Data> entry : resultParameters.response) {
-                    Data key = entry.getKey();
-                    Data value = entry.getValue();
+                    Data key = entry.getKey().compact();
+                    Data value = entry.getValue().compact();
 
                     Long reservationId = reservations.get(key);
                     if (reservationId != null) {
