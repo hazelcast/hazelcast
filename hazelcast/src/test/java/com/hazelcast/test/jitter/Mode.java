@@ -17,9 +17,10 @@
 package com.hazelcast.test.jitter;
 
 /**
- * Operational Modes for {@link JitterRule}
+ * Operational Modes for {@link JitterRule}.
  */
 public enum Mode {
+
     /**
      * JitterRule is explicitly disabled. No jitter monitoring is performed no matter
      * what test or environment is used.
