@@ -27,13 +27,22 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.Assert;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.aws.AwsProperties.CONNECTION_TIMEOUT_SECONDS;
+import static com.hazelcast.aws.AwsProperties.PORT;
+import static com.hazelcast.aws.AwsProperties.TAG_KEY;
+import static com.hazelcast.aws.AwsProperties.TAG_VALUE;
+import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assume.assumeThat;
 
 /**
  * NOTE: This tests needs AWS credentials to be set as environment variables!
@@ -44,15 +53,26 @@ import java.util.Map;
 @Category({SlowTest.class, ParallelTest.class})
 public class AwsCloudDiscoveryTest {
 
+    private static final String ACCESS_KEY = AwsProperties.ACCESS_KEY.getDefinition().key();
+    private static final String SECRET_KEY = AwsProperties.SECRET_KEY.getDefinition().key();
+
     @Test
     public void testAwsClient_MemberNonDefaultPortConfig() {
         Map<String, Comparable> props = new HashMap<String, Comparable>();
-        props.put(AwsProperties.PORT.getDefinition().key(), "60000");
-        props.put(AwsProperties.ACCESS_KEY.getDefinition().key(), System.getenv("AWS_ACCESS_KEY_ID"));
-        props.put(AwsProperties.SECRET_KEY.getDefinition().key(), System.getenv("AWS_SECRET_ACCESS_KEY"));
-        props.put(AwsProperties.TAG_KEY.getDefinition().key(), "aws-test-tag");
-        props.put(AwsProperties.TAG_VALUE.getDefinition().key(), "aws-tag-value-1");
-        props.put(AwsProperties.CONNECTION_TIMEOUT_SECONDS.getDefinition().key(), "10");
+        props.put(PORT.getDefinition().key(), "60000");
+        props.put(ACCESS_KEY, System.getenv("AWS_ACCESS_KEY_ID"));
+        props.put(SECRET_KEY, System.getenv("AWS_SECRET_ACCESS_KEY"));
+        props.put(TAG_KEY.getDefinition().key(), "aws-test-tag");
+        props.put(TAG_VALUE.getDefinition().key(), "aws-tag-value-1");
+        props.put(CONNECTION_TIMEOUT_SECONDS.getDefinition().key(), "10");
+
+        if (isOnJenkins()) {
+            assertNotNull("AWS_ACCESS_KEY_ID is not set", props.get(ACCESS_KEY));
+            assertNotNull("AWS_SECRET_ACCESS_KEY is not set", props.get(SECRET_KEY));
+        } else {
+            assumeThat("AWS_ACCESS_KEY_ID is not set", props.get(ACCESS_KEY), Matchers.<Comparable>notNullValue());
+            assumeThat("AWS_SECRET_ACCESS_KEY is not set", props.get(SECRET_KEY), Matchers.<Comparable>notNullValue());
+        }
 
         ClientConfig config = new ClientConfig();
         config.getNetworkConfig().getDiscoveryConfig()
@@ -64,6 +84,6 @@ public class AwsCloudDiscoveryTest {
         HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
         IMap<Object, Object> map = client.getMap("MyMap");
         map.put(1, 5);
-        Assert.assertEquals(5, map.get(1));
+        assertEquals(5, map.get(1));
     }
 }
