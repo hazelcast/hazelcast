@@ -19,11 +19,29 @@ package com.hazelcast.test;
 public final class TestEnvironment {
 
     public static final String HAZELCAST_TEST_USE_NETWORK = "hazelcast.test.use.network";
+    /**
+     * If defined, should indicate a filename prefix to an existing directory where files will be created to dump
+     * samples of objects which were serialized/deserialized during test suite execution. Two files per JVM are
+     * created, an index and the serialized samples file. The property's value is used as prefix for the filename,
+     * followed by a random UUID to avoid clashes.
+     * For example {@code -Dhazelcast.test.sample.serialized.objects=/home/hz/tmp/objects-} will create files
+     * {@code /home/hz/tmp/objects-UUID.index} and {@code /home/hz/tmp/objects-UUID.samples}.
+     * @see com.hazelcast.test.compatibility.SamplingSerializationService
+     */
+    public static final String SAMPLE_SERIALIZED_OBJECTS = "hazelcast.test.sample.serialized.objects";
 
     private TestEnvironment() {
     }
 
     public static boolean isMockNetwork() {
         return !Boolean.getBoolean(HAZELCAST_TEST_USE_NETWORK);
+    }
+
+    public static boolean isRecordingSerializedClassNames() {
+        return System.getProperty(SAMPLE_SERIALIZED_OBJECTS) != null;
+    }
+
+    public static String getSerializedClassNamesPath() {
+        return System.getProperty(SAMPLE_SERIALIZED_OBJECTS);
     }
 }

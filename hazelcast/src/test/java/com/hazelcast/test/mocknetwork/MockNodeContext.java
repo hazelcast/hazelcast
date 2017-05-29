@@ -18,6 +18,7 @@ package com.hazelcast.test.mocknetwork;
 
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.instance.AddressPicker;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
 import com.hazelcast.instance.NodeExtension;
@@ -26,10 +27,15 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.NodeIOService;
 import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
+import com.hazelcast.test.TestEnvironment;
+import com.hazelcast.test.compatibility.SamplingNodeExtension;
 
+import java.lang.reflect.Constructor;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Collections;
 import java.util.Set;
+
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public class MockNodeContext implements NodeContext {
 
@@ -49,7 +55,11 @@ public class MockNodeContext implements NodeContext {
 
     @Override
     public NodeExtension createNodeExtension(Node node) {
-        return NodeExtensionFactory.create(node);
+        if (TestEnvironment.isRecordingSerializedClassNames()) {
+            return constructSamplingNodeExtension(node);
+        } else {
+            return NodeExtensionFactory.create(node);
+        }
     }
 
     public AddressPicker createAddressPicker(Node node) {
@@ -63,5 +73,24 @@ public class MockNodeContext implements NodeContext {
     public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
         NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
         return new FirewallingMockConnectionManager(ioService, node, registry, initiallyBlockedAddresses);
+    }
+
+    /**
+     * @return {@code NodeExtension} suitable for sampling serialized objects in OSS or EE environment
+     */
+    private NodeExtension constructSamplingNodeExtension(Node node) {
+        if (BuildInfoProvider.BUILD_INFO.isEnterprise()) {
+            try {
+                Class<? extends NodeExtension> klass = (Class<? extends NodeExtension>)
+                        Class.forName("com.hazelcast.test.compatibility.SamplingEnterpriseNodeExtension");
+                Constructor<? extends NodeExtension> constructor = klass.getConstructor(Node.class);
+                return constructor.newInstance(node);
+            } catch (Exception e) {
+                throw rethrow(e);
+            }
+        } else {
+            NodeExtension wrapped = NodeExtensionFactory.create(node);
+            return new SamplingNodeExtension(wrapped);
+        }
     }
 }
