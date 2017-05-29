@@ -55,6 +55,7 @@ public class AddIndexOperation extends MapOperation implements PartitionAwareOpe
 
     @Override
     public void run() throws Exception {
+        mapContainer.addIndexDefinition(attributeName, ordered);
         Indexes indexes = mapContainer.getIndexes(getPartitionId());
         Index index = indexes.addOrGetIndex(attributeName, ordered);
 

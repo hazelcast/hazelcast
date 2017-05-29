@@ -138,7 +138,7 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
     }
 
     private Set<QueryableEntry> queryAllPartitions(MapServiceContext mapServiceContext) {
-        // TODO optimize this code (index-per-partition)
+        // TODO this won't work for NATIVE
         Set<QueryableEntry> result = null;
         Predicate optimizedPredicate = null;
         for (PartitionContainer partitionContainer : mapServiceContext.getPartitionContainers()) {

@@ -141,7 +141,6 @@ import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.impl.IndexReplicationInfo;
 import com.hazelcast.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MAP_DS_FACTORY;
@@ -289,9 +288,8 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int ENTRY_OFFLOADABLE_SET_UNLOCK = 136;
     public static final int QUERY_PARTITION_OP_FACTORY = 137;
     public static final int LOCK_AWARE_LAZY_MAP_ENTRY = 138;
-    public static final int INDEX_REPLICATION_INFO = 139;
 
-    private static final int LEN = INDEX_REPLICATION_INFO + 1;
+    private static final int LEN = LOCK_AWARE_LAZY_MAP_ENTRY + 1;
 
     @Override
     public int getFactoryId() {
@@ -975,11 +973,6 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[LOCK_AWARE_LAZY_MAP_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new LockAwareLazyMapEntry();
-            }
-        };
-        constructors[INDEX_REPLICATION_INFO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new IndexReplicationInfo();
             }
         };
 

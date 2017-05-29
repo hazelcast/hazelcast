@@ -139,9 +139,11 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
         MapService mapService = getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         for (MapIndexInfo mapIndex : indexInfoList) {
-            for (PartitionContainer partitionContainer : mapServiceContext.getPartitionContainers()) {
-                final Indexes indexes = partitionContainer.getIndexes(mapIndex.mapName);
-                for (MapIndexInfo.IndexInfo indexInfo : mapIndex.lsIndexes) {
+            MapContainer mapContainer = mapServiceContext.getMapContainer(mapIndex.mapName);
+            for (MapIndexInfo.IndexInfo indexInfo : mapIndex.lsIndexes) {
+                mapContainer.addIndexDefinition(indexInfo.attributeName, indexInfo.ordered);
+                for (PartitionContainer partitionContainer : mapServiceContext.getPartitionContainers()) {
+                    final Indexes indexes = partitionContainer.getIndexes(mapIndex.mapName);
                     indexes.addOrGetIndex(indexInfo.attributeName, indexInfo.ordered);
                 }
             }

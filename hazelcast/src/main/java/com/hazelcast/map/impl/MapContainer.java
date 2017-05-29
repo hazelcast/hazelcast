@@ -51,6 +51,11 @@ import com.hazelcast.util.RuntimeMemoryInfoAccessor;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
 
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
@@ -75,6 +80,8 @@ public class MapContainer {
     protected final InterceptorRegistry interceptorRegistry = new InterceptorRegistry();
     protected final IFunction<Object, Data> toDataFunction = new ObjectToData();
     protected final ConstructorFunction<Void, RecordFactory> recordFactoryConstructor;
+    protected final ConcurrentHashMap<String, Boolean> indexDefinitions = new ConcurrentHashMap<String, Boolean>();
+
     /**
      * Holds number of registered {@link InvalidationListener} from clients.
      */
@@ -287,14 +294,24 @@ public class MapContainer {
     }
 
     public boolean shouldCloneOnEntryProcessing() {
-        // TODO
-        int firstPartitionId = mapServiceContext.getOwnedPartitions().iterator().next();
-        Indexes indexes = getIndexes(firstPartitionId);
-        return indexes != null && indexes.hasIndex() && OBJECT.equals(mapConfig.getInMemoryFormat());
+        Iterator<Integer> partitionIterator = mapServiceContext.getOwnedPartitions().iterator();
+        if (partitionIterator.hasNext()) {
+            Indexes indexes = getIndexes(partitionIterator.next());
+            return indexes != null && indexes.hasIndex() && OBJECT.equals(mapConfig.getInMemoryFormat());
+        }
+        return false;
     }
 
     public ObjectNamespace getObjectNamespace() {
         return objectNamespace;
+    }
+
+    public void addIndexDefinition(String name, Boolean ordered) {
+        indexDefinitions.put(name, ordered);
+    }
+
+    public Set<Map.Entry<String, Boolean>> getIndexDefinitionsEntrySet() {
+        return Collections.unmodifiableSet(indexDefinitions.entrySet());
     }
 
     @SerializableByConvention

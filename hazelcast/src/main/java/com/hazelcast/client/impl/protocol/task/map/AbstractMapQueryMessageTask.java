@@ -149,9 +149,9 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
 
     private Query buildQuery(Predicate predicate) {
         Query.QueryBuilder builder =
-            Query.of().mapName(getDistributedObjectName())
-                      .predicate(predicate)
-                      .iterationType(getIterationType());
+                Query.of().mapName(getDistributedObjectName())
+                        .predicate(predicate)
+                        .iterationType(getIterationType());
 
         if (getAggregator() != null) {
             builder = builder.aggregator(getAggregator());
@@ -258,7 +258,8 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
     }
 
     // for rolling-upgrade compatibility, can be deleted in 4.0
-    private QueryPartitionOperation createQueryPartitionOperation(Query query, Version clusterVersion, MapServiceContext mapServiceContext) {
+    private QueryPartitionOperation createQueryPartitionOperation(Query query, Version clusterVersion,
+                                                                  MapServiceContext mapServiceContext) {
         boolean isVersion39orGreater = clusterVersion.isGreaterOrEqual(Versions.V3_9);
         if (isVersion39orGreater) {
             return (QueryPartitionOperation) mapServiceContext.getMapOperationProvider(
