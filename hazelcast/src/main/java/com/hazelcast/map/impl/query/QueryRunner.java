@@ -172,6 +172,12 @@ public class QueryRunner {
         if (indexes == null) {
             return null;
         }
+        if (!indexes.isGlobal()) {
+            // rolling-upgrade compatibility guide, if the index is not global we can't use it in the global scan.
+            // it may happen if the 3.9 EE node receives a QueryOperation from a 3.8 node, in this case we can't
+            // leverage index on this node in a global way.
+            return null;
+        }
         Collection<QueryableEntry> entries = indexes.query(predicate);
         if (entries == null) {
             return null;
