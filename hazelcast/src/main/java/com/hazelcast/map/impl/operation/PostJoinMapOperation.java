@@ -60,7 +60,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
 
     public void addMapIndex(MapServiceContext mapServiceContext, MapContainer mapContainer) {
         for (PartitionContainer partitionContainer : mapServiceContext.getPartitionContainers()) {
-            final Indexes indexes = partitionContainer.getIndexes(mapContainer.getName());
+            final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
             if (indexes != null && indexes.hasIndex()) {
                 MapIndexInfo mapIndexInfo = new MapIndexInfo(mapContainer.getName());
                 for (Index index : indexes.getIndexes()) {
@@ -143,7 +143,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
             for (MapIndexInfo.IndexInfo indexInfo : mapIndex.lsIndexes) {
                 mapContainer.addIndexDefinition(indexInfo.attributeName, indexInfo.ordered);
                 for (PartitionContainer partitionContainer : mapServiceContext.getPartitionContainers()) {
-                    final Indexes indexes = partitionContainer.getIndexes(mapIndex.mapName);
+                    final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
                     indexes.addOrGetIndex(indexInfo.attributeName, indexInfo.ordered);
                 }
             }

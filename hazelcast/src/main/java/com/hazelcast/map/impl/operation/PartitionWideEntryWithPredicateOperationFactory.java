@@ -18,10 +18,10 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -39,7 +39,6 @@ import com.hazelcast.util.collection.Int2ObjectHashMap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -138,25 +137,19 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
     }
 
     private Set<QueryableEntry> queryAllPartitions(MapServiceContext mapServiceContext) {
-        // TODO this won't work for NATIVE
-        Set<QueryableEntry> result = null;
-        Predicate optimizedPredicate = null;
-        for (PartitionContainer partitionContainer : mapServiceContext.getPartitionContainers()) {
-
-            final Indexes indexes = partitionContainer.getIndexes(name);
-            if (optimizedPredicate == null) {
-                QueryOptimizer queryOptimizer = mapServiceContext.getQueryOptimizer();
-                optimizedPredicate = queryOptimizer.optimize(predicate, indexes);
-            }
-            Set<QueryableEntry> querySet = indexes.query(predicate);
-            if (querySet != null) {
-                if (result == null) {
-                    result = new HashSet<QueryableEntry>();
-                }
-                result.addAll(querySet);
-            }
+        QueryOptimizer queryOptimizer = mapServiceContext.getQueryOptimizer();
+        MapContainer mapContainer = mapServiceContext.getMapContainer(name);
+        Indexes indexes = mapContainer.getIndexes();
+        if (indexes != null) {
+            Predicate optimizedPredicate = queryOptimizer.optimize(predicate, indexes);
+            Set<QueryableEntry> querySet = indexes.query(optimizedPredicate);
+            return querySet;
+        } else {
+            // TODO off-heap (handle index per-partition case)
+            // we can't query off-heap indexes here, since it's an index per partition that needs to be queried
+            // on a partition thread.
+            return Collections.emptySet();
         }
-        return result;
     }
 
     private Map<Integer, List<Data>> getPartitionIdToKeysMap(Set<Data> keys, InternalPartitionService partitionService) {

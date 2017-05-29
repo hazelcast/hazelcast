@@ -50,7 +50,6 @@ public class PartitionContainer {
 
     final ConcurrentMap<String, Indexes> indexes = new ConcurrentHashMap<String, Indexes>(10);
 
-
     final ConstructorFunction<String, RecordStore> recordStoreConstructor
             = new ConstructorFunction<String, RecordStore>() {
 
@@ -122,7 +121,8 @@ public class PartitionContainer {
 
         InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
         IndexProvider indexProvider = serviceContext.getIndexProvider(mapConfig.getName());
-        Indexes indexesForMap = new Indexes(ss, indexProvider, mapContainer.getExtractors());
+        final boolean globalIndex = false;
+        Indexes indexesForMap = new Indexes(ss, indexProvider, mapContainer.getExtractors(), globalIndex);
         indexes.putIfAbsent(name, indexesForMap);
 
         RecordStore recordStore = serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);
@@ -239,7 +239,11 @@ public class PartitionContainer {
         this.lastCleanupTimeCopy = lastCleanupTimeCopy;
     }
 
-    public Indexes getIndexes(String name) {
+    // -------------------------------------------------------------------
+    // WATCH OUT: never use directly! use MapContainer.getIndex() instead
+    // -------------------------------------------------------------------
+    Indexes getIndexes(String name) {
+        final boolean globalIndex = false;
         Indexes ixs = indexes.get(name);
         if (ixs == null) {
 
@@ -248,7 +252,7 @@ public class PartitionContainer {
                     mapServiceContext.getNodeEngine().getSerializationService();
             Extractors extractors = mapServiceContext.getMapContainer(name).getExtractors();
             IndexProvider indexProvider = mapServiceContext.getIndexProvider(name);
-            Indexes indexesForMap = new Indexes(ss, indexProvider, extractors);
+            Indexes indexesForMap = new Indexes(ss, indexProvider, extractors, globalIndex);
             ixs = indexes.putIfAbsent(name, indexesForMap);
             if (ixs == null) {
                 ixs = indexesForMap;

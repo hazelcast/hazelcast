@@ -115,7 +115,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                 PartitionContainer partitionContainer = recordStore.getMapContainer().getMapServiceContext()
                         .getPartitionContainer(mapReplicationOperation.getPartitionId());
                 for (Map.Entry<String, Boolean> indexDefinition : mapContainer.getIndexDefinitionsEntrySet()) {
-                    Indexes indexes = partitionContainer.getIndexes(mapName);
+                    Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
                     indexes.addOrGetIndex(indexDefinition.getKey(), indexDefinition.getValue());
                 }
 

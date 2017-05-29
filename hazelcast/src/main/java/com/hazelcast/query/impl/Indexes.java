@@ -40,12 +40,15 @@ public class Indexes {
     private final InternalSerializationService serializationService;
     private final IndexProvider indexProvider;
     private final Extractors extractors;
+    private final boolean global;
 
 
-    public Indexes(InternalSerializationService serializationService, IndexProvider indexProvider, Extractors extractors) {
+    public Indexes(InternalSerializationService serializationService, IndexProvider indexProvider,
+                   Extractors extractors, boolean global) {
         this.serializationService = serializationService;
         this.indexProvider = indexProvider;
         this.extractors = extractors;
+        this.global = global;
     }
 
     public synchronized Index destroyIndex(String attribute) {
@@ -95,6 +98,10 @@ public class Indexes {
         for (Index index : indexes) {
             index.saveEntryIndex(queryableEntry, oldValue);
         }
+    }
+
+    public boolean isGlobal() {
+        return global;
     }
 
     /**

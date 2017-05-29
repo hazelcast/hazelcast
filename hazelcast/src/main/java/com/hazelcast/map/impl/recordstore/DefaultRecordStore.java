@@ -38,8 +38,10 @@ import com.hazelcast.map.impl.querycache.publisher.MapPublisherRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -289,7 +291,19 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             lockService.clearLockStore(partitionId, namespace);
         }
 
-        mapContainer.getIndexes(partitionId).clearIndexes();
+        Indexes indexes = mapContainer.getIndexes(partitionId);
+        if (indexes.isGlobal()) {
+            if (indexes.hasIndex()) {
+                for (Record record : storage.values()) {
+                    Data key = record.getKey();
+                    Object value = Records.getValueOrCachedValue(record, serializationService);
+                    indexes.removeEntryIndex(key, value);
+                }
+            }
+        } else {
+            indexes.clearIndexes();
+        }
+
         mapDataStore.reset();
 
         if (onShutdown) {

@@ -30,7 +30,6 @@ import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -79,11 +78,16 @@ public class QueryRunner {
         Collection<Integer> initialPartitions = mapServiceContext.getOwnedPartitions();
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
 
+        // to optimize the query we need to get any index instance
+        Indexes indexes = mapContainer.getIndexes();
+        if (indexes == null) {
+            indexes = mapContainer.getIndexes(initialPartitions.iterator().next());
+        }
         // first we optimize the query
-        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(0));
+        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), indexes);
 
         // then we try to run using an index, but if that doesn't work, we'll try a full table scan
-        Collection<QueryableEntry> entries = runUsingIndexSafely(predicate, mapContainer, migrationStamp);
+        Collection<QueryableEntry> entries = runUsingGlobalIndexSafely(predicate, mapContainer, migrationStamp);
         if (entries == null) {
             entries = runUsingPartitionScanSafely(query.getMapName(), predicate, initialPartitions, migrationStamp);
         }
@@ -101,7 +105,8 @@ public class QueryRunner {
     }
 
     // MIGRATION UNSAFE QUERYING - MIGRATION STAMPTS ARE NOT VALIDATED, so assumes a run on partition-thread
-    public Result runIndexOrPartitionScanQueryOnGivenOwnedPartition(Query query, int partitionId) {
+    // for a single partition. If the index is global it won't be asked
+    public Result runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(Query query, int partitionId) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
         List<Integer> partitions = Collections.singletonList(partitionId);
 
@@ -110,7 +115,7 @@ public class QueryRunner {
 
         Collection<QueryableEntry> entries = null;
         Indexes indexes = mapContainer.getIndexes(partitionId);
-        if (indexes != null) {
+        if (indexes != null && !indexes.isGlobal()) {
             entries = indexes.query(predicate);
         }
         if (entries == null) {
@@ -154,8 +159,8 @@ public class QueryRunner {
         );
     }
 
-    protected Collection<QueryableEntry> runUsingIndexSafely(Predicate predicate, MapContainer mapContainer,
-                                                             int migrationStamp) {
+    protected Collection<QueryableEntry> runUsingGlobalIndexSafely(Predicate predicate, MapContainer mapContainer,
+                                                                   int migrationStamp) {
 
         // If a migration is in progress or migration ownership changes,
         // do not attempt to use an index as they may have not been created yet.
@@ -163,7 +168,11 @@ public class QueryRunner {
             return null;
         }
 
-        Collection<QueryableEntry> entries = runIndexOnOwnedPartitions(predicate, mapContainer);
+        Indexes indexes = mapContainer.getIndexes();
+        if (indexes == null) {
+            return null;
+        }
+        Collection<QueryableEntry> entries = indexes.query(predicate);
         if (entries == null) {
             return null;
         }
@@ -178,25 +187,6 @@ public class QueryRunner {
             return entries;
         }
         return null;
-    }
-
-    private Collection<QueryableEntry> runIndexOnOwnedPartitions(Predicate predicate, MapContainer mapContainer) {
-        Collection<Integer> ownedPartitions = mapServiceContext.getOwnedPartitions();
-        Collection<QueryableEntry> entries = null;
-        for (int partitionId : ownedPartitions) {
-            Indexes indexes = mapContainer.getIndexes(partitionId);
-            if (indexes == null) {
-                continue;
-            }
-            Collection<QueryableEntry> partitionEntries = indexes.query(predicate);
-            if (partitionEntries != null) {
-                if (entries == null) {
-                    entries = new ArrayList<QueryableEntry>();
-                }
-                entries.addAll(partitionEntries);
-            }
-        }
-        return entries;
     }
 
     protected Collection<QueryableEntry> runUsingPartitionScanSafely(String name, Predicate predicate,

@@ -52,12 +52,12 @@ import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
@@ -80,6 +80,8 @@ public class MapContainer {
     protected final InterceptorRegistry interceptorRegistry = new InterceptorRegistry();
     protected final IFunction<Object, Data> toDataFunction = new ObjectToData();
     protected final ConstructorFunction<Void, RecordFactory> recordFactoryConstructor;
+    protected final boolean globalIndex;
+    protected final Indexes indexes;
     protected final ConcurrentHashMap<String, Boolean> indexDefinitions = new ConcurrentHashMap<String, Boolean>();
 
     /**
@@ -114,6 +116,15 @@ public class MapContainer {
         this.objectNamespace = new DistributedObjectNamespace(MapService.SERVICE_NAME, name);
         initWanReplication(nodeEngine);
         this.extractors = new Extractors(mapConfig.getMapAttributeConfigs(), config.getClassLoader());
+        if (!mapConfig.getInMemoryFormat().equals(NATIVE)) {
+            // for non-native memory populate a single global index
+            this.globalIndex = true;
+            this.indexes = new Indexes((InternalSerializationService) serializationService,
+                    mapServiceContext.getIndexProvider(name), extractors, true);
+        } else {
+            this.globalIndex = false;
+            this.indexes = null;
+        }
         this.mapStoreContext = createMapStoreContext(this);
         this.mapStoreContext.start();
         initEvictor();
@@ -183,8 +194,22 @@ public class MapContainer {
         return mapServiceContext.getPartitioningStrategy(mapConfig.getName(), mapConfig.getPartitioningStrategyConfig());
     }
 
+    public Indexes getIndexes() {
+        if (globalIndex) {
+            return indexes;
+        }
+        return null;
+    }
+
     public Indexes getIndexes(int partitionId) {
+        if (globalIndex) {
+            return indexes;
+        }
         return mapServiceContext.getPartitionContainer(partitionId).getIndexes(name);
+    }
+
+    public boolean isGlobalIndex() {
+        return globalIndex;
     }
 
     public WanReplicationPublisher getWanReplicationPublisher() {
@@ -293,13 +318,8 @@ public class MapContainer {
     public void onDestroy() {
     }
 
-    public boolean shouldCloneOnEntryProcessing() {
-        Iterator<Integer> partitionIterator = mapServiceContext.getOwnedPartitions().iterator();
-        if (partitionIterator.hasNext()) {
-            Indexes indexes = getIndexes(partitionIterator.next());
-            return indexes != null && indexes.hasIndex() && OBJECT.equals(mapConfig.getInMemoryFormat());
-        }
-        return false;
+    public boolean shouldCloneOnEntryProcessing(int partitionId) {
+        return getIndexes(partitionId).hasIndex() && OBJECT.equals(mapConfig.getInMemoryFormat());
     }
 
     public ObjectNamespace getObjectNamespace() {
