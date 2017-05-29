@@ -35,7 +35,7 @@ public interface StaleReadDetector {
      */
     StaleReadDetector ALWAYS_FRESH = new StaleReadDetector() {
         @Override
-        public boolean isStaleRead(Object key, NearCacheRecord record) {
+        public boolean isStaleRead(NearCacheRecord record) {
             return false;
         }
 
@@ -46,12 +46,11 @@ public interface StaleReadDetector {
     };
 
     /**
-     * @param key    the key
      * @param record the Near Cache record
      * @return {@code true} if reading with the supplied invalidation metadata is stale,
      * otherwise returns {@code false}
      */
-    boolean isStaleRead(Object key, NearCacheRecord record);
+    boolean isStaleRead(NearCacheRecord record);
 
     /**
      * @param key supplied key to get value
