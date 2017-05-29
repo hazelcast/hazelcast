@@ -33,7 +33,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * JUnit rule for detecting JVM/OS hiccups. It's meant to give you an insight into your environment
  * in the case of a test failure. This is useful for troubleshooting of spuriously failing tests.
  */
+@SuppressWarnings("WeakerAccess")
 public class JitterRule implements TestRule {
+
     /**
      * Time interval aggregated into a single bucket. Smaller interval provides
      * a clearer picture about hiccups in time, too small intervals may use too
@@ -44,7 +46,7 @@ public class JitterRule implements TestRule {
     /**
      * Number of buckets to be created. Jitter monitor records a floating window
      * where the length of the window can be calculated as
-     * <code>AGGREGATION_INTERVAL_MILLIS * CAPACITY</code>
+     * {@code AGGREGATION_INTERVAL_MILLIS * CAPACITY}
      *
      * It has to be a power of two.
      */
