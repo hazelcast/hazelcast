@@ -41,14 +41,14 @@ import java.util.concurrent.TimeoutException;
  * <li>not always being able to fully utilize the number of invocations.</li>
  * </ol>
  */
-public abstract class CallIdSequence {
+public interface CallIdSequence {
 
     /**
      * Returns the maximum concurrent invocations supported. Integer.MAX_VALUE means there is no max.
      *
      * @return the maximum concurrent invocation.
      */
-    public abstract int getMaxConcurrentInvocations();
+    int getMaxConcurrentInvocations();
 
     /**
      * Generates the next unique call ID. When the implementation
@@ -59,7 +59,7 @@ public abstract class CallIdSequence {
      * @throws TimeoutException if the outstanding invocation count hasn't dropped below the configured limit
      * within the configured timeout
      */
-    public abstract long next() throws TimeoutException;
+    long next() throws TimeoutException;
 
     /**
      * Generates the next unique call ID.
@@ -67,14 +67,14 @@ public abstract class CallIdSequence {
      *
      * @return the generated call ID
      */
-    public abstract long forceNext();
+    long forceNext();
 
     /** Not idempotent: must be called exactly once per invocation. */
-    public abstract void complete();
+    void complete();
 
     /** Returns the last issued call ID.
      * <strong>ONLY FOR TESTING. Must not be used for production code.</strong>
      */
-    public abstract long getLastCallId();
+    long getLastCallId();
 
 }

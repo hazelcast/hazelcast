@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.sequence;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-public final class CallIdSequenceWithoutBackpressure extends CallIdSequence {
+public final class CallIdSequenceWithoutBackpressure implements CallIdSequence {
 
     private static final AtomicLongFieldUpdater<CallIdSequenceWithoutBackpressure> HEAD
             = AtomicLongFieldUpdater.newUpdater(CallIdSequenceWithoutBackpressure.class, "head");

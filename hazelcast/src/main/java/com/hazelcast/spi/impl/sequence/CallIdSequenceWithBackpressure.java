@@ -40,7 +40,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * So perhaps there are a few threads that at the same time see that the there is space and do a next.
  * But any following invocation needs to wait till there is is capacity.
  */
-public final class CallIdSequenceWithBackpressure extends CallIdSequence {
+public final class CallIdSequenceWithBackpressure implements CallIdSequence {
     static final int MAX_DELAY_MS = 500;
     private static final IdleStrategy IDLER = new BackoffIdleStrategy(
             0, 0, MILLISECONDS.toNanos(1), MILLISECONDS.toNanos(MAX_DELAY_MS));
