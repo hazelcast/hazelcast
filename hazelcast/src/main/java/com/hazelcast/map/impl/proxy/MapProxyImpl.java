@@ -825,7 +825,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
                 .iterationType(IterationType.VALUE)
                 .projection(projection)
                 .build();
-        queryEngine.execute(query, Target.ALL_NODES);
         QueryResult result = queryEngine.execute(query, Target.ALL_NODES);
         return transformToSet(serializationService, result, predicate, IterationType.VALUE, false);
     }
