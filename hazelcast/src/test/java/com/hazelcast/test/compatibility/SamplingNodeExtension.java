@@ -112,8 +112,8 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
-    public ChannelFactory getSocketChannelWrapperFactory() {
-        return nodeExtension.getSocketChannelWrapperFactory();
+    public ChannelFactory getChannelFactory() {
+        return nodeExtension.getChannelFactory();
     }
 
     @Override
