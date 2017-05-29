@@ -23,7 +23,7 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.SampleObjects;
+import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -305,8 +305,8 @@ public class ClientTxnMapTest {
         final String mapName = randomString();
         IMap map = client.getMap(mapName);
 
-        final SampleObjects.Employee emp1 = new SampleObjects.Employee("abc-123-xvz", 34, true, 10D);
-        final SampleObjects.Employee emp2 = new SampleObjects.Employee("abc-123-xvz", 20, true, 10D);
+        final SampleTestObjects.Employee emp1 = new SampleTestObjects.Employee("abc-123-xvz", 34, true, 10D);
+        final SampleTestObjects.Employee emp2 = new SampleTestObjects.Employee("abc-123-xvz", 20, true, 10D);
 
         map.put(emp1, emp1);
 
@@ -333,7 +333,7 @@ public class ClientTxnMapTest {
         final String mapName = randomString();
         IMap map = client.getMap(mapName);
 
-        final SampleObjects.Employee emp1 = new SampleObjects.Employee("employee1", 10, true, 10D);
+        final SampleTestObjects.Employee emp1 = new SampleTestObjects.Employee("employee1", 10, true, 10D);
 
         map.put("employee1", emp1);
 

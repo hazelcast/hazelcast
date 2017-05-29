@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryConstants;
-import com.hazelcast.query.SampleObjects;
+import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -67,7 +67,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
     @Test
     public void getAttribute_whenValueIsPortableObject_thenConvertedToData() {
         Data key = serializationService.toData("indexedKey");
-        Portable value = new SampleObjects.PortableEmployee(30, "peter");
+        Portable value = new SampleTestObjects.PortableEmployee(30, "peter");
         QueryableEntry queryEntry = entry(key, value, Extractors.empty());
 
         // in the portable-data, the attribute 'name' is called 'n'. So if we can retrieve on n
@@ -79,7 +79,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
 
     @Test
     public void getAttribute_whenKeyIsPortableObject_thenConvertedToData() {
-        Data key = serializationService.toData(new SampleObjects.PortableEmployee(30, "peter"));
+        Data key = serializationService.toData(new SampleTestObjects.PortableEmployee(30, "peter"));
         SerializableObject value = new SerializableObject();
         QueryableEntry queryEntry = entry(key, value, Extractors.empty());
 
@@ -92,7 +92,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
 
     @Test
     public void getAttribute_whenKeyPortableObjectThenConvertedToData() {
-        Data key = serializationService.toData(new SampleObjects.PortableEmployee(30, "peter"));
+        Data key = serializationService.toData(new SampleTestObjects.PortableEmployee(30, "peter"));
         SerializableObject value = new SerializableObject();
         QueryableEntry queryEntry = entry(key, value, Extractors.empty());
 

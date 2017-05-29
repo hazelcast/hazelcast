@@ -1017,6 +1017,55 @@
                 </plugins>
             </build>
         </profile>
+
+        <profile>
+            <!-- same as default build (excludes Nightly & Slow tests), outputs serialized objects to a blob -->
+            <!-- for compatibility testing -->
+            <id>generate-compatibility-samples</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven.surefire.plugin.version}</version>
+                        <configuration combine.self="override">
+                            <properties>
+                                <property>
+                                    <name>listener</name>
+                                    <value>com.hazelcast.test.compatibility.SamplingRunListener</value>
+                                </property>
+                            </properties>
+                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                            <runOrder>failedfirst</runOrder>
+                            <argLine>
+                                -Xms128m -Xmx1G -XX:MaxPermSize=128M
+                                -Dhazelcast.phone.home.enabled=false
+                                -Dhazelcast.mancenter.enabled=false
+                                -Dhazelcast.test.use.network=false
+                                -Dhazelcast.test.sample.serialized.objects=${target.dir}/serialized-objects-${project.version}-
+                            </argLine>
+                            <includes>
+                                <include>**/**.java</include>
+                            </includes>
+                            <excludes>
+                                <exclude>**/jsr/**.java</exclude>
+                                <exclude>**/client/**Request.*</exclude>
+                                <!-- code triggered by UserCodeDeploymentSmokeTest and OperationRunnerImplTest -->
+                                <!-- casts to SerializationServiceV1 and fails when Node is configured with the -->
+                                <!-- wrapper ClassRecordingSerializationService -->
+                                <exclude>**/UserCodeDeploymentSmokeTest.java</exclude>
+                                <exclude>**/OperationRunnerImplTest.java</exclude>
+                            </excludes>
+                            <groups>com.hazelcast.test.annotation.QuickTest</groups>
+                            <excludedGroups>
+                                com.hazelcast.test.annotation.SlowTest,
+                                com.hazelcast.test.annotation.NightlyTest
+                            </excludedGroups>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <distributionManagement>

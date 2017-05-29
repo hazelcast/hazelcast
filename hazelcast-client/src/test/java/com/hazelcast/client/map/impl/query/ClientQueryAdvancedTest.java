@@ -21,7 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SampleObjects;
+import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -55,18 +55,18 @@ public class ClientQueryAdvancedTest {
         Config config = getConfig();
         hazelcastFactory.newHazelcastInstance(config);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
-        final IMap<Integer, SampleObjects.Value> map = client.getMap("default");
+        final IMap<Integer, SampleTestObjects.Value> map = client.getMap("default");
 
         map.addIndex("type", false);
 
-        SampleObjects.ValueType valueType = new SampleObjects.ValueType("name");
-        SampleObjects.Value valueWithoutNull = new SampleObjects.Value("notNull", valueType, 1);
-        SampleObjects.Value valueWithNull = new SampleObjects.Value("null", null, 1);
+        SampleTestObjects.ValueType valueType = new SampleTestObjects.ValueType("name");
+        SampleTestObjects.Value valueWithoutNull = new SampleTestObjects.Value("notNull", valueType, 1);
+        SampleTestObjects.Value valueWithNull = new SampleTestObjects.Value("null", null, 1);
         map.put(1, valueWithoutNull);
         map.put(2, valueWithNull);
 
         final Predicate nullPredicate = equal("type", null);
-        final Collection<SampleObjects.Value> emptyFieldValues = map.values(nullPredicate);
+        final Collection<SampleTestObjects.Value> emptyFieldValues = map.values(nullPredicate);
         assertThat(emptyFieldValues, hasSize(1));
         assertThat(emptyFieldValues, contains(valueWithNull));
     }

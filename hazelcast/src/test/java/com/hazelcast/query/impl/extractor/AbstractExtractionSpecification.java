@@ -18,7 +18,7 @@ package com.hazelcast.query.impl.extractor;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.extractor.specification.ComplexDataStructure;
+import com.hazelcast.query.impl.extractor.specification.ComplexTestDataStructure;
 import com.hazelcast.query.impl.predicates.AbstractPredicate;
 import com.hazelcast.query.impl.predicates.PredicateTestUtils;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -110,7 +110,7 @@ public class AbstractExtractionSpecification extends HazelcastTestSupport {
 
         public static Expected empty() {
             Expected expected = new Expected();
-            expected.objects = new ComplexDataStructure.Person[0];
+            expected.objects = new ComplexTestDataStructure.Person[0];
             return expected;
         }
     }

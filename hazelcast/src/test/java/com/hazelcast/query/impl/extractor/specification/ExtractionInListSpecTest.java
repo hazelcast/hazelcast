@@ -35,12 +35,12 @@ import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.ORDERED;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.UNORDERED;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.LIST;
-import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.Finger;
-import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.Person;
-import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.finger;
-import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.limb;
-import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.person;
-import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.tattoos;
+import static com.hazelcast.query.impl.extractor.specification.ComplexTestDataStructure.Finger;
+import static com.hazelcast.query.impl.extractor.specification.ComplexTestDataStructure.Person;
+import static com.hazelcast.query.impl.extractor.specification.ComplexTestDataStructure.finger;
+import static com.hazelcast.query.impl.extractor.specification.ComplexTestDataStructure.limb;
+import static com.hazelcast.query.impl.extractor.specification.ComplexTestDataStructure.person;
+import static com.hazelcast.query.impl.extractor.specification.ComplexTestDataStructure.tattoos;
 import static java.util.Arrays.asList;
 
 /**

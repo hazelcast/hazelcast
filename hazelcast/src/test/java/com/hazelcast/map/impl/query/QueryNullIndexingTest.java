@@ -19,8 +19,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.SampleObjects;
-import com.hazelcast.query.SampleObjects.Employee;
+import com.hazelcast.query.SampleTestObjects;
+import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -112,7 +112,7 @@ public class QueryNullIndexingTest extends HazelcastTestSupport {
 
     private List<Long> queryIndexedDateFieldAsNullValue(boolean ordered, Predicate pred) {
         HazelcastInstance instance = createHazelcastInstance();
-        IMap<Integer, SampleObjects.Employee> map = instance.getMap("default");
+        IMap<Integer, SampleTestObjects.Employee> map = instance.getMap("default");
 
         map.addIndex("date", ordered);
         for (int i = 10; i >= 1; i--) {
@@ -126,7 +126,7 @@ public class QueryNullIndexingTest extends HazelcastTestSupport {
         }
 
         List<Long> dates = new ArrayList<Long>();
-        for (SampleObjects.Employee employee : map.values(pred)) {
+        for (SampleTestObjects.Employee employee : map.values(pred)) {
             Timestamp date = employee.getDate();
             dates.add(date == null ? null : date.getTime());
         }

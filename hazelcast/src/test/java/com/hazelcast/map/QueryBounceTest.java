@@ -19,7 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.query.SampleObjects;
+import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
@@ -49,7 +49,7 @@ public class QueryBounceTest {
     private static final int COUNT_ENTRIES = 100000;
     private static final int CONCURRENCY = 10;
 
-    private IMap<String, SampleObjects.Employee> map;
+    private IMap<String, SampleTestObjects.Employee> map;
 
     @Rule
     public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getConfig())
@@ -94,21 +94,21 @@ public class QueryBounceTest {
         bounceMemberRule.testRepeatedly(testTasks, MINUTES.toSeconds(3));
     }
 
-    private IMap<String, SampleObjects.Employee> getMap() {
+    private IMap<String, SampleTestObjects.Employee> getMap() {
         return bounceMemberRule.getSteadyMember().getMap(TEST_MAP_NAME);
     }
 
     // obtain a reference to test map from 0-th member with indexes created for Employee attributes
-    private IMap<String, SampleObjects.Employee> getMapWithIndexes() {
-        IMap<String, SampleObjects.Employee> map = bounceMemberRule.getSteadyMember().getMap(TEST_MAP_NAME);
+    private IMap<String, SampleTestObjects.Employee> getMapWithIndexes() {
+        IMap<String, SampleTestObjects.Employee> map = bounceMemberRule.getSteadyMember().getMap(TEST_MAP_NAME);
         map.addIndex("id", false);
         map.addIndex("age", true);
         return map;
     }
 
-    private void populateMap(IMap<String, SampleObjects.Employee> map) {
+    private void populateMap(IMap<String, SampleTestObjects.Employee> map) {
         for (int i = 0; i < COUNT_ENTRIES; i++) {
-            SampleObjects.Employee e = new SampleObjects.Employee(i, "name" + i, i, true, i);
+            SampleTestObjects.Employee e = new SampleTestObjects.Employee(i, "name" + i, i, true, i);
             map.put("name" + i, e);
         }
     }
@@ -136,7 +136,7 @@ public class QueryBounceTest {
             String sql = (min % 2 == 0)
                     ? "age >= " + min + " AND age < " + max // may use sorted index
                     : "id >= " + min + " AND id < " + max;  // may use unsorted index
-            Collection<SampleObjects.Employee> employees = map.values(new SqlPredicate(sql));
+            Collection<SampleTestObjects.Employee> employees = map.values(new SqlPredicate(sql));
             assertEquals("Obtained " + employees.size() + " results for query '" + sql + "'",
                     numberOfResults, employees.size());
         }

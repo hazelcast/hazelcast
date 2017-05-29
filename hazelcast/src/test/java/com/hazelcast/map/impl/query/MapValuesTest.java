@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SampleObjects;
+import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.predicates.InstanceOfPredicate;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -122,7 +122,7 @@ public class MapValuesTest extends HazelcastTestSupport {
     @Test
     public void testSerializationServiceNullClassLoaderProblem() throws Exception {
         // if the classloader is null the following call throws NullPointerException
-        map.values(new InstanceOfPredicate(SampleObjects.PortableEmployee.class));
+        map.values(new InstanceOfPredicate(SampleTestObjects.PortableEmployee.class));
     }
 
     static class GoodPredicate implements Predicate<String, String> {

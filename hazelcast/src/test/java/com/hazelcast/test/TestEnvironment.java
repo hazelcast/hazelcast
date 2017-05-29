@@ -16,10 +16,22 @@
 
 package com.hazelcast.test;
 
+import com.hazelcast.test.compatibility.SamplingSerializationService;
+
 public final class TestEnvironment {
 
     public static final String HAZELCAST_TEST_USE_NETWORK = "hazelcast.test.use.network";
     public static final String EXECUTE_COMPATIBILITY_TESTS = "hazelcast.test.compatibility";
+    /**
+     * If defined, should indicate a filename prefix to an existing directory where files will be created to dump
+     * samples of objects which were serialized/deserialized during test suite execution. Two files per JVM are
+     * created, an index and the serialized samples file. The property's value is used as prefix for the filename,
+     * followed by a random UUID to avoid clashes.
+     * For example {@code -Dhazelcast.test.sample.serialized.objects=/home/hz/tmp/objects-} will create files
+     * {@code /home/hz/tmp/objects-UUID.index} and {@code /home/hz/tmp/objects-UUID.samples}.
+     * @see SamplingSerializationService
+     */
+    public static final String SAMPLE_SERIALIZED_OBJECTS = "hazelcast.test.sample.serialized.objects";
 
     private TestEnvironment() {
     }
@@ -33,5 +45,13 @@ public final class TestEnvironment {
      */
     public static boolean isRunningCompatibilityTest() {
         return Boolean.getBoolean(EXECUTE_COMPATIBILITY_TESTS);
+    }
+
+    public static boolean isRecordingSerializedClassNames() {
+        return System.getProperty(SAMPLE_SERIALIZED_OBJECTS) != null;
+    }
+
+    public static String getSerializedClassNamesPath() {
+        return System.getProperty(SAMPLE_SERIALIZED_OBJECTS);
     }
 }

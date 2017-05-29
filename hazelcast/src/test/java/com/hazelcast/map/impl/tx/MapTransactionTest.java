@@ -38,8 +38,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.query.PagingPredicate;
-import com.hazelcast.query.SampleObjects;
-import com.hazelcast.query.SampleObjects.Employee;
+import com.hazelcast.query.SampleTestObjects;
+import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
@@ -1062,14 +1062,14 @@ public class MapTransactionTest extends HazelcastTestSupport {
         final Config config = getConfig();
         config.getSerializationConfig().addPortableFactory(666, new PortableFactory() {
             public Portable create(int classId) {
-                return new SampleObjects.PortableEmployee();
+                return new SampleTestObjects.PortableEmployee();
             }
         });
         final HazelcastInstance instance = createHazelcastInstance(config);
         IMap map = instance.getMap(mapName);
 
-        final SampleObjects.PortableEmployee emp1 = new SampleObjects.PortableEmployee(34, "abc-123-xvz");
-        final SampleObjects.PortableEmployee emp2 = new SampleObjects.PortableEmployee(20, "abc-123-xvz");
+        final SampleTestObjects.PortableEmployee emp1 = new SampleTestObjects.PortableEmployee(34, "abc-123-xvz");
+        final SampleTestObjects.PortableEmployee emp2 = new SampleTestObjects.PortableEmployee(20, "abc-123-xvz");
 
         map.put(emp1, emp1);
 

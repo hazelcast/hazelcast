@@ -21,7 +21,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.query.SampleObjects;
+import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -54,15 +54,15 @@ public class ObjectRecordTest extends HazelcastTestSupport {
 
     @Test
     public void testGetValue() throws Exception {
-        map.put(1, new SampleObjects.Employee("alex", 26, true, 25));
+        map.put(1, new SampleTestObjects.Employee("alex", 26, true, 25));
         map.get(1);
         assertSizeEventually(1, map);
     }
 
     @Test
     public void testSetValue() throws Exception {
-        map.put(1, new SampleObjects.Employee("alex", 26, true, 25));
-        map.put(1, new SampleObjects.Employee("tom", 24, true, 10));
+        map.put(1, new SampleTestObjects.Employee("alex", 26, true, 25));
+        map.put(1, new SampleTestObjects.Employee("tom", 24, true, 10));
         assertSizeEventually(1, map);
     }
 }
