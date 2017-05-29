@@ -70,7 +70,9 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         this.delegate = delegate;
         this.context = context;
         this.serializationService = context.getSerializationService();
-        // TODO off-heap indexes
+        // We are not using injected index provider since we're not supporting off-heap indexes in CQC due
+        // to threading incompatibility. If we injected the IndexProvider from the MapServiceContext
+        // the EE side would create HD indexes which is undesired
         this.indexes = new Indexes(serializationService, new DefaultIndexProvider(), Extractors.empty());
         this.includeValue = isIncludeValue();
         this.partitioningStrategy = getPartitioningStrategy();
