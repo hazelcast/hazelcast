@@ -697,12 +697,10 @@ public class MembershipFailureTest extends HazelcastTestSupport {
 
     @Test
     public void test_whenNodesStartedTerminatedConcurrently() throws InterruptedException {
-        Config config = new Config();
-
-        newHazelcastInstance(config);
+        newHazelcastInstance();
 
         for (int i = 0; i < 3; i++) {
-            startInstancesConcurrently(config, 4);
+            startInstancesConcurrently(4);
             terminateRandomInstancesConcurrently(3);
 
             HazelcastInstance[] instances = getAllHazelcastInstances().toArray(new HazelcastInstance[0]);
@@ -749,12 +747,12 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         }, 10);
     }
 
-    private void startInstancesConcurrently(final Config config, int count) throws InterruptedException {
+    private void startInstancesConcurrently(int count) throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(count);
         for (int i = 0; i < count; i++) {
             new Thread() {
                 public void run() {
-                    newHazelcastInstance(config);
+                    newHazelcastInstance();
                     latch.countDown();
                 }
             }.start();
