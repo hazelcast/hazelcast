@@ -42,6 +42,7 @@ class StringGaugeImpl
 
         if (function == null || source == null) {
             clearProbeInstance();
+            return;
         }
 
         try {

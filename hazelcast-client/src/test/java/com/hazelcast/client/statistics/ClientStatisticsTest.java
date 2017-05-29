@@ -37,7 +37,6 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -51,6 +50,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -230,12 +230,19 @@ public class ClientStatisticsTest
     @Test
     public void testEscapeSpecialCharacter() {
         String originalString = "stat1=value1.lastName,stat2=value2\\hello==";
-        StringBuilder escapedString = new StringBuilder("stat1\\=value1\\.lastName\\,stat2\\=value2\\\\hello\\=\\=");
+        String escapedString = "stat1\\=value1\\.lastName\\,stat2\\=value2\\\\hello\\=\\=";
         StringBuilder buffer = new StringBuilder(originalString);
-        Statistics.escapeSpecialCharacters(buffer, 0);
-        assertEquals(escapedString.toString(), buffer.toString());
-        Statistics.unescapeSpecialCharacters(escapedString, 0);
-        assertEquals(originalString, escapedString.toString());
+        Statistics.escapeSpecialCharacters(buffer);
+        assertEquals(escapedString, buffer.toString());
+        assertEquals(originalString, Statistics.unescapeSpecialCharacters(escapedString));
+    }
+
+    @Test
+    public void testSplit() {
+        String escapedString = "stat1=value1.lastName,stat2=full\\name==hazel\\,ali,";
+        String[] expectedStrings = { "stat1=value1.lastName", "stat2=full\\name==hazel\\,ali"};
+        List<String> strings = Statistics.split(escapedString);
+        assertArrayEquals(expectedStrings, strings.toArray());
     }
 
     private <K, V> CacheConfig<K, V> createCacheConfig() {
@@ -294,12 +301,12 @@ public class ClientStatisticsTest
     private Map<String,String> parseStatValue(String value) {
         Map<String,String> result = new HashMap<String, String>();
 
-        String[] stats = value.split(",");
-        for (String stat : stats) {
-            StringBuilder unescapedEntry = new StringBuilder(stat);
-            Statistics.unescapeSpecialCharacters(unescapedEntry, 0);
-            String[] entry = unescapedEntry.toString().split("=");
-            result.put(entry[0], entry[1]);
+        List<String> strings = Statistics.split(value);
+
+        for (String stat : strings) {
+            List<String> keyValue = Statistics.split(stat, 0, '=');
+            result.put(Statistics.unescapeSpecialCharacters(keyValue.get(0)),
+                    Statistics.unescapeSpecialCharacters(keyValue.get(1)));
         }
 
         return result;

@@ -1,4 +1,4 @@
-package com.hazelcast.client.impl.statistics;/*
+/*
  * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +13,8 @@ package com.hazelcast.client.impl.statistics;/*
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package com.hazelcast.client.impl.statistics;
 
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
@@ -34,57 +36,64 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+/**
+ * This class is the main entry point for collecting and sending the client
+ * statistics to the cluster. If the client statistics feature is enabled
+ * it will be scheduled for periodic statistics collection and send.
+ */
 public class Statistics {
-    public static final String CONFIGURATION_PREFIX = "hazelcast.client.statistics";
-    public final static String NEAR_CACHE_CATEGORY_PREFIX = "nearcache.";
-    public final static String FEATURE_SUPPORTED_SINCE_VERSION_STRING = "3.9";
-    public final static int FEATURE_SUPPORTED_SINCE_VERSION = BuildInfo.calculateVersion(FEATURE_SUPPORTED_SINCE_VERSION_STRING);
-    private final static char STAT_SEPARATOR = ',';
-    private final static char KEY_VALUE_SEPARATOR = '=';
-    private final static char ESCAPE_CHAR = '\\';
-
-    private final boolean enabled;
-    private final HazelcastProperties properties;
-    private final ILogger logger = Logger.getLogger(this.getClass());
-    private final HazelcastClientInstanceImpl client;
-
-    private final boolean enterprise;
-
-    private final MetricsRegistry metricsRegistry;
-    private PeriodicStatistics periodicStats;
-
     /**
      * Use to enable the client statistics collection.
      * <p/>
      * The default is false.
      */
-    public static final HazelcastProperty ENABLED = new HazelcastProperty(CONFIGURATION_PREFIX + ".enabled", false);
+    public static final HazelcastProperty ENABLED = new HazelcastProperty("hazelcast.client.statistics.enabled", false);
 
     /**
-     * The period in seconds the statictics runs.
+     * The period in seconds the statistics runs.
      * <p/>
      */
-    public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty(CONFIGURATION_PREFIX + ".period.seconds", 3,
+    public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty("hazelcast.client.statistics.period.seconds", 3,
             SECONDS);
 
-    public Statistics(HazelcastClientInstanceImpl client) {
-        this.properties = client.getProperties();
+    private static final String NEAR_CACHE_CATEGORY_PREFIX = "nearcache.";
+    private static final String FEATURE_SUPPORTED_SINCE_VERSION_STRING = "3.9";
+    private static final int FEATURE_SUPPORTED_SINCE_VERSION = BuildInfo.calculateVersion(FEATURE_SUPPORTED_SINCE_VERSION_STRING);
+    private static final char STAT_SEPARATOR = ',';
+    private static final char KEY_VALUE_SEPARATOR = '=';
+    private static final char ESCAPE_CHAR = '\\';
+
+    private final MetricsRegistry metricsRegistry;
+    private final boolean enabled;
+    private final HazelcastProperties properties;
+    private final ILogger logger = Logger.getLogger(this.getClass());
+
+    private final HazelcastClientInstanceImpl client;
+
+    private final boolean enterprise;
+
+    private PeriodicStatistics periodicStats;
+
+    public Statistics(final HazelcastClientInstanceImpl clientInstance) {
+        this.properties = clientInstance.getProperties();
         this.enabled = properties.getBoolean(ENABLED);
-        this.client = client;
+        this.client = clientInstance;
         this.enterprise = BuildInfoProvider.getBuildInfo().isEnterprise();
-        this.metricsRegistry = client.getMetricsRegistry();
+        this.metricsRegistry = clientInstance.getMetricsRegistry();
     }
 
     /**
-     * Registers all client statistics and schedules peridic collection of stats
+     * Registers all client statistics and schedules peridic collection of stats.
      */
-    public void start() {
+    public final void start() {
         if (!enabled) {
             return;
         }
@@ -107,6 +116,10 @@ public class Statistics {
         logger.info("Client statistics is enabled with period " + periodSeconds + " seconds.");
     }
 
+    /**
+     *
+     * @return The owner connection to the server for the client only if the server supports the client statistics feature.
+     */
     private ClientConnection getOwnerConnection() {
         Address ownerConnectionAddress = client.getClientClusterService().getOwnerConnectionAddress();
         if (null == ownerConnectionAddress) {
@@ -130,6 +143,10 @@ public class Statistics {
         return connection;
     }
 
+    /**
+     *
+     * @param periodSeconds The interval at which the statistics collection and send is being run.
+     */
     private void schedulePeriodicStatisticsSendTask(long periodSeconds) {
         client.getExecutionService().scheduleWithRepetition(new Runnable() {
             @Override
@@ -142,20 +159,7 @@ public class Statistics {
 
                 final StringBuilder stats = new StringBuilder();
 
-                stats.append("lastStatisticsCollectionTime").append(KEY_VALUE_SEPARATOR).append(System.currentTimeMillis());
-                addStat(stats, "enterprise", enterprise);
-                addStat(stats, "clientType", ClientType.JAVA.toString());
-                addStat(stats, "clusterConnectionTimestamp", ownerConnection.getStartTime());
-
-                stats.append(STAT_SEPARATOR).append("clientAddress").append(KEY_VALUE_SEPARATOR)
-                     .append(ownerConnection.getInetAddress().getHostAddress()).append(":").append(ownerConnection.getPort());
-
-                Credentials credentials = client.getCredentials();
-                if (!(credentials instanceof UsernamePasswordCredentials)) {
-                    addStat(stats, "credentials.principal", credentials.getPrincipal());
-                }
-
-                periodicStats.fillMetrics(stats);
+                periodicStats.fillMetrics(stats, ownerConnection);
 
                 addNearCachStats(stats);
 
@@ -164,7 +168,7 @@ public class Statistics {
         }, 0, periodSeconds, SECONDS);
     }
 
-    private void addNearCachStats(StringBuilder stats) {
+    private void addNearCachStats(final StringBuilder stats) {
         for (NearCache nearCache : client.getNearCacheManager().listAllNearCaches()) {
             String nearCacheName = nearCache.getName();
             StringBuilder nearCachNameWithPrefix = getNameWithPrefix(nearCacheName);
@@ -193,11 +197,11 @@ public class Statistics {
         }
     }
 
-    private void addStat(StringBuilder stats, String name, long value) {
+    private void addStat(final StringBuilder stats, final String name, long value) {
         addStat(stats, null, name, value);
     }
 
-    private void addStat(StringBuilder stats, String keyPrefix, String name, long value) {
+    private void addStat(final StringBuilder stats, final String keyPrefix, final String name, long value) {
         stats.append(STAT_SEPARATOR);
         if (null != keyPrefix) {
             stats.append(keyPrefix);
@@ -233,6 +237,14 @@ public class Statistics {
         return escapedName;
     }
 
+    /**
+     *
+     * @param buffer The string for which the special characters ',', '=', '\' are escaped properly.
+     */
+    public static void escapeSpecialCharacters(StringBuilder buffer) {
+        escapeSpecialCharacters(buffer, 0);
+    }
+
     public static void escapeSpecialCharacters(StringBuilder buffer, int start) {
         for (int i = start; i < buffer.length(); ++i) {
             char c = buffer.charAt(i);
@@ -243,13 +255,76 @@ public class Statistics {
         }
     }
 
+    /**
+     *
+     * @param buffer The string for which the escape character '\' is escaped properly.
+     * @return The unescaped string
+     */
+    public static String unescapeSpecialCharacters(String buffer) {
+        return unescapeSpecialCharacters(buffer, 0);
+    }
+
+    public static String unescapeSpecialCharacters(String buffer, int start) {
+        StringBuilder result = new StringBuilder(buffer);
+        unescapeSpecialCharacters(result, start);
+        return result.toString();
+    }
+
     public static void unescapeSpecialCharacters(StringBuilder buffer, int start) {
         for (int i = start; i < buffer.length() - 1; ++i) {
             char c = buffer.charAt(i);
-            if (c == ESCAPE_CHAR ) {
+            if (c == ESCAPE_CHAR) {
                 buffer.deleteCharAt(i);
             }
         }
+    }
+
+    /**
+     * This method uses ',' character by default. It is for splitting into key=value tokens.
+     *
+     * @param statString The statistics string to be split
+     * @return A list of splitted strings
+     */
+    public static List<String> split(String statString) {
+        return split(statString, 0, STAT_SEPARATOR);
+    }
+
+    /**
+     *
+     * @param stat statistics string to be split
+     * @param start The start index for splitting
+     * @param splitChar A special character to be used for split, e.g. '='
+     * @return A list of splitted strings
+     */
+    public static List<String> split(String stat, int start, char splitChar) {
+        int bufferLen = stat.length();
+        if (bufferLen == 0) {
+            return null;
+        }
+
+        List<String> result = new ArrayList<String>();
+        int strStart = start;
+        int index = start;
+        // just initialize to a non-special character
+        char previousChar = 'a';
+        for (char currentChar; index < bufferLen; previousChar = currentChar, ++index) {
+            currentChar = stat.charAt(index);
+            if (currentChar == splitChar) {
+                if (previousChar == ESCAPE_CHAR) {
+                    continue;
+                }
+
+                result.add(stat.substring(strStart, index));
+                strStart = index + 1;
+            }
+        }
+
+        // Add the last string if exists
+        if (index > strStart) {
+            result.add(stat.substring(strStart, index));
+        }
+
+        return result;
     }
 
     private void sendStats(String newStats, ClientConnection ownerConnection) {
@@ -265,27 +340,38 @@ public class Statistics {
     }
 
     class PeriodicStatistics {
-        private final String[] STATISTIC_NAMES = {"os.committedVirtualMemorySize", "os.freePhysicalMemorySize",
-                                                  "os.freeSwapSpaceSize", "os.maxFileDescriptorCount",
-                                                  "os.openFileDescriptorCount", "os.processCpuTime",
-                                                  "os.systemLoadAverage", "os.totalPhysicalMemorySize",
-                                                  "os.totalSwapSpaceSize", "runtime.availableProcessors",
-                                                  "runtime.freeMemory", "runtime.maxMemory",
-                                                  "runtime.totalMemory", "runtime.uptime", "runtime.usedMemory",
-                                                  "executionService.userExecutorQueueSize"};
+        private final String[] statisticNames = {
+                "os.committedVirtualMemorySize", "os.freePhysicalMemorySize", "os.freeSwapSpaceSize", "os.maxFileDescriptorCount",
+                "os.openFileDescriptorCount", "os.processCpuTime", "os.systemLoadAverage", "os.totalPhysicalMemorySize",
+                "os.totalSwapSpaceSize", "runtime.availableProcessors", "runtime.freeMemory", "runtime.maxMemory",
+                "runtime.totalMemory", "runtime.uptime", "runtime.usedMemory", "executionService.userExecutorQueueSize",
+                };
 
-        private final Map<String, StringGauge> allMetrics = new HashMap<String, StringGauge>(STATISTIC_NAMES.length);
+        private final Map<String, StringGauge> allMetrics = new HashMap<String, StringGauge>(statisticNames.length);
 
         PeriodicStatistics(final MetricsRegistry metricsRegistry) {
-            for (String name : STATISTIC_NAMES) {
+            for (String name : statisticNames) {
                 allMetrics.put(name, metricsRegistry.newStringGauge(name));
             }
         }
 
-        void fillMetrics(final StringBuilder buffer) {
+        void fillMetrics(final StringBuilder stats, final ClientConnection ownerConnection) {
+            stats.append("lastStatisticsCollectionTime").append(KEY_VALUE_SEPARATOR).append(System.currentTimeMillis());
+            addStat(stats, "enterprise", enterprise);
+            addStat(stats, "clientType", ClientType.JAVA.toString());
+            addStat(stats, "clusterConnectionTimestamp", ownerConnection.getStartTime());
+
+            stats.append(STAT_SEPARATOR).append("clientAddress").append(KEY_VALUE_SEPARATOR)
+                 .append(ownerConnection.getInetAddress().getHostAddress()).append(":").append(ownerConnection.getPort());
+
+            Credentials credentials = client.getCredentials();
+            if (!(credentials instanceof UsernamePasswordCredentials)) {
+                addStat(stats, "credentials.principal", credentials.getPrincipal());
+            }
+
             for (Map.Entry<String, StringGauge> entry : allMetrics.entrySet()) {
-                buffer.append(STAT_SEPARATOR).append(entry.getKey()).append(KEY_VALUE_SEPARATOR);
-                entry.getValue().read(buffer);
+                stats.append(STAT_SEPARATOR).append(entry.getKey()).append(KEY_VALUE_SEPARATOR);
+                entry.getValue().read(stats);
             }
         }
     }

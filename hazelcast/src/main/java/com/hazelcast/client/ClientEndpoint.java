@@ -25,8 +25,6 @@ import com.hazelcast.transaction.TransactionContext;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**

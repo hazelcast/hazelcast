@@ -31,7 +31,6 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 
-import java.util.List;
 import java.util.Map;
 
 /**
