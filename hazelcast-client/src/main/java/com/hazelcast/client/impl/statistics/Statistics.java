@@ -82,6 +82,8 @@ public class Statistics {
 
     private PeriodicStatistics periodicStats;
 
+    private volatile Address ownerAddress;
+
     public Statistics(final HazelcastClientInstanceImpl clientInstance) {
         this.properties = clientInstance.getProperties();
         this.enabled = properties.getBoolean(ENABLED);
@@ -125,6 +127,7 @@ public class Statistics {
         if (null == ownerConnectionAddress) {
             return null;
         }
+
         ClientConnection connection = (ClientConnection) client.getConnectionManager().getConnection(ownerConnectionAddress);
         if (null == connection) {
             return null;
@@ -132,11 +135,17 @@ public class Statistics {
 
         int serverVersion = connection.getConnectedServerVersion();
         if (serverVersion < FEATURE_SUPPORTED_SINCE_VERSION) {
-            if (logger.isFinestEnabled()) {
-                logger.finest(
-                        format("Client statistics can not be started since current connected owner server version is less than"
-                                + " the minimum supported server version %s", FEATURE_SUPPORTED_SINCE_VERSION_STRING));
+            // do not print too many logs if connected to an old version server
+            if (ownerAddress == null || !ownerConnectionAddress.equals(ownerAddress)) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest(
+                            format("Client statistics can not be sent to server " + ownerConnectionAddress + " since, connected "
+                                            + "owner server version is less than the minimum supported server version %s",
+                                    FEATURE_SUPPORTED_SINCE_VERSION_STRING));
+                }
             }
+            // cache the last connected server address for decreasing the log prints
+            ownerAddress = ownerConnectionAddress;
             return null;
         }
 

@@ -109,7 +109,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService,
     }
 
     @Probe (level = MANDATORY)
-    public long getUserExecutorQueueSize() {
+    public int getUserExecutorQueueSize() {
         return ((ThreadPoolExecutor) userExecutor).getQueue().size();
     }
 
