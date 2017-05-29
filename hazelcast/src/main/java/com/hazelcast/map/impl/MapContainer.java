@@ -120,7 +120,7 @@ public class MapContainer {
             // for non-native memory populate a single global index
             this.globalIndex = true;
             this.indexes = new Indexes((InternalSerializationService) serializationService,
-                    mapServiceContext.getIndexProvider(name), extractors, true);
+                    mapServiceContext.getIndexProvider(mapConfig), extractors, true);
         } else {
             this.globalIndex = false;
             this.indexes = null;

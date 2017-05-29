@@ -120,7 +120,7 @@ public class PartitionContainer {
         keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
 
         InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
-        IndexProvider indexProvider = serviceContext.getIndexProvider(mapConfig.getName());
+        IndexProvider indexProvider = serviceContext.getIndexProvider(mapConfig);
         final boolean globalIndex = false;
         Indexes indexesForMap = new Indexes(ss, indexProvider, mapContainer.getExtractors(), globalIndex);
         indexes.putIfAbsent(name, indexesForMap);
@@ -248,10 +248,12 @@ public class PartitionContainer {
         if (ixs == null) {
 
             MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+            MapContainer mapContainer = mapServiceContext.getMapContainer(name);
+
             InternalSerializationService ss = (InternalSerializationService)
                     mapServiceContext.getNodeEngine().getSerializationService();
             Extractors extractors = mapServiceContext.getMapContainer(name).getExtractors();
-            IndexProvider indexProvider = mapServiceContext.getIndexProvider(name);
+            IndexProvider indexProvider = mapServiceContext.getIndexProvider(mapContainer.getMapConfig());
             Indexes indexesForMap = new Indexes(ss, indexProvider, extractors, globalIndex);
             ixs = indexes.putIfAbsent(name, indexesForMap);
             if (ixs == null) {

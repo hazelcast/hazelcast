@@ -146,7 +146,7 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     MapOperationProvider getMapOperationProvider(MapConfig mapConfig);
 
-    IndexProvider getIndexProvider(String name);
+    IndexProvider getIndexProvider(MapConfig mapConfig);
 
     Extractors getExtractors(String mapName);
 

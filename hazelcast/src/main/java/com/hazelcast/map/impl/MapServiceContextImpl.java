@@ -651,7 +651,7 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public IndexProvider getIndexProvider(String name) {
+    public IndexProvider getIndexProvider(MapConfig mapConfig) {
         return indexProvider;
     }
 
