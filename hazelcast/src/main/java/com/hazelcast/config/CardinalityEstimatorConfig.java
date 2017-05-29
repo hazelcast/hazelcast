@@ -63,7 +63,7 @@ public class CardinalityEstimatorConfig {
     /**
      * Gets the name of the cardinality estimator.
      *
-     * @return The name of the estimator.
+     * @return the name of the estimator
      */
     public String getName() {
         return name;
@@ -72,8 +72,8 @@ public class CardinalityEstimatorConfig {
     /**
      * Sets the name of the cardinality estimator.
      *
-     * @param name The name of the estimator.
-     * @return The cardinality estimator config instance.
+     * @param name the name of the estimator
+     * @return the cardinality estimator config instance
      */
     public CardinalityEstimatorConfig setName(String name) {
         checkNotNull(name);
@@ -84,7 +84,7 @@ public class CardinalityEstimatorConfig {
     /**
      * Gets the number of synchronous backups.
      *
-     * @return number of synchronous backups.
+     * @return number of synchronous backups
      */
     public int getBackupCount() {
         return backupCount;
@@ -109,7 +109,7 @@ public class CardinalityEstimatorConfig {
     /**
      * Gets the number of synchronous backups.
      *
-     * @return number of synchronous backups.
+     * @return number of synchronous backups
      */
     public int getAsyncBackupCount() {
         return asyncBackupCount;

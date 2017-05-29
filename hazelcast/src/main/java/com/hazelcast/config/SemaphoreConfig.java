@@ -27,11 +27,11 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 public class SemaphoreConfig {
 
     /**
-     * Default synchronous backup count
+     * Default synchronous backup count.
      */
     public static final int DEFAULT_SYNC_BACKUP_COUNT = 1;
     /**
-     * Default asynchronous backup count
+     * Default asynchronous backup count.
      */
     public static final int DEFAULT_ASYNC_BACKUP_COUNT = 0;
 
@@ -51,7 +51,7 @@ public class SemaphoreConfig {
      * Creates a SemaphoreConfig by cloning another one.
      *
      * @param config the SemaphoreConfig to copy
-     * @throws IllegalArgumentException if config is null.
+     * @throws IllegalArgumentException if config is {@code null}
      */
     public SemaphoreConfig(SemaphoreConfig config) {
         isNotNull(config, "config");
@@ -64,8 +64,8 @@ public class SemaphoreConfig {
     /**
      * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public SemaphoreConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
@@ -75,9 +75,9 @@ public class SemaphoreConfig {
     }
 
     /**
-     * Gets the name of the semaphore. If no name has been configured, null is returned.
+     * Gets the name of the semaphore. If no name has been configured, {@code null} is returned.
      *
-     * @return the name of the semaphore.
+     * @return the name of the semaphore
      */
     public String getName() {
         return name;
@@ -88,7 +88,7 @@ public class SemaphoreConfig {
      *
      * @param name the name of the semaphore
      * @return the updated SemaphoreConfig
-     * @throws IllegalArgumentException if name is null or empty.
+     * @throws IllegalArgumentException if name is {@code null} or empty
      */
     public SemaphoreConfig setName(String name) {
         this.name = checkHasText(name, "name must contain text");
@@ -98,7 +98,7 @@ public class SemaphoreConfig {
     /**
      * Gets the initial number of permits.
      *
-     * @return the initial number of permits.
+     * @return the initial number of permits
      */
     public int getInitialPermits() {
         return initialPermits;
@@ -108,7 +108,7 @@ public class SemaphoreConfig {
      * Sets the initial number of permits. The initial number of permits can be 0; meaning that there is no permit.
      * It can also be a negative number, meaning that there is a shortage of permits.
      *
-     * @param initialPermits the initial number of permits.
+     * @param initialPermits the initial number of permits
      * @return the updated SemaphoreConfig
      */
     public SemaphoreConfig setInitialPermits(int initialPermits) {
@@ -119,7 +119,7 @@ public class SemaphoreConfig {
     /**
      * Returns the number of synchronous backups.
      *
-     * @return the number of synchronous backups.
+     * @return the number of synchronous backups
      * @see #setBackupCount(int)
      */
     public int getBackupCount() {
@@ -146,7 +146,7 @@ public class SemaphoreConfig {
     /**
      * Returns the number of asynchronous backups.
      *
-     * @return the number of asynchronous backups.
+     * @return the number of asynchronous backups
      * @see #setAsyncBackupCount(int)
      */
     public int getAsyncBackupCount() {
@@ -156,7 +156,7 @@ public class SemaphoreConfig {
     /**
      * Sets the number of asynchronous backups. 0 means no backups.
      *
-     * @param asyncBackupCount the number of asynchronous synchronous backups to set.
+     * @param asyncBackupCount the number of asynchronous synchronous backups to set
      * @return the updated SemaphoreConfig
      * @throws IllegalArgumentException if asyncBackupCount smaller than 0,
      *                                  or larger than the maximum number of backup
@@ -174,7 +174,7 @@ public class SemaphoreConfig {
      * Returns the total number of backups (synchronous plus asynchronous);
      * the returned value will always equal or bigger than 0.
      *
-     * @return the total number of backups (synchronous plus asynchronous).
+     * @return the total number of backups (synchronous plus asynchronous)
      */
     public int getTotalBackupCount() {
         return asyncBackupCount + backupCount;

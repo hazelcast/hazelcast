@@ -32,11 +32,11 @@ import java.util.Set;
 
 /**
  * Contains all the configuration for the {@link com.hazelcast.cache.ICache} (used for backward compatibility).
- *
+ * <p>
  * This class does not support disablePerEntryInvalidationEvents and has no eviction policy comparator support.
  *
- * @param <K> the key type.
- * @param <V> the value type.
+ * @param <K> the key type
+ * @param <V> the value type
  */
 @BinaryInterface
 public class LegacyCacheConfig<K, V> implements DataSerializable, TypedDataSerializable {

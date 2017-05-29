@@ -75,8 +75,8 @@ public class EntryListenerConfig extends ListenerConfig {
     /**
      * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     @Override
     public EntryListenerConfigReadOnly getAsReadOnly() {
@@ -102,11 +102,11 @@ public class EntryListenerConfig extends ListenerConfig {
     /**
      * This method provides a workaround by converting a MapListener to EntryListener
      * when it is added via EntryListenerConfig object.
-     * <p/>
+     * <p>
      * With this method, we are trying to fix two problems :
      * First, if we do not introduce the conversion in this method, {@link EntryListenerConfig#getImplementation}
      * will give {@link ClassCastException} with a MapListener implementation.
-     * <p/>
+     * <p>
      * Second goal of the conversion is to preserve backward compatibility.
      */
     private static EventListener toEntryListener(Object implementation) {

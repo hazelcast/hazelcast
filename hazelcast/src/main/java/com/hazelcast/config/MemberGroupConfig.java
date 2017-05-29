@@ -26,7 +26,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for a single member group.
- * <p/>
+ * <p>
  * See the {@link PartitionGroupConfig} for more information.
  */
 public class MemberGroupConfig {
@@ -36,9 +36,9 @@ public class MemberGroupConfig {
     /**
      * Adds an interface to the member group. Duplicate elements are ignored.
      *
-     * @param ip the ip address of the interface.
+     * @param ip the IP address of the interface
      * @return the updated MemberGroupConfig
-     * @throws IllegalArgumentException if ip is null or empty.
+     * @throws IllegalArgumentException if IP is {@code null} or empty
      * @see #getInterfaces()
      * @see #clear()
      */
@@ -49,7 +49,7 @@ public class MemberGroupConfig {
 
     /**
      * Removes all interfaces from the member group.
-     * <p/>
+     * <p>
      * If no members are in the group, the call is ignored.
      *
      * @return the updated MemberGroupConfig
@@ -62,7 +62,7 @@ public class MemberGroupConfig {
     /**
      * Gets an unmodifiable collection containing all interfaces.
      *
-     * @return the unmodifiable collection containing all interfaces.
+     * @return the unmodifiable collection containing all interfaces
      * @see #setInterfaces(java.util.Collection)
      */
     public Collection<String> getInterfaces() {
@@ -71,12 +71,12 @@ public class MemberGroupConfig {
 
     /**
      * Sets the interfaces that are part of a group.
-     * <p/>
+     * <p>
      * If the interfaces is empty, it will have the same effect as calling {@link #clear()}.
      *
-     * @param interfaces the interfaces to set that are part of a group.
+     * @param interfaces the interfaces to set that are part of a group
      * @return the updated MemberGroupConfig
-     * @throws IllegalArgumentException if interfaces is null.
+     * @throws IllegalArgumentException if interfaces is {@code null}
      * @see #getInterfaces()
      * @see #clear()
      */

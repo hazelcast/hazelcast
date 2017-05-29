@@ -130,7 +130,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
      * Constructs a XmlConfigBuilder that reads from the provided XML file.
      *
      * @param xmlFileName the name of the XML file that the XmlConfigBuilder reads from
-     * @throws FileNotFoundException if the file can't be found.
+     * @throws FileNotFoundException if the file can't be found
      */
     public XmlConfigBuilder(String xmlFileName) throws FileNotFoundException {
         this(new FileInputStream(xmlFileName));
@@ -140,8 +140,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     /**
      * Constructs a XmlConfigBuilder that reads from the given InputStream.
      *
-     * @param inputStream the InputStream containing the XML configuration.
-     * @throws IllegalArgumentException if inputStream is null.
+     * @param inputStream the InputStream containing the XML configuration
+     * @throws IllegalArgumentException if inputStream is {@code null}
      */
     public XmlConfigBuilder(InputStream inputStream) {
         if (inputStream == null) {
@@ -175,7 +175,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     /**
      * Gets the current used properties. Can be null if no properties are set.
      *
-     * @return the current used properties.
+     * @return the current used properties
      * @see #setProperties(java.util.Properties)
      */
     @Override
@@ -185,10 +185,10 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
 
     /**
      * Sets the used properties. Can be null if no properties should be used.
-     * <p/>
+     * <p>
      * Properties are used to resolve ${variable} occurrences in the XML file.
      *
-     * @param properties the new properties.
+     * @param properties the new properties
      * @return the XmlConfigBuilder
      */
     public XmlConfigBuilder setProperties(Properties properties) {

@@ -21,7 +21,7 @@ import java.util.Collection;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
- * Contains the 3 different join configurations; tcp-ip/multicast/aws. Only one of them should be enabled!
+ * Contains the 3 different join configurations; TCP-IP/multicast/AWS. Only one of them should be enabled!
  */
 public class JoinConfig {
 
@@ -104,7 +104,7 @@ public class JoinConfig {
     /**
      * Verifies this JoinConfig is valid. At most a single joiner should be active.
      *
-     * @throws IllegalStateException when the join config is not valid.
+     * @throws IllegalStateException when the join config is not valid
      */
     public void verify() {
         if (getTcpIpConfig().isEnabled() && getMulticastConfig().isEnabled()) {
@@ -125,7 +125,7 @@ public class JoinConfig {
      * Verifies this JoinConfig is valid. When Discovery SPI enabled other discovery
      * methods should be disabled
      *
-     * @throws IllegalStateException when the join config is not valid.
+     * @throws IllegalStateException when the join config is not valid
      */
     private void verifyDiscoveryProviderConfig() {
         Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = discoveryConfig.getDiscoveryStrategyConfigs();

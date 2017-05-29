@@ -23,7 +23,7 @@ import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
 
 /**
- * Contains the configuration for an {@link com.hazelcast.core.IQueue}
+ * Contains the configuration for an {@link com.hazelcast.core.IQueue}.
  */
 public class QueueConfig {
 
@@ -81,8 +81,8 @@ public class QueueConfig {
     /**
      * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public QueueConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
@@ -94,7 +94,7 @@ public class QueueConfig {
     /**
      * Returns the TTL (time to live) for emptying the Queue.
      *
-     * @return The TTL (time to live) for emptying the Queue.
+     * @return the TTL (time to live) for emptying the Queue
      */
     public int getEmptyQueueTtl() {
         return emptyQueueTtl;
@@ -103,8 +103,8 @@ public class QueueConfig {
     /**
      * Sets the TTL (time to live) for emptying the Queue.
      *
-     * @param emptyQueueTtl Set the TTL (time to live) for emptying the Queue to this value.
-     * @return The Queue configuration.
+     * @param emptyQueueTtl set the TTL (time to live) for emptying the Queue to this value
+     * @return the Queue configuration
      */
     public QueueConfig setEmptyQueueTtl(int emptyQueueTtl) {
         this.emptyQueueTtl = emptyQueueTtl;
@@ -114,7 +114,7 @@ public class QueueConfig {
     /**
      * Returns the maximum size of the Queue.
      *
-     * @return The maximum size of the Queue.
+     * @return the maximum size of the Queue
      */
     public int getMaxSize() {
         return maxSize == 0 ? Integer.MAX_VALUE : maxSize;
@@ -123,8 +123,8 @@ public class QueueConfig {
     /**
      * Sets the maximum size of the Queue.
      *
-     * @param maxSize Set the maximum size of the Queue to this value.
-     * @return The Queue configuration.
+     * @param maxSize set the maximum size of the Queue to this value
+     * @return the Queue configuration
      */
     public QueueConfig setMaxSize(int maxSize) {
         if (maxSize < 0) {
@@ -137,7 +137,7 @@ public class QueueConfig {
     /**
      * Get the total number of backups: the backup count plus the asynchronous backup count.
      *
-     * @return The total number of backups.
+     * @return the total number of backups
      */
     public int getTotalBackupCount() {
         return backupCount + asyncBackupCount;
@@ -146,7 +146,7 @@ public class QueueConfig {
     /**
      * Get the number of synchronous backups for this queue.
      *
-     * @return The synchronous backup count.
+     * @return the synchronous backup count
      */
     public int getBackupCount() {
         return backupCount;
@@ -170,7 +170,7 @@ public class QueueConfig {
     /**
      * Get the number of asynchronous backups for this queue.
      *
-     * @return The number of asynchronous backups.
+     * @return the number of asynchronous backups
      */
     public int getAsyncBackupCount() {
         return asyncBackupCount;
@@ -195,7 +195,7 @@ public class QueueConfig {
     /**
      * Get the QueueStore (load and store queue items from/to a database) configuration.
      *
-     * @return The QueueStore configuration.
+     * @return the QueueStore configuration
      */
     public QueueStoreConfig getQueueStoreConfig() {
         return queueStoreConfig;
@@ -204,8 +204,8 @@ public class QueueConfig {
     /**
      * Set the QueueStore (load and store queue items from/to a database) configuration.
      *
-     * @param queueStoreConfig Set the QueueStore configuration to this configuration.
-     * @return The QueueStore configuration.
+     * @param queueStoreConfig set the QueueStore configuration to this configuration
+     * @return the QueueStore configuration
      */
     public QueueConfig setQueueStoreConfig(QueueStoreConfig queueStoreConfig) {
         this.queueStoreConfig = queueStoreConfig;
@@ -215,7 +215,7 @@ public class QueueConfig {
     /**
      * Check if statistics are enabled for this queue.
      *
-     * @return true if statistics are enabled, false otherwise.
+     * @return {@code true} if statistics are enabled, {@code false} otherwise
      */
     public boolean isStatisticsEnabled() {
         return statisticsEnabled;
@@ -224,7 +224,7 @@ public class QueueConfig {
     /**
      * Enables or disables statistics for this queue.
      *
-     * @param statisticsEnabled True to enable statistics for this queue, false to disable.
+     * @param statisticsEnabled {@code true} to enable statistics for this queue, {@code false} to disable
      * @return the updated QueueConfig
      */
     public QueueConfig setStatisticsEnabled(boolean statisticsEnabled) {
@@ -233,7 +233,7 @@ public class QueueConfig {
     }
 
     /**
-     * @return The name of this queue.
+     * @return the name of this queue
      */
     public String getName() {
         return name;
@@ -242,8 +242,8 @@ public class QueueConfig {
     /**
      * Set the name for this queue.
      *
-     * @param name The name to set for this queue.
-     * @return This queue configuration.
+     * @param name the name to set for this queue
+     * @return this queue configuration
      */
     public QueueConfig setName(String name) {
         this.name = name;
@@ -253,8 +253,8 @@ public class QueueConfig {
     /**
      * Add an item listener configuration to this queue.
      *
-     * @param listenerConfig The item listener configuration to add to this queue.
-     * @return The updated queue configuration.
+     * @param listenerConfig the item listener configuration to add to this queue
+     * @return the updated queue configuration
      */
     public QueueConfig addItemListenerConfig(ItemListenerConfig listenerConfig) {
         getItemListenerConfigs().add(listenerConfig);
@@ -264,7 +264,7 @@ public class QueueConfig {
     /**
      * Get the list of item listener configurations for this queue.
      *
-     * @return The list of item listener configurations for this queue.
+     * @return the list of item listener configurations for this queue
      */
     public List<ItemListenerConfig> getItemListenerConfigs() {
         if (listenerConfigs == null) {
@@ -276,8 +276,8 @@ public class QueueConfig {
     /**
      * Set the list of item listener configurations for this queue.
      *
-     * @param listenerConfigs The list of item listener configurations to set for this queue.
-     * @return The updated queue configuration.
+     * @param listenerConfigs the list of item listener configurations to set for this queue
+     * @return the updated queue configuration
      */
     public QueueConfig setItemListenerConfigs(List<ItemListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;

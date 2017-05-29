@@ -49,7 +49,6 @@ public class MultiMapConfig {
     private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
     private boolean statisticsEnabled = true;
-    //    private PartitioningStrategyConfig partitionStrategyConfig;
     private MultiMapConfigReadOnly readOnly;
 
     public MultiMapConfig() {
@@ -67,14 +66,13 @@ public class MultiMapConfig {
         this.asyncBackupCount = defConfig.asyncBackupCount;
         this.statisticsEnabled = defConfig.statisticsEnabled;
         this.listenerConfigs = new ArrayList<EntryListenerConfig>(defConfig.getEntryListenerConfigs());
-        //this.partitionStrategyConfig = defConfig.getPartitioningStrategyConfig();
     }
 
     /**
      * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @return Immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public MultiMapConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
@@ -100,7 +98,7 @@ public class MultiMapConfig {
     /**
      * Gets the name of this MultiMap.
      *
-     * @return The name of this MultiMap.
+     * @return the name of this MultiMap
      */
     public String getName() {
         return name;
@@ -109,8 +107,8 @@ public class MultiMapConfig {
     /**
      * Sets the name of this MultiMap.
      *
-     * @param name The name to set for this MultiMap.
-     * @return This updated MultiMap configuration.
+     * @param name the name to set for this MultiMap
+     * @return this updated MultiMap configuration
      */
     public MultiMapConfig setName(String name) {
         this.name = name;
@@ -120,7 +118,7 @@ public class MultiMapConfig {
     /**
      * Gets the collection type for the values of this MultiMap.
      *
-     * @return The collection type for the values of this MultiMap.
+     * @return the collection type for the values of this MultiMap
      */
     public ValueCollectionType getValueCollectionType() {
         return ValueCollectionType.valueOf(valueCollectionType.toUpperCase());
@@ -129,8 +127,8 @@ public class MultiMapConfig {
     /**
      * Sets the collection type for the values of this MultiMap.
      *
-     * @param valueCollectionType The collection type for the values of this MultiMap (SET or LIST).
-     * @return This updated MultiMap configuration.
+     * @param valueCollectionType the collection type for the values of this MultiMap (SET or LIST)
+     * @return this updated MultiMap configuration
      */
     public MultiMapConfig setValueCollectionType(String valueCollectionType) {
         this.valueCollectionType = valueCollectionType;
@@ -140,8 +138,8 @@ public class MultiMapConfig {
     /**
      * Sets the collection type for the values of this MultiMap.
      *
-     * @param valueCollectionType The collection type for the values of this MultiMap (SET or LIST).
-     * @return This updated MultiMap configuration.
+     * @param valueCollectionType the collection type for the values of this MultiMap (SET or LIST)
+     * @return this updated MultiMap configuration
      */
     public MultiMapConfig setValueCollectionType(ValueCollectionType valueCollectionType) {
         this.valueCollectionType = valueCollectionType.toString();
@@ -151,7 +149,7 @@ public class MultiMapConfig {
     /**
      * Adds an entry listener to this MultiMap (listens for when entries are added or removed).
      *
-     * @param listenerConfig The entry listener to add to this MultiMap.
+     * @param listenerConfig the entry listener to add to this MultiMap
      */
     public MultiMapConfig addEntryListenerConfig(EntryListenerConfig listenerConfig) {
         getEntryListenerConfigs().add(listenerConfig);
@@ -161,7 +159,7 @@ public class MultiMapConfig {
     /**
      * Gets the list of entry listeners (listens for when entries are added or removed) for this MultiMap.
      *
-     * @return The list of entry listeners for this MultiMap.
+     * @return the list of entry listeners for this MultiMap
      */
     public List<EntryListenerConfig> getEntryListenerConfigs() {
         if (listenerConfigs == null) {
@@ -173,8 +171,8 @@ public class MultiMapConfig {
     /**
      * Sets the list of entry listeners (listens for when entries are added or removed) for this MultiMap.
      *
-     * @param listenerConfigs The list of entry listeners for this MultiMap.
-     * @return This updated MultiMap configuration.
+     * @param listenerConfigs the list of entry listeners for this MultiMap
+     * @return this updated MultiMap configuration
      */
     public MultiMapConfig setEntryListenerConfigs(List<EntryListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
@@ -184,7 +182,7 @@ public class MultiMapConfig {
     /**
      * Checks if the MultiMap is in binary (serialized) form.
      *
-     * @return True if the MultiMap is in binary (serialized) form, false otherwise.
+     * @return {@code true} if the MultiMap is in binary (serialized) form, {@code false} otherwise
      */
     public boolean isBinary() {
         return binary;
@@ -193,8 +191,8 @@ public class MultiMapConfig {
     /**
      * Enables or disables binary (serialized) form for this MultiMap.
      *
-     * @param binary True to set the MultiMap to binary (serialized) form, false otherwise.
-     * @return This updated MultiMap configuration.
+     * @param binary {@code true} to set the MultiMap to binary (serialized) form, {@code false} otherwise
+     * @return this updated MultiMap configuration
      */
 
     public MultiMapConfig setBinary(boolean binary) {
@@ -216,7 +214,7 @@ public class MultiMapConfig {
     /**
      * Gets the number of synchronous backups for this MultiMap.
      *
-     * @return The number of synchronous backups for this MultiMap.
+     * @return the number of synchronous backups for this MultiMap
      */
     public int getBackupCount() {
         return backupCount;
@@ -240,7 +238,7 @@ public class MultiMapConfig {
     /**
      * Gets the number of asynchronous backups for this MultiMap.
      *
-     * @return The number of asynchronous backups for this MultiMap.
+     * @return the number of asynchronous backups for this MultiMap
      */
     public int getAsyncBackupCount() {
         return asyncBackupCount;
@@ -265,7 +263,7 @@ public class MultiMapConfig {
     /**
      * Gets the total number of backups (synchronous + asynchronous) for this MultiMap.
      *
-     * @return The total number of backups (synchronous + asynchronous) for this MultiMap.
+     * @return the total number of backups (synchronous + asynchronous) for this MultiMap
      */
     public int getTotalBackupCount() {
         return backupCount + asyncBackupCount;
@@ -274,7 +272,7 @@ public class MultiMapConfig {
     /**
      * Checks to see if statistics are enabled for this MultiMap.
      *
-     * @return True if statistics are enabled for this MultiMap, false otherwise.
+     * @return {@code true} if statistics are enabled for this MultiMap, {@code false} otherwise
      */
     public boolean isStatisticsEnabled() {
         return statisticsEnabled;
@@ -283,22 +281,13 @@ public class MultiMapConfig {
     /**
      * Enables or disables statistics for this MultiMap.
      *
-     * @param statisticsEnabled True to enable statistics for this MultiMap, false to disable.
+     * @param statisticsEnabled {@code true} to enable statistics for this MultiMap, {@code false} to disable
      * @return the updated MultiMapConfig
      */
     public MultiMapConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
         return this;
     }
-
-//    public PartitioningStrategyConfig getPartitioningStrategyConfig() {
-//        return partitionStrategyConfig;
-//    }
-//
-//    public MultiMapConfig setPartitioningStrategyConfig(PartitioningStrategyConfig partitionStrategyConfig) {
-//        this.partitionStrategyConfig = partitionStrategyConfig;
-//        return this;
-//    }
 
     public String toString() {
         return "MultiMapConfig{"

@@ -20,9 +20,9 @@ import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.ConfigurationException;
 
 /**
- * This <code>ConfigPatternMatcher</code> supports a simplified wildcard matching.
+ * This {@code ConfigPatternMatcher} supports a simplified wildcard matching.
  * See "Config.md ## Using Wildcard" for details about the syntax options.
- * <p/>
+ * <p>
  * In addition the candidates are weighted by the best match. The best result is returned.
  * Throws {@link com.hazelcast.config.ConfigurationException} is multiple configurations are found.
  */

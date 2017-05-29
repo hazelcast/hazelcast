@@ -37,11 +37,10 @@ import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBas
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Contains all the configuration to start a {@link com.hazelcast.core.HazelcastInstance}. A Config
- * can be created programmatically, but can also be configured using XML, see {@link com.hazelcast.config.XmlConfigBuilder}.
- * <p/>
- * Config instances can be shared between threads, but should not be modified after they are used to
- * create HazelcastInstances.
+ * Contains all the configuration to start a {@link com.hazelcast.core.HazelcastInstance}. A Config can be created
+ * programmatically, but can also be configured using XML, see {@link com.hazelcast.config.XmlConfigBuilder}.
+ * <p>
+ * Config instances can be shared between threads, but should not be modified after they are used to create HazelcastInstances.
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class Config {
@@ -142,7 +141,8 @@ public class Config {
 
     /**
      * Returns the class-loader that will be used in serialization.
-     * <p> If null, then thread context class-loader will be used instead.
+     * <p>
+     * If {@code null}, then thread context class-loader will be used instead.
      *
      * @return the class-loader
      */
@@ -153,13 +153,11 @@ public class Config {
     /**
      * Sets the class-loader to be used during de-serialization
      * and as context class-loader of Hazelcast internal threads.
-     * <p/>
-     * <p/>
-     * If not set (or set to null); thread context class-loader
+     * <p>
+     * If not set (or set to {@code null}); thread context class-loader
      * will be used in required places.
-     * <p/>
-     * <p/>
-     * Default value is null.
+     * <p>
+     * Default value is {@code null}.
      *
      * @param classLoader class-loader to be used during de-serialization
      * @return Config instance
@@ -791,6 +789,7 @@ public class Config {
         }
         return getCardinalityEstimatorConfig("default").getAsReadOnly();
     }
+
     /**
      * Returns the ExecutorConfig for the given name
      *
@@ -1030,7 +1029,7 @@ public class Config {
     /**
      * Returns the collection of semaphore configs.
      *
-     * @return collection of semaphore configs.
+     * @return collection of semaphore configs
      */
     public Collection<SemaphoreConfig> getSemaphoreConfigs() {
         return semaphoreConfigs.values();
@@ -1306,14 +1305,14 @@ public class Config {
     }
 
     /**
-     * @return indicates if the node is a lite member or not. Lite members do not own any partition.
+     * @return indicates if the node is a lite member or not. Lite members do not own any partition
      */
     public boolean isLiteMember() {
         return liteMember;
     }
 
     /**
-     * @param liteMember sets if the node will be a lite member or not. Lite members do not own any partition.
+     * @param liteMember sets if the node will be a lite member or not. Lite members do not own any partition
      */
     public Config setLiteMember(boolean liteMember) {
         this.liteMember = liteMember;
@@ -1324,7 +1323,6 @@ public class Config {
      * Get current configuration of User Code Deployment.
      *
      * @since 3.8
-     *
      */
     public UserCodeDeploymentConfig getUserCodeDeploymentConfig() {
         return userCodeDeploymentConfig;
@@ -1334,8 +1332,8 @@ public class Config {
      * Set User Code Deployment configuration
      *
      * @param userCodeDeploymentConfig
-     * @since 3.8
      * @return User Code Deployment configuration
+     * @since 3.8
      */
     public Config setUserCodeDeploymentConfig(UserCodeDeploymentConfig userCodeDeploymentConfig) {
         this.userCodeDeploymentConfig = userCodeDeploymentConfig;

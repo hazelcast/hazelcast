@@ -36,7 +36,7 @@ public class MapIndexConfig {
     private MapIndexConfigReadOnly readOnly;
 
     /**
-     * Creates a MapIndexConfig without an attribute and with ordered set to false.
+     * Creates a MapIndexConfig without an attribute and with ordered set to {@code false}.
      */
     public MapIndexConfig() {
     }
@@ -44,8 +44,8 @@ public class MapIndexConfig {
     /**
      * Creates a MapIndexConfig with the given attribute and ordered setting.
      *
-     * @param attribute the attribute that is going to be indexed.
-     * @param ordered   true if the index is ordered.
+     * @param attribute the attribute that is going to be indexed
+     * @param ordered   {@code true} if the index is ordered, {@code false} otherwise
      * @see #setOrdered(boolean)
      * @see #setAttribute(String)
      */
@@ -62,8 +62,8 @@ public class MapIndexConfig {
     /**
      * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public MapIndexConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
@@ -73,9 +73,9 @@ public class MapIndexConfig {
     }
 
     /**
-     * Gets the attribute that is going to be indexed. If no attribute is set, null is returned.
+     * Gets the attribute that is going to be indexed. If no attribute is set, {@code null} is returned.
      *
-     * @return the attribute to be indexed.
+     * @return the attribute to be indexed
      * @see #setAttribute(String)
      */
     public String getAttribute() {
@@ -85,9 +85,9 @@ public class MapIndexConfig {
     /**
      * Sets the attribute that is going to be indexed.
      *
-     * @param attribute the attribute that is going to be indexed.
-     * @return the updated MapIndexConfig.
-     * @throws IllegalArgumentException if attribute is null or an empty string.
+     * @param attribute the attribute that is going to be indexed
+     * @return the updated MapIndexConfig
+     * @throws IllegalArgumentException if attribute is null or an empty string
      */
     public MapIndexConfig setAttribute(String attribute) {
         this.attribute = validateIndexAttribute(attribute);
@@ -97,7 +97,7 @@ public class MapIndexConfig {
     /**
      * Checks if the index should be ordered.
      *
-     * @return true if ordered, false otherwise.
+     * @return {@code true} if ordered, {@code false} otherwise
      * @see #setOrdered(boolean)
      */
     public boolean isOrdered() {
@@ -105,12 +105,12 @@ public class MapIndexConfig {
     }
 
     /**
-     * Configures the index to be ordered or not ordered. Some indices can be ordered, such as age. Sometimes you
-     * want to look for all people with an age equal or greater than X. In other cases an ordered index doesn't make
-     * sense, such as a phone number for a person.
+     * Configures the index to be ordered or not ordered. Some indices can be ordered, such as age.
+     * Sometimes you want to look for all people with an age equal or greater than X.
+     * In other cases an ordered index doesn't make sense, such as a phone number for a person.
      *
-     * @param ordered if the index should be an ordered index.
-     * @return the updated MapIndexConfig.
+     * @param ordered if the index should be an ordered index
+     * @return the updated MapIndexConfig
      */
     public MapIndexConfig setOrdered(boolean ordered) {
         this.ordered = ordered;
@@ -123,7 +123,7 @@ public class MapIndexConfig {
     }
 
     /**
-     * Validates index attribute content
+     * Validates index attribute content.
      *
      * @param attribute attribute to validate
      * @return the attribute for fluent assignment

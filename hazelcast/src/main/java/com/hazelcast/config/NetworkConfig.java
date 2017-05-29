@@ -27,7 +27,7 @@ import java.util.HashSet;
 public class NetworkConfig {
 
     /**
-     * Default value of port number
+     * Default value of port number.
      */
     public static final int DEFAULT_PORT = 5701;
 
@@ -84,7 +84,7 @@ public class NetworkConfig {
      * @param port the port the Hazelcast member will try to bind on
      * @return NetworkConfig the updated NetworkConfig
      * @see #getPort()
-     * @see #setPortAutoIncrement(boolean) for more information.
+     * @see #setPortAutoIncrement(boolean) for more information
      */
     public NetworkConfig setPort(int port) {
         if (port < 0 || port > PORT_MAX) {
@@ -99,7 +99,7 @@ public class NetworkConfig {
      *
      * @return the maximum number of ports allowed to try to bind on
      * @see #setPortCount(int)
-     * @see #setPortAutoIncrement(boolean) for more information.
+     * @see #setPortAutoIncrement(boolean) for more information
      */
     public int getPortCount() {
         return portCount;
@@ -108,8 +108,8 @@ public class NetworkConfig {
     /**
      * The maximum number of ports allowed to use.
      *
-     * @param portCount the maximum number of ports allowed to use.
-     * @see #setPortAutoIncrement(boolean) for more information.
+     * @param portCount the maximum number of ports allowed to use
+     * @see #setPortAutoIncrement(boolean) for more information
      */
     public void setPortCount(int portCount) {
         if (portCount < 1) {
@@ -132,11 +132,11 @@ public class NetworkConfig {
     /**
      * Sets if a Hazelcast member is allowed to find a free port by incrementing the port number when it encounters
      * an occupied port.
-     * <p/>
+     * <p>
      * If you explicitly want to control the port a Hazelcast member is going to use, you probably want to set
      * portAutoincrement to false. In this case, the Hazelcast member is going to try the port {@link #setPort(int)}
      * and if the port is not free, the member will not start and throw an exception.
-     * <p/>
+     * <p>
      * If this value is set to true, Hazelcast will start at the port specified by {@link #setPort(int)} and will try
      * until it finds a free port, or until it runs out of ports to try {@link #setPortCount(int)}.
      *
@@ -157,13 +157,13 @@ public class NetworkConfig {
 
     /**
      * Sets the reuse address.
-     *
+     * <p>
      * When should setReuseAddress(true) be used?
-     *
+     * <p>
      * When the member is shutdown, the server socket port will be in TIME_WAIT state for the next 2 minutes or so. If you
      * start the member right after shutting it down, you may not be able to bind to the same port because it is in TIME_WAIT
      * state. if you set reuseAddress=true then TIME_WAIT will be ignored and you will be able to bind to the same port again.
-     *
+     * <p>
      * This property should not be set to true on the Windows platform: see
      * <ol>
      * <li>http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6421091</li>
@@ -259,7 +259,7 @@ public class NetworkConfig {
     }
 
     /**
-     * Gets the {@link SocketInterceptorConfig}. The value can be null if no socket interception is needed.
+     * Gets the {@link SocketInterceptorConfig}. The value can be {@code null} if no socket interception is needed.
      *
      * @return the SocketInterceptorConfig
      * @see #setSocketInterceptorConfig(SocketInterceptorConfig)
@@ -269,7 +269,7 @@ public class NetworkConfig {
     }
 
     /**
-     * Sets the {@link SocketInterceptorConfig}. The value can be null if no socket interception is needed.
+     * Sets the {@link SocketInterceptorConfig}. The value can be {@code null} if no socket interception is needed.
      *
      * @param socketInterceptorConfig the SocketInterceptorConfig to set
      * @return the updated NetworkConfig
@@ -280,7 +280,7 @@ public class NetworkConfig {
     }
 
     /**
-     * Gets the {@link SymmetricEncryptionConfig}. The value can be null which means that no symmetric encryption should
+     * Gets the {@link SymmetricEncryptionConfig}. The value can be {@code null} which means that no symmetric encryption should
      * be used.
      *
      * @return the SymmetricEncryptionConfig
@@ -290,10 +290,10 @@ public class NetworkConfig {
     }
 
     /**
-     * Sets the {@link SymmetricEncryptionConfig}. The value can be null if no symmetric encryption should be used.
+     * Sets the {@link SymmetricEncryptionConfig}. The value can be {@code null} if no symmetric encryption should be used.
      *
      * @param symmetricEncryptionConfig the SymmetricEncryptionConfig to set
-     * @return the updated NetworkConfig.
+     * @return the updated NetworkConfig
      * @see #getSymmetricEncryptionConfig()
      */
     public NetworkConfig setSymmetricEncryptionConfig(final SymmetricEncryptionConfig symmetricEncryptionConfig) {
@@ -302,10 +302,9 @@ public class NetworkConfig {
     }
 
     /**
-     * Returns the current {@link SSLConfig}. It is possible that null is returned if no SSLConfig has been
-     * set.
+     * Returns the current {@link SSLConfig}. It is possible that null is returned if no SSLConfig has been set.
      *
-     * @return the SSLConfig.
+     * @return the SSLConfig
      * @see #setSSLConfig(SSLConfig)
      */
     public SSLConfig getSSLConfig() {
@@ -315,8 +314,8 @@ public class NetworkConfig {
     /**
      * Sets the {@link SSLConfig}. null value indicates that no SSLConfig should be used.
      *
-     * @param sslConfig the SSLConfig.
-     * @return the updated NetworkConfig.
+     * @param sslConfig the SSLConfig
+     * @return the updated NetworkConfig
      * @see #getSSLConfig()
      */
     public NetworkConfig setSSLConfig(SSLConfig sslConfig) {

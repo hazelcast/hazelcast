@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 /**
- * Simple configuration to hold parsed listener config
+ * Simple configuration to hold parsed listener config.
  */
 public class CacheSimpleEntryListenerConfig {
 
@@ -41,8 +41,8 @@ public class CacheSimpleEntryListenerConfig {
     /**
      * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public CacheSimpleEntryListenerConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
@@ -71,40 +71,38 @@ public class CacheSimpleEntryListenerConfig {
      * If old value is required, previously assigned values for the affected keys
      * will be sent to this cache entry listener implementation.
      *
-     * @return True if old value is required, false otherwise.
+     * @return {@code true} if old value is required, {@code false} otherwise
      */
     public boolean isOldValueRequired() {
         return oldValueRequired;
     }
 
     /**
-     * If true, previously assigned values for the affected keys will be sent to this
-     * cache entry listener implementation. Setting this attribute to true
-     * creates additional traffic. Default value is false.
+     * If {@code true}, previously assigned values for the affected keys will be sent to this
+     * cache entry listener implementation. Setting this attribute to {@code true}
+     * creates additional traffic. Default value is {@code false}.
      *
-     * @param oldValueRequired True to have old value required, false otherwise.
+     * @param oldValueRequired {@code true} to have old value required, {@code false} otherwise
      */
     public void setOldValueRequired(boolean oldValueRequired) {
         this.oldValueRequired = oldValueRequired;
     }
 
     /**
-     * If true, this cache entry listener implementation will be called
-     * in a synchronous manner.
+     * If {@code true}, this cache entry listener implementation will be called in a synchronous manner.
      *
-     * @return True if this cache entry listener implementation will be called
-     * in a synchronous manner, false otherwise.
+     * @return {@code true} if this cache entry listener implementation will be called in a synchronous manner,
+     * {@code false} otherwise
      */
     public boolean isSynchronous() {
         return synchronous;
     }
 
     /**
-     * If true, this cache entry listener implementation will be called
-     * in a synchronous manner.
+     * If {@code true}, this cache entry listener implementation will be called in a synchronous manner.
      *
-     * @param synchronous True to have this cache entry listener implementation called
-     *                    in a synchronous manner, false otherwise.
+     * @param synchronous {@code true} to have this cache entry listener implementation called in a synchronous manner,
+     *                    {@code false} otherwise.
      */
     public void setSynchronous(boolean synchronous) {
         this.synchronous = synchronous;

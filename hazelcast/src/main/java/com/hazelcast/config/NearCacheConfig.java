@@ -186,7 +186,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
      * Returns an immutable version of this configuration.
      *
      * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     @Deprecated
     public NearCacheConfigReadOnly getAsReadOnly() {
@@ -218,7 +218,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Returns the data type used to store entries.
-     * <p/>
+     * <p>
      * Possible values:
      * <ul>
      * <li>{@code BINARY}: keys and values are stored as binary data</li>
@@ -235,7 +235,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Sets the data type used to store entries.
-     * <p/>
+     * <p>
      * Possible values:
      * <ul>
      * <li>{@code BINARY}: keys and values are stored as binary data</li>
@@ -263,7 +263,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
     /**
      * Checks if Near Cache entries are invalidated when the entries in the backing data structure are changed
      * (updated or removed).
-     * <p/>
+     * <p>
      * When this setting is enabled, a Hazelcast instance with a Near Cache listens for cluster-wide changes
      * on the entries of the backing data structure and invalidates its corresponding Near Cache entries.
      * Changes done on the local Hazelcast instance always invalidate the Near Cache immediately.
@@ -277,7 +277,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
     /**
      * Sets if Near Cache entries are invalidated when the entries in the backing data structure are changed
      * (updated or removed).
-     * <p/>
+     * <p>
      * When this setting is enabled, a Hazelcast instance with a Near Cache listens for cluster-wide changes
      * on the entries of the backing data structure and invalidates its corresponding Near Cache entries.
      * Changes done on the local Hazelcast instance always invalidate the Near Cache immediately.
@@ -292,7 +292,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Returns the maximum number of seconds for each entry to stay in the Near Cache (time to live).
-     * <p/>
+     * <p>
      * Entries that are older than {@code timeToLiveSeconds} will automatically be evicted from the Near Cache.
      *
      * @return the maximum number of seconds for each entry to stay in the Near Cache
@@ -303,9 +303,9 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Returns the maximum number of seconds for each entry to stay in the Near Cache (time to live).
-     * <p/>
+     * <p>
      * Entries that are older than {@code timeToLiveSeconds} will automatically be evicted from the Near Cache.
-     * <p/>
+     * <p>
      * Accepts any integer between {@code 0} and {@link Integer#MAX_VALUE}.
      * The value {@code 0} means {@link Integer#MAX_VALUE}.
      * The default is {@code 0}.
@@ -320,7 +320,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Returns the maximum number of seconds each entry can stay in the Near Cache as untouched (not-read).
-     * <p/>
+     * <p>
      * Entries that are not read (touched) more than {@code maxIdleSeconds} value will get removed from the Near Cache.
      *
      * @return maximum number of seconds each entry can stay in the Near Cache as untouched (not-read)
@@ -331,9 +331,9 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Set the maximum number of seconds each entry can stay in the Near Cache as untouched (not-read).
-     * <p/>
+     * <p>
      * Entries that are not read (touched) more than {@code maxIdleSeconds} value will get removed from the Near Cache.
-     * <p/>
+     * <p>
      * Accepts any integer between {@code 0} and {@link Integer#MAX_VALUE}.
      * The value {@code 0} means {@link Integer#MAX_VALUE}.
      * The default is {@code 0}.
@@ -348,7 +348,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Returns the maximum size of the Near Cache.
-     * <p/>
+     * <p>
      * When the maxSize is reached, the Near Cache is evicted based on the policy defined.
      *
      * @return the maximum size of the Near Cache
@@ -361,9 +361,9 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Sets the maximum size of the Near Cache.
-     * <p/>
+     * <p>
      * When the maxSize is reached, the Near Cache is evicted based on the policy defined.
-     * <p/>
+     * <p>
      * Accepts any integer between {@code 0} and {@link Integer#MAX_VALUE}.
      * The value {@code 0} means {@link Integer#MAX_VALUE}.
      * The default is {@code 0}.
@@ -394,7 +394,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Sets the eviction policy.
-     * <p/>
+     * <p>
      * Valid values are:
      * <ul>
      * <li>{@code LRU} (Least Recently Used)</li>
@@ -440,7 +440,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Checks if local entries are also cached in the Near Cache.
-     * <p/>
+     * <p>
      * This is useful when the in-memory format of the Near Cache is different from the backing data structure.
      * This setting has no meaning on Hazelcast clients, since they have no local entries.
      *
@@ -452,7 +452,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Sets if local entries are also cached in the Near Cache.
-     * <p/>
+     * <p>
      * This is useful when the in-memory format of the Near Cache is different from the backing data structure.
      * This setting has no meaning on Hazelcast clients, since they have no local entries.
      *
@@ -475,7 +475,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Sets the {@link LocalUpdatePolicy} of this Near Cache.
-     * <p/>
+     * <p>
      * This is only implemented for {@code JCache} data structures.
      *
      * @param localUpdatePolicy the {@link LocalUpdatePolicy} of this Near Cache

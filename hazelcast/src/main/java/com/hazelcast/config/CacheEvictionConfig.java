@@ -68,8 +68,8 @@ public class CacheEvictionConfig extends EvictionConfig {
     /**
      * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     @Override
     public CacheEvictionConfig getAsReadOnly() {

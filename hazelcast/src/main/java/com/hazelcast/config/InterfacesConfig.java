@@ -30,7 +30,7 @@ public class InterfacesConfig {
     private final Set<String> interfaceSet = new HashSet<String>();
 
     /**
-     * @return true if the interface is enabled
+     * @return {@code true} if the interface is enabled, {@code false} otherwise
      */
     public boolean isEnabled() {
         return enabled;

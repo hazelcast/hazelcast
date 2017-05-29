@@ -126,7 +126,7 @@ public class CacheSimpleConfig {
         this.asyncBackupCount = cacheSimpleConfig.asyncBackupCount;
         this.backupCount = cacheSimpleConfig.backupCount;
         this.inMemoryFormat = cacheSimpleConfig.inMemoryFormat;
-        // Eviction config cannot be null
+        // eviction config cannot be null
         if (cacheSimpleConfig.evictionConfig != null) {
             this.evictionConfig = cacheSimpleConfig.evictionConfig;
         }
@@ -145,8 +145,8 @@ public class CacheSimpleConfig {
     /**
      * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public CacheSimpleConfig getAsReadOnly() {
         if (readOnly == null) {
@@ -158,7 +158,7 @@ public class CacheSimpleConfig {
     /**
      * Gets the name of this {@link com.hazelcast.cache.ICache}.
      *
-     * @return the name of the {@link com.hazelcast.cache.ICache}.
+     * @return the name of the {@link com.hazelcast.cache.ICache}
      */
     public String getName() {
         return name;
@@ -167,8 +167,8 @@ public class CacheSimpleConfig {
     /**
      * Sets the name of this {@link com.hazelcast.cache.ICache}.
      *
-     * @param name The name to set for this {@link com.hazelcast.cache.ICache}.
-     * @return The current cache config instance.
+     * @param name the name to set for this {@link com.hazelcast.cache.ICache}
+     * @return the current cache config instance
      */
     public CacheSimpleConfig setName(String name) {
         this.name = name;
@@ -178,7 +178,7 @@ public class CacheSimpleConfig {
     /**
      * Gets the key type for this {@link com.hazelcast.cache.ICache}.
      *
-     * @return The key type.
+     * @return the key type
      */
     public String getKeyType() {
         return keyType;
@@ -187,8 +187,8 @@ public class CacheSimpleConfig {
     /**
      * Sets the key type for this {@link com.hazelcast.cache.ICache}.
      *
-     * @param keyType The key type to set for this {@link com.hazelcast.cache.ICache}.
-     * @return The current cache config instance.
+     * @param keyType the key type to set for this {@link com.hazelcast.cache.ICache}
+     * @return the current cache config instance
      */
     public CacheSimpleConfig setKeyType(String keyType) {
         this.keyType = keyType;
@@ -198,7 +198,7 @@ public class CacheSimpleConfig {
     /**
      * Gets the value type for this {@link com.hazelcast.cache.ICache}.
      *
-     * @return The value type for this {@link com.hazelcast.cache.ICache}.
+     * @return the value type for this {@link com.hazelcast.cache.ICache}
      */
     public String getValueType() {
         return valueType;
@@ -207,8 +207,8 @@ public class CacheSimpleConfig {
     /**
      * Sets the value type for this {@link com.hazelcast.cache.ICache}.
      *
-     * @param valueType The value type to set for this {@link com.hazelcast.cache.ICache}.
-     * @return The current cache config instance.
+     * @param valueType the value type to set for this {@link com.hazelcast.cache.ICache}
+     * @return the current cache config instance
      */
     public CacheSimpleConfig setValueType(String valueType) {
         this.valueType = valueType;
@@ -218,7 +218,7 @@ public class CacheSimpleConfig {
     /**
      * Checks if statistics are enabled for this {@link com.hazelcast.cache.ICache}.
      *
-     * @return True if statistics are enabled, false otherwise.
+     * @return {@code true} if statistics are enabled, {@code false} otherwise
      */
     public boolean isStatisticsEnabled() {
         return statisticsEnabled;
@@ -227,8 +227,8 @@ public class CacheSimpleConfig {
     /**
      * Sets statistics to enabled or disabled for this {@link com.hazelcast.cache.ICache}.
      *
-     * @param statisticsEnabled True to enable cache statistics, false to disable.
-     * @return The current cache config instance.
+     * @param statisticsEnabled {@code true} to enable cache statistics, {@code false} to disable
+     * @return the current cache config instance
      */
     public CacheSimpleConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
@@ -238,7 +238,7 @@ public class CacheSimpleConfig {
     /**
      * Checks if management is enabled for this {@link com.hazelcast.cache.ICache}.
      *
-     * @return True if cache management is enabled, false otherwise.
+     * @return {@code true} if cache management is enabled, {@code false} otherwise
      */
     public boolean isManagementEnabled() {
         return managementEnabled;
@@ -247,8 +247,8 @@ public class CacheSimpleConfig {
     /**
      * Sets management to enabled or disabled for this {@link com.hazelcast.cache.ICache}.
      *
-     * @param managementEnabled True to enable cache management, false to disable.
-     * @return The current cache config instance.
+     * @param managementEnabled {@code true} to enable cache management, {@code false} to disable
+     * @return the current cache config instance
      */
     public CacheSimpleConfig setManagementEnabled(boolean managementEnabled) {
         this.managementEnabled = managementEnabled;
@@ -259,7 +259,7 @@ public class CacheSimpleConfig {
      * Checks if this {@link com.hazelcast.cache.ICache} is read-through: a read loads the entry from the data store
      * if it is not already in the cache.
      *
-     * @return True if the cache is read-through, false otherwise.
+     * @return {@code true} if the cache is read-through, {@code false} otherwise
      */
     public boolean isReadThrough() {
         return readThrough;
@@ -268,8 +268,9 @@ public class CacheSimpleConfig {
     /**
      * Enables or disables read-through: a read loads the entry from the data store if it is not already in the cache.
      *
-     * @param readThrough True to enable read-through for this {@link com.hazelcast.cache.ICache}, false to disable.
-     * @return The current cache config instance.
+     * @param readThrough {@code true} to enable read-through for this {@link com.hazelcast.cache.ICache},
+     *                    {@code false} to disable
+     * @return the current cache config instance
      */
     public CacheSimpleConfig setReadThrough(boolean readThrough) {
         this.readThrough = readThrough;
@@ -280,7 +281,7 @@ public class CacheSimpleConfig {
      * Checks if the {@link com.hazelcast.cache.ICache} is write-through: a write to the queue also loads the entry
      * into the data store.
      *
-     * @return True if the cache is write-through, false otherwise.
+     * @return {@code true} if the cache is write-through, {@code false} otherwise
      */
     public boolean isWriteThrough() {
         return writeThrough;
@@ -290,8 +291,8 @@ public class CacheSimpleConfig {
      * Enables or disables write-through for this {@link com.hazelcast.cache.ICache}: a write to the queue also loads
      * the entry into the data store.
      *
-     * @param writeThrough True to enable write-through, false to disable.
-     * @return The current cache config instance.
+     * @param writeThrough {@code true} to enable write-through, {@code false} to disable
+     * @return the current cache config instance
      */
     public CacheSimpleConfig setWriteThrough(boolean writeThrough) {
         this.writeThrough = writeThrough;
@@ -301,7 +302,7 @@ public class CacheSimpleConfig {
     /**
      * Gets the factory for the {@link javax.cache.integration.CacheLoader}.
      *
-     * @return The factory for the {@link javax.cache.integration.CacheLoader}.
+     * @return the factory for the {@link javax.cache.integration.CacheLoader}
      */
     public String getCacheLoaderFactory() {
         return cacheLoaderFactory;
@@ -310,8 +311,8 @@ public class CacheSimpleConfig {
     /**
      * Sets the factory for this {@link javax.cache.integration.CacheLoader}.
      *
-     * @param cacheLoaderFactory The factory to set for this {@link javax.cache.integration.CacheLoader}.
-     * @return The current cache config instance.
+     * @param cacheLoaderFactory the factory to set for this {@link javax.cache.integration.CacheLoader}
+     * @return the current cache config instance
      */
     public CacheSimpleConfig setCacheLoaderFactory(String cacheLoaderFactory) {
         if (cacheLoader != null && cacheLoaderFactory != null) {
@@ -325,7 +326,7 @@ public class CacheSimpleConfig {
     /**
      * Get classname of a class to be used as {@link javax.cache.integration.CacheLoader}.
      *
-     * @return classname to be used as {@link javax.cache.integration.CacheLoader}.
+     * @return classname to be used as {@link javax.cache.integration.CacheLoader}
      */
     public String getCacheLoader() {
         return cacheLoader;
@@ -334,8 +335,8 @@ public class CacheSimpleConfig {
     /**
      * Set classname of a class to be used as {@link javax.cache.integration.CacheLoader}.
      *
-     * @param cacheLoader classname to be used as {@link javax.cache.integration.CacheLoader}.
-     * @return The current cache config instance.
+     * @param cacheLoader classname to be used as {@link javax.cache.integration.CacheLoader}
+     * @return the current cache config instance
      */
     public CacheSimpleConfig setCacheLoader(String cacheLoader) {
         if (cacheLoader != null && cacheLoaderFactory != null) {
@@ -349,7 +350,7 @@ public class CacheSimpleConfig {
     /**
      * Gets the factory for the {@link javax.cache.integration.CacheWriter}.
      *
-     * @return The factory for the {@link javax.cache.integration.CacheWriter}.
+     * @return the factory for the {@link javax.cache.integration.CacheWriter}
      */
     public String getCacheWriterFactory() {
         return cacheWriterFactory;
@@ -358,8 +359,8 @@ public class CacheSimpleConfig {
     /**
      * Sets the factory for this {@link javax.cache.integration.CacheWriter}.
      *
-     * @param cacheWriterFactory The factory to set for this {@link javax.cache.integration.CacheWriter}.
-     * @return The current cache config instance.
+     * @param cacheWriterFactory the factory to set for this {@link javax.cache.integration.CacheWriter}
+     * @return the current cache config instance
      */
     public CacheSimpleConfig setCacheWriterFactory(String cacheWriterFactory) {
         if (cacheWriter != null && cacheWriterFactory != null) {
@@ -373,7 +374,7 @@ public class CacheSimpleConfig {
     /**
      * Get classname of a class to be used as {@link javax.cache.integration.CacheWriter}.
      *
-     * @return classname to be used as {@link javax.cache.integration.CacheWriter}.
+     * @return classname to be used as {@link javax.cache.integration.CacheWriter}
      */
     public String getCacheWriter() {
         return cacheWriter;
@@ -382,9 +383,8 @@ public class CacheSimpleConfig {
     /**
      * Set classname of a class to be used as {@link javax.cache.integration.CacheWriter}.
      *
-     * @param cacheWriter classname to be used as {@link javax.cache.integration.CacheWriter}.
-     * @return The current cache config instance.
-     *
+     * @param cacheWriter classname to be used as {@link javax.cache.integration.CacheWriter}
+     * @return the current cache config instance
      */
     public CacheSimpleConfig setCacheWriter(String cacheWriter) {
         if (cacheWriter != null && cacheWriterFactory != null) {
@@ -398,7 +398,7 @@ public class CacheSimpleConfig {
     /**
      * Gets the factory configuration for the {@link javax.cache.expiry.ExpiryPolicy}.
      *
-     * @return The factory configuration for the {@link javax.cache.expiry.ExpiryPolicy}.
+     * @return the factory configuration for the {@link javax.cache.expiry.ExpiryPolicy}
      */
     public ExpiryPolicyFactoryConfig getExpiryPolicyFactoryConfig() {
         return expiryPolicyFactoryConfig;
@@ -407,9 +407,8 @@ public class CacheSimpleConfig {
     /**
      * Sets the factory configuration for this {@link javax.cache.expiry.ExpiryPolicy}.
      *
-     * @param expiryPolicyFactoryConfig The factory configuration to set for this
-     *                                  {@link javax.cache.expiry.ExpiryPolicy}.
-     * @return The current cache config instance.
+     * @param expiryPolicyFactoryConfig the factory configuration to set for this {@link javax.cache.expiry.ExpiryPolicy}
+     * @return the current cache config instance
      */
     public CacheSimpleConfig setExpiryPolicyFactoryConfig(ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig) {
         this.expiryPolicyFactoryConfig = expiryPolicyFactoryConfig;
@@ -419,9 +418,8 @@ public class CacheSimpleConfig {
     /**
      * Sets the factory for this {@link javax.cache.expiry.ExpiryPolicy}.
      *
-     * @param className The factory to set for this
-     *                  {@link javax.cache.expiry.ExpiryPolicy}.
-     * @return The current cache config instance.
+     * @param className the factory to set for this {@link javax.cache.expiry.ExpiryPolicy}
+     * @return the current cache config instance
      */
     public CacheSimpleConfig setExpiryPolicyFactory(String className) {
         this.expiryPolicyFactoryConfig = new ExpiryPolicyFactoryConfig(className);
@@ -431,8 +429,7 @@ public class CacheSimpleConfig {
     /**
      * Adds {@link CacheSimpleEntryListenerConfig} to this {@link com.hazelcast.cache.ICache}.
      *
-     * @param listenerConfig
-     * @return this {@code CacheSimpleConfig} instance.
+     * @return this {@code CacheSimpleConfig} instance
      */
     public CacheSimpleConfig addEntryListenerConfig(CacheSimpleEntryListenerConfig listenerConfig) {
         getCacheEntryListeners().add(listenerConfig);
@@ -442,7 +439,7 @@ public class CacheSimpleConfig {
     /**
      * Gets a list of {@link CacheSimpleEntryListenerConfig} from this {@link com.hazelcast.cache.ICache}.
      *
-     * @return list of {@link CacheSimpleEntryListenerConfig}.
+     * @return list of {@link CacheSimpleEntryListenerConfig}
      */
     public List<CacheSimpleEntryListenerConfig> getCacheEntryListeners() {
         if (cacheEntryListeners == null) {
@@ -454,8 +451,8 @@ public class CacheSimpleConfig {
     /**
      * Sets a list of {@link CacheSimpleEntryListenerConfig} for this {@link com.hazelcast.cache.ICache}.
      *
-     * @param cacheEntryListeners list of {@link CacheSimpleEntryListenerConfig}.
-     * @return this {@code CacheSimpleConfig} instance.
+     * @param cacheEntryListeners list of {@link CacheSimpleEntryListenerConfig}
+     * @return this {@code CacheSimpleConfig} instance
      */
     public CacheSimpleConfig setCacheEntryListeners(List<CacheSimpleEntryListenerConfig> cacheEntryListeners) {
         this.cacheEntryListeners = cacheEntryListeners;
@@ -465,7 +462,7 @@ public class CacheSimpleConfig {
     /**
      * Gets the number of asynchronous backups for this {@link com.hazelcast.cache.ICache}.
      *
-     * @return The number of asynchronous backups for this {@link com.hazelcast.cache.ICache}.
+     * @return the number of asynchronous backups for this {@link com.hazelcast.cache.ICache}
      */
     public int getAsyncBackupCount() {
         return asyncBackupCount;
@@ -474,11 +471,11 @@ public class CacheSimpleConfig {
     /**
      * Sets the number of asynchronous backups for this {@link com.hazelcast.cache.ICache}.
      *
-     * @param asyncBackupCount the number of asynchronous synchronous backups to set.
+     * @param asyncBackupCount the number of asynchronous synchronous backups to set
      * @return the updated CacheSimpleConfig
      * @throws IllegalArgumentException if asyncBackupCount smaller than 0,
      *                                  or larger than the maximum number of backups,
-     *                                  or the sum of the backups and async backups is larger than the maximum number of backups.
+     *                                  or the sum of the backups and async backups is larger than the maximum number of backups
      * @see #setBackupCount(int)
      * @see #getAsyncBackupCount()
      */
@@ -490,7 +487,7 @@ public class CacheSimpleConfig {
     /**
      * Gets the number of synchronous backups for this {@link com.hazelcast.cache.ICache}.
      *
-     * @return The number of synchronous backups.
+     * @return the number of synchronous backups
      */
     public int getBackupCount() {
         return backupCount;
@@ -514,7 +511,7 @@ public class CacheSimpleConfig {
     /**
      * Gets the InMemory Format for this {@link com.hazelcast.cache.ICache}.
      *
-     * @return The InMemory Format.
+     * @return the InMemory Format
      */
     public InMemoryFormat getInMemoryFormat() {
         return inMemoryFormat;
@@ -523,8 +520,8 @@ public class CacheSimpleConfig {
     /**
      * Sets the InMemory Format for this {@link com.hazelcast.cache.ICache}.
      *
-     * @param inMemoryFormat The InMemory Format.
-     * @return the updated CacheSimpleConfig.
+     * @param inMemoryFormat the InMemory Format
+     * @return the updated CacheSimpleConfig
      */
     public CacheSimpleConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
         this.inMemoryFormat = isNotNull(inMemoryFormat, "In-Memory format cannot be null!");
@@ -534,7 +531,7 @@ public class CacheSimpleConfig {
     /**
      * Gets the eviction configuration for this {@link com.hazelcast.cache.ICache}.
      *
-     * @return The eviction configuration.
+     * @return the eviction configuration
      */
     public EvictionConfig getEvictionConfig() {
         return evictionConfig;
@@ -543,8 +540,8 @@ public class CacheSimpleConfig {
     /**
      * Sets the eviction configuration for this {@link com.hazelcast.cache.ICache}.
      *
-     * @param evictionConfig The eviction configuration to set.
-     * @return the updated CacheSimpleConfig.
+     * @param evictionConfig the eviction configuration to set
+     * @return the updated CacheSimpleConfig
      */
     public CacheSimpleConfig setEvictionConfig(EvictionConfig evictionConfig) {
         this.evictionConfig = isNotNull(evictionConfig, "evictionConfig");
@@ -554,7 +551,7 @@ public class CacheSimpleConfig {
     /**
      * Gets the WAN target replication reference.
      *
-     * @return The WAN target replication reference.
+     * @return the WAN target replication reference
      */
     public WanReplicationRef getWanReplicationRef() {
         return wanReplicationRef;
@@ -563,7 +560,7 @@ public class CacheSimpleConfig {
     /**
      * Sets the WAN target replication reference.
      *
-     * @param wanReplicationRef the WAN target replication reference.
+     * @param wanReplicationRef the WAN target replication reference
      */
     public void setWanReplicationRef(WanReplicationRef wanReplicationRef) {
         this.wanReplicationRef = wanReplicationRef;
@@ -572,7 +569,7 @@ public class CacheSimpleConfig {
     /**
      * Gets the partition lost listener references added to cache configuration.
      *
-     * @return List of CachePartitionLostListenerConfig.
+     * @return List of CachePartitionLostListenerConfig
      */
     public List<CachePartitionLostListenerConfig> getPartitionLostListenerConfigs() {
         if (partitionLostListenerConfigs == null) {
@@ -584,7 +581,7 @@ public class CacheSimpleConfig {
     /**
      * Sets the PartitionLostListenerConfigs.
      *
-     * @param partitionLostListenerConfigs CachePartitionLostListenerConfig list.
+     * @param partitionLostListenerConfigs CachePartitionLostListenerConfig list
      */
     public CacheSimpleConfig setPartitionLostListenerConfigs(
             List<CachePartitionLostListenerConfig> partitionLostListenerConfigs) {
@@ -595,7 +592,7 @@ public class CacheSimpleConfig {
     /**
      * Adds the CachePartitionLostListenerConfig to partitionLostListenerConfigs.
      *
-     * @param listenerConfig CachePartitionLostListenerConfig to be added.
+     * @param listenerConfig CachePartitionLostListenerConfig to be added
      */
     public CacheSimpleConfig addCachePartitionLostListenerConfig(CachePartitionLostListenerConfig listenerConfig) {
         getPartitionLostListenerConfigs().add(listenerConfig);
@@ -614,8 +611,8 @@ public class CacheSimpleConfig {
     /**
      * Associates this cache configuration to a quorum.
      *
-     * @param quorumName name of the desired quorum.
-     * @return the updated CacheSimpleConfig.
+     * @param quorumName name of the desired quorum
+     * @return the updated CacheSimpleConfig
      */
     public CacheSimpleConfig setQuorumName(String quorumName) {
         this.quorumName = quorumName;
@@ -623,22 +620,19 @@ public class CacheSimpleConfig {
     }
 
     /**
-     * Gets the class name of {@link com.hazelcast.cache.CacheMergePolicy}
-     * implementation of this cache config.
+     * Gets the class name of {@link com.hazelcast.cache.CacheMergePolicy} implementation of this cache config.
      *
-     * @return the class name of {@link com.hazelcast.cache.CacheMergePolicy}
-     * implementation of this cache config
+     * @return the class name of {@link com.hazelcast.cache.CacheMergePolicy} implementation of this cache config
      */
     public String getMergePolicy() {
         return mergePolicy;
     }
 
     /**
-     * Sets the class name of {@link com.hazelcast.cache.CacheMergePolicy}
-     * implementation to this cache config.
+     * Sets the class name of {@link com.hazelcast.cache.CacheMergePolicy} implementation to this cache config.
      *
-     * @param mergePolicy the class name of {@link com.hazelcast.cache.CacheMergePolicy}
-     *                    implementation to be set to this cache config
+     * @param mergePolicy the class name of {@link com.hazelcast.cache.CacheMergePolicy} implementation
+     *                    to be set to this cache config
      */
     public void setMergePolicy(String mergePolicy) {
         this.mergePolicy = mergePolicy;
@@ -667,8 +661,7 @@ public class CacheSimpleConfig {
     /**
      * Returns invalidation events disabled status for per entry.
      *
-     * @return <tt>true</tt> if invalidation events are disabled for per entry,
-     * otherwise <tt>false</tt>
+     * @return {@code true} if invalidation events are disabled for per entry, {@code false} otherwise
      */
     public boolean isDisablePerEntryInvalidationEvents() {
         return disablePerEntryInvalidationEvents;
@@ -677,8 +670,8 @@ public class CacheSimpleConfig {
     /**
      * Sets invalidation events disabled status for per entry.
      *
-     * @param disablePerEntryInvalidationEvents Disables invalidation event sending behaviour if it is <tt>true</tt>,
-     *                                          otherwise enables it.
+     * @param disablePerEntryInvalidationEvents Disables invalidation event sending behaviour if it is {@code true},
+     *                                          otherwise enables it
      */
     public void setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
         this.disablePerEntryInvalidationEvents = disablePerEntryInvalidationEvents;
@@ -738,28 +731,26 @@ public class CacheSimpleConfig {
             public enum ExpiryPolicyType {
 
                 /**
-                 * Expiry policy type for the "javax.cache.expiry.CreatedExpiryPolicy"
+                 * Expiry policy type for the {@link javax.cache.expiry.CreatedExpiryPolicy}.
                  */
                 CREATED,
                 /**
-                 * Expiry policy type for the "javax.cache.expiry.ModifiedExpiryPolicy"
+                 * Expiry policy type for the {@link javax.cache.expiry.CreatedExpiryPolicy}.
                  */
                 MODIFIED,
                 /**
-                 * Expiry policy type for the "javax.cache.expiry.AccessedExpiryPolicy"
+                 * Expiry policy type for the {@link javax.cache.expiry.CreatedExpiryPolicy}.
                  */
                 ACCESSED,
                 /**
-                 * Expiry policy type for the "javax.cache.expiry.TouchedExpiryPolicy"
+                 * Expiry policy type for the {@link javax.cache.expiry.CreatedExpiryPolicy}.
                  */
                 TOUCHED,
                 /**
-                 * Expiry policy type for the "javax.cache.expiry.EternalExpiryPolicy"
+                 * Expiry policy type for the {@link javax.cache.expiry.CreatedExpiryPolicy}.
                  */
                 ETERNAL
-
             }
-
         }
 
         /**
@@ -783,9 +774,6 @@ public class CacheSimpleConfig {
             public TimeUnit getTimeUnit() {
                 return timeUnit;
             }
-
         }
-
     }
-
 }

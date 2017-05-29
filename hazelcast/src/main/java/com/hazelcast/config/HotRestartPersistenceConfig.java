@@ -23,11 +23,11 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
  * Configures the Hot Restart stores.
- * <p/>
+ * <p>
  * Hot restart stores are used to hold copy of in-memory data in
  * disk to be able to restart very fast without needing to load
  * data from a central storage.
- * <p/>
+ * <p>
  * HotRestartConfig configures whether hot restart is enabled,
  * where disk data will be stored, should data be persisted
  * sync or async etc.

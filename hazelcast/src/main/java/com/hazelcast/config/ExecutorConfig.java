@@ -27,7 +27,7 @@ public class ExecutorConfig {
     public static final int DEFAULT_POOL_SIZE = 16;
 
     /**
-     * Capacity of Queue
+     * Capacity of queue.
      */
     public static final int DEFAULT_QUEUE_CAPACITY = Integer.MAX_VALUE;
 
@@ -63,8 +63,8 @@ public class ExecutorConfig {
     /**
      * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public ExecutorConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
@@ -76,7 +76,7 @@ public class ExecutorConfig {
     /**
      * Gets the name of the executor task.
      *
-     * @return The name of the executor task.
+     * @return the name of the executor task
      */
     public String getName() {
         return name;
@@ -85,8 +85,8 @@ public class ExecutorConfig {
     /**
      * Sets the name of the executor task.
      *
-     * @param name The name of the executor task.
-     * @return This executor config instance.
+     * @param name the name of the executor task
+     * @return this executor config instance
      */
     public ExecutorConfig setName(String name) {
         this.name = name;
@@ -96,7 +96,7 @@ public class ExecutorConfig {
     /**
      * Gets the number of executor threads per member for the executor.
      *
-     * @return The number of executor threads per member for the executor.
+     * @return the number of executor threads per member for the executor
      */
     public int getPoolSize() {
         return poolSize;
@@ -105,8 +105,8 @@ public class ExecutorConfig {
     /**
      * Sets the number of executor threads per member for the executor.
      *
-     * @param poolSize The number of executor threads per member for the executor.
-     * @return This executor config instance.
+     * @param poolSize the number of executor threads per member for the executor
+     * @return this executor config instance
      */
     public ExecutorConfig setPoolSize(final int poolSize) {
         if (poolSize <= 0) {
@@ -117,19 +117,19 @@ public class ExecutorConfig {
     }
 
     /**
-     * Gets the queue capacity of the executor task. 0 means Integer.MAX_VALUE.
+     * Gets the queue capacity of the executor task. 0 means {@code Integer.MAX_VALUE}.
      *
-     * @return Queue capacity of the executor task. 0 means Integer.MAX_VALUE.
+     * @return Queue capacity of the executor task. 0 means {@code Integer.MAX_VALUE}
      */
     public int getQueueCapacity() {
         return queueCapacity;
     }
 
     /**
-     * Sets the queue capacity of the executor task. 0 means Integer.MAX_VALUE.
+     * Sets the queue capacity of the executor task. 0 means {@code Integer.MAX_VALUE}.
      *
-     * @param queueCapacity Queue capacity of the executor task. 0 means Integer.MAX_VALUE.
-     * @return This executor config instance.
+     * @param queueCapacity Queue capacity of the executor task. 0 means {@code Integer.MAX_VALUE}
+     * @return this executor config instance
      */
     public ExecutorConfig setQueueCapacity(int queueCapacity) {
         this.queueCapacity = queueCapacity;
@@ -139,7 +139,7 @@ public class ExecutorConfig {
     /**
      * Gets if statistics gathering is enabled or disabled on the executor task.
      *
-     * @return True (default) if statistics gathering is enabled on the executor task, false otherwise.
+     * @return {@code true} if statistics gathering is enabled on the executor task (default), {@code false} otherwise
      */
     public boolean isStatisticsEnabled() {
         return statisticsEnabled;
@@ -148,8 +148,8 @@ public class ExecutorConfig {
     /**
      * Enables or disables statistics gathering on the executor task.
      *
-     * @param statisticsEnabled True (default) if statistics gathering is enabled on the executor task, false otherwise.
-     * @return This executor config instance.
+     * @param statisticsEnabled {@code true} if statistics gathering is enabled on the executor task, {@code false} otherwise
+     * @return this executor config instance
      */
     public ExecutorConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;

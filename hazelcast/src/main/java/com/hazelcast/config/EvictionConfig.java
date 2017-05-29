@@ -34,7 +34,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 /**
  * Configuration for eviction.
  * You can set a limit for number of entries or total memory cost of entries.
- * <p/>
+ * <p>
  * The default values of the eviction configuration are
  * <ul>
  * <li>{@link EvictionPolicy#LRU} as eviction policy</li>
@@ -151,8 +151,8 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
     /**
      * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public EvictionConfig getAsReadOnly() {
         if (readOnly == null) {
@@ -163,7 +163,7 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
 
     /**
      * Returns the size which is used by the {@link MaxSizePolicy}.
-     * <p/>
+     * <p>
      * The interpretation of the value depends on the configured {@link MaxSizePolicy}.
      *
      * @return the size which is used by the {@link MaxSizePolicy}
@@ -174,9 +174,9 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
 
     /**
      * Sets the size which is used by the {@link MaxSizePolicy}.
-     * <p/>
+     * <p>
      * The interpretation of the value depends on the configured {@link MaxSizePolicy}.
-     * <p/>
+     * <p>
      * Accepts any positive number. The default value is {@value #DEFAULT_MAX_ENTRY_COUNT}.
      *
      * @param size the size which is used by the {@link MaxSizePolicy}
@@ -273,7 +273,7 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
 
     /**
      * Sets the class name of the configured {@link EvictionPolicyComparator} implementation.
-     * <p/>
+     * <p>
      * Only one of the {@code comparator class name} and {@code comparator} can be configured in the eviction configuration.
      *
      * @param comparatorClassName the class name of the configured {@link EvictionPolicyComparator} implementation
@@ -296,7 +296,7 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
 
     /**
      * Sets the instance of the configured {@link EvictionPolicyComparator} implementation.
-     * <p/>
+     * <p>
      * Only one of the {@code comparator class name} and {@code comparator} can be configured in the eviction configuration.
      *
      * @param comparator the instance of the configured {@link EvictionPolicyComparator} implementation

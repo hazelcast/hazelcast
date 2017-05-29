@@ -19,12 +19,12 @@ package com.hazelcast.config.properties;
 /**
  * This interface defines a certain validation logic implementation
  * to test if a given value is expected to be correct or not.
- * <p/>
+ * <p>
  * All verification is done on property level which means that the
  * configuration overall might still be invalid and needs to be checked
  * by the provider vendor before actually using it.
- * <p/>
- * All <tt>ValueValidator</tt> implementations need to be fully thread-safe
+ * <p>
+ * All {@code ValueValidator} implementations need to be fully thread-safe
  * and are recommended to be stateless to prevent any kind of unexpected
  * concurrency issues.
  *

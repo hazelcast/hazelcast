@@ -138,7 +138,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
     protected abstract Properties getProperties();
 
     /**
-     * @return ConfigType of current config class as enum value.
+     * @return ConfigType of current config class as enum value
      */
     @Override
     protected abstract ConfigType getXmlType();

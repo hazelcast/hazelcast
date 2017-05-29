@@ -19,12 +19,12 @@ package com.hazelcast.config.matcher;
 import com.hazelcast.config.ConfigPatternMatcher;
 
 /**
- * This <code>ConfigPatternMatcher</code> supports a simplified wildcard matching.
+ * This {@code ConfigPatternMatcher} supports a simplified wildcard matching.
  * See "Config.md ## Using Wildcard" for details about the syntax.
- * <p/>
+ * <p>
  * This matcher represents a "contains" matching to provide backward compatibility.
  * No exception will be thrown if multiple configurations are found (first match is returned).
- * <p/>
+ * <p>
  * Please adapt your configuration and use {@link com.hazelcast.config.matcher.WildcardConfigPatternMatcher} instead.
  */
 @Deprecated
@@ -43,9 +43,9 @@ public class LegacyWildcardConfigPatternMatcher implements ConfigPatternMatcher 
     /**
      * This method is public to be accessible by {@link com.hazelcast.security.permission.InstancePermission}.
      *
-     * @param pattern     configuration pattern to match with
-     * @param itemName    item name to match
-     * @return <tt>true</tt> if itemName matches, <tt>false</tt> otherwise
+     * @param pattern  configuration pattern to match with
+     * @param itemName item name to match
+     * @return {@code true} if itemName matches, {@code false} otherwise
      */
     public boolean matches(String pattern, String itemName) {
         int index = pattern.indexOf('*');
