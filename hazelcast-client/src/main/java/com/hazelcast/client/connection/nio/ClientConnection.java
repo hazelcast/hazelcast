@@ -54,7 +54,7 @@ public class ClientConnection implements Connection {
     private final ClientConnectionManagerImpl connectionManager;
     private final LifecycleService lifecycleService;
     private final HazelcastClientInstanceImpl client;
-    private final long startTime;
+    private final long startTime = System.currentTimeMillis();;
 
     private volatile Address remoteEndpoint;
     private volatile boolean isHeartBeating = true;
@@ -80,7 +80,6 @@ public class ClientConnection implements Connection {
         channel.attributeMap().put(ClientConnection.class, this);
         this.connectionId = connectionId;
         this.logger = client.getLoggingService().getLogger(ClientConnection.class);
-        this.startTime = System.currentTimeMillis();
     }
 
     public ClientConnection(HazelcastClientInstanceImpl client,
@@ -91,7 +90,6 @@ public class ClientConnection implements Connection {
         this.connectionId = connectionId;
         this.channel = null;
         this.logger = client.getLoggingService().getLogger(ClientConnection.class);
-        this.startTime = System.currentTimeMillis();
     }
 
     public void incrementPendingPacketCount() {
