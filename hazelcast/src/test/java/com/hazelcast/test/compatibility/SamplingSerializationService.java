@@ -195,7 +195,7 @@ public class SamplingSerializationService implements InternalSerializationServic
     }
 
     // record the given object, then return it
-    private static <T> T sampleObject(T obj, byte[] serializedObject) {
+    static <T> T sampleObject(T obj, byte[] serializedObject) {
         if (obj == null)
             return null;
 
