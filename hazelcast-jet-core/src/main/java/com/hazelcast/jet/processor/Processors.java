@@ -250,7 +250,7 @@ public final class Processors {
      * AggregateOperation#combineAccumulatorsF() combine} aggregation
      * primitive to the entries received from several upstream instances of
      * {@link #accumulateByKey(DistributedFunction, AggregateOperation)
-     * groupAndAccumulate()}. After exhausting all its input it emits one
+     * accumulateByKey()}. After exhausting all its input it emits one
      * {@code Map.Entry<K, R>} per observed key.
      * <p>
      * Since the input to this processor must be bounded, its primary use case
@@ -273,7 +273,7 @@ public final class Processors {
      * Returns a supplier of processor that performs the provided aggregate
      * operation on all the items it receives. After exhausting all its input
      * it emits a single item of type {@code R} &mdash;the result of the
-     * aggegate operation.
+     * aggregate operation.
      * <p>
      * Since the input to this processor must be bounded, its primary use case
      * are batch jobs.
@@ -296,7 +296,7 @@ public final class Processors {
      * Returns a supplier of processor that performs the provided aggregate
      * operation on all the items it receives. After exhausting all its input
      * it emits a single item of type {@code R} &mdash;the result of the
-     * aggegate operation.
+     * aggregate operation.
      * <p>
      * Since the input to this processor must be bounded, its primary use case
      * are batch jobs.
@@ -319,7 +319,7 @@ public final class Processors {
      * Returns a supplier of processor that performs the provided aggregate
      * operation on all the items it receives. After exhausting all its input
      * it emits a single item of type {@code R} &mdash;the result of the
-     * aggegate operation.
+     * aggregate operation.
      * <p>
      * Since the input to this processor must be bounded, its primary use case
      * are batch jobs.
@@ -426,7 +426,7 @@ public final class Processors {
      * primitive to frames received from several upstream instances of {@link
      * #accumulateByFrame(DistributedFunction, DistributedToLongFunction,
      * TimestampKind, WindowDefinition, AggregateOperation)
-     * groupByFrameAndAccumulate()}. It emits sliding window results labeled with
+     * accumulateByFrame()}. It emits sliding window results labeled with
      * the timestamp denoting the window's end time. This timestamp is equal to
      * the exclusive upper bound of timestamps belonging to the window.
      * <p>

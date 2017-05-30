@@ -104,12 +104,12 @@ public class WindowingProcessors_integrationTest extends JetTestSupport {
                     .edge(between(slidingWin, sink).oneToMany());
 
         } else {
-            Vertex groupByFrame = dag.newVertex("groupByFrame", accumulateByFrame(
+            Vertex accumulateByFrame = dag.newVertex("accumulateByFrame", accumulateByFrame(
                     MockEvent::getKey, MockEvent::getTimestamp, TimestampKind.EVENT, wDef, counting));
             Vertex slidingWin = dag.newVertex("slidingWin", combineToSlidingWindow(wDef, counting));
             dag
-                    .edge(between(insertPP, groupByFrame).partitioned(MockEvent::getKey))
-                    .edge(between(groupByFrame, slidingWin).partitioned(entryKey()).distributed())
+                    .edge(between(insertPP, accumulateByFrame).partitioned(MockEvent::getKey))
+                    .edge(between(accumulateByFrame, slidingWin).partitioned(entryKey()).distributed())
                     .edge(between(slidingWin, sink).oneToMany());
         }
 

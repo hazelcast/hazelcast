@@ -32,7 +32,7 @@ import static com.hazelcast.jet.Traversers.empty;
  * {@link com.hazelcast.jet.processor.Processors#insertPunctuation(
  *      com.hazelcast.jet.function.DistributedToLongFunction,
  *      com.hazelcast.jet.function.DistributedSupplier)
- * WindowingProcessors.insertPunctuation()}.
+ * Processors.insertPunctuation()}.
  *
  * @param <T> type of the stream item
  */

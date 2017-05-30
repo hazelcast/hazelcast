@@ -86,16 +86,16 @@ public interface PunctuationPolicy {
      * floorFrameTs} as returned from the supplied {@code WindowDefinition}.
      * This throttling policy should be employed to drive a downstream
      * processor that computes a sliding/tumbling window
-     * ({@link Processors#accumulateByFrame(
+     * ({@link com.hazelcast.jet.processor.Processors#accumulateByFrame(
      *      com.hazelcast.jet.function.DistributedFunction,
      *      com.hazelcast.jet.function.DistributedToLongFunction,
-     *      WindowDefinition, AggregateOperation)
-     * slidingWindowStage1} or
-     * {@link Processors#aggregateToSlidingWindow(
+     *      TimestampKind, WindowDefinition, AggregateOperation)
+     * accumulateByFrame()} or
+     * {@link com.hazelcast.jet.processor.Processors#aggregateToSlidingWindow(
      *      com.hazelcast.jet.function.DistributedFunction,
      *      com.hazelcast.jet.function.DistributedToLongFunction,
-     *      WindowDefinition, AggregateOperation)
-     * slidingWindowSingleStage}).
+     *      TimestampKind, WindowDefinition, AggregateOperation)
+     * aggregateToSlidingWindow()}).
      */
     default PunctuationPolicy throttleByFrame(WindowDefinition winDef) {
         return new PunctuationPolicy() {

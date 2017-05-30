@@ -198,8 +198,9 @@ public final class Sinks {
 
     /**
      * Returns a meta-supplier of processor that writes all items to a local
-     * file on each member. {@code item.toString()} is written to the file,
-     * followed by a platform-specific line separator.
+     * file on each member. The output of {@code toStringF} is written to the
+     * file, followed by a platform-specific line separator. Files are named
+     * with an integer number starting from 0, which is unique cluster-wide.
      * <p>
      * The same pathname must be available for writing on all nodes. Each
      * processor instance will write to its own file so the full data will be
