@@ -22,9 +22,9 @@ import java.util.Arrays;
 
 /**
  *
- * Control caching of de-serialized values. Caching makes query evaluation faster but it cost memory.
+ * Control caching of de-serialized values. Caching makes query evaluation faster but it costs memory.
  *
- * To maintain reusability cached values are used by read-only operations only and they are never
+ * To maintain reusability, cached values are used by read-only operations only and they are never
  * passed to user-code where they could be accidentally mutated. Users will always get a fresh object,
  * which they are free to mutate.
  *
@@ -42,7 +42,7 @@ public enum CacheDeserializedValues {
     NEVER,
 
     /**
-     * Cache values only when using search indexes.
+     * Cache values only when using search indexes
      *
      */
     INDEX_ONLY,
