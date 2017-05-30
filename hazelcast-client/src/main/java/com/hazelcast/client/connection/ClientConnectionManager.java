@@ -17,7 +17,7 @@
 package com.hazelcast.client.connection;
 
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -47,7 +47,7 @@ public interface ClientConnectionManager extends ConnectionListenable {
     /**
      * Start clientConnectionManager
      */
-    void start();
+    void start() throws Exception ;
 
     /**
      * @param address to be connected
@@ -71,15 +71,15 @@ public interface ClientConnectionManager extends ConnectionListenable {
      */
     Connection getOrTriggerConnect(Address address, boolean asOwner) throws IOException;
 
-    /**
-     * Handles incoming network package
-     *
-     * @param message    to be processed
-     * @param connection that client message come from
-     */
-    void handleClientMessage(ClientMessage message, Connection connection);
-
     void addConnectionHeartbeatListener(ConnectionHeartbeatListener connectionHeartbeatListener);
 
     Collection<ClientConnection> getActiveConnections();
+
+    Address getOwnerConnectionAddress() ;
+
+    ClientPrincipal getPrincipal();
+
+    ClientConnection getOwnerConnection();
+
+    void connectToCluster() throws Exception;
 }
