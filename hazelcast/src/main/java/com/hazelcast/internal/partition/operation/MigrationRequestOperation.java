@@ -34,6 +34,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
@@ -267,7 +268,7 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
         }
     }
 
-    private final class SendNewMigrationFragmentRunnable implements PartitionSpecificRunnable {
+    private final class SendNewMigrationFragmentRunnable implements PartitionSpecificRunnable, UrgentSystemOperation {
 
         @Override
         public int getPartitionId() {
