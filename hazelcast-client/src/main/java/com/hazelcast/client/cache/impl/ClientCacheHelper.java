@@ -178,7 +178,7 @@ final class ClientCacheHelper {
                 throw new IOException("Partition does not have an owner. partitionId: " + partitionId);
             }
         } else {
-            address = client.getClientClusterService().getOwnerConnectionAddress();
+            address = client.getConnectionManager().getOwnerConnectionAddress();
             if (address == null) {
                 throw new IOException("ClientNonSmartInvocationServiceImpl: Owner connection is not available.");
             }

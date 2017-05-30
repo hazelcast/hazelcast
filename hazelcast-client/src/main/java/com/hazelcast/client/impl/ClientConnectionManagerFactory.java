@@ -17,11 +17,14 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
+
+import java.util.Collection;
 
 public interface ClientConnectionManagerFactory {
 
     ClientConnectionManager createConnectionManager(ClientConfig config, HazelcastClientInstanceImpl client,
-                                                    DiscoveryService discoveryService);
+            DiscoveryService discoveryService, Collection<AddressProvider> addressProviders);
 }

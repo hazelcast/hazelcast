@@ -497,7 +497,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
                     }
                 } else {
                     ClientEventRegistration registration = registrations.iterator().next();
-                    assertEquals(clientInstanceImpl.getClientClusterService().getOwnerConnectionAddress(),
+                    assertEquals(clientInstanceImpl.getConnectionManager().getOwnerConnectionAddress(),
                             registration.getSubscriber().getEndPoint());
                 }
             }

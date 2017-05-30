@@ -19,6 +19,7 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
@@ -30,6 +31,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 
+import java.util.Collection;
+
 public class DefaultClientConnectionManagerFactory implements ClientConnectionManagerFactory {
 
     public DefaultClientConnectionManagerFactory() {
@@ -37,7 +40,7 @@ public class DefaultClientConnectionManagerFactory implements ClientConnectionMa
 
     @Override
     public ClientConnectionManager createConnectionManager(ClientConfig config, HazelcastClientInstanceImpl client,
-                                                           DiscoveryService discoveryService) {
+            DiscoveryService discoveryService, Collection<AddressProvider> addressProviders) {
 
         LoggingService loggingService = client.getLoggingService();
         ILogger logger = loggingService.getLogger(HazelcastClient.class);
@@ -56,6 +59,6 @@ public class DefaultClientConnectionManagerFactory implements ClientConnectionMa
         } else {
             addressTranslator = new DefaultAddressTranslator();
         }
-        return new ClientConnectionManagerImpl(client, addressTranslator);
+        return new ClientConnectionManagerImpl(client, addressTranslator, addressProviders);
     }
 }

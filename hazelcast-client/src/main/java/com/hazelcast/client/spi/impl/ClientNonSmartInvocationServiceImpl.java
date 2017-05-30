@@ -32,7 +32,7 @@ public class ClientNonSmartInvocationServiceImpl extends ClientInvocationService
 
     @Override
     public void invokeOnRandomTarget(ClientInvocation invocation) throws IOException {
-        sendToOwner(invocation);
+        send(invocation, getOwnerConnection());
     }
 
     @Override
@@ -46,24 +46,19 @@ public class ClientNonSmartInvocationServiceImpl extends ClientInvocationService
     @Override
     public void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException {
         invocation.getClientMessage().setPartitionId(partitionId);
-        sendToOwner(invocation);
+        send(invocation, getOwnerConnection());
     }
 
     @Override
     public void invokeOnTarget(ClientInvocation invocation, Address target) throws IOException {
-        sendToOwner(invocation);
+        send(invocation, getOwnerConnection());
     }
 
-    private void sendToOwner(ClientInvocation invocation) throws IOException {
-        ClientClusterService clusterService = client.getClientClusterService();
-        Address ownerConnectionAddress = clusterService.getOwnerConnectionAddress();
-        if (ownerConnectionAddress == null) {
-            throw new IOException("Packet is not send to owner address");
+    private ClientConnection getOwnerConnection() throws IOException {
+        ClientConnection ownerConnection = client.getConnectionManager().getOwnerConnection();
+        if (ownerConnection == null) {
+            throw new IOException("ClientNonSmartInvocationServiceImpl: Owner connection is not available.");
         }
-        Connection conn = connectionManager.getConnection(ownerConnectionAddress);
-        if (conn == null) {
-            throw new IOException("Packet is not sent to owner address: " + ownerConnectionAddress);
-        }
-        send(invocation, (ClientConnection) conn);
+        return ownerConnection;
     }
 }

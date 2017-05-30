@@ -55,11 +55,9 @@ class ClientChannelInitializer implements ChannelInitializer {
 
         ChannelInboundHandler inboundHandler = new ClientMessageChannelInboundHandler(
                 new ClientMessageChannelInboundHandler.MessageHandler() {
-                    private final ClientConnectionManager connectionManager = connection.getConnectionManager();
-
                     @Override
                     public void handleMessage(ClientMessage message) {
-                        connectionManager.handleClientMessage(message, connection);
+                        connection.handleClientMessage(message);
                     }
                 });
         return new InitResult<ChannelInboundHandler>(inputBuffer, inboundHandler);
