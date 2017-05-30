@@ -21,7 +21,7 @@
  * <ul><li>
  *     {@link com.hazelcast.jet.processor.Sources} (have no inbound edges)
  * </li><li>
- *     {@link com.hazelcast.jet.processor.Sinks} (have no outbound adges)
+ *     {@link com.hazelcast.jet.processor.Sinks} (have no outbound edges)
  * </li><li>
  *     {@link com.hazelcast.jet.processor.Processors Internal vertices}
  *     (have both inbound and outbound edges)
