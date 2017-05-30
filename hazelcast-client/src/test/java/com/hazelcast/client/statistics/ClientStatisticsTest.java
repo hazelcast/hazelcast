@@ -97,9 +97,9 @@ public class ClientStatisticsTest
         String queueSize = stats.get("executionService.userExecutorQueueSize");
         assertNotNull(queueSize);
 
-        String mapHits = stats.get("nearcache." + testMapName + ".hits");
+        String mapHits = stats.get("nc." + testMapName + ".hits");
         assertNull(mapHits);
-        String cacheHits = stats.get("nearcache." + testCacheName + ".hits");
+        String cacheHits = stats.get("nc." + testCacheName + ".hits");
         assertNull(cacheHits);
 
         IMap<Integer, Integer> map = client.getMap(testMapName);
@@ -108,10 +108,10 @@ public class ClientStatisticsTest
         sleepSeconds(statsPeriodSeconds + 1);
 
         stats = getStats(client, clientEngine);
-        mapHits = stats.get("nearcache." + testMapName + ".hits");
+        mapHits = stats.get("nc." + testMapName + ".hits");
         assertNotNull(mapHits);
         assertEquals("0", mapHits);
-        cacheHits = stats.get("nearcache.hz/" + testCacheName + ".hits");
+        cacheHits = stats.get("nc.hz/" + testCacheName + ".hits");
         assertNull(cacheHits);
 
         // produce map and cache stat
@@ -121,10 +121,10 @@ public class ClientStatisticsTest
         sleepSeconds(statsPeriodSeconds + 1);
 
         stats = getStats(client, clientEngine);
-        mapHits = stats.get("nearcache." + testMapName + ".hits");
+        mapHits = stats.get("nc." + testMapName + ".hits");
         assertNotNull(mapHits);
         assertEquals("1", mapHits);
-        cacheHits = stats.get("nearcache.hz/" + testCacheName + ".hits");
+        cacheHits = stats.get("nc.hz/" + testCacheName + ".hits");
         assertNotNull(cacheHits);
         assertEquals("1", cacheHits);
     }

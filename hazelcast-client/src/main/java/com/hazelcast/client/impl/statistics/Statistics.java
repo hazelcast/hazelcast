@@ -64,7 +64,7 @@ public class Statistics {
     public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty("hazelcast.client.statistics.period.seconds", 3,
             SECONDS);
 
-    private static final String NEAR_CACHE_CATEGORY_PREFIX = "nearcache.";
+    private static final String NEAR_CACHE_CATEGORY_PREFIX = "nc.";
     private static final String FEATURE_SUPPORTED_SINCE_VERSION_STRING = "3.9";
     private static final int FEATURE_SUPPORTED_SINCE_VERSION = BuildInfo.calculateVersion(FEATURE_SUPPORTED_SINCE_VERSION_STRING);
     private static final char STAT_SEPARATOR = ',';
@@ -372,6 +372,8 @@ public class Statistics {
 
             stats.append(STAT_SEPARATOR).append("clientAddress").append(KEY_VALUE_SEPARATOR)
                  .append(ownerConnection.getInetAddress().getHostAddress()).append(":").append(ownerConnection.getPort());
+
+            addStat(stats, "clientName", client.getName());
 
             Credentials credentials = client.getCredentials();
             if (!(credentials instanceof UsernamePasswordCredentials)) {
