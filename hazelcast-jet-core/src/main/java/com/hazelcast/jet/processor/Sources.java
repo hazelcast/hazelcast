@@ -211,9 +211,10 @@ public final class Sources {
 
     /**
      * A source that generates a stream of lines of text coming from files in
-     * the watched directory (but not its subdirectories). It will pick up both
+     * the watched directory (but not its subdirectories). You can pass `*` as
+     * the pattern to read all files in the directory. It will pick up both
      * newly created files and content appended to pre-existing files. It
-     * expects the file content not to change once appended. There is no
+     * expects the file contents not to change once appended. There is no
      * indication which file a particular line comes from.
      * <p>
      * The processor will scan pre-existing files for file sizes on startup and

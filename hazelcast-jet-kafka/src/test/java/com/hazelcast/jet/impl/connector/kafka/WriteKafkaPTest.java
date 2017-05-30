@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.connector.kafka;
+package com.hazelcast.jet.impl.connector.kafka;
 
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.processor.Sources.readMap;
-import static com.hazelcast.jet.connector.kafka.WriteKafkaP.writeKafka;
+import static com.hazelcast.jet.processor.KafkaProcessors.writeKafka;
 import static java.util.stream.IntStream.range;
 
 @Category(QuickTest.class)

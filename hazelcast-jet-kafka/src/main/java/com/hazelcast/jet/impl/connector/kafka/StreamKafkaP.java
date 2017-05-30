@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.connector.kafka;
+package com.hazelcast.jet.impl.connector.kafka;
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.Processor;
-import com.hazelcast.util.Preconditions;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -32,7 +29,8 @@ import java.util.concurrent.CompletableFuture;
 import static com.hazelcast.jet.Util.entry;
 
 /**
- * Kafka reader for Jet, emits records read from Kafka as {@code Map.Entry}.
+ * See {@link com.hazelcast.jet.processor.KafkaProcessors#streamKafka(
+ * Properties, String...)}.
  */
 public final class StreamKafkaP extends AbstractProcessor {
 
@@ -41,31 +39,9 @@ public final class StreamKafkaP extends AbstractProcessor {
     private final String[] topicIds;
     private CompletableFuture<Void> jobFuture;
 
-    private StreamKafkaP(String[] topicIds, Properties properties) {
-        this.topicIds = topicIds;
+    public StreamKafkaP(Properties properties, String[] topicIds) {
         this.properties = properties;
-    }
-
-    /**
-     * Returns a 2supplier of processors that consume one or more Kafka topics and emit
-     * items from it as {@code Map.Entry} instances.
-     * <p>
-     * A {@code KafkaConsumer} is created per {@code Processor} instance using the
-     * supplied properties. All processors must be in the same consumer group
-     * supplied by the {@code group.id} property.
-     * The supplied properties will be passed on to the {@code KafkaConsumer} instance.
-     * These processors are only terminated in case of an error or if the underlying job is cancelled.
-     *
-     * @param topics     the list of topics
-     * @param properties consumer properties which should contain consumer group name,
-     *                   broker address and key/value deserializers
-     */
-    public static DistributedSupplier<Processor> streamKafka(Properties properties, String... topics) {
-        Preconditions.checkPositive(topics.length, "At least one topic must be supplied");
-        Preconditions.checkTrue(properties.containsKey("group.id"), "Properties should contain `group.id`");
-        properties.put("enable.auto.commit", false);
-
-        return () -> new StreamKafkaP(topics, properties);
+        this.topicIds = Arrays.copyOf(topicIds, topicIds.length);
     }
 
     @Override

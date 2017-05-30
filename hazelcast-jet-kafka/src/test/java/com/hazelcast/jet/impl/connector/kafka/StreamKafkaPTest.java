@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.connector.kafka;
+package com.hazelcast.jet.impl.connector.kafka;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
@@ -36,7 +36,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.processor.Sinks.writeList;
-import static com.hazelcast.jet.connector.kafka.StreamKafkaP.streamKafka;
+import static com.hazelcast.jet.processor.KafkaProcessors.streamKafka;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

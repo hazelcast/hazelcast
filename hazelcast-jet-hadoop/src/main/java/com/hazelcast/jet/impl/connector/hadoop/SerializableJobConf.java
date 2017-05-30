@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.connector.hadoop;
+package com.hazelcast.jet.impl.connector.hadoop;
 
 import org.apache.hadoop.mapred.JobConf;
 
@@ -28,13 +28,13 @@ import java.io.Serializable;
 /**
  * This class is used to make {@link JobConf} object serializable
  */
-final class SerializableJobConf extends JobConf implements Serializable {
+public final class SerializableJobConf extends JobConf implements Serializable {
 
     SerializableJobConf() {
         //For deserialization
     }
 
-    SerializableJobConf(JobConf jobConf) {
+    private SerializableJobConf(JobConf jobConf) {
         super(jobConf);
     }
 
@@ -46,7 +46,7 @@ final class SerializableJobConf extends JobConf implements Serializable {
         super.readFields(new DataInputStream(in));
     }
 
-    static SerializableJobConf asSerializable(JobConf conf) {
+    public static SerializableJobConf asSerializable(JobConf conf) {
         return new SerializableJobConf(conf);
     }
 }

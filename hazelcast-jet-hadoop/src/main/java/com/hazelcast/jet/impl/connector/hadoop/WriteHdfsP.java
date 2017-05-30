@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.connector.hadoop;
+package com.hazelcast.jet.impl.connector.hadoop;
 
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.nio.Address;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.JobContextImpl;
 import org.apache.hadoop.mapred.JobID;
 import org.apache.hadoop.mapred.OutputCommitter;
@@ -36,8 +35,6 @@ import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.jet.function.DistributedFunction.identity;
-import static com.hazelcast.jet.connector.hadoop.SerializableJobConf.asSerializable;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.lang.String.valueOf;
@@ -46,21 +43,8 @@ import static java.util.stream.IntStream.range;
 import static org.apache.hadoop.mapreduce.TaskType.JOB_SETUP;
 
 /**
- * A processor which consumes records and writes them to HDFS.
- *
- * The records are written according to the given {@code OutputFormat}. The
- * processor expects incoming items to be of type {@code Map.Entry<K,V>} and also
- * accepts optional mappers to transform the key and the value to another type, such as
- * a {@code Writable} that is expected by some of the output formats.
- *
- * Each processor instance creates a single file in the output path identified by
- * the member ID and the processor ID. Unlike in MapReduce,
- * the output files are not sorted by key.
- *
- * @param <K>         the key type of the records
- * @param <KM>        the type of the key after mapping
- * @param <V>         the value type of the records
- * @param <VM>        the type of the value after mapping
+ * See {@link com.hazelcast.jet.processor.HdfsProcessors#writeHdfs(
+ * org.apache.hadoop.mapred.JobConf, DistributedFunction, DistributedFunction)}.
  */
 public final class WriteHdfsP<K, KM, V, VM> extends AbstractProcessor {
 
@@ -104,48 +88,7 @@ public final class WriteHdfsP<K, KM, V, VM> extends AbstractProcessor {
         return false;
     }
 
-    /**
-     * Returns a meta-supplier of processors that writes to HDFS. The processors expect
-     * items of type {@code Map.Entry<K,V>}. The key and the value must be of a type that
-     * is writable to disk by the given {@code OutputFormat} in the configuration.
-     *
-     * The supplied {@code JobConf} must specify an {@code OutputFormat} with a path.
-     *
-     * @param jobConf     {@code JobConf} used for output format configuration
-     */
-    @Nonnull
-    public static ProcessorMetaSupplier writeHdfs(@Nonnull JobConf jobConf) {
-        return WriteHdfsP.writeHdfs(jobConf, identity(), identity());
-    }
-
-    /**
-     * Returns a meta-supplier of processors that writes to HDFS. The processors expect
-     * items of type {@code Map.Entry<K,V>} and take optional mappers for converting
-     * the key and the value to types required by the output format. For example, the mappers
-     * can be used to map the keys and the values to their {@code Writable} equivalents.
-     *
-     * The supplied {@code JobConf} supplied must specify an {@code OutputFormat} with a path.
-     *
-     * @param jobConf     {@code JobConf} used for output format configuration
-     * @param keyMapper   mapper which can be used to map a key to another key
-     * @param valueMapper mapper which can be used to map a value to another value
-     *
-     * @param <K>         the key type of the records
-     * @param <KM>        the type of the key after mapping
-     * @param <V>         the value type of the records
-     * @param <VM>        the type of the value after mapping
-     */
-    @Nonnull
-    public static <K, KM, V, VM> ProcessorMetaSupplier writeHdfs(
-            @Nonnull JobConf jobConf,
-            @Nonnull DistributedFunction<K, KM> keyMapper,
-            @Nonnull DistributedFunction<V, VM> valueMapper
-    ) {
-        return new MetaSupplier<>(asSerializable(jobConf), keyMapper, valueMapper);
-    }
-
-
-    private static class MetaSupplier<K, KM, V, VM> implements ProcessorMetaSupplier {
+    public static class MetaSupplier<K, KM, V, VM> implements ProcessorMetaSupplier {
 
         static final long serialVersionUID = 1L;
 
@@ -155,9 +98,9 @@ public final class WriteHdfsP<K, KM, V, VM> extends AbstractProcessor {
 
         private transient Address address;
 
-        MetaSupplier(SerializableJobConf jobConf,
-                     DistributedFunction<K, KM> keyMapper,
-                     DistributedFunction<V, VM> valueMapper
+        public MetaSupplier(SerializableJobConf jobConf,
+                            DistributedFunction<K, KM> keyMapper,
+                            DistributedFunction<V, VM> valueMapper
         ) {
             this.jobConf = jobConf;
             this.keyMapper = keyMapper;

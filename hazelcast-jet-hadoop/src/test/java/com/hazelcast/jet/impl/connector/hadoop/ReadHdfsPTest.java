@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.connector.hadoop;
+package com.hazelcast.jet.impl.connector.hadoop;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
@@ -61,8 +61,8 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.processor.Sinks.writeList;
-import static com.hazelcast.jet.connector.hadoop.ReadHdfsP.readHdfs;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static com.hazelcast.jet.processor.HdfsProcessors.readHdfs;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

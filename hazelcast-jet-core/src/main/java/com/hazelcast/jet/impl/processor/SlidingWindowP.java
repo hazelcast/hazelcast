@@ -39,7 +39,7 @@ import static java.util.Collections.emptyMap;
 
 /**
  * Handles various setups of sliding and tumbling window aggregation.
- * See {@link com.hazelcast.jet.impl.Processors} for more documentation.
+ * See {@link com.hazelcast.jet.processor.Processors} for more documentation.
  *
  * @param <T> type of input item (stream item in 1st stage, Frame, if 2nd stage)
  * @param <A> type of the frame accumulator object
@@ -80,6 +80,7 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
     protected boolean tryProcess0(@Nonnull Object item) {
         T t = (T) item;
         final Long frameTimestamp = getFrameTimestampF.applyAsLong(t);
+        assert frameTimestamp == wDef.floorFrameTs(frameTimestamp) : "timestamp not on the verge of a frame";
         final Object key = getKeyF.apply(t);
         A acc = tsToKeyToAcc.computeIfAbsent(frameTimestamp, x -> new HashMap<>())
                             .computeIfAbsent(key, k -> aggrOp.createAccumulatorF().get());

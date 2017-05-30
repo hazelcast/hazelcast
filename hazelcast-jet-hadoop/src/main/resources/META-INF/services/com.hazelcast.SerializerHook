@@ -14,11 +14,11 @@
 # limitations under the License.
 #
 
-com.hazelcast.jet.connector.hadoop.WritableSerializerHooks$Default
-com.hazelcast.jet.connector.hadoop.WritableSerializerHooks$Boolean
-com.hazelcast.jet.connector.hadoop.WritableSerializerHooks$Byte
-com.hazelcast.jet.connector.hadoop.WritableSerializerHooks$Double
-com.hazelcast.jet.connector.hadoop.WritableSerializerHooks$Float
-com.hazelcast.jet.connector.hadoop.WritableSerializerHooks$Int
-com.hazelcast.jet.connector.hadoop.WritableSerializerHooks$Long
-com.hazelcast.jet.connector.hadoop.WritableSerializerHooks$Text
+com.hazelcast.jet.impl.connector.hadoop.WritableSerializerHooks$Default
+com.hazelcast.jet.impl.connector.hadoop.WritableSerializerHooks$Boolean
+com.hazelcast.jet.impl.connector.hadoop.WritableSerializerHooks$Byte
+com.hazelcast.jet.impl.connector.hadoop.WritableSerializerHooks$Double
+com.hazelcast.jet.impl.connector.hadoop.WritableSerializerHooks$Float
+com.hazelcast.jet.impl.connector.hadoop.WritableSerializerHooks$Int
+com.hazelcast.jet.impl.connector.hadoop.WritableSerializerHooks$Long
+com.hazelcast.jet.impl.connector.hadoop.WritableSerializerHooks$Text

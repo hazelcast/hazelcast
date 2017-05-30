@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.connector.kafka;
+package com.hazelcast.jet.impl.connector.kafka;
 
 import com.hazelcast.jet.JetTestSupport;
 import kafka.admin.AdminUtils;

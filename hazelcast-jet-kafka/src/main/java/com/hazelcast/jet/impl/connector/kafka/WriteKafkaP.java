@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.connector.kafka;
+package com.hazelcast.jet.impl.connector.kafka;
 
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -32,11 +31,8 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Kafka writer for Jet. Receives records of type {@code Map.Entry} and publishes
- * them to a Kafka topic.
- *
- * @param <K> type of keys written
- * @param <V> type of values written
+ * See {@link com.hazelcast.jet.processor.KafkaProcessors#writeKafka(String,
+ * Properties)}.
  */
 public final class WriteKafkaP<K, V> extends AbstractProcessor {
 
@@ -46,22 +42,6 @@ public final class WriteKafkaP<K, V> extends AbstractProcessor {
     WriteKafkaP(String topic, KafkaProducer<K, V> producer) {
         this.topic = topic;
         this.producer = producer;
-    }
-
-    /**
-     * Returns a meta-supplier of processors that publish messages to a Kafka topic.
-     * It receives items of type {@code Map.Entry<K,V>} and publishes them to Kafka.
-     *
-     * A single {@code KafkaProducer} is created per node using the supplied properties file.
-     * The producer instance is shared across all {@code Processor} instances on that node.
-     *
-     * @param <K>        type of keys written
-     * @param <V>        type of values written
-     * @param topic      kafka topic name to publish to
-     * @param properties producer properties which should contain broker address and key/value serializers
-     */
-    public static <K, V> ProcessorMetaSupplier writeKafka(String topic, Properties properties) {
-        return ProcessorMetaSupplier.of(new Supplier<K, V>(topic, properties));
     }
 
     @Override
@@ -82,7 +62,7 @@ public final class WriteKafkaP<K, V> extends AbstractProcessor {
         return true;
     }
 
-    private static class Supplier<K, V> implements ProcessorSupplier {
+    public static class Supplier<K, V> implements ProcessorSupplier {
 
         static final long serialVersionUID = 1L;
 
@@ -91,7 +71,7 @@ public final class WriteKafkaP<K, V> extends AbstractProcessor {
 
         private transient KafkaProducer<K, V> producer;
 
-        Supplier(String topicId, Properties properties) {
+        public Supplier(String topicId, Properties properties) {
             this.topicId = topicId;
             this.properties = properties;
         }

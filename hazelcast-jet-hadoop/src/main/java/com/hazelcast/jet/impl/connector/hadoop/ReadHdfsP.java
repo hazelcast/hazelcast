@@ -14,23 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.connector.hadoop;
+package com.hazelcast.jet.impl.connector.hadoop;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.processor.Processors;
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.Util;
 import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.processor.Processors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 
 import javax.annotation.Nonnull;
@@ -54,7 +52,6 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.connector.hadoop.SerializableJobConf.asSerializable;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
@@ -70,23 +67,8 @@ import static java.util.stream.Stream.concat;
 import static org.apache.hadoop.mapred.Reporter.NULL;
 
 /**
- * A processor which reads and emits records from HDFS.
- *
- * The input according to the given {@code InputFormat} is split
- * among the processor instances and each processor instance is responsible
- * for reading a part of the input. The records by default are emitted as
- * {@code Map.Entry<K,V>}, but this can also be transformed to another type
- * using an optional {@code mapper}.
- *
- * Jet cluster should be run on the same nodes as the HDFS nodes for best
- * read performance. If the hosts are aligned, each processor instance will
- * try to read as much local data as possible. A heuristic algorithm is used
- * to assign replicated blocks across the cluster to ensure a
- * well-balanced work distribution between processor instances.
- *
- * @param <K> key type of the records
- * @param <V> value type of the records
- * @param <R> the type of the emitted value
+ * See {@link com.hazelcast.jet.processor.HdfsProcessors#readHdfs(
+ * org.apache.hadoop.mapred.JobConf, DistributedBiFunction)}.
  */
 public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
 
@@ -124,39 +106,7 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
         return false;
     }
 
-    /**
-     * Returns a meta-supplier of processors that reads from HDFS files.
-     * The processors emit entries of type {@code Map.Entry<K,V>}.
-     *
-     * @param <K>     key type of the records
-     * @param <V>     value type of the records
-     * @param jobConf JobConf for reading files with the appropriate input format and path
-     * @return {@link ProcessorMetaSupplier} supplier
-     */
-    @Nonnull
-    public static <K, V> MetaSupplier<K, V, Entry<K, V>> readHdfs(@Nonnull JobConf jobConf) {
-        return readHdfs(jobConf, Util::entry);
-    }
-
-    /**
-     * Returns a meta-supplier of processors that read HDFS files.
-     * It will emit entries of type {@code Map.Entry<K,V>}.
-     *
-     * @param <K>     key type of the records
-     * @param <V>     value type of the records
-     * @param <R>     the type of the mapped value
-     * @param jobConf JobConf for reading files with the appropriate input format and path
-     * @param mapper  mapper which can be used to map the key and value to another value
-     * @return {@link ProcessorMetaSupplier} supplier
-     */
-    @Nonnull
-    public static <K, V, R> MetaSupplier<K, V, R> readHdfs(
-            @Nonnull JobConf jobConf, @Nonnull DistributedBiFunction<K, V, R> mapper
-    ) {
-        return new MetaSupplier<>(asSerializable(jobConf), mapper);
-    }
-
-    private static class MetaSupplier<K, V, R> implements ProcessorMetaSupplier {
+    public static class MetaSupplier<K, V, R> implements ProcessorMetaSupplier {
 
         static final long serialVersionUID = 1L;
 
@@ -167,7 +117,7 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
         private transient ILogger logger;
 
 
-        MetaSupplier(@Nonnull SerializableJobConf jobConf, @Nonnull DistributedBiFunction<K, V, R> mapper) {
+        public MetaSupplier(@Nonnull SerializableJobConf jobConf, @Nonnull DistributedBiFunction<K, V, R> mapper) {
             this.jobConf = jobConf;
             this.mapper = mapper;
         }

@@ -15,6 +15,6 @@
  */
 
 /**
- * Kafka reader/writer support for Hazelcast Jet
+ * Apache Hadoop HDFS read/write support for Hazelcast Jet.
  */
-package com.hazelcast.jet.connector.kafka;
+package com.hazelcast.jet.processor;
