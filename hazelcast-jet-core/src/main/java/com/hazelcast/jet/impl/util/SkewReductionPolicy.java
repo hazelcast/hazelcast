@@ -84,6 +84,16 @@ public class SkewReductionPolicy {
     private final long priorityDrainingThreshold;
     private final boolean forceAdvancePunc;
 
+    /**
+     * Creates a policy which does not stop draining from any queue under any condition
+     * and does not advance punctuation eagerly. The policy only sets the draining order for the queues
+     * by ordering them by their current punctuation value. The queue with the lowest punctuation
+     * value will have the drain order 0.
+     */
+    public SkewReductionPolicy(int numQueues) {
+        this(numQueues, Long.MAX_VALUE, Long.MAX_VALUE, false);
+    }
+
     public SkewReductionPolicy(int numQueues, long maxSkew, long priorityDrainingThreshold, boolean forceAdvancePunc) {
         checkNotNegative(maxSkew, "maxSkew must not be a negative number");
         checkNotNegative(priorityDrainingThreshold, "priorityDrainingThreshold must not be a negative number");

@@ -57,7 +57,7 @@ public class ConcurrentInboundEdgeStreamTest {
         //noinspection unchecked
         ConcurrentConveyor<Object> conveyor = ConcurrentConveyor.concurrentConveyor(senderGone, q1, q2);
 
-        stream = new ConcurrentInboundEdgeStream(conveyor, 0, 0, 0, 0, false);
+        stream = new ConcurrentInboundEdgeStream(conveyor, 0, 0);
     }
 
     @Test

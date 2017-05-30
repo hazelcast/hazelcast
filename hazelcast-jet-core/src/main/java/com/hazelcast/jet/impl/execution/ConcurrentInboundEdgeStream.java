@@ -41,15 +41,14 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
     private final ProgressTracker tracker = new ProgressTracker();
     private final PunctuationDetector puncDetector = new PunctuationDetector();
     private long lastEmittedPunc = Long.MIN_VALUE;
+
     private final SkewReductionPolicy skewReductionPolicy;
 
-    public ConcurrentInboundEdgeStream(ConcurrentConveyor<Object> conveyor, int ordinal, int priority,
-            long maxSkew, long priorityDrainingThreshold, boolean forceAdvancePunctuation) {
+    public ConcurrentInboundEdgeStream(ConcurrentConveyor<Object> conveyor, int ordinal, int priority) {
         this.conveyor = conveyor;
         this.ordinal = ordinal;
         this.priority = priority;
-        this.skewReductionPolicy = new SkewReductionPolicy(
-                conveyor.queueCount(), maxSkew, priorityDrainingThreshold, forceAdvancePunctuation);
+        this.skewReductionPolicy = new SkewReductionPolicy(conveyor.queueCount());
     }
 
     @Override
@@ -71,9 +70,6 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
         tracker.reset();
         for (int drainOrderIdx = 0; drainOrderIdx < conveyor.queueCount(); drainOrderIdx++) {
             int queueIndex = skewReductionPolicy.toQueueIndex(drainOrderIdx);
-            if (skewReductionPolicy.shouldStopDraining(queueIndex, tracker.isMadeProgress())) {
-                break;
-            }
             final Pipe<Object> q = conveyor.queue(queueIndex);
             if (q == null) {
                 continue;

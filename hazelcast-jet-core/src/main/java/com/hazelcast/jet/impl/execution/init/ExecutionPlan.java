@@ -236,8 +236,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             for (Address destAddr : getRemoteMembers(nodeEngine)) {
                 final ConcurrentConveyor<Object> conveyor =
                         createConveyorArray(1, edge.sourceVertex().parallelism(), edge.getConfig().getQueueSize())[0];
-                final ConcurrentInboundEdgeStream inboundEdgeStream = createInboundEdgeStream(
-                        edge.destOrdinal(), edge.priority(), conveyor);
+                final ConcurrentInboundEdgeStream inboundEdgeStream =
+                        new ConcurrentInboundEdgeStream(conveyor, edge.destOrdinal(), edge.priority());
                 final int destVertexId = edge.destVertex().vertexId();
                 final SenderTasklet t = new SenderTasklet(inboundEdgeStream, nodeEngine,
                         destAddr, executionId, destVertexId, edge.getConfig().getPacketSizeLimit());
@@ -377,17 +377,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         for (EdgeDef inEdge : srcVertex.inboundEdges()) {
             // each tasklet has one input conveyor per edge
             final ConcurrentConveyor<Object> conveyor = localConveyorMap.get(inEdge.edgeId())[processorIdx];
-            inboundStreams.add(createInboundEdgeStream(inEdge.destOrdinal(), inEdge.priority(), conveyor));
+            inboundStreams.add(new ConcurrentInboundEdgeStream(conveyor, inEdge.destOrdinal(), inEdge.priority()));
         }
         return inboundStreams;
     }
 
-    private static ConcurrentInboundEdgeStream createInboundEdgeStream(
-            int ordinal, int priority, ConcurrentConveyor<Object> conveyor
-    ) {
-        // TODO set these params through Edge
-        return new ConcurrentInboundEdgeStream(conveyor, ordinal, priority,
-                Long.MAX_VALUE, Long.MAX_VALUE, false);
-    }
 }
 
