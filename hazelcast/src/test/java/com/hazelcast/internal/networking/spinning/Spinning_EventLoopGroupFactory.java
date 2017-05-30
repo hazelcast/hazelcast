@@ -17,6 +17,8 @@
 package com.hazelcast.internal.networking.spinning;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.networking.ChannelFactory;
+import com.hazelcast.internal.networking.nio.NioChannelFactory;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.EventLoopGroupFactory;
 import com.hazelcast.nio.tcp.MemberChannelInitializer;
@@ -24,6 +26,11 @@ import com.hazelcast.nio.tcp.MockIOService;
 import com.hazelcast.nio.tcp.TcpIpConnectionChannelErrorHandler;
 
 public class Spinning_EventLoopGroupFactory implements EventLoopGroupFactory {
+
+    @Override
+    public ChannelFactory createChannelFactory() {
+        return new SpinningChannelFactory();
+    }
 
     @Override
     public SpinningEventLoopGroup create(MockIOService ioService, MetricsRegistry metricsRegistry) {

@@ -14,22 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.networking.nio;
+package com.hazelcast.internal.networking.spinning;
 
-import com.hazelcast.nio.tcp.TcpIpConnection_BaseTest;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelFactory;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
-public class SelectNow_TcpIpConnection_BasicTest extends TcpIpConnection_BaseTest {
+import java.nio.channels.SocketChannel;
 
-    @Before
-    public void setup() throws Exception {
-        eventLoopGroupFactory = new SelectNow_NioEventLoopGroupFactory();
-        super.setup();
+public class SpinningChannelFactory implements ChannelFactory {
+
+    @Override
+    public Channel create(SocketChannel channel, boolean clientMode, boolean directBuffer) throws Exception {
+        return new SpinningChannel(channel, clientMode);
     }
 }

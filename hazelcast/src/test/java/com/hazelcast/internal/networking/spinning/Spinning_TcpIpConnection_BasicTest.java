@@ -29,7 +29,7 @@ public class Spinning_TcpIpConnection_BasicTest extends TcpIpConnection_BaseTest
 
     @Before
     public void setup() throws Exception {
-        threadingModelFactory = new Spinning_EventLoopGroupFactory();
+        eventLoopGroupFactory = new Spinning_EventLoopGroupFactory();
         super.setup();
     }
 }
