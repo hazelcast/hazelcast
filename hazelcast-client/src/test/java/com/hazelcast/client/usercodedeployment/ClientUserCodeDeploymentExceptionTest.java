@@ -81,7 +81,10 @@ public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport 
 
     @Test(expected = IllegalStateException.class)
     public void testClientsWithConflictingClassRepresentations() {
-        // this test also validate the EP is filtered locally and has to be loaded from the other member
+        /*
+            These two jars IncrementingEntryProcessor.jar and IncrementingEntryProcessorConflicting.jar
+            contains same class `IncrementingEntryProcessor` with different implementations
+         */
         Config config = createNodeConfig();
         config.getUserCodeDeploymentConfig().setEnabled(true);
 
@@ -98,10 +101,11 @@ public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport 
         {
             ClientConfig clientConfig = new ClientConfig();
             ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
-            clientUserCodeDeploymentConfig.addJar("IncrementingEntryProcessor2.jar").setEnabled(true);
+            clientUserCodeDeploymentConfig.addJar("IncrementingEntryProcessorConflicting.jar").setEnabled(true);
             clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig);
             factory.newHazelcastClient(clientConfig);
         }
 
     }
+
 }

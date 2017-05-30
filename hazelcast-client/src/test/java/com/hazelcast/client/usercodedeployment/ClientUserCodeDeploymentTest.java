@@ -34,6 +34,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
+import usercodedeployment.EntryProcessorWithAnonymousAndInner;
 import usercodedeployment.IncrementingEntryProcessor;
 
 import java.util.Collection;
@@ -141,4 +142,30 @@ public class ClientUserCodeDeploymentTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void testWithInnerAndAnonymousClass() {
+        Config config = createNodeConfig();
+
+        factory.newHazelcastInstance(config);
+        ClientConfig clientConfig = new ClientConfig();
+        ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+        clientUserCodeDeploymentConfig.addJar("EntryProcessorWithAnonymousAndInner.jar").setEnabled(true);
+        clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig);
+
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+
+
+        EntryProcessorWithAnonymousAndInner incrementingEntryProcessor = new EntryProcessorWithAnonymousAndInner();
+        int keyCount = 100;
+        IMap<Integer, Integer> map = client.getMap(randomName());
+
+        for (int i = 0; i < keyCount; i++) {
+            map.put(i, 0);
+        }
+        map.executeOnEntries(incrementingEntryProcessor);
+
+        for (int i = 0; i < keyCount; i++) {
+            assertEquals(1, (int) map.get(i));
+        }
+    }
 }

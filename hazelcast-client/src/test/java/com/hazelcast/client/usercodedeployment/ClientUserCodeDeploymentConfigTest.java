@@ -104,6 +104,22 @@ public class ClientUserCodeDeploymentConfigTest extends HazelcastTestSupport {
         assertClassLoaded(list, "usercodedeployment.IncrementingEntryProcessor");
     }
 
+    @Test
+    public void testConfigWithJarFile_withInnerAndAnonymousClass() throws IOException, URISyntaxException {
+        ClientUserCodeDeploymentConfig config = new ClientUserCodeDeploymentConfig();
+        config.setEnabled(true);
+        ClassLoader classLoader = getClass().getClassLoader();
+        URL resource = classLoader.getResource("EntryProcessorWithAnonymousAndInner.jar");
+        File file = new File(resource.toURI());
+        config.addJar(file);
+        ClientUserCodeDeploymentService service = new ClientUserCodeDeploymentService(config, classLoader);
+        service.start();
+        List<Map.Entry<String, byte[]>> list = service.getClassDefinitionList();
+        assertClassLoaded(list, "usercodedeployment.EntryProcessorWithAnonymousAndInner");
+        assertClassLoaded(list, "usercodedeployment.EntryProcessorWithAnonymousAndInner$1");
+        assertClassLoaded(list, "usercodedeployment.EntryProcessorWithAnonymousAndInner$Test");
+    }
+
     private void assertClassLoaded(List<Map.Entry<String, byte[]>> list, String name) {
         for (Map.Entry<String, byte[]> classDefinition : list) {
             if (classDefinition.getKey().equals(name)) {

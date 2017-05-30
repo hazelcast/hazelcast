@@ -24,7 +24,6 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.LifecycleServiceImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
@@ -200,7 +199,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                 logger.info("Setting " + connection + " as owner  with principal " + principal);
                 fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
                 return true;
-            } catch (HazelcastException e) {
+            } catch (Exception e) {
                 Level level = e instanceof AuthenticationException ? Level.WARNING : Level.FINEST;
                 logger.log(level, "Exception during initial connection to " + inetSocketAddress, e);
                 if (null != connection) {
