@@ -16,21 +16,26 @@
 
 package classloading;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import com.hazelcast.test.HazelcastTestSupport;
+import org.junit.After;
+import org.junit.Before;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
-public class ThreadLeakTest extends AbstractThreadLeakTest {
+import java.util.Set;
 
-    @Test
-    public void testThreadLeak() {
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance();
-        hz.shutdown();
+import static classloading.ThreadLeakTestUtils.assertHazelcastThreadShutdown;
+import static classloading.ThreadLeakTestUtils.getThreads;
+
+public abstract class AbstractThreadLeakTest extends HazelcastTestSupport {
+
+    private Set<Thread> oldThreads;
+
+    @Before
+    public final void getOldThreads() {
+        oldThreads = getThreads();
+    }
+
+    @After
+    public final void assertThreadLeaks() {
+        assertHazelcastThreadShutdown(oldThreads);
     }
 }
