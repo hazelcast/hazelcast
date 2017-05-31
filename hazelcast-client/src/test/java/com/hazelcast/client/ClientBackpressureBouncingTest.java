@@ -101,11 +101,11 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
     @Test(timeout = TEST_TIMEOUT_MILLIS)
     public void testInFlightInvocationCountIsNotGrowing() {
         HazelcastInstance driver = bounceMemberRule.getNextTestDriver();
-        checkingThread = new InvocationCheckingThread(driver);
-        checkingThread.start();
-
         IMap<Integer, Integer> map = driver.getMap(randomMapName());
         Runnable[] tasks = createTasks(map);
+
+        checkingThread = new InvocationCheckingThread(driver);
+        checkingThread.start();
 
         bounceMemberRule.testRepeatedly(tasks, TEST_DURATION_SECONDS);
         System.out.println("Finished bouncing");
@@ -135,8 +135,10 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
 
         private InvocationCheckingThread(HazelcastInstance client) {
             long durationMillis = TimeUnit.SECONDS.toMillis(TEST_DURATION_SECONDS);
-            this.warmUpDeadline = System.currentTimeMillis() + (durationMillis / 5);
-            this.deadLine = System.currentTimeMillis() + durationMillis;
+            long now = System.currentTimeMillis();
+
+            this.warmUpDeadline = now + (durationMillis / 5);
+            this.deadLine = now + durationMillis;
             this.callIdMap = extraCallIdMap(client);
         }
 
@@ -186,10 +188,10 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
 
     private class MyRunnable implements Runnable {
 
+        private final ExecutionCallback<Integer> callback = new CountingCallback();
+        private final AtomicLong backpressureCounter = new AtomicLong();
         private final AtomicLong progressCounter = new AtomicLong();
         private final AtomicLong failureCounter = new AtomicLong();
-        private final AtomicLong backpressureCounter = new AtomicLong();
-        private final ExecutionCallback<Integer> callback = new CountingCallback();
 
         private final IMap<Integer, Integer> map;
         private final int workerNo;
