@@ -29,9 +29,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
@@ -88,28 +85,26 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     private void testListenersTerminateRandomNode() {
         setupListener();
 
-        terminateRandomNode();
-
-        HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
-        final CountDownLatch memberAddedLatch = new CountDownLatch(1);
-        clientInstanceImpl.getClientClusterService().addMembershipListener(new MembershipListener() {
+        final CountDownLatch disconnectedLatch = new CountDownLatch(1);
+        final CountDownLatch connectedLatch = new CountDownLatch(1);
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
-            public void memberAdded(MembershipEvent membershipEvent) {
-                memberAddedLatch.countDown();
-            }
-
-            @Override
-            public void memberRemoved(MembershipEvent membershipEvent) {
-            }
-
-            @Override
-            public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+            public void stateChanged(LifecycleEvent event) {
+                if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED == event.getState()) {
+                    disconnectedLatch.countDown();
+                }
+                if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED == event.getState()) {
+                    connectedLatch.countDown();
+                }
             }
         });
 
+        terminateRandomNode();
+        assertOpenEventually(disconnectedLatch);
         factory.newHazelcastInstance();
+        assertOpenEventually(connectedLatch);
 
-        assertOpenEventually(memberAddedLatch);
+        assertClusterSizeEventually(clusterSize, client);
         validateRegistrationsAndListenerFunctionality();
     }
 
