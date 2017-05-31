@@ -137,10 +137,10 @@ public class NearCacheConfigTest {
     }
 
     @Test
-    public void testIsSerializeKeys_whenNativeMemoryFormat() {
-        config.setSerializeKeys(true);
+    public void testIsSerializeKeys_whenNativeMemoryFormat_thenAlwaysReturnTrue() {
+        config.setSerializeKeys(false);
         config.setInMemoryFormat(InMemoryFormat.NATIVE);
-        assertFalse(config.isSerializeKeys());
+        assertTrue(config.isSerializeKeys());
     }
 
     @Test
