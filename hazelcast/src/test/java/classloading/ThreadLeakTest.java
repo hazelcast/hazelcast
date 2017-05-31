@@ -74,7 +74,7 @@ public class ThreadLeakTest extends HazelcastTestSupport {
         StringBuilder sb = new StringBuilder("There are still Hazelcast threads running after shutdown!\n");
         for (Thread thread : joinableThreads) {
             String stackTrace = Arrays.toString(stackTraces.get(thread));
-            sb.append(format("  -> %s (id: %s) (group: %s) (daemon: %b) (alive: %b) (interrupted: %b) (state: %s)%n%s",
+            sb.append(format("  -> %s (id: %s) (group: %s) (daemon: %b) (alive: %b) (interrupted: %b) (state: %s)%n%s%n",
                     thread.getName(), thread.getId(), getThreadGroupName(thread), thread.isDaemon(), thread.isAlive(),
                     thread.isInterrupted(), thread.getState(), stackTrace));
         }
