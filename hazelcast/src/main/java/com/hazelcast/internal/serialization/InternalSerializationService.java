@@ -16,12 +16,14 @@
 
 package com.hazelcast.internal.serialization;
 
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.Disposable;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataType;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -53,6 +55,12 @@ public interface InternalSerializationService extends SerializationService, Disp
      * disabled.
      */
     byte[] toBytes(Object obj, int leftPadding, boolean insertPartitionHash);
+
+    <B extends Data> B toData(Object obj, DataType type);
+
+    <B extends Data> B toData(Object obj, DataType type, PartitioningStrategy strategy);
+
+    <B extends Data> B convertData(Data data, DataType type);
 
     void writeObject(ObjectDataOutput out, Object obj);
 

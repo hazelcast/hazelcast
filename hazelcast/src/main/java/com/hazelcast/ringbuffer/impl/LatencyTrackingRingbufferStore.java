@@ -19,6 +19,7 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.core.RingbufferStore;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin.LatencyProbe;
+import com.hazelcast.spi.ObjectNamespace;
 
 /**
  * A {@link RingbufferStore} that decorates an RingbufferStore with latency tracking instrumentation.
@@ -34,12 +35,13 @@ class LatencyTrackingRingbufferStore<T> implements RingbufferStore<T> {
     private final LatencyProbe storeAllProbe;
     private final RingbufferStore<T> delegate;
 
-    LatencyTrackingRingbufferStore(RingbufferStore<T> delegate, StoreLatencyPlugin plugin, String ringbufferName) {
+    LatencyTrackingRingbufferStore(RingbufferStore<T> delegate, StoreLatencyPlugin plugin, ObjectNamespace namespace) {
+        final String nsDescription = namespace.getServiceName() + ":" + namespace.getObjectName();
         this.delegate = delegate;
-        this.loadProbe = plugin.newProbe(KEY, ringbufferName, "load");
-        this.getLargestSequenceProbe = plugin.newProbe(KEY, ringbufferName, "getLargestSequence");
-        this.storeProbe = plugin.newProbe(KEY, ringbufferName, "store");
-        this.storeAllProbe = plugin.newProbe(KEY, ringbufferName, "storeAll");
+        this.loadProbe = plugin.newProbe(KEY, nsDescription, "load");
+        this.getLargestSequenceProbe = plugin.newProbe(KEY, nsDescription, "getLargestSequence");
+        this.storeProbe = plugin.newProbe(KEY, nsDescription, "store");
+        this.storeAllProbe = plugin.newProbe(KEY, nsDescription, "storeAll");
     }
 
     @Override

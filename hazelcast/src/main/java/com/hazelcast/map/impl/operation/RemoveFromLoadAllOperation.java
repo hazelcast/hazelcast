@@ -32,7 +32,10 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Removes data from Record store on LoadAllOperation that replaces existing values
+ * Removes keys that are contained in the {@link com.hazelcast.map.impl.recordstore.RecordStore} from the provided list,
+ * leaving only keys which are not contained in the record store.
+ *
+ * @see com.hazelcast.core.IMap#loadAll(java.util.Set, boolean)
  */
 public class RemoveFromLoadAllOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation {
 

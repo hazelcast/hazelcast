@@ -98,8 +98,7 @@ public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
                 .setInMemoryFormat(inMemoryFormat)
                 .setTimeToLiveSeconds(ttlSeconds);
 
-        final RingbufferContainer rbContainer = new RingbufferContainer(config.getName(), config,
-                nodeEngine.getSerializationService(), nodeEngine.getConfigClassLoader());
+        final RingbufferContainer rbContainer = getRingbufferContainer(config);
         testSerialization(rbContainer);
 
         for (int k = 0; k < config.getCapacity() * 2; k++) {
@@ -119,6 +118,12 @@ public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
             ringbuffer.setHeadSequence(ringbuffer.headSequence() + 1);
             testSerialization(rbContainer);
         }
+    }
+
+    private RingbufferContainer getRingbufferContainer(RingbufferConfig config) {
+        return new RingbufferContainer(
+                RingbufferService.getRingbufferNamespace(config.getName()), config,
+                nodeEngine.getSerializationService(), nodeEngine.getConfigClassLoader());
     }
 
     private void testSerialization(RingbufferContainer original) {

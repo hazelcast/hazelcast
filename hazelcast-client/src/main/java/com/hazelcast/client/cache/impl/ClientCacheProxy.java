@@ -20,11 +20,16 @@ import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
+import com.hazelcast.cache.impl.journal.EventJournalCacheEvent;
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheAddPartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheContainsKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheEntryProcessorCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheEventJournalReadCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheEventJournalSubscribeCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheEventJournalSubscribeCodec.ResponseParameters;
 import com.hazelcast.client.impl.protocol.codec.CacheListenerRegistrationCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheLoadAllCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
@@ -32,12 +37,20 @@ import com.hazelcast.client.impl.protocol.codec.CacheRemovePartitionLostListener
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
+import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
+import com.hazelcast.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.projection.Projection;
+import com.hazelcast.ringbuffer.ReadResultSet;
+import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
+import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.function.Predicate;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -55,12 +68,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.cache.impl.CacheEventType.PARTITION_LOST;
 import static com.hazelcast.cache.impl.CacheProxyUtil.NULL_KEY_IS_NOT_ALLOWED;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateConfiguredTypes;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -68,19 +83,37 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@link com.hazelcast.cache.ICache} implementation for Hazelcast clients.
- *
+ * <p>
  * This proxy is the implementation of {@link com.hazelcast.cache.ICache} and {@link javax.cache.Cache} which is returned by
  * {@link HazelcastClientCacheManager}. Represents a cache on client.
- *
+ * <p>
  * This implementation is a thin proxy implementation using hazelcast client infrastructure.
  *
  * @param <K> key type
  * @param <V> value type
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
+    private ClientMessageDecoder eventJournalReadResponseDecoder;
+
 
     ClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext context) {
         super(cacheConfig, context);
+    }
+
+    @Override
+    protected void onInitialize() {
+        super.onInitialize();
+        eventJournalReadResponseDecoder = new ClientMessageDecoder() {
+            @Override
+            public ReadResultSet<?> decodeClientMessage(ClientMessage message) {
+                final CacheEventJournalReadCodec.ResponseParameters params = CacheEventJournalReadCodec.decodeResponse(message);
+                final PortableReadResultSet<?> resultSet
+                        = new PortableReadResultSet<Object>(params.readCount, params.items, params.itemSeqs);
+                resultSet.setSerializationService(getSerializationService());
+                return resultSet;
+            }
+        };
     }
 
     @Override
@@ -470,6 +503,62 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
     @Override
     public boolean removePartitionLostListener(String id) {
         return getContext().getListenerService().deregisterListener(id);
+    }
+
+
+    /**
+     * Subscribe to the event journal for this cache and a specific partition ID.
+     * The method will register the subscription so that the event journal knows which
+     * items have been read by this subscriber. It will return the subscription ID and
+     * the newest and oldest event journal sequence.
+     *
+     * @param partitionId the partition ID of the entries to which we are subscribing
+     * @return the initial subscriber state containing the subscription ID, newest and oldest event journal sequence
+     * @throws UnsupportedOperationException if the cluster version is lower than 3.9 or there is no event journal
+     *                                       configured for this cache
+     * @since 3.9
+     */
+    public EventJournalInitialSubscriberState subscribeToEventJournal(int partitionId) {
+        final ClientMessage request = CacheEventJournalSubscribeCodec.encodeRequest(nameWithPrefix);
+        final ClientInvocationFuture invocation = new ClientInvocation(getClient(), request, partitionId).invoke();
+        try {
+            final ClientMessage msg = invocation.get();
+            final ResponseParameters resp = CacheEventJournalSubscribeCodec.decodeResponse(msg);
+            return new EventJournalInitialSubscriberState(resp.oldestSequence, resp.newestSequence);
+        } catch (InterruptedException e) {
+            throw rethrow(e);
+        } catch (ExecutionException e) {
+            throw rethrow(e);
+        }
+    }
+
+    /**
+     * Reads from the event journal. The returned future may throw {@link UnsupportedOperationException}
+     * if the cluster version is lower than 3.9 or there is no event journal configured for this cache.
+     *
+     * @param startSequence the sequence of the first item to read
+     * @param maxSize       the maximum number of items to read
+     * @param partitionId   the partition ID of the entries in the journal
+     * @param predicate     the predicate which the events must pass to be included in the response.
+     *                      May be {@code null} in which case all events pass the predicate
+     * @param projection    the projection which is applied to the events before returning.
+     *                      May be {@code null} in which case the event is returned without being projected
+     * @param <T>           the return type of the projection. It is equal to the journal event type
+     *                      if the projection is {@code null} or it is the identity projection
+     * @return the future with the filtered and projected journal items
+     * @since 3.9
+     */
+    public <T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(
+            long startSequence,
+            int maxSize,
+            int partitionId,
+            Predicate<? super EventJournalCacheEvent<K, V>> predicate,
+            Projection<? super EventJournalCacheEvent<K, V>, T> projection) {
+        final SerializationService ss = getSerializationService();
+        final ClientMessage request = CacheEventJournalReadCodec.encodeRequest(
+                nameWithPrefix, startSequence, 1, maxSize, ss.toData(predicate), ss.toData(projection));
+        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, partitionId).invoke();
+        return new ClientDelegatingFuture<ReadResultSet<T>>(fut, ss, eventJournalReadResponseDecoder);
     }
 
     private final class ClientCachePartitionLostEventHandler

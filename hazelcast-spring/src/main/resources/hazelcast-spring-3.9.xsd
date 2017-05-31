@@ -977,6 +977,58 @@
                                 </xs:attribute>
                             </xs:complexType>
                         </xs:element>
+                        <xs:element name="event-journal" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Configuration for an event journal. The event journal keeps events related
+                                        to a specific partition and data structure. For instance, it could keep
+                                        map add, update, remove, merge events along with the key, old value, new value and so on.
+                                        This configuration is not tied to a specific data structure and can be reused.
+                                    </xs:documentation>
+                                </xs:annotation>
+                                <xs:attribute name="map-name" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            The name of the map to which this config applies.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="cache-name" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            The name of the cache to which this config applies.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="enabled" type="parameterized-boolean" default="true">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            True if the event journal is enabled, false otherwise.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="capacity" use="optional" type="parameterized-unsigned-int">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Number of items in the event journal. If no time-to-live-seconds
+                                            is set, the size will always be equal to capacity after the event
+                                            journal has been filled. This is because no items are getting retired.
+                                            The default value is 10000.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="time-to-live-seconds" use="optional" type="parameterized-unsigned-int">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Maximum number of seconds for each entry to stay in the event journal.
+                                            Entries that are older than &lt;time-to-live-seconds&gt; are evicted from the journal.
+                                            Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                            </xs:complexType>
+                        </xs:element>
                         <xs:element name="multimap" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>

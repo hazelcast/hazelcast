@@ -19,6 +19,7 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.RingbufferStore;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -37,6 +38,7 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelTest.class})
 public class LatencyTrackingRingbufferStoreTest extends HazelcastTestSupport {
     private static final String NAME = "somerb";
+    private static final ObjectNamespace NAMESPACE = RingbufferService.getRingbufferNamespace(NAME);
 
     private HazelcastInstance hz;
     private StoreLatencyPlugin plugin;
@@ -48,7 +50,8 @@ public class LatencyTrackingRingbufferStoreTest extends HazelcastTestSupport {
         hz = createHazelcastInstance();
         plugin = new StoreLatencyPlugin(getNodeEngineImpl(hz));
         delegate = mock(RingbufferStore.class);
-        ringbufferStore = new LatencyTrackingRingbufferStore<String>(delegate, plugin, NAME);
+        ringbufferStore = new LatencyTrackingRingbufferStore<String>(delegate, plugin,
+                NAMESPACE);
     }
 
     @Test
@@ -97,7 +100,7 @@ public class LatencyTrackingRingbufferStoreTest extends HazelcastTestSupport {
     }
 
     public void assertProbeCalledOnce(String methodName) {
-        assertEquals(1, plugin.count(LatencyTrackingRingbufferStore.KEY, NAME, methodName));
+        assertEquals(1, plugin.count(LatencyTrackingRingbufferStore.KEY,
+                NAMESPACE.getServiceName() + ":" + NAMESPACE.getObjectName(), methodName));
     }
 }
-

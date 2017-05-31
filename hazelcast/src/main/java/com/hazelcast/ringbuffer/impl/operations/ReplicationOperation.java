@@ -19,6 +19,7 @@ package com.hazelcast.ringbuffer.impl.operations;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.Operation;
@@ -31,8 +32,7 @@ import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.F_ID;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.REPLICATION_OPERATION;
 import static com.hazelcast.ringbuffer.impl.RingbufferService.SERVICE_NAME;
 
-public class ReplicationOperation extends Operation
-        implements IdentifiedDataSerializable {
+public class ReplicationOperation extends Operation implements IdentifiedDataSerializable, Versioned {
 
     private Map<String, RingbufferContainer> migrationData;
 
@@ -47,11 +47,11 @@ public class ReplicationOperation extends Operation
 
     @Override
     public void run() {
-        RingbufferService service = getService();
+        final RingbufferService service = getService();
         for (Map.Entry<String, RingbufferContainer> entry : migrationData.entrySet()) {
-            String name = entry.getKey();
-            RingbufferContainer ringbuffer = entry.getValue();
-            service.addRingbuffer(name, ringbuffer);
+            final String name = entry.getKey();
+            final RingbufferContainer ringbuffer = entry.getValue();
+            service.addRingbuffer(getPartitionId(), ringbuffer, service.getRingbufferConfig(name));
         }
     }
 
@@ -86,8 +86,9 @@ public class ReplicationOperation extends Operation
         int mapSize = in.readInt();
         migrationData = new HashMap<String, RingbufferContainer>(mapSize);
         for (int i = 0; i < mapSize; i++) {
-            String name = in.readUTF();
-            RingbufferContainer container = new RingbufferContainer(name);
+            final String name = in.readUTF();
+            final RingbufferContainer container = new RingbufferContainer(
+                    RingbufferService.getRingbufferNamespace(name));
             container.readData(in);
             migrationData.put(name, container);
         }

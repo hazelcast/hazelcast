@@ -36,8 +36,7 @@ import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.ADD_OPE
  * the backup operation will put the item under the sequence ID that the master generated. This is to avoid differences
  * in ring buffer data structures.
  */
-public class AddOperation extends AbstractRingBufferOperation
-        implements Notifier, BackupAwareOperation {
+public class AddOperation extends AbstractRingBufferOperation implements Notifier, BackupAwareOperation {
 
     private Data item;
     private long resultSequence;

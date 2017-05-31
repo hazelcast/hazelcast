@@ -49,7 +49,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -65,6 +67,7 @@ import org.junit.runner.RunWith;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
@@ -154,13 +157,16 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         String partitionKey = "hazelcast";
         HazelcastInstance hz = getHazelcastInstance(partitionKey);
 
-        Ringbuffer ringbuffer = hz.getRingbuffer("ringbuffer@" + partitionKey);
+        Ringbuffer<String> ringbuffer = hz.getRingbuffer("ringbuffer@" + partitionKey);
         ringbuffer.add("foo");
         assertEquals("ringbuffer@" + partitionKey, ringbuffer.getName());
         assertEquals(partitionKey, ringbuffer.getPartitionKey());
 
         RingbufferService service = getNodeEngine(hz).getService(RingbufferService.SERVICE_NAME);
-        assertTrue(service.getContainers().containsKey(ringbuffer.getName()));
+        final ConcurrentMap<ObjectNamespace, RingbufferContainer> partitionContainers =
+                service.getContainers().get(service.getRingbufferPartitionId(ringbuffer.getName()));
+        assertNotNull(partitionContainers);
+        assertTrue(partitionContainers.containsKey(RingbufferService.getRingbufferNamespace(ringbuffer.getName())));
     }
 
     @Test

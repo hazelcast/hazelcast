@@ -1,0 +1,102 @@
+/*
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.cache.impl.journal;
+
+import com.hazelcast.journal.EventJournal;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ObjectNamespace;
+
+/**
+ * The event journal is a container for events related to a data structure.
+ * This interface provides methods for cache event journals. This includes
+ * events such as add, update, remove, evict and others. Each cache and
+ * partition has it's own event journal.
+ * <p>
+ * If a cache is destroyed or the migrated, the related event journal will be destroyed or
+ * migrated as well. In this sense, the event journal is co-located with the cache partition
+ * and it's replicas.
+ *
+ * @since 3.9
+ */
+public interface CacheEventJournal extends EventJournal<InternalEventJournalCacheEvent> {
+
+    /**
+     * Writes an {@link com.hazelcast.cache.impl.CacheEventType#UPDATED} to the event journal.
+     * If there is no event journal configured for this cache, the method will do nothing.
+     * If an event is added to the event journal, all parked operations waiting for
+     * new events on that journal will be unparked.
+     *
+     * @param namespace   the cache namespace, containing the full prefixed cache name
+     * @param partitionId the entry key partition
+     * @param key         the entry key
+     * @param oldValue    the old value
+     * @param newValue    the new value
+     */
+    void writeUpdateEvent(ObjectNamespace namespace, int partitionId, Data key, Object oldValue, Object newValue);
+
+    /**
+     * Writes an {@link com.hazelcast.cache.impl.CacheEventType#CREATED} to the event journal.
+     * If there is no event journal configured for this cache, the method will do nothing.
+     * If an event is added to the event journal, all parked operations waiting for
+     * new events on that journal will be unparked.
+     *
+     * @param namespace   the cache namespace, containing the full prefixed cache name
+     * @param partitionId the entry key partition
+     * @param key         the entry key
+     * @param value       the entry value
+     */
+    void writeCreatedEvent(ObjectNamespace namespace, int partitionId, Data key, Object value);
+
+    /**
+     * Writes an {@link com.hazelcast.cache.impl.CacheEventType#REMOVED} to the event journal.
+     * If there is no event journal configured for this cache, the method will do nothing.
+     * If an event is added to the event journal, all parked operations waiting for
+     * new events on that journal will be unparked.
+     *
+     * @param namespace   the cache namespace, containing the full prefixed cache name
+     * @param partitionId the entry key partition
+     * @param key         the entry key
+     * @param value       the entry value
+     */
+    void writeRemoveEvent(ObjectNamespace namespace, int partitionId, Data key, Object value);
+
+    /**
+     * Writes an {@link com.hazelcast.cache.impl.CacheEventType#EVICTED} to the event journal.
+     * If there is no event journal configured for this cache, the method will do nothing.
+     * If an event is added to the event journal, all parked operations waiting for
+     * new events on that journal will be unparked.
+     *
+     * @param namespace   the cache namespace, containing the full prefixed cache name
+     * @param partitionId the entry key partition
+     * @param key         the entry key
+     * @param value       the entry value
+     */
+    void writeEvictEvent(ObjectNamespace namespace, int partitionId, Data key, Object value);
+
+    /**
+     * Writes an {@link com.hazelcast.cache.impl.CacheEventType#EXPIRED} to the event journal.
+     * If there is no event journal configured for this cache, the method will do nothing.
+     * If an event is added to the event journal, all parked operations waiting for
+     * new events on that journal will be unparked.
+     *
+     * @param namespace   the cache namespace, containing the full prefixed cache name
+     * @param partitionId the entry key partition
+     * @param key         the entry key
+     * @param value       the entry value
+     */
+    void writeExpiredEvent(ObjectNamespace namespace, int partitionId, Data key, Object value);
+}

@@ -30,6 +30,7 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.DataType;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -108,6 +109,30 @@ public class SerializationServiceV1 extends AbstractSerializationService {
                 new JavaDefaultSerializers.ExternalizableSerializer(enableCompression), this);
         registerConstantSerializers();
         registerJavaTypeSerializers();
+    }
+
+    @Override
+    public <B extends Data> B toData(Object obj, DataType type) {
+        if (type == DataType.NATIVE) {
+            throw new IllegalArgumentException("Native data type is not supported");
+        }
+        return toData(obj);
+    }
+
+    @Override
+    public <B extends Data> B toData(Object obj, DataType type, PartitioningStrategy strategy) {
+        if (type == DataType.NATIVE) {
+            throw new IllegalArgumentException("Native data type is not supported");
+        }
+        return toData(obj, strategy);
+    }
+
+    @Override
+    public <B extends Data> B convertData(Data data, DataType type) {
+        if (type == DataType.NATIVE) {
+            throw new IllegalArgumentException("Native data type is not supported");
+        }
+        return (B) data;
     }
 
     public PortableReader createPortableReader(Data data) throws IOException {

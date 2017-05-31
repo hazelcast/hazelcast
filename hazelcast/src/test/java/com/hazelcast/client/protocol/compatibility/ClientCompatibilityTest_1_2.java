@@ -396,6 +396,10 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
+
+
+
 {
     ClientMessage clientMessage = MapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong   );
     int length = inputStream.readInt();
@@ -1532,6 +1536,10 @@ public class ClientCompatibilityTest_1_2 {
                 assertTrue(isEqual(anInt, params.tableIndex));
                 assertTrue(isEqual(aListOfEntry, params.entries));
 }
+
+
+
+
 
 
 
@@ -5648,6 +5656,10 @@ public class ClientCompatibilityTest_1_2 {
 
 
 
+
+
+
+
 {
     ClientMessage clientMessage = XATransactionClearRemoteCodec.encodeRequest(    anXid   );
     int length = inputStream.readInt();
@@ -6094,6 +6106,7 @@ public class ClientCompatibilityTest_1_2 {
     RingbufferReadManyCodec.ResponseParameters params = RingbufferReadManyCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(anInt, params.readCount));
                 assertTrue(isEqual(datas, params.items));
+                assertTrue(isEqual(arrLongs, params.itemSeqs));
 }
 
 

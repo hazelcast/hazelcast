@@ -197,6 +197,8 @@ public class PartitionContainer {
     public void clear(boolean onShutdown) {
         for (RecordStore recordStore : maps.values()) {
             recordStore.clearPartition(onShutdown);
+            mapService.getMapServiceContext().getEventJournal().destroy(
+                    recordStore.getMapContainer().getObjectNamespace(), partitionId);
         }
         maps.clear();
     }
