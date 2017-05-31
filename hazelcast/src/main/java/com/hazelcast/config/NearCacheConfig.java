@@ -265,13 +265,13 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
     /**
      * Checks if the Near Cache key is stored in serialized format or by-reference.
      * <p>
-     * <b>NOTE:</b> When the in-memory-format is {@code NATIVE}, this method will always return {@code false}.
+     * <b>NOTE:</b> When the in-memory-format is {@code NATIVE}, this method will always return {@code true}.
      *
-     * @return {@code true} if the key is stored in serialized format, {@code false} if stored by-reference
-     * or in-memory-format is {@code NATIVE}
+     * @return {@code true} if the key is stored in serialized format or in-memory-format is {@code NATIVE},
+     * {@code false} if the key is stored by-reference and in-memory-format is {@code BINARY} or {@code OBJECT}
      */
     public boolean isSerializeKeys() {
-        return serializeKeys && inMemoryFormat != InMemoryFormat.NATIVE;
+        return serializeKeys || inMemoryFormat == InMemoryFormat.NATIVE;
     }
 
     /**

@@ -781,7 +781,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         NearCacheConfig ncConfig = mapConfig.getNearCacheConfig();
 
         assertEquals(InMemoryFormat.NATIVE, ncConfig.getInMemoryFormat());
-        assertFalse(ncConfig.isSerializeKeys());
+        assertTrue(ncConfig.isSerializeKeys());
     }
 
     @Test
