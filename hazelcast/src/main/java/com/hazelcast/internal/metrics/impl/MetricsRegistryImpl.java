@@ -24,8 +24,8 @@ import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.StringGauge;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
+import com.hazelcast.internal.metrics.renderers.StringRenderer;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
 
@@ -228,10 +228,15 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     }
 
     @Override
-    public StringGauge newStringGauge(final String name) {
+    public StringRenderer newStringRendererGauge(final String name) {
         checkNotNull(name, "name can't be null");
 
-        return new StringGaugeImpl(this, name);
+        ProbeInstance probeInstance = getProbeInstance(name);
+        if (probeInstance.function instanceof DoubleProbeFunction) {
+            return new DoubleGaugeImpl(this, name);
+        }
+
+        return new LongGaugeImpl(this, name);
     }
 
     @Override

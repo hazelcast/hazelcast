@@ -16,13 +16,15 @@
 
 package com.hazelcast.internal.metrics;
 
+import com.hazelcast.internal.metrics.renderers.StringRenderer;
+
 /**
  * A LongGauge is {@link Metric} where a particular long value is read instantaneous. E.g. the current size of the
  * pending operations queue.
  *
  * {@link DoubleGauge}
  */
-public interface LongGauge extends Metric {
+public interface LongGauge extends Metric, StringRenderer {
 
     /**
      * Reads the current available value as a long.

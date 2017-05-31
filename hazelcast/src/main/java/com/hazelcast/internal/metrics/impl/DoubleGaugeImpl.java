@@ -59,4 +59,9 @@ class DoubleGaugeImpl extends AbstractGauge implements DoubleGauge {
             return DEFAULT_VALUE;
         }
     }
+
+    @Override
+    public void render(StringBuilder buffer) {
+        buffer.append(read());
+    }
 }

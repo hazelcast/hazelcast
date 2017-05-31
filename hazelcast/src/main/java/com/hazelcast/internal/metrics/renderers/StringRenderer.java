@@ -14,22 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.metrics;
+package com.hazelcast.internal.metrics.renderers;
 
-/**
- * A StringGauge is {link Metric} where a particular  value is read instantaneous. E.g. the current os load.
- *
- * {@link LongGauge}{@link DoubleGauge}
- */
-public interface StringGauge
-        extends Metric {
-
+public interface StringRenderer {
     /**
-     * Reads the current available value into the provided buffer.
+     * The interface is used to fill a StringBuilder buffer with the current value of a probe.
      *
-     *
-     * If no probe is available, or there are problems obtaining a value from the probe, buffer is not filled
-     *
+     * @param buffer The string buffer to be filled.
      */
-    void read(StringBuilder buffer);
+    void render(StringBuilder buffer);
 }
