@@ -25,23 +25,16 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Set;
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ThreadLeakClientTest extends ThreadLeakTest {
+public class ThreadLeakClientTest extends AbstractThreadLeakTest {
 
     @Test
-    @Override
     public void testThreadLeak() {
-        Set<Thread> threads = Thread.getAllStackTraces().keySet();
-
         HazelcastInstance member = Hazelcast.newHazelcastInstance();
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
         client.shutdown();
         member.shutdown();
-
-        assertHazelcastThreadShutdown(threads);
     }
 }
