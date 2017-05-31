@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -121,6 +122,25 @@ public class NearCacheConfigTest {
     @Test(expected = NullPointerException.class)
     public void testSetInMemoryFormat_withString_whenNull() {
         config.setInMemoryFormat((String) null);
+    }
+
+    @Test
+    public void testIsSerializeKeys_whenEnabled() {
+        config.setSerializeKeys(true);
+        assertTrue(config.isSerializeKeys());
+    }
+
+    @Test
+    public void testIsSerializeKeys_whenDisabled() {
+        config.setSerializeKeys(false);
+        assertFalse(config.isSerializeKeys());
+    }
+
+    @Test
+    public void testIsSerializeKeys_whenNativeMemoryFormat() {
+        config.setSerializeKeys(true);
+        config.setInMemoryFormat(InMemoryFormat.NATIVE);
+        assertFalse(config.isSerializeKeys());
     }
 
     @Test

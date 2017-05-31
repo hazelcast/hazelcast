@@ -256,6 +256,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     private void handleNearCache(Node node) {
         String name = getAttribute(node, "name");
         NearCacheConfig nearCacheConfig = new NearCacheConfig(name);
+        Boolean serializeKeys = null;
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
@@ -271,6 +272,9 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
                 LOGGER.warning("The element <eviction-policy/> for <near-cache/> is deprecated, please use <eviction/> instead!");
             } else if ("in-memory-format".equals(nodeName)) {
                 nearCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
+            } else if ("serialize-keys".equals(nodeName)) {
+                serializeKeys = Boolean.parseBoolean(value);
+                nearCacheConfig.setSerializeKeys(serializeKeys);
             } else if ("invalidate-on-change".equals(nodeName)) {
                 nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(value));
             } else if ("cache-local-entries".equals(nodeName)) {
@@ -282,6 +286,10 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             } else if ("preloader".equals(nodeName)) {
                 nearCacheConfig.setPreloaderConfig(getNearCachePreloaderConfig(child));
             }
+        }
+        if (serializeKeys != null && !serializeKeys && nearCacheConfig.getInMemoryFormat() == InMemoryFormat.NATIVE) {
+            LOGGER.warning("The Near Cache doesn't support keys by-reference with NATIVE in-memory-format."
+                    + " This setting will have no effect!");
         }
         clientConfig.addNearCacheConfig(nearCacheConfig);
     }

@@ -765,6 +765,26 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testNearCacheInMemoryFormatNative_withKeysByReference() {
+        String mapName = "testMapNearCacheInMemoryFormatNative";
+        String xml = HAZELCAST_START_TAG
+                + "  <map name=\"" + mapName + "\">\n"
+                + "    <near-cache>\n"
+                + "      <in-memory-format>NATIVE</in-memory-format>\n"
+                + "      <serialize-keys>false</serialize-keys>\n"
+                + "    </near-cache>\n"
+                + "  </map>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        NearCacheConfig ncConfig = mapConfig.getNearCacheConfig();
+
+        assertEquals(InMemoryFormat.NATIVE, ncConfig.getInMemoryFormat());
+        assertFalse(ncConfig.isSerializeKeys());
+    }
+
+    @Test
     public void testNearCacheEvictionPolicy() {
         String xml = HAZELCAST_START_TAG
                 + "  <map name=\"lfuNearCache\">"
@@ -827,6 +847,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "  <map name=\"" + mapName + "\">\n"
                 + "    <near-cache name=\"test\">\n"
                 + "      <in-memory-format>OBJECT</in-memory-format>\n"
+                + "      <serialize-keys>false</serialize-keys>\n"
                 + "      <max-size>1234</max-size>\n"
                 + "      <time-to-live-seconds>77</time-to-live-seconds>\n"
                 + "      <max-idle-seconds>92</max-idle-seconds>\n"

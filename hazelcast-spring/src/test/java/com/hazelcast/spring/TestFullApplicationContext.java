@@ -317,6 +317,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(EvictionPolicy.LRU, testNearCacheConfig.getEvictionConfig().getEvictionPolicy());
         assertEquals(5000, testNearCacheConfig.getEvictionConfig().getSize());
         assertTrue(testNearCacheConfig.isInvalidateOnChange());
+        assertFalse(testNearCacheConfig.isSerializeKeys());
 
         // test that the testMapConfig2's mapStoreConfig implementation
         MapConfig testMapConfig2 = config.getMapConfig("testMap2");

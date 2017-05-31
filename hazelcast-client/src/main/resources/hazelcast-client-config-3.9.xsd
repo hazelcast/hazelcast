@@ -350,6 +350,7 @@
     <xs:complexType name="near-cache">
         <xs:all>
             <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
+            <xs:element name="serialize-keys" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
             <xs:element name="invalidate-on-change" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
             <xs:element name="time-to-live-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
             <xs:element name="max-idle-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>

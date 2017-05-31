@@ -41,7 +41,8 @@
                 <xs:element name="partition-group" type="partition-group" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="executor-service" type="executor-service" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="durable-executor-service" type="durable-executor-service" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="scheduled-executor-service" type="scheduled-executor-service" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="scheduled-executor-service" type="scheduled-executor-service" minOccurs="0"
+                            maxOccurs="unbounded"/>
                 <xs:element name="queue" type="queue" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="map" type="map" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="multimap" type="multimap" minOccurs="0" maxOccurs="unbounded"/>
@@ -2407,6 +2408,17 @@
                         BINARY (default): keys and values are stored as binary data.
                         OBJECT: values are stored in their object forms.
                         NATIVE: keys and values are stored in native memory. Only available on Hazelcast Enterprise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="serialize-keys" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defines if the Near Cache keys should be serialized or not.
+                        Keys should be serialized if they are mutable and need to be cloned via serialization.
+                        NOTE: It's not supported to disable key serialization with in-memory-format NATIVE.
+                        This setting will have no effect in that case.
+                        Default value is true.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

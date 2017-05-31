@@ -250,6 +250,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("LFU", nearCacheConfig.getEvictionPolicy());
         assertEquals(EvictionPolicy.LFU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
         assertTrue(nearCacheConfig.isInvalidateOnChange());
+        assertFalse(nearCacheConfig.isSerializeKeys());
         assertEquals(InMemoryFormat.OBJECT, nearCacheConfig.getInMemoryFormat());
     }
 
@@ -356,6 +357,23 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
     public void testHazelcastClientTagAppearsTwice() {
         String xml = HAZELCAST_CLIENT_START_TAG + "<hazelcast-client/></<hazelcast-client>";
         buildConfig(xml);
+    }
+
+    @Test
+    public void testNearCacheInMemoryFormatNative_withKeysByReference() {
+        String mapName = "testMapNearCacheInMemoryFormatNative";
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "  <near-cache name=\"" + mapName + "\">\n"
+                + "    <in-memory-format>NATIVE</in-memory-format>\n"
+                + "    <serialize-keys>false</serialize-keys>\n"
+                + "  </near-cache>\n"
+                + HAZELCAST_CLIENT_END_TAG;
+
+        ClientConfig clientConfig = buildConfig(xml);
+        NearCacheConfig ncConfig = clientConfig.getNearCacheConfig(mapName);
+
+        assertEquals(InMemoryFormat.NATIVE, ncConfig.getInMemoryFormat());
+        assertFalse(ncConfig.isSerializeKeys());
     }
 
     @Test

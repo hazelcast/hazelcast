@@ -78,7 +78,7 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
 
     @Before
     public void setUp() {
-        nearCacheConfig = createNearCacheConfig(inMemoryFormat)
+        nearCacheConfig = createNearCacheConfig(inMemoryFormat, true)
                 .setCacheLocalEntries(true);
     }
 

@@ -56,6 +56,11 @@ public class NearCacheConfigReadOnly extends NearCacheConfig {
     }
 
     @Override
+    public NearCacheConfig setSerializeKeys(boolean serializeKeys) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
     public NearCacheConfig setInvalidateOnChange(boolean invalidateOnChange) {
         throw new UnsupportedOperationException("This config is read-only");
     }

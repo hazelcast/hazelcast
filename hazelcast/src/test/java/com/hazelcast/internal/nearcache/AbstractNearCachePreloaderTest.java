@@ -290,7 +290,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
                 .setSize(maxSize)
                 .setEvictionPolicy(EvictionPolicy.LRU);
 
-        NearCacheConfig nearCacheConfig = createNearCacheConfig(InMemoryFormat.BINARY)
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(InMemoryFormat.BINARY, true)
                 .setName(defaultNearCache)
                 .setInvalidateOnChange(invalidationOnChange)
                 .setEvictionConfig(evictionConfig);
