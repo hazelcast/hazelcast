@@ -71,14 +71,17 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
 
                 ClientRegistrationKey registrationKey = new ClientRegistrationKey(userRegistrationId, handler, codec);
                 registrations.put(registrationKey, new ConcurrentHashMap<Connection, ClientEventRegistration>());
-                try {
-                    Collection<ClientConnection> connections = clientConnectionManager.getActiveConnections();
-                    for (ClientConnection connection : connections) {
+                Collection<ClientConnection> connections = clientConnectionManager.getActiveConnections();
+                for (ClientConnection connection : connections) {
+                    try {
                         invoke(registrationKey, connection);
+                    } catch (Exception e) {
+                        if (connection.isAlive()) {
+                            deregisterListenerInternal(userRegistrationId);
+                            throw new HazelcastException("Listener can not be added ", e);
+                        }
+
                     }
-                } catch (Exception e) {
-                    deregisterListenerInternal(userRegistrationId);
-                    throw new HazelcastException("Listener can not be added", e);
                 }
                 return userRegistrationId;
             }
@@ -164,9 +167,11 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
                 removeEventHandler(registration.getCallId());
                 registrationMap.remove(subscriber);
             } catch (Exception e) {
-                successful = false;
-                logger.warning("Deregistration of listener with id " + userRegistrationId
-                        + " has failed to address " + subscriber.getEndPoint(), e);
+                if (subscriber.isAlive()) {
+                    successful = false;
+                    logger.warning("Deregistration of listener with id " + userRegistrationId
+                            + " has failed to address " + subscriber.getEndPoint(), e);
+                }
             }
         }
         if (successful) {
