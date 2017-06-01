@@ -144,7 +144,7 @@ public class Processors_peekTest {
         // Given
         DistributedSupplier<Processor> passThroughPSupplier = procSupplier();
         Processor wrappedP = (toStringF == null
-                ? peekInput(passThroughPSupplier)
+                ? peekOutput(passThroughPSupplier)
                 : peekOutput(toStringF, shouldLogF, passThroughPSupplier)
         ).get();
 
@@ -159,7 +159,7 @@ public class Processors_peekTest {
         // Given
         ProcessorSupplier passThroughPSupplier = ProcessorSupplier.of(procSupplier());
         Processor wrappedP = (toStringF == null
-                ? peekInput(passThroughPSupplier)
+                ? peekOutput(passThroughPSupplier)
                 : peekOutput(toStringF, shouldLogF, passThroughPSupplier)
         ).get(1).iterator().next();
         wrappedP.init(outbox, context);
@@ -174,7 +174,7 @@ public class Processors_peekTest {
         ProcessorMetaSupplier passThroughPSupplier = ProcessorMetaSupplier.of(procSupplier());
         Address address = new Address();
         Processor wrappedP = (toStringF == null
-                ? peekInput(passThroughPSupplier)
+                ? peekOutput(passThroughPSupplier)
                 : peekOutput(toStringF, shouldLogF, passThroughPSupplier)
         ).get(Collections.singletonList(address)).apply(address).get(1).iterator().next();
         wrappedP.init(outbox, context);

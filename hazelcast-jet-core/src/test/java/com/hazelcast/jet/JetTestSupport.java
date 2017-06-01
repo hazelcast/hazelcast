@@ -111,7 +111,7 @@ public class JetTestSupport extends HazelcastTestSupport {
     }
 
     @FunctionalInterface
-    protected interface UncheckedRunnable {
+    public interface UncheckedRunnable {
         void run() throws Exception;
     }
 }

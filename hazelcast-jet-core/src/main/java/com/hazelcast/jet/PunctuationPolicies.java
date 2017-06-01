@@ -140,6 +140,13 @@ public final class PunctuationPolicies {
      */
     @Nonnull
     public static PunctuationPolicy limitingTimestampAndWallClockLag(long timestampLag, long wallClockLag) {
+        return limitingTimestampAndWallClockLag(timestampLag, wallClockLag, System::currentTimeMillis);
+    }
+
+    @Nonnull
+    static PunctuationPolicy limitingTimestampAndWallClockLag(
+            long timestampLag, long wallClockLag, DistributedLongSupplier wallClock
+    ) {
         checkNotNegative(timestampLag, "timestampLag must not be negative");
         checkNotNegative(wallClockLag, "wallClockLag must not be negative");
 
@@ -157,7 +164,7 @@ public final class PunctuationPolicies {
             }
 
             private long updateFromWallClock() {
-                return makePuncAtLeast(System.currentTimeMillis() - wallClockLag);
+                return makePuncAtLeast(wallClock.getAsLong() - wallClockLag);
             }
         };
     }

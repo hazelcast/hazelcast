@@ -42,6 +42,13 @@ import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static java.util.stream.Collectors.toList;
 
+/**
+ * Instead of methods in this class use:<ul>
+ * <li>{@link com.hazelcast.jet.processor.Sinks#writeMap(String)}</li>
+ * <li>{@link com.hazelcast.jet.processor.Sinks#writeCache(String)}</li>
+ * <li>{@link com.hazelcast.jet.processor.Sinks#writeList(String)}</li>
+ * </ul>
+ */
 public final class HazelcastWriters {
 
     private HazelcastWriters() {

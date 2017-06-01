@@ -27,7 +27,7 @@ import javax.annotation.Nonnull;
  * Batch processor that computes the supplied aggregate operation
  * on all received items.
  */
-public class AggregateP<T, K, A, R> extends AbstractProcessor {
+public class AggregateP<T, A, R> extends AbstractProcessor {
     private final DistributedBiConsumer<? super A, ? super T> accumulateF;
     private final DistributedFunction<? super A, R> finishF;
     private final A acc;
