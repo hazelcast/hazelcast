@@ -243,6 +243,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         ioThreadingModel.shutdown();
     }
 
+    @Override
     public ClientConnection getConnection(Address target) {
         target = addressTranslator.translate(target);
         if (target == null) {
