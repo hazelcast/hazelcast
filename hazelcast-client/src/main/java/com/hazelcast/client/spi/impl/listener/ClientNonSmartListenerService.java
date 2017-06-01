@@ -164,6 +164,7 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
             @Override
             public void run() {
                 for (ClientEventRegistration registration : registrations.values()) {
+                    registration.setActive(false);
                     removeEventHandler(registration.getCallId());
                 }
             }
@@ -184,7 +185,7 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
                             return Collections.EMPTY_LIST;
                         }
                         LinkedList<ClientEventRegistration> activeRegistrations = new LinkedList<ClientEventRegistration>();
-                        if (getEventHandler(registration.getCallId()) != null) {
+                        if (registration.isActive()) {
                             activeRegistrations.add(registration);
                         }
                         return activeRegistrations;

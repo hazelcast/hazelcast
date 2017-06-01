@@ -30,6 +30,7 @@ public class ClientEventRegistration {
     private final String serverRegistrationId;
     private final long callId;
     private final ListenerMessageCodec codec;
+    private volatile boolean active = true;
 
     public ClientEventRegistration(String serverRegistrationId,
                                    long callId, Connection subscriber, ListenerMessageCodec codec) {
@@ -74,6 +75,14 @@ public class ClientEventRegistration {
 
     public ListenerMessageCodec getCodec() {
         return codec;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     @Override
