@@ -321,17 +321,18 @@ abstract class MapProxySupport<K, V>
         return mapStoreConfig != null && mapStoreConfig.isEnabled();
     }
 
-    protected Object getInternal(Data key) {
+    protected Object getInternal(Object key) {
         // TODO: action for read-backup true is not well tested
+        Data keyData = toDataWithStrategy(key);
         if (mapConfig.isReadBackupData()) {
-            Object fromBackup = readBackupDataOrNull(key);
+            Object fromBackup = readBackupDataOrNull(keyData);
             if (fromBackup != null) {
                 return fromBackup;
             }
         }
-        MapOperation operation = operationProvider.createGetOperation(name, key);
+        MapOperation operation = operationProvider.createGetOperation(name, keyData);
         operation.setThreadId(getThreadId());
-        return invokeOperation(key, operation);
+        return invokeOperation(keyData, operation);
     }
 
     private Data readBackupDataOrNull(Data key) {
@@ -348,10 +349,11 @@ abstract class MapProxySupport<K, V>
         return recordStore.readBackupData(key);
     }
 
-    protected InternalCompletableFuture<Data> getAsyncInternal(Data key) {
-        int partitionId = partitionService.getPartitionId(key);
+    protected InternalCompletableFuture<Data> getAsyncInternal(Object key) {
+        Data keyData = toDataWithStrategy(key);
+        int partitionId = partitionService.getPartitionId(keyData);
 
-        MapOperation operation = operationProvider.createGetOperation(name, key);
+        MapOperation operation = operationProvider.createGetOperation(name, keyData);
         try {
             long startTime = System.currentTimeMillis();
             InternalCompletableFuture<Data> future = operationService
@@ -369,28 +371,32 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    protected Data putInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
+    protected Data putInternal(Object key, Data value, long ttl, TimeUnit timeunit) {
+        Data keyData = toDataWithStrategy(key);
         long timeInMillis = getTimeInMillis(ttl, timeunit);
-        MapOperation operation = operationProvider.createPutOperation(name, key, value, timeInMillis);
-        return (Data) invokeOperation(key, operation);
+        MapOperation operation = operationProvider.createPutOperation(name, keyData, value, timeInMillis);
+        return (Data) invokeOperation(keyData, operation);
     }
 
-    protected boolean tryPutInternal(Data key, Data value, long timeout, TimeUnit timeunit) {
+    protected boolean tryPutInternal(Object key, Data value, long timeout, TimeUnit timeunit) {
+        Data keyData = toDataWithStrategy(key);
         long timeInMillis = getTimeInMillis(timeout, timeunit);
-        MapOperation operation = operationProvider.createTryPutOperation(name, key, value, timeInMillis);
-        return (Boolean) invokeOperation(key, operation);
+        MapOperation operation = operationProvider.createTryPutOperation(name, keyData, value, timeInMillis);
+        return (Boolean) invokeOperation(keyData, operation);
     }
 
-    protected Data putIfAbsentInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
+    protected Data putIfAbsentInternal(Object key, Data value, long ttl, TimeUnit timeunit) {
+        Data keyData = toDataWithStrategy(key);
         long timeInMillis = getTimeInMillis(ttl, timeunit);
-        MapOperation operation = operationProvider.createPutIfAbsentOperation(name, key, value, timeInMillis);
-        return (Data) invokeOperation(key, operation);
+        MapOperation operation = operationProvider.createPutIfAbsentOperation(name, keyData, value, timeInMillis);
+        return (Data) invokeOperation(keyData, operation);
     }
 
-    protected void putTransientInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
+    protected void putTransientInternal(Object key, Data value, long ttl, TimeUnit timeunit) {
+        Data keyData = toDataWithStrategy(key);
         long timeInMillis = getTimeInMillis(ttl, timeunit);
-        MapOperation operation = operationProvider.createPutTransientOperation(name, key, value, timeInMillis);
-        invokeOperation(key, operation);
+        MapOperation operation = operationProvider.createPutTransientOperation(name, keyData, value, timeInMillis);
+        invokeOperation(keyData, operation);
     }
 
     private Object invokeOperation(Data key, MapOperation operation) {
@@ -417,9 +423,10 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    protected InternalCompletableFuture<Data> putAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        int partitionId = partitionService.getPartitionId(key);
-        MapOperation operation = operationProvider.createPutOperation(name, key, value, getTimeInMillis(ttl, timeunit));
+    protected InternalCompletableFuture<Data> putAsyncInternal(Object key, Data value, long ttl, TimeUnit timeunit) {
+        Data keyData = toDataWithStrategy(key);
+        int partitionId = partitionService.getPartitionId(keyData);
+        MapOperation operation = operationProvider.createPutOperation(name, keyData, value, getTimeInMillis(ttl, timeunit));
         operation.setThreadId(getThreadId());
         try {
             long startTime = System.currentTimeMillis();
@@ -434,9 +441,10 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    protected InternalCompletableFuture<Data> setAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        int partitionId = partitionService.getPartitionId(key);
-        MapOperation operation = operationProvider.createSetOperation(name, key, value, getTimeInMillis(ttl, timeunit));
+    protected InternalCompletableFuture<Data> setAsyncInternal(Object key, Data value, long ttl, TimeUnit timeunit) {
+        Data keyData = toDataWithStrategy(key);
+        int partitionId = partitionService.getPartitionId(keyData);
+        MapOperation operation = operationProvider.createSetOperation(name, keyData, value, getTimeInMillis(ttl, timeunit));
         operation.setThreadId(getThreadId());
         try {
             return operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
@@ -445,21 +453,24 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    protected boolean replaceInternal(Data key, Data expect, Data update) {
-        MapOperation operation = operationProvider.createReplaceIfSameOperation(name, key, expect, update);
-        return (Boolean) invokeOperation(key, operation);
+    protected boolean replaceInternal(Object key, Data expect, Data update) {
+        Data keyData = toDataWithStrategy(key);
+        MapOperation operation = operationProvider.createReplaceIfSameOperation(name, keyData, expect, update);
+        return (Boolean) invokeOperation(keyData, operation);
     }
 
-    protected Data replaceInternal(Data key, Data value) {
-        MapOperation operation = operationProvider.createReplaceOperation(name, key, value);
-        return (Data) invokeOperation(key, operation);
+    protected Data replaceInternal(Object key, Data value) {
+        Data keyData = toDataWithStrategy(key);
+        MapOperation operation = operationProvider.createReplaceOperation(name, keyData, value);
+        return (Data) invokeOperation(keyData, operation);
     }
 
     // WARNING: when UpdateEvent is fired it does *NOT* contain the oldValue
     // see this: https://github.com/hazelcast/hazelcast/pull/6088#issuecomment-136025968
-    protected void setInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        MapOperation operation = operationProvider.createSetOperation(name, key, value, timeunit.toMillis(ttl));
-        invokeOperation(key, operation);
+    protected void setInternal(Object key, Data value, long ttl, TimeUnit timeunit) {
+        Data keyData = toDataWithStrategy(key);
+        MapOperation operation = operationProvider.createSetOperation(name, keyData, value, timeunit.toMillis(ttl));
+        invokeOperation(keyData, operation);
     }
 
     /**
@@ -468,9 +479,10 @@ abstract class MapProxySupport<K, V>
      * @param key the key to evict
      * @return {@code true} if eviction was successful, {@code false} otherwise
      */
-    protected boolean evictInternal(Data key) {
-        MapOperation operation = operationProvider.createEvictOperation(name, key, false);
-        return (Boolean) invokeOperation(key, operation);
+    protected boolean evictInternal(Object key) {
+        Data keyData = toDataWithStrategy(key);
+        MapOperation operation = operationProvider.createEvictOperation(name, keyData, false);
+        return (Boolean) invokeOperation(keyData, operation);
     }
 
     protected void evictAllInternal() {
@@ -509,7 +521,10 @@ abstract class MapProxySupport<K, V>
     /**
      * Maps keys to corresponding partitions and sends operations to them.
      */
-    protected void loadInternal(Iterable<Data> dataKeys, boolean replaceExistingValues) {
+    protected void loadInternal(Set<K> keys, Iterable<Data> dataKeys, boolean replaceExistingValues) {
+        if (dataKeys == null) {
+            dataKeys = convertToData(keys);
+        }
         Map<Integer, List<Data>> partitionIdToKeys = getPartitionIdToKeysMap(dataKeys);
         Iterable<Entry<Integer, List<Data>>> entries = partitionIdToKeys.entrySet();
         for (Entry<Integer, List<Data>> entry : entries) {
@@ -529,24 +544,28 @@ abstract class MapProxySupport<K, V>
         return operationProvider.createLoadAllOperation(name, keys, replaceExistingValues);
     }
 
-    protected Data removeInternal(Data key) {
-        MapOperation operation = operationProvider.createRemoveOperation(name, key, false);
-        return (Data) invokeOperation(key, operation);
+    protected Data removeInternal(Object key) {
+        Data keyData = toDataWithStrategy(key);
+        MapOperation operation = operationProvider.createRemoveOperation(name, keyData, false);
+        return (Data) invokeOperation(keyData, operation);
     }
 
-    protected void deleteInternal(Data key) {
-        MapOperation operation = operationProvider.createDeleteOperation(name, key);
-        invokeOperation(key, operation);
+    protected void deleteInternal(Object key) {
+        Data keyData = toDataWithStrategy(key);
+        MapOperation operation = operationProvider.createDeleteOperation(name, keyData);
+        invokeOperation(keyData, operation);
     }
 
-    protected boolean removeInternal(Data key, Data value) {
-        MapOperation operation = operationProvider.createRemoveIfSameOperation(name, key, value);
-        return (Boolean) invokeOperation(key, operation);
+    protected boolean removeInternal(Object key, Data value) {
+        Data keyData = toDataWithStrategy(key);
+        MapOperation operation = operationProvider.createRemoveIfSameOperation(name, keyData, value);
+        return (Boolean) invokeOperation(keyData, operation);
     }
 
-    protected boolean tryRemoveInternal(Data key, long timeout, TimeUnit timeunit) {
-        MapOperation operation = operationProvider.createTryRemoveOperation(name, key, getTimeInMillis(timeout, timeunit));
-        return (Boolean) invokeOperation(key, operation);
+    protected boolean tryRemoveInternal(Object key, long timeout, TimeUnit timeunit) {
+        Data keyData = toDataWithStrategy(key);
+        MapOperation operation = operationProvider.createTryRemoveOperation(name, keyData, getTimeInMillis(timeout, timeunit));
+        return (Boolean) invokeOperation(keyData, operation);
     }
 
     protected void removeAllInternal(Predicate predicate) {
@@ -559,9 +578,10 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    protected InternalCompletableFuture<Data> removeAsyncInternal(Data key) {
-        int partitionId = partitionService.getPartitionId(key);
-        MapOperation operation = operationProvider.createRemoveOperation(name, key, false);
+    protected InternalCompletableFuture<Data> removeAsyncInternal(Object key) {
+        Data keyData = toDataWithStrategy(key);
+        int partitionId = partitionService.getPartitionId(keyData);
+        MapOperation operation = operationProvider.createRemoveOperation(name, keyData, false);
         operation.setThreadId(getThreadId());
         try {
             long startTime = System.currentTimeMillis();
@@ -577,9 +597,10 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    protected boolean containsKeyInternal(Data key) {
-        int partitionId = partitionService.getPartitionId(key);
-        MapOperation containsKeyOperation = operationProvider.createContainsKeyOperation(name, key);
+    protected boolean containsKeyInternal(Object key) {
+        Data keyData = toDataWithStrategy(key);
+        int partitionId = partitionService.getPartitionId(keyData);
+        MapOperation containsKeyOperation = operationProvider.createContainsKeyOperation(name, keyData);
         containsKeyOperation.setThreadId(getThreadId());
         containsKeyOperation.setServiceName(SERVICE_NAME);
         try {
@@ -700,9 +721,12 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    protected void getAllObjectInternal(List<Data> dataKeys, List<Object> resultingKeyValuePairs) {
-        if (dataKeys == null || dataKeys.isEmpty()) {
+    protected void getAllObjectInternal(Set<K> keys, List<Data> dataKeys, List<Object> resultingKeyValuePairs) {
+        if (keys == null || keys.isEmpty()) {
             return;
+        }
+        if (dataKeys.isEmpty()) {
+            toDataCollection(keys, dataKeys);
         }
         Collection<Integer> partitions = getPartitionsForKeys(dataKeys);
         Map<Integer, Object> responses;
@@ -836,22 +860,23 @@ abstract class MapProxySupport<K, V>
                     long currentSize = ++counterPerMember[partitionId].value;
                     if (currentSize % putAllBatchSize == 0) {
                         List<Integer> partitions = memberPartitionsMap.get(addresses[partitionId]);
-                        invokePutAllOperation(addresses[partitionId], partitions, entriesPerPartition);
+                        invokePutAllOperation(partitions, entriesPerPartition);
                     }
                 }
             }
 
             // invoke operations for entriesPerPartition
             for (Entry<Address, List<Integer>> entry : memberPartitionsMap.entrySet()) {
-                invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition);
+                invokePutAllOperation(entry.getValue(), entriesPerPartition);
             }
+
+            finalizePutAll(map);
         } catch (Exception e) {
             throw rethrow(e);
         }
     }
 
-    private void invokePutAllOperation(Address address, List<Integer> memberPartitions, MapEntries[] entriesPerPartition)
-            throws Exception {
+    private void invokePutAllOperation(List<Integer> memberPartitions, MapEntries[] entriesPerPartition) throws Exception {
         int size = memberPartitions.size();
         int[] partitions = new int[size];
         int index = 0;
@@ -883,15 +908,17 @@ abstract class MapProxySupport<K, V>
             return;
         }
 
-        invokePutAllOperationFactory(address, totalSize, partitions, entries);
+        invokePutAllOperationFactory(totalSize, partitions, entries);
     }
 
-    protected void invokePutAllOperationFactory(Address address, final long size, int[] partitions, MapEntries[] entries)
-            throws Exception {
+    protected void invokePutAllOperationFactory(long size, int[] partitions, MapEntries[] entries) throws Exception {
         OperationFactory factory = operationProvider.createPutAllOperationFactory(name, partitions, entries);
-        final long time = System.currentTimeMillis();
+        long time = System.currentTimeMillis();
         operationService.invokeOnPartitions(SERVICE_NAME, factory, partitions);
         localMapStats.incrementPuts(size, System.currentTimeMillis() - time);
+    }
+
+    protected void finalizePutAll(Map<?, ?> map) {
     }
 
     @Override
@@ -1021,9 +1048,10 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    public Data executeOnKeyInternal(Data key, EntryProcessor entryProcessor) {
-        int partitionId = partitionService.getPartitionId(key);
-        MapOperation operation = operationProvider.createEntryOperation(name, key, entryProcessor);
+    public Data executeOnKeyInternal(Object key, EntryProcessor entryProcessor) {
+        Data keyData = toDataWithStrategy(key);
+        int partitionId = partitionService.getPartitionId(keyData);
+        MapOperation operation = operationProvider.createEntryOperation(name, keyData, entryProcessor);
         operation.setThreadId(getThreadId());
         validateEntryProcessorForSingleKeyProcessing(entryProcessor);
         try {
@@ -1047,13 +1075,17 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    public Map executeOnKeysInternal(Set<Data> keys, EntryProcessor entryProcessor) {
+    public Map<K, Object> executeOnKeysInternal(Set<K> keys, Set<Data> dataKeys, EntryProcessor entryProcessor) {
         // TODO: why are we not forwarding to executeOnKeysInternal(keys, entryProcessor, null) or some other kind of fake
         // callback? now there is a lot of code duplication
-        Map<Object, Object> result = new HashMap<Object, Object>();
-        Collection<Integer> partitionsForKeys = getPartitionsForKeys(keys);
+        if (dataKeys.isEmpty()) {
+            toDataCollection(keys, dataKeys);
+        }
+        Map<K, Object> result = new HashMap<K, Object>();
+        Collection<Integer> partitionsForKeys = getPartitionsForKeys(dataKeys);
         try {
-            OperationFactory operationFactory = operationProvider.createMultipleEntryOperationFactory(name, keys, entryProcessor);
+            OperationFactory operationFactory = operationProvider.createMultipleEntryOperationFactory(name, dataKeys,
+                    entryProcessor);
             Map<Integer, Object> results = operationService.invokeOnPartitions(SERVICE_NAME, operationFactory, partitionsForKeys);
             for (Object object : results.values()) {
                 if (object != null) {
@@ -1067,10 +1099,11 @@ abstract class MapProxySupport<K, V>
         return result;
     }
 
-    public InternalCompletableFuture<Object> executeOnKeyInternal(
-            Data key, EntryProcessor entryProcessor, ExecutionCallback<Object> callback) {
+    public InternalCompletableFuture<Object> executeOnKeyInternal(Object key, EntryProcessor entryProcessor,
+                                                                  ExecutionCallback<Object> callback) {
+        Data keyData = toDataWithStrategy(key);
         int partitionId = partitionService.getPartitionId(key);
-        MapOperation operation = operationProvider.createEntryOperation(name, key, entryProcessor);
+        MapOperation operation = operationProvider.createEntryOperation(name, keyData, entryProcessor);
         operation.setThreadId(getThreadId());
         try {
             if (callback == null) {
@@ -1137,6 +1170,13 @@ abstract class MapProxySupport<K, V>
             return EMPTY_LOCAL_MAP_STATS;
         }
         return mapServiceContext.getLocalMapStatsProvider().createLocalMapStats(name);
+    }
+
+    protected void toDataCollection(Set<K> keys, Collection<Data> dataKeys) {
+        for (K key : keys) {
+            checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+            dataKeys.add(toDataWithStrategy(key));
+        }
     }
 
     private long getTimeInMillis(long time, TimeUnit timeunit) {
