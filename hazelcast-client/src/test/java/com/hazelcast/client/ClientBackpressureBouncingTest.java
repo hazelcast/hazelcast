@@ -76,16 +76,16 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
         });
     }
 
-    public long backoff;
-
     @Rule
     public BounceMemberRule bounceMemberRule;
 
     private InvocationCheckingThread checkingThread;
 
+    private long backoff;
+
     public ClientBackpressureBouncingTest(int backoffTimeoutMillis) {
         this.backoff = backoffTimeoutMillis;
-        bounceMemberRule = BounceMemberRule
+        this.bounceMemberRule = BounceMemberRule
                 .with(new Config())
                 .driverFactory(new MultiSocketClientDriverFactory(
                         new ClientConfig()
