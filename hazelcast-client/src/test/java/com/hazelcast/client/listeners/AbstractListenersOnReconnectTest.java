@@ -53,15 +53,14 @@ import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport {
 
-    protected HazelcastInstance client;
-    private AtomicInteger eventCount;
+    private static final int EVENT_COUNT = 10;
+    private final AtomicInteger eventCount = new AtomicInteger();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final CountDownLatch eventsLatch = new CountDownLatch(1);
+    private final Set<String> events = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
     private String registrationId;
     private int clusterSize;
-
-    private static final int EVENT_COUNT = 10;
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
-    private Set<String> events = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
-    private CountDownLatch eventsLatch = new CountDownLatch(1);
+    protected HazelcastInstance client;
 
     @After
     public void tearDown() {
@@ -463,7 +462,6 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     private void setupListener() {
         clusterSize = factory.getAllHazelcastInstances().size();
         assertClusterSizeEventually(clusterSize, client);
-        eventCount = new AtomicInteger();
         registrationId = addListener();
     }
 
@@ -507,33 +505,25 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     }
 
     private void validateListenerFunctionality() {
-        assertTrueEventually(new AssertTask() {
+        for (int i = 0; i < EVENT_COUNT; i++) {
+            events.add(randomString());
+        }
+
+        for (String event : events) {
+            produceEvent(event);
+        }
+
+        assertOpenEventually(eventsLatch);
+
+        assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run() throws Exception {
-                events.clear();
-                eventCount.set(0);
-                for (int i = 0; i < EVENT_COUNT; i++) {
-                    events.add(randomString());
-                }
-
-                for (String event : events) {
-                    produceEvent(event);
-                }
-
-                assertOpenEventually(eventsLatch);
-
-                assertTrueAllTheTime(new AssertTask() {
-                    @Override
-                    public void run()
-                            throws Exception {
-                        int count = eventCount.get();
-                        assertEquals("Received event count is " + count + " but it is expected to stay at " + EVENT_COUNT, EVENT_COUNT,
-                                eventCount.get());
-                    }
-                }, 3);
+            public void run()
+                    throws Exception {
+                int count = eventCount.get();
+                assertEquals("Received event count is " + count + " but it is expected to stay at " + EVENT_COUNT, EVENT_COUNT,
+                        eventCount.get());
             }
-        });
-
+        }, 3);
     }
 
     private void terminateRandomNode() {
