@@ -37,51 +37,55 @@ public class HeapData implements Data {
 
     public static final int HEAP_DATA_OVERHEAD = DATA_OFFSET;
 
-    // array (12: array header, 4: length)
-    private static final int ARRAY_HEADER_SIZE_IN_BYTES = 16;
+    // array jvm (12: array header, 4: length) + fields (4: offset , 4: length)
+    private static final int ARRAY_HEADER_SIZE_IN_BYTES = 24;
 
+    protected final int offset;
     protected byte[] payload;
+    protected int length;
 
     public HeapData() {
+        this.offset = 0;
     }
 
     public HeapData(byte[] payload) {
-        if (payload != null && payload.length > 0 && payload.length < HEAP_DATA_OVERHEAD) {
+        this(payload, 0, payload == null ? 0 : payload.length);
+    }
+
+    public HeapData(byte[] payload, int offset, int length) {
+        this.payload = payload;
+        this.offset = offset;
+        this.length = payload == null ? 0 : length;
+        assert payload == null || payload.length >= length + offset;
+        if (payload != null && payload.length > 0 && length < HEAP_DATA_OVERHEAD) {
             throw new IllegalArgumentException(
                     "Data should be either empty or should contain more than " + HeapData.HEAP_DATA_OVERHEAD + " bytes! -> "
-                            + Arrays.toString(payload));
+                            + Arrays.toString(Arrays.copyOfRange(payload, offset, length)));
         }
-        this.payload = payload;
     }
 
     @Override
     public int dataSize() {
-        return Math.max(totalSize() - HEAP_DATA_OVERHEAD, 0);
+        return Math.max(length - HEAP_DATA_OVERHEAD, 0);
     }
 
     @Override
     public int totalSize() {
-        return payload != null ? payload.length : 0;
+        return length;
     }
 
     @Override
-    public void copyTo(byte[] dest, int destPos) {
-        if (totalSize() > 0) {
-            System.arraycopy(payload, 0, dest, destPos, payload.length);
+    public Data compact() {
+        if (offset == 0) {
+            return this;
         }
+        byte[] bytes = Arrays.copyOfRange(payload, offset, offset + length);
+        return new HeapData(bytes);
     }
 
     @Override
-    public int getPartitionHash() {
-        if (hasPartitionHash()) {
-            return Bits.readIntB(payload, PARTITION_HASH_OFFSET);
-        }
-        return hashCode();
-    }
-
-    @Override
-    public boolean hasPartitionHash() {
-        return payload != null && payload.length >= HEAP_DATA_OVERHEAD && Bits.readIntB(payload, PARTITION_HASH_OFFSET) != 0;
+    public int offset() {
+        return offset;
     }
 
     @Override
@@ -90,11 +94,31 @@ public class HeapData implements Data {
     }
 
     @Override
+    public void copyTo(byte[] dest, int destPos) {
+        if (length > 0) {
+            System.arraycopy(payload, offset, dest, destPos, length);
+        }
+    }
+
+    @Override
+    public int getPartitionHash() {
+        if (hasPartitionHash()) {
+            return Bits.readIntB(payload, offset + PARTITION_HASH_OFFSET);
+        }
+        return hashCode();
+    }
+
+    @Override
+    public boolean hasPartitionHash() {
+        return payload != null && length >= HEAP_DATA_OVERHEAD && Bits.readIntB(payload, offset + PARTITION_HASH_OFFSET) != 0;
+    }
+
+    @Override
     public int getType() {
-        if (totalSize() == 0) {
+        if (length == 0) {
             return SerializationConstants.CONSTANT_TYPE_NULL;
         }
-        return Bits.readIntB(payload, TYPE_OFFSET);
+        return Bits.readIntB(payload, offset + TYPE_OFFSET);
     }
 
     @Override
@@ -124,11 +148,11 @@ public class HeapData implements Data {
             return false;
         }
 
-        return dataSize == 0 || equals(this.payload, data.toByteArray());
+        return dataSize == 0 || equals(this.payload, this.offset, data.toByteArray(), data.offset());
     }
 
     // Same as Arrays.equals(byte[] a, byte[] a2) but loop order is reversed.
-    private static boolean equals(byte[] data1, byte[] data2) {
+    private static boolean equals(byte[] data1, int offset, byte[] data2, int offset2) {
         if (data1 == data2) {
             return true;
         }
@@ -136,11 +160,11 @@ public class HeapData implements Data {
             return false;
         }
         final int length = data1.length;
-        if (data2.length != length) {
+        if (data2.length - offset2 != length - offset) {
             return false;
         }
-        for (int i = length - 1; i >= DATA_OFFSET; i--) {
-            if (data1[i] != data2[i]) {
+        for (int i = length - 1, j = data2.length - 1; i >= DATA_OFFSET + offset; i--, j--) {
+            if (data1[i] != data2[j]) {
                 return false;
             }
         }
@@ -149,12 +173,12 @@ public class HeapData implements Data {
 
     @Override
     public int hashCode() {
-        return HashUtil.MurmurHash3_x86_32(payload, DATA_OFFSET, dataSize());
+        return HashUtil.MurmurHash3_x86_32(payload, offset + DATA_OFFSET, dataSize());
     }
 
     @Override
     public long hash64() {
-        return HashUtil.MurmurHash3_x64_64(payload, DATA_OFFSET, dataSize());
+        return HashUtil.MurmurHash3_x64_64(payload, offset + DATA_OFFSET, dataSize());
     }
 
     @Override
