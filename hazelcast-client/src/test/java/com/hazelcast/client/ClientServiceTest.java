@@ -18,8 +18,8 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.connection.ClientConnectionStrategy;
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.ClientTestUtil;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.ClientTestSupport;
@@ -365,7 +365,7 @@ public class ClientServiceTest extends ClientTestSupport {
         InetSocketAddress socketAddress = hazelcastInstance.getCluster().getLocalMember().getSocketAddress();
         Address address = new Address(socketAddress.getAddress().getHostAddress(), socketAddress.getPort());
         ClientConnectionManager connectionManager = clientInstanceImpl.getConnectionManager();
-        final ClientConnection connection = (ClientConnection) connectionManager.getConnection(address);
+        final ClientConnection connection = (ClientConnection) connectionManager.getActiveConnection(address);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -435,7 +435,7 @@ public class ClientServiceTest extends ClientTestSupport {
         });
 
         hazelcastInstance.shutdown();
-        assertOpenEventually(countDownLatch, ClientConnectionManagerImpl.TERMINATE_TIMEOUT_SECONDS);
+        assertOpenEventually(countDownLatch, ClientConnectionStrategy.TERMINATE_TIMEOUT_SECONDS);
     }
 
     @Test

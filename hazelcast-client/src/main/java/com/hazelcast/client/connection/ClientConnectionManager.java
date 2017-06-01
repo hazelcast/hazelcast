@@ -53,23 +53,21 @@ public interface ClientConnectionManager extends ConnectionListenable {
      * @param address to be connected
      * @return connection if available, null otherwise
      */
-    Connection getConnection(Address address);
+    Connection getActiveConnection(Address address);
 
     /**
      * @param address to be connected
-     * @param asOwner true if connection should be authenticated as owner, false otherwise
      * @return associated connection if available, creates new connection otherwise
      * @throws IOException if connection is not established
      */
-    Connection getOrConnect(Address address, boolean asOwner) throws IOException;
+    Connection getOrConnect(Address address) throws IOException;
 
     /**
      * @param address to be connected
-     * @param asOwner true if connection should be authenticated as owner, false otherwise
      * @return associated connection if available, returns null and triggers new connection creation otherwise
      * @throws IOException if connection is not able to triggered
      */
-    Connection getOrTriggerConnect(Address address, boolean asOwner) throws IOException;
+    Connection getOrTriggerConnect(Address address) throws IOException;
 
     void addConnectionHeartbeatListener(ConnectionHeartbeatListener connectionHeartbeatListener);
 
@@ -81,5 +79,4 @@ public interface ClientConnectionManager extends ConnectionListenable {
 
     ClientConnection getOwnerConnection();
 
-    void connectToCluster() throws Exception;
 }

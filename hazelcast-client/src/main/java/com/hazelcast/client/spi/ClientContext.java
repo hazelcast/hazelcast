@@ -46,7 +46,7 @@ import static java.lang.String.format;
  */
 public final class ClientContext {
 
-    private final String localUuid;
+    private String localUuid;
     private final SerializationService serializationService;
     private final ClientClusterService clusterService;
     private final ClientPartitionService partitionService;
@@ -96,11 +96,18 @@ public final class ClientContext {
         return getOrPutIfAbsent(repairingTasks, serviceName, repairingTaskConstructor);
     }
 
+    private String getLocalUuid() {
+        if (this.localUuid == null) {
+            this.localUuid = clusterService.getLocalClient().getUuid();
+        }
+        return this.localUuid;
+    }
+
     private RepairingTask newRepairingTask(String serviceName) {
         MetaDataFetcher metaDataFetcher = newMetaDataFetcher(serviceName);
         ILogger logger = loggingService.getLogger(RepairingTask.class);
         return new RepairingTask(properties, metaDataFetcher, executionService, serializationService, minimalPartitionService,
-                localUuid, logger);
+                getLocalUuid(), logger);
     }
 
     private MetaDataFetcher newMetaDataFetcher(String serviceName) {

@@ -132,7 +132,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
             @Override
             public void run()
                     throws Exception {
-                assertNotNull(connectionManager.getConnection(instance2.getCluster().getLocalMember().getAddress()));
+                assertNotNull(connectionManager.getActiveConnection(instance2.getCluster().getLocalMember().getAddress()));
             }
         });
 

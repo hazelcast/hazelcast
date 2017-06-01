@@ -67,7 +67,7 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
     }
 
     private Connection getOrTriggerConnect(Address target) throws IOException {
-        Connection connection = connectionManager.getOrTriggerConnect(target, false);
+        Connection connection = connectionManager.getOrTriggerConnect(target);
         if (connection == null) {
             throw new IOException("No available connection to address " + target);
         }
