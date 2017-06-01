@@ -75,23 +75,30 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
     public InMemoryFormat inMemoryFormat;
 
     @Parameter(value = 1)
+    public boolean serializeKeys;
+
+    @Parameter(value = 2)
     public LocalUpdatePolicy localUpdatePolicy;
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @Parameters(name = "format:{0} {1}")
+    @Parameters(name = "format:{0} serializeKeys:{1} {2}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {InMemoryFormat.BINARY, LocalUpdatePolicy.INVALIDATE},
-                {InMemoryFormat.BINARY, LocalUpdatePolicy.CACHE_ON_UPDATE},
-                {InMemoryFormat.OBJECT, LocalUpdatePolicy.INVALIDATE},
-                {InMemoryFormat.OBJECT, LocalUpdatePolicy.CACHE_ON_UPDATE},
+                {InMemoryFormat.BINARY, true, LocalUpdatePolicy.INVALIDATE},
+                {InMemoryFormat.BINARY, true, LocalUpdatePolicy.CACHE_ON_UPDATE},
+                {InMemoryFormat.BINARY, false, LocalUpdatePolicy.INVALIDATE},
+                {InMemoryFormat.BINARY, false, LocalUpdatePolicy.CACHE_ON_UPDATE},
+                {InMemoryFormat.OBJECT, true, LocalUpdatePolicy.INVALIDATE},
+                {InMemoryFormat.OBJECT, true, LocalUpdatePolicy.CACHE_ON_UPDATE},
+                {InMemoryFormat.OBJECT, false, LocalUpdatePolicy.INVALIDATE},
+                {InMemoryFormat.OBJECT, false, LocalUpdatePolicy.CACHE_ON_UPDATE},
         });
     }
 
     @Before
     public void setUp() {
-        nearCacheConfig = createNearCacheConfig(inMemoryFormat, true)
+        nearCacheConfig = createNearCacheConfig(inMemoryFormat, serializeKeys)
                 .setLocalUpdatePolicy(localUpdatePolicy);
     }
 
