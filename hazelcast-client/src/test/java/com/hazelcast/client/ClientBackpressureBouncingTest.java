@@ -38,7 +38,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
@@ -77,19 +76,23 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
         });
     }
 
-    @Parameter
-    public long backoff;
-
     @Rule
-    public BounceMemberRule bounceMemberRule = BounceMemberRule
-            .with(new Config())
-            .driverFactory(new MultiSocketClientDriverFactory(
-                    new ClientConfig()
-                            .setProperty(MAX_CONCURRENT_INVOCATIONS.getName(), valueOf(MAX_CONCURRENT_INVOCATION_CONFIG))
-                            .setProperty(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS.getName(), valueOf(backoff))
-            )).build();
+    public BounceMemberRule bounceMemberRule;
 
     private InvocationCheckingThread checkingThread;
+
+    private long backoff;
+
+    public ClientBackpressureBouncingTest(int backoffTimeoutMillis) {
+        this.backoff = backoffTimeoutMillis;
+        this.bounceMemberRule = BounceMemberRule
+                .with(new Config())
+                .driverFactory(new MultiSocketClientDriverFactory(
+                        new ClientConfig()
+                                .setProperty(MAX_CONCURRENT_INVOCATIONS.getName(), valueOf(MAX_CONCURRENT_INVOCATION_CONFIG))
+                                .setProperty(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS.getName(), valueOf(backoff))
+                )).build();
+    }
 
     @After
     public void tearDown() {
