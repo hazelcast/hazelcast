@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.packetdispatcher.impl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.spi.impl.PacketDispatcher;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -39,14 +40,14 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class PacketDispatcherImplTest extends HazelcastTestSupport {
+public class PacketDispatcherTest extends HazelcastTestSupport {
 
     private PacketHandler operationExecutor;
     private PacketHandler eventService;
     private PacketHandler connectionManager;
     private PacketHandler responseHandler;
     private PacketHandler invocationMonitor;
-    private PacketDispatcherImpl dispatcher;
+    private PacketDispatcher dispatcher;
     private PacketHandler jetService;
 
     @Before
@@ -59,7 +60,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
         invocationMonitor = mock(PacketHandler.class);
         jetService = mock(PacketHandler.class);
 
-        dispatcher = new PacketDispatcherImpl(
+        dispatcher = new PacketDispatcher(
                 logger,
                 operationExecutor,
                 responseHandler,
@@ -73,7 +74,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     public void whenOperationPacket() throws Exception {
         Packet packet = new Packet().setPacketType(Packet.Type.OPERATION);
 
-        dispatcher.dispatch(packet);
+        dispatcher.handle(packet);
 
         verify(operationExecutor).handle(packet);
 
@@ -84,7 +85,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     public void whenUrgentOperationPacket() throws Exception {
         Packet packet = new Packet().setPacketType(Packet.Type.OPERATION).raiseFlags(FLAG_URGENT);
 
-        dispatcher.dispatch(packet);
+        dispatcher.handle(packet);
 
         verify(operationExecutor).handle(packet);
 
@@ -96,7 +97,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     public void whenOperationResponsePacket() throws Exception {
         Packet packet = new Packet().setPacketType(Packet.Type.OPERATION).raiseFlags(FLAG_OP_RESPONSE);
 
-        dispatcher.dispatch(packet);
+        dispatcher.handle(packet);
 
         verify(responseHandler).handle(packet);
         verifyZeroInteractions(operationExecutor, eventService, connectionManager, invocationMonitor, jetService);
@@ -106,7 +107,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     public void whenUrgentOperationResponsePacket() throws Exception {
         Packet packet = new Packet().setPacketType(Packet.Type.OPERATION).raiseFlags(FLAG_OP_RESPONSE | FLAG_URGENT);
 
-        dispatcher.dispatch(packet);
+        dispatcher.handle(packet);
 
         verify(responseHandler).handle(packet);
         verifyZeroInteractions(operationExecutor, eventService, connectionManager, invocationMonitor, jetService);
@@ -117,7 +118,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     public void whenOperationControlPacket() throws Exception {
         Packet packet = new Packet().setPacketType(Packet.Type.OPERATION).raiseFlags(FLAG_OP_CONTROL);
 
-        dispatcher.dispatch(packet);
+        dispatcher.handle(packet);
 
         verify(invocationMonitor).handle(packet);
 
@@ -129,7 +130,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     public void whenEventPacket() throws Exception {
         Packet packet = new Packet().setPacketType(Packet.Type.EVENT);
 
-        dispatcher.dispatch(packet);
+        dispatcher.handle(packet);
 
         verify(eventService).handle(packet);
         verifyZeroInteractions(responseHandler, operationExecutor, connectionManager, invocationMonitor, jetService);
@@ -139,7 +140,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     public void whenBindPacket() throws Exception {
         Packet packet = new Packet().setPacketType(Packet.Type.BIND);
 
-        dispatcher.dispatch(packet);
+        dispatcher.handle(packet);
 
         verify(connectionManager).handle(packet);
         verifyZeroInteractions(responseHandler, operationExecutor, eventService, invocationMonitor, jetService);
@@ -148,7 +149,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     @Test
     public void whenJetPacket() throws Exception {
         Packet packet = new Packet().setPacketType(Packet.Type.JET);
-        dispatcher.dispatch(packet);
+        dispatcher.handle(packet);
 
         verify(jetService).handle(packet);
         verifyZeroInteractions(responseHandler, operationExecutor, connectionManager, eventService, invocationMonitor);
@@ -159,7 +160,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     public void whenUnrecognizedPacket_thenSwallowed() throws Exception {
         Packet packet = new Packet().setPacketType(Packet.Type.NULL);
 
-        dispatcher.dispatch(packet);
+        dispatcher.handle(packet);
 
         verifyZeroInteractions(responseHandler, operationExecutor, eventService, connectionManager, invocationMonitor,
                 jetService);
@@ -172,6 +173,6 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
 
         Mockito.doThrow(new ExpectedRuntimeException()).when(operationExecutor).handle(packet);
 
-        dispatcher.dispatch(packet);
+        dispatcher.handle(packet);
     }
 }

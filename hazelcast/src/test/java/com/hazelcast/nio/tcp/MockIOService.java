@@ -17,23 +17,19 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.internal.networking.ChannelOutboundHandler;
-import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelFactory;
-import com.hazelcast.internal.networking.nio.NioChannelFactory;
-import com.hazelcast.internal.networking.spinning.SpinningChannelFactory;
+import com.hazelcast.internal.networking.ChannelInboundHandler;
+import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.Packet;
@@ -41,7 +37,6 @@ import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.impl.PacketHandler;
-import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -357,11 +352,11 @@ public class MockIOService implements IOService {
 
     @Override
     public ChannelInboundHandler createInboundHandler(final TcpIpConnection connection) {
-        return new MemberChannelInboundHandler(connection, new PacketDispatcher() {
+        return new MemberChannelInboundHandler(connection, new PacketHandler() {
             private ILogger logger = loggingService.getLogger("MockIOService");
 
             @Override
-            public void dispatch(Packet packet) {
+            public void handle(Packet packet) {
                 try {
                     if (packet.getPacketType() == Packet.Type.BIND) {
                         connection.getConnectionManager().handle(packet);

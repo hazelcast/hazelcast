@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl.packetdispatcher.impl;
+package com.hazelcast.spi.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.impl.PacketHandler;
-import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
 
 /**
- * Default {@link PacketDispatcher} implementation.
+ * A {@link PacketHandler} that dispatches the {@link Packet} to the right service. So operations are send to the
+ * {@link com.hazelcast.spi.OperationService}, events are send to the {@link com.hazelcast.spi.EventService} etc.
  */
-public final class PacketDispatcherImpl implements PacketDispatcher {
+public final class PacketDispatcher implements PacketHandler {
 
     private final ILogger logger;
     private final PacketHandler eventService;
@@ -38,13 +37,13 @@ public final class PacketDispatcherImpl implements PacketDispatcher {
     private final PacketHandler responseHandler;
     private final PacketHandler invocationMonitor;
 
-    public PacketDispatcherImpl(ILogger logger,
-                                PacketHandler operationExecutor,
-                                PacketHandler responseHandler,
-                                PacketHandler invocationMonitor,
-                                PacketHandler eventService,
-                                PacketHandler connectionManager,
-                                PacketHandler jetService) {
+    public PacketDispatcher(ILogger logger,
+                            PacketHandler operationExecutor,
+                            PacketHandler responseHandler,
+                            PacketHandler invocationMonitor,
+                            PacketHandler eventService,
+                            PacketHandler connectionManager,
+                            PacketHandler jetService) {
         this.logger = logger;
         this.responseHandler = responseHandler;
         this.eventService = eventService;
@@ -55,7 +54,7 @@ public final class PacketDispatcherImpl implements PacketDispatcher {
     }
 
     @Override
-    public void dispatch(Packet packet) {
+    public void handle(Packet packet) throws Exception {
         try {
             switch (packet.getPacketType()) {
                 case OPERATION:

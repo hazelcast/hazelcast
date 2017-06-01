@@ -23,7 +23,6 @@ import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -32,6 +31,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.test.mocknetwork.MockConnectionManager.isTargetLeft;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public class MockConnection implements Connection {
 
@@ -70,7 +70,11 @@ public class MockConnection implements Connection {
 
         Packet packet = (Packet) frame;
         Packet newPacket = readFromPacket(packet);
-        remoteNodeEngine.getPacketDispatcher().dispatch(newPacket);
+        try {
+            remoteNodeEngine.getPacketDispatcher().handle(newPacket);
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
         return true;
     }
 
@@ -142,7 +146,7 @@ public class MockConnection implements Connection {
         try {
             return localEndpoint.getInetAddress();
         } catch (UnknownHostException e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 

@@ -71,8 +71,6 @@ import com.hazelcast.spi.impl.operationparker.OperationParker;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
-import com.hazelcast.spi.impl.packetdispatcher.impl.PacketDispatcherImpl;
 import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
@@ -115,7 +113,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final TransactionManagerServiceImpl transactionManagerService;
     private final ProxyServiceImpl proxyService;
     private final WanReplicationService wanReplicationService;
-    private final PacketDispatcher packetDispatcher;
+    private final PacketHandler packetDispatcher;
     private final QuorumServiceImpl quorumService;
     private final MetricsRegistryImpl metricsRegistry;
     private final SerializationService serializationService;
@@ -143,7 +141,7 @@ public class NodeEngineImpl implements NodeEngine {
         }
         this.transactionManagerService = new TransactionManagerServiceImpl(this);
         this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
-        this.packetDispatcher = new PacketDispatcherImpl(
+        this.packetDispatcher = new PacketDispatcher(
                 logger,
                 operationService.getOperationExecutor(),
                 operationService.getAsyncInboundResponseHandler(),
@@ -213,7 +211,7 @@ public class NodeEngineImpl implements NodeEngine {
         return metricsRegistry;
     }
 
-    public PacketDispatcher getPacketDispatcher() {
+    public PacketHandler getPacketDispatcher() {
         return packetDispatcher;
     }
 
