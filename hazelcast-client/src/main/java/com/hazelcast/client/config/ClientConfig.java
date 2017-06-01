@@ -109,6 +109,8 @@ public class ClientConfig {
 
     private String licenseKey;
 
+    private ClientConnectionStrategyConfig connectionStrategyConfig = new ClientConnectionStrategyConfig();
+
     public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
         if (configPatternMatcher == null) {
             throw new IllegalArgumentException("ConfigPatternMatcher is not allowed to be null!");
@@ -723,5 +725,14 @@ public class ClientConfig {
 
     public void setInstanceName(String instanceName) {
         this.instanceName = instanceName;
+    }
+
+    public ClientConnectionStrategyConfig getConnectionStrategyConfig() {
+        return connectionStrategyConfig;
+    }
+
+    public ClientConfig setConnectionStrategyConfig(ClientConnectionStrategyConfig connectionStrategyConfig) {
+        this.connectionStrategyConfig = connectionStrategyConfig;
+        return this;
     }
 }

@@ -191,7 +191,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
                 Collection<Member> memberList = clientClusterService.getMemberList();
                 for (Member member : memberList) {
                     try {
-                        clientConnectionManager.getOrTriggerConnect(member.getAddress(), false);
+                        clientConnectionManager.getOrTriggerConnect(member.getAddress());
                     } catch (IOException e) {
                         return;
                     }

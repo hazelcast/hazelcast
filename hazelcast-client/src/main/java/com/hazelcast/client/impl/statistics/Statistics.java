@@ -121,16 +121,12 @@ public class Statistics {
      * @return the owner connection to the server for the client only if the server supports the client statistics feature
      */
     private ClientConnection getOwnerConnection() {
-        Address ownerConnectionAddress = client.getClientClusterService().getOwnerConnectionAddress();
-        if (null == ownerConnectionAddress) {
-            return null;
-        }
-
-        ClientConnection connection = (ClientConnection) client.getConnectionManager().getConnection(ownerConnectionAddress);
+        ClientConnection connection = client.getConnectionManager().getOwnerConnection();
         if (null == connection) {
             return null;
         }
 
+        Address ownerConnectionAddress = client.getConnectionManager().getOwnerConnectionAddress();
         int serverVersion = connection.getConnectedServerVersion();
         if (serverVersion < FEATURE_SUPPORTED_SINCE_VERSION) {
             // do not print too many logs if connected to an old version server

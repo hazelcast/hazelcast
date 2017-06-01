@@ -25,13 +25,11 @@ import java.util.concurrent.TimeoutException;
 class AuthenticationFuture {
 
     private final CountDownLatch countDownLatch = new CountDownLatch(1);
-    private Connection connection;
+    private ClientConnection connection;
     private Throwable throwable;
-    private boolean authenticatedAsOwner;
 
-    void onSuccess(Connection connection, boolean asOwner) {
+    void onSuccess(ClientConnection connection) {
         this.connection = connection;
-        this.authenticatedAsOwner = asOwner;
         countDownLatch.countDown();
     }
 
@@ -49,9 +47,5 @@ class AuthenticationFuture {
         }
         assert throwable != null;
         throw throwable;
-    }
-
-    boolean isAuthenticatedAsOwner() {
-        return authenticatedAsOwner;
     }
 }

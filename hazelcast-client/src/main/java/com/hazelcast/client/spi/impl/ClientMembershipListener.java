@@ -135,14 +135,12 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     public void onListenerRegister() {
     }
 
-    void listenMembershipEvents(Address ownerConnectionAddress) throws Exception {
+    void listenMembershipEvents() throws Exception {
         initialListFetchedLatch = new CountDownLatch(1);
         ClientMessage clientMessage = ClientAddMembershipListenerCodec.encodeRequest(false);
-        Connection connection = connectionManager.getConnection(ownerConnectionAddress);
+        Connection connection = connectionManager.getOwnerConnection();
         if (connection == null) {
-            throw new IllegalStateException(
-                    "Can not load initial members list because owner connection is null. Address "
-                            + ownerConnectionAddress);
+            throw new IllegalStateException("Can not load initial members list because owner connection is null.");
         }
         ClientInvocation invocation = new ClientInvocation(client, clientMessage, connection);
         invocation.setEventHandler(this);
@@ -160,7 +158,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     private void memberRemoved(Member member) {
         members.remove(member);
         logger.info(membersString());
-        final Connection connection = connectionManager.getConnection(member.getAddress());
+        final Connection connection = connectionManager.getActiveConnection(member.getAddress());
         if (connection != null) {
             connection.close(null, newTargetDisconnectedExceptionCausedByMemberLeftEvent(connection));
         }
@@ -192,7 +190,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
             events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED, eventMembers));
             Address address = member.getAddress();
             if (clusterService.getMember(address) == null) {
-                Connection connection = connectionManager.getConnection(address);
+                Connection connection = connectionManager.getActiveConnection(address);
                 if (connection != null) {
                     connection.close(null, newTargetDisconnectedExceptionCausedByMemberLeftEvent(connection));
                 }

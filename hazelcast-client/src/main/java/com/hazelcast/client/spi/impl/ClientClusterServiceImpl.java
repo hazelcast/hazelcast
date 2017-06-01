@@ -21,6 +21,7 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.Client;
@@ -140,10 +141,10 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     @Override
     public Client getLocalClient() {
         final ClientConnectionManager cm = client.getConnectionManager();
-        Address address = cm.getOwnerConnectionAddress();
-        final ClientConnection connection = (ClientConnection) cm.getConnection(address);
+        final ClientConnection connection = cm.getOwnerConnection();
         InetSocketAddress inetSocketAddress = connection != null ? connection.getLocalSocketAddress() : null;
-        final String uuid = cm.getPrincipal().getUuid();
+        ClientPrincipal principal = cm.getPrincipal();
+        final String uuid = principal != null ? principal.getUuid() : null;
         return new ClientImpl(uuid, inetSocketAddress);
     }
 
@@ -186,7 +187,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     @Override
     public void init() throws Exception {
-        this.clientMembershipListener.listenMembershipEvents(client.getConnectionManager().getOwnerConnectionAddress());
+        this.clientMembershipListener.listenMembershipEvents();
     }
 
     public void start() {

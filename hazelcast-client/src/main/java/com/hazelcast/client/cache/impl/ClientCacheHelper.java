@@ -160,7 +160,7 @@ final class ClientCacheHelper {
             throws IOException {
 
         Address address = getSendAddress(client, partitionId);
-        ClientConnection sendConnection = (ClientConnection) client.getConnectionManager().getOrConnect(address, false);
+        ClientConnection sendConnection = (ClientConnection) client.getConnectionManager().getOrConnect(address);
         if (BuildInfo.UNKNOWN_HAZELCAST_VERSION == sendConnection.getConnectedServerVersion()) {
             boolean compatibilityEnabled = client.getProperties().getBoolean(ClientProperty.COMPATIBILITY_3_6_SERVER_ENABLED);
             if (compatibilityEnabled) {

@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ClientMessageChannelInboundHandler;
 import com.hazelcast.internal.networking.Channel;

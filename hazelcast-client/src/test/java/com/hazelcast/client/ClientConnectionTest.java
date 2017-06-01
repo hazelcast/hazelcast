@@ -133,7 +133,7 @@ public class ClientConnectionTest extends HazelcastTestSupport {
         connectionManager.addConnectionListener(listener);
 
         final Address serverAddress = new Address(server.getCluster().getLocalMember().getSocketAddress());
-        final Connection connectionToServer = connectionManager.getConnection(serverAddress);
+        final Connection connectionToServer = connectionManager.getActiveConnection(serverAddress);
 
         final CountDownLatch isConnected = new CountDownLatch(1);
         clientImpl.getLifecycleService().addLifecycleListener(new LifecycleListener() {
