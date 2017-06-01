@@ -19,7 +19,7 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.internal.networking.nio.NioChannel;
 import com.hazelcast.internal.networking.nio.NioChannelReader;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
+import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -60,7 +60,7 @@ public class MemberChannelInboundHandlerTest extends TcpIpConnection_AbstractTes
         dispatcher = new MockPacketDispatcher();
         readHandler = new MemberChannelInboundHandler(connection, dispatcher);
 
-        channelReader = ((NioChannel)connection.getChannel()).getReader();
+        channelReader = ((NioChannel) connection.getChannel()).getReader();
         oldNormalPacketsRead = channelReader.getNormalFramesReadCounter().get();
         oldPriorityPacketsRead = channelReader.getPriorityFramesReadCounter().get();
     }
@@ -123,11 +123,11 @@ public class MemberChannelInboundHandlerTest extends TcpIpConnection_AbstractTes
         assertEquals(oldPriorityPacketsRead + 1, channelReader.getPriorityFramesReadCounter().get());
     }
 
-    class MockPacketDispatcher implements PacketDispatcher {
+    class MockPacketDispatcher implements PacketHandler {
         private List<Packet> packets = new LinkedList<Packet>();
 
         @Override
-        public void dispatch(Packet packet) {
+        public void handle(Packet packet) throws Exception {
             packets.add(packet);
         }
     }

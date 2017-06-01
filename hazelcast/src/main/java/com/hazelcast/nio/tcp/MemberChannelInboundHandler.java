@@ -19,16 +19,16 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.nio.ChannelInboundHandlerWithCounters;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
+import com.hazelcast.spi.impl.PacketHandler;
 
 import java.nio.ByteBuffer;
 
 /**
  * The {@link ChannelInboundHandler} for member to member communication.
  *
- * It reads as many packets from the src ByteBuffer as possible, and each of the Packets is send to the {@link PacketDispatcher}.
+ * It reads as many packets from the src ByteBuffer as possible, and each of the Packets is send to the {@link PacketHandler}.
  *
- * @see PacketDispatcher
+ * @see PacketHandler
  * @see MemberChannelOutboundHandler
  */
 public class MemberChannelInboundHandler extends ChannelInboundHandlerWithCounters {
@@ -36,11 +36,11 @@ public class MemberChannelInboundHandler extends ChannelInboundHandlerWithCounte
     protected final TcpIpConnection connection;
     protected Packet packet;
 
-    private final PacketDispatcher packetDispatcher;
+    private final PacketHandler handler;
 
-    public MemberChannelInboundHandler(TcpIpConnection connection, PacketDispatcher packetDispatcher) {
+    public MemberChannelInboundHandler(TcpIpConnection connection, PacketHandler handler) {
         this.connection = connection;
-        this.packetDispatcher = packetDispatcher;
+        this.handler = handler;
     }
 
     @Override
@@ -59,7 +59,7 @@ public class MemberChannelInboundHandler extends ChannelInboundHandlerWithCounte
         }
     }
 
-    protected void handlePacket(Packet packet) {
+    protected void handlePacket(Packet packet) throws Exception {
         if (packet.isFlagRaised(Packet.FLAG_URGENT)) {
             priorityPacketsRead.inc();
         } else {
@@ -68,6 +68,6 @@ public class MemberChannelInboundHandler extends ChannelInboundHandlerWithCounte
 
         packet.setConn(connection);
 
-        packetDispatcher.dispatch(packet);
+        handler.handle(packet);
     }
 }
