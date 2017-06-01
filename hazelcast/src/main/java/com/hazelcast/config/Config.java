@@ -454,7 +454,6 @@ public class Config {
         if (defConfig == null) {
             defConfig = new MapConfig();
             defConfig.setName("default");
-            initDefaultMaxSizeForOnHeapMaps(defConfig.getNearCacheConfig());
             mapConfigs.put(defConfig.getName(), defConfig);
         }
         config = new MapConfig(defConfig);
