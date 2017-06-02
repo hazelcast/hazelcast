@@ -107,4 +107,16 @@ public interface ClientEndpoint extends Client {
      */
     void setClientVersion(String version);
 
+    /**
+     * Updates to the latest client statistics
+     * @param stats The latest statistics retrieved from the client
+     */
+    void setClientStatictics(String stats);
+
+    /**
+     *
+     * @return statistics string for the client
+     *
+     */
+    String getClientStatistics();
 }

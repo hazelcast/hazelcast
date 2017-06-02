@@ -17,6 +17,7 @@
 package com.hazelcast.internal.metrics;
 
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
+import com.hazelcast.internal.metrics.renderers.StringRenderer;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -84,6 +85,16 @@ public interface MetricsRegistry {
      * @see #newLongGauge(String)
      */
     DoubleGauge newDoubleGauge(String name);
+
+    /**
+     * Creates a String probe for a given metric name.
+     *
+     * @param name name of the metric
+     * @return the created gauge which implements the StringRenderer.
+     * @throws NullPointerException if name is null.
+     * @see #newLongGauge(String)#newDoubleGauge(String)
+     */
+    StringRenderer newStringRendererGauge(String name);
 
     /**
      * Gets a set of all current probe names.

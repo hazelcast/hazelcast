@@ -588,6 +588,19 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         return resultMap;
     }
 
+    @Override
+    public Map<String, String> getClientStatistics() {
+        Collection<ClientEndpoint> clientEndpoints = endpointManager.getEndpoints();
+        Map<String, String> statsMap = new HashMap<String, String>(clientEndpoints.size());
+        for (ClientEndpoint e : clientEndpoints) {
+            String statistics = e.getClientStatistics();
+            if (null != statistics) {
+                statsMap.put(e.getUuid(), statistics);
+            }
+        }
+        return statsMap;
+    }
+
     private static class PriorityPartitionSpecificRunnable implements PartitionSpecificRunnable, UrgentSystemOperation {
 
         private final MessageTask task;

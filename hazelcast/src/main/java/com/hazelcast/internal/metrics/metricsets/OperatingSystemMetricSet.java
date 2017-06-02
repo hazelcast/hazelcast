@@ -69,7 +69,6 @@ public final class OperatingSystemMetricSet {
         );
     }
 
-
     // This method doesn't depend on the OperatingSystemMXBean so it can be tested. Due to not knowing
     // the exact OperatingSystemMXBean class it is very difficult to get this class tested.
     static void registerMethod(MetricsRegistry metricsRegistry, Object osBean, String methodName, String name) {

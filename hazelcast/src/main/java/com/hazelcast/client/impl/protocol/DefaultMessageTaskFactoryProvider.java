@@ -1662,6 +1662,11 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new com.hazelcast.client.impl.protocol.task.AuthenticationMessageTask(clientMessage, node, connection);
             }
         };
+        factories[com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new com.hazelcast.client.impl.protocol.task.ClientStatisticsMessageTask(clientMessage, node, connection);
+            }
+        };
 //endregion
 //region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.queue
         factories[com.hazelcast.client.impl.protocol.codec.QueueCompareAndRemoveAllCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
