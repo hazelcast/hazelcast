@@ -19,7 +19,11 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
+import com.hazelcast.jet.Outbox;
+import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
+import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,35 +35,62 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.processor.Sources.readMap;
-import static com.hazelcast.jet.processor.Sinks.writeSocket;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static com.hazelcast.jet.processor.Sinks.writeSocket;
+import static com.hazelcast.jet.processor.Sources.readMap;
 import static java.util.stream.IntStream.range;
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
 public class WriteSocketTest extends JetTestSupport {
 
-    private static final String HOST = "localhost";
-    private static final int PORT = 8787;
     private static final int ITEM_COUNT = 1000;
 
     @Test
-    public void test() throws Exception {
-        ServerSocket socket = new ServerSocket(PORT);
-        CountDownLatch latch = new CountDownLatch(ITEM_COUNT);
+    public void unitTest() throws Exception {
+        AtomicInteger counter = new AtomicInteger();
+        ServerSocket serverSocket = new ServerSocket(0);
         new Thread(() -> uncheckRun(() -> {
-            while (!socket.isClosed()) {
-                Socket accept = socket.accept();
+            Socket socket = serverSocket.accept();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+                while (reader.readLine() != null) {
+                    counter.incrementAndGet();
+                }
+            }
+        })).start();
+
+        ArrayDequeInbox inbox = new ArrayDequeInbox();
+        range(0, ITEM_COUNT).forEach(inbox::add);
+
+        Processor p = writeSocket("localhost", serverSocket.getLocalPort()).get(1).iterator().next();
+        p.init(mock(Outbox.class), new ProcCtx(null, null, null, 0));
+        p.process(0, inbox);
+        p.complete();
+        serverSocket.close();
+        assertTrueEventually(() -> assertTrue(counter.get() >= ITEM_COUNT));
+        // wait a little to check, if the counter doesn't get too far
+        Thread.sleep(500);
+        assertEquals(ITEM_COUNT, counter.get());
+    }
+
+    @Test
+    public void integrationTest() throws Exception {
+        AtomicInteger counter = new AtomicInteger();
+        ServerSocket serverSocket = new ServerSocket(0);
+        new Thread(() -> uncheckRun(() -> {
+            while (!serverSocket.isClosed()) {
+                Socket socket = serverSocket.accept();
                 new Thread(() -> uncheckRun(() -> {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(accept.getInputStream()));
-                    String line = reader.readLine();
-                    while (line != null) {
-                        line = reader.readLine();
-                        latch.countDown();
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+                        while (reader.readLine() != null) {
+                            counter.incrementAndGet();
+                        }
                     }
                 })).start();
             }
@@ -68,17 +99,17 @@ public class WriteSocketTest extends JetTestSupport {
         JetInstance jetInstance = createJetMember();
         createJetMember();
         IStreamMap<Integer, String> map = jetInstance.getMap("map");
-        range(0, 1000).forEach(i -> map.put(i, i + "\n"));
+        range(0, ITEM_COUNT).forEach(i -> map.put(i, String.valueOf(i)));
 
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", readMap("map"));
-        Vertex sink = dag.newVertex("sink", writeSocket(HOST, PORT));
+        Vertex sink = dag.newVertex("sink", writeSocket("localhost", serverSocket.getLocalPort()));
 
         dag.edge(between(source, sink));
 
         jetInstance.newJob(dag).execute().get();
-        assertOpenEventually(latch);
-        socket.close();
+        serverSocket.close();
+        assertEquals(ITEM_COUNT, counter.get());
     }
 
 }

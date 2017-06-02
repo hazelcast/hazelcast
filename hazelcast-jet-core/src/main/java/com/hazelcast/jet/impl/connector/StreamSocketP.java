@@ -32,16 +32,16 @@ import java.util.concurrent.CompletableFuture;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 
 /**
- * @see Sources#streamTextSocket(String, int, Charset)
+ * @see Sources#streamSocket(String, int, Charset)
  */
-public final class StreamTextSocketP extends AbstractProcessor {
+public final class StreamSocketP extends AbstractProcessor {
 
     private final String host;
     private final int port;
     private final Charset charset;
     private CompletableFuture<Void> jobFuture;
 
-    private StreamTextSocketP(String host, int port, Charset charset) {
+    private StreamSocketP(String host, int port, Charset charset) {
         this.host = host;
         this.port = port;
         this.charset = charset;
@@ -87,6 +87,6 @@ public final class StreamTextSocketP extends AbstractProcessor {
     }
 
     public static DistributedSupplier<Processor> supplier(String host, int port, @Nonnull String charset) {
-        return () -> new StreamTextSocketP(host, port, Charset.forName(charset));
+        return () -> new StreamSocketP(host, port, Charset.forName(charset));
     }
 }

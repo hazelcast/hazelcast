@@ -16,21 +16,18 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.ProcessorMetaSupplier;
-import com.hazelcast.jet.processor.Sinks;
+import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.processor.Sinks;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.BufferedWriter;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
@@ -45,36 +42,35 @@ public final class WriteFileP {
     /**
      * Use {@link Sinks#writeFile(String, DistributedFunction, Charset, boolean)}
      */
-    public static <T> ProcessorMetaSupplier supplier(
+    public static <T> ProcessorSupplier supplier(
             @Nonnull String directoryName,
-            @Nullable DistributedFunction<T, String> toStringF,
-            @Nullable String charset,
+            @Nonnull DistributedFunction<T, String> toStringF,
+            @Nonnull String charset,
             boolean append) {
-        DistributedFunction<T, String> toStringF2 = toStringF == null ? Object::toString : toStringF;
 
-        return addresses -> address -> count -> {
-            Path directory = Paths.get(directoryName);
-            // ignore the result: we'll fail later when creating the files.
-            // It's also false, if the directory already existed
-            boolean ignored = directory.toFile().mkdirs();
-
-            return IntStream.range(0, count)
-                    .mapToObj(localIndex -> new WriteBufferedP<>(
-                            globalIndex -> createBufferedWriter(directory.resolve(Integer.toString(globalIndex)),
-                                    charset, append),
-                            (writer, item) -> uncheckRun(() -> {
-                                writer.write(toStringF2.apply((T) item));
-                                writer.newLine();
-                            }),
-                            writer -> uncheckRun(writer::flush),
-                            bufferedWriter -> uncheckRun(bufferedWriter::close)
-                    )).collect(Collectors.toList());
-        };
+        return Sinks.writeBuffered(
+                globalIndex -> createBufferedWriter(Paths.get(directoryName), globalIndex,
+                        charset, append),
+                (fileWriter, item) -> uncheckRun(() -> {
+                    fileWriter.write(toStringF.apply((T) item));
+                    fileWriter.newLine();
+                }),
+                fileWriter -> uncheckRun(fileWriter::flush),
+                fileWriter -> uncheckRun(fileWriter::close)
+        );
     }
 
-    private static BufferedWriter createBufferedWriter(Path path, String charset, boolean append) {
-        return uncheckCall(() -> Files.newBufferedWriter(path,
-                charset == null ? StandardCharsets.UTF_8 : Charset.forName(charset), StandardOpenOption.CREATE,
+    @SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED_BAD_PRACTICE",
+            justification = "mkdirs() returns false if the directory already existed, which is good. "
+                    + "We don't care even if it didn't exist and we failed to create it, "
+                    + "because we'll fail later when trying to create the file.")
+    private static BufferedWriter createBufferedWriter(Path directory, int globalIndex, String charset, boolean append) {
+        directory.toFile().mkdirs();
+
+        Path file = directory.resolve(String.valueOf(globalIndex));
+
+        return uncheckCall(() -> Files.newBufferedWriter(file,
+                Charset.forName(charset), StandardOpenOption.CREATE,
                 append ? StandardOpenOption.APPEND : StandardOpenOption.TRUNCATE_EXISTING));
     }
 

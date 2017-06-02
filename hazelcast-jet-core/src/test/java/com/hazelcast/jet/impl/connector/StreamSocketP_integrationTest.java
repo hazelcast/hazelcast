@@ -21,6 +21,7 @@ import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.processor.Sources;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -40,13 +41,12 @@ import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.jet.processor.Processors.noop;
 import static com.hazelcast.jet.processor.Sinks.writeList;
-import static com.hazelcast.jet.processor.Sources.streamTextSocket;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
-public class StreamTextSocketP_integrationTest extends JetTestSupport {
+public class StreamSocketP_integrationTest extends JetTestSupport {
 
     private static final String HOST = "localhost";
     private static final int PORT = 8888;
@@ -85,7 +85,7 @@ public class StreamTextSocketP_integrationTest extends JetTestSupport {
             })).start();
 
             DAG dag = new DAG();
-            Vertex producer = dag.newVertex("producer", streamTextSocket(HOST, PORT)).localParallelism(2);
+            Vertex producer = dag.newVertex("producer", Sources.streamSocket(HOST, PORT)).localParallelism(2);
             Vertex consumer = dag.newVertex("consumer", writeList("consumer")).localParallelism(1);
             dag.edge(between(producer, consumer));
 
@@ -106,7 +106,7 @@ public class StreamTextSocketP_integrationTest extends JetTestSupport {
             AtomicReference<Socket> accept = new AtomicReference<>();
             CountDownLatch acceptationLatch = new CountDownLatch(1);
             // Cancellation only works, if there are data on socket. Without data, SocketInputStream.read()
-            // blocks indefinitely. The StreamTextSocketP should be improved to use NIO.
+            // blocks indefinitely. The StreamSocketP should be improved to use NIO.
             new Thread(() -> uncheckRun(() -> {
                 accept.set(socket.accept());
                 acceptationLatch.countDown();
@@ -120,7 +120,7 @@ public class StreamTextSocketP_integrationTest extends JetTestSupport {
                 }
             })).start();
 
-            Vertex producer = new Vertex("producer", streamTextSocket(HOST, PORT)).localParallelism(1);
+            Vertex producer = new Vertex("producer", Sources.streamSocket(HOST, PORT)).localParallelism(1);
             Vertex sink = new Vertex("sink", noop()).localParallelism(1);
             DAG dag = new DAG()
                     .vertex(producer)

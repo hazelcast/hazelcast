@@ -16,16 +16,21 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.function.DistributedBiConsumer;
-import com.hazelcast.jet.function.DistributedConsumer;
-import com.hazelcast.jet.function.DistributedIntFunction;
 import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Punctuation;
-import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.DistributedBiConsumer;
+import com.hazelcast.jet.function.DistributedConsumer;
+import com.hazelcast.jet.function.DistributedIntFunction;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.IntStream;
+
+import static java.util.stream.Collectors.toList;
 
 public final class WriteBufferedP<B, T> implements Processor {
 
@@ -50,14 +55,40 @@ public final class WriteBufferedP<B, T> implements Processor {
         this.buffer = newBuffer.apply(context.globalProcessorIndex());
     }
 
+    /**
+     * Use {@link
+     * com.hazelcast.jet.processor.Sinks#writeBuffered(DistributedIntFunction,
+     * DistributedBiConsumer, DistributedConsumer, DistributedConsumer)
+     * Sinks.writeBuffered()} instead of this one.
+     */
     @Nonnull
-    public static <B, T> DistributedSupplier<Processor> writeBuffered(
-            DistributedIntFunction<B> newBuffer,
-            DistributedBiConsumer<B, T> addToBuffer,
-            DistributedConsumer<B> consumeBuffer,
-            DistributedConsumer<B> closeBuffer
+    public static <B, T> ProcessorSupplier supplier(
+            DistributedIntFunction<B> newBufferF,
+            DistributedBiConsumer<B, T> addToBufferF,
+            DistributedConsumer<B> flushBufferF,
+            DistributedConsumer<B> disposeBufferF
     ) {
-        return () -> new WriteBufferedP<>(newBuffer, addToBuffer, consumeBuffer, closeBuffer);
+        return new ProcessorSupplier() {
+            private transient List<WriteBufferedP<B, T>> processors;
+
+            @Nonnull
+            @Override
+            public Collection<? extends Processor> get(int count) {
+                return processors = IntStream.range(0, count)
+                        .mapToObj(i -> new WriteBufferedP<>(newBufferF, addToBufferF, flushBufferF, disposeBufferF))
+                        .collect(toList());
+            }
+
+            @Override
+            public void complete(Throwable error) {
+                if (processors == null) {
+                    return;
+                }
+                for (WriteBufferedP<B, T> p : processors) {
+                    p.close();
+                }
+            }
+        };
     }
 
     @Override
@@ -72,9 +103,12 @@ public final class WriteBufferedP<B, T> implements Processor {
 
     @Override
     public boolean complete() {
-        flushBuffer.accept(buffer);
-        disposeBuffer.accept(buffer);
+        close();
         return true;
+    }
+
+    public void close() {
+        disposeBuffer.accept(buffer);
     }
 
     @Override

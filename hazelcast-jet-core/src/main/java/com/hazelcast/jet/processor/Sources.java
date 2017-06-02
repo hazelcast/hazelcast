@@ -25,7 +25,7 @@ import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.ReadIListP;
 import com.hazelcast.jet.impl.connector.ReadWithPartitionIteratorP;
 import com.hazelcast.jet.impl.connector.StreamFilesP;
-import com.hazelcast.jet.impl.connector.StreamTextSocketP;
+import com.hazelcast.jet.impl.connector.StreamSocketP;
 
 import javax.annotation.Nonnull;
 import java.nio.charset.Charset;
@@ -128,12 +128,12 @@ public final class Sources {
     }
 
     /**
-     * Convenience for {@link #streamTextSocket(String, int, Charset)} with
+     * Convenience for {@link #streamSocket(String, int, Charset)} with
      * the UTF-8 character set.
      */
     @Nonnull
-    public static DistributedSupplier<Processor> streamTextSocket(@Nonnull String host, int port) {
-        return streamTextSocket(host, port, StandardCharsets.UTF_8);
+    public static DistributedSupplier<Processor> streamSocket(@Nonnull String host, int port) {
+        return streamSocket(host, port, StandardCharsets.UTF_8);
     }
 
     /**
@@ -153,10 +153,10 @@ public final class Sources {
      * @param charset Character set used to decode the stream
      */
     @Nonnull
-    public static DistributedSupplier<Processor> streamTextSocket(
+    public static DistributedSupplier<Processor> streamSocket(
             @Nonnull String host, int port, @Nonnull Charset charset
     ) {
-        return StreamTextSocketP.supplier(host, port, charset.name());
+        return StreamSocketP.supplier(host, port, charset.name());
     }
 
     /**

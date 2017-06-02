@@ -44,7 +44,7 @@ import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
-public class StreamTextSocketPTest extends JetTestSupport {
+public class StreamSocketPTest extends JetTestSupport {
 
     private Queue<Object> bucket;
     private ArrayDequeOutbox outbox;
@@ -72,7 +72,7 @@ public class StreamTextSocketPTest extends JetTestSupport {
             }));
             thread.start();
 
-            Processor processor = Sources.streamTextSocket("localhost", serverSocket.getLocalPort()).get();
+            Processor processor = Sources.streamSocket("localhost", serverSocket.getLocalPort()).get();
             processor.init(outbox, context);
 
             assertTrue(processor.complete());

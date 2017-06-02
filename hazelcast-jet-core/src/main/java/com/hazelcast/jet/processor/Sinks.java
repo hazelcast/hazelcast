@@ -17,26 +17,25 @@
 package com.hazelcast.jet.processor;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedIntFunction;
-import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 
@@ -113,60 +112,92 @@ public final class Sinks {
      *
      * @param <B> type of buffer
      * @param <T> type of received item
-     * @param newBuffer supplies the buffer. Supplier argument is the global processor index
-     * @param addToBuffer adds item to buffer
-     * @param flushBuffer flushes the buffer
+     * @param newBufferF supplies the buffer. Supplier argument is the global processor index
+     * @param addToBufferF adds item to buffer
+     * @param flushBufferF flushes the buffer
      */
     @Nonnull
-    public static <B, T> DistributedSupplier<Processor> writeBuffered(
-            @Nonnull DistributedIntFunction<B> newBuffer,
-            @Nonnull DistributedBiConsumer<B, T> addToBuffer,
-            @Nonnull DistributedConsumer<B> flushBuffer
+    public static <B, T> ProcessorSupplier writeBuffered(
+            @Nonnull DistributedIntFunction<B> newBufferF,
+            @Nonnull DistributedBiConsumer<B, T> addToBufferF,
+            @Nonnull DistributedConsumer<B> flushBufferF
     ) {
-        return WriteBufferedP.writeBuffered(newBuffer, addToBuffer, flushBuffer, noopConsumer());
+        return writeBuffered(newBufferF, addToBufferF, flushBufferF, noopConsumer());
     }
 
     /**
      * Returns a supplier of processor which drains all items from the inbox
      * to an intermediate buffer and then flushes the buffer. The buffer will
-     * be disposed via {@code disposeBuffer} once the processor is completed.
+     * be disposed via {@code disposeBufferF} once the processor is completed.
      * <p>
      * This is a useful building block to implement sinks with explicit control
      * over buffering and flushing.
      *
      * @param <B> type of buffer
      * @param <T> type of received item
-     * @param newBuffer supplies the buffer. Supplier argument is the global processor index.
-     * @param addToBuffer adds item to buffer
-     * @param flushBuffer flushes the buffer
-     * @param disposeBuffer disposes of the buffer
+     * @param newBufferF supplies the buffer. Supplier argument is the global processor index.
+     * @param addToBufferF adds item to buffer
+     * @param flushBufferF flushes the buffer
+     * @param disposeBufferF disposes of the buffer
      */
     @Nonnull
-    public static <B, T> DistributedSupplier<Processor> writeBuffered(
-            @Nonnull DistributedIntFunction<B> newBuffer,
-            @Nonnull DistributedBiConsumer<B, T> addToBuffer,
-            @Nonnull DistributedConsumer<B> flushBuffer,
-            @Nonnull DistributedConsumer<B> disposeBuffer
+    public static <B, T> ProcessorSupplier writeBuffered(
+            @Nonnull DistributedIntFunction<B> newBufferF,
+            @Nonnull DistributedBiConsumer<B, T> addToBufferF,
+            @Nonnull DistributedConsumer<B> flushBufferF,
+            @Nonnull DistributedConsumer<B> disposeBufferF
     ) {
-        return WriteBufferedP.writeBuffered(newBuffer, addToBuffer, flushBuffer, disposeBuffer);
+        return WriteBufferedP.supplier(newBufferF, addToBufferF, flushBufferF, disposeBufferF);
+    }
+
+    /**
+     * Convenience for {@link #writeSocket(String, int, DistributedFunction, Charset)}
+     * with {@code Object::toString} formatter and UTF-8 charset.
+     */
+    public static ProcessorSupplier writeSocket(@Nonnull String host, int port) {
+        return writeSocket(host, port, Object::toString, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Convenience for {@link #writeSocket(String, int, DistributedFunction, Charset)}
+     * with UTF-8 charset.
+     */
+    public static <T> ProcessorSupplier writeSocket(
+            @Nonnull String host,
+            int port,
+            @Nonnull DistributedFunction<T, String> toStringF
+    ) {
+        return writeSocket(host, port, toStringF, StandardCharsets.UTF_8);
     }
 
     /**
      * Returns a supplier of processor which connects to specified socket and
      * writes the items as text.
+     * <p>
+     * Note that no separator is added between items.
      */
-    public static DistributedSupplier<Processor> writeSocket(@Nonnull String host, int port) {
+    public static <T> ProcessorSupplier writeSocket(
+            @Nonnull String host,
+            int port,
+            @Nonnull DistributedFunction<T, String> toStringF,
+            @Nonnull Charset charset
+    ) {
+        String charsetName = charset.name();
         return writeBuffered(
-                index -> createBufferedWriter(host, port),
-                (bufferedWriter, item) -> uncheckRun(() -> bufferedWriter.write(item.toString())),
+                index -> uncheckCall(
+                        () -> new BufferedWriter(new OutputStreamWriter(
+                                new Socket(host, port).getOutputStream(), charsetName))),
+                (bufferedWriter, item) -> {
+                    try {
+                        bufferedWriter.write(toStringF.apply((T) item));
+                        bufferedWriter.write('\n');
+                    } catch (IOException e) {
+                        throw sneakyThrow(e);
+                    }
+                },
                 bufferedWriter -> uncheckRun(bufferedWriter::flush),
                 bufferedWriter -> uncheckRun(bufferedWriter::close)
         );
-    }
-
-    private static BufferedWriter createBufferedWriter(@Nonnull String host, int port) {
-        return uncheckCall(
-                () -> new BufferedWriter(new OutputStreamWriter(new Socket(host, port).getOutputStream(), "UTF-8")));
     }
 
     /**
@@ -174,10 +205,10 @@ public final class Sinks {
      * boolean)} with the UTF-8 charset and with overwriting of existing files.
      *
      * @param directoryName directory to create the files in. Will be created,
-     *                      if it doesn't exist. Must be the same on all nodes.
+     *                      if it doesn't exist. Must be the same on all members.
      */
     @Nonnull
-    public static ProcessorMetaSupplier writeFile(@Nonnull String directoryName) {
+    public static ProcessorSupplier writeFile(@Nonnull String directoryName) {
         return writeFile(directoryName, Object::toString, StandardCharsets.UTF_8, false);
     }
 
@@ -186,11 +217,11 @@ public final class Sinks {
      * boolean)} with the UTF-8 charset and with overwriting of existing files.
      *
      * @param directoryName directory to create the files in. Will be created,
-     *                      if it doesn't exist. Must be the same on all nodes.
+     *                      if it doesn't exist. Must be the same on all members.
      * @param toStringF a function to convert items to String (a formatter).
      */
     @Nonnull
-    public static <T> ProcessorMetaSupplier writeFile(
+    public static <T> ProcessorSupplier writeFile(
             @Nonnull String directoryName, @Nonnull DistributedFunction<T, String> toStringF
     ) {
         return writeFile(directoryName, toStringF, StandardCharsets.UTF_8, false);
@@ -202,7 +233,7 @@ public final class Sinks {
      * file, followed by a platform-specific line separator. Files are named
      * with an integer number starting from 0, which is unique cluster-wide.
      * <p>
-     * The same pathname must be available for writing on all nodes. Each
+     * The same pathname must be available for writing on all members. Each
      * processor instance will write to its own file so the full data will be
      * distributed among several files and members.
      * <p>
@@ -214,13 +245,13 @@ public final class Sinks {
      * vertex, the optimal value would be in the range of 4-8.
      *
      * @param directoryName directory to create the files in. Will be created,
-     *                      if it doesn't exist. Must be the same on all nodes.
+     *                      if it doesn't exist. Must be the same on all members.
      * @param toStringF a function to convert items to String (a formatter)
      * @param charset charset used to encode the file output
      * @param append whether to append or overwrite the file
      */
     @Nonnull
-    public static <T> ProcessorMetaSupplier writeFile(
+    public static <T> ProcessorSupplier writeFile(
             @Nonnull String directoryName,
             @Nonnull DistributedFunction<T, String> toStringF,
             @Nonnull Charset charset,
