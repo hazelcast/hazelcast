@@ -29,7 +29,6 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -54,8 +53,10 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
     public static final String TOPIC_RB_PREFIX = "_hz_rb_";
 
     public static final String SERVICE_NAME = "hz:impl:ringbufferService";
+
     private final ConcurrentMap<String, RingbufferContainer> containers
             = new ConcurrentHashMap<String, RingbufferContainer>();
+
     private NodeEngine nodeEngine;
 
     public RingbufferService(NodeEngineImpl nodeEngine) {
@@ -69,7 +70,7 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
         return name;
     }
 
-    // just for testing.
+    // just for testing
     public ConcurrentMap<String, RingbufferContainer> getContainers() {
         return containers;
     }
@@ -164,10 +165,9 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
             return ringbuffer;
         }
 
-        RingbufferConfig ringbufferConfig = getRingbufferConfig(name);
         ringbuffer = new RingbufferContainer(
                 name,
-                ringbufferConfig,
+                getRingbufferConfig(name),
                 nodeEngine.getSerializationService(),
                 nodeEngine.getConfigClassLoader());
         ringbuffer.getStore().instrument(nodeEngine);
@@ -175,22 +175,20 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
         return ringbuffer;
     }
 
-    private RingbufferConfig getRingbufferConfig(String name) {
-        Config config = nodeEngine.getConfig();
-        return config.getRingbufferConfig(getConfigName(name));
-    }
-
     public void addRingbuffer(String name, RingbufferContainer ringbuffer) {
         checkNotNull(name, "name can't be null");
         checkNotNull(ringbuffer, "ringbuffer can't be null");
-        final RingbufferConfig config = nodeEngine.getConfig().getRingbufferConfig(name);
-        final SerializationService serializationService = nodeEngine.getSerializationService();
         ringbuffer.init(
                 name,
-                config,
-                serializationService,
+                getRingbufferConfig(name),
+                nodeEngine.getSerializationService(),
                 nodeEngine.getConfigClassLoader());
         ringbuffer.getStore().instrument(nodeEngine);
         containers.put(name, ringbuffer);
+    }
+
+    private RingbufferConfig getRingbufferConfig(String name) {
+        Config config = nodeEngine.getConfig();
+        return config.findRingbufferConfig(getConfigName(name));
     }
 }
