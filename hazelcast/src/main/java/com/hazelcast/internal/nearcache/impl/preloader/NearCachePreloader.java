@@ -91,6 +91,7 @@ public class NearCachePreloader<K> {
     private final String nearCacheName;
     private final NearCacheStatsImpl nearCacheStats;
     private final SerializationService serializationService;
+    private final boolean serializeKeys;
 
     private final NearCachePreloaderLock lock;
     private final File storeFile;
@@ -100,10 +101,12 @@ public class NearCachePreloader<K> {
     private int lastKeyCount;
 
     public NearCachePreloader(String nearCacheName, NearCachePreloaderConfig preloaderConfig,
-                              NearCacheStatsImpl nearCacheStats, SerializationService serializationService) {
+                              NearCacheStatsImpl nearCacheStats, SerializationService serializationService,
+                              boolean serializeKeys) {
         this.nearCacheName = nearCacheName;
         this.nearCacheStats = nearCacheStats;
         this.serializationService = serializationService;
+        this.serializeKeys = serializeKeys;
 
         String filename = getFilename(preloaderConfig.getDirectory(), nearCacheName);
         this.lock = new NearCachePreloaderLock(logger, filename + ".lock");
@@ -120,7 +123,7 @@ public class NearCachePreloader<K> {
      *
      * @param adapter the {@link DataStructureAdapter} to load the values from
      */
-    public void loadKeys(DataStructureAdapter<Data, ?> adapter) {
+    public void loadKeys(DataStructureAdapter<Object, ?> adapter) {
         if (!storeFile.exists()) {
             logger.info(format("Skipped loading keys of Near Cache %s since storage file doesn't exist (%s)", nearCacheName,
                     storeFile.getAbsolutePath()));
@@ -210,17 +213,18 @@ public class NearCachePreloader<K> {
                 MemoryUnit.BYTES.toKiloBytes(lastWrittenBytes)));
     }
 
-    private int loadKeySet(BufferingInputStream bis, DataStructureAdapter<Data, ?> adapter) throws IOException {
+    private int loadKeySet(BufferingInputStream bis, DataStructureAdapter<Object, ?> adapter) throws IOException {
         int loadedKeys = 0;
 
-        Builder<Data> builder = InflatableSet.newBuilder(LOAD_BATCH_SIZE);
+        Builder<Object> builder = InflatableSet.newBuilder(LOAD_BATCH_SIZE);
         while (readFullyOrNothing(bis, tmpBytes)) {
             int dataSize = readIntB(tmpBytes, 0);
             byte[] payload = new byte[dataSize];
             if (!readFullyOrNothing(bis, payload)) {
                 break;
             }
-            builder.add(new HeapData(payload));
+            Data key = new HeapData(payload);
+            builder.add(serializeKeys ? key : serializationService.toObject(key));
             if (builder.size() == LOAD_BATCH_SIZE) {
                 adapter.getAll(builder.build());
                 builder = InflatableSet.newBuilder(LOAD_BATCH_SIZE);

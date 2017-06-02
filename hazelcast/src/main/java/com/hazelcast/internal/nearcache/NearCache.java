@@ -20,7 +20,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InitializingObject;
 
 /**
@@ -138,7 +137,7 @@ public interface NearCache<K, V> extends InitializingObject {
     /**
      * Executes the Near Cache pre-loader on the given {@link DataStructureAdapter}.
      */
-    void preload(DataStructureAdapter<Data, ?> adapter);
+    void preload(DataStructureAdapter<Object, ?> adapter);
 
     /**
      * Stores the keys of the Near Cache.
