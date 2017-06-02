@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
  * Client Delegating Future is used to delegate ClientInvocationFuture to user to be used with
@@ -37,11 +38,15 @@ import java.util.concurrent.TimeoutException;
  */
 public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
 
+    private static final AtomicReferenceFieldUpdater<ClientDelegatingFuture, Object> DECODED_RESPONSE =
+            AtomicReferenceFieldUpdater.newUpdater(ClientDelegatingFuture.class, Object.class, "decodedResponse");
+    private static final Object VOID = "VOID";
     private final ClientInvocationFuture future;
     private final SerializationService serializationService;
     private final ClientMessageDecoder clientMessageDecoder;
     private final V defaultValue;
     private final Executor userExecutor;
+    private volatile Object decodedResponse = VOID;
 
     public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
                                   SerializationService serializationService,
@@ -143,12 +148,22 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
             return defaultValue;
         }
 
-        ClientMessage tempMessage = ClientMessage.createForDecode(clientMessage.buffer(), 0);
-        Object decodedResponse = clientMessageDecoder.decodeClientMessage(tempMessage);
+        Object decodedResponse = decodeResponse(clientMessage);
         if (deserialize) {
             return serializationService.toObject(decodedResponse);
         }
         return decodedResponse;
+    }
+
+    private Object decodeResponse(ClientMessage clientMessage) {
+        if (decodedResponse != VOID) {
+            return decodedResponse;
+        }
+        ClientMessage message = ClientMessage.createForDecode(clientMessage.buffer(), 0);
+        Object newDecodedResponse = clientMessageDecoder.decodeClientMessage(message);
+
+        DECODED_RESPONSE.compareAndSet(this, VOID, newDecodedResponse);
+        return newDecodedResponse;
     }
 
     protected ClientInvocationFuture getFuture() {

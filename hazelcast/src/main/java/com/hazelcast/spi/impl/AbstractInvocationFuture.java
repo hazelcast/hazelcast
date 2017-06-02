@@ -206,7 +206,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
     }
 
     @Override
-    public void andThen(ExecutionCallback<V> callback, Executor executor) {
+    public final void andThen(ExecutionCallback<V> callback, Executor executor) {
         isNotNull(callback, "callback");
         isNotNull(executor, "executor");
 

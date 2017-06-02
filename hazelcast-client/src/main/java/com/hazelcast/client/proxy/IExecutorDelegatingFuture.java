@@ -102,7 +102,6 @@ public final class IExecutorDelegatingFuture<V> extends ClientDelegatingFuture<V
             ClientInvocation clientInvocation = new ClientInvocation(client, request, target);
             ClientInvocationFuture f = clientInvocation.invoke();
             return ExecutorServiceCancelOnAddressCodec.decodeResponse(f.get()).response;
-
         }
     }
 
