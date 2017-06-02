@@ -734,7 +734,6 @@ public class Config {
         return this;
     }
 
-
     /**
      * @return the topicConfigs
      */
@@ -1152,7 +1151,6 @@ public class Config {
         quorumConfigs.put(quorumConfig.getName(), quorumConfig);
         return this;
     }
-
 
     public ManagementCenterConfig getManagementCenterConfig() {
         return managementCenterConfig;
