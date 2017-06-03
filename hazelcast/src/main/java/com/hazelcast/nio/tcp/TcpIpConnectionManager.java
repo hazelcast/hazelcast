@@ -43,9 +43,12 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -187,18 +190,62 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         connectionListeners.add(listener);
     }
 
+    private final ConcurrentMap<String, List<TcpIpConnection>> tmpConnections = new ConcurrentHashMap<String, List<TcpIpConnection>>();
+    private final ConcurrentMap<TcpIpConnection, BindMessage> bindMessages = new ConcurrentHashMap<TcpIpConnection, BindMessage>();
+
     @Override
     public void handle(Packet packet) throws Exception {
         assert packet.getPacketType() == Packet.Type.BIND;
 
+        TcpIpConnection connection = (TcpIpConnection) packet.getConn();
         BindMessage bind = ioService.getSerializationService().toObject(packet);
-        bind((TcpIpConnection) packet.getConn(), bind.getLocalAddress(), bind.getTargetAddress(), bind.shouldReply());
+        bindMessages.put(connection, bind);
+
+        System.out.println("receiving bind:" + bind);
+
+        String key = bind.getLocalAddress() + "|" + bind.getTargetAddress();
+        List<TcpIpConnection> connections = tmpConnections.get(key);
+        if (connections == null) {
+            List<TcpIpConnection> items = new ArrayList<TcpIpConnection>();
+            List<TcpIpConnection> found = tmpConnections.putIfAbsent(key, items);
+            connections = found == null ? items : found;
+        }
+
+        boolean register;
+        TcpIpConnection targetConnection = null;
+        synchronized (connections) {
+            connections.add((TcpIpConnection) packet.getConn());
+            register = connections.size() == ioService.supportChannelCount() + 1;
+
+            for (TcpIpConnection c : connections) {
+                BindMessage bindMessage = bindMessages.get(c);
+                if (bindMessage.getChannelIndex() == 0) {
+                    targetConnection = c;
+                    break;
+                }
+            }
+        }
+
+        if(bind(connection, bind.getLocalAddress(), bind.getTargetAddress(), bind.shouldReply(), bind.getChannelIndex())){
+            logger.info("Bind completes;"+bind);
+        }else{
+           logger.info("Bind ignored: "+bind);
+        }
+
+        if(register){
+            registerConnection(bind.getLocalAddress(), targetConnection);
+            logger.info("Registering");
+        }else{
+            logger.info("Skipping registration");
+        }
     }
 
     /**
      * Binding completes the connection and makes it available to be used with the ConnectionManager.
      */
-    private synchronized boolean bind(TcpIpConnection connection, Address remoteEndPoint, Address localEndpoint, boolean reply) {
+    private synchronized boolean bind(
+            TcpIpConnection connection, Address remoteEndPoint, Address localEndpoint, boolean reply, int channelIndex) {
+
         if (logger.isFinestEnabled()) {
             logger.finest("Binding " + connection + " to " + remoteEndPoint + ", reply is " + reply);
         }
@@ -220,16 +267,16 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         }
 
         connection.setEndPoint(remoteEndPoint);
-        ioService.onSuccessfulConnection(remoteEndPoint);
+
+        if(channelIndex==0) {
+            ioService.onSuccessfulConnection(remoteEndPoint);
+        }
+
         if (reply) {
-            sendBindRequest(connection, remoteEndPoint, false);
+            sendBindRequest(connection, remoteEndPoint, false, channelIndex);
         }
 
-        if (checkAlreadyConnected(connection, remoteEndPoint)) {
-            return false;
-        }
-
-        return registerConnection(remoteEndPoint, connection);
+        return true;
     }
 
     private boolean ensureValidBindSource(TcpIpConnection connection, Address remoteEndPoint) {
@@ -274,7 +321,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     }
 
     @Override
-    public synchronized boolean registerConnection(final Address remoteEndPoint, final Connection connection) {
+    public synchronized boolean registerConnection(final Address remoteEndPoint,
+                                                   final Connection connection) {
         try {
             if (remoteEndPoint.equals(ioService.getThisAddress())) {
                 return false;
@@ -288,7 +336,20 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             }
 
             if (connection instanceof TcpIpConnection) {
+
                 TcpIpConnection tcpConnection = (TcpIpConnection) connection;
+                BindMessage bind = bindMessages.get(tcpConnection);
+                String key = bind.getLocalAddress() + "|" + bind.getTargetAddress();
+                List<TcpIpConnection> connections = tmpConnections.get(key);
+
+                Channel[] channels = new Channel[ioService.supportChannelCount()+1];
+                for(TcpIpConnection c: connections){
+                    BindMessage bindMessage = bindMessages.get(c);
+                    channels[bindMessage.getChannelIndex()]=c.getChannel();
+                }
+
+                tcpConnection.updateChannels(channels);
+
                 Address currentEndPoint = tcpConnection.getEndPoint();
                 if (currentEndPoint != null && !currentEndPoint.equals(remoteEndPoint)) {
                     throw new IllegalArgumentException(connection + " has already a different endpoint than: "
@@ -337,14 +398,15 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         return false;
     }
 
-    void sendBindRequest(TcpIpConnection connection, Address remoteEndPoint, boolean reply) {
+    void sendBindRequest(TcpIpConnection connection, Address remoteEndPoint, boolean reply, int channelIndex) {
         connection.setEndPoint(remoteEndPoint);
+
         ioService.onSuccessfulConnection(remoteEndPoint);
         //make sure bind packet is the first packet sent to the end point.
         if (logger.isFinestEnabled()) {
             logger.finest("Sending bind packet to " + remoteEndPoint);
         }
-        BindMessage bind = new BindMessage(ioService.getThisAddress(), remoteEndPoint, reply);
+        BindMessage bind = new BindMessage(ioService.getThisAddress(), remoteEndPoint, reply, channelIndex);
         byte[] bytes = ioService.getSerializationService().toBytes(bind);
         Packet packet = new Packet(bytes).setPacketType(Packet.Type.BIND);
         connection.write(packet);
@@ -363,6 +425,9 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
                 throw new IllegalStateException("connection manager is not live!");
             }
 
+            // todo: how to figure out the supporting channels that have been made
+            // in theory any binding on the non primary interface could be seen as primary
+            // and with the
             TcpIpConnection connection = new TcpIpConnection(this, connectionIdGen.incrementAndGet(), channel);
 
             connection.setEndPoint(endpoint);

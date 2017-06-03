@@ -23,6 +23,7 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.util.AddressUtil;
 
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -33,6 +34,7 @@ import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Level;
 
 /**
@@ -63,7 +65,34 @@ public class TcpIpConnector {
 
     void asyncConnect(Address address, boolean silent) {
         ioService.shouldConnectTo(address);
-        ioService.executeAsync(new ConnectTask(address, silent));
+
+        List<String> localSupportNics = ioService.getSupportNics(ioService.getThisAddress().getHost());
+        List<String> remoteSupportNics = ioService.getSupportNics(address.getHost());
+
+        if (localSupportNics.size() != remoteSupportNics.size()) {
+            throw new RuntimeException("local-support-nics should be same size as remote-support-nics, local:"
+                    + localSupportNics + " remote:" + remoteSupportNics);
+        }
+
+        if (localSupportNics.isEmpty()) {
+            for (int k = 0; k < ioService.supportChannelCount(); k++) {
+                localSupportNics.add(ioService.getThisAddress().getHost());
+                remoteSupportNics.add(address.getHost());
+            }
+        }
+
+        ioService.executeAsync(new ConnectTask(address, silent, 0, null));
+        for (int k = 0; k < localSupportNics.size(); k++) {
+            String localAddedNic = localSupportNics.get(k);
+            String remoteAddedNic = remoteSupportNics.get(k);
+
+            try {
+                Address supportRemoteAddress = new Address(remoteAddedNic, address.getPort());
+                ioService.executeAsync(new ConnectTask(supportRemoteAddress, silent, k + 1, localAddedNic));
+            } catch (UnknownHostException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private boolean useAnyOutboundPort() {
@@ -88,10 +117,14 @@ public class TcpIpConnector {
     private final class ConnectTask implements Runnable {
         private final Address address;
         private final boolean silent;
+        private final int channelIndex;
+        private final String localNic;
 
-        public ConnectTask(Address address, boolean silent) {
+        public ConnectTask(Address address, boolean silent, int channelIndex, String bindAddress) {
             this.address = address;
             this.silent = silent;
+            this.channelIndex = channelIndex;
+            this.localNic = bindAddress;
         }
 
         @Override
@@ -103,9 +136,9 @@ public class TcpIpConnector {
                 return;
             }
 
-            if (logger.isFinestEnabled()) {
-                logger.finest("Starting to connect to " + address);
-            }
+            //  if (logger.isFinestEnabled()) {
+            logger.info("Starting to connect to " + address + " channelIndex:" + channelIndex);
+            //}
 
             try {
                 Address thisAddress = ioService.getThisAddress();
@@ -184,7 +217,8 @@ public class TcpIpConnector {
 
                 socketChannel.configureBlocking(false);
                 TcpIpConnection connection = connectionManager.newConnection(channel, address);
-                connectionManager.sendBindRequest(connection, address, true);
+
+                connectionManager.sendBindRequest(connection, address, true, channelIndex);
             } catch (Exception e) {
                 closeSocket(socketChannel);
                 logger.log(level, "Could not connect to: " + socketAddress + ". Reason: " + e.getClass().getSimpleName()
@@ -234,6 +268,10 @@ public class TcpIpConnector {
         }
 
         private InetAddress getInetAddress() throws UnknownHostException {
+            if (localNic != null) {
+                return Inet4Address.getByName(localNic);
+            }
+
             return ioService.isSocketBindAny() ? null : ioService.getThisAddress().getInetAddress();
         }
 

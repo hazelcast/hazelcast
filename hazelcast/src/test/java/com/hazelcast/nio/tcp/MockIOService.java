@@ -24,15 +24,14 @@ import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.networking.nio.NioChannelFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -46,6 +45,8 @@ import java.net.SocketException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class MockIOService implements IOService {
@@ -55,10 +56,9 @@ public class MockIOService implements IOService {
     public final InternalSerializationService serializationService;
     public final LoggingServiceImpl loggingService;
     public final ConcurrentHashMap<Long, DummyPayload> payloads = new ConcurrentHashMap<Long, DummyPayload>();
-    private final ChannelFactory channelFactory;
     public volatile PacketHandler packetHandler;
 
-    public MockIOService(int port, ChannelFactory channelFactory) throws Exception {
+    public MockIOService(int port) throws Exception {
         loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.BUILD_INFO);
         serverSocketChannel = ServerSocketChannel.open();
         ServerSocket serverSocket = serverSocketChannel.socket();
@@ -66,10 +66,19 @@ public class MockIOService implements IOService {
         serverSocket.setSoTimeout(1000);
         serverSocket.bind(new InetSocketAddress("0.0.0.0", port));
         thisAddress = new Address("127.0.0.1", port);
-        this.channelFactory = channelFactory;
         this.serializationService = new DefaultSerializationServiceBuilder()
                 .addDataSerializableFactory(TestDataFactory.FACTORY_ID, new TestDataFactory())
                 .build();
+    }
+
+    @Override
+    public int supportChannelCount() {
+        return 0;
+    }
+
+    @Override
+    public List<String> getSupportNics(String address) {
+        return new LinkedList<String>();
     }
 
     @Override
@@ -342,7 +351,7 @@ public class MockIOService implements IOService {
 
     @Override
     public ChannelFactory getChannelFactory() {
-        return channelFactory;
+        return new NioChannelFactory();
     }
 
     @Override
@@ -352,25 +361,27 @@ public class MockIOService implements IOService {
 
     @Override
     public ChannelInboundHandler createInboundHandler(final TcpIpConnection connection) {
-        return new MemberChannelInboundHandler(connection, new PacketHandler() {
-            private ILogger logger = loggingService.getLogger("MockIOService");
+//        return new MemberChannelInboundHandler(connection, new PacketDispatcher() {
+//            private ILogger logger = loggingService.getLogger("MockIOService");
+//
+//            @Override
+//            public void dispatch(Packet packet) {
+//                try {
+//                    if (packet.getPacketType() == Packet.Type.BIND) {
+//                        connection.getConnectionManager().handle(packet);
+//                    } else {
+//                        PacketHandler handler = packetHandler;
+//                        if (handler != null) {
+//                            handler.handle(packet);
+//                        }
+//                    }
+//                } catch (Exception e) {
+//                    logger.severe(e);
+//                }
+//            }
+//        });
 
-            @Override
-            public void handle(Packet packet) {
-                try {
-                    if (packet.getPacketType() == Packet.Type.BIND) {
-                        connection.getConnectionManager().handle(packet);
-                    } else {
-                        PacketHandler handler = packetHandler;
-                        if (handler != null) {
-                            handler.handle(packet);
-                        }
-                    }
-                } catch (Exception e) {
-                    logger.severe(e);
-                }
-            }
-        });
+        return null;
     }
 
     @Override

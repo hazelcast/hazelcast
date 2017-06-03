@@ -30,14 +30,20 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Collection;
+import java.util.List;
 
 @PrivateApi
 public interface IOService {
 
     int KILO_BYTE = 1024;
+
+    List<String> getSupportNics(String address);
+
+    int supportChannelCount();
 
     boolean isActive();
 

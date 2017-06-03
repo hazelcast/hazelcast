@@ -39,15 +39,20 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 
 import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static java.lang.Byte.toUnsignedInt;
 
 @PrivateApi
 public class NodeIOService implements IOService {
@@ -58,6 +63,27 @@ public class NodeIOService implements IOService {
     public NodeIOService(Node node, NodeEngineImpl nodeEngine) {
         this.node = node;
         this.nodeEngine = nodeEngine;
+    }
+
+    @Override
+    public int supportChannelCount() {
+        return 1;
+    }
+
+    @Override
+    public List<String> getSupportNics(String address) {
+        String key = "nic" + address + "";
+        String nics = System.getProperty(key);
+
+        getLoggingService().getLogger(NodeIOService.class).info("key " + key + " nics: " + nics);
+
+        LinkedList<String> result = new LinkedList<String>();
+        if (nics != null) {
+            for (String s : nics.split(",")) {
+                result.add(s);
+            }
+        }
+        return result;
     }
 
     @Override

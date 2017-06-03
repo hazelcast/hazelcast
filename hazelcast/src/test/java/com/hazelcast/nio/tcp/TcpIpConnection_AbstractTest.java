@@ -111,14 +111,16 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
     }
 
     protected TcpIpConnectionManager newConnectionManager(int port, MetricsRegistry metricsRegistry) throws Exception {
-        MockIOService ioService = new MockIOService(port, eventLoopGroupFactory.createChannelFactory());
+        //MockIOService ioService = new MockIOService(port, eventLoopGroupFactory.createChannelFactory());
 
-        return new TcpIpConnectionManager(
-                ioService,
-                ioService.serverSocketChannel,
-                ioService.loggingService,
-                metricsRegistry,
-                eventLoopGroupFactory.create(ioService, metricsRegistry));
+//        return new TcpIpConnectionManager(
+//                ioService,
+//                ioService.serverSocketChannel,
+//                ioService.loggingService,
+//                metricsRegistry,
+//                eventLoopGroupFactory.create(ioService, metricsRegistry));
+
+        return null;
     }
 
     // ====================== support ========================================

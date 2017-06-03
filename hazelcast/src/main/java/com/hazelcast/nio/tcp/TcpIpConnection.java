@@ -25,12 +25,14 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
+import com.hazelcast.nio.Packet;
 
 import java.io.EOFException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.CancelledKeyException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * The Tcp/Ip implementation of the {@link com.hazelcast.nio.Connection}.
@@ -43,7 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @SuppressWarnings("checkstyle:methodcount")
 public final class TcpIpConnection implements Connection {
 
-    private final Channel channel;
+    private volatile Channel[] channels;
 
     private final TcpIpConnectionManager connectionManager;
 
@@ -66,18 +68,27 @@ public final class TcpIpConnection implements Connection {
     private volatile String closeReason;
 
     public TcpIpConnection(TcpIpConnectionManager connectionManager,
-                           int connectionId,
-                           Channel channel) {
+                           int connectionId, Channel channel) {
         this.connectionId = connectionId;
         this.connectionManager = connectionManager;
         this.ioService = connectionManager.getIoService();
         this.logger = ioService.getLoggingService().getLogger(TcpIpConnection.class);
-        this.channel = channel;
+        this.channels = new Channel[]{channel};
         channel.attributeMap().put(TcpIpConnection.class, this);
+        channel.attributeMap().put("channelIndex", 0);
+    }
+
+    public void updateChannels(Channel[] channels) {
+        this.channels = channels;
+        for (int k = 0; k < channels.length; k++) {
+            Channel channel = channels[k];
+            channel.attributeMap().put(TcpIpConnection.class, this);
+            channel.attributeMap().put("channelIndex", k);
+        }
     }
 
     public Channel getChannel() {
-        return channel;
+        return channels[0];
     }
 
     @Override
@@ -104,17 +115,17 @@ public final class TcpIpConnection implements Connection {
 
     @Override
     public InetAddress getInetAddress() {
-        return channel.socket().getInetAddress();
+        return channels[0].socket().getInetAddress();
     }
 
     @Override
     public int getPort() {
-        return channel.socket().getPort();
+        return channels[0].socket().getPort();
     }
 
     @Override
     public InetSocketAddress getRemoteSocketAddress() {
-        return (InetSocketAddress) channel.getRemoteSocketAddress();
+        return (InetSocketAddress) channels[0].getRemoteSocketAddress();
     }
 
     @Override
@@ -124,12 +135,28 @@ public final class TcpIpConnection implements Connection {
 
     @Override
     public long lastWriteTimeMillis() {
-        return channel.lastWriteTimeMillis();
+        long result = 0;
+        for (Channel channel : channels) {
+            long w = channel.lastWriteTimeMillis();
+            if (w > result) {
+                result = w;
+            }
+        }
+
+        return result;
     }
 
     @Override
     public long lastReadTimeMillis() {
-        return channel.lastReadTimeMillis();
+        long result = 0;
+        for (Channel channel : channels) {
+            long r = channel.lastReadTimeMillis();
+            if (r > result) {
+                result = r;
+            }
+        }
+
+        return result;
     }
 
     @Override
@@ -155,8 +182,26 @@ public final class TcpIpConnection implements Connection {
         return t != null && t != ConnectionType.NONE && t.isClient();
     }
 
+    private final AtomicLong selector = new AtomicLong();
+
     @Override
     public boolean write(OutboundFrame frame) {
+//        int index = (int)(selector.incrementAndGet() % channels.length);
+//        Channel channel = channels[index];
+
+        Channel channel;
+        if (frame instanceof Packet) {
+            Packet packet = (Packet) frame;
+            int partitionId = packet.getPartitionId();
+            int index = partitionId == -1 ? 0 : (partitionId % channels.length);
+            channel = channels[index];
+        } else {
+            int index = (int) (selector.incrementAndGet() % channels.length);
+            channel = channels[index];
+        }
+
+        System.out.println(channel+" writing to channel:"+channel);
+
         if (channel.write(frame)) {
             return true;
         }
@@ -197,7 +242,8 @@ public final class TcpIpConnection implements Connection {
         logClose();
 
         try {
-            channel.close();
+            for (Channel channel : channels)
+                channel.close();
         } catch (Exception e) {
             logger.warning(e);
         }
@@ -250,11 +296,14 @@ public final class TcpIpConnection implements Connection {
 
     @Override
     public String toString() {
-        return "Connection[id=" + connectionId
-                + ", " + channel.getLocalSocketAddress() + "->" + channel.getRemoteSocketAddress()
-                + ", endpoint=" + endPoint
+        String s = "Connection[id=" + connectionId;
+        for (Channel channel : channels) {
+            s += ", " + channel.getLocalSocketAddress() + "->" + channel.getRemoteSocketAddress();
+        }
+        s += ", endpoint=" + endPoint
                 + ", alive=" + alive
                 + ", type=" + type
                 + "]";
+        return s;
     }
 }
