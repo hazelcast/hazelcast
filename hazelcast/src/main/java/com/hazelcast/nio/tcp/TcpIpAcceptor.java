@@ -85,8 +85,6 @@ public class TcpIpAcceptor implements MetricsProvider {
         this.ioService = connectionManager.getIoService();
         this.logger = ioService.getLoggingService().getLogger(getClass());
         this.acceptorThread = new AcceptorIOThread();
-
-
     }
 
     /**

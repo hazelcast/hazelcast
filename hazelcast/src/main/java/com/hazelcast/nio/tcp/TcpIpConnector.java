@@ -63,11 +63,11 @@ public class TcpIpConnector {
         this.outboundPorts.addAll(ports);
     }
 
-    void asyncConnect(Address address, boolean silent) {
-        ioService.shouldConnectTo(address);
+    void asyncConnect(Address remoteAddress, boolean silent) {
+        ioService.shouldConnectTo(remoteAddress);
 
         List<String> localSupportNics = ioService.getSupportNics(ioService.getThisAddress().getHost());
-        List<String> remoteSupportNics = ioService.getSupportNics(address.getHost());
+        List<String> remoteSupportNics = ioService.getSupportNics(remoteAddress.getHost());
 
         if (localSupportNics.size() != remoteSupportNics.size()) {
             throw new RuntimeException("local-support-nics should be same size as remote-support-nics, local:"
@@ -77,18 +77,21 @@ public class TcpIpConnector {
         if (localSupportNics.isEmpty()) {
             for (int k = 0; k < ioService.supportChannelCount(); k++) {
                 localSupportNics.add(ioService.getThisAddress().getHost());
-                remoteSupportNics.add(address.getHost());
+                remoteSupportNics.add(remoteAddress.getHost());
             }
         }
 
-        ioService.executeAsync(new ConnectTask(address, silent, 0, null));
+        // the main connection
+        ioService.executeAsync(new ConnectTask(remoteAddress, remoteAddress, silent, 0, null));
+
+        // the support connections.
         for (int k = 0; k < localSupportNics.size(); k++) {
             String localAddedNic = localSupportNics.get(k);
             String remoteAddedNic = remoteSupportNics.get(k);
 
             try {
-                Address supportRemoteAddress = new Address(remoteAddedNic, address.getPort());
-                ioService.executeAsync(new ConnectTask(supportRemoteAddress, silent, k + 1, localAddedNic));
+                Address supportRemoteAddress = new Address(remoteAddedNic, remoteAddress.getPort());
+                ioService.executeAsync(new ConnectTask(supportRemoteAddress, remoteAddress, silent, k + 1, localAddedNic));
             } catch (UnknownHostException e) {
                 throw new RuntimeException(e);
             }
@@ -115,13 +118,26 @@ public class TcpIpConnector {
     }
 
     private final class ConnectTask implements Runnable {
-        private final Address address;
+        private final Address remoteAddress;
         private final boolean silent;
         private final int channelIndex;
         private final String localNic;
+        private final Address remoteAddressForBindMessage;
 
-        public ConnectTask(Address address, boolean silent, int channelIndex, String bindAddress) {
-            this.address = address;
+        /**
+         *
+         * @param remoteAddress the remote address to connect to.
+         * @param silent
+         * @param channelIndex
+         * @param bindAddress the local address of the interface to bind to.
+         */
+        public ConnectTask(Address remoteAddress,
+                           Address remoteAddressForBindMessage,
+                           boolean silent,
+                           int channelIndex,
+                           String bindAddress) {
+            this.remoteAddress = remoteAddress;
+            this.remoteAddressForBindMessage = remoteAddressForBindMessage;
             this.silent = silent;
             this.channelIndex = channelIndex;
             this.localNic = bindAddress;
@@ -131,28 +147,28 @@ public class TcpIpConnector {
         public void run() {
             if (!connectionManager.isLive()) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest("ConnectionManager is not live, connection attempt to " + address + " is cancelled!");
+                    logger.finest("ConnectionManager is not live, connection attempt to " + remoteAddress + " is cancelled!");
                 }
                 return;
             }
 
             //  if (logger.isFinestEnabled()) {
-            logger.info("Starting to connect to " + address + " channelIndex:" + channelIndex);
+            logger.info("Starting to connect to " + remoteAddress + " channelIndex:" + channelIndex);
             //}
 
             try {
                 Address thisAddress = ioService.getThisAddress();
-                if (address.isIPv4()) {
+                if (remoteAddress.isIPv4()) {
                     // remote is IPv4; connect...
-                    tryToConnect(address.getInetSocketAddress(),
+                    tryToConnect(remoteAddress.getInetSocketAddress(),
                             ioService.getSocketConnectTimeoutSeconds() * MILLIS_PER_SECOND);
                 } else if (thisAddress.isIPv6() && thisAddress.getScopeId() != null) {
                     // Both remote and this addresses are IPv6.
                     // This is a local IPv6 address and scope ID is known.
                     // find correct inet6 address for remote and connect...
                     Inet6Address inetAddress = AddressUtil
-                            .getInetAddressFor((Inet6Address) address.getInetAddress(), thisAddress.getScopeId());
-                    tryToConnect(new InetSocketAddress(inetAddress, address.getPort()),
+                            .getInetAddressFor((Inet6Address) remoteAddress.getInetAddress(), thisAddress.getScopeId());
+                    tryToConnect(new InetSocketAddress(inetAddress, remoteAddress.getPort()),
                             ioService.getSocketConnectTimeoutSeconds() * MILLIS_PER_SECOND);
                 } else {
                     // remote is IPv6 and this is either IPv4 or a global IPv6.
@@ -161,13 +177,13 @@ public class TcpIpConnector {
                 }
             } catch (Throwable e) {
                 logger.finest(e);
-                connectionManager.failedConnection(address, e, silent);
+                connectionManager.failedConnection(remoteAddress, e, silent);
             }
         }
 
         private void tryConnectToIPv6() throws Exception {
             Collection<Inet6Address> possibleInetAddresses = AddressUtil
-                    .getPossibleInetAddressesFor((Inet6Address) address.getInetAddress());
+                    .getPossibleInetAddressesFor((Inet6Address) remoteAddress.getInetAddress());
             Level level = silent ? Level.FINEST : Level.INFO;
             //TODO: collection.toString() will likely not produce any useful output!
             if (logger.isLoggable(level)) {
@@ -180,7 +196,7 @@ public class TcpIpConnector {
                     ? configuredTimeoutMillis : DEFAULT_IPV6_SOCKET_CONNECT_TIMEOUT_SECONDS * MILLIS_PER_SECOND;
             for (Inet6Address inetAddress : possibleInetAddresses) {
                 try {
-                    tryToConnect(new InetSocketAddress(inetAddress, address.getPort()), timeoutMillis);
+                    tryToConnect(new InetSocketAddress(inetAddress, remoteAddress.getPort()), timeoutMillis);
                     connected = true;
                     break;
                 } catch (Exception e) {
@@ -210,15 +226,15 @@ public class TcpIpConnector {
                 socketChannel.configureBlocking(true);
                 connectSocketChannel(socketAddress, timeout, socketChannel);
                 if (logger.isFinestEnabled()) {
-                    logger.finest("Successfully connected to: " + address + " using socket " + socketChannel.socket());
+                    logger.finest("Successfully connected to: " + remoteAddress + " using socket " + socketChannel.socket());
                 }
                 Channel channel = connectionManager.createChannel(socketChannel, true);
                 ioService.interceptSocket(socketChannel.socket(), false);
 
                 socketChannel.configureBlocking(false);
-                TcpIpConnection connection = connectionManager.newConnection(channel, address);
+                TcpIpConnection connection = connectionManager.newConnection(channel, remoteAddress);
 
-                connectionManager.sendBindRequest(connection, address, true, channelIndex);
+                connectionManager.sendBindRequest(connection, remoteAddressForBindMessage, true, channelIndex);
             } catch (Exception e) {
                 closeSocket(socketChannel);
                 logger.log(level, "Could not connect to: " + socketAddress + ". Reason: " + e.getClass().getSimpleName()

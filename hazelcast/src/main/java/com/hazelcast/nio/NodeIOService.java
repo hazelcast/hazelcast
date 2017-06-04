@@ -67,7 +67,7 @@ public class NodeIOService implements IOService {
 
     @Override
     public int supportChannelCount() {
-        return 1;
+        return Integer.getInteger("hazelcast.supportchannel.count",1);
     }
 
     @Override

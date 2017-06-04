@@ -201,14 +201,14 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         BindMessage bind = ioService.getSerializationService().toObject(packet);
         bindMessages.put(connection, bind);
 
-        System.out.println("receiving bind:" + bind);
+        logger.info("receiving bind:" + bind);
 
         String key = bind.getLocalAddress() + "|" + bind.getTargetAddress();
         List<TcpIpConnection> connections = tmpConnections.get(key);
         if (connections == null) {
-            List<TcpIpConnection> items = new ArrayList<TcpIpConnection>();
-            List<TcpIpConnection> found = tmpConnections.putIfAbsent(key, items);
-            connections = found == null ? items : found;
+            List<TcpIpConnection> newConnections = new ArrayList<TcpIpConnection>();
+            List<TcpIpConnection> foundConnections = tmpConnections.putIfAbsent(key, newConnections);
+            connections = foundConnections == null ? newConnections : foundConnections;
         }
 
         boolean register;
@@ -219,6 +219,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
             for (TcpIpConnection c : connections) {
                 BindMessage bindMessage = bindMessages.get(c);
+                logger.info("bindMessage:" + bindMessage);
                 if (bindMessage.getChannelIndex() == 0) {
                     targetConnection = c;
                     break;
@@ -226,16 +227,16 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             }
         }
 
-        if(bind(connection, bind.getLocalAddress(), bind.getTargetAddress(), bind.shouldReply(), bind.getChannelIndex())){
-            logger.info("Bind completes;"+bind);
-        }else{
-           logger.info("Bind ignored: "+bind);
+        if (bind(connection, bind.getLocalAddress(), bind.getTargetAddress(), bind.shouldReply(), bind.getChannelIndex())) {
+            logger.info("Bind completes;" + bind);
+        } else {
+            logger.info("Bind ignored: " + bind);
         }
 
-        if(register){
+        if (register) {
             registerConnection(bind.getLocalAddress(), targetConnection);
             logger.info("Registering");
-        }else{
+        } else {
             logger.info("Skipping registration");
         }
     }
@@ -251,24 +252,17 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         }
 
         final Address thisAddress = ioService.getThisAddress();
-
-        // Some simple spoofing attack prevention
-        // Prevent BINDs from src that doesn't match the BIND local address
-        // Prevent BINDs from src that match us (same host & port)
-        if (SPOOFING_CHECKS
-                && (!ensureValidBindSource(connection, remoteEndPoint)
-                 || !ensureBindNotFromSelf(connection, remoteEndPoint, thisAddress))) {
-            return false;
-        }
-
-        // Prevent BINDs that don't have this node as the destination
-        if (!ensureValidBindTarget(connection, remoteEndPoint, localEndpoint, thisAddress)) {
-            return false;
-        }
+//        if (ioService.isSocketBindAny() && !connection.isClient() && !thisAddress.equals(localEndpoint)) {
+//            String msg = "Wrong bind request from " + remoteEndPoint
+//                    + "! This node is not requested endpoint: " + localEndpoint;
+//            logger.warning(msg);
+//            connection.close(msg, null);
+//            return false;
+//        }
 
         connection.setEndPoint(remoteEndPoint);
 
-        if(channelIndex==0) {
+        if (channelIndex == 0) {
             ioService.onSuccessfulConnection(remoteEndPoint);
         }
 
@@ -336,16 +330,15 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             }
 
             if (connection instanceof TcpIpConnection) {
-
                 TcpIpConnection tcpConnection = (TcpIpConnection) connection;
                 BindMessage bind = bindMessages.get(tcpConnection);
                 String key = bind.getLocalAddress() + "|" + bind.getTargetAddress();
                 List<TcpIpConnection> connections = tmpConnections.get(key);
 
-                Channel[] channels = new Channel[ioService.supportChannelCount()+1];
-                for(TcpIpConnection c: connections){
+                Channel[] channels = new Channel[ioService.supportChannelCount() + 1];
+                for (TcpIpConnection c : connections) {
                     BindMessage bindMessage = bindMessages.get(c);
-                    channels[bindMessage.getChannelIndex()]=c.getChannel();
+                    channels[bindMessage.getChannelIndex()] = c.getChannel();
                 }
 
                 tcpConnection.updateChannels(channels);

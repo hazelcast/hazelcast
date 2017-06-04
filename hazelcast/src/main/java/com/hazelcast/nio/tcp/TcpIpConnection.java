@@ -85,6 +85,12 @@ public final class TcpIpConnection implements Connection {
             channel.attributeMap().put(TcpIpConnection.class, this);
             channel.attributeMap().put("channelIndex", k);
         }
+
+        StringBuilder sb = new StringBuilder("\n" + getEndPoint() + "\n");
+        for (Channel channel : channels) {
+            sb.append("\t").append(channel).append("\n");
+        }
+        logger.info(sb.toString());
     }
 
     public Channel getChannel() {
@@ -193,14 +199,19 @@ public final class TcpIpConnection implements Connection {
         if (frame instanceof Packet) {
             Packet packet = (Packet) frame;
             int partitionId = packet.getPartitionId();
-            int index = partitionId == -1 ? 0 : (partitionId % channels.length);
+            int index;
+            if (partitionId <= 0) {
+                index = (int) (selector.incrementAndGet() % channels.length);
+            } else {
+                index = (partitionId % channels.length);
+            }
             channel = channels[index];
         } else {
             int index = (int) (selector.incrementAndGet() % channels.length);
             channel = channels[index];
         }
 
-        System.out.println(channel+" writing to channel:"+channel);
+        //System.out.println(channel+" writing to channel:"+channel);
 
         if (channel.write(frame)) {
             return true;
