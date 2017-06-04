@@ -85,7 +85,7 @@ public class TcpIpConnector {
         ioService.executeAsync(new ConnectTask(remoteAddress, remoteAddress, silent, 0, null));
 
         // the support connections.
-        for (int k = 0; k < localSupportNics.size(); k++) {
+        for (int k = 0; k < ioService.supportChannelCount(); k++) {
             String localAddedNic = localSupportNics.get(k);
             String remoteAddedNic = remoteSupportNics.get(k);
 

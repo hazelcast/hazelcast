@@ -93,6 +93,11 @@ public class BindMessage implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "Bind " + localAddress +" remoteAddress:"+targetAddress+" channelIndex:"+channelIndex;
+        return "BindMessage{" +
+                "localAddress=" + localAddress +
+                ", targetAddress=" + targetAddress +
+                ", reply=" + reply +
+                ", channelIndex=" + channelIndex +
+                '}';
     }
 }
