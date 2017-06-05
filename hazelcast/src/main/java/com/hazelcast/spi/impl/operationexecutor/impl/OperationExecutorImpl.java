@@ -35,12 +35,15 @@ import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
+import com.hazelcast.util.concurrent.IdleStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.spi.impl.operationservice.impl.AsyncInboundResponseHandler.getIdleStrategy;
 import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
@@ -73,6 +76,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public final class OperationExecutorImpl implements OperationExecutor, MetricsProvider {
+    public static final HazelcastProperty IDLE_STRATEGY
+            = new HazelcastProperty("hazelcast.operation.partitionthread.idlestrategy", "block");
 
     private static final int TERMINATION_TIMEOUT_SECONDS = 3;
 
@@ -148,11 +153,13 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
             threadCount = Math.max(2, coreSize);
         }
 
+        IdleStrategy idleStrategy = getIdleStrategy(properties, IDLE_STRATEGY);
         PartitionOperationThread[] threads = new PartitionOperationThread[threadCount];
         for (int threadId = 0; threadId < threads.length; threadId++) {
             String threadName = createThreadPoolName(hzName, "partition-operation") + threadId;
             // the normalQueue will be a blocking queue. We don't want to idle, because there are many operation threads.
-            MPSCQueue<Object> normalQueue = new MPSCQueue<Object>(null);
+            MPSCQueue<Object> normalQueue = new MPSCQueue<Object>(idleStrategy);
+
             OperationQueue operationQueue = new DefaultOperationQueue(normalQueue, new ConcurrentLinkedQueue<Object>());
 
             PartitionOperationThread partitionThread = new PartitionOperationThread(threadName, threadId, operationQueue, logger,
