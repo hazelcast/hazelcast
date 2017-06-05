@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.impl.util;
 
+import com.hazelcast.jet.JetException;
+
 import java.util.Arrays;
 
 import static com.hazelcast.jet.impl.util.Util.subtractClamped;
@@ -131,7 +133,8 @@ public class SkewReductionPolicy {
             // this is possible if force-advancing the punctuation because we increase
             // the queuePuncValue without receiving punctuation from that queue
             if (!forceAdvancePunc) {
-                throw new AssertionError("Punctuations not monotonically increasing on queue");
+                throw new JetException("Punctuations not monotonically increasing on queue: " +
+                        "last one=" + queuePuncs[queueIndex] + ", new one=" + puncValue);
             }
             return false;
         }

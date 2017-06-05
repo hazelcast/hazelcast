@@ -133,7 +133,7 @@ public final class AggregateOperations {
                     }
                 },
                 (a1, a2) -> {
-                    if (comparator.compare(a1.get(), a2.get()) < 0) {
+                    if (a1.get() == null || comparator.compare(a1.get(), a2.get()) < 0) {
                         a1.set(a2.get());
                     }
                 },

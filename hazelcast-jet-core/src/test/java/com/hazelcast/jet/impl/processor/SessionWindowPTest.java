@@ -42,7 +42,9 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static java.util.Arrays.asList;
 import static java.util.Collections.shuffle;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
@@ -69,40 +71,69 @@ public class SessionWindowPTest extends StreamingTestSupport {
 
     @Test
     public void when_orderedEventsWithOneKey() {
-        List<Entry<String, Long>> evs = eventsWithKey("a");
-        assertCorrectness(evs);
+        List<Entry<String, Long>> events = eventsWithKey("a");
+        assertCorrectness(events);
     }
 
     @Test
     public void when_disorderedEventsWithOneKey() {
-        List<Entry<String, Long>> evs = eventsWithKey("a");
-        shuffle(evs);
-        assertCorrectness(evs);
+        List<Entry<String, Long>> events = eventsWithKey("a");
+        shuffle(events);
+        assertCorrectness(events);
     }
 
     @Test
     public void when_orderedEventsWithThreeKeys() {
-        List<Entry<String, Long>> evs = new ArrayList<>();
-        evs.addAll(eventsWithKey("a"));
-        evs.addAll(eventsWithKey("b"));
-        evs.addAll(eventsWithKey("c"));
-        assertCorrectness(evs);
+        List<Entry<String, Long>> events = new ArrayList<>();
+        events.addAll(eventsWithKey("a"));
+        events.addAll(eventsWithKey("b"));
+        events.addAll(eventsWithKey("c"));
+        assertCorrectness(events);
     }
 
     @Test
     public void when_disorderedEVentsWithThreeKeys() {
-        List<Entry<String, Long>> evs = new ArrayList<>();
-        evs.addAll(eventsWithKey("a"));
-        evs.addAll(eventsWithKey("b"));
-        evs.addAll(eventsWithKey("c"));
-        shuffle(evs);
-        assertCorrectness(evs);
+        List<Entry<String, Long>> events = new ArrayList<>();
+        events.addAll(eventsWithKey("a"));
+        events.addAll(eventsWithKey("b"));
+        events.addAll(eventsWithKey("c"));
+        shuffle(events);
+        assertCorrectness(events);
     }
 
-    private void assertCorrectness(List<Entry<String, Long>> evs) {
+    @Test
+    public void when_batchProcessing_then_flushEverything() {
+        // Given
+        inbox.addAll(eventsWithKey("a"));
+        // this punctuation will cause the first session to be emitted, but not the second
+        inbox.add(new Punctuation(25));
+
+        // When
+        processor.process(0, inbox);
+
+        // Then
+        List<Session<String, Long>> expectedSessions = expectedSessions("a").collect(toList());
+        assertEquals(expectedSessions.get(0), pollOutbox());
+        assertNull(pollOutbox());
+
+        // When
+        // this will cause the second session to be emitted
+        long start = System.nanoTime();
+        processor.complete();
+        long processTime = System.nanoTime() - start;
+        // this is to test that there is no iteration from current punctuation up to Long.MAX_VALUE, which
+        // will take too long.
+
+        // Then
+        assertTrue("process took too long: " + processTime, processTime < MILLISECONDS.toNanos(100));
+        assertEquals(expectedSessions.get(1), pollOutbox());
+        assertNull(pollOutbox());
+    }
+
+    private void assertCorrectness(List<Entry<String, Long>> events) {
         // Given
         Set<String> keys = new HashSet<>();
-        for (Entry<String, Long> ev : evs) {
+        for (Entry<String, Long> ev : events) {
             inbox.add(ev);
             keys.add(ev.getKey());
         }
@@ -125,7 +156,7 @@ public class SessionWindowPTest extends StreamingTestSupport {
             assertTrue("keyToWindows not empty", processor.keyToWindows.isEmpty());
             assertTrue("deadlineToKeys not empty", processor.deadlineToKeys.isEmpty());
         } catch (AssertionError e) {
-            System.err.println("Tested with events: " + evs);
+            System.err.println("Tested with events: " + events);
             throw e;
         }
     }

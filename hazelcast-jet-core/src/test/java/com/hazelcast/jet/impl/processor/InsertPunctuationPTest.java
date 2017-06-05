@@ -124,7 +124,7 @@ public class InsertPunctuationPTest {
             }
 
             p.tryProcess();
-            drainOutbox(resultToCheck);
+            drainOutbox();
 
             clock.advance();
         }
@@ -134,13 +134,13 @@ public class InsertPunctuationPTest {
 
     private void tryProcessAndDrain(Item item) throws Exception {
         while (!p.tryProcess(0, item)) {
-            drainOutbox(resultToCheck);
+            drainOutbox();
         }
     }
 
-    private void drainOutbox(List<String> actual) {
+    private void drainOutbox() {
         for (Object o; (o = outbox.queueWithOrdinal(0).poll()) != null; ) {
-            actual.add(o.toString());
+            resultToCheck.add(o.toString());
         }
     }
 

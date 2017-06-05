@@ -31,6 +31,7 @@ import org.junit.runners.Parameterized.Parameters;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.AggregateOperations.counting;
 import static com.hazelcast.jet.Edge.between;
@@ -56,9 +57,17 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
     @Parameter
     public boolean singleStageProcessor;
 
-    @Parameters(name = "singleStageProcessor={0}")
+    @Parameter(1)
+    public boolean isBatch;
+
+    @Parameters(name = "singleStageProcessor={0}, isBatch={1}")
     public static Collection<Object> parameters() {
-        return asList(true, false);
+        return asList(
+                new Object[]{true, true},
+                new Object[]{true, false},
+                new Object[]{false, true},
+                new Object[]{false, false}
+        );
     }
 
     @After
@@ -84,7 +93,7 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
         AggregateOperation<Object, ?, Long> counting = counting();
 
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", () -> new StreamListP(sourceEvents)).localParallelism(1);
+        Vertex source = dag.newVertex("source", () -> new EmitListP(sourceEvents, isBatch)).localParallelism(1);
         Vertex insertPP = dag.newVertex("insertPP", insertPunctuation(TimestampedEntry<String, Long>::getTimestamp,
                 () -> limitingLagAndLull(500, 1000).throttleByFrame(wDef)))
                 .localParallelism(1);
@@ -111,13 +120,17 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
                     .edge(between(slidingWin, sink).oneToMany());
         }
 
-        instance.newJob(dag).execute();
+        Future<Void> future = instance.newJob(dag).execute();
+
+        if (isBatch) {
+            future.get();
+        }
 
         IList<TimestampedEntry<String, Long>> sinkList = instance.getList("sink");
 
-        assertTrueEventually(() -> assertTrue(sinkList.size() == expectedOutput.size()));
+        assertTrueEventually(() -> assertTrue(sinkList.size() == expectedOutput.size()), 5);
         // wait a little more and make sure, that there are no more frames
-        Thread.sleep(2000);
+        Thread.sleep(1000);
 
         String expected = streamToString(expectedOutput.stream());
         String actual = streamToString(new ArrayList<>(sinkList).stream());
@@ -125,13 +138,15 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
     }
 
     /**
-     * A processor that will emit contents of a list and then NOT complete.
+     * A processor that will emit contents of a list and optionally complete.
      */
-    private static class StreamListP extends AbstractProcessor {
+    private static class EmitListP extends AbstractProcessor {
         private final List<?> list;
+        private final boolean complete;
 
-        StreamListP(List<?> list) {
+        EmitListP(List<?> list, boolean complete) {
             this.list = list;
+            this.complete = complete;
         }
 
         @Override
@@ -139,10 +154,12 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
             for (Object o : list) {
                 emit(o);
             }
-            try {
-                Thread.sleep(Long.MAX_VALUE);
-            } catch (InterruptedException e) {
-                // fall through to returning true
+            if (!complete) {
+                try {
+                    Thread.sleep(Long.MAX_VALUE);
+                } catch (InterruptedException e) {
+                    // proceed to returning true
+                }
             }
             return true;
         }

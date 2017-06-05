@@ -77,7 +77,7 @@ public interface Traverser<T> {
      * after it returns the first {@code null} value.
      */
     @Nonnull
-    default Traverser<T> append(T item) {
+    default Traverser<T> append(@Nonnull T item) {
         return new Traverser<T>() {
             T appendedItem = item;
             @Override
@@ -100,7 +100,7 @@ public interface Traverser<T> {
      * all the items of this traverser.
      */
     @Nonnull
-    default Traverser<T> prepend(T item) {
+    default Traverser<T> prepend(@Nonnull T item) {
         return new Traverser<T>() {
             private boolean itemReturned;
             @Override

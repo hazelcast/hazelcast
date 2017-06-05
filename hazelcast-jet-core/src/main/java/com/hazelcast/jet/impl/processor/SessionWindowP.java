@@ -56,6 +56,7 @@ import static java.lang.System.arraycopy;
  * @param <R> type of the finished result
  */
 public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
+    private static final Punctuation COMPLETING_PUNC = new Punctuation(Long.MAX_VALUE);
 
     // exposed for testing, to check for memory leaks
     final Map<K, Windows> keyToWindows = new HashMap<>();
@@ -99,6 +100,11 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
     @Override
     protected boolean tryProcessPunc0(@Nonnull Punctuation punc) {
         return expiredSessionFlatmapper.tryProcess(punc);
+    }
+
+    @Override
+    public boolean complete() {
+        return expiredSessionFlatmapper.tryProcess(COMPLETING_PUNC);
     }
 
     private Traverser<Session<K, R>> expiredSessionTraverser(Punctuation punc) {

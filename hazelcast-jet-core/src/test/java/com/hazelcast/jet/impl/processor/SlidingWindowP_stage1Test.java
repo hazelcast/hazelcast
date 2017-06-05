@@ -39,6 +39,7 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.WindowDefinition.slidingWindowDef;
 import static com.hazelcast.jet.processor.Processors.accumulateByFrame;
 import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -126,6 +127,32 @@ public class SlidingWindowP_stage1Test extends StreamingTestSupport {
 
         // Then
         assertOutbox(somePuncs);
+    }
+
+    @Test
+    public void when_batch_then_emitEverything() {
+        // Given
+        ArrayDequeInbox inbox = new ArrayDequeInbox();
+        inbox.addAll(asList(
+                entry(0L, 1L), // to frame 4
+                punc(4) // closes frame 4
+        ));
+
+        // When
+        processor.process(0, inbox);
+        long start = System.nanoTime();
+        processor.complete();
+        long processTime = System.nanoTime() - start;
+        // this is to test that there is no iteration from current punctuation up to Long.MAX_VALUE, which
+        // will take too long.
+        assertTrue("process took too long: " + processTime, processTime < MILLISECONDS.toNanos(100));
+        assertTrue(inbox.isEmpty());
+
+        // Then
+        assertOutbox(asList(
+                frame(4, 1),
+                punc(4)
+        ));
     }
 
     private static TimestampedEntry<Long, LongAccumulator> frame(long timestamp, long value) {
