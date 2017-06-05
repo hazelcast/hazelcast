@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Traversers.traverseStream;
@@ -58,7 +59,7 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
 
     // exposed for testing, to check for memory leaks
     final Map<K, Windows> keyToWindows = new HashMap<>();
-    SortedMap<Long, Set<K>> deadlineToKeys = new TreeMap<>();
+    final SortedMap<Long, Set<K>> deadlineToKeys = new TreeMap<>();
 
     private final long sessionTimeout;
     private final DistributedToLongFunction<? super T> getTimestampF;
@@ -101,14 +102,19 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
     }
 
     private Traverser<Session<K, R>> expiredSessionTraverser(Punctuation punc) {
-        Stream<Session<K, R>> sessions = deadlineToKeys
+        List<K> distinctKeys = deadlineToKeys
                 .headMap(punc.timestamp())
                 .values().stream()
                 .flatMap(Set::stream)
                 .distinct()
+                .collect(Collectors.toList());
+
+        deadlineToKeys.headMap(punc.timestamp()).clear();
+
+        Stream<Session<K, R>> sessions = distinctKeys.stream()
                 .map(key -> keyToWindows.get(key).closeWindows(key, punc.timestamp()))
                 .flatMap(List::stream);
-        deadlineToKeys = deadlineToKeys.tailMap(punc.timestamp());
+
         return traverseStream(sessions);
     }
 
