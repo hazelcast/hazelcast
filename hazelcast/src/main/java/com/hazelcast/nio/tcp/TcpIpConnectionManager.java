@@ -45,6 +45,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -534,9 +535,14 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         int retries = sendTask.retries;
         if (retries < RETRY_NUMBER && ioService.isActive()) {
             getOrConnect(target, true);
-            // TODO: Caution: may break the order guarantee of the packets sent from the same thread!
-            scheduler.schedule(sendTask, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
-            return true;
+            try {
+                scheduler.schedule(sendTask, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
+                return true;
+            } catch (RejectedExecutionException e) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Packet send task is rejected. Packet cannot be sent to " + target);
+                }
+            }
         }
         return false;
     }
