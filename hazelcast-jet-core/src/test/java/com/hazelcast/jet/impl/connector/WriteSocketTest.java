@@ -109,6 +109,9 @@ public class WriteSocketTest extends JetTestSupport {
 
         jetInstance.newJob(dag).execute().get();
         serverSocket.close();
+        assertTrueEventually(() -> assertEquals(ITEM_COUNT, counter.get()));
+        // wait a little to check, if the counter doesn't get too far
+        Thread.sleep(500);
         assertEquals(ITEM_COUNT, counter.get());
     }
 
