@@ -43,11 +43,6 @@ public class CollectionTransactionRollbackOperation extends CollectionOperation 
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
-    }
-
-    @Override
     public int getId() {
         return CollectionDataSerializerHook.TX_ROLLBACK;
     }
