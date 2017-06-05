@@ -336,14 +336,16 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
 
     @Test
+    @Category(NightlyTest.class)
     public void testNoOperationTimeoutException_whenUserCodeLongRunning() {
         Config config = getConfig();
-        config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "2000");
+        long callTimeoutMillis = SECONDS.toMillis(10);
+        config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(callTimeoutMillis));
         hazelcastFactory.newHazelcastInstance(config);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         IMap<Object, Object> map = client.getMap(randomMapName());
-        SleepyProcessor sleepyProcessor = new SleepyProcessor(SECONDS.toMillis(10));
+        SleepyProcessor sleepyProcessor = new SleepyProcessor(2 * callTimeoutMillis);
         String key = randomString();
         String value = randomString();
         map.put(key, value);
