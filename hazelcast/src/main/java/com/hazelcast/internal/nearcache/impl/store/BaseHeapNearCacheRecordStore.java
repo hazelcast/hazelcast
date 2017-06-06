@@ -53,9 +53,8 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
         super(nearCacheConfig, serializationService, classLoader);
 
         NearCachePreloaderConfig preloaderConfig = nearCacheConfig.getPreloaderConfig();
-        this.nearCachePreloader = preloaderConfig.isEnabled()
-                ? new NearCachePreloader<K>(name, preloaderConfig, nearCacheStats, serializationService)
-                : null;
+        this.nearCachePreloader = preloaderConfig.isEnabled() ? new NearCachePreloader<K>(name, preloaderConfig, nearCacheStats,
+                serializationService, nearCacheConfig.isSerializeKeys()) : null;
     }
 
     @Override
@@ -121,7 +120,7 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     }
 
     @Override
-    public void loadKeys(DataStructureAdapter<Data, ?> adapter) {
+    public void loadKeys(DataStructureAdapter<Object, ?> adapter) {
         if (nearCachePreloader != null) {
             nearCachePreloader.loadKeys(adapter);
         }
