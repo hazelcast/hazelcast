@@ -123,12 +123,12 @@ public class DelegatingFuture<V> implements InternalCompletableFuture<V> {
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        return false;
+        return future.cancel(mayInterruptIfRunning);
     }
 
     @Override
     public boolean isCancelled() {
-        return false;
+        return future.isCancelled();
     }
 
     @Override
@@ -143,10 +143,6 @@ public class DelegatingFuture<V> implements InternalCompletableFuture<V> {
 
     protected void setError(Throwable error) {
         future.complete(error);
-    }
-
-    protected void completeWithDefault() {
-        future.complete(result);
     }
 
     protected ICompletableFuture getFuture() {
