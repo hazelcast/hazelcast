@@ -45,6 +45,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.IOException;
@@ -102,14 +103,16 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         for (VertexDef srcVertex : vertices) {
             int processorIdx = 0;
             for (Processor p : createProcessors(srcVertex, srcVertex.parallelism())) {
-                // createOutboundEdgeStreams() populates localConveyorMap and edgeSenderConveyorMap.
-                // Also populates instance fields: senderMap, receiverMap, tasklets.
-                List<OutboundEdgeStream> outboundStreams = createOutboundEdgeStreams(srcVertex, processorIdx);
-                List<InboundEdgeStream> inboundStreams = createInboundEdgeStreams(srcVertex, processorIdx);
                 ILogger logger =
                         nodeEngine.getLogger(p.getClass().getName() + '.' + srcVertex.name() + '#' + processorIdx);
                 ProcCtx context =
                         new ProcCtx(instance, logger, srcVertex.name(), processorIdx + srcVertex.getProcIdxOffset());
+                String probePrefix = String.format("jet.job.%d.%s#%d", executionId, srcVertex.name(), processorIdx);
+                ((NodeEngineImpl) nodeEngine).getMetricsRegistry().scanAndRegister(p, probePrefix);
+                // createOutboundEdgeStreams() populates localConveyorMap and edgeSenderConveyorMap.
+                // Also populates instance fields: senderMap, receiverMap, tasklets.
+                List<OutboundEdgeStream> outboundStreams = createOutboundEdgeStreams(srcVertex, processorIdx);
+                List<InboundEdgeStream> inboundStreams = createInboundEdgeStreams(srcVertex, processorIdx);
                 tasklets.add(p.isCooperative()
                         ? new CooperativeProcessorTasklet(context, p, inboundStreams, outboundStreams)
                         : new BlockingProcessorTasklet(context, p, inboundStreams, outboundStreams)

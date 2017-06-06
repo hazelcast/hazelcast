@@ -20,6 +20,6 @@ performance*.log
 */src/test/resources/data/result*
 dependency-reduced-pom.xml
 *.jfr
-
+diagnostics-*.log
 # Hadoop files
 *.crc
