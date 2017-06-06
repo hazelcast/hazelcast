@@ -16,6 +16,8 @@
 
 package classloading;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.test.jitter.JitterThread;
 
 import java.util.Arrays;
@@ -30,6 +32,12 @@ import static java.lang.String.format;
 import static java.util.Arrays.asList;
 
 public final class ThreadLeakTestUtils {
+
+    private static final ILogger LOGGER = Logger.getLogger(ThreadLeakTestUtils.class);
+
+    static {
+        LOGGER.info("Initializing Logger (required for thread leak tests).");
+    }
 
     /**
      * List of whitelisted classes of threads, which are allowed to be not joinable.
