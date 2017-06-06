@@ -34,13 +34,12 @@ import static com.hazelcast.jet.AggregateOperations.averagingDouble;
 import static com.hazelcast.jet.AggregateOperations.averagingLong;
 import static com.hazelcast.jet.AggregateOperations.counting;
 import static com.hazelcast.jet.AggregateOperations.linearTrend;
-import static com.hazelcast.jet.AggregateOperations.maxBy;
-import static com.hazelcast.jet.AggregateOperations.minBy;
 import static com.hazelcast.jet.AggregateOperations.reducing;
-import static com.hazelcast.jet.AggregateOperations.summingToDouble;
-import static com.hazelcast.jet.AggregateOperations.summingToLong;
-import static com.hazelcast.jet.function.DistributedComparator.naturalOrder;
+import static com.hazelcast.jet.AggregateOperations.summingDouble;
+import static com.hazelcast.jet.AggregateOperations.summingLong;
+import static com.hazelcast.jet.function.DistributedFunction.identity;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(Parameterized.class)
@@ -54,20 +53,20 @@ public class AggregateOperations_accEqualityTest {
     public static Collection<AggregateOperation<?, ?, ?>> data() {
         return Arrays.asList(
                 counting(),
-                summingToLong(Long::longValue),
-                summingToDouble(Double::doubleValue),
+                summingLong(Long::longValue),
+                summingDouble(Double::doubleValue),
                 averagingLong(Long::longValue),
                 averagingDouble(Double::doubleValue),
-                minBy(naturalOrder()),
-                maxBy(naturalOrder()),
                 linearTrend(x -> 1L, x -> 1L),
-                allOf(counting(), summingToLong(Long::longValue)),
-                reducing(1, null, null, null)
+                allOf(counting(), summingLong(Long::longValue)),
+                reducing(1, identity(), (a, b) -> a, (a, b) -> a)
         );
     }
 
     @Test
     public void testTwoAccumulatorsEqual() {
+        assertTrue("this test is not needed if deduct is not implemented", operation.deductAccumulatorF() != null);
+
         Object accumulator1 = operation.createAccumulatorF();
         Object accumulator2 = operation.createAccumulatorF();
 

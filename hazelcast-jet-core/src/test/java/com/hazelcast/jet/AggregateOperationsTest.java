@@ -24,11 +24,15 @@ import com.hazelcast.jet.accumulator.LongLongAccumulator;
 import com.hazelcast.jet.accumulator.MutableReference;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -39,13 +43,22 @@ import static com.hazelcast.jet.AggregateOperations.averagingDouble;
 import static com.hazelcast.jet.AggregateOperations.averagingLong;
 import static com.hazelcast.jet.AggregateOperations.counting;
 import static com.hazelcast.jet.AggregateOperations.linearTrend;
+import static com.hazelcast.jet.AggregateOperations.mapping;
 import static com.hazelcast.jet.AggregateOperations.maxBy;
 import static com.hazelcast.jet.AggregateOperations.minBy;
 import static com.hazelcast.jet.AggregateOperations.reducing;
-import static com.hazelcast.jet.AggregateOperations.summingToDouble;
-import static com.hazelcast.jet.AggregateOperations.summingToLong;
+import static com.hazelcast.jet.AggregateOperations.summingDouble;
+import static com.hazelcast.jet.AggregateOperations.summingLong;
+import static com.hazelcast.jet.AggregateOperations.toList;
+import static com.hazelcast.jet.AggregateOperations.toMap;
+import static com.hazelcast.jet.AggregateOperations.toSet;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.function.DistributedComparator.naturalOrder;
+import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
+import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
 import static java.util.function.Function.identity;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -55,6 +68,10 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class AggregateOperationsTest {
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+
     @Test
     public void when_counting() {
         validateOp(counting(), LongAccumulator::get,
@@ -63,13 +80,13 @@ public class AggregateOperationsTest {
 
     @Test
     public void when_summingToLong() {
-        validateOp(summingToLong(Long::longValue), LongAccumulator::get,
+        validateOp(summingLong(Long::longValue), LongAccumulator::get,
                 1L, 2L, 1L, 3L, 3L);
     }
 
     @Test
     public void when_summingToDouble() {
-        validateOp(summingToDouble(Double::doubleValue), DoubleAccumulator::get,
+        validateOp(summingDouble(Double::doubleValue), DoubleAccumulator::get,
                 0.5, 1.5, 0.5, 2.0, 2.0);
     }
 
@@ -100,11 +117,11 @@ public class AggregateOperationsTest {
     @Test
     public void when_allOf() {
         validateOp(
-                allOf(counting(), summingToLong(Long::longValue)),
+                allOf(counting(), summingLong(Long::longValue)),
                 identity(), 10L, 11L,
-                Arrays.asList(new LongAccumulator(1L), new LongAccumulator(10L)),
-                Arrays.asList(new LongAccumulator(2L), new LongAccumulator(21L)),
-                Arrays.asList(2L, 21L)
+                asList(new LongAccumulator(1L), new LongAccumulator(10L)),
+                asList(new LongAccumulator(2L), new LongAccumulator(21L)),
+                asList(2L, 21L)
         );
     }
 
@@ -113,9 +130,9 @@ public class AggregateOperationsTest {
         validateOpWithoutDeduct(
                 allOf(counting(), maxBy(naturalOrder())),
                 identity(), 10L, 11L,
-                Arrays.asList(new LongAccumulator(1), new MutableReference<>(10L)),
-                Arrays.asList(new LongAccumulator(2), new MutableReference<>(11L)),
-                Arrays.asList(2L, 11L)
+                asList(new LongAccumulator(1), new MutableReference<>(10L)),
+                asList(new LongAccumulator(2), new MutableReference<>(11L)),
+                asList(2L, 11L)
         );
     }
 
@@ -177,6 +194,111 @@ public class AggregateOperationsTest {
         validateOp(reducing(0, Integer::intValue, Integer::sum, (x, y) -> x - y),
                 MutableReference::get,
                 1, 2, 1, 3, 3);
+    }
+
+    @Test
+    public void when_toList() {
+        validateOpWithoutDeduct(
+                toList(), identity(), 1, 2, singletonList(1), asList(1, 2), asList(1, 2));
+    }
+
+    @Test
+    public void when_toSet() {
+        validateOpWithoutDeduct(
+                toSet(), identity(), 1, 2, singleton(1), new HashSet<>(asList(1, 2)), new HashSet<>(asList(1, 2)));
+    }
+
+    @Test
+    public void when_toMap() {
+        Map<Integer, Integer> acced = new HashMap<>();
+        acced.put(1, 1);
+
+        Map<Integer, Integer> combined = new HashMap<>(acced);
+        combined.put(2, 2);
+
+        validateOpWithoutDeduct(
+                toMap(entryKey(), entryValue()),
+                identity(), entry(1, 1), entry(2, 2),
+                acced, combined, combined);
+    }
+
+    @Test
+    public void when_toMapDuplicateAccumulate_then_fail() {
+        AggregateOperation<Entry<Integer, Integer>, Map<Integer, Integer>, Map<Integer, Integer>> op =
+                toMap(entryKey(), entryValue());
+
+        Map<Integer, Integer> acc = op.createAccumulatorF().get();
+        op.accumulateItemF().accept(acc, entry(1, 1));
+
+        exception.expect(IllegalStateException.class);
+        op.accumulateItemF().accept(acc, entry(1, 2));
+    }
+
+    @Test
+    public void when_toMapDuplicateCombine_then_fail() {
+        AggregateOperation<Entry<Integer, Integer>, Map<Integer, Integer>, Map<Integer, Integer>> op =
+                toMap(entryKey(), entryValue());
+
+        Map<Integer, Integer> acc1 = op.createAccumulatorF().get();
+        op.accumulateItemF().accept(acc1, entry(1, 1));
+        Map<Integer, Integer> acc2 = op.createAccumulatorF().get();
+        op.accumulateItemF().accept(acc2, entry(1, 2));
+
+        exception.expect(IllegalStateException.class);
+        op.combineAccumulatorsF().accept(acc1, acc2);
+    }
+
+    @Test
+    public void when_toMapWithMerge_then_merged() {
+        Map<Integer, Integer> acced = new HashMap<>();
+        acced.put(1, 1);
+
+        Map<Integer, Integer> combined = new HashMap<>();
+        combined.put(1, 3);
+
+        validateOpWithoutDeduct(
+                toMap(entryKey(), entryValue(), Integer::sum),
+                identity(), entry(1, 1), entry(1, 2),
+                acced, combined, combined);
+    }
+
+    @Test
+    public void when_mappingWithoutDeduct() {
+        validateOpWithoutDeduct(
+                mapping((Entry<?, Integer> e) -> e.getValue(), maxBy(naturalOrder())),
+                identity(),
+                entry("a", 1),
+                entry("b", 2),
+                new MutableReference<>(1),
+                new MutableReference<>(2),
+                2
+        );
+    }
+
+    @Test
+    public void when_mappingWithDeduct() {
+        validateOp(
+                mapping((Entry<?, Long> e) -> e.getValue(), summingLong(i -> i)),
+                identity(),
+                entry("a", 1L),
+                entry("b", 2L),
+                new LongAccumulator(1),
+                new LongAccumulator(3),
+                3L
+        );
+    }
+
+    @Test
+    public void when_mappingToNull_then_doNotAggregate() {
+        validateOp(
+                mapping((Entry<?, Long> e) -> e.getValue(), summingLong(i -> i)),
+                identity(),
+                entry("a", null),
+                entry("b", 2L),
+                new LongAccumulator(0),
+                new LongAccumulator(2),
+                2L
+        );
     }
 
     private static <T, A, X, R> void validateOp(

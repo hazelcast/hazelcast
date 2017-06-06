@@ -48,7 +48,7 @@ public final class DistributedFunctions {
      * @param <K> type of entry's key
      */
     @Nonnull
-    public static <K> DistributedFunction<Entry<K, ?>, K> entryKey() {
+    public static <K, V> DistributedFunction<Entry<K, V>, K> entryKey() {
         return Map.Entry::getKey;
     }
 
@@ -58,7 +58,7 @@ public final class DistributedFunctions {
      * @param <V> type of entry's value
      */
     @Nonnull
-    public static <V> DistributedFunction<Entry<?, V>, V> entryValue() {
+    public static <K, V> DistributedFunction<Entry<K, V>, V> entryValue() {
         return Map.Entry::getValue;
     }
 

@@ -51,7 +51,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.hazelcast.jet.AggregateOperations.counting;
-import static com.hazelcast.jet.AggregateOperations.summingToLong;
+import static com.hazelcast.jet.AggregateOperations.summingLong;
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.processor.Processors.flatMap;
@@ -165,7 +165,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         Vertex aggregateStage1 = dag.newVertex("aggregateStage1", aggregateByKey(wholeItem(), counting()));
         // (word, count) -> (word, count)
         Vertex aggregateStage2 = dag.newVertex("aggregateStage2",
-                aggregateByKey(entryKey(), summingToLong(Entry<String, Long>::getValue)));
+                aggregateByKey(entryKey(), summingLong(Entry<String, Long>::getValue)));
         Vertex sink = dag.newVertex("sink", writeMap("counts"));
 
         dag.edge(between(source.localParallelism(1), tokenize))

@@ -38,7 +38,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.jet.AggregateOperations.summingToLong;
+import static com.hazelcast.jet.AggregateOperations.summingLong;
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.processor.Processors.accumulate;
 import static com.hazelcast.jet.processor.Processors.aggregate;
@@ -75,7 +75,7 @@ public class Processors_globalAggregationIntegrationTest extends JetTestSupport 
             throws Exception {
         JetInstance instance = createJetMember();
 
-        AggregateOperation<Long, ?, Long> summingOp = summingToLong((Long l) -> l);
+        AggregateOperation<Long, ?, Long> summingOp = summingLong((Long l) -> l);
 
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", () -> new EmitListP(sourceItems)).localParallelism(1);
