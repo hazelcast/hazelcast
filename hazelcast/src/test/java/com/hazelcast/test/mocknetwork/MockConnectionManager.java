@@ -19,6 +19,7 @@ package com.hazelcast.test.mocknetwork;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
+import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -39,6 +40,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.HazelcastTestSupport.suspectMember;
+import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 
 
 public class MockConnectionManager implements ConnectionManager {
@@ -51,7 +53,7 @@ public class MockConnectionManager implements ConnectionManager {
     private final Node node;
 
     private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
-    private final ScheduledExecutorService scheduler = new ScheduledThreadPoolExecutor(4);
+    private final ScheduledExecutorService scheduler;
     private final IOService ioService;
     private final ILogger logger;
 
@@ -61,6 +63,8 @@ public class MockConnectionManager implements ConnectionManager {
         this.ioService = ioService;
         this.registry = registry;
         this.node = node;
+        this.scheduler = new ScheduledThreadPoolExecutor(4,
+                new ThreadFactoryImpl(createThreadPoolName(ioService.getHazelcastName(), "MockConnectionManager")));
         this.logger = ioService.getLoggingService().getLogger(MockConnectionManager.class);
     }
 
@@ -161,6 +165,7 @@ public class MockConnectionManager implements ConnectionManager {
     @Override
     public synchronized void shutdown() {
         stop();
+        scheduler.shutdownNow();
     }
 
     @Override
