@@ -84,9 +84,6 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
     protected final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    private static final Random rand = new Random();
-    private static final int NIGHTLY_TEST_WAIT_DURATION = 30;
-
     @After
     public void tearDown() {
         hazelcastFactory.shutdownAll();
@@ -911,7 +908,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             public void run() {
                 assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount());
             }
-        }, getRandomTime());
+        }, 10);
     }
 
     @Test
@@ -962,7 +959,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             public void run() {
                 assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount());
             }
-        }, getRandomTime());
+        }, 10);
     }
 
     private void mapClearFromMember(final ClearEventCounterEventHandler handler) {
@@ -1006,7 +1003,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             public void run() {
                 assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount());
             }
-        }, getRandomTime());
+        }, 10);
     }
 
     private void mapEvictAllFromClient(final ClearEventCounterEventHandler handler) {
@@ -1050,7 +1047,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             public void run() {
                 assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount());
             }
-        }, getRandomTime());
+        }, 10);
     }
 
     private void mapAvictAllFromMember(final ClearEventCounterEventHandler handler) {
@@ -1343,13 +1340,5 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         int getClearEventCount() {
             return clearEventCount.get();
         }
-    }
-
-    private static int getRandomTime() {
-        int duration = rand.nextInt(NIGHTLY_TEST_WAIT_DURATION);
-        if (duration == 0) {
-            return 10;
-        }
-        return duration;
     }
 }
