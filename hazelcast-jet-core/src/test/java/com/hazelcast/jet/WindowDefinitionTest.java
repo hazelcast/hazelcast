@@ -23,6 +23,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.WindowDefinition.slidingWindowDef;
+import static com.hazelcast.jet.WindowDefinition.tumblingWindowDef;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
@@ -119,4 +121,27 @@ public class WindowDefinitionTest {
         assertEquals(expectedHigher, definition.higherFrameTs(timestamp));
     }
 
+    @Test
+    public void test_tumblingWindowDef() {
+        definition = tumblingWindowDef(123L);
+        assertEquals(123L, definition.frameLength());
+        assertEquals(123L, definition.windowLength());
+        assertEquals(0, definition.frameOffset());
+    }
+
+    @Test
+    public void test_toTumblingByFrame() {
+        definition = slidingWindowDef(1000, 100);
+        definition = definition.toTumblingByFrame();
+        assertEquals(100, definition.windowLength());
+        assertEquals(100, definition.frameLength());
+    }
+
+    @Test
+    public void test_withOffset() {
+        definition = slidingWindowDef(1000, 100);
+        assertEquals(0, definition.frameOffset());
+        definition = definition.withOffset(10);
+        assertEquals(10, definition.frameOffset());
+    }
 }

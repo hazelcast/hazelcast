@@ -22,6 +22,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Vector;
 import java.util.stream.Stream;
 
@@ -93,5 +96,19 @@ public class TraversersTest {
         assertEquals(1, t1);
         assertEquals(2, t2);
         assertNull(t3);
+    }
+
+    @Test
+    public void peek() {
+        List<Integer> list = new ArrayList<>();
+        Traverser<Integer> t = Traverser.over(1, 2, 3)
+                                        .peek(list::add);
+
+        assertEquals(Integer.valueOf(1), t.next());
+        assertEquals(Integer.valueOf(2), t.next());
+        assertEquals(Integer.valueOf(3), t.next());
+        assertNull(t.next());
+
+        assertEquals(Arrays.asList(1, 2, 3), list);
     }
 }
