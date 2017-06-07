@@ -1185,12 +1185,18 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
             map.remove(i);
         }
 
-        assertEquals("put count", operationCount, stats1.getPutOperationCount() + stats2.getPutOperationCount());
-        assertEquals("get count", operationCount, stats1.getGetOperationCount() + stats2.getGetOperationCount());
-        assertEquals("remove count", operationCount, stats1.getRemoveOperationCount() + stats2.getRemoveOperationCount());
-        assertTrue("put latency", 0 < stats1.getTotalPutLatency() + stats2.getTotalPutLatency());
-        assertTrue("get latency", 0 < stats1.getTotalGetLatency() + stats2.getTotalGetLatency());
-        assertTrue("remove latency", 0 < stats1.getTotalRemoveLatency() + stats2.getTotalRemoveLatency());
+        assertEquals("put count: stats1" + stats1 + " stats2:" + stats2, operationCount,
+                stats1.getPutOperationCount() + stats2.getPutOperationCount());
+        assertEquals("get count : stats1" + stats1 + " stats2:" + stats2, operationCount,
+                stats1.getGetOperationCount() + stats2.getGetOperationCount());
+        assertEquals("remove count : stats1" + stats1 + " stats2:" + stats2, operationCount,
+                stats1.getRemoveOperationCount() + stats2.getRemoveOperationCount());
+        assertTrue("put latency : stats1" + stats1 + " stats2:" + stats2,
+                0 < stats1.getTotalPutLatency() + stats2.getTotalPutLatency());
+        assertTrue("get latency : stats1" + stats1 + " stats2:" + stats2,
+                0 < stats1.getTotalGetLatency() + stats2.getTotalGetLatency());
+        assertTrue("remove latency : stats1" + stats1 + " stats2:" + stats2,
+                0 < stats1.getTotalRemoveLatency() + stats2.getTotalRemoveLatency());
     }
 
     @Test(expected = UnsupportedOperationException.class)
