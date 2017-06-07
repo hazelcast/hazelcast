@@ -1346,6 +1346,10 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     private static int getRandomTime() {
-        return rand.nextInt(NIGHTLY_TEST_WAIT_DURATION);
+        int duration = rand.nextInt(NIGHTLY_TEST_WAIT_DURATION);
+        if (duration == 0) {
+            return 10;
+        }
+        return duration;
     }
 }
