@@ -68,7 +68,11 @@ import java.util.jar.JarFile;
  * public class CustomJetJob {
  *   public static void main(String[] args) {
  *     JetInstance jet = JetBootstrap.getInstance();
- *     jet.newJob(getDAG()).execute().get();
+ *     jet.newJob(buildDag()).execute().get();
+ *   }
+ *
+ *   public static DAG buildDag() {
+ *       // ...
  *   }
  * }
  * </pre>
