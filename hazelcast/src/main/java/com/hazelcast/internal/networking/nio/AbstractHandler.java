@@ -32,8 +32,12 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 public abstract class AbstractHandler
         implements SelectionHandler, MigratableHandler {
 
+    protected static final int LOAD_BALANCING_HANDLE = 0;
+    protected static final int LOAD_BALANCING_BYTE = 1;
+    protected static final int LOAD_BALANCING_FRAME = 2;
+
     // for the time being we configure using a int until we have decided which load strategy to use.
-    protected static final int LOAD_TYPE = Integer.getInteger("io.load", 0);
+    protected static final int LOAD_TYPE = Integer.getInteger("hazelcast.io.load", LOAD_BALANCING_BYTE);
 
     @Probe(name = "handleCount")
     protected final SwCounter handleCount = newSwCounter();
