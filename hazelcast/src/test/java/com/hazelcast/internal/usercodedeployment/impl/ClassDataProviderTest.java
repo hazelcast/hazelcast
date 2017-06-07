@@ -82,6 +82,6 @@ public class ClassDataProviderTest {
     }
 
     private static ClassSource newMockClassSource(String classname) {
-        return new ClassSource(classname, new byte[0], null, null);
+        return new ClassSource(null, null);
     }
 }

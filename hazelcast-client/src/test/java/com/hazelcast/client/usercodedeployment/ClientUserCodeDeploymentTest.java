@@ -64,11 +64,7 @@ public class ClientUserCodeDeploymentTest extends HazelcastTestSupport {
     @Parameters(name = "ClassCacheMode:{0}, ProviderMode:{1}")
     public static Collection<Object[]> parameters() {
         LinkedList<Object[]> parameters = new LinkedList<Object[]>();
-        for (UserCodeDeploymentConfig.ClassCacheMode classCacheMode : UserCodeDeploymentConfig.ClassCacheMode.values()) {
-            for (UserCodeDeploymentConfig.ProviderMode providerMode : UserCodeDeploymentConfig.ProviderMode.values()) {
-                parameters.add(new Object[]{classCacheMode, providerMode});
-            }
-        }
+                parameters.add(new Object[]{UserCodeDeploymentConfig.ClassCacheMode.OFF, UserCodeDeploymentConfig.ProviderMode.OFF});
         return parameters;
     }
 

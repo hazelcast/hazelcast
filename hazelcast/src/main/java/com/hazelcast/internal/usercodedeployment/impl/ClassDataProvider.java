@@ -74,15 +74,15 @@ public final class ClassDataProvider {
         if (classSource == null) {
             return null;
         }
-        return classSource.getBytecode();
+        return classSource.getBytecode(className);
     }
 
     private byte[] loadBytecodeFromClientCache(String className) {
-        ClassSource classSource = clientClassSourceMap.get(className);
+        ClassSource classSource = clientClassSourceMap.get(ClassLocator.extractParentClassName(className));
         if (classSource == null) {
             return null;
         }
-        return classSource.getBytecode();
+        return classSource.getBytecode(className);
     }
 
     private byte[] loadBytecodeFromParent(String className) {

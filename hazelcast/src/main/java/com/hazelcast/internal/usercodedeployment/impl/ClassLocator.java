@@ -33,6 +33,8 @@ import java.util.Arrays;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Provides classes to a local member.
@@ -44,6 +46,7 @@ import java.util.concurrent.Future;
  * remote members.
  */
 public final class ClassLocator {
+    private static final Pattern CLASS_PATTERN = Pattern.compile("^(.*)\\$.*");
     private final ConcurrentMap<String, ClassSource> classSourceMap;
     private final ConcurrentMap<String, ClassSource> clientClassSourceMap;
     private final ClassLoader parent;
@@ -92,22 +95,26 @@ public final class ClassLocator {
         // we need to acquire a classloading lock before defining a class
         // Java 7+ can use locks with per-class granularity while Java 6 has to use a single lock
         // mutexFactory abstract these differences away
-        Closeable classMutex = mutexFactory.getMutexForClass(name);
+        String parentClassName = extractParentClassName(name);
+        Closeable classMutex = mutexFactory.getMutexForClass(parentClassName);
         try {
             synchronized (classMutex) {
-                ClassSource classSource = clientClassSourceMap.get(name);
+                ClassSource classSource = clientClassSourceMap.get(parentClassName);
                 if (classSource != null) {
-                    if (!Arrays.equals(classDef, classSource.getBytecode())) {
-                        throw new IllegalStateException("Class " + name
-                                + " is already in a local cache and conflicting byte code representation");
-                    } else if (logger.isFineEnabled()) {
-                        logger.finest("Class " + name + " is already in a local cache. ");
+                    if (classSource.getClazz(name) != null) {
+                        if (!Arrays.equals(classDef, classSource.getBytecode(name))) {
+                            throw new IllegalStateException("Class " + name
+                                    + " is already in a local cache and conflicting byte code representation");
+                        } else if (logger.isFineEnabled()) {
+                            logger.finest("Class " + name + " is already in a local cache. ");
+                        }
+                        return;
                     }
-                    return;
+                } else {
+                    classSource = new ClassSource(parent, this);
+                    clientClassSourceMap.put(parentClassName, classSource);
                 }
-                classSource = new ClassSource(name, classDef, parent, this);
-                classSource.define();
-                clientClassSourceMap.put(name, classSource);
+                classSource.define(name, classDef);
             }
         } finally {
             IOUtil.closeResource(classMutex);
@@ -126,7 +133,7 @@ public final class ClassLocator {
                     if (logger.isFineEnabled()) {
                         logger.finest("Class " + name + " is already in a local cache. ");
                     }
-                    return classSource.getClazz();
+                    return classSource.getClazz(name);
                 }
                 byte[] classDef = fetchBytecodeFromRemote(name);
                 if (classDef == null) {
@@ -145,34 +152,48 @@ public final class ClassLocator {
             if (logger.isFineEnabled()) {
                 logger.finest("Class " + name + " is already in a local cache. ");
             }
-            return classSource.getClazz();
+            return classSource.getClazz(name);
         }
 
-        classSource = clientClassSourceMap.get(name);
+        classSource = clientClassSourceMap.get(extractParentClassName(name));
         if (classSource != null) {
-            if (logger.isFineEnabled()) {
-                logger.finest("Class " + name + " is already in a local cache. ");
+            Class clazz = classSource.getClazz(name);
+            if (clazz != null) {
+                if (logger.isFineEnabled()) {
+                    logger.finest("Class " + name + " is already in a local cache. ");
+                }
+                return clazz;
             }
-            return classSource.getClazz();
         }
 
         classSource = ThreadLocalClassCache.getFromCache(name);
         if (classSource != null) {
-            return classSource.getClazz();
+            return classSource.getClazz(name);
+        }
+        return null;
+    }
+
+    public static String extractParentClassName(String className) {
+        if (!className.contains("$")) {
+            return className;
+        }
+        Matcher matcher = CLASS_PATTERN.matcher(className);
+        if (matcher.matches()) {
+            return matcher.group(1);
         }
         return null;
     }
 
     // called while holding class lock
     private Class<?> defineAndCacheClass(String name, byte[] classDef) {
-        ClassSource classSource = new ClassSource(name, classDef, parent, this);
-        classSource.define();
+        ClassSource classSource = new ClassSource(parent, this);
+        classSource.define(name, classDef);
         if (classCacheMode != UserCodeDeploymentConfig.ClassCacheMode.OFF) {
             classSourceMap.put(name, classSource);
         } else {
             ThreadLocalClassCache.store(name, classSource);
         }
-        return classSource.getClazz();
+        return classSource.getClazz(name);
     }
 
     // called while holding class lock
@@ -239,6 +260,6 @@ public final class ClassLocator {
         if (classSource == null) {
             return null;
         }
-        return classSource.getClazz();
+        return classSource.getClazz(name);
     }
 }

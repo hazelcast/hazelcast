@@ -44,11 +44,11 @@ public class EntryProcessorWithAnonymousAndInner extends AbstractEntryProcessor<
     public class Test {
         private final Map.Entry<Integer, Integer> entry;
 
-        public Test(Map.Entry<Integer, Integer> entry) {
+        Test(Map.Entry<Integer, Integer> entry) {
             this.entry = entry;
         }
 
-        public void set(Integer newValue) {
+        void set(Integer newValue) {
             entry.setValue(newValue);
         }
     }

@@ -35,6 +35,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
+import usercodedeployment.EntryProcessorWithAnonymousAndInner;
 import usercodedeployment.IncrementingEntryProcessor;
 import usercodedeployment.blacklisted.BlacklistedEP;
 import usercodedeployment.whitelisted.WhitelistedEP;
@@ -90,7 +91,7 @@ public class UserCodeDeploymentSmokeTest extends HazelcastTestSupport {
                 .setEnabled(true)
                 .setClassCacheMode(classCacheMode);
 
-        IncrementingEntryProcessor incrementingEntryProcessor = new IncrementingEntryProcessor();
+        EntryProcessorWithAnonymousAndInner incrementingEntryProcessor = new EntryProcessorWithAnonymousAndInner();
         executeSimpleTestScenario(i1Config, i2Config, incrementingEntryProcessor);
     }
 
