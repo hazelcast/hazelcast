@@ -39,6 +39,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -896,14 +897,34 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
+    @Category(NightlyTest.class)
+    public void ensure_receives_one_clearEvent_after_mapClear_call_from_client() {
+        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
+
+        mapClearFromClient(handler);
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount());
+            }
+        }, 10);
+    }
+
+    @Test
     public void receives_one_clearEvent_after_mapClear_call_from_client() {
+        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
+
+        mapClearFromClient(handler);
+    }
+
+    private void mapClearFromClient(final ClearEventCounterEventHandler handler) {
         // populate Near Cache
-        IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(newNearCacheConfig());
+        IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(newNearCacheConfig(), 2);
         populateMap(clientMap, 1000);
         populateNearCache(clientMap, 1000);
 
         // add test listener to count clear events
-        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
         ((NearCachedClientMapProxy) clientMap).addNearCacheInvalidationListener(handler);
 
         // create a new client to send events
@@ -911,59 +932,87 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         IMap<Object, Object> anotherClientMap = anotherClient.getMap(clientMap.getName());
         anotherClientMap.clear();
 
-        // sleep for a while to see there is another clear event coming
-        sleepSeconds(2);
-
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount());
+                assertTrue("Expecting at least 1 clear event", 0 < handler.getClearEventCount());
             }
         });
     }
 
     @Test
     public void receives_one_clearEvent_after_mapClear_call_from_member() {
-        // start new member and populate map
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(newConfig());
-        IMap<Integer, Integer> memberMap = member.getMap("test");
-        populateMap(memberMap, 1000);
+        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
 
-        // populate client Near Cache
-        NearCacheConfig nearCacheConfig = newNearCacheConfig();
-        ClientConfig clientConfig = newClientConfig();
-        clientConfig.addNearCacheConfig(nearCacheConfig);
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-        IMap<Integer, Integer> clientMap = client.getMap("test");
+        mapClearFromMember(handler);
+    }
+
+    @Test
+    @Category(NightlyTest.class)
+    public void ensure_receives_one_clearEvent_after_mapClear_call_from_member() {
+        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
+
+        mapClearFromMember(handler);
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount());
+            }
+        }, 10);
+    }
+
+    private void mapClearFromMember(final ClearEventCounterEventHandler handler) {
+        // populate Near Cache
+        IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(newNearCacheConfig(), 2);
+        populateMap(clientMap, 1000);
         populateNearCache(clientMap, 1000);
 
         // add test listener to count clear events
-        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
         ((NearCachedClientMapProxy) clientMap).addNearCacheInvalidationListener(handler);
 
         // clear map from member side
+        HazelcastInstance member = hazelcastFactory.getAllHazelcastInstances().iterator().next();
+        IMap memberMap = member.getMap(clientMap.getName());
         memberMap.clear();
-
-        // sleep for a while to see there is another clear event coming
-        sleepSeconds(2);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount());
+                assertTrue("Expecting at least 1 clear event", 0 < handler.getClearEventCount());
             }
         });
     }
 
     @Test
     public void receives_one_clearEvent_after_mapEvictAll_call_from_client() {
+        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
+
+        mapEvictAllFromClient(handler);
+    }
+
+    @Test
+    @Category(NightlyTest.class)
+    public void ensure_receives_one_clearEvent_after_mapEvictAll_call_from_client() {
+        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
+
+        mapEvictAllFromClient(handler);
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount());
+            }
+        }, 10);
+    }
+
+    private void mapEvictAllFromClient(final ClearEventCounterEventHandler handler) {
         // populate Near Cache
         IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(newNearCacheConfig());
         populateMap(clientMap, 1000);
         populateNearCache(clientMap, 1000);
 
         // add test listener to count clear events
-        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
         ((NearCachedClientMapProxy) clientMap).addNearCacheInvalidationListener(handler);
 
         // call evictAll
@@ -971,42 +1020,55 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         IMap<Object, Object> anotherClientMap = anotherClient.getMap(clientMap.getName());
         anotherClientMap.evictAll();
 
-        // sleep for a while to see there is another clear event coming
-        sleepSeconds(2);
-
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount());
+                assertTrue("Expecting at least 1 clear event", 0 < handler.getClearEventCount());
             }
         });
     }
 
     @Test
     public void receives_one_clearEvent_after_mapEvictAll_call_from_member() {
+        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
+
+        mapAvictAllFromMember(handler);
+    }
+
+    @Test
+    @Category(NightlyTest.class)
+    public void ensure_receives_one_clearEvent_after_mapEvictAll_call_from_member() {
+        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
+
+        mapAvictAllFromMember(handler);
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount());
+            }
+        }, 10);
+    }
+
+    private void mapAvictAllFromMember(final ClearEventCounterEventHandler handler) {
+        IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(newNearCacheConfig(), 2);
+
         // populate Near Cache
-        IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(newNearCacheConfig());
         populateMap(clientMap, 1000);
         populateNearCache(clientMap, 1000);
 
-        // member comes
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(newConfig());
-
         // add test listener to count clear events
-        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
         ((NearCachedClientMapProxy) clientMap).addNearCacheInvalidationListener(handler);
 
         // call evictAll
+        HazelcastInstance member = hazelcastFactory.getAllHazelcastInstances().iterator().next();
         IMap memberMap = member.getMap(clientMap.getName());
         memberMap.evictAll();
-
-        // sleep for a while to see there is another clear event coming
-        sleepSeconds(2);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount());
+                assertTrue("Expecting at least 1 clear event", 0 < handler.getClearEventCount());
             }
         });
     }
@@ -1018,7 +1080,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         config.getMapConfig("default").getMapStoreConfig().setEnabled(true).setImplementation(new SimpleMapStore());
 
         // populate Near Cache
-        final IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(config, newNearCacheConfig());
+        final IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(config, newNearCacheConfig(), 2);
         populateMap(clientMap, 1000);
         populateNearCache(clientMap, 1000);
 
@@ -1044,15 +1106,13 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         Config config = newConfig();
         config.getMapConfig("default").getMapStoreConfig().setEnabled(true).setImplementation(new SimpleMapStore());
 
-        // member comes
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
-
         // populate Near Cache
-        final IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(config, newNearCacheConfig());
+        final IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(config, newNearCacheConfig(), 2);
         populateMap(clientMap, 1000);
         populateNearCache(clientMap, 1000);
 
         // create a new client to send events
+        HazelcastInstance member = hazelcastFactory.getAllHazelcastInstances().iterator().next();
         IMap<Object, Object> memberMap = member.getMap(clientMap.getName());
         memberMap.loadAll(true);
 
@@ -1207,12 +1267,20 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     protected <K, V> IMap<K, V> getNearCachedMapFromClient(NearCacheConfig nearCacheConfig) {
-        return getNearCachedMapFromClient(newConfig(), nearCacheConfig);
+        return getNearCachedMapFromClient(newConfig(), nearCacheConfig, 1);
+    }
+
+    protected <K, V> IMap<K, V> getNearCachedMapFromClient(NearCacheConfig nearCacheConfig, int clusterSize) {
+        return getNearCachedMapFromClient(newConfig(), nearCacheConfig, clusterSize);
     }
 
     protected <K, V> IMap<K, V> getNearCachedMapFromClient(Config config, NearCacheConfig nearCacheConfig) {
+        return getNearCachedMapFromClient(config, nearCacheConfig, 1);
+    }
+
+    protected <K, V> IMap<K, V> getNearCachedMapFromClient(Config config, NearCacheConfig nearCacheConfig, int clusterSize) {
         String mapName = randomMapName();
-        hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newInstances(config, clusterSize);
 
         nearCacheConfig.setName(mapName + "*");
 
