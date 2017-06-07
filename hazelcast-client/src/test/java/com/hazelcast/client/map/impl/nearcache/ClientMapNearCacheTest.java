@@ -39,6 +39,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -82,6 +83,9 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     protected final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
+    private static final Random rand = new Random();
+    private static final int NIGHTLY_TEST_WAIT_DURATION = 30;
 
     @After
     public void tearDown() {
@@ -896,14 +900,34 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
+    @Category(NightlyTest.class)
+    public void ensure_receives_one_clearEvent_after_mapClear_call_from_client() {
+        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
+
+        mapClearFromClient(handler);
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount());
+            }
+        }, getRandomTime());
+    }
+
+    @Test
     public void receives_one_clearEvent_after_mapClear_call_from_client() {
+        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
+
+        mapClearFromClient(handler);
+    }
+
+    private void mapClearFromClient(final ClearEventCounterEventHandler handler) {
         // populate Near Cache
         IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(newNearCacheConfig(), 2);
         populateMap(clientMap, 1000);
         populateNearCache(clientMap, 1000);
 
         // add test listener to count clear events
-        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
         ((NearCachedClientMapProxy) clientMap).addNearCacheInvalidationListener(handler);
 
         // create a new client to send events
@@ -917,24 +941,37 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
                 assertTrue("Expecting at least 1 clear event", 0 < handler.getClearEventCount());
             }
         });
+    }
+
+    @Test
+    public void receives_one_clearEvent_after_mapClear_call_from_member() {
+        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
+
+        mapClearFromMember(handler);
+    }
+
+    @Test
+    @Category(NightlyTest.class)
+    public void ensure_receives_one_clearEvent_after_mapClear_call_from_member() {
+        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
+
+        mapClearFromMember(handler);
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() {
                 assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount());
             }
-        }, 2);
+        }, getRandomTime());
     }
 
-    @Test
-    public void receives_one_clearEvent_after_mapClear_call_from_member() {
+    private void mapClearFromMember(final ClearEventCounterEventHandler handler) {
         // populate Near Cache
         IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(newNearCacheConfig(), 2);
         populateMap(clientMap, 1000);
         populateNearCache(clientMap, 1000);
 
         // add test listener to count clear events
-        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
         ((NearCachedClientMapProxy) clientMap).addNearCacheInvalidationListener(handler);
 
         // clear map from member side
@@ -948,24 +985,37 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
                 assertTrue("Expecting at least 1 clear event", 0 < handler.getClearEventCount());
             }
         });
+    }
+
+    @Test
+    public void receives_one_clearEvent_after_mapEvictAll_call_from_client() {
+        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
+
+        mapEvictAllFromClient(handler);
+    }
+
+    @Test
+    @Category(NightlyTest.class)
+    public void ensure_receives_one_clearEvent_after_mapEvictAll_call_from_client() {
+        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
+
+        mapEvictAllFromClient(handler);
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() {
                 assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount());
             }
-        }, 2);
+        }, getRandomTime());
     }
 
-    @Test
-    public void receives_one_clearEvent_after_mapEvictAll_call_from_client() {
+    private void mapEvictAllFromClient(final ClearEventCounterEventHandler handler) {
         // populate Near Cache
         IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(newNearCacheConfig());
         populateMap(clientMap, 1000);
         populateNearCache(clientMap, 1000);
 
         // add test listener to count clear events
-        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
         ((NearCachedClientMapProxy) clientMap).addNearCacheInvalidationListener(handler);
 
         // call evictAll
@@ -979,17 +1029,31 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
                 assertTrue("Expecting at least 1 clear event", 0 < handler.getClearEventCount());
             }
         });
+    }
+
+    @Test
+    public void receives_one_clearEvent_after_mapEvictAll_call_from_member() {
+        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
+
+        mapAvictAllFromMember(handler);
+    }
+
+    @Test
+    @Category(NightlyTest.class)
+    public void ensure_receives_one_clearEvent_after_mapEvictAll_call_from_member() {
+        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
+
+        mapAvictAllFromMember(handler);
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() {
                 assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount());
             }
-        }, 2);
+        }, getRandomTime());
     }
 
-    @Test
-    public void receives_one_clearEvent_after_mapEvictAll_call_from_member() {
+    private void mapAvictAllFromMember(final ClearEventCounterEventHandler handler) {
         IMap<Integer, Integer> clientMap = getNearCachedMapFromClient(newNearCacheConfig(), 2);
 
         // populate Near Cache
@@ -997,7 +1061,6 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         populateNearCache(clientMap, 1000);
 
         // add test listener to count clear events
-        final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
         ((NearCachedClientMapProxy) clientMap).addNearCacheInvalidationListener(handler);
 
         // call evictAll
@@ -1011,13 +1074,6 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
                 assertTrue("Expecting at least 1 clear event", 0 < handler.getClearEventCount());
             }
         });
-
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("Expecting only 1 clear event", 1, handler.getClearEventCount());
-            }
-        }, 2);
     }
 
     @Test
@@ -1287,5 +1343,9 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         int getClearEventCount() {
             return clearEventCount.get();
         }
+    }
+
+    private static int getRandomTime() {
+        return rand.nextInt(NIGHTLY_TEST_WAIT_DURATION);
     }
 }
