@@ -141,52 +141,50 @@ import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
  * each upstream processor, doing very little work.
  *
  * <h1>Overview of factory methods for aggregate operations</h1>
+ * <table border="1">
+ * <tr>
+ *     <th></th>
+ *     <th>single-stage</th>
+ *     <th>stage 1/2</th>
+ *     <th>stage 2/2</th>
+ * </tr><tr>
+ *     <th>batch,<br>no grouping</th>
  *
- * <h2>Global batch aggregation</strong> (no grouping)</h2>
- * <ul><li>
- *     single-stage: {@link #aggregate(AggregateOperation) aggregate()}
- * </li><li>
- *     1/2 stage: {@link #accumulate(AggregateOperation) accumulate()}
- * </li><li>
- *     2/2 stage: {@link #combine(AggregateOperation) combine()}
- * </ul></li>
+ *     <td>{@link #aggregate(AggregateOperation) aggregate()}</td>
+ *     <td>{@link #accumulate(AggregateOperation) accumulate()}</td>
+ *     <td>{@link #combine(AggregateOperation) combine()}</td>
+ * </tr><tr>
+ *     <th>batch, group by key</th>
  *
- * <h2>Batch aggregation by key</h2>
+ *     <td>{@link #aggregateByKey(DistributedFunction, AggregateOperation)
+ *          aggregateByKey()}</td>
+ *     <td>{@link #accumulateByKey(DistributedFunction, AggregateOperation)
+ *          accumulateByKey()}</td>
+ *     <td>{@link #combineByKey(AggregateOperation) combineByKey()}</td>
+ * </tr><tr>
+ *     <th>stream, group by key<br>and aligned window</th>
  *
- * <ul><li>
- *     single-stage: {@link #aggregateByKey(DistributedFunction, AggregateOperation)
- *     aggregateByKey()}
- *  </li><li>
- *     1/2 stage: {@link #accumulateByKey(DistributedFunction, AggregateOperation)
- *     accumulateByKey()}
- *  </li><li>
- *     2/2 stage: {@link #combineByKey(AggregateOperation) combineByKey()}
- * </ul></li>
- *
- * <h2>Aggregation by key and sliding window</h2>
- *
+ *     <td>{@link #aggregateToSlidingWindow(DistributedFunction, DistributedToLongFunction,
+ *          TimestampKind, WindowDefinition, AggregateOperation)
+ *          aggregateToSlidingWindow()}</td>
+ *     <td>{@link #accumulateByFrame(DistributedFunction, DistributedToLongFunction,
+ *          TimestampKind, WindowDefinition, AggregateOperation)
+ *          accumulateByFrame()}</td>
+ *     <td>{@link #combineToSlidingWindow(WindowDefinition, AggregateOperation)
+ *          combineToSlidingWindow()}</td>
+ * </tr><tr>
+ *     <th>stream, group by key<br>and session window</th>
+ *     <td>{@link #aggregateToSessionWindow(long, DistributedToLongFunction,
+ *          DistributedFunction, AggregateOperation)
+ *          aggregateToSessionWindow()}</td>
+ *     <td>N/A</td>
+ *     <td>N/A</td>
+ * </tr></table>
+ * <p>
  * Tumbling window is a special case of sliding window with sliding step =
  * window size. To achieve the effect of aggregation without a
  * grouping key, specify {@link com.hazelcast.jet.function.DistributedFunctions#constantKey()
  * constantKey()} as the key-extracting function.
- * <ul><li>
- *     single-stage: {@link #aggregateToSlidingWindow(DistributedFunction,
- *          DistributedToLongFunction, TimestampKind, WindowDefinition, AggregateOperation)
- *     aggregateToSlidingWindow()}
- * </li><li>
- *     1/2 stage: {@link #accumulateByFrame(DistributedFunction,
- *          DistributedToLongFunction, TimestampKind, WindowDefinition, AggregateOperation)
- *     accumulateByFrame()}
- * </li><li>
- *     2/2 stage: {@link #combineToSlidingWindow(WindowDefinition, AggregateOperation)
- *     combineToSlidingWindow()}
- * </li></ul>
- *
- * <h2>Aggregation by key and session window</h2>
- *
- * {@link #aggregateToSessionWindow(long, DistributedToLongFunction,
- *     DistributedFunction, AggregateOperation)
- * aggregateToSessionWindow()}
  */
 public final class Processors {
 

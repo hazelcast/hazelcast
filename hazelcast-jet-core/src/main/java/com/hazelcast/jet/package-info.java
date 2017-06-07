@@ -15,6 +15,6 @@
  */
 
 /**
- * Hazelcast Jet is a distributed computation engine.
+ * The base package of Hazelcast Jet. Contains most of the public API.
  */
 package com.hazelcast.jet;

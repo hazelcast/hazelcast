@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.Edge.ForwardingPattern;
+import com.hazelcast.jet.Edge.RoutingPolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -109,7 +109,7 @@ public class EdgeTest {
     }
 
     @Test
-    public void whenPartitioned_thenPartitionerAndForwardingPatternSet() {
+    public void whenPartitioned_thenPartitionerAndRoutingPolicySet() {
         // Given
         final Edge e = Edge.from(a);
 
@@ -120,7 +120,7 @@ public class EdgeTest {
         partitioner.init(Integer.class::cast);
 
         // Then
-        assertSame(ForwardingPattern.PARTITIONED, e.getForwardingPattern());
+        assertSame(RoutingPolicy.PARTITIONED, e.getRoutingPolicy());
         assertEquals(13, partitioner.getPartition(13, 0));
     }
 
@@ -137,7 +137,7 @@ public class EdgeTest {
         partitioner.init(Integer.class::cast);
 
         // Then
-        assertSame(ForwardingPattern.PARTITIONED, e.getForwardingPattern());
+        assertSame(RoutingPolicy.PARTITIONED, e.getRoutingPolicy());
         assertEquals(partitioningKey, partitioner.getPartition(13, 0));
     }
 
@@ -153,7 +153,7 @@ public class EdgeTest {
         assertNotNull(partitioner);
 
         // Then
-        assertSame(ForwardingPattern.PARTITIONED, e.getForwardingPattern());
+        assertSame(RoutingPolicy.PARTITIONED, e.getRoutingPolicy());
         assertEquals(partitionId, partitioner.getPartition(13, 0));
     }
 
@@ -169,14 +169,14 @@ public class EdgeTest {
         assertNotNull(partitioner);
 
         // Then
-        assertSame(ForwardingPattern.PARTITIONED, e.getForwardingPattern());
+        assertSame(RoutingPolicy.PARTITIONED, e.getRoutingPolicy());
         assertEquals(partitioner.getPartition(17, mockPartitionCount), partitioner.getPartition(13, mockPartitionCount));
     }
 
     @Test
     public void whenBroadcastSet_thenIsBroadcast() {
         final Edge e = Edge.from(a).broadcast();
-        assertSame(ForwardingPattern.BROADCAST, e.getForwardingPattern());
+        assertSame(RoutingPolicy.BROADCAST, e.getRoutingPolicy());
     }
 
     @Test

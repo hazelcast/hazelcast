@@ -99,7 +99,7 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
                 .localParallelism(1);
         Vertex sink = dag.newVertex("sink", writeList("sink"));
 
-        dag.edge(between(source, insertPP).oneToMany());
+        dag.edge(between(source, insertPP).isolated());
 
         if (singleStageProcessor) {
             Vertex slidingWin = dag.newVertex("slidingWin",
@@ -107,7 +107,7 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
                             TimestampedEntry::getTimestamp, TimestampKind.EVENT, wDef, counting));
             dag
                     .edge(between(insertPP, slidingWin).partitioned(TimestampedEntry<String, Long>::getKey).distributed())
-                    .edge(between(slidingWin, sink).oneToMany());
+                    .edge(between(slidingWin, sink).isolated());
 
         } else {
             Vertex accumulateByFrame = dag.newVertex("accumulateByFrame",
@@ -117,7 +117,7 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
             dag
                     .edge(between(insertPP, accumulateByFrame).partitioned(TimestampedEntry<String, Long>::getKey))
                     .edge(between(accumulateByFrame, slidingWin).partitioned(entryKey()).distributed())
-                    .edge(between(slidingWin, sink).oneToMany());
+                    .edge(between(slidingWin, sink).isolated());
         }
 
         Future<Void> future = instance.newJob(dag).execute();

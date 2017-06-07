@@ -49,7 +49,7 @@ import static com.hazelcast.jet.Partitioner.defaultPartitioner;
  * cluster-wide, or only within each member.
  * <p>
  * A newly instantiated Edge is non-distributed with a {@link
- * ForwardingPattern#VARIABLE_UNICAST VARIABLE_UNICAST} forwarding pattern.
+ * RoutingPolicy#UNICAST UNICAST} routing policy.
  */
 public class Edge implements IdentifiedDataSerializable {
 
@@ -65,7 +65,7 @@ public class Edge implements IdentifiedDataSerializable {
     private boolean isBuffered;
     private boolean isDistributed;
     private Partitioner<?> partitioner;
-    private ForwardingPattern forwardingPattern = ForwardingPattern.VARIABLE_UNICAST;
+    private RoutingPolicy routingPolicy = RoutingPolicy.UNICAST;
 
     private EdgeConfig config;
 
@@ -224,60 +224,58 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
-     * Activates the {@link ForwardingPattern#PARTITIONED PARTITIONED}
-     * forwarding pattern and applies the
-     * {@link Partitioner#defaultPartitioner() default} Hazelcast partitioning
-     * strategy. The strategy is applied to the result of the
-     * {@code keyExtractor} function.
+     * Activates the {@link RoutingPolicy#PARTITIONED PARTITIONED} routing
+     * policy and applies the {@link Partitioner#defaultPartitioner() default}
+     * Hazelcast partitioning strategy. The strategy is applied to the result of
+     * the {@code keyExtractor} function.
      */
     public <T> Edge partitioned(DistributedFunction<T, ?> keyExtractor) {
         return partitioned(keyExtractor, defaultPartitioner());
     }
 
     /**
-     * Activates the {@link ForwardingPattern#PARTITIONED PARTITIONED} forwarding
-     * pattern and applies the provided partitioning strategy. The strategy
+     * Activates the {@link RoutingPolicy#PARTITIONED PARTITIONED} routing
+     * policy and applies the provided partitioning strategy. The strategy
      * is applied to the result of the {@code keyExtractor} function.
      */
     public <T, K> Edge partitioned(DistributedFunction<T, K> keyExtractor, Partitioner<? super K> partitioner) {
-        this.forwardingPattern = ForwardingPattern.PARTITIONED;
+        this.routingPolicy = RoutingPolicy.PARTITIONED;
         this.partitioner = new KeyPartitioner<>(keyExtractor, partitioner);
         return this;
     }
 
     /**
-     * Activates a special-cased {@link ForwardingPattern#PARTITIONED
-     * PARTITIONED} forwarding pattern where all items will be assigned the
-     * same, randomly chosen partition ID. Therefore all items will be directed
-     * to the same processor.
+     * Activates a special-cased {@link RoutingPolicy#PARTITIONED PARTITIONED}
+     * routing policy where all items will be assigned the same, randomly
+     * chosen partition ID. Therefore all items will be directed to the same
+     * processor.
      */
     public Edge allToOne() {
         return partitioned(wholeItem(), new Single());
     }
 
     /**
-     * Activates the {@link ForwardingPattern#BROADCAST BROADCAST} forwarding
-     * pattern.
+     * Activates the {@link RoutingPolicy#BROADCAST BROADCAST} routing policy.
      */
     public Edge broadcast() {
-        forwardingPattern = ForwardingPattern.BROADCAST;
+        routingPolicy = RoutingPolicy.BROADCAST;
         return this;
     }
 
     /**
-     * Activates the {@link ForwardingPattern#ONE_TO_MANY ONE_TO_MANY} with
-     * fixed paths from upstream to downstream processors. Each downstream
-     * processor is assigned exactly one upstream processor that will feed it,
-     * and each upstream processor is assigned a fixed subset of downstream
-     * processors. This creates isolated groups of processors (one upstream
-     * processor + all the downstream processors it feeds) that can be driven
-     * on a single thread, thus eliminating the overhead of concurrent queues.
+     * Activates the {@link RoutingPolicy#ISOLATED ISOLATED} routing policy
+     * which ensures that the paths from upstream to downstream processors
+     * never cross. Each downstream processor is assigned exactly one upstream
+     * processor and each upstream processor is assigned a disjoint subset of
+     * downstream processors. This allows the selective application of
+     * backpressure to just one source processor that feeds a given downstream
+     * processor.
      * <p>
-     * This pattern requires the downstream parallelism to be greater than or
-     * equal to upstream parallelism. It can only be applied to local edges.
+     * The downstream vertex's parallelism must be greater than or equal to the
+     * upstream's. This routing policy can only be applied to a local edge.
      */
-    public Edge oneToMany() {
-        forwardingPattern = ForwardingPattern.ONE_TO_MANY;
+    public Edge isolated() {
+        routingPolicy = RoutingPolicy.ISOLATED;
         return this;
     }
 
@@ -290,10 +288,10 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
-     * Returns the {@link ForwardingPattern} in effect on the edge.
+     * Returns the {@link RoutingPolicy} in effect on the edge.
      */
-    public ForwardingPattern getForwardingPattern() {
-        return forwardingPattern;
+    public RoutingPolicy getRoutingPolicy() {
+        return routingPolicy;
     }
 
     /**
@@ -305,11 +303,11 @@ public class Edge implements IdentifiedDataSerializable {
      * distributed edge.
      * <p>
      * A <em>distributed</em> edge allows all the data to be observed by all
-     * the processors (using the {@link ForwardingPattern#BROADCAST BROADCAST}
-     * forwarding pattern) and, more attractively, all the data with a given
+     * the processors (using the {@link RoutingPolicy#BROADCAST BROADCAST}
+     * routing policy) and, more attractively, all the data with a given
      * partition ID to be observed by the same unique processor, regardless of
      * whether it is running on the local or a remote member (using the {@link
-     * ForwardingPattern#PARTITIONED PARTITIONED} forwarding pattern).
+     * RoutingPolicy#PARTITIONED PARTITIONED} routing policy).
      */
     public Edge distributed() {
         isDistributed = true;
@@ -355,17 +353,17 @@ public class Edge implements IdentifiedDataSerializable {
             }
             b.append(')');
         }
-        switch (getForwardingPattern()) {
-            case VARIABLE_UNICAST:
+        switch (getRoutingPolicy()) {
+            case UNICAST:
+                break;
+            case ISOLATED:
+                b.append(".isolated()");
                 break;
             case PARTITIONED:
                 b.append(getPartitioner() instanceof Single ? ".allToOne()" : ".partitioned(?)");
                 break;
             case BROADCAST:
                 b.append(".broadcast()");
-                break;
-            case ONE_TO_MANY:
-                b.append(".oneToMany()");
                 break;
             default:
         }
@@ -401,7 +399,7 @@ public class Edge implements IdentifiedDataSerializable {
         out.writeInt(priority);
         out.writeBoolean(isBuffered);
         out.writeBoolean(isDistributed);
-        out.writeObject(forwardingPattern);
+        out.writeObject(routingPolicy);
         CustomClassLoadedObject.write(out, partitioner);
         out.writeObject(config);
     }
@@ -415,7 +413,7 @@ public class Edge implements IdentifiedDataSerializable {
         priority = in.readInt();
         isBuffered = in.readBoolean();
         isDistributed = in.readBoolean();
-        forwardingPattern = in.readObject();
+        routingPolicy = in.readObject();
         partitioner = CustomClassLoadedObject.read(in);
         config = in.readObject();
     }
@@ -434,32 +432,35 @@ public class Edge implements IdentifiedDataSerializable {
 
 
     /**
-     * Enumerates the supported patterns of forwarding data items along an edge. Since there
-     * are many {@code Processor} instances doing the work of the same destination vertex, a
-     * choice can be made which processor(s) to send the item to.
-     * <p>
-     * If the edge is not distributed, candidate processors are only those running within
-     * the same cluster member.
+     * An edge describes a connection from many upstream processors to many
+     * downstream processors. The routing policy decides where exactly to route
+     * each particular item emitted from an upstream processor. To simplify
+     * the reasoning we introduce the concept of the <em>set of candidate
+     * downstream processors</em>, or the <em>candidate set</em> for short. On
+     * a local edge the candidate set contains only local processors and on a
+     * distributed edge it contain all the processors.
      */
-    public enum ForwardingPattern implements Serializable {
+    public enum RoutingPolicy implements Serializable {
         /**
-         * For each item a single destination processor is chosen per item,
-         * with no restriction on the choice.
+         * For each item a single destination processor is chosen from the
+         * candidate set, with no restriction on the choice.
          */
-        VARIABLE_UNICAST,
+        UNICAST,
         /**
-         * Each downstream processor consumes items always from the same upstream processor and
-         * no items from any of the other upstream processors.
-         *
-         * Requires downstream parallelism to be greater than or equal to upstream parallelism.
-         *
-         * This pattern is only available for local edges.
+         * Like {@link #UNICAST}, but guarantees that any given downstream
+         * processor receives data from exactly one upstream processor. This is
+         * needed in some DAG setups to apply selective backpressure to individual
+         * upstream source processors.
+         * <p>
+         * The downstream's local parallelism must not be less than the upstream's.
+         * This policy is only available on a local edge.
          */
-        ONE_TO_MANY,
+        ISOLATED,
         /**
-         * Each item is sent to the one processor responsible for the item's partition ID. On
-         * a distributed edge, the processor is unique across the cluster; on a non-distributed
-         * edge the processor is unique only within a member.
+         * Each item is sent to the one processor responsible for the item's
+         * partition ID. On a distributed edge the processor is unique across the
+         * cluster; on a non-distributed edge the processor is unique only within a
+         * member.
          */
         PARTITIONED,
         /**

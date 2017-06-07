@@ -60,16 +60,16 @@ public interface OutboundCollector {
         if (collectors.length == 1) {
             return collectors[0];
         }
-        switch (outboundEdge.forwardingPattern()) {
-            case VARIABLE_UNICAST:
-            case ONE_TO_MANY:
+        switch (outboundEdge.routingPolicy()) {
+            case UNICAST:
+            case ISOLATED:
                 return new RoundRobin(collectors);
             case PARTITIONED:
                 return new Partitioned(collectors, outboundEdge.partitioner(), partitionCount);
             case BROADCAST:
                 return new Broadcast(collectors);
             default:
-                throw new AssertionError("Missing case label for " + outboundEdge.forwardingPattern());
+                throw new AssertionError("Missing case label for " + outboundEdge.routingPolicy());
         }
     }
 

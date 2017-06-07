@@ -491,48 +491,45 @@ public final class AggregateOperations {
     }
 
     /**
-     * A reducing operation maintains a value that starts out as the
-     * operation's <em>identity</em> value and is being iteratively transformed
-     * by applying the <em>combining</em> function to the current value and a
-     * new item's value. The item is first passed through the provided <em>
-     * mapping</em> function. Since the order of application of the function to
-     * stream items is unspecified, the combining function must be commutative
-     * and associative to produce meaningful results.
+     * A reducing operation maintains an accumulated value that starts out as
+     * {@code emptyAccValue} and is being iteratively transformed by applying
+     * the {@code combine} primitive to it and each stream item's accumulated
+     * value, as returned from {@code toAccValueF}. The {@code combine} must
+     * be <em>associative</em> because it will also be used to combine partial
+     * results, and <em>commutative</em> because the encounter order of items
+     * is unspecified.
      * <p>
-     * To support O(1) maintenance of a sliding window, a <em>deducting</em>
-     * function should be supplied whose effect is the opposite of the
-     * combining function, removing the contribution of an item to the reduced
-     * result:
+     * The optional {@code deduct} primitive allows Jet to compute the sliding
+     * window in O(1) time. It must undo the effects of a previous
+     * {@code combine}:
      * <pre>
-     *     U acc = ... // any possible value
-     *     U val = mapF.apply(item);
-     *     U combined = combineF.apply(acc, val);
-     *     U deducted = deductF.apply(combined, val);
-     *     assert deducted.equals(acc);
+     *     A accVal;  (has some pre-existing value)
+     *     A itemAccVal = toAccValueF.apply(item);
+     *     A combined = combineAccValuesF.apply(accVal, itemAccVal);
+     *     A deducted = deductAccValueF.apply(combined, itemAccVal);
+     *     assert deducted.equals(accVal);
      * </pre>
      *
-     * @param identity the reducing operation's identity element
-     * @param mapF a function to apply to the item before passing it to the combining
-     *             function
-     * @param combineF a function that combines a new item with the current result
-     *                 and returns the new result
-     * @param deductF an optional function that deducts the contribution of an
-     *                item from the current result and returns the new result
+     * @param emptyAccValue the reducing operation's emptyAccValue element
+     * @param toAccValueF transforms the stream item into its accumulated value
+     * @param combineAccValuesF combines two accumulated values into one
+     * @param deductAccValueF deducts the right-hand accumulated value from the left-hand one
+     *                        (optional)
      * @param <T> type of the stream item
-     * @param <U> type of the reduced result
+     * @param <A> type of the accumulated value
      */
     @Nonnull
-    public static <T, U> AggregateOperation<T, MutableReference<U>, U> reducing(
-            @Nonnull U identity,
-            @Nonnull DistributedFunction<? super T, ? extends U> mapF,
-            @Nonnull DistributedBinaryOperator<U> combineF,
-            @Nullable DistributedBinaryOperator<U> deductF
+    public static <T, A> AggregateOperation<T, MutableReference<A>, A> reducing(
+            @Nonnull A emptyAccValue,
+            @Nonnull DistributedFunction<? super T, ? extends A> toAccValueF,
+            @Nonnull DistributedBinaryOperator<A> combineAccValuesF,
+            @Nullable DistributedBinaryOperator<A> deductAccValueF
     ) {
         return new AggregateOperationImpl<>(
-                () -> new MutableReference<>(identity),
-                (a, t) -> a.set(combineF.apply(a.get(), mapF.apply(t))),
-                (a, b) -> a.set(combineF.apply(a.get(), b.get())),
-                deductF != null ? (a, b) -> a.set(deductF.apply(a.get(), b.get())) : null,
+                () -> new MutableReference<>(emptyAccValue),
+                (a, t) -> a.set(combineAccValuesF.apply(a.get(), toAccValueF.apply(t))),
+                (a, b) -> a.set(combineAccValuesF.apply(a.get(), b.get())),
+                deductAccValueF != null ? (a, b) -> a.set(deductAccValueF.apply(a.get(), b.get())) : null,
                 MutableReference::get);
     }
 }

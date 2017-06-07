@@ -45,7 +45,7 @@ import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class ForwardingTest extends JetTestSupport {
+public class RoutingPolicyTest extends JetTestSupport {
 
     private static final List<Integer> NUMBERS_LOW = IntStream.range(0, 4096).boxed().collect(toList());
     private static final List<Integer> NUMBERS_HIGH = IntStream.range(4096, 8192).boxed().collect(toList());
@@ -67,7 +67,7 @@ public class ForwardingTest extends JetTestSupport {
     }
 
     @Test
-    public void when_variableUnicast() throws Throwable {
+    public void when_unicast() throws Throwable {
         DAG dag = new DAG();
         Vertex producer = producer(NUMBERS_LOW, NUMBERS_HIGH);
         Vertex consumer = consumer(consumerSup, 2);
@@ -126,7 +126,7 @@ public class ForwardingTest extends JetTestSupport {
     }
 
     @Test
-    public void when_oneToMany_downstreamEqualsUpstream() throws Throwable {
+    public void when_isolated_downstreamEqualsUpstream() throws Throwable {
         DAG dag = new DAG();
         Vertex producer = producer(NUMBERS_LOW, NUMBERS_HIGH);
         Vertex consumer = consumer(consumerSup, 2);
@@ -134,7 +134,7 @@ public class ForwardingTest extends JetTestSupport {
         dag.vertex(producer)
            .vertex(consumer)
            .edge(between(producer, consumer)
-                   .oneToMany());
+                   .isolated());
 
         execute(dag);
 
@@ -143,7 +143,7 @@ public class ForwardingTest extends JetTestSupport {
     }
 
     @Test
-    public void when_oneToMany_downstreamGreaterThanUpstream() throws Throwable {
+    public void when_isolated_downstreamGreaterThanUpstream() throws Throwable {
         DAG dag = new DAG();
         Vertex producer = producer(NUMBERS_LOW, NUMBERS_HIGH);
         Vertex consumer = consumer(consumerSup, 4);
@@ -151,7 +151,7 @@ public class ForwardingTest extends JetTestSupport {
         dag.vertex(producer)
            .vertex(consumer)
            .edge(between(producer, consumer)
-                   .oneToMany());
+                   .isolated());
 
         execute(dag);
 

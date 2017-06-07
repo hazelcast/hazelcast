@@ -86,7 +86,7 @@ public class Processors_globalAggregationIntegrationTest extends JetTestSupport 
                     .localParallelism(1);
             dag
                     .edge(between(source, aggregate).distributed().allToOne())
-                    .edge(between(aggregate, sink).oneToMany());
+                    .edge(between(aggregate, sink).isolated());
 
         } else {
             Vertex accumulate = dag.newVertex("accumulate", accumulate(summingOp));
@@ -94,7 +94,7 @@ public class Processors_globalAggregationIntegrationTest extends JetTestSupport 
             dag
                     .edge(between(source, accumulate))
                     .edge(between(accumulate, combine).distributed().allToOne())
-                    .edge(between(combine, sink).oneToMany());
+                    .edge(between(combine, sink).isolated());
         }
 
         instance.newJob(dag).execute().get();

@@ -33,15 +33,16 @@ import java.util.Objects;
  * to the final result at the end of accumulation. These are the
  * primitives:
  * <ol><li>
- *     {@link #createAccumulatorF() create} a new accumulator
+ *     {@link #createAccumulatorF() create} a new accumulator object
  * </li><li>
- *     {@link #accumulateItemF() accumulate} the data of an item
+ *     {@link #accumulateItemF() accumulate} the data of an item by mutating
+ *     the accumulator
  * </li><li>
- *     {@link #combineAccumulatorsF() combine} the contents of one accumulator
- *     into another one
+ *     {@link #combineAccumulatorsF() combine} the contents of the right-hand
+ *     accumulator into the left-hand one
  * </li><li>
- *     {@link #deductAccumulatorF() deduct} the contents of one accumulator
- *     from another (undo the effects of {@code combine})
+ *     {@link #deductAccumulatorF() deduct} the contents of the right-hand
+ *     accumulator from the left-hand one (undo the effects of {@code combine})
  * </li><li>
  *     {@link #finishAccumulationF() finish} accumulation by transforming the
  *     accumulator's intermediate result into the final result

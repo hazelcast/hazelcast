@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.Edge.RoutingPolicy;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.Partitioner;
 import com.hazelcast.nio.ObjectDataInput;
@@ -34,7 +35,7 @@ public class EdgeDef implements IdentifiedDataSerializable {
     private int priority;
     private boolean isBuffered;
     private boolean isDistributed;
-    private Edge.ForwardingPattern forwardingPattern;
+    private RoutingPolicy routingPolicy;
     private Partitioner partitioner;
     private EdgeConfig config;
 
@@ -54,7 +55,7 @@ public class EdgeDef implements IdentifiedDataSerializable {
         this.priority = edge.getPriority();
         this.isBuffered = edge.isBuffered();
         this.isDistributed = isJobDistributed && edge.isDistributed();
-        this.forwardingPattern = edge.getForwardingPattern();
+        this.routingPolicy = edge.getRoutingPolicy();
         this.partitioner = edge.getPartitioner();
         this.config = config;
     }
@@ -66,8 +67,8 @@ public class EdgeDef implements IdentifiedDataSerializable {
         this.id = sourceVertex.vertexId() + ":" + destVertex.vertexId();
     }
 
-    public Edge.ForwardingPattern forwardingPattern() {
-        return forwardingPattern;
+    public RoutingPolicy routingPolicy() {
+        return routingPolicy;
     }
 
     public Partitioner partitioner() {
@@ -131,7 +132,7 @@ public class EdgeDef implements IdentifiedDataSerializable {
         out.writeInt(priority);
         out.writeBoolean(isBuffered);
         out.writeBoolean(isDistributed);
-        out.writeObject(forwardingPattern);
+        out.writeObject(routingPolicy);
         CustomClassLoadedObject.write(out, partitioner);
         out.writeObject(config);
     }
@@ -144,7 +145,7 @@ public class EdgeDef implements IdentifiedDataSerializable {
         priority = in.readInt();
         isBuffered = in.readBoolean();
         isDistributed = in.readBoolean();
-        forwardingPattern = in.readObject();
+        routingPolicy = in.readObject();
         partitioner = CustomClassLoadedObject.read(in);
         config = in.readObject();
     }
