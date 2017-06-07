@@ -164,7 +164,7 @@ public class NearCacheRecordStoreTest extends NearCacheRecordStoreTestSupport {
                 = createNearCacheRecordStore(nearCacheConfig, inMemoryFormat);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.put(i, "Record-" + i);
+            nearCacheRecordStore.put(i, null, "Record-" + i);
             nearCacheRecordStore.doEvictionIfRequired();
             assertTrue(maxSize >= nearCacheRecordStore.size());
         }

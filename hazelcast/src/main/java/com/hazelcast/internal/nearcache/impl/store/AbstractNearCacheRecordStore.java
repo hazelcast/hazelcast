@@ -154,7 +154,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     protected abstract R getOrCreateToReserve(K key);
 
-    protected abstract V updateAndGetReserved(K key, V value, long reservationId, boolean deserialize);
+    protected abstract V updateAndGetReserved(K key, Data keyData, V value, long reservationId, boolean deserialize);
 
     protected abstract R putRecord(K key, R record);
 
@@ -274,12 +274,10 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
                 if (record.getRecordState() != READ_PERMITTED) {
                     return null;
                 }
-
                 if (staleReadDetector.isStaleRead(key, record)) {
                     remove(key);
                     return null;
                 }
-
                 if (isRecordExpired(record)) {
                     remove(key);
                     onExpire(key, record);
@@ -302,7 +300,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     @Override
-    public void put(K key, V value) {
+    public void put(K key, Data keyData, V value) {
         checkAvailable();
         // if there is no eviction configured we return if the Near Cache is full and it's a new key
         // (we have to check the key, otherwise we might lose updates on existing keys)
@@ -314,7 +312,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         R oldRecord = null;
         try {
             record = valueToRecord(value);
-            onRecordCreate(key, record);
+            onRecordCreate(record);
+            initInvalidationMetaData(record, key, keyData);
             oldRecord = putRecord(key, record);
             if (oldRecord == null) {
                 nearCacheStats.incrementOwnedEntryCount();
@@ -411,16 +410,18 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     @Override
-    public V tryPublishReserved(K key, final V value, final long reservationId, boolean deserialize) {
-        return updateAndGetReserved(key, value, reservationId, deserialize);
+    public V tryPublishReserved(K key, Data keyData, V value, long reservationId, boolean deserialize) {
+        return updateAndGetReserved(key, keyData, value, reservationId, deserialize);
     }
 
-    protected R updateReservedRecordInternal(K key, V value, R reservedRecord, long reservationId) {
+    protected R updateReservedRecordInternal(K key, Data keyData, V value, R reservedRecord, long reservationId) {
         if (!reservedRecord.casRecordState(reservationId, UPDATE_STARTED)) {
             return reservedRecord;
         }
 
         updateRecordValue(reservedRecord, value);
+        initInvalidationMetaData(reservedRecord, key, keyData);
+
         reservedRecord.casRecordState(UPDATE_STARTED, READ_PERMITTED);
 
         nearCacheStats.incrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, reservedRecord));
@@ -433,9 +434,12 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         record.incrementAccessHit();
     }
 
-    private void onRecordCreate(K key, R record) {
+    private void onRecordCreate(R record) {
         record.setCreationTime(Clock.currentTimeMillis());
-        int partitionId = staleReadDetector.getPartitionId(key);
+    }
+
+    private void initInvalidationMetaData(R record, K key, Data keyData) {
+        int partitionId = staleReadDetector.getPartitionId(keyData == null ? toData(key) : keyData);
         MetaDataContainer metaDataContainer = staleReadDetector.getMetaDataContainer(partitionId);
         if (metaDataContainer != null) {
             record.setPartitionId(partitionId);
@@ -455,7 +459,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
             R record = null;
             try {
                 record = valueToRecord(null);
-                onRecordCreate(key, record);
+                onRecordCreate(record);
                 record.casRecordState(READ_PERMITTED, RESERVED);
             } catch (Throwable throwable) {
                 onPutError(key, null, record, null, throwable);

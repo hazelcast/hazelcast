@@ -191,7 +191,8 @@ public class NearCacheLiteMemberTest {
 
         // fill the Near Cache with the same data as below so we can detect when it is emptied
         for (int i = 0; i < count; i++) {
-            liteNearCache.put(serializationService.toData(i), i);
+            Data keyData = serializationService.toData(i);
+            liteNearCache.put(keyData, keyData, i);
         }
         final NearCacheStats stats = liteNearCache.getNearCacheStats();
         assertEquals(100, stats.getOwnedEntryCount());

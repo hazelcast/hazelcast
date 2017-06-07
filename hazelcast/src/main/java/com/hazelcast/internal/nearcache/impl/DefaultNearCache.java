@@ -116,12 +116,12 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     @Override
-    public void put(K key, V value) {
+    public void put(K key, Data keyData, V value) {
         checkNotNull(key, "key cannot be null on put!");
 
         nearCacheRecordStore.doEvictionIfRequired();
 
-        nearCacheRecordStore.put(key, value);
+        nearCacheRecordStore.put(key, keyData, value);
     }
 
     @Override
@@ -213,8 +213,8 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     @Override
-    public V tryPublishReserved(K key, V value, long reservationId, boolean deserialize) {
-        return nearCacheRecordStore.tryPublishReserved(key, value, reservationId, deserialize);
+    public V tryPublishReserved(K key, Data keyData, V value, long reservationId, boolean deserialize) {
+        return nearCacheRecordStore.tryPublishReserved(key, keyData, value, reservationId, deserialize);
     }
 
     public NearCacheRecordStore<K, V> getNearCacheRecordStore() {
