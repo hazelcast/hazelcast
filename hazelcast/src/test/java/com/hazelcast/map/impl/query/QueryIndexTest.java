@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.query.CompositePredicate;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
@@ -160,6 +161,19 @@ public class QueryIndexTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 1000 * 60)
+    public void testOneIndexedFieldsWithTwoCriteriaField_compositePredicate() {
+        HazelcastInstance h1 = createHazelcastInstance();
+        IMap<String, Employee> map = h1.getMap("employees");
+        map.addIndex("name", false);
+        map.put("1", new Employee(1L, "joe", 30, true, 100D));
+        EntryObject e = new PredicateBuilder().getEntryObject();
+        PredicateBuilder a = e.get("name").equal("joe");
+        Predicate b = e.get("age").equal("30");
+        Collection<Employee> actual = map.values(new CompositePredicate(a.and(b)));
+        assertEquals(1, actual.size());
+    }
+
+    @Test(timeout = 1000 * 60)
     public void testPredicateNotEqualWithIndex() {
         HazelcastInstance instance = createHazelcastInstance();
         IMap<Integer, Value> map1 = instance.getMap("testPredicateNotEqualWithIndex-ordered");
@@ -177,7 +191,11 @@ public class QueryIndexTest extends HazelcastTestSupport {
         assertEquals(2, map.values(new SqlPredicate("index != 2")).size());
         assertEquals(3, map.values(new SqlPredicate("name <> 'aac'")).size());
         assertEquals(2, map.values(new SqlPredicate("index <> 2")).size());
-        assertEquals(3, map.values(new PredicateBuilder().getEntryObject().get("name").notEqual("aac")).size());
-        assertEquals(2, map.values(new PredicateBuilder().getEntryObject().get("index").notEqual(2)).size());
+        PredicateBuilder predicate1 = new PredicateBuilder().getEntryObject().get("name").notEqual("aac");
+        assertEquals(3, map.values(predicate1).size());
+        assertEquals(3, map.values(new CompositePredicate(predicate1)).size());
+        PredicateBuilder predicate2 = new PredicateBuilder().getEntryObject().get("index").notEqual(2);
+        assertEquals(2, map.values(predicate2).size());
+        assertEquals(2, map.values(new CompositePredicate(predicate2)).size());
     }
 }

@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableTest.ChildPortableObject;
 import com.hazelcast.nio.serialization.PortableTest.GrandParentPortableObject;
 import com.hazelcast.nio.serialization.PortableTest.ParentPortableObject;
+import com.hazelcast.query.CompositePredicate;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
@@ -307,6 +308,21 @@ public class QueryBasicTest extends HazelcastTestSupport {
             map.put("" + i, "" + i);
         }
         Predicate predicate = new PredicateBuilder().getEntryObject().get("this").equal("10");
+        Collection<String> set = map.values(predicate);
+        assertEquals(1, set.size());
+        assertEquals(1, map.values(new SqlPredicate("this=15")).size());
+    }
+
+    @Test(timeout = 1000 * 60)
+    public void queryWithThis_compositePredicate() {
+        HazelcastInstance instance = createHazelcastInstance(getConfig());
+        IMap<String, String> map = instance.getMap("queryWithThis");
+        map.addIndex("this", false);
+        for (int i = 0; i < 1000; i++) {
+            map.put("" + i, "" + i);
+        }
+        PredicateBuilder predicateBuilder = new PredicateBuilder().getEntryObject().get("this").equal("10");
+        Predicate predicate = new CompositePredicate(predicateBuilder);
         Collection<String> set = map.values(predicate);
         assertEquals(1, set.size());
         assertEquals(1, map.values(new SqlPredicate("this=15")).size());
