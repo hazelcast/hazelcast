@@ -19,7 +19,6 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.ClientTypes;
-import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.connection.AddressProvider;
@@ -157,7 +156,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         this.socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
 
         this.credentials = client.getCredentials();
-        ClientConnectionStrategyConfig strategyConfig = client.getClientConfig().getConnectionStrategyConfig();
         this.connectionStrategy = initializeStrategy(client);
         this.clusterConnectionExecutor = createSingleThreadExecutorService(client);
         this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
@@ -264,7 +262,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         }
         alive = false;
 
-        clusterConnectionExecutor.shutdown();
         ClientExecutionServiceImpl.shutdownExecutor("clusterExecutor", clusterConnectionExecutor, logger);
         for (Connection connection : activeConnections.values()) {
             connection.close("Hazelcast client is shutting down", null);
@@ -284,7 +281,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     private void setPrincipal(ClientPrincipal principal) {
         this.principal = principal;
     }
-
 
     protected void stopEventLoopGroup() {
         eventLoopGroup.shutdown();
@@ -344,7 +340,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         return ownerConnectionAddress;
     }
 
-    public void setOwnerConnectionAddress(Address ownerConnectionAddress) {
+    private void setOwnerConnectionAddress(Address ownerConnectionAddress) {
         this.ownerConnectionAddress = ownerConnectionAddress;
     }
 
@@ -399,13 +395,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         return connection;
     }
 
-    public Connection connectAsOwner(InetSocketAddress ownerInetSocketAddress) {
+    private Connection connectAsOwner(InetSocketAddress ownerInetSocketAddress) {
         Connection connection = null;
         try {
             Address address = new Address(ownerInetSocketAddress);
             logger.info("Trying to connect to " + address + " as owner member");
             connection = getOrConnect(address, true);
-            client.getClientClusterService().init();
+            client.onClusterConnect(connection);
+            setOwnerConnectionAddress(connection.getEndPoint());
+            logger.info("Setting " + connection + " as owner with principal " + principal);
             fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
             connectionStrategy.onConnectToCluster();
         } catch (Exception e) {
@@ -414,6 +412,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             if (null != connection) {
                 connection.close("Could not connect to " + ownerInetSocketAddress + " as owner", e);
             }
+            return null;
         }
         return connection;
     }
@@ -433,7 +432,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         for (ConnectionListener listener : connectionListeners) {
             listener.connectionRemoved(connection);
         }
-        if (connection.isAuthenticatedAsOwner()) {
+        Address endpoint = connection.getEndPoint();
+        if (endpoint != null && endpoint.equals(ownerConnectionAddress)) {
             setOwnerConnectionAddress(null);
             connectionStrategy.onDisconnectFromCluster();
         }
@@ -563,8 +563,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                             connection.setIsAuthenticatedAsOwner();
                             ClientPrincipal principal = new ClientPrincipal(result.uuid, result.ownerUuid);
                             setPrincipal(principal);
-                            setOwnerConnectionAddress(connection.getEndPoint());
-                            logger.info("Setting " + connection + " as owner  with principal " + principal);
                         }
                         onAuthenticated(target, connection);
                         callback.onSuccess(connection);
@@ -722,7 +720,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         try {
             connectToClusterInternal();
         } catch (Exception e) {
-            logger.warning("Could not re-connect to cluster shutting down the client" + e.getMessage());
+            logger.warning("Could not connect to cluster shutting down the client" + e.getMessage());
             client.getLifecycleService().shutdown();
             throw rethrow(e);
         }

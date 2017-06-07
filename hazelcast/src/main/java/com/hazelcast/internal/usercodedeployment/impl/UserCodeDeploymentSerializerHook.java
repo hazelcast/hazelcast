@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.usercodedeployment.impl.operation.ClassDataFinderOperation;
+import com.hazelcast.internal.usercodedeployment.impl.operation.DeployClassesOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.ConstructorFunction;
@@ -33,8 +34,9 @@ public class UserCodeDeploymentSerializerHook implements DataSerializerHook {
 
     public static final int CLASS_DATA = 0;
     public static final int CLASS_DATA_FINDER_OP = 1;
+    public static final int DEPLOY_CLASSES_OP = 2;
 
-    public static final int LEN = CLASS_DATA_FINDER_OP + 1;
+    public static final int LEN = DEPLOY_CLASSES_OP + 1;
 
     @Override
     public int getFactoryId() {
@@ -54,6 +56,12 @@ public class UserCodeDeploymentSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ClassDataFinderOperation();
+            }
+        };
+        constructors[DEPLOY_CLASSES_OP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new DeployClassesOperation();
             }
         };
         return new ArrayDataSerializableFactory(constructors);

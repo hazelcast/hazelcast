@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol;
 
+import com.hazelcast.client.impl.protocol.task.DeployClassesMessageTask;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.client.impl.protocol.task.cache.Pre38CacheAddInvalidationListenerTask;
 import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorAddMessageTask;
@@ -1665,6 +1666,11 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories[com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.ClientStatisticsMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.ClientDeployClassesCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new DeployClassesMessageTask(clientMessage, node, connection);
             }
         };
 //endregion

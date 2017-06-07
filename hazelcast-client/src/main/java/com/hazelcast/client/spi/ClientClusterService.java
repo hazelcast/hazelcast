@@ -107,6 +107,4 @@ public interface ClientClusterService {
      */
     boolean removeMembershipListener(String registrationId);
 
-    void init() throws Exception;
-
 }

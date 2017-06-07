@@ -35,24 +35,31 @@ public final class ClassDataProvider {
     private final UserCodeDeploymentConfig.ProviderMode providerMode;
     private final ClassLoader parent;
     private final ConcurrentMap<String, ClassSource> classSourceMap;
+    private final ConcurrentMap<String, ClassSource> clientClassSourceMap;
     private final ILogger logger;
 
     public ClassDataProvider(UserCodeDeploymentConfig.ProviderMode providerMode,
                              ClassLoader parent,
                              ConcurrentMap<String, ClassSource> classSourceMap,
+                             ConcurrentMap<String, ClassSource> clientClassSourceMap,
                              ILogger logger) {
         this.providerMode = providerMode;
         this.parent = parent;
         this.classSourceMap = classSourceMap;
+        this.clientClassSourceMap = clientClassSourceMap;
         this.logger = logger;
     }
 
     public ClassData getClassDataOrNull(String className) {
+        byte[] bytecode = loadBytecodeFromClientCache(className);
+        if (bytecode != null) {
+            return new ClassData(bytecode);
+        }
         if (providerMode == UserCodeDeploymentConfig.ProviderMode.OFF) {
             return null;
         }
         ClassData classData = null;
-        byte[] bytecode = loadBytecodeFromParent(className);
+        bytecode = loadBytecodeFromParent(className);
         if (bytecode == null && providerMode == UserCodeDeploymentConfig.ProviderMode.LOCAL_AND_CACHED_CLASSES) {
             bytecode = loadBytecodeFromCache(className);
         }
@@ -64,6 +71,14 @@ public final class ClassDataProvider {
 
     private byte[] loadBytecodeFromCache(String className) {
         ClassSource classSource = classSourceMap.get(className);
+        if (classSource == null) {
+            return null;
+        }
+        return classSource.getBytecode();
+    }
+
+    private byte[] loadBytecodeFromClientCache(String className) {
+        ClassSource classSource = clientClassSourceMap.get(className);
         if (classSource == null) {
             return null;
         }

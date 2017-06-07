@@ -41,7 +41,8 @@
                 <xs:element name="query-caches" type="query-caches" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="connection-strategy" type="connection-strategy" minOccurs="0" maxOccurs="1"/>
 
-                <xs:element name="instance-name" type="xs:string" minOccurs="0" maxOccurs="1" />
+                <xs:element name="instance-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="user-code-deployment" type="user-code-deployment" minOccurs="0" maxOccurs="1"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
@@ -386,7 +387,8 @@
             <xs:element name="cache-local-entries" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
                 <xs:annotation>
                     <xs:documentation>
-                        Deprecated since 3.8, has no effect on a client since there is no local part of the distributed data
+                        Deprecated since 3.8, has no effect on a client since there is no local part of the distributed
+                        data
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -580,5 +582,32 @@
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="enabled" default="false" type="xs:boolean"/>
+    </xs:complexType>
+    <xs:complexType name="user-code-deployment">
+        <xs:all>
+            <xs:element name="jarPaths" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="jarPath" type="xs:string" minOccurs="1" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+
+            <xs:element name="classNames" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="className" type="xs:string" minOccurs="1" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    True to enable User Code Deployment on this client, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 </xs:schema>

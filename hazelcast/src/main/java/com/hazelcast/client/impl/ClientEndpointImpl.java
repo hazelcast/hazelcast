@@ -139,7 +139,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public void setClientStatictics(String stats) {
+    public void setClientStatistics(String stats) {
         this.stats = stats;
     }
 

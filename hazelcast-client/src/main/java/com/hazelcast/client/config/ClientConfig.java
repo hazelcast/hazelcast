@@ -111,6 +111,8 @@ public class ClientConfig {
 
     private ClientConnectionStrategyConfig connectionStrategyConfig = new ClientConnectionStrategyConfig();
 
+    private ClientUserCodeDeploymentConfig userCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+
     public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
         if (configPatternMatcher == null) {
             throw new IllegalArgumentException("ConfigPatternMatcher is not allowed to be null!");
@@ -733,6 +735,28 @@ public class ClientConfig {
 
     public ClientConfig setConnectionStrategyConfig(ClientConnectionStrategyConfig connectionStrategyConfig) {
         this.connectionStrategyConfig = connectionStrategyConfig;
+        return this;
+    }
+
+    /**
+     * Get current configuration of User Code Deployment.
+     *
+     * @return User Code Deployment configuration
+     * @since 3.9
+     */
+    public ClientUserCodeDeploymentConfig getUserCodeDeploymentConfig() {
+        return userCodeDeploymentConfig;
+    }
+
+    /**
+     * Set User Code Deployment configuration
+     *
+     * @param userCodeDeploymentConfig
+     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
+     * @since 3.9
+     */
+    public ClientConfig setUserCodeDeploymentConfig(ClientUserCodeDeploymentConfig userCodeDeploymentConfig) {
+        this.userCodeDeploymentConfig = userCodeDeploymentConfig;
         return this;
     }
 }

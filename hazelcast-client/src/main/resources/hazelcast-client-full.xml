@@ -102,7 +102,8 @@
             <portable-factory factory-id="2">com.hazelcast.examples.PortableFactory</portable-factory>
         </portable-factories>
         <serializers>
-            <global-serializer override-java-serialization="true">com.hazelcast.examples.GlobalSerializerFactory</global-serializer>
+            <global-serializer override-java-serialization="true">com.hazelcast.examples.GlobalSerializerFactory
+            </global-serializer>
             <serializer type-class="com.hazelcast.examples.DummyType"
                         class-name="com.hazelcast.examples.SerializerFactory"/>
         </serializers>
@@ -110,7 +111,7 @@
     </serialization>
 
     <native-memory enabled="false" allocator-type="POOLED">
-        <size unit="MEGABYTES" value="128" />
+        <size unit="MEGABYTES" value="128"/>
         <min-block-size>1</min-block-size>
         <page-size>1</page-size>
         <metadata-space-percentage>40.5</metadata-space-percentage>
@@ -161,5 +162,16 @@
     </query-caches>
 
     <connection-strategy async-start="true" reconnect-mode="ASYNC"/>
+
+    <user-code-deployment enabled="true">
+        <jarPaths>
+            <jarPath>/User/test/sample.jar</jarPath>
+            <jarPath>https://hazelcast.com/</jarPath>
+            <jarPath>file://User/test/sample.jar</jarPath>
+        </jarPaths>
+        <classNames>
+            <className>test.sampleClassName</className>
+        </classNames>
+    </user-code-deployment>
 
 </hazelcast-client>

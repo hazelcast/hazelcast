@@ -42,7 +42,7 @@ public class ClientStatisticsMessageTask
 
     @Override
     protected Object call() throws Exception {
-        getEndpoint().setClientStatictics(parameters.stats);
+        getEndpoint().setClientStatistics(parameters.stats);
         return null;
     }
 
