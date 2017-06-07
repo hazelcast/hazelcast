@@ -25,14 +25,18 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static classloading.ThreadLeakTestUtils.assertHazelcastThreadShutdown;
+import static classloading.ThreadLeakTestUtils.getThreads;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 
@@ -40,7 +44,14 @@ import static org.mockito.Mockito.doThrow;
 @Category(QuickTest.class)
 public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
 
+    private static Set<Thread> oldThreads;
+
     private HazelcastInstance hazelcastInstance;
+
+    @BeforeClass
+    public static void getThread() {
+        oldThreads = getThreads();
+    }
 
     @After
     public void tearDown() {
@@ -52,6 +63,8 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
     @AfterClass
     public static void cleanUp() {
         HazelcastInstanceFactory.terminateAll();
+
+        assertHazelcastThreadShutdown(oldThreads);
     }
 
     @Test
@@ -175,24 +188,6 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
             hazelcastInstance.getLifecycleService().terminate();
             throw expected;
         }
-    }
-
-    @Test(expected = ExpectedRuntimeException.class)
-    public void test_NewInstance_failedAfterStartAndBeforeShutdown() throws Exception {
-        NodeContext context = new TestNodeContext() {
-            @Override
-            public NodeExtension createNodeExtension(Node node) {
-                NodeExtension nodeExtension = super.createNodeExtension(node);
-                doThrow(new ExpectedRuntimeException()).when(nodeExtension).afterStart();
-                doThrow(new ExpectedRuntimeException()).when(nodeExtension).beforeShutdown();
-                return nodeExtension;
-            }
-        };
-
-        Config config = new Config();
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
-
-        hazelcastInstance = HazelcastInstanceFactory.newHazelcastInstance(config, randomString(), context);
     }
 
     @Test(expected = IllegalStateException.class)

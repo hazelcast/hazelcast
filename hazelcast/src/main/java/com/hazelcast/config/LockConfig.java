@@ -34,7 +34,7 @@ public class LockConfig {
      * Creates a {@link LockConfig} with the provided name.
      *
      * @param name the name
-     * @throws NullPointerException if name is null
+     * @throws NullPointerException if name is {@code null}
      */
     public LockConfig(String name) {
         this.name = checkNotNull(name, "name can't be null");
@@ -44,7 +44,7 @@ public class LockConfig {
      * Clones a {@link LockConfig}
      *
      * @param config the lock config to clone
-     * @throws NullPointerException if config is null
+     * @throws NullPointerException if config is {@code null}
      */
     public LockConfig(LockConfig config) {
         checkNotNull(config, "config can't be null");
@@ -56,8 +56,8 @@ public class LockConfig {
      * Creates a new {@link LockConfig} by cloning an existing config and overriding the name.
      *
      * @param name   the new name
-     * @param config the config.
-     * @throws NullPointerException if name or config is null.
+     * @param config the config
+     * @throws NullPointerException if name or config is {@code null}
      */
     public LockConfig(String name, LockConfig config) {
         this(config);
@@ -69,7 +69,7 @@ public class LockConfig {
      *
      * @param name the name of the lock
      * @return the updated {@link LockConfig}
-     * @throws IllegalArgumentException if name is null or an empty string.
+     * @throws IllegalArgumentException if name is {@code null} or an empty string
      */
     public LockConfig setName(String name) {
         this.name = checkHasText(name, "name must contain text");
@@ -79,7 +79,7 @@ public class LockConfig {
     /**
      * Returns the name of the lock.
      *
-     * @return the name of the lock.
+     * @return the name of the lock
      */
     public String getName() {
         return name;
@@ -108,8 +108,8 @@ public class LockConfig {
     /**
      * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public LockConfig getAsReadOnly() {
         return new LockConfigReadonly(this);

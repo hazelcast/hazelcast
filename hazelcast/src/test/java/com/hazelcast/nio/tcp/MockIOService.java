@@ -17,22 +17,19 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.internal.networking.ChannelOutboundHandler;
-import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelFactory;
-import com.hazelcast.internal.networking.nio.NioChannelFactory;
+import com.hazelcast.internal.networking.ChannelInboundHandler;
+import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.Packet;
@@ -40,7 +37,6 @@ import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.impl.PacketHandler;
-import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -59,9 +55,10 @@ public class MockIOService implements IOService {
     public final InternalSerializationService serializationService;
     public final LoggingServiceImpl loggingService;
     public final ConcurrentHashMap<Long, DummyPayload> payloads = new ConcurrentHashMap<Long, DummyPayload>();
+    private final ChannelFactory channelFactory;
     public volatile PacketHandler packetHandler;
 
-    public MockIOService(int port) throws Exception {
+    public MockIOService(int port, ChannelFactory channelFactory) throws Exception {
         loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.BUILD_INFO);
         serverSocketChannel = ServerSocketChannel.open();
         ServerSocket serverSocket = serverSocketChannel.socket();
@@ -69,6 +66,7 @@ public class MockIOService implements IOService {
         serverSocket.setSoTimeout(1000);
         serverSocket.bind(new InetSocketAddress("0.0.0.0", port));
         thisAddress = new Address("127.0.0.1", port);
+        this.channelFactory = channelFactory;
         this.serializationService = new DefaultSerializationServiceBuilder()
                 .addDataSerializableFactory(TestDataFactory.FACTORY_ID, new TestDataFactory())
                 .build();
@@ -344,7 +342,7 @@ public class MockIOService implements IOService {
 
     @Override
     public ChannelFactory getChannelFactory() {
-        return new NioChannelFactory();
+        return channelFactory;
     }
 
     @Override
@@ -354,11 +352,11 @@ public class MockIOService implements IOService {
 
     @Override
     public ChannelInboundHandler createInboundHandler(final TcpIpConnection connection) {
-        return new MemberChannelInboundHandler(connection, new PacketDispatcher() {
+        return new MemberChannelInboundHandler(connection, new PacketHandler() {
             private ILogger logger = loggingService.getLogger("MockIOService");
 
             @Override
-            public void dispatch(Packet packet) {
+            public void handle(Packet packet) {
                 try {
                     if (packet.getPacketType() == Packet.Type.BIND) {
                         connection.getConnectionManager().handle(packet);

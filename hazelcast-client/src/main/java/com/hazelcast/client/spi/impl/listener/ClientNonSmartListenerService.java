@@ -31,16 +31,19 @@ import com.hazelcast.util.UuidUtil;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 
 public class ClientNonSmartListenerService extends ClientListenerServiceImpl implements ConnectionListener {
 
-    private final Map<ClientRegistrationKey, ClientEventRegistration> registrations
+    private final Map<ClientRegistrationKey, ClientEventRegistration> activeRegistrations
             = new ConcurrentHashMap<ClientRegistrationKey, ClientEventRegistration>();
+    private final Set<ClientRegistrationKey> userRegistrations = new HashSet<ClientRegistrationKey>();
 
     public ClientNonSmartListenerService(HazelcastClientInstanceImpl client,
                                          int eventThreadCount, int eventQueueCapacity) {
@@ -59,7 +62,8 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
                 ClientRegistrationKey registrationKey = new ClientRegistrationKey(userRegistrationId, handler, codec);
                 try {
                     ClientEventRegistration registration = invoke(registrationKey);
-                    registrations.put(registrationKey, registration);
+                    activeRegistrations.put(registrationKey, registration);
+                    userRegistrations.add(registrationKey);
                 } catch (Exception e) {
                     throw new HazelcastException("Listener can not be added", e);
                 }
@@ -100,10 +104,14 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
             @Override
             public Boolean call() throws Exception {
                 ClientRegistrationKey key = new ClientRegistrationKey(userRegistrationId);
-                ClientEventRegistration registration = registrations.get(key);
 
-                if (registration == null) {
+                if (!userRegistrations.remove(key)) {
                     return false;
+                }
+
+                ClientEventRegistration registration = activeRegistrations.get(key);
+                if (registration == null) {
+                    return true;
                 }
 
                 ClientMessage request = registration.getCodec().encodeRemoveRequest(registration.getServerRegistrationId());
@@ -111,7 +119,7 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
                     Future future = new ClientInvocation(client, request).invoke();
                     future.get();
                     removeEventHandler(registration.getCallId());
-                    registrations.remove(key);
+                    activeRegistrations.remove(key);
                 } catch (Exception e) {
                     throw new HazelcastException("Listener with id " + userRegistrationId + " could not be removed", e);
                 }
@@ -140,7 +148,7 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
             public void run() {
                 Map<ClientRegistrationKey, ClientEventRegistration> tempMap =
                         new HashMap<ClientRegistrationKey, ClientEventRegistration>();
-                for (ClientRegistrationKey registrationKey : registrations.keySet()) {
+                for (ClientRegistrationKey registrationKey : userRegistrations) {
                     try {
                         ClientEventRegistration eventRegistration = invoke(registrationKey);
                         tempMap.put(registrationKey, eventRegistration);
@@ -149,7 +157,7 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
                                 + connection, e);
                     }
                 }
-                registrations.putAll(tempMap);
+                activeRegistrations.putAll(tempMap);
             }
         });
 
@@ -163,9 +171,10 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
         registrationExecutor.submit(new Runnable() {
             @Override
             public void run() {
-                for (ClientEventRegistration registration : registrations.values()) {
+                for (ClientEventRegistration registration : activeRegistrations.values()) {
                     removeEventHandler(registration.getCallId());
                 }
+                activeRegistrations.clear();
             }
         });
     }
@@ -179,14 +188,12 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
                 new Callable<Collection<ClientEventRegistration>>() {
                     @Override
                     public Collection<ClientEventRegistration> call() throws Exception {
-                        ClientEventRegistration registration = registrations.get(new ClientRegistrationKey(uuid));
+                        ClientEventRegistration registration = activeRegistrations.get(new ClientRegistrationKey(uuid));
                         if (registration == null) {
                             return Collections.EMPTY_LIST;
                         }
                         LinkedList<ClientEventRegistration> activeRegistrations = new LinkedList<ClientEventRegistration>();
-                        if (getEventHandler(registration.getCallId()) != null) {
-                            activeRegistrations.add(registration);
-                        }
+                        activeRegistrations.add(registration);
                         return activeRegistrations;
                     }
                 });

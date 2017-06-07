@@ -84,12 +84,14 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      * Creates a {@link NearCacheConfig} with a given {@link InMemoryFormat}.
      *
      * @param inMemoryFormat the {@link InMemoryFormat} to set
+     * @param serializeKeys  defines if Near Caches keys should be serialized
      * @return the {@link NearCacheConfig}
      */
-    public static NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat) {
+    public static NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat, boolean serializeKeys) {
         NearCacheConfig nearCacheConfig = new NearCacheConfig()
                 .setName(AbstractNearCacheBasicTest.DEFAULT_NEAR_CACHE_NAME + "*")
                 .setInMemoryFormat(inMemoryFormat)
+                .setSerializeKeys(serializeKeys)
                 .setInvalidateOnChange(false);
 
         if (inMemoryFormat == InMemoryFormat.NATIVE) {
@@ -135,8 +137,10 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      * @return the key in the Near Cache format
      */
     public static Object getNearCacheKey(NearCacheTestContext<?, ?, ?, ?> context, Object key) {
+        boolean serializeKeys = context.nearCacheConfig.isSerializeKeys();
         boolean isReplicatedMap = context.nearCacheAdapter instanceof ReplicatedMapDataStructureAdapter;
-        return isReplicatedMap ? key : context.serializationService.toData(key);
+        // the ReplicatedMap already uses keys by-reference
+        return (serializeKeys && !isReplicatedMap) ? context.serializationService.toData(key) : key;
     }
 
     /**

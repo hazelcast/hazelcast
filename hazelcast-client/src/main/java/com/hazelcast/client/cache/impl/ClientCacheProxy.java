@@ -98,11 +98,11 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
         ensureOpen();
         validateNotNull(key);
 
-        Data keyData = toData(key);
-        return containsKeyInternal(keyData);
+        return containsKeyInternal(key);
     }
 
-    protected boolean containsKeyInternal(Data keyData) {
+    protected boolean containsKeyInternal(Object key) {
+        Data keyData = toData(key);
         ClientMessage request = CacheContainsKeyCodec.encodeRequest(nameWithPrefix, keyData);
         ClientMessage result = invoke(request, keyData);
         return CacheContainsKeyCodec.decodeResponse(result).response;
@@ -119,10 +119,11 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
             dataKeys.add(toData(key));
         }
 
-        loadAllInternal(dataKeys, replaceExistingValues, completionListener);
+        loadAllInternal(keys, dataKeys, replaceExistingValues, completionListener);
     }
 
-    protected void loadAllInternal(List<Data> dataKeys, boolean replaceExistingValues, CompletionListener completionListener) {
+    protected void loadAllInternal(Set<? extends K> keys, List<Data> dataKeys, boolean replaceExistingValues,
+                                   CompletionListener completionListener) {
         ClientMessage request = CacheLoadAllCodec.encodeRequest(nameWithPrefix, dataKeys, replaceExistingValues);
         try {
             submitLoadAllTask(request, completionListener, dataKeys);
@@ -230,7 +231,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
 
         List<Data> dataKeys = new ArrayList<Data>(keys.size());
         objectToDataCollection(keys, dataKeys, getSerializationService(), NULL_KEY_IS_NOT_ALLOWED);
-        removeAllKeysInternal(dataKeys, startNanos);
+        removeAllKeysInternal(keys, dataKeys, startNanos);
     }
 
     @Override
@@ -261,13 +262,12 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
             throw new NullPointerException("Entry Processor is null");
         }
 
-        Data keyData = toData(key);
         Data epData = toData(entryProcessor);
-
-        return (T) invokeInternal(keyData, epData, arguments);
+        return (T) invokeInternal(key, epData, arguments);
     }
 
-    protected Object invokeInternal(Data keyData, Data epData, Object... arguments) {
+    protected Object invokeInternal(Object key, Data epData, Object... arguments) {
+        Data keyData = toData(key);
         List<Data> argumentsData;
         if (arguments != null) {
             argumentsData = new ArrayList<Data>(arguments.length);

@@ -33,7 +33,6 @@ import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.IterationType;
 
@@ -109,7 +108,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         if (currentValue != null) {
             return checkIfRemoved(currentValue);
         }
-        return toObjectIfNeeded(getInternal(keyData));
+        return toObjectIfNeeded(getInternal(key, keyData));
     }
 
     @Override
@@ -312,7 +311,6 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkNotInstanceOf(PagingPredicate.class, predicate, "Paging is not supported for Transactional queries!");
 
         MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine(name);
-        SerializationService serializationService = getNodeEngine().getSerializationService();
 
         Query query = Query.of().mapName(name).predicate(predicate).iterationType(IterationType.KEY).build();
         QueryResult queryResult = queryEngine.execute(query, Target.ALL_NODES);
@@ -357,7 +355,6 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkNotInstanceOf(PagingPredicate.class, predicate, "Paging is not supported for Transactional queries");
 
         MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine(name);
-        SerializationService serializationService = getNodeEngine().getSerializationService();
 
         Query query = Query.of().mapName(name).predicate(predicate).iterationType(IterationType.ENTRY).build();
         QueryResult queryResult = queryEngine.execute(query, Target.ALL_NODES);

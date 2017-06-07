@@ -64,19 +64,24 @@ public class ClientMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data
     @Parameter
     public InMemoryFormat inMemoryFormat;
 
+    @Parameter(value = 1)
+    public boolean serializeKeys;
+
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @Parameters(name = "format:{0}")
+    @Parameters(name = "format:{0}, serializeKeys:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {InMemoryFormat.BINARY},
-                {InMemoryFormat.OBJECT},
+                {InMemoryFormat.BINARY, true},
+                {InMemoryFormat.BINARY, false},
+                {InMemoryFormat.OBJECT, true},
+                {InMemoryFormat.OBJECT, false},
         });
     }
 
     @Before
     public void setUp() {
-        nearCacheConfig = createNearCacheConfig(inMemoryFormat);
+        nearCacheConfig = createNearCacheConfig(inMemoryFormat, serializeKeys);
     }
 
     @After

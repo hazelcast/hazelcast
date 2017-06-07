@@ -30,7 +30,7 @@ public class SelectWithSelectorFix_TcpIpConnection_TransferStressTest
 
     @Before
     public void setup() throws Exception {
-        threadingModelFactory = new SelectWithSelectorFix_NioEventLoopGroupFactory();
+        eventLoopGroupFactory = new SelectWithSelectorFix_NioEventLoopGroupFactory();
         super.setup();
     }
 }

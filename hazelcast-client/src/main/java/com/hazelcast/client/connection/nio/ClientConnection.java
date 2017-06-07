@@ -54,6 +54,7 @@ public class ClientConnection implements Connection {
     private final ClientConnectionManagerImpl connectionManager;
     private final LifecycleService lifecycleService;
     private final HazelcastClientInstanceImpl client;
+    private final long startTime = System.currentTimeMillis();;
 
     private volatile Address remoteEndpoint;
     private volatile boolean isHeartBeating = true;
@@ -255,6 +256,10 @@ public class ClientConnection implements Connection {
 
     public void setIsAuthenticatedAsOwner() {
         this.isAuthenticatedAsOwner = true;
+    }
+
+    public long getStartTime() {
+        return startTime;
     }
 
     @Override

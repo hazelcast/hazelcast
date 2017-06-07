@@ -92,6 +92,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     private String name = "default";
     private InMemoryFormat inMemoryFormat = DEFAULT_MEMORY_FORMAT;
+    private boolean serializeKeys = true;
     private boolean invalidateOnChange = true;
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
     private int maxIdleSeconds = DEFAULT_MAX_IDLE_SECONDS;
@@ -163,19 +164,20 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
     }
 
     public NearCacheConfig(NearCacheConfig config) {
-        name = config.name;
-        inMemoryFormat = config.inMemoryFormat;
-        invalidateOnChange = config.invalidateOnChange;
-        timeToLiveSeconds = config.timeToLiveSeconds;
-        maxIdleSeconds = config.maxIdleSeconds;
-        maxSize = config.maxSize;
-        evictionPolicy = config.evictionPolicy;
+        this.name = config.name;
+        this.inMemoryFormat = config.inMemoryFormat;
+        this.serializeKeys = config.serializeKeys;
+        this.invalidateOnChange = config.invalidateOnChange;
+        this.timeToLiveSeconds = config.timeToLiveSeconds;
+        this.maxIdleSeconds = config.maxIdleSeconds;
+        this.maxSize = config.maxSize;
+        this.evictionPolicy = config.evictionPolicy;
         // EvictionConfig is not allowed to be null
         if (config.evictionConfig != null) {
             this.evictionConfig = config.evictionConfig;
         }
-        cacheLocalEntries = config.cacheLocalEntries;
-        localUpdatePolicy = config.localUpdatePolicy;
+        this.cacheLocalEntries = config.cacheLocalEntries;
+        this.localUpdatePolicy = config.localUpdatePolicy;
         // NearCachePreloaderConfig is not allowed to be null
         if (config.preloaderConfig != null) {
             this.preloaderConfig = config.preloaderConfig;
@@ -186,7 +188,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
      * Returns an immutable version of this configuration.
      *
      * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     @Deprecated
     public NearCacheConfigReadOnly getAsReadOnly() {
@@ -218,7 +220,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Returns the data type used to store entries.
-     * <p/>
+     * <p>
      * Possible values:
      * <ul>
      * <li>{@code BINARY}: keys and values are stored as binary data</li>
@@ -235,7 +237,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Sets the data type used to store entries.
-     * <p/>
+     * <p>
      * Possible values:
      * <ul>
      * <li>{@code BINARY}: keys and values are stored as binary data</li>
@@ -261,9 +263,35 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
     }
 
     /**
+     * Checks if the Near Cache key is stored in serialized format or by-reference.
+     * <p>
+     * <b>NOTE:</b> When the in-memory-format is {@code NATIVE}, this method will always return {@code true}.
+     *
+     * @return {@code true} if the key is stored in serialized format or in-memory-format is {@code NATIVE},
+     * {@code false} if the key is stored by-reference and in-memory-format is {@code BINARY} or {@code OBJECT}
+     */
+    public boolean isSerializeKeys() {
+        return serializeKeys || inMemoryFormat == InMemoryFormat.NATIVE;
+    }
+
+    /**
+     * Sets if the Near Cache key is stored in serialized format or by-reference.
+     * <p>
+     * <b>NOTE:</b> It's not supported to disable the key serialization when the in-memory-format is {@code NATIVE}.
+     * You can still set this value to {@code false}, but it will have no effect.
+     *
+     * @param serializeKeys {@code true} if the key is stored in serialized format, {@code false} if stored by-reference
+     * @return this Near Cache config instance
+     */
+    public NearCacheConfig setSerializeKeys(boolean serializeKeys) {
+        this.serializeKeys = serializeKeys;
+        return this;
+    }
+
+    /**
      * Checks if Near Cache entries are invalidated when the entries in the backing data structure are changed
      * (updated or removed).
-     * <p/>
+     * <p>
      * When this setting is enabled, a Hazelcast instance with a Near Cache listens for cluster-wide changes
      * on the entries of the backing data structure and invalidates its corresponding Near Cache entries.
      * Changes done on the local Hazelcast instance always invalidate the Near Cache immediately.
@@ -277,7 +305,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
     /**
      * Sets if Near Cache entries are invalidated when the entries in the backing data structure are changed
      * (updated or removed).
-     * <p/>
+     * <p>
      * When this setting is enabled, a Hazelcast instance with a Near Cache listens for cluster-wide changes
      * on the entries of the backing data structure and invalidates its corresponding Near Cache entries.
      * Changes done on the local Hazelcast instance always invalidate the Near Cache immediately.
@@ -292,7 +320,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Returns the maximum number of seconds for each entry to stay in the Near Cache (time to live).
-     * <p/>
+     * <p>
      * Entries that are older than {@code timeToLiveSeconds} will automatically be evicted from the Near Cache.
      *
      * @return the maximum number of seconds for each entry to stay in the Near Cache
@@ -303,9 +331,9 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Returns the maximum number of seconds for each entry to stay in the Near Cache (time to live).
-     * <p/>
+     * <p>
      * Entries that are older than {@code timeToLiveSeconds} will automatically be evicted from the Near Cache.
-     * <p/>
+     * <p>
      * Accepts any integer between {@code 0} and {@link Integer#MAX_VALUE}.
      * The value {@code 0} means {@link Integer#MAX_VALUE}.
      * The default is {@code 0}.
@@ -320,7 +348,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Returns the maximum number of seconds each entry can stay in the Near Cache as untouched (not-read).
-     * <p/>
+     * <p>
      * Entries that are not read (touched) more than {@code maxIdleSeconds} value will get removed from the Near Cache.
      *
      * @return maximum number of seconds each entry can stay in the Near Cache as untouched (not-read)
@@ -331,9 +359,9 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Set the maximum number of seconds each entry can stay in the Near Cache as untouched (not-read).
-     * <p/>
+     * <p>
      * Entries that are not read (touched) more than {@code maxIdleSeconds} value will get removed from the Near Cache.
-     * <p/>
+     * <p>
      * Accepts any integer between {@code 0} and {@link Integer#MAX_VALUE}.
      * The value {@code 0} means {@link Integer#MAX_VALUE}.
      * The default is {@code 0}.
@@ -348,7 +376,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Returns the maximum size of the Near Cache.
-     * <p/>
+     * <p>
      * When the maxSize is reached, the Near Cache is evicted based on the policy defined.
      *
      * @return the maximum size of the Near Cache
@@ -361,9 +389,9 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Sets the maximum size of the Near Cache.
-     * <p/>
+     * <p>
      * When the maxSize is reached, the Near Cache is evicted based on the policy defined.
-     * <p/>
+     * <p>
      * Accepts any integer between {@code 0} and {@link Integer#MAX_VALUE}.
      * The value {@code 0} means {@link Integer#MAX_VALUE}.
      * The default is {@code 0}.
@@ -394,7 +422,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Sets the eviction policy.
-     * <p/>
+     * <p>
      * Valid values are:
      * <ul>
      * <li>{@code LRU} (Least Recently Used)</li>
@@ -440,7 +468,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Checks if local entries are also cached in the Near Cache.
-     * <p/>
+     * <p>
      * This is useful when the in-memory format of the Near Cache is different from the backing data structure.
      * This setting has no meaning on Hazelcast clients, since they have no local entries.
      *
@@ -452,7 +480,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Sets if local entries are also cached in the Near Cache.
-     * <p/>
+     * <p>
      * This is useful when the in-memory format of the Near Cache is different from the backing data structure.
      * This setting has no meaning on Hazelcast clients, since they have no local entries.
      *
@@ -475,7 +503,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Sets the {@link LocalUpdatePolicy} of this Near Cache.
-     * <p/>
+     * <p>
      * This is only implemented for {@code JCache} data structures.
      *
      * @param localUpdatePolicy the {@link LocalUpdatePolicy} of this Near Cache

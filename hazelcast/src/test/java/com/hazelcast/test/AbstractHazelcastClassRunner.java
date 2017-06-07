@@ -136,6 +136,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     private static void attachFinalRemovalAgent() {
         Instrumentation instrumentation = ByteBuddyAgent.install();
         new AgentBuilder.Default()
+                .disableClassFormatChanges()
                 .type(new ElementMatcher<TypeDescription>() {
                     @Override
                     public boolean matches(TypeDescription target) {

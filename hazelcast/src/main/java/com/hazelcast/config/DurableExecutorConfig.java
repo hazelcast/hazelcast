@@ -34,12 +34,12 @@ public class DurableExecutorConfig {
     public static final int DEFAULT_POOL_SIZE = 16;
 
     /**
-     * Capacity of RingBuffer (per partition)
+     * Capacity of RingBuffer (per partition).
      */
     public static final int DEFAULT_RING_BUFFER_CAPACITY = 100;
 
     /**
-     * Durability of Executor
+     * Durability of Executor.
      */
     public static final int DEFAULT_DURABILITY = 1;
 
@@ -74,7 +74,7 @@ public class DurableExecutorConfig {
     /**
      * Gets the name of the executor task.
      *
-     * @return The name of the executor task.
+     * @return the name of the executor task
      */
     public String getName() {
         return name;
@@ -83,8 +83,8 @@ public class DurableExecutorConfig {
     /**
      * Sets the name of the executor task.
      *
-     * @param name The name of the executor task.
-     * @return This executor config instance.
+     * @param name the name of the executor task
+     * @return this executor config instance
      */
     public DurableExecutorConfig setName(String name) {
         this.name = name;
@@ -94,7 +94,7 @@ public class DurableExecutorConfig {
     /**
      * Gets the number of executor threads per member for the executor.
      *
-     * @return The number of executor threads per member for the executor.
+     * @return the number of executor threads per member for the executor
      */
     public int getPoolSize() {
         return poolSize;
@@ -103,12 +103,11 @@ public class DurableExecutorConfig {
     /**
      * Sets the number of executor threads per member for the executor.
      *
-     * @param poolSize The number of executor threads per member for the executor.
-     * @return This executor config instance.
+     * @param poolSize the number of executor threads per member for the executor
+     * @return this executor config instance
      */
     public DurableExecutorConfig setPoolSize(int poolSize) {
-        checkPositive(poolSize, "Pool size should be greater than 0");
-        this.poolSize = poolSize;
+        this.poolSize = checkPositive(poolSize, "Pool size should be greater than 0");
         return this;
     }
 
@@ -125,11 +124,10 @@ public class DurableExecutorConfig {
      * Sets the durability of the executor
      *
      * @param durability the durability of the executor
-     * @return This executor config instance.
+     * @return this executor config instance
      */
     public DurableExecutorConfig setDurability(int durability) {
-        checkNotNegative(durability, "durability can't be smaller than 0");
-        this.durability = durability;
+        this.durability = checkNotNegative(durability, "durability can't be smaller than 0");
         return this;
     }
 
@@ -137,7 +135,7 @@ public class DurableExecutorConfig {
      * Gets the ring buffer capacity of the executor task.
      * This is a per partition parameter, so total capacity of the ringbuffers will be partitionCount * capacity
      *
-     * @return Ring buffer capacity of the executor task.
+     * @return Ring buffer capacity of the executor task
      */
     public int getCapacity() {
         return capacity;
@@ -146,12 +144,11 @@ public class DurableExecutorConfig {
     /**
      * Sets the ring buffer capacity of the executor task.
      *
-     * @param capacity Ring Buffer capacity of the executor task.
-     * @return This executor config instance.
+     * @param capacity Ring Buffer capacity of the executor task
+     * @return this executor config instance
      */
     public DurableExecutorConfig setCapacity(int capacity) {
-        checkPositive(capacity, "Capacity should be greater than 0");
-        this.capacity = capacity;
+        this.capacity = checkPositive(capacity, "Capacity should be greater than 0");
         return this;
     }
 

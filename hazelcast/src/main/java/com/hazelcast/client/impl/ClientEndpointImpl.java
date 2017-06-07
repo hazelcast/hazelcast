@@ -50,6 +50,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
             = new ConcurrentHashMap<String, TransactionContext>();
     private final ConcurrentHashMap<String, Callable> removeListenerActions = new ConcurrentHashMap<String, Callable>();
     private final SocketAddress socketAddress;
+    private final long creationTime;
 
     private LoginContext loginContext;
     private ClientPrincipal principal;
@@ -59,6 +60,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private int clientVersion;
     private String clientVersionString;
     private long authenticationCorrelationId;
+    private volatile String stats;
 
     public ClientEndpointImpl(ClientEngineImpl clientEngine, Connection connection) {
         this.clientEngine = clientEngine;
@@ -71,6 +73,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         }
         this.clientVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
         this.clientVersionString = "Unknown";
+        this.creationTime = System.currentTimeMillis();
     }
 
     @Override
@@ -133,6 +136,16 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     public void setClientVersion(String version) {
         clientVersionString = version;
         clientVersion = BuildInfo.calculateVersion(version);
+    }
+
+    @Override
+    public void setClientStatictics(String stats) {
+        this.stats = stats;
+    }
+
+    @Override
+    public String getClientStatistics() {
+        return stats;
     }
 
     @Override
@@ -262,6 +275,8 @@ public final class ClientEndpointImpl implements ClientEndpoint {
                 + ", firstConnection=" + firstConnection
                 + ", authenticated=" + authenticated
                 + ", clientVersion=" + clientVersionString
+                + ", creationTime=" + creationTime
+                + ", latest statistics=" + stats
                 + '}';
     }
 

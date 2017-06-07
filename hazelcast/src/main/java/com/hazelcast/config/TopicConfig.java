@@ -48,7 +48,7 @@ public class TopicConfig {
     /**
      * Creates a TopicConfig with the given name.
      *
-     * @param name the name of the Topic.
+     * @param name the name of the Topic
      */
     public TopicConfig(String name) {
         setName(name);
@@ -57,7 +57,7 @@ public class TopicConfig {
     /**
      * Creates a {@link TopicConfig} by cloning another TopicConfig.
      *
-     * @param config the TopicConfig to clone.
+     * @param config the TopicConfig to clone
      */
     public TopicConfig(TopicConfig config) {
         isNotNull(config, "config");
@@ -70,8 +70,8 @@ public class TopicConfig {
     /**
      * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public TopicConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
@@ -92,9 +92,9 @@ public class TopicConfig {
     /**
      * Sets the name of the topic.
      *
-     * @param name the topic name to set.
+     * @param name the topic name to set
      * @return the updated {@link TopicConfig}
-     * @throws IllegalArgumentException if name is null or an empty string.
+     * @throws IllegalArgumentException if name is {@code null} or an empty string
      */
     public TopicConfig setName(String name) {
         this.name = checkHasText(name, "name must contain text");
@@ -117,8 +117,8 @@ public class TopicConfig {
      * get their messages in the same order), or disable it (nodes get
      * the messages in the order that the messages are published).
      *
-     * @param globalOrderingEnabled set to true to enable global ordering, false to disable
-     * @return The updated TopicConfig
+     * @param globalOrderingEnabled set to {@code true} to enable global ordering, {@code false} to disable
+     * @return the updated TopicConfig
      */
     public TopicConfig setGlobalOrderingEnabled(boolean globalOrderingEnabled) {
         if (this.multiThreadingEnabled && globalOrderingEnabled) {
@@ -133,7 +133,7 @@ public class TopicConfig {
      * When disabled only one dedicated thread will handle all topic messages. Otherwise
      * any thread from events thread pool can be used for message handling.
      *
-     * @return true if multi-threading is enabled, false if disabled
+     * @return {@code true} if multi-threading is enabled, {@code false} if disabled
      */
     public boolean isMultiThreadingEnabled() {
         return multiThreadingEnabled;
@@ -149,8 +149,8 @@ public class TopicConfig {
      * messages produced by local publisher can be processed by several threads with
      * no ordering guarantee.
      *
-     * @param multiThreadingEnabled set to true to enable multi-threaded message processing, false to disable
-     * @return The updated TopicConfig
+     * @param multiThreadingEnabled set to {@code true} to enable multi-threaded message processing, {@code false} to disable
+     * @return the updated TopicConfig
      */
     public TopicConfig setMultiThreadingEnabled(boolean multiThreadingEnabled) {
         if (this.globalOrderingEnabled && multiThreadingEnabled) {
@@ -163,7 +163,7 @@ public class TopicConfig {
     /**
      * Adds a message listener to this topic (listens for when messages are added or removed).
      *
-     * @param listenerConfig The message listener to add to this topic.
+     * @param listenerConfig the message listener to add to this topic
      */
     public TopicConfig addMessageListenerConfig(ListenerConfig listenerConfig) {
         getMessageListenerConfigs().add(listenerConfig);
@@ -173,7 +173,7 @@ public class TopicConfig {
     /**
      * Gets the list of message listeners (listens for when messages are added or removed) for this topic.
      *
-     * @return The list of message listeners for this topic.
+     * @return the list of message listeners for this topic
      */
     public List<ListenerConfig> getMessageListenerConfigs() {
         if (listenerConfigs == null) {
@@ -185,8 +185,8 @@ public class TopicConfig {
     /**
      * Sets the list of message listeners (listens for when messages are added or removed) for this topic.
      *
-     * @param listenerConfigs The list of message listeners for this topic.
-     * @return This updated topic configuration.
+     * @param listenerConfigs the list of message listeners for this topic
+     * @return this updated topic configuration
      */
     public TopicConfig setMessageListenerConfigs(List<ListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
@@ -196,7 +196,7 @@ public class TopicConfig {
     /**
      * Checks if statistics are enabled for this topic.
      *
-     * @return true if statistics are enabled, false otherwise.
+     * @return {@code true} if statistics are enabled, {@code false} otherwise
      */
     public boolean isStatisticsEnabled() {
         return statisticsEnabled;
@@ -205,7 +205,7 @@ public class TopicConfig {
     /**
      * Enables or disables statistics for this topic.
      *
-     * @param statisticsEnabled True to enable statistics for this topic, false to disable.
+     * @param statisticsEnabled {@code true} to enable statistics for this topic, {@code false} to disable
      * @return the updated TopicConfig
      */
     public TopicConfig setStatisticsEnabled(boolean statisticsEnabled) {
@@ -220,7 +220,7 @@ public class TopicConfig {
     /**
      * Checks if the given object is equal to this topic.
      *
-     * @return true if the object is equal to this topic, false otherwise.
+     * @return {@code true} if the object is equal to this topic, {@code false} otherwise
      */
     public boolean equals(Object obj) {
         if (this == obj) {

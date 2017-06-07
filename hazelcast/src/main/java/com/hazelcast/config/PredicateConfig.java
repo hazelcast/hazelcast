@@ -46,8 +46,8 @@ public class PredicateConfig {
     /**
      * Creates a PredicateConfig with the given className.
      *
-     * @param className the name of the Predicate class.
-     * @throws IllegalArgumentException if className is null or an empty String.
+     * @param className the name of the Predicate class
+     * @throws IllegalArgumentException if className is {@code null} or an empty String
      */
     public PredicateConfig(String className) {
         setClassName(className);
@@ -62,8 +62,8 @@ public class PredicateConfig {
     /**
      * Creates a PredicateConfig with the given implementation.
      *
-     * @param implementation the implementation to use as Predicate.
-     * @throws IllegalArgumentException if the implementation is null.
+     * @param implementation the implementation to use as Predicate
+     * @throws IllegalArgumentException if the implementation is {@code null}
      */
     public PredicateConfig(Predicate implementation) {
         this.implementation = isNotNull(implementation, "implementation");
@@ -72,8 +72,8 @@ public class PredicateConfig {
     /**
      * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public PredicateConfig getAsReadOnly() {
         if (readOnly == null) {
@@ -83,9 +83,9 @@ public class PredicateConfig {
     }
 
     /**
-     * Returns the name of the class of the Predicate. If no class is specified, null is returned.
+     * Returns the name of the class of the Predicate. If no class is specified, {@code null} is returned.
      *
-     * @return the class name of the Predicate.
+     * @return the class name of the Predicate
      * @see #setClassName(String)
      */
     public String getClassName() {
@@ -94,12 +94,12 @@ public class PredicateConfig {
 
     /**
      * Sets the class name of the Predicate.
-     * <p/>
+     * <p>
      * If a implementation or sql was set, it will be removed.
      *
-     * @param className the name of the class of the Predicate.
-     * @return the updated PredicateConfig.
-     * @throws IllegalArgumentException if className is null or an empty String.
+     * @param className the name of the class of the Predicate
+     * @return the updated PredicateConfig
+     * @throws IllegalArgumentException if className is {@code null} or an empty String
      * @see #setImplementation(Predicate)
      * @see #getClassName()
      */
@@ -111,9 +111,9 @@ public class PredicateConfig {
     }
 
     /**
-     * Returns the Predicate implementation. If none has been specified, null is returned.
+     * Returns the Predicate implementation. If none has been specified, {@code null} is returned.
      *
-     * @return the Predicate implementation.
+     * @return the Predicate implementation
      * @see #setImplementation(Predicate)
      */
     public Predicate getImplementation() {
@@ -122,12 +122,12 @@ public class PredicateConfig {
 
     /**
      * Sets the Predicate implementation.
-     * <p/>
+     * <p>
      * If a className or sql was set, it will be removed.
      *
-     * @param implementation the Predicate implementation.
-     * @return the updated PredicateConfig.
-     * @throws IllegalArgumentException the implementation is null.
+     * @param implementation the Predicate implementation
+     * @return the updated PredicateConfig
+     * @throws IllegalArgumentException the implementation is {@code null}
      * @see #setClassName(String)
      * @see #getImplementation()
      */
@@ -141,7 +141,7 @@ public class PredicateConfig {
     /**
      * Returns sql string for this config.
      *
-     * @return sql string for this config.
+     * @return sql string for this config
      */
     public String getSql() {
         return sql;
@@ -149,10 +149,10 @@ public class PredicateConfig {
 
     /**
      * Sets sql string for this config.
-     * <p/>
+     * <p>
      * If a className or implementation was set, it will be removed.
      *
-     * @param sql sql string for this config.
+     * @param sql sql string for this config
      */
     public void setSql(String sql) {
         this.sql = sql;
@@ -171,7 +171,6 @@ public class PredicateConfig {
         }
 
         PredicateConfig that = (PredicateConfig) o;
-
         if (className != null ? !className.equals(that.className) : that.className != null) {
             return false;
         }

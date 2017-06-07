@@ -25,6 +25,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.ICacheDataStructureAdapter;
@@ -48,7 +49,6 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import javax.cache.spi.CachingProvider;
 import java.io.File;
-import java.util.Arrays;
 import java.util.Collection;
 
 import static com.hazelcast.cache.CacheUtil.getDistributedObjectName;
@@ -56,6 +56,7 @@ import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMO
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.nio.IOUtil.toFileName;
+import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
@@ -66,22 +67,36 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
     private final File storeFile = new File("nearCache-" + cacheFileName + ".store").getAbsoluteFile();
     private final File storeLockFile = new File(storeFile.getName() + ".lock").getAbsoluteFile();
 
-    @Parameter
-    public boolean invalidationOnChange;
-
-    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-
-    @Parameters(name = "invalidationOnChange:{0}")
+    @Parameters(name = "format:{0} invalidationOnChange:{1} serializeKeys:{2}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
-                {false},
-                {true}
+        return asList(new Object[][]{
+                {InMemoryFormat.BINARY, false, true},
+                {InMemoryFormat.BINARY, false, false},
+                {InMemoryFormat.BINARY, true, true},
+                {InMemoryFormat.BINARY, true, false},
+
+                {InMemoryFormat.OBJECT, false, true},
+                {InMemoryFormat.OBJECT, false, false},
+                {InMemoryFormat.OBJECT, true, true},
+                {InMemoryFormat.OBJECT, true, false},
         });
     }
 
+    @Parameter
+    public InMemoryFormat inMemoryFormat;
+
+    @Parameter(value = 1)
+    public boolean invalidationOnChange;
+
+    @Parameter(value = 2)
+    public boolean serializeKeys;
+
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
     @Before
     public void setUp() {
-        nearCacheConfig = getNearCacheConfig(invalidationOnChange, KEY_COUNT, storeFile.getParent());
+        nearCacheConfig = getNearCacheConfig(inMemoryFormat, serializeKeys, invalidationOnChange, KEY_COUNT,
+                storeFile.getParent());
     }
 
     @After

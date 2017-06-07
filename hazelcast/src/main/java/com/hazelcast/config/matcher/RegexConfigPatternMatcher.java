@@ -22,8 +22,8 @@ import com.hazelcast.config.ConfigurationException;
 import java.util.regex.Pattern;
 
 /**
- * This <code>ConfigPatternMatcher</code> uses Java regular expressions for matching.
- * <p/>
+ * This {@code ConfigPatternMatcher} uses Java regular expressions for matching.
+ * <p>
  * Throws {@link com.hazelcast.config.ConfigurationException} is multiple configurations are found.
  */
 public class RegexConfigPatternMatcher implements ConfigPatternMatcher {

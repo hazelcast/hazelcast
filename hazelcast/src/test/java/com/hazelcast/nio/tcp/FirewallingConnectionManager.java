@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
@@ -39,7 +40,8 @@ public class FirewallingConnectionManager implements ConnectionManager, PacketHa
 
     private final ConnectionManager delegate;
     private final Set<Address> blockedAddresses = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
-    private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService scheduledExecutor
+            = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl("FirewallingConnectionManager"));
     private final PacketHandler packetHandler;
 
     private volatile PacketFilter droppingPacketFilter;

@@ -94,6 +94,7 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.security.AccessControlException;
 import java.util.AbstractMap;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.ConcurrentModificationException;
@@ -229,6 +230,10 @@ public class ReferenceObjects {
     public static Xid anXid = new SerializableXID(1, aString.getBytes(), aString.getBytes());
     public static List<Map.Entry<Data, Data>> aListOfEntry = Collections.<Map.Entry<Data, Data>>singletonList(
             new AbstractMap.SimpleEntry<Data, Data>(aData, aData));
+    public static Map.Entry<String, byte[]> aStringToByteArrEntry =
+            new AbstractMap.SimpleEntry<String, byte[]>(aString, new byte[]{aByte});
+    public static List<Map.Entry<String, byte[]>> aListOfStringToByteArrEntry
+            = Arrays.asList(aStringToByteArrEntry, aStringToByteArrEntry);
 
     public static List<Map.Entry<String, List<Map.Entry<Integer, Long>>>> aNamePartitionSequenceList;
     public static long[] arrLongs = new long[] { aLong };

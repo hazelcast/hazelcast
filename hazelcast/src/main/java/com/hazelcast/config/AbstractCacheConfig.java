@@ -16,8 +16,8 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
@@ -200,11 +200,10 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
 
     /**
      * Sets whether or not statistics gathering is enabled on this cache.
-     * <p/>
-     * Statistics may be enabled or disabled at runtime via
-     * {@link javax.cache.CacheManager#enableStatistics(String, boolean)}.
+     * <p>
+     * Statistics may be enabled or disabled at runtime via {@link javax.cache.CacheManager#enableStatistics(String, boolean)}.
      *
-     * @param enabled true to enable statistics, false to disable.
+     * @param enabled {@code true} to enable statistics, {@code false} to disable
      * @return the {@link CacheConfig}
      */
     @Override
@@ -220,11 +219,10 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
 
     /**
      * Sets whether or not management is enabled on this cache.
-     * <p/>
-     * Management may be enabled or disabled at runtime via
-     * {@link javax.cache.CacheManager#enableManagement(String, boolean)}.
+     * <p>
+     * Management may be enabled or disabled at runtime via {@link javax.cache.CacheManager#enableManagement(String, boolean)}.
      *
-     * @param enabled true to enable statistics, false to disable.
+     * @param enabled {@code true} to enable statistics, {@code false} to disable
      * @return the {@link CacheConfig}
      */
     @Override
@@ -235,6 +233,7 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
 
     /**
      * Gets the {@code HotRestartConfig} for this {@code CacheConfiguration}
+     *
      * @return hot restart config
      */
     public HotRestartConfig getHotRestartConfig() {
@@ -243,6 +242,7 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
 
     /**
      * Sets the {@code HotRestartConfig} for this {@code CacheConfiguration}
+     *
      * @param hotRestartConfig hot restart config
      * @return this {@code CacheConfiguration} instance
      */
@@ -297,13 +297,13 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
 
     /**
      * Sets the expected type of keys and values for a {@link javax.cache.Cache}
-     * configured with this {@link javax.cache.configuration.Configuration}. Setting both to
-     * <code>Object.class</code> means type-safety checks are not required.
-     * <p/>
+     * configured with this {@link javax.cache.configuration.Configuration}.
+     * Setting both to {@code Object.class} means type-safety checks are not required.
+     * <p>
      * This is used by {@link javax.cache.CacheManager} to ensure that the key and value
      * types are the same as those configured for the {@link javax.cache.Cache} prior to
      * returning a requested cache from this method.
-     * <p/>
+     * <p>
      * Implementations may further perform type checking on mutative cache operations
      * and throw a {@link ClassCastException} if these checks fail.
      *
@@ -332,8 +332,8 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
      * Set if a configured cache should use store-by-value or store-by-reference
      * semantics.
      *
-     * @param storeByValue <code>true</code> if store-by-value is required,
-     *                     <code>false</code> for store-by-reference
+     * @param storeByValue {@code true} if store-by-value is required,
+     *                     {@code false} for store-by-reference
      * @return the {@link CacheConfig}
      */
     @Override

@@ -46,12 +46,12 @@ public class MapAttributeConfig {
 
     /**
      * Creates a MapAttributeConfig with the given attribute and ordered setting.
-     *
+     * <p>
      * Name may begin with an ascii letter [A-Za-z] or digit [0-9] and may contain ascii letters [A-Za-z], digits [0-9]
      * or underscores later on.
      *
-     * @param name      the name given to an attribute that is going to be extracted.
-     * @param extractor full class name of the extractor used to extract the value of the attribute.
+     * @param name      the name given to an attribute that is going to be extracted
+     * @param extractor full class name of the extractor used to extract the value of the attribute
      * @see #setName(String)
      * @see #setExtractor(String)
      */
@@ -68,8 +68,8 @@ public class MapAttributeConfig {
     /**
      * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public MapAttributeConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
@@ -81,7 +81,7 @@ public class MapAttributeConfig {
     /**
      * Gets the name of the attribute extracted by the extractor.
      *
-     * @return the name of the attribute extracted by the extractor.
+     * @return the name of the attribute extracted by the extractor
      * @see #setName(String)
      */
     public String getName() {
@@ -92,9 +92,9 @@ public class MapAttributeConfig {
      * Sets the name of the attribute extracted by the extractor.
      * The name cannot be equal to any of the query constants.
      *
-     * @param name the name of the attribute extracted by the extractor.
-     * @return the updated MapAttributeConfig.
-     * @throws IllegalArgumentException if attribute is null,an empty or inappropriate string.
+     * @param name the name of the attribute extracted by the extractor
+     * @return the updated MapAttributeConfig
+     * @throws IllegalArgumentException if attribute is null,an empty or inappropriate string
      * @see QueryConstants
      */
     public MapAttributeConfig setName(String name) {
@@ -126,9 +126,9 @@ public class MapAttributeConfig {
     }
 
     /**
-     * Gets the full class name of the extractor in a String format, e.g. com.example.car.SpeedExtractor
+     * Gets the full class name of the extractor in a String format, e.g. {@code com.example.car.SpeedExtractor}.
      *
-     * @return the full class name of the extractor in a String format.
+     * @return the full class name of the extractor in a String format
      * @see #setExtractor(String)
      */
     public String getExtractor() {
@@ -136,10 +136,10 @@ public class MapAttributeConfig {
     }
 
     /**
-     * Sets the full class name of the extractor in a String format, e.g. com.example.car.SpeedExtractor
+     * Sets the full class name of the extractor in a String format, e.g. {@code com.example.car.SpeedExtractor}.
      *
-     * @param extractor the full class name of the extractor in a String format.
-     * @return the updated MapAttributeConfig.
+     * @param extractor the full class name of the extractor in a String format
+     * @return the updated MapAttributeConfig
      */
     public MapAttributeConfig setExtractor(String extractor) {
         this.extractor = checkHasText(extractor, "Map attribute extractor must contain text");

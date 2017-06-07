@@ -70,26 +70,26 @@ public class MapConfig {
     public static final long DEFAULT_MIN_EVICTION_CHECK_MILLIS = 100L;
 
     /**
-     * The number of default Time to Live in seconds
+     * The number of default Time to Live in seconds.
      */
     public static final int DEFAULT_TTL_SECONDS = 0;
 
     /**
-     * The number of default time to wait eviction in seconds
+     * The number of default time to wait eviction in seconds.
      */
     public static final int DEFAULT_MAX_IDLE_SECONDS = 0;
 
     /**
-     * Default policy for eviction
+     * Default policy for eviction.
      */
     public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.NONE;
 
     /**
-     * Default policy for merging
+     * Default policy for merging.
      */
     public static final String DEFAULT_MAP_MERGE_POLICY = PutIfAbsentMapMergePolicy.class.getName();
     /**
-     * Default In-Memory format is binary
+     * Default In-Memory format is binary.
      */
     public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
 
@@ -199,8 +199,8 @@ public class MapConfig {
     /**
      * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public MapConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
@@ -231,7 +231,7 @@ public class MapConfig {
     /**
      * Returns the data type that will be used for storing records.
      *
-     * @return data type that will be used for storing records.
+     * @return data type that will be used for storing records
      */
     public InMemoryFormat getInMemoryFormat() {
         return inMemoryFormat;
@@ -240,12 +240,14 @@ public class MapConfig {
     /**
      * Binary type that will be used for storing records.
      * Possible values:
-     * BINARY (default): keys and values will be stored as binary data
-     * OBJECT : values will be stored in their object forms
-     * NATIVE : values will be stored in non-heap region of JVM
+     * <ul>
+     * <li>BINARY (default): keys and values will be stored as binary data</li>
+     * <li>OBJECT: values will be stored in their object forms</li>
+     * <li>NATIVE: values will be stored in non-heap region of JVM</li>
+     * </ul>
      *
      * @param inMemoryFormat the record type to set for this {@link com.hazelcast.core.IMap}
-     * @throws IllegalArgumentException if inMemoryFormat is null.
+     * @throws IllegalArgumentException if inMemoryFormat is {@code null}
      */
     public MapConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
         this.inMemoryFormat = isNotNull(inMemoryFormat, "inMemoryFormat");
@@ -264,8 +266,8 @@ public class MapConfig {
 
     /**
      * Number of synchronous backups. For example, if 1 is set as the backup count,
-     * then all entries of the map will be copied to another JVM for
-     * fail-safety. 0 means no sync backup.
+     * then all entries of the map will be copied to another JVM for fail-safety.
+     * 0 means no sync backup.
      *
      * @param backupCount the number of synchronous backups to set for this {@link com.hazelcast.core.IMap}
      * @see #setAsyncBackupCount(int)
@@ -331,9 +333,9 @@ public class MapConfig {
      * based on sampling. Please see documentation for further details) and this parameter has no effect.
      *
      * @param evictionPercentage the evictionPercentage to set: the specified percentage of the map to be evicted
-     * @throws IllegalArgumentException if evictionPercentage is not in the 0-100 range.
+     * @throws IllegalArgumentException if evictionPercentage is not in the 0-100 range
      * @deprecated As of version 3.7, eviction mechanism changed.
-     * It uses a probabilistic algorithm based on sampling. Please see documentation for further details.
+     * It uses a probabilistic algorithm based on sampling. Please see documentation for further details
      */
     public MapConfig setEvictionPercentage(final int evictionPercentage) {
         if (evictionPercentage < MIN_EVICTION_PERCENTAGE) {
@@ -351,7 +353,7 @@ public class MapConfig {
      *
      * Default value is {@value #DEFAULT_MIN_EVICTION_CHECK_MILLIS} milliseconds.
      *
-     * @return number of milliseconds that should pass before asking for the next eviction.
+     * @return number of milliseconds that should pass before asking for the next eviction
      * @since 3.3
      * @deprecated As of version 3.7, eviction mechanism changed.
      * It uses a probabilistic algorithm based on sampling. Please see documentation for further details.
@@ -472,9 +474,9 @@ public class MapConfig {
     }
 
     /**
-     * Returns custom eviction policy if it is set otherwise returns null.
+     * Returns custom eviction policy if it is set otherwise returns {@code null}.
      *
-     * @return custom eviction policy or null.
+     * @return custom eviction policy or {@code null}
      */
     public MapEvictionPolicy getMapEvictionPolicy() {
         return mapEvictionPolicy;
@@ -555,7 +557,7 @@ public class MapConfig {
     /**
      * Checks if statistics are enabled for this map.
      *
-     * @return True if statistics are enabled, false otherwise.
+     * @return {@code true} if statistics are enabled, {@code false} otherwise
      */
     public boolean isStatisticsEnabled() {
         return statisticsEnabled;
@@ -564,8 +566,8 @@ public class MapConfig {
     /**
      * Sets statistics to enabled or disabled for this map.
      *
-     * @param statisticsEnabled True to enable map statistics, false to disable.
-     * @return The current map config instance.
+     * @param statisticsEnabled {@code true} to enable map statistics, {@code false} to disable
+     * @return the current map config instance
      */
     public MapConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
@@ -575,7 +577,7 @@ public class MapConfig {
     /**
      * Checks if read-backup-data (reading local backup entries) is enabled for this map.
      *
-     * @return True if read-backup-data is enabled, false otherwise.
+     * @return {@code true} if read-backup-data is enabled, {@code false} otherwise
      */
     public boolean isReadBackupData() {
         return readBackupData;
@@ -584,8 +586,8 @@ public class MapConfig {
     /**
      * Sets read-backup-data (reading local backup entries) for this map.
      *
-     * @param readBackupData True to enable read-backup-data, false to disable.
-     * @return The current map config instance.
+     * @param readBackupData {@code true} to enable read-backup-data, {@code false} to disable
+     * @return the current map config instance
      */
     public MapConfig setReadBackupData(boolean readBackupData) {
         this.readBackupData = readBackupData;
@@ -595,7 +597,7 @@ public class MapConfig {
     /**
      * Gets the WAN target replication reference.
      *
-     * @return The WAN target replication reference.
+     * @return the WAN target replication reference
      */
     public WanReplicationRef getWanReplicationRef() {
         return wanReplicationRef;
@@ -604,8 +606,8 @@ public class MapConfig {
     /**
      * Sets the WAN target replication reference.
      *
-     * @param wanReplicationRef the WAN target replication reference.
-     * @return The current map config instance.
+     * @param wanReplicationRef the WAN target replication reference
+     * @return the current map config instance
      */
     public MapConfig setWanReplicationRef(WanReplicationRef wanReplicationRef) {
         this.wanReplicationRef = wanReplicationRef;
@@ -685,10 +687,10 @@ public class MapConfig {
     /**
      * Adds a new {@link QueryCacheConfig} to this {@code MapConfig}.
      *
-     * @param queryCacheConfig the config to be added.
-     * @return this {@code MapConfig} instance.
+     * @param queryCacheConfig the config to be added
+     * @return this {@code MapConfig} instance
      * @throws java.lang.IllegalArgumentException if there is already a {@code QueryCache}
-     *                                            with the same {@code QueryCacheConfig#name}.
+     *                                            with the same {@code QueryCacheConfig#name}
      */
     public MapConfig addQueryCacheConfig(QueryCacheConfig queryCacheConfig) {
         String queryCacheName = queryCacheConfig.getName();
@@ -742,7 +744,7 @@ public class MapConfig {
      * Checks if queries are optimized.
      *
      * @return {@code true} if queries are optimized, {@code false} otherwise
-     * @deprecated use {@link #getQueryCacheConfigs()} instead.
+     * @deprecated use {@link #getQueryCacheConfigs()} instead
      */
     public boolean isOptimizeQueries() {
         return cacheDeserializedValues == CacheDeserializedValues.ALWAYS;
@@ -753,7 +755,7 @@ public class MapConfig {
      * is {@link InMemoryFormat#OBJECT} or when {@link com.hazelcast.nio.serialization.Portable} serialization is used.
      *
      * @param optimizeQueries {@code true} if queries should be optimized, {@code false} otherwise
-     * @return this {@code MapConfig} instance.
+     * @return this {@code MapConfig} instance
      * @see CacheDeserializedValues
      * @deprecated use {@link #setCacheDeserializedValues(CacheDeserializedValues)} instead
      */
@@ -785,8 +787,7 @@ public class MapConfig {
      * Configure de-serialized value caching.
      * Default: {@link CacheDeserializedValues#INDEX_ONLY}
      *
-     * @param cacheDeserializedValues
-     * @return this {@code MapConfig} instance.
+     * @return this {@code MapConfig} instance
      * @see CacheDeserializedValues
      * @since 3.6
      */

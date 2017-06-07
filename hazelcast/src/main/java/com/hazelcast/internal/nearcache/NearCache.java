@@ -20,7 +20,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InitializingObject;
 
 /**
@@ -114,6 +113,13 @@ public interface NearCache<K, V> extends InitializingObject {
     NearCacheStats getNearCacheStats();
 
     /**
+     * Checks if the Near Cache key is stored in serialized format or by-reference.
+     *
+     * @return {@code true} if the key is stored in serialized format, {@code false} if stored by-reference.
+     */
+    boolean isSerializeKeys();
+
+    /**
      * Selects the best candidate object to store from the given {@code candidates}.
      *
      * @param candidates the candidates from which the best candidate object will be selected.
@@ -131,7 +137,7 @@ public interface NearCache<K, V> extends InitializingObject {
     /**
      * Executes the Near Cache pre-loader on the given {@link DataStructureAdapter}.
      */
-    void preload(DataStructureAdapter<Data, ?> adapter);
+    void preload(DataStructureAdapter<Object, ?> adapter);
 
     /**
      * Stores the keys of the Near Cache.

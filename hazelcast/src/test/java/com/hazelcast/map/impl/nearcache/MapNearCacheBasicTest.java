@@ -32,8 +32,8 @@ import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.NearCacheTestUtils;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -66,19 +66,24 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
     @Parameter
     public InMemoryFormat inMemoryFormat;
 
+    @Parameter(value = 1)
+    public boolean serializeKeys;
+
     private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory();
 
-    @Parameters(name = "format:{0}")
+    @Parameters(name = "format:{0}, serializeKeys:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {InMemoryFormat.BINARY},
-                {InMemoryFormat.OBJECT},
+                {InMemoryFormat.BINARY, true},
+                {InMemoryFormat.BINARY, false},
+                {InMemoryFormat.OBJECT, true},
+                {InMemoryFormat.OBJECT, false},
         });
     }
 
     @Before
     public void setUp() {
-        nearCacheConfig = createNearCacheConfig(inMemoryFormat)
+        nearCacheConfig = createNearCacheConfig(inMemoryFormat, serializeKeys)
                 .setCacheLocalEntries(true);
     }
 

@@ -51,8 +51,8 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 /**
  * Contains all the configuration for the {@link com.hazelcast.cache.ICache}.
  *
- * @param <K> the key type.
- * @param <V> the value type.
+ * @param <K> the key type
+ * @param <V> the value type
  */
 @BinaryInterface
 public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
@@ -228,8 +228,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     /**
      * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public CacheConfigReadOnly<K, V> getAsReadOnly() {
         return new CacheConfigReadOnly<K, V>(this);
@@ -238,7 +238,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     /**
      * Gets the name of this {@link com.hazelcast.cache.ICache}.
      *
-     * @return The name of this {@link com.hazelcast.cache.ICache}.
+     * @return the name of this {@link com.hazelcast.cache.ICache}
      */
     public String getName() {
         return name;
@@ -247,8 +247,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     /**
      * Sets the name of this {@link com.hazelcast.cache.ICache}.
      *
-     * @param name The name to set for this {@link com.hazelcast.cache.ICache}.
-     * @return The current cache config instance.
+     * @param name the name to set for this {@link com.hazelcast.cache.ICache}
+     * @return the current cache config instance
      */
     public CacheConfig<K, V> setName(String name) {
         this.name = name;
@@ -258,7 +258,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     /**
      * Gets the manager prefix of the {@link com.hazelcast.cache.ICache}, such as "hz://".
      *
-     * @return The manager prefix of this {@link com.hazelcast.cache.ICache}.
+     * @return the manager prefix of this {@link com.hazelcast.cache.ICache}
      */
     public String getManagerPrefix() {
         return managerPrefix;
@@ -267,8 +267,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     /**
      * Sets the manager prefix of the {@link com.hazelcast.cache.ICache}.
      *
-     * @param managerPrefix The manager prefix to set for this {@link com.hazelcast.cache.ICache}.
-     * @return The current cache config instance.
+     * @param managerPrefix the manager prefix to set for this {@link com.hazelcast.cache.ICache}
+     * @return the current cache config instance
      */
     public CacheConfig<K, V> setManagerPrefix(String managerPrefix) {
         this.managerPrefix = managerPrefix;
@@ -278,7 +278,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     /**
      * Gets the URI string which is the global identifier for this {@link com.hazelcast.cache.ICache}.
      *
-     * @return The URI string of this {@link com.hazelcast.cache.ICache}.
+     * @return the URI string of this {@link com.hazelcast.cache.ICache}
      */
     public String getUriString() {
         return uriString;
@@ -287,8 +287,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     /**
      * Sets the URI string, which is the global identifier of the {@link com.hazelcast.cache.ICache}.
      *
-     * @param uriString The URI string to set for this {@link com.hazelcast.cache.ICache}.
-     * @return The current cache config instance.
+     * @param uriString the URI string to set for this {@link com.hazelcast.cache.ICache}
+     * @return the current cache config instance
      */
     public CacheConfig<K, V> setUriString(String uriString) {
         this.uriString = uriString;
@@ -298,7 +298,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     /**
      * Gets the full name of the {@link com.hazelcast.cache.ICache}, including the manager scope prefix.
      *
-     * @return The full name of the {@link com.hazelcast.cache.ICache}, including the manager scope prefix.
+     * @return the full name of the {@link com.hazelcast.cache.ICache}, including the manager scope prefix
      */
     public String getNameWithPrefix() {
         return managerPrefix + name;
@@ -307,7 +307,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     /**
      * Gets the number of synchronous backups for this {@link com.hazelcast.cache.ICache}.
      *
-     * @return The number of synchronous backups (backupCount) for this {@link com.hazelcast.cache.ICache}.
+     * @return the number of synchronous backups (backupCount) for this {@link com.hazelcast.cache.ICache}
      * @see #getAsyncBackupCount()
      */
     public int getBackupCount() {
@@ -319,13 +319,12 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
      * then all entries of the map will be copied to another JVM for
      * fail-safety. 0 means no synchronous backup.
      *
-     * @param backupCount The number of synchronous backups to set for
-     *                    this {@link com.hazelcast.cache.ICache}.
-     * @return The current cache config instance.
+     * @param backupCount the number of synchronous backups to set for this {@link com.hazelcast.cache.ICache}
+     * @return the current cache config instance
      * @throws IllegalArgumentException if backupCount smaller than 0,
      *                                  or larger than the maximum number of backup,
      *                                  or the sum of the synchronous and asynchronous backups is larger than
-     *                                  the maximum number of backups.
+     *                                  the maximum number of backups
      * @see #setAsyncBackupCount(int)
      */
     public CacheConfig<K, V> setBackupCount(int backupCount) {
@@ -336,7 +335,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     /**
      * Gets the number of asynchronous backups for this {@link com.hazelcast.cache.ICache}.
      *
-     * @return the number of asynchronous backups for this {@link com.hazelcast.cache.ICache}.
+     * @return the number of asynchronous backups for this {@link com.hazelcast.cache.ICache}
      * @see #setBackupCount(int)
      */
     public int getAsyncBackupCount() {
@@ -346,13 +345,12 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     /**
      * Sets the number of asynchronous backups for this {@link com.hazelcast.cache.ICache}.
      *
-     * @param asyncBackupCount The number of asynchronous backups to set
-     *                         for this {@link com.hazelcast.cache.ICache}.
+     * @param asyncBackupCount the number of asynchronous backups to set for this {@link com.hazelcast.cache.ICache}
      * @return the updated CacheConfig
      * @throws IllegalArgumentException if asyncBackupCount is smaller than 0,
      *                                  or larger than the maximum number of backups,
      *                                  or the sum of the synchronous and asynchronous backups is larger
-     *                                  than the maximum number of backups.
+     *                                  than the maximum number of backups
      * @see #setBackupCount(int)
      * @see #getAsyncBackupCount()
      */
@@ -362,9 +360,9 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     }
 
     /**
-     * Gets the total backup count (<code>backupCount + asyncBackupCount</code>) of the cache.
+     * Gets the total backup count ({@code backupCount + asyncBackupCount}) of the cache.
      *
-     * @return the total backup count (<code>backupCount + asyncBackupCount</code>) of the cache.
+     * @return the total backup count ({@code backupCount + asyncBackupCount}) of the cache
      */
     public int getTotalBackupCount() {
         return backupCount + asyncBackupCount;
@@ -373,7 +371,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     /**
      * Gets the {@link EvictionConfig} instance of the eviction configuration for this {@link com.hazelcast.cache.ICache}.
      *
-     * @return The {@link EvictionConfig} instance of the eviction configuration.
+     * @return the {@link EvictionConfig} instance of the eviction configuration
      */
     // TODO: change to "EvictionConfig" in the future since "CacheEvictionConfig" is deprecated
     public CacheEvictionConfig getEvictionConfig() {
@@ -383,8 +381,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     /**
      * Sets the {@link EvictionConfig} instance for eviction configuration for this {@link com.hazelcast.cache.ICache}.
      *
-     * @param evictionConfig The {@link EvictionConfig} instance to set for the eviction configuration.
-     * @return The current cache config instance.
+     * @param evictionConfig the {@link EvictionConfig} instance to set for the eviction configuration
+     * @return the current cache config instance
      */
     public CacheConfig<K, V> setEvictionConfig(EvictionConfig evictionConfig) {
         isNotNull(evictionConfig, "evictionConfig");
@@ -411,7 +409,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     /**
      * Gets the partition lost listener references added to cache configuration.
      *
-     * @return List of CachePartitionLostListenerConfig.
+     * @return List of CachePartitionLostListenerConfig
      */
     public List<CachePartitionLostListenerConfig> getPartitionLostListenerConfigs() {
         if (partitionLostListenerConfigs == null) {
@@ -423,7 +421,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     /**
      * Sets the WAN target replication reference.
      *
-     * @param partitionLostListenerConfigs CachePartitionLostListenerConfig list.
+     * @param partitionLostListenerConfigs CachePartitionLostListenerConfig list
      */
     public CacheConfig<K, V> setPartitionLostListenerConfigs(
             List<CachePartitionLostListenerConfig> partitionLostListenerConfigs) {
@@ -434,7 +432,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     /**
      * Gets the data type that will be used to store records.
      *
-     * @return the data storage type of the cache config.
+     * @return the data storage type of the cache config
      */
     public InMemoryFormat getInMemoryFormat() {
         return inMemoryFormat;
@@ -443,12 +441,14 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     /**
      * Data type that will be used to store records in this {@link com.hazelcast.cache.ICache}.
      * Possible values:
-     * BINARY (default): keys and values will be stored as binary data.
-     * OBJECT: values will be stored in their object forms.
+     * <ul>
+     * <li>BINARY (default): keys and values will be stored as binary data</li>
+     * <li>OBJECT: values will be stored in their object forms</li>
+     * </ul>
      *
-     * @param inMemoryFormat the record type to set.
-     * @return current cache config instance.
-     * @throws IllegalArgumentException if inMemoryFormat is null.
+     * @param inMemoryFormat the record type to set
+     * @return current cache config instance
+     * @throws IllegalArgumentException if inMemoryFormat is {@code null}
      */
     public CacheConfig<K, V> setInMemoryFormat(InMemoryFormat inMemoryFormat) {
         this.inMemoryFormat = isNotNull(inMemoryFormat, "In-Memory format cannot be null!");
@@ -467,8 +467,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     /**
      * Associates this cache configuration to a quorum.
      *
-     * @param quorumName name of the desired quorum.
-     * @return the updated CacheConfig.
+     * @param quorumName name of the desired quorum
+     * @return the updated CacheConfig
      */
     public CacheConfig<K, V> setQuorumName(String quorumName) {
         this.quorumName = quorumName;
@@ -476,22 +476,19 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     }
 
     /**
-     * Gets the class name of {@link com.hazelcast.cache.CacheMergePolicy}
-     * implementation of this cache config.
+     * Gets the class name of {@link com.hazelcast.cache.CacheMergePolicy} implementation of this cache config.
      *
-     * @return the class name of {@link com.hazelcast.cache.CacheMergePolicy}
-     * implementation of this cache config
+     * @return the class name of {@link com.hazelcast.cache.CacheMergePolicy} implementation of this cache config
      */
     public String getMergePolicy() {
         return mergePolicy;
     }
 
     /**
-     * Sets the class name of {@link com.hazelcast.cache.CacheMergePolicy}
-     * implementation to this cache config.
+     * Sets the class name of {@link com.hazelcast.cache.CacheMergePolicy} implementation to this cache config.
      *
-     * @param mergePolicy the class name of {@link com.hazelcast.cache.CacheMergePolicy}
-     *                    implementation to be set to this cache config
+     * @param mergePolicy the class name of {@link com.hazelcast.cache.CacheMergePolicy} implementation to be set to this cache
+     *                    config
      */
     public void setMergePolicy(String mergePolicy) {
         this.mergePolicy = mergePolicy;
@@ -500,8 +497,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     /**
      * Returns invalidation events disabled status for per entry.
      *
-     * @return <tt>true</tt> if invalidation events are disabled for per entry,
-     * otherwise <tt>false</tt>
+     * @return {@code true} if invalidation events are disabled for per entry, {@code false} otherwise
      */
     public boolean isDisablePerEntryInvalidationEvents() {
         return disablePerEntryInvalidationEvents;
@@ -510,8 +506,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     /**
      * Sets invalidation events disabled status for per entry.
      *
-     * @param disablePerEntryInvalidationEvents Disables invalidation event sending behaviour if it is <tt>true</tt>,
-     *                                          otherwise enables it.
+     * @param disablePerEntryInvalidationEvents disables invalidation event sending behaviour if it is {@code true},
+     *                                          otherwise enables it
      */
     public void setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
         this.disablePerEntryInvalidationEvents = disablePerEntryInvalidationEvents;
@@ -529,7 +525,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         out.writeObject(evictionConfig);
 
         out.writeObject(wanReplicationRef);
-        //SUPER
+        // SUPER
         out.writeObject(keyType);
         out.writeObject(valueType);
         out.writeObject(cacheLoaderFactory);
@@ -573,7 +569,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
         wanReplicationRef = in.readObject();
 
-        //SUPER
+        // SUPER
         keyType = in.readObject();
         valueType = in.readObject();
         cacheLoaderFactory = in.readObject();
@@ -622,8 +618,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         }
 
         final CacheConfig that = (CacheConfig) o;
-
-
         if (managerPrefix != null ? !managerPrefix.equals(that.managerPrefix) : that.managerPrefix != null) {
             return false;
         }

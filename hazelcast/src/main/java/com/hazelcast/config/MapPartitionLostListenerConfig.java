@@ -46,8 +46,8 @@ public class MapPartitionLostListenerConfig extends ListenerConfig {
     /**
      * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     @Override
     public MapPartitionLostListenerConfigReadOnly getAsReadOnly() {

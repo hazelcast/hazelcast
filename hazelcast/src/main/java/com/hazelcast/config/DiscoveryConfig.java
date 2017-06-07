@@ -51,8 +51,8 @@ public class DiscoveryConfig {
     /**
      * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public DiscoveryConfig getAsReadOnly() {
         if (readonly != null) {
@@ -94,7 +94,7 @@ public class DiscoveryConfig {
      * Returns the defined {@link DiscoveryStrategy}
      * configurations. This collection does not include deactivated configurations
      * since those are automatically skipped while reading the configuration file.
-     * <p/>
+     * <p>
      * All returned configurations are expected to be active, this is to remember
      * when building custom {@link com.hazelcast.config.Config} instances.
      *
@@ -110,7 +110,7 @@ public class DiscoveryConfig {
 
     /**
      * Adds an enabled {@link DiscoveryStrategy} configuration.
-     * <p/>
+     * <p>
      * All added configurations are strictly meant to be enabled, this is to
      * remember when building custom {@link com.hazelcast.config.Config} instances.
      *

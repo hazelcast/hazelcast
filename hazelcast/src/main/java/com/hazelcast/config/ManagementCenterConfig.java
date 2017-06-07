@@ -38,19 +38,19 @@ public class ManagementCenterConfig {
     }
 
     /**
-     * True if management center is enabled, false if disabled.
+     * {@code true} if management center is enabled, {@code false} if disabled.
      *
-     * @return True if management center is enabled, false if disabled.
+     * @return {@code true} if management center is enabled, {@code false} if disabled
      */
     public boolean isEnabled() {
         return enabled;
     }
 
     /**
-     * Set to true to enable management center, false to disable.
+     * Set to {@code true} to enable management center, {@code false} to disable.
      *
-     * @param enabled True to enable management center, false to disable.
-     * @return This management center config instance.
+     * @param enabled {@code true} to enable management center, {@code false} to disable
+     * @return this management center config instance
      */
     public ManagementCenterConfig setEnabled(final boolean enabled) {
         this.enabled = enabled;
@@ -60,7 +60,7 @@ public class ManagementCenterConfig {
     /**
      * Gets the URL where management center will work.
      *
-     * @return The URL where management center will work.
+     * @return the URL where management center will work
      */
     public String getUrl() {
         return url;
@@ -69,8 +69,8 @@ public class ManagementCenterConfig {
     /**
      * Sets the URL where management center will work.
      *
-     * @param url The URL where management center will work.
-     * @return This management center config instance.
+     * @param url the URL where management center will work
+     * @return this management center config instance
      */
     public ManagementCenterConfig setUrl(final String url) {
         this.url = url;
@@ -81,8 +81,8 @@ public class ManagementCenterConfig {
      * Gets the time frequency (in seconds) for which Management Center will take
      * information from the Hazelcast cluster.
      *
-     * @return The time frequency (in seconds) for which Management Center will take
-     * information from the Hazelcast cluster.
+     * @return the time frequency (in seconds) for which Management Center will take
+     * information from the Hazelcast cluster
      */
     public int getUpdateInterval() {
         return updateInterval;
@@ -93,8 +93,8 @@ public class ManagementCenterConfig {
      * information from the Hazelcast cluster.
      *
      * @param updateInterval the time frequency (in seconds) for which Management Center will take
-     *                       information from the Hazelcast cluster.
-     * @return This management center config instance.
+     *                       information from the Hazelcast cluster
+     * @return this management center config instance
      */
     public ManagementCenterConfig setUpdateInterval(final int updateInterval) {
         this.updateInterval = updateInterval;

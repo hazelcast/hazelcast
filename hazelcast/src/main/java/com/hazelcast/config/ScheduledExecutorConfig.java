@@ -20,7 +20,7 @@ import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
- * Configuration options for the {@link com.hazelcast.scheduledexecutor.IScheduledExecutorService}
+ * Configuration options for the {@link com.hazelcast.scheduledexecutor.IScheduledExecutorService}.
  */
 public class ScheduledExecutorConfig {
 
@@ -30,12 +30,12 @@ public class ScheduledExecutorConfig {
     private static final int DEFAULT_POOL_SIZE = 16;
 
     /**
-     * The number of tasks that can co-exist per scheduler per partition
+     * The number of tasks that can co-exist per scheduler per partition.
      */
     private static final int DEFAULT_CAPACITY = 100;
 
     /**
-     * The number of replicas per task scheduled in each ScheduledExecutor
+     * The number of replicas per task scheduled in each ScheduledExecutor.
      */
     private static final int DEFAULT_DURABILITY = 1;
 
@@ -70,7 +70,7 @@ public class ScheduledExecutorConfig {
     /**
      * Gets the name of the executor task.
      *
-     * @return The name of the executor task.
+     * @return the name of the executor task
      */
     public String getName() {
         return name;
@@ -79,8 +79,8 @@ public class ScheduledExecutorConfig {
     /**
      * Sets the name of the executor task.
      *
-     * @param name The name of the executor task.
-     * @return This executor config instance.
+     * @param name the name of the executor task
+     * @return this executor config instance
      */
     public ScheduledExecutorConfig setName(String name) {
         this.name = name;
@@ -90,7 +90,7 @@ public class ScheduledExecutorConfig {
     /**
      * Gets the number of executor threads per member for the executor.
      *
-     * @return The number of executor threads per member for the executor.
+     * @return the number of executor threads per member for the executor
      */
     public int getPoolSize() {
         return poolSize;
@@ -99,12 +99,11 @@ public class ScheduledExecutorConfig {
     /**
      * Sets the number of executor threads per member for the executor.
      *
-     * @param poolSize The number of executor threads per member for the executor.
-     * @return This executor config instance.
+     * @param poolSize the number of executor threads per member for the executor
+     * @return this executor config instance
      */
     public ScheduledExecutorConfig setPoolSize(int poolSize) {
-        checkPositive(poolSize, "Pool size should be greater than 0");
-        this.poolSize = poolSize;
+        this.poolSize = checkPositive(poolSize, "Pool size should be greater than 0");
         return this;
     }
 
@@ -124,11 +123,10 @@ public class ScheduledExecutorConfig {
      * down then the task is lost.
      *
      * @param durability the durability of the executor
-     * @return This executor config instance.
+     * @return this executor config instance
      */
     public ScheduledExecutorConfig setDurability(int durability) {
-        checkNotNegative(durability, "durability can't be smaller than 0");
-        this.durability = durability;
+        this.durability = checkNotNegative(durability, "durability can't be smaller than 0");
         return this;
     }
 
@@ -147,11 +145,10 @@ public class ScheduledExecutorConfig {
      * If this is set to 0 then there is no limit
      *
      * @param capacity the capacity of the executor
-     * @return This executor config instance.
+     * @return this executor config instance
      */
     public ScheduledExecutorConfig setCapacity(int capacity) {
-        checkNotNegative(capacity, "capacity can't be smaller than 0");
-        this.capacity = capacity;
+        this.capacity = checkNotNegative(capacity, "capacity can't be smaller than 0");
         return this;
     }
 

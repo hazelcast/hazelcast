@@ -39,6 +39,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 
@@ -52,7 +53,7 @@ import static java.util.Arrays.asList;
  * Near Cache serialization count tests for {@link com.hazelcast.core.TransactionalMap} on Hazelcast members.
  */
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class TxnMapNearCacheSerializationCountTest extends AbstractNearCacheSerializationCountTest<Data, String> {
 
@@ -74,18 +75,25 @@ public class TxnMapNearCacheSerializationCountTest extends AbstractNearCacheSeri
     @Parameter(value = 5)
     public InMemoryFormat nearCacheInMemoryFormat;
 
+    @Parameter(value = 6)
+    public Boolean serializeKeys;
+
     private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory();
 
-    @Parameters(name = "mapFormat:{4} nearCacheFormat:{5}")
+    @Parameters(name = "mapFormat:{4} nearCacheFormat:{5} serializeKeys:{6}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, null},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, BINARY},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, OBJECT},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, null, null},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, BINARY, true},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, BINARY, false},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, OBJECT, true},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, OBJECT, false},
 
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 1), newInt(1, 1, 1), OBJECT, null},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 1), newInt(1, 1, 1), OBJECT, BINARY},
-                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 1), newInt(1, 1, 1), OBJECT, OBJECT},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 1), newInt(1, 1, 1), OBJECT, null, null},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 1), newInt(1, 1, 1), OBJECT, BINARY, true},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 1), newInt(1, 1, 1), OBJECT, BINARY, false},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 1), newInt(1, 1, 1), OBJECT, OBJECT, true},
+                {newInt(1, 1, 1), newInt(0, 0, 0), newInt(1, 1, 1), newInt(1, 1, 1), OBJECT, OBJECT, false},
         });
     }
 
@@ -96,7 +104,7 @@ public class TxnMapNearCacheSerializationCountTest extends AbstractNearCacheSeri
         expectedValueSerializationCounts = valueSerializationCounts;
         expectedValueDeserializationCounts = valueDeserializationCounts;
         if (nearCacheInMemoryFormat != null) {
-            nearCacheConfig = createNearCacheConfig(nearCacheInMemoryFormat)
+            nearCacheConfig = createNearCacheConfig(nearCacheInMemoryFormat, serializeKeys)
                     // we have to enable invalidations, otherwise the Near Cache in the TransactionalMap will not be used
                     .setInvalidateOnChange(true)
                     .setCacheLocalEntries(true);
@@ -112,6 +120,7 @@ public class TxnMapNearCacheSerializationCountTest extends AbstractNearCacheSeri
     protected void addConfiguration(NearCacheSerializationCountConfigBuilder configBuilder) {
         configBuilder.append(mapInMemoryFormat);
         configBuilder.append(nearCacheInMemoryFormat);
+        configBuilder.append(serializeKeys);
     }
 
     @Override

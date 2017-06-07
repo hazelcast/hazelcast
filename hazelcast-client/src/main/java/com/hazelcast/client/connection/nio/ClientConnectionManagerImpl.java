@@ -242,6 +242,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         eventLoopGroup.shutdown();
     }
 
+    @Override
     public ClientConnection getConnection(Address target) {
         target = addressTranslator.translate(target);
         if (target == null) {

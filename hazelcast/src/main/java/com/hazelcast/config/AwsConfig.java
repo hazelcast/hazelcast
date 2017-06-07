@@ -20,22 +20,17 @@ import static com.hazelcast.util.Preconditions.checkHasText;
 
 /**
  * The AWSConfig contains the configuration for AWS join mechanism.
- * <p/>
+ * <p>
  * what happens behind the scenes is that data about the running AWS instances in a specific region are downloaded using the
  * accesskey/secretkey and are potential Hazelcast members.
- * <p/>
  * <h1>Filtering</h1>
  * There are 2 mechanisms for filtering out AWS instances and these mechanisms can be combined (AND).
  * <ol>
- * <li>If a securityGroup is configured, only instances within that security group are selected.
- * </li>
- * <li>
- * If a tag key/value is set, only instances with that tag key/value will be selected.
- * </li>
+ * <li>If a securityGroup is configured, only instances within that security group are selected.</li>
+ * <li>If a tag key/value is set, only instances with that tag key/value will be selected.</li>
  * </ol>
- * <p/>
- * Once Hazelcast has figured out which instances are available, it will use the private ip addresses of these
- * instances to create a tcp/ip-cluster.
+ * Once Hazelcast has figured out which instances are available, it will use the private IP addresses of these
+ * instances to create a TCP/IP-cluster.
  */
 public class AwsConfig {
 
@@ -66,8 +61,8 @@ public class AwsConfig {
      * Sets the access key to access AWS.
      *
      * @param accessKey the access key to access AWS
-     * @return the updated AwsConfig.
-     * @throws IllegalArgumentException if accessKey is null or empty.
+     * @return the updated AwsConfig
+     * @throws IllegalArgumentException if accessKey is {@code null} or empty
      * @see #getAccessKey()
      * @see #setSecretKey(String)
      */
@@ -77,9 +72,9 @@ public class AwsConfig {
     }
 
     /**
-     * Gets the secret key to access AWS. Returns null if no access key is configured.
+     * Gets the secret key to access AWS. Returns {@code null} if no access key is configured.
      *
-     * @return the secret key.
+     * @return the secret key
      * @see #setSecretKey(String)
      */
     public String getSecretKey() {
@@ -90,8 +85,8 @@ public class AwsConfig {
      * Sets the secret key to access AWS.
      *
      * @param secretKey the secret key to access AWS
-     * @return the updated AwsConfig.
-     * @throws IllegalArgumentException if secretKey is null or empty.
+     * @return the updated AwsConfig
+     * @throws IllegalArgumentException if secretKey is {@code null} or empty
      * @see #getSecretKey()
      * @see #setAccessKey(String)
      */
@@ -115,7 +110,7 @@ public class AwsConfig {
      *
      * @param region the region where the EC2 instances running the Hazelcast members will be running
      * @return the updated AwsConfig
-     * @throws IllegalArgumentException if region is null or empty.
+     * @throws IllegalArgumentException if region is {@code null} or empty
      */
     public AwsConfig setRegion(String region) {
         this.region = checkHasText(region, "region must contain text");
@@ -136,7 +131,7 @@ public class AwsConfig {
      *
      * @param hostHeader the new host header; the address where the EC2 API can be found
      * @return the updated AwsConfig
-     * @throws IllegalArgumentException if hostHeader is null or an empty string.
+     * @throws IllegalArgumentException if hostHeader is {@code null} or an empty string
      */
     public AwsConfig setHostHeader(String hostHeader) {
         this.hostHeader = checkHasText(hostHeader, "hostHeader must contain text");
@@ -144,10 +139,10 @@ public class AwsConfig {
     }
 
     /**
-     * Enables or disables the aws join mechanism.
+     * Enables or disables the AWS join mechanism.
      *
-     * @param enabled true if enabled, false otherwise.
-     * @return the updated AwsConfig.
+     * @param enabled {@code true} if enabled, {@code false} otherwise
+     * @return the updated AwsConfig
      */
     public AwsConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
@@ -155,9 +150,9 @@ public class AwsConfig {
     }
 
     /**
-     * Checks if the aws join mechanism is enabled.
+     * Checks if the AWS join mechanism is enabled.
      *
-     * @return true if enabled, false otherwise.
+     * @return {@code true} if enabled, {@code false} otherwise
      */
     public boolean isEnabled() {
         return enabled;
@@ -166,8 +161,8 @@ public class AwsConfig {
     /**
      * Sets the security group name. See the filtering section above for more information.
      *
-     * @param securityGroupName the security group name.
-     * @return the updated AwsConfig.
+     * @param securityGroupName the security group name
+     * @return the updated AwsConfig
      * @see #getSecurityGroupName()
      */
     public AwsConfig setSecurityGroupName(String securityGroupName) {
@@ -176,9 +171,9 @@ public class AwsConfig {
     }
 
     /**
-     * Gets the security group name. If nothing has been configured, null is returned.
+     * Gets the security group name. If nothing has been configured, {@code null} is returned.
      *
-     * @return the security group name; null if nothing has been configured
+     * @return the security group name; {@code null} if nothing has been configured
      */
     public String getSecurityGroupName() {
         return securityGroupName;
@@ -187,8 +182,8 @@ public class AwsConfig {
     /**
      * Sets the tag key. See the filtering section above for more information.
      *
-     * @param tagKey the tag key. See the filtering section above for more information.
-     * @return the updated AwsConfig.
+     * @param tagKey the tag key (see the filtering section above for more information)
+     * @return the updated AwsConfig
      * @see #setTagKey(String)
      */
     public AwsConfig setTagKey(String tagKey) {
@@ -199,8 +194,8 @@ public class AwsConfig {
     /**
      * Sets the tag value. See the filtering section above for more information.
      *
-     * @param tagValue the tag value. See the filtering section above for more information.
-     * @return the updated AwsConfig.
+     * @param tagValue the tag value (see the filtering section above for more information)
+     * @return the updated AwsConfig
      * @see #setTagKey(String)
      * @see #getTagValue()
      */
@@ -210,18 +205,18 @@ public class AwsConfig {
     }
 
     /**
-     * Gets the tag key. If nothing is specified, null is returned.
+     * Gets the tag key. If nothing is specified, {@code null} is returned.
      *
-     * @return the tag key. null if nothing is returned.
+     * @return the tag key or {@code null} if nothing is returned
      */
     public String getTagKey() {
         return tagKey;
     }
 
     /**
-     * Gets the tag value. If nothing is specified, null is returned.
+     * Gets the tag value. If nothing is specified, {@code null} is returned.
      *
-     * @return the tag value. null if nothing is returned.
+     * @return the tag value or {@code null} if nothing is returned
      */
     public String getTagValue() {
         return tagValue;
@@ -241,7 +236,7 @@ public class AwsConfig {
      * Sets the connect timeout in seconds. See {@link TcpIpConfig#setConnectionTimeoutSeconds(int)} for more information.
      *
      * @param connectionTimeoutSeconds the connectionTimeoutSeconds (connection timeout in seconds) to set
-     * @return the updated AwsConfig.
+     * @return the updated AwsConfig
      * @see #getConnectionTimeoutSeconds()
      * @see TcpIpConfig#setConnectionTimeoutSeconds(int)
      */
@@ -256,7 +251,7 @@ public class AwsConfig {
     /**
      * Gets the iamRole name
      *
-     * @return the iamRole. null if nothing is returned.
+     * @return the iamRole or {@code null} if nothing is returned
      * @see #setIamRole(String) (int)
      */
     public String getIamRole() {
@@ -266,8 +261,8 @@ public class AwsConfig {
     /**
      * Sets the tag value. See the filtering section above for more information.
      *
-     * @param iamRole the IAM Role name.
-     * @return the updated AwsConfig.
+     * @param iamRole the IAM Role name
+     * @return the updated AwsConfig
      * @see #getIamRole()
      */
     public AwsConfig setIamRole(String iamRole) {

@@ -42,8 +42,8 @@ public class ListenerConfig {
     /**
      * Creates a ListenerConfig with the given className.
      *
-     * @param className the name of the EventListener class.
-     * @throws IllegalArgumentException if className is null or an empty String.
+     * @param className the name of the EventListener class
+     * @throws IllegalArgumentException if className is {@code null} or an empty String
      */
     public ListenerConfig(String className) {
         setClassName(className);
@@ -57,8 +57,8 @@ public class ListenerConfig {
     /**
      * Creates a ListenerConfig with the given implementation.
      *
-     * @param implementation the implementation to use as EventListener.
-     * @throws IllegalArgumentException if the implementation is null.
+     * @param implementation the implementation to use as EventListener
+     * @throws IllegalArgumentException if the implementation is {@code null}
      */
     public ListenerConfig(EventListener implementation) {
         this.implementation = isNotNull(implementation, "implementation");
@@ -67,8 +67,8 @@ public class ListenerConfig {
     /**
      * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public ListenerConfig getAsReadOnly() {
         if (readOnly == null) {
@@ -80,7 +80,7 @@ public class ListenerConfig {
     /**
      * Returns the name of the class of the EventListener. If no class is specified, null is returned.
      *
-     * @return the class name of the EventListener.
+     * @return the class name of the EventListener
      * @see #setClassName(String)
      */
     public String getClassName() {
@@ -89,12 +89,12 @@ public class ListenerConfig {
 
     /**
      * Sets the class name of the EventListener.
-     * <p/>
+     * <p>
      * If a implementation was set, it will be removed.
      *
-     * @param className the name of the class of the EventListener.
-     * @return the updated ListenerConfig.
-     * @throws IllegalArgumentException if className is null or an empty String.
+     * @param className the name of the class of the EventListener
+     * @return the updated ListenerConfig
+     * @throws IllegalArgumentException if className is {@code null} or an empty String
      * @see #setImplementation(java.util.EventListener)
      * @see #getClassName()
      */
@@ -107,7 +107,7 @@ public class ListenerConfig {
     /**
      * Returns the EventListener implementation. If none has been specified, null is returned.
      *
-     * @return the EventListener implementation.
+     * @return the EventListener implementation
      * @see #setImplementation(java.util.EventListener)
      */
     public EventListener getImplementation() {
@@ -116,12 +116,12 @@ public class ListenerConfig {
 
     /**
      * Sets the EventListener implementation.
-     * <p/>
+     * <p>
      * If a className was set, it will be removed.
      *
-     * @param implementation the EventListener implementation.
-     * @return the updated ListenerConfig.
-     * @throws IllegalArgumentException the implementation is null.
+     * @param implementation the EventListener implementation
+     * @return the updated ListenerConfig
+     * @throws IllegalArgumentException the implementation is {@code null}
      * @see #setClassName(String)
      * @see #getImplementation()
      */
@@ -155,7 +155,6 @@ public class ListenerConfig {
         }
 
         ListenerConfig that = (ListenerConfig) o;
-
         if (className != null ? !className.equals(that.className) : that.className != null) {
             return false;
         }

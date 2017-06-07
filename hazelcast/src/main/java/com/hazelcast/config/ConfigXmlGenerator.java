@@ -69,7 +69,7 @@ public class ConfigXmlGenerator {
     /**
      * Creates a ConfigXmlGenerator.
      *
-     * @param formatted true if the XML should be formatted, false otherwise.
+     * @param formatted {@code true} if the XML should be formatted, {@code false} otherwise
      */
     public ConfigXmlGenerator(boolean formatted) {
         this.formatted = formatted;
@@ -78,8 +78,8 @@ public class ConfigXmlGenerator {
     /**
      * Generates the XML string based on some Config.
      *
-     * @param config the configuration.
-     * @return the XML string.
+     * @param config the configuration
+     * @return the XML string
      */
     public String generate(Config config) {
         isNotNull(config, "Config");
@@ -450,10 +450,10 @@ public class ConfigXmlGenerator {
             gen.open("wan-replication", "name", wan.getName());
             for (WanPublisherConfig p : wan.getWanPublisherConfigs()) {
                 gen.open("wan-publisher", "group-name", p.getGroupName())
-                   .node("class-name", p.getClassName())
-                   .node("queue-full-behavior", p.getQueueFullBehavior())
-                   .node("queue-capacity", p.getQueueCapacity())
-                   .appendProperties(p.getProperties());
+                        .node("class-name", p.getClassName())
+                        .node("queue-full-behavior", p.getQueueFullBehavior())
+                        .node("queue-capacity", p.getQueueCapacity())
+                        .appendProperties(p.getProperties());
                 awsConfigXmlGenerator(gen, p.getAwsConfig());
                 discoveryStrategyConfigXmlGenerator(gen, p.getDiscoveryConfig());
                 gen.close();
@@ -863,7 +863,7 @@ public class ConfigXmlGenerator {
 
             gen.node("factory-class-name",
                     classNameOrImplClass(ssl.getFactoryClassName(), ssl.getFactoryImplementation()))
-               .appendProperties(props);
+                    .appendProperties(props);
         }
         gen.close();
     }

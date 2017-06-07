@@ -25,7 +25,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for the Tcp/Ip join mechanism.
- * <p/>
+ * <p>
  * The Tcp/Ip join mechanism relies on one or more well known members. So when a new member wants to join
  * a cluster, it will try to connect to one of the well known members. If it is able to connect, it will know
  * about all members in the cluster and won't rely on these well known members anymore.
@@ -58,9 +58,9 @@ public class TcpIpConfig {
      * member is not able to connect to a cluster. Setting it as too high a value means that member startup
      * could slow down because of longer timeouts (e.g. when a well known member is not up).
      *
-     * @param connectionTimeoutSeconds the connection timeout in seconds.
+     * @param connectionTimeoutSeconds the connection timeout in seconds
      * @return the updated TcpIpConfig
-     * @throws IllegalArgumentException if connectionTimeoutSeconds is smaller than 0.
+     * @throws IllegalArgumentException if connectionTimeoutSeconds is smaller than 0
      * @see #getConnectionTimeoutSeconds()
      */
     public TcpIpConfig setConnectionTimeoutSeconds(final int connectionTimeoutSeconds) {
@@ -74,7 +74,7 @@ public class TcpIpConfig {
     /**
      * Checks if the Tcp/Ip join mechanism is enabled.
      *
-     * @return true if enabled, false otherwise
+     * @return {@code true} if enabled, {@code false} otherwise
      */
     public boolean isEnabled() {
         return enabled;
@@ -83,8 +83,8 @@ public class TcpIpConfig {
     /**
      * Enables or disables the Tcp/Ip join mechanism.
      *
-     * @param enabled true to enable the Tcp/Ip join mechanism, false to disable
-     * @return TcpIpConfig the updated TcpIpConfig config.
+     * @param enabled {@code true} to enable the Tcp/Ip join mechanism, {@code false} to disable
+     * @return TcpIpConfig the updated TcpIpConfig config
      */
     public TcpIpConfig setEnabled(final boolean enabled) {
         this.enabled = enabled;
@@ -95,7 +95,7 @@ public class TcpIpConfig {
      * Gets a list of all the well known members. If there are no well known members, the list will
      * be empty.
      *
-     * @return the lsMembers
+     * @return the list members
      * @see #setMembers(java.util.List)
      */
     public List<String> getMembers() {
@@ -107,15 +107,15 @@ public class TcpIpConfig {
 
     /**
      * Sets the well known members.
-     * <p/>
+     * <p>
      * If members are empty, calling this method will have the same effect as calling {@link #clear()}.
-     * <p/>
+     * <p>
      * A member can be a comma separated string, e..g '10.11.12.1,10.11.12.2' which indicates multiple members
      * are going to be added.
      *
      * @param members the members to set
-     * @return the updated TcpIpConfig.
-     * @throws IllegalArgumentException if members is null.
+     * @return the updated TcpIpConfig
+     * @throws IllegalArgumentException if members is {@code null}
      */
     public TcpIpConfig setMembers(final List<String> members) {
         isNotNull(members, "members");
@@ -130,16 +130,16 @@ public class TcpIpConfig {
 
     /**
      * Adds a 'well known' member.
-     * <p/>
+     * <p>
      * Each HazelcastInstance will try to connect to at least one of the members, to find all other members,
      * and create a cluster.
-     * <p/>
+     * <p>
      * A member can be a comma separated string, e..g '10.11.12.1,10.11.12.2' which indicates multiple members
      * are going to be added.
      *
-     * @param member the member to add.
-     * @return the updated configuration.
-     * @throws IllegalArgumentException if member is null or empty.
+     * @param member the member to add
+     * @return the updated configuration
+     * @throws IllegalArgumentException if member is {@code null} or empty
      * @see #getMembers()
      */
     public TcpIpConfig addMember(String member) {
@@ -156,10 +156,10 @@ public class TcpIpConfig {
 
     /**
      * Removes all members.
-     * <p/>
+     * <p>
      * Can safely be called when there are no members.
      *
-     * @return the updated configuration.
+     * @return the updated configuration
      * @see #addMember(String)
      */
     public TcpIpConfig clear() {
@@ -179,12 +179,12 @@ public class TcpIpConfig {
 
     /**
      * Sets the required member. If a null value is passed, it means that there is no required member.
-     * <p/>
+     * <p>
      * With a required member configured, the cluster will only start up when this required member is up.
      * Setting the required member can be tricky, since if that member doesn't come up, the cluster won't start.
      *
      * @param requiredMember the requiredMember to set
-     * @return TcpIpConfig the updated configuration.
+     * @return TcpIpConfig the updated configuration
      * @see #getRequiredMember()
      */
     public TcpIpConfig setRequiredMember(final String requiredMember) {

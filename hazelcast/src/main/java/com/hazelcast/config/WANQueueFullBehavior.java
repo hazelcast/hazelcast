@@ -17,17 +17,17 @@
 package com.hazelcast.config;
 
 /**
- * Determines the behavior of WAN replication impl. in case of WAN event queues are full
+ * Determines the behavior of WAN replication impl. In case of WAN event queues are full.
  */
 public enum WANQueueFullBehavior {
 
     /**
-     * Instruct WAN repl. impl to drop new events when WAN event queues are full
+     * Instruct WAN replication implementation to drop new events when WAN event queues are full.
      */
     DISCARD_AFTER_MUTATION(0),
 
     /**
-     * Instruct WAN repl. impl to throw an exception and doesn't allow further processing.
+     * Instruct WAN replication implementation to throw an exception and doesn't allow further processing.
      */
     THROW_EXCEPTION(1),
 
@@ -44,22 +44,22 @@ public enum WANQueueFullBehavior {
     }
 
     /**
-     * Gets the id for the given {@link WANQueueFullBehavior}.
-     *
-     * This reason this id is used instead of an the ordinal value is that the ordinal value is more prone to changes due to
+     * Gets the ID for the given {@link WANQueueFullBehavior}.
+     * <p>
+     * This reason this ID is used instead of an the ordinal value is that the ordinal value is more prone to changes due to
      * reordering.
      *
-     * @return the id.
+     * @return the ID
      */
     public int getId() {
         return id;
     }
 
     /**
-     +     * Returns the EntryEventType as an enum.
-     +     *
-     +     * @return the EntryEventType as an enum.
-     +     */
+     * Returns the EntryEventType as an enum.
+     *
+     * @return the EntryEventType as an enum
+     */
     public static WANQueueFullBehavior getByType(final int id) {
         for (WANQueueFullBehavior behavior : values()) {
             if (behavior.id == id) {

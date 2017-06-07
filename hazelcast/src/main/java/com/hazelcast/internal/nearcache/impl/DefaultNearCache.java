@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
+import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class DefaultNearCache<K, V> implements NearCache<K, V> {
@@ -46,6 +47,8 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
 
     protected NearCacheRecordStore<K, V> nearCacheRecordStore;
     protected ScheduledFuture expirationTaskFuture;
+
+    private final boolean serializeKeys;
 
     private volatile boolean preloadDone;
 
@@ -64,6 +67,7 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
         this.classLoader = classLoader;
         this.scheduler = scheduler;
         this.nearCacheRecordStore = nearCacheRecordStore;
+        this.serializeKeys = nearCacheConfig.isSerializeKeys();
     }
 
     @Override
@@ -123,6 +127,9 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     @Override
     public boolean remove(K key) {
         checkNotNull(key, "key cannot be null on remove!");
+        if (!serializeKeys) {
+            checkNotInstanceOf(Data.class, key, "key cannot be of type Data!");
+        }
 
         return nearCacheRecordStore.remove(key);
     }
@@ -156,6 +163,11 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     @Override
+    public boolean isSerializeKeys() {
+        return serializeKeys;
+    }
+
+    @Override
     public Object selectToSave(Object... candidates) {
         return nearCacheRecordStore.selectToSave(candidates);
     }
@@ -166,7 +178,7 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     @Override
-    public void preload(DataStructureAdapter<Data, ?> adapter) {
+    public void preload(DataStructureAdapter<Object, ?> adapter) {
         nearCacheRecordStore.loadKeys(adapter);
         preloadDone = true;
     }

@@ -29,7 +29,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
  * Contains the configuration for the {@link com.hazelcast.ringbuffer.Ringbuffer}.
- * <p/>
+ * <p>
  * The RingBuffer is currently not a distributed data-structure, so its content will be fully stored on a single member
  * in the cluster and its backup in another member in the cluster.
  */
@@ -72,7 +72,7 @@ public class RingbufferConfig {
      * Creates a RingbufferConfig with the provided name.
      *
      * @param name the name
-     * @throws java.lang.NullPointerException if name is null
+     * @throws java.lang.NullPointerException if name is {@code null}
      */
     public RingbufferConfig(String name) {
         this.name = checkNotNull(name, "name can't be null");
@@ -82,7 +82,7 @@ public class RingbufferConfig {
      * Clones a RingbufferConfig
      *
      * @param config the ringbuffer config to clone
-     * @throws java.lang.NullPointerException if config is null
+     * @throws java.lang.NullPointerException if config is {@code null}
      */
     public RingbufferConfig(RingbufferConfig config) {
         checkNotNull(config, "config can't be null");
@@ -101,8 +101,8 @@ public class RingbufferConfig {
      * Creates a new RingbufferConfig by cloning an existing config and overriding the name.
      *
      * @param name   the new name
-     * @param config the config.
-     * @throws java.lang.NullPointerException if name or config is null.
+     * @param config the config
+     * @throws java.lang.NullPointerException if name or config is {@code null}
      */
     public RingbufferConfig(String name, RingbufferConfig config) {
         this(config);
@@ -114,7 +114,7 @@ public class RingbufferConfig {
      *
      * @param name the name of the ringbuffer
      * @return the updated {@link RingbufferConfig}
-     * @throws IllegalArgumentException if name is null or an empty string.
+     * @throws IllegalArgumentException if name is {@code null} or an empty string
      */
     public RingbufferConfig setName(String name) {
         this.name = checkHasText(name, "name must contain text");
@@ -124,7 +124,7 @@ public class RingbufferConfig {
     /**
      * Returns the name of the ringbuffer.
      *
-     * @return the name of the ringbuffer.
+     * @return the name of the ringbuffer
      */
     public String getName() {
         return name;
@@ -132,13 +132,13 @@ public class RingbufferConfig {
 
     /**
      * Gets the capacity of the ringbuffer.
-     * <p/>
+     * <p>
      * The capacity is the total number of items in the ringbuffer. The items will remain in the ringbuffer, but the oldest items
      * will eventually be be overwritten by the newest items.
-     * <p/>
+     * <p>
      * In the future we'll add more advanced policies e.g. based on memory usage or lifespan.
      *
-     * @return the capacity.
+     * @return the capacity
      */
     public int getCapacity() {
         return capacity;
@@ -147,21 +147,20 @@ public class RingbufferConfig {
     /**
      * Sets the capacity of the ringbuffer.
      *
-     * @param capacity the capacity.
-     * @return the updated Config.
-     * @throws java.lang.IllegalArgumentException if capacity smaller than 1.
+     * @param capacity the capacity
+     * @return the updated Config
+     * @throws java.lang.IllegalArgumentException if capacity smaller than 1
      * @see #getCapacity()
      */
     public RingbufferConfig setCapacity(int capacity) {
-        checkPositive(capacity, "capacity can't be smaller than 1");
-        this.capacity = capacity;
+        this.capacity = checkPositive(capacity, "capacity can't be smaller than 1");
         return this;
     }
 
     /**
      * Gets the number of synchronous backups.
      *
-     * @return number of synchronous backups.
+     * @return number of synchronous backups
      */
     public int getBackupCount() {
         return backupCount;
@@ -186,14 +185,14 @@ public class RingbufferConfig {
     /**
      * Gets the number of asynchronous backups.
      *
-     * @return the number of asynchronous backups.
+     * @return the number of asynchronous backups
      */
     public int getAsyncBackupCount() {
         return asyncBackupCount;
     }
 
     /**
-     * Sets the number of asynchronous backups. 0 means no backups
+     * Sets the number of asynchronous backups. 0 means no backups.
      *
      * @param asyncBackupCount the number of asynchronous synchronous backups to set
      * @return the updated SemaphoreConfig
@@ -220,7 +219,7 @@ public class RingbufferConfig {
     /**
      * Gets the time to live in seconds.
      *
-     * @return the time to live in seconds. Returns 0 the time to live if the items don't expire.
+     * @return the time to live in seconds or 0 if the items don't expire
      */
     public int getTimeToLiveSeconds() {
         return timeToLiveSeconds;
@@ -237,7 +236,7 @@ public class RingbufferConfig {
      *
      * @param timeToLiveSeconds the time to live period in seconds
      * @return the updated RingbufferConfig
-     * @throws IllegalArgumentException if timeToLiveSeconds smaller than 0.
+     * @throws IllegalArgumentException if timeToLiveSeconds smaller than 0
      */
     public RingbufferConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
         this.timeToLiveSeconds = checkNotNegative(timeToLiveSeconds, "timeToLiveSeconds can't be smaller than 0");
@@ -247,7 +246,7 @@ public class RingbufferConfig {
     /**
      * Gets the InMemoryFormat.
      *
-     * @return the InMemoryFormat.
+     * @return the InMemoryFormat
      */
     public InMemoryFormat getInMemoryFormat() {
         return inMemoryFormat;
@@ -269,10 +268,10 @@ public class RingbufferConfig {
      * object format.</li>
      * </ol>
      *
-     * @param inMemoryFormat the new in memory format.
-     * @return the updated Config.
-     * @throws NullPointerException     if inMemoryFormat is null.
-     * @throws IllegalArgumentException if {@link InMemoryFormat#NATIVE} in memory format is selected.
+     * @param inMemoryFormat the new in memory format
+     * @return the updated Config
+     * @throws NullPointerException     if inMemoryFormat is {@code null}
+     * @throws IllegalArgumentException if {@link InMemoryFormat#NATIVE} in memory format is selected
      */
     public RingbufferConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
         checkNotNull(inMemoryFormat, "inMemoryFormat can't be null");
@@ -297,7 +296,7 @@ public class RingbufferConfig {
     /**
      * Get the RingbufferStore (load and store ring buffer items from/to a database) configuration.
      *
-     * @return The ring buffer configuration.
+     * @return the ring buffer configuration
      */
     public RingbufferStoreConfig getRingbufferStoreConfig() {
         return ringbufferStoreConfig;
@@ -306,8 +305,8 @@ public class RingbufferConfig {
     /**
      * Set the RingbufferStore (load and store ring buffer items from/to a database) configuration.
      *
-     * @param ringbufferStoreConfig Set the RingbufferStore configuration to this configuration.
-     * @return The RingbufferStore configuration.
+     * @param ringbufferStoreConfig set the RingbufferStore configuration to this configuration
+     * @return the RingbufferStore configuration
      */
     public RingbufferConfig setRingbufferStoreConfig(RingbufferStoreConfig ringbufferStoreConfig) {
         this.ringbufferStoreConfig = ringbufferStoreConfig;
@@ -317,8 +316,8 @@ public class RingbufferConfig {
     /**
      * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public RingbufferConfig getAsReadOnly() {
         return new RingbufferConfigReadonly(this);

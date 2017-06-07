@@ -36,9 +36,9 @@ public class UrlXmlConfig extends Config {
      * Creates new Config which is loaded from the given url and uses the System.properties to replace
      * variables in the XML.
      *
-     * @param url the url pointing to the Hazelcast XML file.
+     * @param url the url pointing to the Hazelcast XML file
      * @throws MalformedURLException                 if the url is not correct
-     * @throws IOException                           if something fails while loading the resource.
+     * @throws IOException                           if something fails while loading the resource
      * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
      */
     public UrlXmlConfig(String url) throws IOException {
@@ -48,11 +48,11 @@ public class UrlXmlConfig extends Config {
     /**
      * Creates new Config which is loaded from the given url.
      *
-     * @param url        the url pointing to the Hazelcast XML file.
-     * @param properties the properties for replacing variables.
-     * @throws IllegalArgumentException              if properties is null
+     * @param url        the url pointing to the Hazelcast XML file
+     * @param properties the properties for replacing variables
+     * @throws IllegalArgumentException              if properties is {@code null}
      * @throws MalformedURLException                 if the url is not correct
-     * @throws IOException                           if something fails while loading the resource.
+     * @throws IOException                           if something fails while loading the resource
      * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
      */
     public UrlXmlConfig(String url, Properties properties) throws IOException {
@@ -63,9 +63,9 @@ public class UrlXmlConfig extends Config {
      * Creates new Config which is loaded from the given url and uses the System.properties to replace
      * variables in the XML.
      *
-     * @param url the URL pointing to the Hazelcast XML file.
+     * @param url the URL pointing to the Hazelcast XML file
      * @throws IOException                           if something fails while loading the resource
-     * @throws IllegalArgumentException              if the url is null.
+     * @throws IllegalArgumentException              if the url is {@code null}
      * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
      */
     public UrlXmlConfig(URL url) throws IOException {
@@ -75,17 +75,16 @@ public class UrlXmlConfig extends Config {
     /**
      * Creates new Config which is loaded from the given url.
      *
-     * @param url        the URL pointing to the Hazelcast XML file.
-     * @param properties the properties for replacing variables.
+     * @param url        the URL pointing to the Hazelcast XML file
+     * @param properties the properties for replacing variables
      * @throws IOException                           if something fails while loading the resource
-     * @throws IllegalArgumentException              if the url or properties is null.
+     * @throws IllegalArgumentException              if the url or properties is {@code null}
      * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
      */
     public UrlXmlConfig(URL url, Properties properties) throws IOException {
         if (url == null) {
             throw new IllegalArgumentException("url can't be null");
         }
-
         if (properties == null) {
             throw new IllegalArgumentException("properties can't be null");
         }

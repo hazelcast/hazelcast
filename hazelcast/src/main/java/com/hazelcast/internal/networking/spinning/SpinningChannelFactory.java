@@ -14,7 +14,17 @@
  * limitations under the License.
  */
 
-/**
- * Contains the API for the dispatching packets to the appropriate internal services.
- */
-package com.hazelcast.spi.impl.packetdispatcher;
+package com.hazelcast.internal.networking.spinning;
+
+import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelFactory;
+
+import java.nio.channels.SocketChannel;
+
+public class SpinningChannelFactory implements ChannelFactory {
+
+    @Override
+    public Channel create(SocketChannel channel, boolean clientMode, boolean directBuffer) throws Exception {
+        return new SpinningChannel(channel, clientMode);
+    }
+}

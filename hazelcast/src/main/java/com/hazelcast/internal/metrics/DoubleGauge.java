@@ -16,12 +16,14 @@
 
 package com.hazelcast.internal.metrics;
 
+import com.hazelcast.internal.metrics.renderers.StringRenderer;
+
 /**
  * A DoubleGauge is {link Metric} where a particular double value is read instantaneous. E.g. the current os load.
  *
  * {@link LongGauge}
  */
-public interface DoubleGauge extends Metric {
+public interface DoubleGauge extends Metric, StringRenderer {
 
     /**
      * Reads the current available value as a double.

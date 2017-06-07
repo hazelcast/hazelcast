@@ -30,10 +30,10 @@ import java.net.URL;
 /**
  * Support class for the {@link com.hazelcast.config.XmlConfigBuilder} that locates the XML configuration:
  * <ol>
- *     <li>system property</li>
- *     <li>working directory</li>
- *     <li>classpath</li>
- *     <li>default</li>
+ * <li>system property</li>
+ * <li>working directory</li>
+ * <li>classpath</li>
+ * <li>default</li>
  * </ol>
  */
 public class XmlConfigLocator {
@@ -47,7 +47,7 @@ public class XmlConfigLocator {
     /**
      * Constructs a XmlConfigLocator that tries to find a usable XML configuration file.
      *
-     * @throws HazelcastException if there was a problem locating the config-file.
+     * @throws HazelcastException if there was a problem locating the config-file
      */
     public XmlConfigLocator() {
         try {

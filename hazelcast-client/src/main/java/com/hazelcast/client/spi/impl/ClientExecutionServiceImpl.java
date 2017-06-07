@@ -17,6 +17,9 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -35,7 +38,9 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public final class ClientExecutionServiceImpl implements ClientExecutionService {
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+
+public final class ClientExecutionServiceImpl implements ClientExecutionService, MetricsProvider {
 
     public static final HazelcastProperty INTERNAL_EXECUTOR_POOL_SIZE
             = new HazelcastProperty("hazelcast.client.internal.executor.pool.size", 3);
@@ -103,6 +108,11 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
         return userExecutor;
     }
 
+    @Probe (level = MANDATORY)
+    public int getUserExecutorQueueSize() {
+        return ((ThreadPoolExecutor) userExecutor).getQueue().size();
+    }
+
     public void shutdown() {
         shutdownExecutor("user", userExecutor, logger);
         shutdownExecutor("internal", internalExecutor, logger);
@@ -119,5 +129,10 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
         } catch (InterruptedException e) {
             logger.warning(name + " executor await termination is interrupted", e);
         }
+    }
+
+    @Override
+    public void provideMetrics(MetricsRegistry registry) {
+        registry.scanAndRegister(this, "executionService");
     }
 }

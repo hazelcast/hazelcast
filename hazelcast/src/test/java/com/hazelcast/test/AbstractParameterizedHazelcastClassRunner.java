@@ -92,6 +92,14 @@ public abstract class AbstractParameterizedHazelcastClassRunner extends BlockJUn
         return getTestClass().getOnlyConstructor().newInstance(fParameters);
     }
 
+    @Override
+    protected void validateConstructor(List<Throwable> errors) {
+        validateOnlyOneConstructor(errors);
+        if (fieldsAreAnnotated() || !isParameterized) {
+            validateZeroArgConstructor(errors);
+        }
+    }
+
     private Object createTestUsingFieldInjection() throws Exception {
         List<FrameworkField> annotatedFieldsByParameter = getAnnotatedFieldsByParameter();
         if (annotatedFieldsByParameter.size() != fParameters.length) {

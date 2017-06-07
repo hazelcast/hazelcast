@@ -26,17 +26,16 @@ import javax.cache.integration.CacheWriter;
 /**
  * Mutable extension to {@link javax.cache.configuration.CompleteConfiguration}
  *
- * @param <K> the type of key.
- * @param <V> the type of value.
+ * @param <K> the type of key
+ * @param <V> the type of value
  */
 public interface CacheConfiguration<K, V>
         extends CompleteConfiguration<K, V> {
 
-
     /**
      * Sets the expected type of keys and values for a {@link javax.cache.Cache}
      * configured with this {@link javax.cache.configuration.Configuration}. Setting both to
-     * <code>Object.class</code> means type-safety checks are not required.
+     * {@code Object.class} means type-safety checks are not required.
      * <p>
      * This is used by {@link javax.cache.CacheManager} to ensure that the key and value
      * types are the same as those configured for the {@link javax.cache.Cache} prior to
@@ -48,7 +47,7 @@ public interface CacheConfiguration<K, V>
      * @param keyType   the expected key type
      * @param valueType the expected value type
      * @return the {@link com.hazelcast.config.CacheConfiguration} to permit fluent-style method calls
-     * @throws NullPointerException should the key or value type be null
+     * @throws NullPointerException should the key or value type be {@code null}
      * @see javax.cache.CacheManager#getCache(String, Class, Class)
      */
     CacheConfiguration<K, V> setTypes(Class<K> keyType, Class<V> valueType);
@@ -56,24 +55,22 @@ public interface CacheConfiguration<K, V>
     /**
      * Add a configuration for a {@link javax.cache.event.CacheEntryListener}.
      *
-     * @param cacheEntryListenerConfiguration the
-     *  {@link javax.cache.configuration.CacheEntryListenerConfiguration}
+     * @param cacheEntryListenerConfiguration the {@link javax.cache.configuration.CacheEntryListenerConfiguration}
      * @return the {@link com.hazelcast.config.CacheConfiguration} to permit fluent-style method calls
      * @throws IllegalArgumentException if the same CacheEntryListenerConfiguration
-     * is used more than once
+     *                                  is used more than once
      */
-    CacheConfiguration<K, V> addCacheEntryListenerConfiguration(
-            CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration);
+    CacheConfiguration<K, V> addCacheEntryListenerConfiguration(CacheEntryListenerConfiguration<K, V>
+                                                                        cacheEntryListenerConfiguration);
 
     /**
      * Remove a configuration for a {@link javax.cache.event.CacheEntryListener}.
      *
-     * @param cacheEntryListenerConfiguration  the
-     *     {@link javax.cache.configuration.CacheEntryListenerConfiguration} to remove
+     * @param cacheEntryListenerConfiguration the {@link javax.cache.configuration.CacheEntryListenerConfiguration} to remove
      * @return the {@link com.hazelcast.config.CacheConfiguration} to permit fluent-style method calls
      */
-    CacheConfiguration<K, V> removeCacheEntryListenerConfiguration(
-            CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration);
+    CacheConfiguration<K, V> removeCacheEntryListenerConfiguration(CacheEntryListenerConfiguration<K, V>
+                                                                           cacheEntryListenerConfiguration);
 
     /**
      * Set the {@link javax.cache.integration.CacheLoader} factory.
@@ -81,8 +78,7 @@ public interface CacheConfiguration<K, V>
      * @param factory the {@link javax.cache.integration.CacheLoader} {@link javax.cache.configuration.Factory}
      * @return the {@link com.hazelcast.config.CacheConfiguration} to permit fluent-style method calls
      */
-    CacheConfiguration<K, V> setCacheLoaderFactory(Factory<? extends
-            CacheLoader<K, V>> factory);
+    CacheConfiguration<K, V> setCacheLoaderFactory(Factory<? extends CacheLoader<K, V>> factory);
 
     /**
      * Set the {@link javax.cache.integration.CacheWriter} factory.
@@ -90,26 +86,24 @@ public interface CacheConfiguration<K, V>
      * @param factory the {@link javax.cache.integration.CacheWriter} {@link javax.cache.configuration.Factory}
      * @return the {@link com.hazelcast.config.CacheConfiguration} to permit fluent-style method calls
      */
-    CacheConfiguration<K, V> setCacheWriterFactory(Factory<? extends
-            CacheWriter<? super K, ? super V>> factory);
+    CacheConfiguration<K, V> setCacheWriterFactory(Factory<? extends CacheWriter<? super K, ? super V>> factory);
 
     /**
-     * Set the {@link javax.cache.configuration.Factory} for the {@link javax.cache.expiry.ExpiryPolicy}.  If <code>null</code>
-     * is specified the default {@link javax.cache.expiry.ExpiryPolicy} is used.
+     * Set the {@link javax.cache.configuration.Factory} for the {@link javax.cache.expiry.ExpiryPolicy}.
+     * If {@code null} is specified the default {@link javax.cache.expiry.ExpiryPolicy} is used.
      *
      * @param factory the {@link javax.cache.expiry.ExpiryPolicy} {@link javax.cache.configuration.Factory}
      * @return the {@link com.hazelcast.config.CacheConfiguration} to permit fluent-style method calls
      */
-    CacheConfiguration<K, V> setExpiryPolicyFactory(Factory<? extends
-            ExpiryPolicy> factory);
+    CacheConfiguration<K, V> setExpiryPolicyFactory(Factory<? extends ExpiryPolicy> factory);
 
     /**
      * Set if read-through caching should be used.
      * <p>
-     * It is an invalid configuration to set this to true without specifying a
+     * It is an invalid configuration to set this to {@code true} without specifying a
      * {@link javax.cache.integration.CacheLoader} {@link javax.cache.configuration.Factory}.
      *
-     * @param isReadThrough true if read-through is required, false otherwise
+     * @param isReadThrough {@code true} if read-through is required, {@code false} otherwise
      * @return the {@link com.hazelcast.config.CacheConfiguration} to permit fluent-style method calls
      */
     CacheConfiguration<K, V> setReadThrough(boolean isReadThrough);
@@ -117,24 +111,22 @@ public interface CacheConfiguration<K, V>
     /**
      * Set if write-through caching should be used.
      * <p>
-     * It is an invalid configuration to set this to true without specifying a
+     * It is an invalid configuration to set this to {@code true} without specifying a
      * {@link javax.cache.integration.CacheWriter} {@link javax.cache.configuration.Factory}.
      *
-     * @param isWriteThrough true if write-through is required, false otherwise
+     * @param isWriteThrough {@code true} if write-through is required, {@code false} otherwise
      * @return the {@link com.hazelcast.config.CacheConfiguration} to permit fluent-style method calls
      */
     CacheConfiguration<K, V> setWriteThrough(boolean isWriteThrough);
 
     /**
-     * Set if a configured cache should use store-by-value or store-by-reference
-     * semantics.
+     * Set if a configured cache should use store-by-value or store-by-reference semantics.
      *
-     * @param isStoreByValue true if store-by-value is required,
-     *                       false for store-by-reference
+     * @param isStoreByValue {@code true} if store-by-value is required,
+     *                       {@code false} for store-by-reference
      * @return the {@link com.hazelcast.config.CacheConfiguration} to permit fluent-style method calls
      */
     CacheConfiguration<K, V> setStoreByValue(boolean isStoreByValue);
-
 
     /**
      * Sets whether statistics gathering is enabled on a cache.
@@ -142,11 +134,10 @@ public interface CacheConfiguration<K, V>
      * Statistics may be enabled or disabled at runtime via
      * {@link javax.cache.CacheManager#enableStatistics(String, boolean)}.
      *
-     * @param enabled true to enable statistics, false to disable.
+     * @param enabled {@code true} to enable statistics, {@code false} to disable
      * @return the {@link com.hazelcast.config.CacheConfiguration} to permit fluent-style method calls
      */
     CacheConfiguration<K, V> setStatisticsEnabled(boolean enabled);
-
 
     /**
      * Sets whether management is enabled on a cache.
@@ -154,9 +145,8 @@ public interface CacheConfiguration<K, V>
      * Management may be enabled or disabled at runtime via
      * {@link javax.cache.CacheManager#enableManagement(String, boolean)}.
      *
-     * @param enabled true to enable statistics, false to disable.
+     * @param enabled {@code true} to enable statistics, {@code false} to disable
      * @return the {@link com.hazelcast.config.CacheConfiguration} to permit fluent-style method calls
      */
     CacheConfiguration<K, V> setManagementEnabled(boolean enabled);
-
 }

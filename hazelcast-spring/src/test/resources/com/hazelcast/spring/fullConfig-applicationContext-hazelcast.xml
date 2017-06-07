@@ -266,7 +266,7 @@
                 <hz:map-store enabled="true" class-name="com.hazelcast.spring.DummyStore" write-delay-seconds="0"
                               initial-mode="EAGER" write-batch-size="10"/>
                 <hz:near-cache time-to-live-seconds="0" max-idle-seconds="60" eviction-policy="LRU" max-size="5000"
-                               invalidate-on-change="true"/>
+                               invalidate-on-change="true" serialize-keys="false"/>
 
                 <hz:indexes>
                     <hz:index attribute="name"/>

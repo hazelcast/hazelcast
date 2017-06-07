@@ -17,8 +17,8 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.ClientTestUtil;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientSmartInvocationServiceImpl;
 import com.hazelcast.client.test.bounce.MultiSocketClientDriverFactory;
@@ -38,35 +38,37 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.lang.reflect.Field;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.client.impl.ClientTestUtil.getHazelcastClientInstanceImpl;
 import static com.hazelcast.client.spi.properties.ClientProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
 import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.Math.max;
+import static java.lang.String.format;
 import static java.lang.String.valueOf;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category(SlowTest.class)
 public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
 
+    private static final long TEST_DURATION_SECONDS = 240; // 4 minutes
+    private static final long TEST_TIMEOUT_MILLIS = 10 * 60 * 1000; // 10 minutes
+
     private static final int MAX_CONCURRENT_INVOCATION_CONFIG = 100;
     private static final int WORKER_THREAD_COUNT = 5;
-    private static final long TEST_DURATION_SECONDS = 240; //4 minutes
-    private static final long TEST_TIMEOUT_MILLIS = 10 * 60 * 1000; //10 minutes
 
-    private InvocationCheckingThread checkingThread;
-
-    @Parameterized.Parameter
-    public long backoff;
-
-    @Parameterized.Parameters(name = "backoff:{0}")
+    @Parameters(name = "backoffTimeoutMillis:{0}")
     public static Iterable<Object[]> parameters() {
         return asList(new Object[][]{
                 {-1},
@@ -75,62 +77,77 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
     }
 
     @Rule
-    public BounceMemberRule bounceMemberRule = BounceMemberRule.with(new Config())
-            .driverFactory(new MultiSocketClientDriverFactory(
-                    new ClientConfig()
-                            .setProperty(MAX_CONCURRENT_INVOCATIONS.getName(), valueOf(MAX_CONCURRENT_INVOCATION_CONFIG))
-                            .setProperty(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS.getName(), valueOf(backoff))))
-            .build();
+    public BounceMemberRule bounceMemberRule;
+
+    private InvocationCheckingThread checkingThread;
+
+    private long backoff;
+
+    public ClientBackpressureBouncingTest(int backoffTimeoutMillis) {
+        this.backoff = backoffTimeoutMillis;
+        this.bounceMemberRule = BounceMemberRule
+                .with(new Config())
+                .driverFactory(new MultiSocketClientDriverFactory(
+                        new ClientConfig()
+                                .setProperty(MAX_CONCURRENT_INVOCATIONS.getName(), valueOf(MAX_CONCURRENT_INVOCATION_CONFIG))
+                                .setProperty(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS.getName(), valueOf(backoff))
+                )).build();
+    }
 
     @After
-    public void tearDown() throws InterruptedException {
-        //just in case the thread was not stopped in the regular method
-        //it could be the testRepeatedly thrown an exception
-        checkingThread.join();
+    public void tearDown() {
+        if (checkingThread != null) {
+            checkingThread.shutdown();
+        }
     }
 
     @Test(timeout = TEST_TIMEOUT_MILLIS)
-    public void testInFlightInvocationCountIsNotGrowing() throws Exception {
+    public void testInFlightInvocationCountIsNotGrowing() {
         HazelcastInstance driver = bounceMemberRule.getNextTestDriver();
-        final IMap<Integer, Integer> map = driver.getMap(randomMapName());
-        startInvocationCheckingThread(driver);
+        IMap<Integer, Integer> map = driver.getMap(randomMapName());
         Runnable[] tasks = createTasks(map);
-        bounceMemberRule.testRepeatedly(tasks, TEST_DURATION_SECONDS);
-        System.out.println("Finished bouncing");
-        checkingThread.assertInFlightInvocationsWereNotGrowing();
-    }
 
-    private void startInvocationCheckingThread(HazelcastInstance driver) throws Exception {
         checkingThread = new InvocationCheckingThread(driver);
         checkingThread.start();
+
+        bounceMemberRule.testRepeatedly(tasks, TEST_DURATION_SECONDS);
+        System.out.println("Finished bouncing");
+
+        checkingThread.shutdown();
+        checkingThread.assertInFlightInvocationsWereNotGrowing();
     }
 
     private Runnable[] createTasks(final IMap<Integer, Integer> map) {
         Runnable[] tasks = new Runnable[WORKER_THREAD_COUNT];
         for (int i = 0; i < WORKER_THREAD_COUNT; i++) {
-            final int workerNo = i;
-            tasks[i] = new MyRunnable(map, workerNo);
+            tasks[i] = new MyRunnable(map, i);
         }
         return tasks;
     }
 
     private static class InvocationCheckingThread extends Thread {
-        private final long deadLine;
+
         private final long warmUpDeadline;
+        private final long deadLine;
         private final ConcurrentMap<Long, ClientInvocation> callIdMap;
+
         private int maxInvocationCountObserved;
         private int maxInvocationCountObservedDuringWarmup;
 
-        private InvocationCheckingThread(HazelcastInstance client) throws Exception {
-            long durationMillis = TEST_DURATION_SECONDS * 1000;
-            this.warmUpDeadline = System.currentTimeMillis() + (durationMillis / 5);
-            this.deadLine = System.currentTimeMillis() + durationMillis;
+        private volatile boolean running = true;
+
+        private InvocationCheckingThread(HazelcastInstance client) {
+            long durationMillis = TimeUnit.SECONDS.toMillis(TEST_DURATION_SECONDS);
+            long now = System.currentTimeMillis();
+
+            this.warmUpDeadline = now + (durationMillis / 5);
+            this.deadLine = now + durationMillis;
             this.callIdMap = extraCallIdMap(client);
         }
 
         @Override
         public void run() {
-            while (System.currentTimeMillis() < deadLine) {
+            while (System.currentTimeMillis() < deadLine && running) {
                 int currentSize = callIdMap.size();
                 maxInvocationCountObserved = max(currentSize, maxInvocationCountObserved);
                 if (System.currentTimeMillis() < warmUpDeadline) {
@@ -140,38 +157,49 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
             }
         }
 
-        private void assertInFlightInvocationsWereNotGrowing() throws InterruptedException {
-            join();
-            //make sure we are observing something
-            assertTrue(maxInvocationCountObserved > 0);
+        private void shutdown() {
+            running = false;
+            interrupt();
+            assertJoinable(this);
+        }
+
+        private void assertInFlightInvocationsWereNotGrowing() {
+            assertTrue("There are no invocations to be observed!", maxInvocationCountObserved > 0);
 
             long maximumTolerableInvocationCount = (long) (maxInvocationCountObservedDuringWarmup * 1.2);
-            assertTrue("Apparently number of in-flight invocations is growing. "
-                    + "Max. number of in-flight invocation during first fifth of test duration: "
+            assertTrue("Apparently number of in-flight invocations is growing."
+                    + " Max. number of in-flight invocation during first fifth of test duration: "
                     + maxInvocationCountObservedDuringWarmup
                     + " Max. number of in-flight invocation in total: "
                     + maxInvocationCountObserved, maxInvocationCountObserved <= maximumTolerableInvocationCount);
         }
 
-        private ConcurrentMap<Long, ClientInvocation> extraCallIdMap(HazelcastInstance client) throws NoSuchFieldException, IllegalAccessException {
-            HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
-            ClientSmartInvocationServiceImpl invocationService = (ClientSmartInvocationServiceImpl) clientImpl.getInvocationService();
-            Field callIdMapField = ClientSmartInvocationServiceImpl.class.getSuperclass().getDeclaredField("callIdMap");
-            callIdMapField.setAccessible(true);
-            return (ConcurrentMap<Long, ClientInvocation>) callIdMapField.get(invocationService);
+        @SuppressWarnings("unchecked")
+        private ConcurrentMap<Long, ClientInvocation> extraCallIdMap(HazelcastInstance client) {
+            try {
+                HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
+                ClientInvocationService invocationService = clientImpl.getInvocationService();
+                ClientSmartInvocationServiceImpl smartInvocationService = (ClientSmartInvocationServiceImpl) invocationService;
+                Field callIdMapField = ClientSmartInvocationServiceImpl.class.getSuperclass().getDeclaredField("callIdMap");
+                callIdMapField.setAccessible(true);
+                return (ConcurrentMap<Long, ClientInvocation>) callIdMapField.get(smartInvocationService);
+            } catch (Exception e) {
+                throw rethrow(e);
+            }
         }
     }
 
-
     private class MyRunnable implements Runnable {
-        private final IMap<Integer, Integer> map;
+
+        private final ExecutionCallback<Integer> callback = new CountingCallback();
+        private final AtomicLong backpressureCounter = new AtomicLong();
         private final AtomicLong progressCounter = new AtomicLong();
         private final AtomicLong failureCounter = new AtomicLong();
-        private final AtomicLong backpressureCounter = new AtomicLong();
-        private final ExecutionCallback<Integer> callback = new CountingCallback();
+
+        private final IMap<Integer, Integer> map;
         private final int workerNo;
 
-        public MyRunnable(IMap<Integer, Integer> map, int workerNo) {
+        MyRunnable(IMap<Integer, Integer> map, int workerNo) {
             this.map = map;
             this.workerNo = workerNo;
         }
@@ -182,8 +210,10 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
                 int key = ThreadLocalRandomProvider.get().nextInt();
                 map.getAsync(key).andThen(callback);
             } catch (HazelcastOverloadException e) {
-                //HazelcastOverloadException should not be thrown when backoff is configured
-                assertEquals(-1, backoff);
+                if (backoff != -1) {
+                    fail(format("HazelcastOverloadException should not be thrown when backoff is configured (%d ms), but got: %s",
+                            backoff, e));
+                }
                 long current = backpressureCounter.incrementAndGet();
                 if (current % 250000 == 0) {
                     System.out.println("Worker no. " + workerNo + " backpressured. counter: " + current);
@@ -195,7 +225,7 @@ public class ClientBackpressureBouncingTest extends HazelcastTestSupport {
             @Override
             public void onResponse(Integer response) {
                 long position = progressCounter.incrementAndGet();
-                if (position % 10000 == 0) {
+                if (position % 50000 == 0) {
                     System.out.println("Worker no. " + workerNo + " at " + position);
                 }
             }

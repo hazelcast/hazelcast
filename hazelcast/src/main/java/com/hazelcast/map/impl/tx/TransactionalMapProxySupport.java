@@ -30,6 +30,7 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.TransactionalDistributedObject;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
 import com.hazelcast.transaction.TransactionTimedOutException;
@@ -60,9 +61,11 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
     protected final PartitioningStrategy partitionStrategy;
     protected final IPartitionService partitionService;
     protected final OperationService operationService;
+    protected final SerializationService serializationService;
 
     private final RecordFactory recordFactory;
     private final boolean nearCacheEnabled;
+    private final boolean serializeKeys;
 
     TransactionalMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine, Transaction transaction) {
         super(nodeEngine, mapService, transaction);
@@ -74,8 +77,10 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
         this.partitionStrategy = mapContainer.getPartitioningStrategy();
         this.partitionService = nodeEngine.getPartitionService();
         this.operationService = nodeEngine.getOperationService();
+        this.serializationService = nodeEngine.getSerializationService();
         this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
         this.nearCacheEnabled = mapContainer.getMapConfig().isNearCacheEnabled();
+        this.serializeKeys = nearCacheEnabled && mapContainer.getMapConfig().getNearCacheConfig().isSerializeKeys();
     }
 
     @Override
@@ -110,17 +115,17 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
         }
     }
 
-    Object getInternal(Data key) {
+    Object getInternal(Object key, Data keyData) {
         if (nearCacheEnabled) {
-            Object value = getCachedValue(key, true);
+            Object value = getCachedValue(serializeKeys ? keyData : key);
             if (value != NOT_CACHED) {
                 return value;
             }
         }
 
-        MapOperation operation = operationProvider.createGetOperation(name, key);
+        MapOperation operation = operationProvider.createGetOperation(name, keyData);
         operation.setThreadId(ThreadUtil.getThreadId());
-        int partitionId = partitionService.getPartitionId(key);
+        int partitionId = partitionService.getPartitionId(keyData);
         try {
             Future future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
             return future.get();
@@ -129,18 +134,15 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
         }
     }
 
-    private Object getCachedValue(Data key, boolean deserializeValue) {
+    private Object getCachedValue(Object key) {
         Object value = mapNearCacheManager.getFromNearCache(name, key);
-
         if (value == null) {
             return NOT_CACHED;
         }
-
         if (value == CACHED_AS_NULL) {
             return null;
         }
-
-        return deserializeValue ? getNodeEngine().getSerializationService().toObject(value) : value;
+        return serializationService.toData(value);
     }
 
     Object getForUpdateInternal(Data key) {

@@ -37,7 +37,7 @@ public class InMemoryXmlConfig extends Config {
      * in the XML.
      *
      * @param xml the XML content as a Hazelcast XML String
-     * @throws IllegalArgumentException              if the XML is null or empty.
+     * @throws IllegalArgumentException              if the XML is null or empty
      * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
      */
     public InMemoryXmlConfig(String xml) {
@@ -48,7 +48,7 @@ public class InMemoryXmlConfig extends Config {
      * Creates a Config from the provided XML string and properties to resolve the variables in the XML.
      *
      * @param xml the XML content as a Hazelcast XML String
-     * @throws IllegalArgumentException              if the XML is null or empty or if properties is null.
+     * @throws IllegalArgumentException              if the XML is null or empty or if properties is null
      * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
      */
     public InMemoryXmlConfig(String xml, Properties properties) {
