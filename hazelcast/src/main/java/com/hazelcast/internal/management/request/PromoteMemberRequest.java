@@ -21,7 +21,7 @@ import com.hazelcast.internal.management.ManagementCenterService;
 
 import java.io.IOException;
 
-public class PromoteMemberRequest implements ConsoleRequest {
+public class PromoteMemberRequest implements AsyncConsoleRequest {
     @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_PROMOTE_MEMBER;
