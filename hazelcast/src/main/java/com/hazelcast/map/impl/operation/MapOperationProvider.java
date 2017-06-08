@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
@@ -68,6 +69,10 @@ public interface MapOperationProvider {
     MapOperation createGetEntryViewOperation(String name, Data dataKey);
 
     MapOperation createGetOperation(String name, Data dataKey);
+
+    MapOperation createQueryOperation(Query query);
+
+    MapOperation createQueryPartitionOperation(Query query);
 
     MapOperation createLoadAllOperation(String name, List<Data> keys, boolean replaceExistingValues);
 

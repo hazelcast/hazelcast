@@ -109,7 +109,7 @@ public final class EntryOperator {
         this.inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         this.mapName = mapContainer.getName();
         this.wanReplicationEnabled = mapContainer.isWanReplicationEnabled();
-        this.shouldClone = mapContainer.shouldCloneOnEntryProcessing();
+        this.shouldClone = mapContainer.shouldCloneOnEntryProcessing(mapOperation.getPartitionId());
         this.mapServiceContext = mapContainer.getMapServiceContext();
         LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
         this.stats = localMapStatsProvider.getLocalMapStatsImpl(mapName);
