@@ -701,10 +701,10 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         private final ExecutionCallback<T> callback;
 
         CacheOrInvalidateCallback(Object key, V value, Data valueData, ExecutionCallback<T> callback) {
-            this.callback = callback;
             this.key = key;
             this.value = value;
             this.valueData = valueData;
+            this.callback = callback;
         }
 
         @Override
