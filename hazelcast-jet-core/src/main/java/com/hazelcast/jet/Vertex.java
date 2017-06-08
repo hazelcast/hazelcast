@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -74,11 +75,7 @@ public class Vertex implements IdentifiedDataSerializable {
      * @param processorSupplier the simple, parameterless supplier of {@code Processor} instances
      */
     public Vertex(@Nonnull String name, @Nonnull DistributedSupplier<? extends Processor> processorSupplier) {
-        checkNotNull(name, "name");
-        checkNotNull(processorSupplier, "supplier");
-
-        this.supplier = ProcessorMetaSupplier.of(processorSupplier);
-        this.name = name;
+        this(name, ProcessorMetaSupplier.of(processorSupplier));
     }
 
     /**
@@ -88,11 +85,7 @@ public class Vertex implements IdentifiedDataSerializable {
      * @param processorSupplier the supplier of {@code Processor} instances which will be used on all members
      */
     public Vertex(@Nonnull String name, @Nonnull ProcessorSupplier processorSupplier) {
-        checkNotNull(name, "name");
-        checkNotNull(processorSupplier, "supplier");
-
-        this.supplier = ProcessorMetaSupplier.of(processorSupplier);
-        this.name = name;
+        this(name, ProcessorMetaSupplier.of(processorSupplier));
     }
 
     /**
@@ -105,6 +98,7 @@ public class Vertex implements IdentifiedDataSerializable {
     public Vertex(@Nonnull String name, @Nonnull ProcessorMetaSupplier metaSupplier) {
         checkNotNull(name, "name");
         checkNotNull(metaSupplier, "supplier");
+        checkSerializable(metaSupplier, "metaSupplier");
 
         this.supplier = metaSupplier;
         this.name = name;

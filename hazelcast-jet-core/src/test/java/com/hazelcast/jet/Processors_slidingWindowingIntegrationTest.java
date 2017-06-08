@@ -28,6 +28,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -78,14 +79,14 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
     @Test
     public void smokeTest() throws Exception {
         runTest(
-                singletonList(new TimestampedEntry<>(10, "a", 1)),
+                singletonList(new MyEvent(10, "a", 1L)),
                 asList(
                         new TimestampedEntry<>(1000, "a", 1L),
                         new TimestampedEntry<>(2000, "a", 1L)
                 ));
     }
 
-    private void runTest(List<TimestampedEntry> sourceEvents, List<TimestampedEntry<String, Long>> expectedOutput)
+    private void runTest(List<MyEvent> sourceEvents, List<TimestampedEntry<String, Long>> expectedOutput)
             throws Exception {
         JetInstance instance = createJetMember();
 
@@ -93,8 +94,9 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
         AggregateOperation<Object, ?, Long> counting = counting();
 
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", () -> new EmitListP(sourceEvents, isBatch)).localParallelism(1);
-        Vertex insertPP = dag.newVertex("insertPP", insertPunctuation(TimestampedEntry<String, Long>::getTimestamp,
+        boolean isBatchLocal = isBatch;
+        Vertex source = dag.newVertex("source", () -> new EmitListP(sourceEvents, isBatchLocal)).localParallelism(1);
+        Vertex insertPP = dag.newVertex("insertPP", insertPunctuation(MyEvent::getTimestamp,
                 () -> limitingLagAndLull(500, 1000).throttleByFrame(wDef)))
                 .localParallelism(1);
         Vertex sink = dag.newVertex("sink", writeList("sink"));
@@ -103,19 +105,19 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
 
         if (singleStageProcessor) {
             Vertex slidingWin = dag.newVertex("slidingWin",
-                    aggregateToSlidingWindow(TimestampedEntry<String, Long>::getKey,
-                            TimestampedEntry::getTimestamp, TimestampKind.EVENT, wDef, counting));
+                    aggregateToSlidingWindow(MyEvent::getKey,
+                            MyEvent::getTimestamp, TimestampKind.EVENT, wDef, counting));
             dag
-                    .edge(between(insertPP, slidingWin).partitioned(TimestampedEntry<String, Long>::getKey).distributed())
+                    .edge(between(insertPP, slidingWin).partitioned(MyEvent::getKey).distributed())
                     .edge(between(slidingWin, sink).isolated());
 
         } else {
             Vertex accumulateByFrame = dag.newVertex("accumulateByFrame",
-                    accumulateByFrame(TimestampedEntry<String, Long>::getKey,
-                            TimestampedEntry::getTimestamp, TimestampKind.EVENT, wDef, counting));
+                    accumulateByFrame(MyEvent::getKey,
+                            MyEvent::getTimestamp, TimestampKind.EVENT, wDef, counting));
             Vertex slidingWin = dag.newVertex("slidingWin", combineToSlidingWindow(wDef, counting));
             dag
-                    .edge(between(insertPP, accumulateByFrame).partitioned(TimestampedEntry<String, Long>::getKey))
+                    .edge(between(insertPP, accumulateByFrame).partitioned(MyEvent::getKey))
                     .edge(between(accumulateByFrame, slidingWin).partitioned(entryKey()).distributed())
                     .edge(between(slidingWin, sink).isolated());
         }
@@ -126,7 +128,7 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
             future.get();
         }
 
-        IList<TimestampedEntry<String, Long>> sinkList = instance.getList("sink");
+        IList<MyEvent> sinkList = instance.getList("sink");
 
         assertTrueEventually(() -> assertTrue(sinkList.size() == expectedOutput.size()), 5);
         // wait a little more and make sure, that there are no more frames
@@ -167,6 +169,19 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
         @Override
         public boolean isCooperative() {
             return false;
+        }
+    }
+
+    private static class MyEvent extends SimpleImmutableEntry<String, Long> {
+        private final long timestamp;
+
+        MyEvent(long timestamp, String key, Long value) {
+            super(key, value);
+            this.timestamp = timestamp;
+        }
+
+        long getTimestamp() {
+            return timestamp;
         }
     }
 }

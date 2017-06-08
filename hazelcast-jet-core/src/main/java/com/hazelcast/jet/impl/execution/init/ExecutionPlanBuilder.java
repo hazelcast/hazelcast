@@ -40,6 +40,7 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.util.Util.getJetInstance;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -81,6 +82,7 @@ public final class ExecutionPlanBuilder {
             int procIdxOffset = 0;
             for (Entry<Member, ExecutionPlan> e : plans.entrySet()) {
                 final ProcessorSupplier processorSupplier = procSupplierFn.apply(e.getKey().getAddress());
+                checkSerializable(processorSupplier, "ProcessorSupplier in vertex " + vertex.getName());
                 final VertexDef vertexDef = new VertexDef(vertexId, vertex.getName(), processorSupplier,
                         procIdxOffset, localParallelism);
                 vertexDef.addInboundEdges(inbound);

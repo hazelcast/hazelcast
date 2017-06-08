@@ -29,7 +29,7 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.checkSerializable;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
  * A comparison function, which imposes a <i>total ordering</i> on some

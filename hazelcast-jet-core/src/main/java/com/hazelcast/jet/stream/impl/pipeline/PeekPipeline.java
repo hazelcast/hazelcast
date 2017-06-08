@@ -18,13 +18,13 @@ package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.processor.Sinks;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.stream.impl.StreamUtil;
+import com.hazelcast.jet.processor.Sinks;
 
 import java.util.function.Consumer;
 
 import static com.hazelcast.jet.Edge.from;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 
 class PeekPipeline<T> extends AbstractIntermediatePipeline<T, T> {
@@ -33,7 +33,7 @@ class PeekPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
     PeekPipeline(StreamContext context, Pipeline<T> upstream, Consumer<? super T> consumer) {
         super(context, upstream.isOrdered(), upstream);
-        StreamUtil.checkSerializable(consumer, "consumer");
+        checkSerializable(consumer, "consumer");
         this.consumer = consumer;
     }
 

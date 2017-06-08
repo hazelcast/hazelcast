@@ -30,6 +30,7 @@ import java.io.Serializable;
 
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 import static com.hazelcast.jet.Partitioner.defaultPartitioner;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
  * Represents an edge between two {@link Vertex vertices} in a {@link DAG}.
@@ -239,6 +240,8 @@ public class Edge implements IdentifiedDataSerializable {
      * is applied to the result of the {@code keyExtractor} function.
      */
     public <T, K> Edge partitioned(DistributedFunction<T, K> keyExtractor, Partitioner<? super K> partitioner) {
+        checkSerializable(keyExtractor, "keyExtractor");
+        checkSerializable(partitioner, "partitioner");
         this.routingPolicy = RoutingPolicy.PARTITIONED;
         this.partitioner = new KeyPartitioner<>(keyExtractor, partitioner);
         return this;

@@ -39,7 +39,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.jet.processor.Processors.nonCooperative;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -90,18 +89,7 @@ public class WriteBufferedPTest extends JetTestSupport {
         JetInstance instance = createJetMember();
         try {
             DAG dag = new DAG();
-            Vertex source = dag.newVertex("source", nonCooperative(() -> new AbstractProcessor() {
-                @Override
-                public boolean complete() {
-                    // sleep forever - we'll cancel the job
-                    try {
-                        Thread.sleep(Long.MAX_VALUE);
-                    } catch (InterruptedException e) {
-                        fail();
-                    }
-                    return false;
-                }
-            }));
+            Vertex source = dag.newVertex("source", SleepForeverProcessor::new);
             Vertex sink = dag.newVertex("sink", getLoggingBufferedWriter()).localParallelism(1);
 
             dag.edge(Edge.between(source, sink));
@@ -120,14 +108,32 @@ public class WriteBufferedPTest extends JetTestSupport {
 
     private ProcessorSupplier getLoggingBufferedWriter() {
         // returns a processor that will not write anywhere, just log the events instead
+        List<String> localEvents = events;
         return Sinks.writeBuffered(
                 idx -> {
-                    events.add("new");
+                    localEvents.add("new");
                     return null;
                 },
-                (buffer, item) -> events.add("add:" + item),
-                buffer -> events.add("flush"),
-                buffer -> events.add("dispose")
+                (buffer, item) -> localEvents.add("add:" + item),
+                buffer -> localEvents.add("flush"),
+                buffer -> localEvents.add("dispose")
         );
+    }
+
+    private static class SleepForeverProcessor extends AbstractProcessor {
+        SleepForeverProcessor() {
+            setCooperative(false);
+        }
+
+        @Override
+        public boolean complete() {
+            // sleep forever - we'll cancel the job
+            try {
+                Thread.sleep(Long.MAX_VALUE);
+            } catch (InterruptedException e) {
+                fail();
+            }
+            return false;
+        }
     }
 }
