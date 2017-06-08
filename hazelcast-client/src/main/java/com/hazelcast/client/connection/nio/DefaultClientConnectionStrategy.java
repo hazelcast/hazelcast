@@ -19,7 +19,6 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.connection.AddressProvider;
-import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.ClientConnectionStrategy;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.nio.Address;

@@ -53,7 +53,8 @@ public class ClientNonSmartInvocationServiceImpl extends ClientInvocationService
     }
 
     private ClientConnection getOwnerConnection() throws IOException {
-        ClientConnection ownerConnection = client.getConnectionManager().getOwnerConnection();
+        Address ownerConnectionAddress = connectionManager.getOwnerConnectionAddress();
+        ClientConnection ownerConnection = (ClientConnection) connectionManager.getActiveConnection(ownerConnectionAddress);
         if (ownerConnection == null) {
             throw new IOException("ClientNonSmartInvocationServiceImpl: Owner connection is not available.");
         }

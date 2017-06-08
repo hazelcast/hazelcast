@@ -142,7 +142,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
         this.credentials = client.getCredentials();
 
-        this.connectionStrategy  = new DefaultClientConnectionStrategy(client, addressProviders);
+        this.connectionStrategy = new DefaultClientConnectionStrategy(client, addressProviders);
     }
 
     public NioEventLoopGroup getEventLoopGroup() {
@@ -309,12 +309,19 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     private Connection getOrConnect(Address address, boolean asOwner) throws IOException {
         try {
             while (true) {
-                Connection connection = getConnection(address, asOwner);
+                ClientConnection connection = (ClientConnection) getConnection(address, asOwner);
                 if (connection != null) {
                     return connection;
                 }
                 AuthenticationFuture firstCallback = triggerConnect(addressTranslator.translate(address), asOwner);
-                return firstCallback.get(connectionTimeout);
+                connection = (ClientConnection) firstCallback.get(connectionTimeout);
+
+                if (!asOwner) {
+                    return connection;
+                }
+                if (connection.isAuthenticatedAsOwner()) {
+                    return connection;
+                }
             }
         } catch (Throwable e) {
             throw ExceptionUtil.rethrow(e);
@@ -348,7 +355,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         return connection;
     }
 
-    public Connection connectAsOwner(InetSocketAddress ownerInetSocketAddress) throws Exception {
+    public Connection connectAsOwner(InetSocketAddress ownerInetSocketAddress) {
         Connection connection = null;
         try {
             Address address = new Address(ownerInetSocketAddress);
