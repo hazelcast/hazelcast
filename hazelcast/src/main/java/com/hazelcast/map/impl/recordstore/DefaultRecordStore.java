@@ -291,14 +291,19 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             lockService.clearLockStore(partitionId, namespace);
         }
 
-        Indexes indexes = mapContainer.getIndexes();
-        if (indexes.hasIndex()) {
-            for (Record record : storage.values()) {
-                Data key = record.getKey();
-                Object value = Records.getValueOrCachedValue(record, serializationService);
-                indexes.removeEntryIndex(key, value);
+        Indexes indexes = mapContainer.getIndexes(partitionId);
+        if (indexes.isGlobal()) {
+            if (indexes.hasIndex()) {
+                for (Record record : storage.values()) {
+                    Data key = record.getKey();
+                    Object value = Records.getValueOrCachedValue(record, serializationService);
+                    indexes.removeEntryIndex(key, value);
+                }
             }
+        } else {
+            indexes.clearIndexes();
         }
+
         mapDataStore.reset();
 
         if (onShutdown) {

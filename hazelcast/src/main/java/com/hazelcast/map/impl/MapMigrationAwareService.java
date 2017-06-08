@@ -166,7 +166,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
         final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore recordStore : container.getMaps().values()) {
             final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
-            final Indexes indexes = mapContainer.getIndexes();
+            final Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
             if (!indexes.hasIndex()) {
                 continue;
             }

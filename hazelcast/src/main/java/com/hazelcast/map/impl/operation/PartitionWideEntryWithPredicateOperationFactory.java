@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -118,25 +119,34 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
         // get indexes
         MapService mapService = nodeEngine.getService(SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        Indexes indexes = mapServiceContext.getMapContainer(name).getIndexes();
-        // optimize predicate
-        QueryOptimizer queryOptimizer = mapServiceContext.getQueryOptimizer();
-        predicate = queryOptimizer.optimize(predicate, indexes);
+        Set<QueryableEntry> result = queryAllPartitions(mapServiceContext);
 
-        Set<QueryableEntry> querySet = indexes.query(predicate);
-        if (querySet == null) {
+        if (result == null) {
             return emptySet();
         }
 
         List<Data> keys = null;
-        for (QueryableEntry e : querySet) {
+        for (QueryableEntry e : result) {
             if (keys == null) {
-                keys = new ArrayList<Data>(querySet.size());
+                keys = new ArrayList<Data>(result.size());
             }
             keys.add(e.getKeyData());
         }
 
         return keys == null ? Collections.<Data>emptySet() : newBuilder(keys).build();
+    }
+
+    private Set<QueryableEntry> queryAllPartitions(MapServiceContext mapServiceContext) {
+        QueryOptimizer queryOptimizer = mapServiceContext.getQueryOptimizer();
+        MapContainer mapContainer = mapServiceContext.getMapContainer(name);
+        Indexes indexes = mapContainer.getIndexes();
+        if (indexes != null) {
+            Predicate optimizedPredicate = queryOptimizer.optimize(predicate, indexes);
+            Set<QueryableEntry> querySet = indexes.query(optimizedPredicate);
+            return querySet;
+        } else {
+            throw new IllegalArgumentException("Partitioned index is not supported for on-heap usage");
+        }
     }
 
     private Map<Integer, List<Data>> getPartitionIdToKeysMap(Set<Data> keys, InternalPartitionService partitionService) {
