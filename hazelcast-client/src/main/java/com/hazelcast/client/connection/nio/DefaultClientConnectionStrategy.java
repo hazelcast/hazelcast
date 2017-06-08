@@ -17,14 +17,9 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.HazelcastClientOfflineException;
-import com.hazelcast.client.config.ClientConnectionStrategyConfig;
-import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionStrategy;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
-
-import java.util.Collection;
 
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.ASYNC;
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
@@ -34,16 +29,7 @@ import static com.hazelcast.client.config.ClientConnectionStrategyConfig.Reconne
  */
 public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
 
-    private final boolean clientStartAsync;
-    private final ClientConnectionStrategyConfig.ReconnectMode reconnectMode;
     private boolean disconnectedFromCluster;
-
-    public DefaultClientConnectionStrategy(HazelcastClientInstanceImpl client, Collection<AddressProvider> addressProviders) {
-        super(client, addressProviders);
-        ClientConnectionStrategyConfig config = client.getClientConfig().getConnectionStrategyConfig();
-        clientStartAsync = config.isClientStartAsync();
-        reconnectMode = config.getReconnectMode();
-    }
 
     @Override
     public void init() throws Exception {

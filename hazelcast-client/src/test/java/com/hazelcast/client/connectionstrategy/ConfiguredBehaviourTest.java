@@ -30,10 +30,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
@@ -65,11 +63,9 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
 
     @Test(expected = HazelcastClientOfflineException.class)
     public void testAsyncStartMode() {
-        hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().setClientStartAsync(true);
-
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         client.getMap(randomMapName());

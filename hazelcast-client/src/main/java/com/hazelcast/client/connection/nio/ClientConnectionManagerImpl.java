@@ -20,6 +20,7 @@ import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.connection.AddressProvider;
@@ -51,6 +52,7 @@ import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.SocketInterceptor;
@@ -119,7 +121,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     private final ClientConnectionStrategy connectionStrategy;
 
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
-            Collection<AddressProvider> addressProviders) {
+                                       Collection<AddressProvider> addressProviders) {
         this.client = client;
         this.addressTranslator = addressTranslator;
 
@@ -141,8 +143,28 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         this.socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
 
         this.credentials = client.getCredentials();
+        ClientConnectionStrategyConfig strategyConfig = client.getClientConfig().getConnectionStrategyConfig();
+        ClassLoader classLoader = client.getClientConfig().getClassLoader();
+        this.connectionStrategy = initializeStrategy(strategyConfig, addressProviders, classLoader);
+    }
 
-        this.connectionStrategy = new DefaultClientConnectionStrategy(client, addressProviders);
+    private ClientConnectionStrategy initializeStrategy(ClientConnectionStrategyConfig connectionStrategyConfig,
+                                                        Collection<AddressProvider> addressProviders,
+                                                        ClassLoader configClassLoader) {
+        ClientConnectionStrategy strategy;
+        if (connectionStrategyConfig.getImplementation() != null) {
+            strategy = connectionStrategyConfig.getImplementation();
+        } else if (connectionStrategyConfig.getClassName() != null) {
+            try {
+                return ClassLoaderUtil.newInstance(configClassLoader, connectionStrategyConfig.getClassName());
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+        } else {
+            strategy = new DefaultClientConnectionStrategy();
+        }
+        strategy.init(client, this, addressProviders);
+        return strategy;
     }
 
     public NioEventLoopGroup getEventLoopGroup() {
@@ -276,7 +298,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
     private Connection getConnection(Address target, boolean asOwner) throws IOException {
         connectionStrategy.beforeGetConnection(target);
-        if (getOwnerConnection() == null) {
+        if (!asOwner && getOwnerConnection() == null) {
             throw new IOException("Owner connection is not available!");
         }
         target = addressTranslator.translate(target);

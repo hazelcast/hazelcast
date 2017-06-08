@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.connection;
 
+import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
@@ -53,24 +54,32 @@ public abstract class ClientConnectionStrategy {
     protected ClientConnectionManagerImpl connectionManager;
     protected ILogger logger;
     protected boolean shuffleMemberList;
-    protected final ExecutorService clusterConnectionExecutor;
-    protected final Collection<AddressProvider> addressProviders;
+    protected ExecutorService clusterConnectionExecutor;
+    protected Collection<AddressProvider> addressProviders;
 
-    protected final int connectionAttemptPeriod;
-    protected final int connectionAttemptLimit;
+    protected int connectionAttemptPeriod;
+    protected int connectionAttemptLimit;
+    protected boolean clientStartAsync;
+    protected ClientConnectionStrategyConfig.ReconnectMode reconnectMode;
 
-    protected ClientConnectionStrategy(HazelcastClientInstanceImpl client, Collection<AddressProvider> addressProviders) {
+    public final void init(HazelcastClientInstanceImpl client,
+                           ClientConnectionManagerImpl clientConnectionManager,
+                           Collection<AddressProvider> addressProviders) {
         this.client = client;
         this.logger = client.getLoggingService().getLogger(ClientConnectionStrategy.class);
         this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
         this.addressProviders = addressProviders;
         this.clusterConnectionExecutor = createSingleThreadExecutorService(client);
-        this.connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
+        this.connectionManager = clientConnectionManager;
 
-        final ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
-        final int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
+        ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
+        int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
         connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
         connectionAttemptLimit = connAttemptLimit == 0 ? Integer.MAX_VALUE : connAttemptLimit;
+
+        ClientConnectionStrategyConfig config = client.getClientConfig().getConnectionStrategyConfig();
+        clientStartAsync = config.isClientStartAsync();
+        reconnectMode = config.getReconnectMode();
     }
 
     protected void connectToCluster() throws Exception {
@@ -163,25 +172,21 @@ public abstract class ClientConnectionStrategy {
     }
 
     /**
-     *
      * @throws Exception
      */
     public abstract void init() throws Exception;
 
     /**
-     *
      * @param target
      */
     public abstract void beforeGetConnection(Address target);
 
     /**
-     *
      * @param target
      */
     public abstract void beforeOpenConnection(Address target);
 
     /**
-     *
      * @param connection
      */
     public abstract void onConnectToCluster(ClientConnection connection);
@@ -192,25 +197,21 @@ public abstract class ClientConnectionStrategy {
     public abstract void onDisconnectFromCluster();
 
     /**
-     *
      * @param connection
      */
     public abstract void onConnect(ClientConnection connection);
 
     /**
-     *
      * @param connection
      */
     public abstract void onDisconnect(ClientConnection connection);
 
     /**
-     *
      * @param connection
      */
     public abstract void onHeartbeatStopped(ClientConnection connection);
 
     /**
-     *
      * @param connection
      */
     public abstract void onHeartbeatResumed(ClientConnection connection);
