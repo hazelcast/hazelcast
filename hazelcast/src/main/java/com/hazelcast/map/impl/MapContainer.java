@@ -51,8 +51,13 @@ import com.hazelcast.util.RuntimeMemoryInfoAccessor;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
@@ -67,7 +72,6 @@ public class MapContainer {
     protected final String name;
     protected final String quorumName;
     protected final MapServiceContext mapServiceContext;
-    protected final Indexes indexes;
     protected final Extractors extractors;
     protected final PartitioningStrategy partitioningStrategy;
     protected final MapStoreContext mapStoreContext;
@@ -76,6 +80,10 @@ public class MapContainer {
     protected final InterceptorRegistry interceptorRegistry = new InterceptorRegistry();
     protected final IFunction<Object, Data> toDataFunction = new ObjectToData();
     protected final ConstructorFunction<Void, RecordFactory> recordFactoryConstructor;
+    protected final boolean globalIndex;
+    protected final Indexes indexes;
+    protected final ConcurrentHashMap<String, Boolean> indexDefinitions = new ConcurrentHashMap<String, Boolean>();
+
     /**
      * Holds number of registered {@link InvalidationListener} from clients.
      */
@@ -108,7 +116,15 @@ public class MapContainer {
         this.objectNamespace = new DistributedObjectNamespace(MapService.SERVICE_NAME, name);
         initWanReplication(nodeEngine);
         this.extractors = new Extractors(mapConfig.getMapAttributeConfigs(), config.getClassLoader());
-        this.indexes = new Indexes((InternalSerializationService) serializationService, extractors);
+        if (!mapConfig.getInMemoryFormat().equals(NATIVE)) {
+            // for non-native memory populate a single global index
+            this.globalIndex = true;
+            this.indexes = new Indexes((InternalSerializationService) serializationService,
+                    mapServiceContext.getIndexProvider(mapConfig), extractors, true);
+        } else {
+            this.globalIndex = false;
+            this.indexes = null;
+        }
         this.mapStoreContext = createMapStoreContext(this);
         this.mapStoreContext.start();
         initEvictor();
@@ -178,8 +194,31 @@ public class MapContainer {
         return mapServiceContext.getPartitioningStrategy(mapConfig.getName(), mapConfig.getPartitioningStrategyConfig());
     }
 
+    /**
+     * @return the global index, if the global index is in use (on-heap) or null.
+     */
     public Indexes getIndexes() {
-        return indexes;
+        if (globalIndex) {
+            return indexes;
+        }
+        return null;
+    }
+
+    /**
+     *
+     * @return the global index, if the global index is in use (on-heap) or null, or a partitioned-index (off-heap).
+     * @param partitionId partitionId
+     * @return
+     */
+    public Indexes getIndexes(int partitionId) {
+        if (globalIndex) {
+            return indexes;
+        }
+        return mapServiceContext.getPartitionContainer(partitionId).getIndexes(name);
+    }
+
+    public boolean isGlobalIndex() {
+        return globalIndex;
     }
 
     public WanReplicationPublisher getWanReplicationPublisher() {
@@ -288,12 +327,20 @@ public class MapContainer {
     public void onDestroy() {
     }
 
-    public boolean shouldCloneOnEntryProcessing() {
-        return getIndexes().hasIndex() && OBJECT.equals(mapConfig.getInMemoryFormat());
+    public boolean shouldCloneOnEntryProcessing(int partitionId) {
+        return getIndexes(partitionId).hasIndex() && OBJECT.equals(mapConfig.getInMemoryFormat());
     }
 
     public ObjectNamespace getObjectNamespace() {
         return objectNamespace;
+    }
+
+    public void addIndexDefinition(String name, Boolean ordered) {
+        indexDefinitions.put(name, ordered);
+    }
+
+    public Set<Map.Entry<String, Boolean>> getIndexDefinitionsEntrySet() {
+        return Collections.unmodifiableSet(indexDefinitions.entrySet());
     }
 
     @SerializableByConvention

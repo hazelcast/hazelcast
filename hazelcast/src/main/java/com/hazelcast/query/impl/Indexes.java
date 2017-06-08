@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.impl.query.IndexProvider;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
@@ -37,11 +38,17 @@ public class Indexes {
     private final AtomicReference<Index[]> indexes = new AtomicReference<Index[]>(EMPTY_INDEX);
     private volatile boolean hasIndex;
     private final InternalSerializationService serializationService;
-    private Extractors extractors;
+    private final IndexProvider indexProvider;
+    private final Extractors extractors;
+    private final boolean global;
 
-    public Indexes(InternalSerializationService serializationService, Extractors extractors) {
+
+    public Indexes(InternalSerializationService serializationService, IndexProvider indexProvider,
+                   Extractors extractors, boolean global) {
         this.serializationService = serializationService;
+        this.indexProvider = indexProvider;
         this.extractors = extractors;
+        this.global = global;
     }
 
     public synchronized Index destroyIndex(String attribute) {
@@ -53,7 +60,7 @@ public class Indexes {
         if (index != null) {
             return index;
         }
-        index = new IndexImpl(attribute, ordered, serializationService, extractors);
+        index = indexProvider.createIndex(attribute, ordered, extractors, serializationService);
         mapIndexes.put(attribute, index);
         Object[] indexObjects = mapIndexes.values().toArray();
         Index[] newIndexes = new Index[indexObjects.length];
@@ -91,6 +98,10 @@ public class Indexes {
         for (Index index : indexes) {
             index.saveEntryIndex(queryableEntry, oldValue);
         }
+    }
+
+    public boolean isGlobal() {
+        return global;
     }
 
     /**

@@ -51,6 +51,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -100,8 +102,14 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         assertEquals(5L, (long) trade.amount);
         assertEquals(currency, trade.currency);
 
-        Index index = getIndexOfAttributeForMap(instance, name, attributeName);
-        Set<QueryableEntry> dollars = index.getRecords(currency);
+        List<Index> indexes = getIndexOfAttributeForMap(instance, name, attributeName);
+        Set<QueryableEntry> dollars = new HashSet<QueryableEntry>();
+        for(Index index : indexes) {
+            Set<QueryableEntry> result = index.getRecords(currency);
+            if(result != null) {
+                dollars.addAll(result);
+            }
+        }
         assertEquals(1, dollars.size());
     }
 
@@ -182,13 +190,18 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         assertThat(result, hasSize(1));
     }
 
-    private static Index getIndexOfAttributeForMap(HazelcastInstance instance, String mapName, String attribute) {
+    private static List<Index> getIndexOfAttributeForMap(HazelcastInstance instance, String mapName, String attribute) {
         Node node = getNode(instance);
         MapService service = node.nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        Indexes indexes = mapContainer.getIndexes();
-        return indexes.getIndex(attribute);
+
+        List<Index> result = new ArrayList<Index>();
+        for (int partitionId : mapServiceContext.getOwnedPartitions()) {
+            Indexes indexes = mapContainer.getIndexes(partitionId);
+            result.add(indexes.getIndex(attribute));
+        }
+        return result;
     }
 
     static class Body implements Serializable {
