@@ -82,7 +82,7 @@ public abstract class ClientConnectionStrategy {
         reconnectMode = config.getReconnectMode();
     }
 
-    protected void connectToCluster() throws Exception {
+    protected void connectToCluster() {
         connectionManager.setOwnerConnectionAddress(null);
 
         int attempt = 0;
@@ -172,9 +172,8 @@ public abstract class ClientConnectionStrategy {
     }
 
     /**
-     * @throws Exception
      */
-    public abstract void init() throws Exception;
+    public abstract void init();
 
     /**
      * @param target
@@ -187,9 +186,8 @@ public abstract class ClientConnectionStrategy {
     public abstract void beforeOpenConnection(Address target);
 
     /**
-     * @param connection
      */
-    public abstract void onConnectToCluster(ClientConnection connection);
+    public abstract void onConnectToCluster();
 
     /**
      *

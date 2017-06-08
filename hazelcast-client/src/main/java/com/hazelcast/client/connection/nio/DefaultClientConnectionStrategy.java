@@ -32,7 +32,7 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
     private boolean disconnectedFromCluster;
 
     @Override
-    public void init() throws Exception {
+    public void init() {
         if (clientStartAsync) {
             connectToClusterAsync();
         } else {
@@ -58,7 +58,7 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
     }
 
     @Override
-    public void onConnectToCluster(ClientConnection connection) {
+    public void onConnectToCluster() {
 
     }
 

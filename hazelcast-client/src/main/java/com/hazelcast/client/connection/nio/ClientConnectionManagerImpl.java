@@ -297,7 +297,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     }
 
     private Connection getConnection(Address target, boolean asOwner) throws IOException {
-        connectionStrategy.beforeGetConnection(target);
+        if(!asOwner){
+            connectionStrategy.beforeGetConnection(target);
+        }
         if (!asOwner && getOwnerConnection() == null) {
             throw new IOException("Owner connection is not available!");
         }
@@ -351,7 +353,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     }
 
     private AuthenticationFuture triggerConnect(Address target, boolean asOwner) {
-        connectionStrategy.beforeOpenConnection(target);
+        if(!asOwner){
+            connectionStrategy.beforeOpenConnection(target);
+        }
         if (!alive) {
             throw new HazelcastException("ConnectionManager is not active!");
         }
@@ -385,6 +389,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             connection = getOrConnect(address, true);
             client.getClientClusterService().init();
             fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
+            connectionStrategy.onConnectToCluster();
         } catch (Exception e) {
             Level level = e instanceof AuthenticationException ? Level.WARNING : Level.FINEST;
             logger.log(level, "Exception during initial connection to " + ownerInetSocketAddress, e);
@@ -540,7 +545,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                             ClientPrincipal principal = new ClientPrincipal(result.uuid, result.ownerUuid);
                             setPrincipal(principal);
                             setOwnerConnectionAddress(connection.getEndPoint());
-                            connectionStrategy.onConnectToCluster(connection);
                             logger.info("Setting " + connection + " as owner  with principal " + principal);
                         }
                         onAuthenticated(target, connection);
