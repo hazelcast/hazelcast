@@ -89,11 +89,11 @@ public final class NioChannelWriter extends AbstractHandler implements Runnable 
     @Override
     public long getLoad() {
         switch (LOAD_TYPE) {
-            case 0:
+            case LOAD_BALANCING_HANDLE:
                 return handleCount.get();
-            case 1:
+            case LOAD_BALANCING_BYTE:
                 return bytesWritten.get() + priorityFramesWritten.get();
-            case 2:
+            case LOAD_BALANCING_FRAME:
                 return normalFramesWritten.get() + priorityFramesWritten.get();
             default:
                 throw new RuntimeException();

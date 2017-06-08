@@ -69,11 +69,11 @@ public final class NioChannelReader extends AbstractHandler {
     @Override
     public long getLoad() {
         switch (LOAD_TYPE) {
-            case 0:
+            case LOAD_BALANCING_HANDLE:
                 return handleCount.get();
-            case 1:
+            case LOAD_BALANCING_BYTE:
                 return bytesRead.get();
-            case 2:
+            case LOAD_BALANCING_FRAME:
                 return normalFramesRead.get() + priorityFramesRead.get();
             default:
                 throw new RuntimeException();
