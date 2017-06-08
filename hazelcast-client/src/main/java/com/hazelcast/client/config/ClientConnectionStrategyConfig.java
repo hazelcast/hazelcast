@@ -44,7 +44,7 @@ public class ClientConnectionStrategyConfig {
         ASYNC
     }
 
-    private boolean clientStartAsync = true;
+    private boolean clientStartAsync = false;
 
     private ReconnectMode reconnectMode = ReconnectMode.ON;
 
