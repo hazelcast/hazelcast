@@ -112,7 +112,7 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
         while (count < RETRY_COUNT) {
             try {
                 final Address randomAddress = getRandomAddress();
-                return (ClientConnection) client.getConnectionManager().getOrConnect(randomAddress, false);
+                return (ClientConnection) client.getConnectionManager().getOrConnect(randomAddress);
             } catch (Exception e) {
                 lastError = e;
             }

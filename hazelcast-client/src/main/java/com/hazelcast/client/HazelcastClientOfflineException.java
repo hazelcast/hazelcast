@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl;
+package com.hazelcast.client;
 
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.connection.AddressProvider;
-import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.spi.discovery.integration.DiscoveryService;
+/**
+ * Thrown when Hazelcast client is offline during an invocation.
+ */
+public class HazelcastClientOfflineException extends IllegalStateException {
 
-import java.util.Collection;
+    public HazelcastClientOfflineException(String message) {
+        super(message);
+    }
 
-public interface ClientConnectionManagerFactory {
-
-    ClientConnectionManager createConnectionManager(ClientConfig config, HazelcastClientInstanceImpl client,
-            DiscoveryService discoveryService, Collection<AddressProvider> addressProviders);
+    public HazelcastClientOfflineException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

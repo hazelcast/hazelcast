@@ -19,6 +19,7 @@ package com.hazelcast.client.test;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
@@ -54,6 +55,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -85,7 +87,7 @@ class TestClientRegistry {
 
         @Override
         public ClientConnectionManager createConnectionManager(ClientConfig config, HazelcastClientInstanceImpl client,
-                                                               DiscoveryService discoveryService) {
+                DiscoveryService discoveryService, Collection<AddressProvider> addressProviders) {
             final ClientAwsConfig awsConfig = config.getNetworkConfig().getAwsConfig();
             AddressTranslator addressTranslator;
             if (awsConfig != null && awsConfig.isEnabled()) {
@@ -101,7 +103,7 @@ class TestClientRegistry {
             } else {
                 addressTranslator = new DefaultAddressTranslator();
             }
-            return new MockClientConnectionManager(client, addressTranslator, host, ports);
+            return new MockClientConnectionManager(client, addressTranslator, addressProviders, host, ports);
         }
     }
 
@@ -111,9 +113,9 @@ class TestClientRegistry {
         private final HazelcastClientInstanceImpl client;
         private final ConcurrentHashMap<Address, LockPair> addressBlockMap = new ConcurrentHashMap<Address, LockPair>();
 
-        MockClientConnectionManager(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
+        MockClientConnectionManager(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator, Collection<AddressProvider> addressProviders,
                                     String host, AtomicInteger ports) {
-            super(client, addressTranslator);
+            super(client, addressTranslator, addressProviders);
             this.client = client;
             this.host = host;
             this.ports = ports;
@@ -225,12 +227,13 @@ class TestClientRegistry {
                     localAddress, serverNodeEngine, this);
         }
 
-        void handleClientMessage(final ClientMessage clientMessage) {
+        @Override
+        public void handleClientMessage(final ClientMessage clientMessage) {
             executor.executeIncoming(new Runnable() {
                 @Override
                 public void run() {
                     lastReadTime = System.currentTimeMillis();
-                    getConnectionManager().handleClientMessage(clientMessage, MockedClientConnection.this);
+                    MockedClientConnection.super.handleClientMessage(clientMessage);
                 }
 
                 @Override

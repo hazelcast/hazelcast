@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ClientMessageChannelInboundHandler;
 import com.hazelcast.internal.networking.Channel;
@@ -55,11 +54,9 @@ class ClientChannelInitializer implements ChannelInitializer {
 
         ChannelInboundHandler inboundHandler = new ClientMessageChannelInboundHandler(
                 new ClientMessageChannelInboundHandler.MessageHandler() {
-                    private final ClientConnectionManager connectionManager = connection.getConnectionManager();
-
                     @Override
                     public void handleMessage(ClientMessage message) {
-                        connectionManager.handleClientMessage(message, connection);
+                        connection.handleClientMessage(message);
                     }
                 });
         return new InitResult<ChannelInboundHandler>(inputBuffer, inboundHandler);
