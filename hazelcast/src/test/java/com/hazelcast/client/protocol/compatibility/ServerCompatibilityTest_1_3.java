@@ -5369,7 +5369,7 @@ public class ServerCompatibilityTest_1_3 {
                 assertTrue(isEqual(aData, params.filter));
 }
 {
-    ClientMessage clientMessage = RingbufferReadManyCodec.encodeResponse(    anInt ,    datas   );
+    ClientMessage clientMessage = RingbufferReadManyCodec.encodeResponse(    anInt ,    datas ,    arrLongs   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);

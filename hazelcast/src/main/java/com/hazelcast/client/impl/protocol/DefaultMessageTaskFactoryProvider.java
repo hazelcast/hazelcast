@@ -17,6 +17,8 @@
 package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.client.impl.protocol.task.MessageTask;
+import com.hazelcast.client.impl.protocol.task.cache.CacheEventJournalReadTask;
+import com.hazelcast.client.impl.protocol.task.cache.CacheEventJournalSubscribeTask;
 import com.hazelcast.client.impl.protocol.task.cache.Pre38CacheAddInvalidationListenerTask;
 import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorAddMessageTask;
 import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorEstimateMessageTask;
@@ -25,6 +27,8 @@ import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableEx
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAggregateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAggregateWithPredicateMessageTask;
+import com.hazelcast.client.impl.protocol.task.map.MapEventJournalReadTask;
+import com.hazelcast.client.impl.protocol.task.map.MapEventJournalSubscribeTask;
 import com.hazelcast.client.impl.protocol.task.map.MapProjectionMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapProjectionWithPredicateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.Pre38MapAddNearCacheEntryListenerMessageTask;
@@ -384,6 +388,16 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories[com.hazelcast.client.impl.protocol.codec.CacheIterateEntriesCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.cache.CacheIterateEntriesMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CacheEventJournalSubscribeCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new CacheEventJournalSubscribeTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CacheEventJournalReadCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new CacheEventJournalReadTask<Object, Object, Object>(clientMessage, node, connection);
             }
         };
 
@@ -1593,6 +1607,16 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories[com.hazelcast.client.impl.protocol.codec.MapProjectWithPredicateCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new MapProjectionWithPredicateMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.MapEventJournalSubscribeCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new MapEventJournalSubscribeTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.MapEventJournalReadCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new MapEventJournalReadTask<Object, Object, Object>(clientMessage, node, connection);
             }
         };
 //endregion

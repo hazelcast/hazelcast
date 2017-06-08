@@ -287,6 +287,24 @@ public class EncodeDecodeCompatibilityNullTest {
     ClientPingCodec.ResponseParameters params = ClientPingCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
+    ClientMessage clientMessage = ClientStatisticsCodec.encodeRequest(    aString   );
+    ClientStatisticsCodec.RequestParameters params = ClientStatisticsCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.stats));
+}
+{
+    ClientMessage clientMessage = ClientStatisticsCodec.encodeResponse( );
+    ClientStatisticsCodec.ResponseParameters params = ClientStatisticsCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+}
+{
+    ClientMessage clientMessage = ClientDeployClassesCodec.encodeRequest(    aListOfStringToByteArrEntry   );
+    ClientDeployClassesCodec.RequestParameters params = ClientDeployClassesCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aListOfStringToByteArrEntry, params.classDefinitions));
+}
+{
+    ClientMessage clientMessage = ClientDeployClassesCodec.encodeResponse( );
+    ClientDeployClassesCodec.ResponseParameters params = ClientDeployClassesCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+}
+{
     ClientMessage clientMessage = MapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong   );
     MapPutCodec.RequestParameters params = MapPutCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
@@ -1239,6 +1257,34 @@ public class EncodeDecodeCompatibilityNullTest {
         ClientMessage clientMessage = MapAddNearCacheInvalidationListenerCodec.encodeIMapBatchInvalidationEvent( datas ,  strings ,  uuids ,  longs   );
         handler.handle(ClientMessage.createForDecode(clientMessage.buffer(), 0));
      }
+}
+{
+    ClientMessage clientMessage = MapEventJournalSubscribeCodec.encodeRequest(    aString   );
+    MapEventJournalSubscribeCodec.RequestParameters params = MapEventJournalSubscribeCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+}
+{
+    ClientMessage clientMessage = MapEventJournalSubscribeCodec.encodeResponse(    aLong ,    aLong   );
+    MapEventJournalSubscribeCodec.ResponseParameters params = MapEventJournalSubscribeCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aLong, params.oldestSequence));
+            assertTrue(isEqual(aLong, params.newestSequence));
+}
+{
+    ClientMessage clientMessage = MapEventJournalReadCodec.encodeRequest(    aString ,    aLong ,    anInt ,    anInt ,    null ,    null   );
+    MapEventJournalReadCodec.RequestParameters params = MapEventJournalReadCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.startSequence));
+            assertTrue(isEqual(anInt, params.minSize));
+            assertTrue(isEqual(anInt, params.maxSize));
+            assertTrue(isEqual(null, params.predicate));
+            assertTrue(isEqual(null, params.projection));
+}
+{
+    ClientMessage clientMessage = MapEventJournalReadCodec.encodeResponse(    anInt ,    datas ,    arrLongs   );
+    MapEventJournalReadCodec.ResponseParameters params = MapEventJournalReadCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(anInt, params.readCount));
+            assertTrue(isEqual(datas, params.items));
+            assertTrue(isEqual(arrLongs, params.itemSeqs));
 }
 {
     ClientMessage clientMessage = MultiMapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong   );
@@ -4194,6 +4240,34 @@ public class EncodeDecodeCompatibilityNullTest {
             assertTrue(isEqual(aPartitionUuidList, params.partitionUuidList));
 }
 {
+    ClientMessage clientMessage = CacheEventJournalSubscribeCodec.encodeRequest(    aString   );
+    CacheEventJournalSubscribeCodec.RequestParameters params = CacheEventJournalSubscribeCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+}
+{
+    ClientMessage clientMessage = CacheEventJournalSubscribeCodec.encodeResponse(    aLong ,    aLong   );
+    CacheEventJournalSubscribeCodec.ResponseParameters params = CacheEventJournalSubscribeCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aLong, params.oldestSequence));
+            assertTrue(isEqual(aLong, params.newestSequence));
+}
+{
+    ClientMessage clientMessage = CacheEventJournalReadCodec.encodeRequest(    aString ,    aLong ,    anInt ,    anInt ,    null ,    null   );
+    CacheEventJournalReadCodec.RequestParameters params = CacheEventJournalReadCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.startSequence));
+            assertTrue(isEqual(anInt, params.minSize));
+            assertTrue(isEqual(anInt, params.maxSize));
+            assertTrue(isEqual(null, params.predicate));
+            assertTrue(isEqual(null, params.projection));
+}
+{
+    ClientMessage clientMessage = CacheEventJournalReadCodec.encodeResponse(    anInt ,    datas ,    arrLongs   );
+    CacheEventJournalReadCodec.ResponseParameters params = CacheEventJournalReadCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(anInt, params.readCount));
+            assertTrue(isEqual(datas, params.items));
+            assertTrue(isEqual(arrLongs, params.itemSeqs));
+}
+{
     ClientMessage clientMessage = XATransactionClearRemoteCodec.encodeRequest(    anXid   );
     XATransactionClearRemoteCodec.RequestParameters params = XATransactionClearRemoteCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(anXid, params.xid));
@@ -4493,10 +4567,11 @@ public class EncodeDecodeCompatibilityNullTest {
             assertTrue(isEqual(null, params.filter));
 }
 {
-    ClientMessage clientMessage = RingbufferReadManyCodec.encodeResponse(    anInt ,    datas   );
+    ClientMessage clientMessage = RingbufferReadManyCodec.encodeResponse(    anInt ,    datas ,    arrLongs   );
     RingbufferReadManyCodec.ResponseParameters params = RingbufferReadManyCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(anInt, params.readCount));
             assertTrue(isEqual(datas, params.items));
+            assertTrue(isEqual(arrLongs, params.itemSeqs));
 }
 {
     ClientMessage clientMessage = DurableExecutorShutdownCodec.encodeRequest(    aString   );

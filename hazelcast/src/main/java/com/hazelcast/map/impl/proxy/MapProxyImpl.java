@@ -25,12 +25,16 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
+import com.hazelcast.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.iterator.MapPartitionIterator;
+import com.hazelcast.map.impl.journal.EventJournalMapEvent;
+import com.hazelcast.map.impl.journal.MapEventJournalReadOperation;
+import com.hazelcast.map.impl.journal.MapEventJournalSubscribeOperation;
 import com.hazelcast.map.impl.query.AggregationResult;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.Query;
@@ -61,6 +65,7 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
+import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -84,6 +89,7 @@ import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.QueryResultUtils.transformToSet;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequests.newQueryCacheRequest;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -852,6 +858,56 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
 
     public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {
         return new MapPartitionIterator<K, V>(this, fetchSize, partitionId, prefetchValues);
+    }
+
+    /**
+     * Subscribe to the event journal for this map and a specific partition ID.
+     * The method will return the newest and oldest event journal sequence.
+     *
+     * @param partitionId the partition ID of the entries to which we are subscribing
+     * @return the initial subscriber state containing the newest and oldest event journal sequence
+     * @throws UnsupportedOperationException if the cluster version is lower than 3.9 or there is no event journal
+     *                                       configured for this map
+     * @since 3.9
+     */
+    public EventJournalInitialSubscriberState subscribeToEventJournal(int partitionId) {
+        final MapEventJournalSubscribeOperation op = new MapEventJournalSubscribeOperation(name);
+        op.setPartitionId(partitionId);
+        final InternalCompletableFuture<EventJournalInitialSubscriberState> fut = operationService.invokeOnPartition(op);
+
+        try {
+            return fut.get();
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    /**
+     * Reads from the event journal. The returned future may throw {@link UnsupportedOperationException}
+     * if the cluster version is lower than 3.9 or there is no event journal configured for this map.
+     *
+     * @param startSequence the sequence of the first item to read
+     * @param maxSize       the maximum number of items to read
+     * @param partitionId   the partition ID of the entries in the journal
+     * @param predicate     the predicate which the events must pass to be included in the response.
+     *                      May be {@code null} in which case all events pass the predicate
+     * @param projection    the projection which is applied to the events before returning.
+     *                      May be {@code null} in which case the event is returned without being projected
+     * @param <T>           the return type of the projection. It is equal to the journal event type
+     *                      if the projection is {@code null} or it is the identity projection
+     * @return the future with the filtered and projected journal items
+     * @since 3.9
+     */
+    public <T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(
+            long startSequence,
+            int maxSize,
+            int partitionId,
+            com.hazelcast.util.function.Predicate<? super EventJournalMapEvent<K, V>> predicate,
+            Projection<? super EventJournalMapEvent<K, V>, T> projection) {
+        final MapEventJournalReadOperation<K, V, T> op = new MapEventJournalReadOperation<K, V, T>(
+                name, startSequence, 1, maxSize, predicate, projection);
+        op.setPartitionId(partitionId);
+        return operationService.invokeOnPartition(op);
     }
 
     @Override

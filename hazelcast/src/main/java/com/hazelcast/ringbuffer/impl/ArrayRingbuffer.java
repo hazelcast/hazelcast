@@ -27,16 +27,16 @@ import com.hazelcast.ringbuffer.StaleSequenceException;
  * <p/>
  * The ringItems is the ring that contains the actual items.
  */
-public class ArrayRingbuffer implements Ringbuffer {
+public class ArrayRingbuffer<T> implements Ringbuffer<T> {
     // contains the actual items
-    Object[] ringItems;
+    T[] ringItems;
     private long tailSequence = -1;
     private long headSequence = tailSequence + 1;
     private int capacity;
 
     public ArrayRingbuffer(int capacity) {
         this.capacity = capacity;
-        this.ringItems = new Object[capacity];
+        this.ringItems = (T[]) new Object[capacity];
     }
 
     @Override
@@ -76,7 +76,7 @@ public class ArrayRingbuffer implements Ringbuffer {
     }
 
     @Override
-    public long add(Object item) {
+    public long add(T item) {
         tailSequence++;
 
         if (tailSequence - capacity == headSequence) {
@@ -91,7 +91,7 @@ public class ArrayRingbuffer implements Ringbuffer {
     }
 
     @Override
-    public Object read(long sequence) {
+    public T read(long sequence) {
         checkReadSequence(sequence);
         return ringItems[toIndex(sequence)];
     }
@@ -132,7 +132,7 @@ public class ArrayRingbuffer implements Ringbuffer {
     }
 
     @Override
-    public void set(long seq, Object data) {
+    public void set(long seq, T data) {
         ringItems[toIndex(seq)] = data;
     }
 }

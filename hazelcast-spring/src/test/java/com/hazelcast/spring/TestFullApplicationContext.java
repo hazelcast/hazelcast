@@ -24,6 +24,7 @@ import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
@@ -1042,4 +1043,23 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
         assertEquals(expectedComparatorClassName, mapConfig.getMapEvictionPolicy().getClass().getName());
     }
+
+    @Test
+    public void testMapEventJournalConfigIsWellParsed() {
+        final EventJournalConfig journalConfig = config.getMapEventJournalConfig("mapName");
+
+        assertTrue(journalConfig.isEnabled());
+        assertEquals(123, journalConfig.getCapacity());
+        assertEquals(321, journalConfig.getTimeToLiveSeconds());
+    }
+
+    @Test
+    public void testCacheEventJournalConfigIsWellParsed() {
+        final EventJournalConfig journalConfig = config.getCacheEventJournalConfig("cacheName");
+
+        assertTrue(journalConfig.isEnabled());
+        assertEquals(123, journalConfig.getCapacity());
+        assertEquals(321, journalConfig.getTimeToLiveSeconds());
+    }
+
 }

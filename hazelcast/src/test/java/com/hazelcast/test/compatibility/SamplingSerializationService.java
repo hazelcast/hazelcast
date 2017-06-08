@@ -25,6 +25,7 @@ import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataType;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.test.TestEnvironment;
 
@@ -115,6 +116,21 @@ public class SamplingSerializationService implements InternalSerializationServic
         byte[] bytes =  delegate.toBytes(obj, leftPadding, insertPartitionHash);
         sampleObject(obj, bytes);
         return bytes;
+    }
+
+    @Override
+    public <B extends Data> B toData(Object obj, DataType type) {
+        return toData(obj);
+    }
+
+    @Override
+    public <B extends Data> B toData(Object obj, DataType type, PartitioningStrategy strategy) {
+        return toData(obj, strategy);
+    }
+
+    @Override
+    public <B extends Data> B convertData(Data data, DataType type) {
+        return (B) data;
     }
 
     @Override

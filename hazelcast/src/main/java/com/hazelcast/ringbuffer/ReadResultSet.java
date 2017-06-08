@@ -46,4 +46,19 @@ public interface ReadResultSet<E> extends Iterable<E> {
      * @throws IllegalArgumentException if index out of bounds.
      */
     E get(int index);
+
+    /**
+     * Return the sequence number for the item at the given index.
+     *
+     * @param index the index
+     * @return the sequence number for the ringbuffer item
+     */
+    long getSequence(int index);
+
+    /**
+     * Return the result set size.
+     *
+     * @return the result set size
+     */
+    int size();
 }

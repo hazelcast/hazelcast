@@ -18,6 +18,9 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.HazelcastExpiryPolicy;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
+import com.hazelcast.cache.impl.journal.CacheEventJournalReadOperation;
+import com.hazelcast.cache.impl.journal.CacheEventJournalSubscribeOperation;
+import com.hazelcast.cache.impl.journal.DeserialisingEventJournalCacheEvent;
 import com.hazelcast.cache.impl.merge.entry.DefaultCacheEntryView;
 import com.hazelcast.cache.impl.operation.CacheBackupEntryProcessorOperation;
 import com.hazelcast.cache.impl.operation.CacheClearBackupOperation;
@@ -137,8 +140,11 @@ public final class CacheDataSerializerHook
     public static final short CACHE_ASSIGN_AND_GET_UUIDS_FACTORY = 53;
     public static final short CACHE_NEAR_CACHE_STATE_HOLDER = 54;
     public static final short CACHE_EVENT_LISTENER_ADAPTOR = 55;
+    public static final short EVENT_JOURNAL_CACHE_EVENT = 56;
+    public static final short EVENT_JOURNAL_SUBSCRIBE_OPERATION = 57;
+    public static final short EVENT_JOURNAL_READ_OPERATION = 58;
 
-    private static final int LEN = CACHE_EVENT_LISTENER_ADAPTOR + 1;
+    private static final int LEN = EVENT_JOURNAL_READ_OPERATION + 1;
 
     public int getFactoryId() {
         return F_ID;
@@ -412,6 +418,21 @@ public final class CacheDataSerializerHook
         constructors[CACHE_EVENT_LISTENER_ADAPTOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CacheEventListenerAdaptor();
+            }
+        };
+        constructors[EVENT_JOURNAL_CACHE_EVENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new DeserialisingEventJournalCacheEvent<Object, Object>();
+            }
+        };
+        constructors[EVENT_JOURNAL_SUBSCRIBE_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheEventJournalSubscribeOperation();
+            }
+        };
+        constructors[EVENT_JOURNAL_READ_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheEventJournalReadOperation<Object, Object, Object>();
             }
         };
 

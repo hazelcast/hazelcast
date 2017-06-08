@@ -419,6 +419,18 @@
 
     </map>
 
+    <event-journal enabled="true">
+        <mapName>mapName</mapName>
+        <capacity>120</capacity>
+        <time-to-live-seconds>20</time-to-live-seconds>
+    </event-journal>
+
+    <event-journal enabled="true">
+        <cacheName>cacheName</cacheName>
+        <capacity>120</capacity>
+        <time-to-live-seconds>20</time-to-live-seconds>
+    </event-journal>
+
     <multimap name="default">
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>

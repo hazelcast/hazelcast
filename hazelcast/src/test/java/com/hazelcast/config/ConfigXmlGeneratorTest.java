@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.ConfigCompatibilityChecker.EventJournalConfigChecker;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -208,6 +209,38 @@ public class ConfigXmlGeneratorTest {
         final Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         ConfigCompatibilityChecker.checkWanConfigs(config.getWanReplicationConfigs(), xmlConfig.getWanReplicationConfigs());
+    }
+
+    @Test
+    public void testMapEventJournal() {
+        final String mapName = "mapName";
+        final EventJournalConfig journalConfig = new EventJournalConfig()
+                .setMapName(mapName)
+                .setEnabled(true)
+                .setCapacity(123)
+                .setTimeToLiveSeconds(321);
+        final Config config = new Config().addEventJournalConfig(journalConfig);
+        final Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        assertTrue(new EventJournalConfigChecker().check(
+                journalConfig,
+                xmlConfig.getMapEventJournalConfig(mapName)));
+    }
+
+    @Test
+    public void testCacheEventJournal() {
+        final String cacheName = "cacheName";
+        final EventJournalConfig journalConfig = new EventJournalConfig()
+                .setCacheName(cacheName)
+                .setEnabled(true)
+                .setCapacity(123)
+                .setTimeToLiveSeconds(321);
+        final Config config = new Config().addEventJournalConfig(journalConfig);
+        final Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        assertTrue(new EventJournalConfigChecker().check(
+                journalConfig,
+                xmlConfig.getCacheEventJournalConfig(cacheName)));
     }
 
     private DiscoveryConfig getDummyDiscoveryConfig() {

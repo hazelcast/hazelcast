@@ -93,10 +93,9 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         readManyAsyncResponseDecoder = new ClientMessageDecoder() {
             @Override
             public PortableReadResultSet decodeClientMessage(ClientMessage clientMessage) {
-                final RingbufferReadManyCodec.ResponseParameters responseParameters
-                        = RingbufferReadManyCodec.decodeResponse(clientMessage);
-                PortableReadResultSet readResultSet = new PortableReadResultSet(responseParameters.readCount,
-                        responseParameters.items);
+                final RingbufferReadManyCodec.ResponseParameters params = RingbufferReadManyCodec.decodeResponse(clientMessage);
+                final PortableReadResultSet readResultSet
+                        = new PortableReadResultSet(params.readCount, params.items, params.itemSeqs);
                 readResultSet.setSerializationService(getSerializationService());
                 return readResultSet;
             }

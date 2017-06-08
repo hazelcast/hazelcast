@@ -902,6 +902,44 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("com.example.SampleFilter", wanRef.getFilters().get(0));
     }
 
+    @Test
+    public void testMapEventJournalConfig() {
+        final String journalName = "mapName";
+        final String xml = HAZELCAST_START_TAG
+                + "  <event-journal enabled=\"true\">\n" +
+                "        <mapName>" + journalName + "</mapName>\n" +
+                "        <capacity>120</capacity>\n" +
+                "        <time-to-live-seconds>20</time-to-live-seconds>\n" +
+                "    </event-journal>"
+                + HAZELCAST_END_TAG;
+
+        final Config config = buildConfig(xml);
+        final EventJournalConfig journalConfig = config.getMapEventJournalConfig(journalName);
+
+        assertTrue(journalConfig.isEnabled());
+        assertEquals(120, journalConfig.getCapacity());
+        assertEquals(20, journalConfig.getTimeToLiveSeconds());
+    }
+
+    @Test
+    public void testCacheEventJournalConfig() {
+        final String journalName = "cacheName";
+        final String xml = HAZELCAST_START_TAG
+                + "  <event-journal enabled=\"true\">\n" +
+                "        <cacheName>" + journalName + "</cacheName>\n" +
+                "        <capacity>120</capacity>\n" +
+                "        <time-to-live-seconds>20</time-to-live-seconds>\n" +
+                "    </event-journal>"
+                + HAZELCAST_END_TAG;
+
+        final Config config = buildConfig(xml);
+        final EventJournalConfig journalConfig = config.getCacheEventJournalConfig(journalName);
+
+        assertTrue(journalConfig.isEnabled());
+        assertEquals(120, journalConfig.getCapacity());
+        assertEquals(20, journalConfig.getTimeToLiveSeconds());
+    }
+
     @Test(expected = InvalidConfigurationException.class)
     public void testParseExceptionIsNotSwallowed() {
         String invalidXml = HAZELCAST_START_TAG + "</hazelcast";

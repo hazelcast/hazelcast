@@ -20,6 +20,7 @@ import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.util.StringUtil;
 
 import java.io.File;
 import java.net.URL;
@@ -103,6 +104,10 @@ public class Config {
 
     private final Map<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs =
             new ConcurrentHashMap<String, CardinalityEstimatorConfig>();
+
+    private final Map<String, EventJournalConfig> mapEventJournalConfigs = new ConcurrentHashMap<String, EventJournalConfig>();
+
+    private final Map<String, EventJournalConfig> cacheEventJournalConfigs = new ConcurrentHashMap<String, EventJournalConfig>();
 
     private ServicesConfig servicesConfig = new ServicesConfig();
 
@@ -1194,6 +1199,97 @@ public class Config {
         return this;
     }
 
+    public EventJournalConfig findMapEventJournalConfig(String name) {
+        final String baseName = getBaseName(name);
+        final EventJournalConfig config = lookupByPattern(mapEventJournalConfigs, baseName);
+        if (config != null) {
+            return config.getAsReadOnly();
+        }
+        return getMapEventJournalConfig("default").getAsReadOnly();
+    }
+
+    public EventJournalConfig findCacheEventJournalConfig(String name) {
+        final String baseName = getBaseName(name);
+        final EventJournalConfig config = lookupByPattern(cacheEventJournalConfigs, baseName);
+        if (config != null) {
+            return config.getAsReadOnly();
+        }
+        return getCacheEventJournalConfig("default").getAsReadOnly();
+    }
+
+    public EventJournalConfig getMapEventJournalConfig(String name) {
+        final String baseName = getBaseName(name);
+        EventJournalConfig config = lookupByPattern(mapEventJournalConfigs, baseName);
+        if (config != null) {
+            return config;
+        }
+        EventJournalConfig defConfig = mapEventJournalConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new EventJournalConfig().setMapName("default");
+            addEventJournalConfig(defConfig);
+        }
+        config = new EventJournalConfig(defConfig).setMapName(name);
+        addEventJournalConfig(config);
+        return config;
+    }
+
+    public EventJournalConfig getCacheEventJournalConfig(String name) {
+        final String baseName = getBaseName(name);
+        EventJournalConfig config = lookupByPattern(cacheEventJournalConfigs, baseName);
+        if (config != null) {
+            return config;
+        }
+        EventJournalConfig defConfig = cacheEventJournalConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new EventJournalConfig().setCacheName("default");
+            addEventJournalConfig(defConfig);
+        }
+        config = new EventJournalConfig(defConfig).setCacheName(name);
+        addEventJournalConfig(config);
+        return config;
+    }
+
+    public Config addEventJournalConfig(EventJournalConfig eventJournalConfig) {
+        final String mapName = eventJournalConfig.getMapName();
+        final String cacheName = eventJournalConfig.getCacheName();
+        if (StringUtil.isNullOrEmpty(mapName) && StringUtil.isNullOrEmpty(cacheName)) {
+            throw new IllegalArgumentException("Event journal config should have non-empty map name and/or cache name");
+        }
+        if (!StringUtil.isNullOrEmpty(mapName)) {
+            mapEventJournalConfigs.put(eventJournalConfig.getMapName(), eventJournalConfig);
+        }
+        if (!StringUtil.isNullOrEmpty(cacheName)) {
+            cacheEventJournalConfigs.put(eventJournalConfig.getCacheName(), eventJournalConfig);
+        }
+        return this;
+    }
+
+    public Map<String, EventJournalConfig> getMapEventJournalConfigs() {
+        return mapEventJournalConfigs;
+    }
+
+    public Map<String, EventJournalConfig> getCacheEventJournalConfigs() {
+        return cacheEventJournalConfigs;
+    }
+
+    public Config setMapEventJournalConfigs(Map<String, EventJournalConfig> eventJournalConfigs) {
+        this.mapEventJournalConfigs.clear();
+        this.mapEventJournalConfigs.putAll(eventJournalConfigs);
+        for (Entry<String, EventJournalConfig> entry : eventJournalConfigs.entrySet()) {
+            entry.getValue().setMapName(entry.getKey());
+        }
+        return this;
+    }
+
+    public Config setCacheEventJournalConfigs(Map<String, EventJournalConfig> eventJournalConfigs) {
+        this.cacheEventJournalConfigs.clear();
+        this.cacheEventJournalConfigs.putAll(eventJournalConfigs);
+        for (Entry<String, EventJournalConfig> entry : eventJournalConfigs.entrySet()) {
+            entry.getValue().setCacheName(entry.getKey());
+        }
+        return this;
+    }
+
     public SerializationConfig getSerializationConfig() {
         return serializationConfig;
     }
@@ -1369,6 +1465,8 @@ public class Config {
                 + ", ringbufferConfigs=" + ringbufferConfigs
                 + ", wanReplicationConfigs=" + wanReplicationConfigs
                 + ", listenerConfigs=" + listenerConfigs
+                + ", mapEventJournalConfigs=" + mapEventJournalConfigs
+                + ", cacheEventJournalConfigs=" + cacheEventJournalConfigs
                 + ", partitionGroupConfig=" + partitionGroupConfig
                 + ", managementCenterConfig=" + managementCenterConfig
                 + ", securityConfig=" + securityConfig

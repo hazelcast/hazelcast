@@ -57,8 +57,16 @@ public class RingbufferServiceTest extends HazelcastTestSupport {
 
     @Test
     public void reset() {
-        service.getContainer("foo");
-        service.getContainer("bar");
+        final String foo = "foo";
+        final String bar = "bar";
+        service.getContainer(
+                service.getRingbufferPartitionId(foo),
+                RingbufferService.getRingbufferNamespace(foo),
+                service.getRingbufferConfig(foo));
+        service.getContainer(
+                service.getRingbufferPartitionId(bar),
+                RingbufferService.getRingbufferNamespace(bar),
+                service.getRingbufferConfig(bar));
 
         service.reset();
 

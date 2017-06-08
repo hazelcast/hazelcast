@@ -118,5 +118,8 @@ public interface MapEventPublisher {
      */
     void addEventToQueryCache(Object eventData);
 
+    /**
+     * Returns {@code true} if there is at least one listener registered for the specified {@code mapName}.
+     */
     boolean hasEventListener(String mapName);
 }

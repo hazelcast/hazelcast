@@ -122,6 +122,7 @@ public class ConfigXmlGenerator {
         executorXmlGenerator(gen, config);
         durableExecutorXmlGenerator(gen, config);
         scheduledExecutorXmlGenerator(gen, config);
+        eventJournalXmlGenerator(gen, config);
         partitionGroupXmlGenerator(gen, config);
         cardinalityEstimatorXmlGenerator(gen, config);
         listenerXmlGenerator(gen, config);
@@ -182,6 +183,25 @@ public class ConfigXmlGenerator {
             gen.node("listener", classNameOrImplClass(lc.getClassName(), lc.getImplementation()));
         }
         gen.close();
+    }
+
+    private static void eventJournalXmlGenerator(XmlGenerator gen, Config config) {
+        final Collection<EventJournalConfig> mapJournalConfigs = config.getMapEventJournalConfigs().values();
+        final Collection<EventJournalConfig> cacheJournalConfigs = config.getCacheEventJournalConfigs().values();
+        for (EventJournalConfig c : mapJournalConfigs) {
+            gen.open("event-journal", "enabled", c.isEnabled())
+               .node("mapName", c.getMapName())
+               .node("capacity", c.getCapacity())
+               .node("time-to-live-seconds", c.getTimeToLiveSeconds())
+               .close();
+        }
+        for (EventJournalConfig c : cacheJournalConfigs) {
+            gen.open("event-journal", "enabled", c.isEnabled())
+               .node("cacheName", c.getCacheName())
+               .node("capacity", c.getCapacity())
+               .node("time-to-live-seconds", c.getTimeToLiveSeconds())
+               .close();
+        }
     }
 
     @SuppressWarnings({"checkstyle:npathcomplexity"})

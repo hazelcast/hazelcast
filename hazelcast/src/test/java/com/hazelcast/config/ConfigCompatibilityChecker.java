@@ -81,6 +81,8 @@ class ConfigCompatibilityChecker {
         checkCompatibleConfigs("executor", c1, c2, c1.getExecutorConfigs(), c2.getExecutorConfigs(), new ExecutorConfigChecker());
         checkCompatibleConfigs("durable executor", c1, c2, c1.getDurableExecutorConfigs(), c2.getDurableExecutorConfigs(), new DurableExecutorConfigChecker());
         checkCompatibleConfigs("scheduled executor", c1, c2, c1.getScheduledExecutorConfigs(), c2.getScheduledExecutorConfigs(), new ScheduledExecutorConfigChecker());
+        checkCompatibleConfigs("map event journal", c1, c2, c1.getMapEventJournalConfigs(), c2.getMapEventJournalConfigs(), new MapEventJournalConfigChecker());
+        checkCompatibleConfigs("cache event journal", c1, c2, c1.getCacheEventJournalConfigs(), c2.getCacheEventJournalConfigs(), new CacheEventJournalConfigChecker());
         checkCompatibleConfigs("multimap", c1, c2, c1.getMultiMapConfigs(), c2.getMultiMapConfigs(), new MultimapConfigChecker());
         checkCompatibleConfigs("list", c1, c2, c1.getListConfigs(), c2.getListConfigs(), new ListConfigChecker());
         checkCompatibleConfigs("set", c1, c2, c1.getSetConfigs(), c2.getSetConfigs(), new SetConfigChecker());
@@ -203,6 +205,34 @@ class ConfigCompatibilityChecker {
         @Override
         RingbufferConfig getDefault(Config c) {
             return c.getRingbufferConfig("default");
+        }
+    }
+
+    public static class EventJournalConfigChecker extends ConfigChecker<EventJournalConfig> {
+        @Override
+        boolean check(EventJournalConfig c1, EventJournalConfig c2) {
+            final boolean c1Disabled = c1 == null || !c1.isEnabled();
+            final boolean c2Disabled = c2 == null || !c2.isEnabled();
+            return c1 == c2 || (c1Disabled && c2Disabled) ||
+                    (c1 != null && c2 != null
+                            && nullSafeEqual(c1.getMapName(), c2.getMapName())
+                            && nullSafeEqual(c1.getCacheName(), c2.getCacheName())
+                            && nullSafeEqual(c1.getCapacity(), c2.getCapacity())
+                            && nullSafeEqual(c1.getTimeToLiveSeconds(), c2.getTimeToLiveSeconds()));
+        }
+    }
+
+    public static class MapEventJournalConfigChecker extends EventJournalConfigChecker {
+        @Override
+        EventJournalConfig getDefault(Config c) {
+            return c.getMapEventJournalConfig("default");
+        }
+    }
+
+    public static class CacheEventJournalConfigChecker extends EventJournalConfigChecker {
+        @Override
+        EventJournalConfig getDefault(Config c) {
+            return c.getCacheEventJournalConfig("default");
         }
     }
 

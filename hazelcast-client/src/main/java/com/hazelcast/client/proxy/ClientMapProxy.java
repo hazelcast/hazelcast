@@ -36,6 +36,9 @@ import com.hazelcast.client.impl.protocol.codec.MapDeleteCodec;
 import com.hazelcast.client.impl.protocol.codec.MapEntriesWithPagingPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapEntriesWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapEntrySetCodec;
+import com.hazelcast.client.impl.protocol.codec.MapEventJournalReadCodec;
+import com.hazelcast.client.impl.protocol.codec.MapEventJournalSubscribeCodec;
+import com.hazelcast.client.impl.protocol.codec.MapEventJournalSubscribeCodec.ResponseParameters;
 import com.hazelcast.client.impl.protocol.codec.MapEvictAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapEvictCodec;
 import com.hazelcast.client.impl.protocol.codec.MapExecuteOnAllKeysCodec;
@@ -103,6 +106,7 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
@@ -112,6 +116,7 @@ import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.SimpleEntryView;
+import com.hazelcast.map.impl.journal.EventJournalMapEvent;
 import com.hazelcast.map.impl.querycache.subscriber.InternalQueryCache;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
@@ -135,7 +140,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.ringbuffer.ReadResultSet;
+import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.IterationType;
@@ -151,6 +159,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -221,6 +230,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         }
     };
 
+    private ClientMessageDecoder eventJournalReadResponseDecoder;
     private ClientLockReferenceIdGenerator lockReferenceIdGenerator;
     private ClientQueryCacheContext queryCacheContext;
 
@@ -234,6 +244,16 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
         lockReferenceIdGenerator = getClient().getLockReferenceIdGenerator();
         queryCacheContext = getContext().getQueryCacheContext();
+        eventJournalReadResponseDecoder = new ClientMessageDecoder() {
+            @Override
+            public ReadResultSet<?> decodeClientMessage(ClientMessage message) {
+                final MapEventJournalReadCodec.ResponseParameters params = MapEventJournalReadCodec.decodeResponse(message);
+                final PortableReadResultSet<?> resultSet
+                        = new PortableReadResultSet<Object>(params.readCount, params.items, params.itemSeqs);
+                resultSet.setSerializationService(getSerializationService());
+                return resultSet;
+            }
+        };
     }
 
     @Override
@@ -1533,6 +1553,61 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     // used for testing
     public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {
         return new ClientMapPartitionIterator<K, V>(this, getContext(), fetchSize, partitionId, prefetchValues);
+    }
+
+    /**
+     * Subscribe to the event journal for this map and a specific partition ID.
+     * The method will register the subscription so that the event journal knows which
+     * items have been read by this subscriber. It will return the subscription ID and
+     * the newest and oldest event journal sequence.
+     *
+     * @param partitionId the partition ID of the entries to which we are subscribing
+     * @return the initial subscriber state containing the subscription ID, newest and oldest event journal sequence
+     * @throws UnsupportedOperationException if the cluster version is lower than 3.9 or there is no event journal
+     *                                       configured for this map
+     * @since 3.9
+     */
+    public EventJournalInitialSubscriberState subscribeToEventJournal(int partitionId) {
+        final ClientMessage request = MapEventJournalSubscribeCodec.encodeRequest(name);
+        final ClientInvocationFuture invocation = new ClientInvocation(getClient(), request, partitionId).invoke();
+        try {
+            final ClientMessage msg = invocation.get();
+            final ResponseParameters resp = MapEventJournalSubscribeCodec.decodeResponse(msg);
+            return new EventJournalInitialSubscriberState(resp.oldestSequence, resp.newestSequence);
+        } catch (InterruptedException e) {
+            throw rethrow(e);
+        } catch (ExecutionException e) {
+            throw rethrow(e);
+        }
+    }
+
+    /**
+     * Reads from the event journal. The returned future may throw {@link UnsupportedOperationException}
+     * if the cluster version is lower than 3.9 or there is no event journal configured for this map.
+     *
+     * @param startSequence the sequence of the first item to read
+     * @param maxSize       the maximum number of items to read
+     * @param partitionId   the partition ID of the entries in the journal
+     * @param predicate     the predicate which the events must pass to be included in the response.
+     *                      May be {@code null} in which case all events pass the predicate
+     * @param projection    the projection which is applied to the events before returning.
+     *                      May be {@code null} in which case the event is returned without being projected
+     * @param <T>           the return type of the projection. It is equal to the journal event type
+     *                      if the projection is {@code null} or it is the identity projection
+     * @return the future with the filtered and projected journal items
+     * @since 3.9
+     */
+    public <T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(
+            long startSequence,
+            int maxSize,
+            int partitionId,
+            com.hazelcast.util.function.Predicate<? super EventJournalMapEvent<K, V>> predicate,
+            Projection<? super EventJournalMapEvent<K, V>, T> projection) {
+        final SerializationService ss = getSerializationService();
+        final ClientMessage request = MapEventJournalReadCodec.encodeRequest(
+                name, startSequence, 1, maxSize, ss.toData(predicate), ss.toData(projection));
+        final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, partitionId).invoke();
+        return new ClientDelegatingFuture<ReadResultSet<T>>(fut, ss, eventJournalReadResponseDecoder);
     }
 
     // used for testing

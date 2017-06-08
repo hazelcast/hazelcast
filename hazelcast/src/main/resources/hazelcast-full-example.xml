@@ -870,8 +870,8 @@ It has the following sub-elements:
     	Adds the partition lost listeners that you created by implementing Hazelcast's PartitionLostListener interface. 
     * <quorum-ref>:
 	Adds the quorum for this map which you configure using the <quorum> element. You should set the <quorum-ref>'s value
-	as the <quorum>'s name. 
- -->    
+	as the <quorum>'s name.
+ -->
     <map name="default">
         <in-memory-format>BINARY</in-memory-format>
         <statistics-enabled>true</statistics-enabled>
@@ -888,54 +888,54 @@ It has the following sub-elements:
         <merge-policy>com.hazelcast.map.merge.PutIfAbsentMapMergePolicy</merge-policy>
         <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>
         <read-backup-data>false</read-backup-data>
-	<hot-restart enabled="false">
-		<fsync>false</fsync>
-	</hot-restart>
-	<map-store enabled="true" initial-mode="LAZY">
-		<class-name>com.hazelcast.examples.DummyStore</class-name>
-		<write-delay-seconds>60</write-delay-seconds>
-		<write-batch-size>1000</write-batch-size>
-		<write-coalescing>true</write-coalescing>
-		<properties>
-    			<property name="jdbc_url">my.jdbc.com</property>
-		</properties>
-	</map-store>
-	<near-cache>
-		<max-size>5000</max-size>
-		<time-to-live-seconds>0</time-to-live-seconds>
-		<max-idle-seconds>60</max-idle-seconds>
-		<eviction-policy>LRU</eviction-policy>
-		<invalidate-on-change>true</invalidate-on-change>
-		<in-memory-format>BINARY</in-memory-format>
-		<cache-local-entries>false</cache-local-entries>
-		<eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
-	</near-cache>
-	<wan-replication-ref name="my-wan-cluster-batch">
-		<merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>
-		<filters>
-			<filter-impl>com.example.SampleFilter</filter-impl>
-			<filter-impl>com.example.SampleFilter2</filter-impl>
-		</filters>
-		<republishing-enabled>false</republishing-enabled>
-	</wan-replication-ref>
-	<indexes>
-		<index ordered="false">name</index>
-		<index ordered="true">age</index>
-	</indexes>
-	<attributes>
-		<attribute extractor="com.bank.CurrencyExtractor">currency</attribute>
-	</attributes>
-	<entry-listeners>
-		<entry-listener include-value="false" local="false">
-			com.your-package.MyEntryListener
-		</entry-listener>
-	</entry-listeners>
-	<partition-lost-listeners>
-		<partition-lost-listener>
-			com.your-package.YourPartitionLostListener
-		</partition-lost-listener>
-	</partition-lost-listeners>
-	<quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <hot-restart enabled="false">
+            <fsync>false</fsync>
+        </hot-restart>
+        <map-store enabled="true" initial-mode="LAZY">
+            <class-name>com.hazelcast.examples.DummyStore</class-name>
+            <write-delay-seconds>60</write-delay-seconds>
+            <write-batch-size>1000</write-batch-size>
+            <write-coalescing>true</write-coalescing>
+            <properties>
+                <property name="jdbc_url">my.jdbc.com</property>
+            </properties>
+        </map-store>
+        <near-cache>
+            <max-size>5000</max-size>
+            <time-to-live-seconds>0</time-to-live-seconds>
+            <max-idle-seconds>60</max-idle-seconds>
+            <eviction-policy>LRU</eviction-policy>
+            <invalidate-on-change>true</invalidate-on-change>
+            <in-memory-format>BINARY</in-memory-format>
+            <cache-local-entries>false</cache-local-entries>
+            <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
+        </near-cache>
+        <wan-replication-ref name="my-wan-cluster-batch">
+            <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>
+            <filters>
+                <filter-impl>com.example.SampleFilter</filter-impl>
+                <filter-impl>com.example.SampleFilter2</filter-impl>
+            </filters>
+            <republishing-enabled>false</republishing-enabled>
+        </wan-replication-ref>
+        <indexes>
+            <index ordered="false">name</index>
+            <index ordered="true">age</index>
+        </indexes>
+        <attributes>
+            <attribute extractor="com.bank.CurrencyExtractor">currency</attribute>
+        </attributes>
+        <entry-listeners>
+            <entry-listener include-value="false" local="false">
+                com.your-package.MyEntryListener
+            </entry-listener>
+        </entry-listeners>
+        <partition-lost-listeners>
+            <partition-lost-listener>
+                com.your-package.YourPartitionLostListener
+            </partition-lost-listener>
+        </partition-lost-listeners>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
     </map>
 <!--
     ===== HAZELCAST CONTINUOUS QUERY CACHE CONFIGURATION =====
@@ -1201,25 +1201,68 @@ It has the following sub-elements:
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
         <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
-	<wan-replication-ref name="my-wan-cluster-batch">
-	    <merge-policy>com.hazelcast.cache.merge.PassThroughCacheMergePolicy</merge-policy>
-	    <republishing-enabled>true</republishing-enabled>
-	    <filters>
-		<filter-impl>com.example.SampleFilter</filter-impl>
-	    </filters>
-	</wan-replication-ref>
+        <wan-replication-ref name="my-wan-cluster-batch">
+            <merge-policy>com.hazelcast.cache.merge.PassThroughCacheMergePolicy</merge-policy>
+            <republishing-enabled>true</republishing-enabled>
+            <filters>
+                <filter-impl>com.example.SampleFilter</filter-impl>
+            </filters>
+        </wan-replication-ref>
         <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
-	<partition-lost-listeners>
-		<partition-lost-listener>
-			com.your-package.YourPartitionLostListener
-		</partition-lost-listener>
-	</partition-lost-listeners>
+        <partition-lost-listeners>
+            <partition-lost-listener>
+                com.your-package.YourPartitionLostListener
+            </partition-lost-listener>
+        </partition-lost-listeners>
         <merge-policy>com.hazelcast.cache.merge.LatestAccessCacheMergePolicy</merge-policy>
-	<hot-restart enabled="false">
-		<fsync>false</fsync>
-	</hot-restart>
-	<disable-per-entry-invalidation-events>true</disable-per-entry-invalidation-events>
+        <hot-restart enabled="false">
+            <fsync>false</fsync>
+        </hot-restart>
+        <disable-per-entry-invalidation-events>true</disable-per-entry-invalidation-events>
     </cache>
+    <!--
+    ===== HAZELCAST EVENT JOURNAL CONFIGURATION =====
+
+    Configuration element's name is <event-journal>.
+    It has the following attributes and sub-elements:
+    * enabled:
+    	Specifies whether the event journal is enabled.
+    * <mapName>:
+    	Map name to which this configuration applies. This attribute's default value is "default".
+    	Configuration for the event journal with name "default" applies to all maps without
+    	configuration for a specific named map. In another words, if you specify the default
+    	event journal config as enabled then all maps which don't have specific event journal
+    	will be also enabled.
+    * <cacheName>:
+    	Cache name to which this configuration applies. This attribute's default value is "default".
+    	Configuration for the event journal with name "default" applies to all caches without
+    	configuration for a specific named cache. In another words, if you specify the default
+    	event journal config as enabled then all caches which don't have specific event journal
+    	will be also enabled.
+    * <capacity>:
+    * Gets the capacity of the event journal.
+    * The capacity is the total number of items that the event journal can hold at any moment.
+    * The actual number of items contained in the journal can be lower. Its default value is 10000.
+    * <time-to-live-seconds>:
+    * Sets the time to live in seconds.
+    * Time to live is the time the event journal retains items before removing them from the journal.
+    * The events are removed on journal read and write actions, not while the journal is idle.
+    * Time to live can be disabled by setting timeToLiveSeconds to 0. This means that the
+    * events never expire but they can be overwritten when the capacity of the journal is exceeed.
+    * Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Its default value is 0.
+-->
+
+    <event-journal enabled="false">
+        <mapName>default</mapName>
+        <capacity>10000</capacity>
+        <time-to-live-seconds>0</time-to-live-seconds>
+    </event-journal>
+
+    <event-journal enabled="false">
+        <cacheName>default</cacheName>
+        <capacity>10000</capacity>
+        <time-to-live-seconds>0</time-to-live-seconds>
+    </event-journal>
 
 <!--
     ===== HAZELCAST LIST CONFIGURATION =====

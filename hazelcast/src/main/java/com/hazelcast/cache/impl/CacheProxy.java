@@ -19,17 +19,25 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.cache.impl.event.InternalCachePartitionLostListenerAdapter;
+import com.hazelcast.cache.impl.journal.CacheEventJournalReadOperation;
+import com.hazelcast.cache.impl.journal.CacheEventJournalSubscribeOperation;
+import com.hazelcast.cache.impl.journal.EventJournalCacheEvent;
 import com.hazelcast.cache.impl.operation.CacheListenerRegistrationOperation;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
+import com.hazelcast.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.projection.Projection;
+import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.util.function.Predicate;
 
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -47,6 +55,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -68,8 +77,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @param <K> the type of key.
  * @param <V> the type of value.
  */
-public class CacheProxy<K, V>
-        extends AbstractCacheProxy<K, V> {
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
+public class CacheProxy<K, V> extends AbstractCacheProxy<K, V> {
 
     protected final ILogger logger;
 
@@ -359,5 +368,58 @@ public class CacheProxy<K, V>
         checkNotNull(id, "Listener id should not be null!");
         return getService().getNodeEngine().getEventService()
                 .deregisterListener(AbstractCacheService.SERVICE_NAME, name, id);
+    }
+
+    /**
+     * Subscribe to the event journal for this cache and a specific partition ID.
+     * The method will register the subscription so that the event journal knows which
+     * items have been read by this subscriber. It will return the subscription ID and
+     * the newest and oldest event journal sequence.
+     *
+     * @param partitionId the partition ID of the entries to which we are subscribing
+     * @return the initial subscriber state containing the subscription ID, newest and oldest event journal sequence
+     * @throws UnsupportedOperationException if the cluster version is lower than 3.9 or there is no event journal
+     *                                       configured for this cache
+     * @since 3.9
+     */
+    public EventJournalInitialSubscriberState subscribeToEventJournal(int partitionId) {
+        final CacheEventJournalSubscribeOperation op = new CacheEventJournalSubscribeOperation(nameWithPrefix);
+        op.setPartitionId(partitionId);
+        final InternalCompletableFuture<EventJournalInitialSubscriberState> fut = getNodeEngine()
+                .getOperationService().invokeOnPartition(op);
+
+        try {
+            return fut.get();
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    /**
+     * Reads from the event journal. The returned future may throw {@link UnsupportedOperationException}
+     * if the cluster version is lower than 3.9 or there is no event journal configured for this cache.
+     *
+     * @param startSequence the sequence of the first item to read
+     * @param maxSize       the maximum number of items to read
+     * @param partitionId   the partition ID of the entries in the journal
+     * @param predicate     the predicate which the events must pass to be included in the response.
+     *                      May be {@code null} in which case all events pass the predicate
+     * @param projection    the projection which is applied to the events before returning.
+     *                      May be {@code null} in which case the event is returned without being projected
+     * @param <T>           the return type of the projection. It is equal to the journal event type
+     *                      if the projection is {@code null} or it is the identity projection
+     * @return the future with the filtered and projected journal items
+     * @since 3.9
+     */
+    public <T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(
+            long startSequence,
+            int maxSize,
+            int partitionId,
+            Predicate<? super EventJournalCacheEvent<K, V>> predicate,
+            Projection<? super EventJournalCacheEvent<K, V>, T> projection) {
+        final CacheEventJournalReadOperation<K, V, T> op = new CacheEventJournalReadOperation<K, V, T>(
+                nameWithPrefix, startSequence, 1, maxSize, predicate, projection);
+        op.setPartitionId(partitionId);
+        return getNodeEngine().getOperationService().invokeOnPartition(op);
     }
 }

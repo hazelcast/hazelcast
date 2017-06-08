@@ -25,6 +25,9 @@ import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
+import com.hazelcast.map.impl.journal.DeserialisingEventJournalMapEvent;
+import com.hazelcast.map.impl.journal.MapEventJournalReadOperation;
+import com.hazelcast.map.impl.journal.MapEventJournalSubscribeOperation;
 import com.hazelcast.map.impl.nearcache.invalidation.UuidFilter;
 import com.hazelcast.map.impl.operation.AccumulatorConsumerOperation;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
@@ -286,8 +289,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int ENTRY_REMOVING_PROCESSOR = 135;
     public static final int ENTRY_OFFLOADABLE_SET_UNLOCK = 136;
     public static final int LOCK_AWARE_LAZY_MAP_ENTRY = 137;
+    public static final int EVENT_JOURNAL_SUBSCRIBE_OPERATION = 138;
+    public static final int EVENT_JOURNAL_READ = 139;
+    public static final int EVENT_JOURNAL_MAP_EVENT = 140;
 
-    private static final int LEN = LOCK_AWARE_LAZY_MAP_ENTRY + 1;
+    private static final int LEN = EVENT_JOURNAL_MAP_EVENT + 1;
 
     @Override
     public int getFactoryId() {
@@ -968,6 +974,22 @@ public final class MapDataSerializerHook implements DataSerializerHook {
                 return new LockAwareLazyMapEntry();
             }
         };
+        constructors[EVENT_JOURNAL_SUBSCRIBE_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MapEventJournalSubscribeOperation();
+            }
+        };
+        constructors[EVENT_JOURNAL_READ] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MapEventJournalReadOperation<Object, Object, Object>();
+            }
+        };
+        constructors[EVENT_JOURNAL_MAP_EVENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new DeserialisingEventJournalMapEvent<Object, Object>();
+            }
+        };
+
 
         return new ArrayDataSerializableFactory(constructors);
     }
