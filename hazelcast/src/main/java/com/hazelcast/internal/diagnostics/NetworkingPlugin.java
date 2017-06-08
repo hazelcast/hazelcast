@@ -122,13 +122,19 @@ public class NetworkingPlugin extends DiagnosticsPlugin {
 
         for (NioThread thread : threads) {
             writer.startSection(thread.getName());
-            writer.writeKeyValueEntry("frames", toPercentage(thread.framesTransceived(), totalFramesReceived));
-            writer.writeKeyValueEntry("priority-frames",
+            writer.writeKeyValueEntry("frames-percentage", toPercentage(thread.framesTransceived(), totalFramesReceived));
+            writer.writeKeyValueEntry("frames", thread.framesTransceived());
+            writer.writeKeyValueEntry("priority-frames-percentage",
                     toPercentage(thread.priorityFramesTransceived(), totalPriorityFramesReceived));
-            writer.writeKeyValueEntry("bytes", toPercentage(thread.bytesTransceived(), totalBytesReceived));
-            writer.writeKeyValueEntry("events", toPercentage(thread.eventCount(), totalEvents));
-            writer.writeKeyValueEntry("handle-count", toPercentage(thread.handleCount(), totalHandleCount));
-            writer.writeKeyValueEntry("tasks", toPercentage(thread.completedTaskCount(), totalTaskCount));
+            writer.writeKeyValueEntry("priority-frames", thread.priorityFramesTransceived());
+            writer.writeKeyValueEntry("bytes-percentage", toPercentage(thread.bytesTransceived(), totalBytesReceived));
+            writer.writeKeyValueEntry("bytes", thread.bytesTransceived());
+            writer.writeKeyValueEntry("events-percentage", toPercentage(thread.eventCount(), totalEvents));
+            writer.writeKeyValueEntry("events", thread.eventCount());
+            writer.writeKeyValueEntry("handle-count-percentage", toPercentage(thread.handleCount(), totalHandleCount));
+            writer.writeKeyValueEntry("handle-count", thread.handleCount());
+            writer.writeKeyValueEntry("tasks-percentage", toPercentage(thread.completedTaskCount(), totalTaskCount));
+            writer.writeKeyValueEntry("tasks", thread.completedTaskCount());
             writer.endSection();
         }
     }
