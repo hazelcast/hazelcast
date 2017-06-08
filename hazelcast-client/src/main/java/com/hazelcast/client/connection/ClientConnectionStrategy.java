@@ -59,14 +59,13 @@ public abstract class ClientConnectionStrategy {
     protected final int connectionAttemptPeriod;
     protected final int connectionAttemptLimit;
 
-    protected ClientConnectionStrategy(HazelcastClientInstanceImpl client, ClientConnectionManager connectionManager,
-            Collection<AddressProvider> addressProviders) {
+    protected ClientConnectionStrategy(HazelcastClientInstanceImpl client, Collection<AddressProvider> addressProviders) {
         this.client = client;
         this.logger = client.getLoggingService().getLogger(ClientConnectionStrategy.class);
         this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
         this.addressProviders = addressProviders;
         this.clusterConnectionExecutor = createSingleThreadExecutorService(client);
-        this.connectionManager = (ClientConnectionManagerImpl) connectionManager;
+        this.connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
 
         final ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
         final int connAttemptLimit = networkConfig.getConnectionAttemptLimit();

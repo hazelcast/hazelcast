@@ -36,12 +36,11 @@ import static com.hazelcast.client.config.ClientConnectionStrategyConfig.Reconne
 public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
 
     private final boolean clientStartAsync;
-    private ClientConnectionStrategyConfig.ReconnectMode reconnectMode;
+    private final ClientConnectionStrategyConfig.ReconnectMode reconnectMode;
     private boolean disconnectedFromCluster;
 
-    public DefaultClientConnectionStrategy(HazelcastClientInstanceImpl client, ClientConnectionManager connectionManager,
-            Collection<AddressProvider> addressProviders) {
-        super(client, connectionManager, addressProviders);
+    public DefaultClientConnectionStrategy(HazelcastClientInstanceImpl client, Collection<AddressProvider> addressProviders) {
+        super(client, addressProviders);
         ClientConnectionStrategyConfig config = client.getClientConfig().getConnectionStrategyConfig();
         clientStartAsync = config.isClientStartAsync();
         reconnectMode = config.getReconnectMode();
