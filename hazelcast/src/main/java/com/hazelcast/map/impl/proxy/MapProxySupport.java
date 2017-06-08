@@ -413,8 +413,10 @@ abstract class MapProxySupport<K, V>
                 result = future.get();
                 mapServiceContext.incrementOperationStats(time, localMapStats, name, operation);
             } else {
-                Future future = operationService.createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .setResultDeserialized(false).invoke();
+                Future future = operationService
+                        .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                        .setResultDeserialized(false)
+                        .invoke();
                 result = future.get();
             }
             return result;
