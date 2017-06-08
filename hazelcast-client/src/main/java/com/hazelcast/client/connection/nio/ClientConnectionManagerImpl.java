@@ -142,7 +142,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
         this.credentials = client.getCredentials();
 
-        this.connectionStrategy  = new DefaultClientConnectionStrategy(client, this, addressProviders);
+        this.connectionStrategy  = new DefaultClientConnectionStrategy(client, addressProviders);
     }
 
     public NioEventLoopGroup getEventLoopGroup() {
@@ -601,14 +601,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
     @Override
     public void heartbeatResumed(Connection connection) {
-        connectionStrategy.onHeartbeatResumed((ClientConnection) connection,
-                ((ClientConnection) connection).isAuthenticatedAsOwner());
+        connectionStrategy.onHeartbeatResumed((ClientConnection) connection);
     }
 
     @Override
     public void heartbeatStopped(Connection connection) {
-        connectionStrategy.onHeartbeatStopped((ClientConnection) connection,
-                ((ClientConnection) connection).isAuthenticatedAsOwner());
+        connectionStrategy.onHeartbeatStopped((ClientConnection) connection);
     }
 
     private class InitConnectionTask implements Runnable {
