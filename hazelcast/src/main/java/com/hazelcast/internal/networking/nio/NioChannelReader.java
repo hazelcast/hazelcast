@@ -51,10 +51,10 @@ public final class NioChannelReader extends AbstractHandler {
     private ChannelInboundHandler inboundHandler;
     private volatile long lastReadTime;
 
-    private long bytesReadLastPublish;
-    private long normalFramesReadLastPublish;
-    private long priorityFramesReadLastPublish;
-    private long handleCountLastPublish;
+    private volatile long bytesReadLastPublish;
+    private volatile long normalFramesReadLastPublish;
+    private volatile long priorityFramesReadLastPublish;
+    private volatile long handleCountLastPublish;
 
     public NioChannelReader(
             NioChannel channel,

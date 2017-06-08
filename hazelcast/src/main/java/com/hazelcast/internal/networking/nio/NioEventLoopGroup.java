@@ -29,7 +29,7 @@ import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -41,6 +41,7 @@ import static com.hazelcast.util.HashUtil.hashToIndex;
 import static com.hazelcast.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.util.concurrent.BackoffIdleStrategy.createBackoffIdleStrategy;
+import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
@@ -81,8 +82,7 @@ public class NioEventLoopGroup
     private final ChannelInitializer channelInitializer;
     private final int inputThreadCount;
     private final int outputThreadCount;
-    private final Map<NioChannel, NioChannel> channels
-            = new ConcurrentHashMap<NioChannel, NioChannel>();
+    private final Set<NioChannel> channels = newSetFromMap(new ConcurrentHashMap<NioChannel, Boolean>());
     private final ChannelCloseListener channelCloseListener = new ChannelCloseListenerImpl();
 
     // The selector mode determines how IO threads will block (or not) on the Selector:
@@ -207,7 +207,7 @@ public class NioEventLoopGroup
     private class PublishAllTask implements Runnable {
         @Override
         public void run() {
-            for (NioChannel channel : channels.values()) {
+            for (NioChannel channel : channels) {
                 final NioChannelReader reader = channel.getReader();
                 NioThread inputThread = reader.getOwner();
                 if (inputThread != null) {
@@ -274,6 +274,8 @@ public class NioEventLoopGroup
 
         NioChannelReader reader = newChannelReader(nioChannel);
         NioChannelWriter writer = newChannelWriter(nioChannel);
+
+        channels.add(nioChannel);
 
         nioChannel.setReader(reader);
         nioChannel.setWriter(writer);
