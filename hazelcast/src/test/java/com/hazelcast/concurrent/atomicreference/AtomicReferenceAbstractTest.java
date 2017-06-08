@@ -308,7 +308,7 @@ public abstract class AtomicReferenceAbstractTest extends HazelcastTestSupport {
         }
     }
 
-    private static class FailingFunction implements IFunction<String, String> {
+    protected static class FailingFunction implements IFunction<String, String> {
         @Override
         public String apply(String input) {
             throw new HazelcastException();

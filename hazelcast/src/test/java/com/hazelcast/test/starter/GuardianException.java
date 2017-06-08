@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.test;
+package com.hazelcast.test.starter;
 
-public class ExpectedRuntimeException extends RuntimeException {
+public class GuardianException extends RuntimeException {
 
-    private static final long serialVersionUID = 83105880382695411L;
-
-    public ExpectedRuntimeException() {
+    public GuardianException(String message) {
+        super(message);
     }
 
-    public ExpectedRuntimeException(String msg) {
-        super(msg);
+    public GuardianException(Throwable t) {
+        super(t);
+    }
+
+    public GuardianException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

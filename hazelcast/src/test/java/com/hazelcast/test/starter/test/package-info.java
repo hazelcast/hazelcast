@@ -14,16 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.test;
-
-public class ExpectedRuntimeException extends RuntimeException {
-
-    private static final long serialVersionUID = 83105880382695411L;
-
-    public ExpectedRuntimeException() {
-    }
-
-    public ExpectedRuntimeException(String msg) {
-        super(msg);
-    }
-}
+/**
+ * Tests for Hazelcast Starter
+ */
+package com.hazelcast.test.starter.test;

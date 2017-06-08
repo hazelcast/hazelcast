@@ -207,7 +207,7 @@ public abstract class AtomicLongAbstractTest extends HazelcastTestSupport {
         }
     }
 
-    private static class FailingFunction implements IFunction<Long, Long> {
+    protected static class FailingFunction implements IFunction<Long, Long> {
         @Override
         public Long apply(Long input) {
             throw new ExpectedRuntimeException();
