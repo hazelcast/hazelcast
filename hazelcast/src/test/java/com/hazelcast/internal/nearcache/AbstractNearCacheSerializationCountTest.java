@@ -19,6 +19,8 @@ package com.hazelcast.internal.nearcache;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
+import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
+import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -34,6 +36,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -41,7 +44,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
 import static java.lang.String.format;
-import static org.junit.Assert.assertTrue;
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonMap;
+import static org.junit.Assert.fail;
 
 /**
  * Contains the logic code for unified Near Cache serialization count tests.
@@ -65,6 +70,11 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
     private static final AtomicReference<List<String>> KEY_DESERIALIZE_STACKTRACE = new AtomicReference<List<String>>();
     private static final AtomicReference<List<String>> VALUE_SERIALIZE_STACKTRACE = new AtomicReference<List<String>>();
     private static final AtomicReference<List<String>> VALUE_DESERIALIZE_STACKTRACE = new AtomicReference<List<String>>();
+
+    /**
+     * The {@link DataStructureMethods} which should be used in the test.
+     */
+    protected DataStructureMethods testMethod;
 
     /**
      * An array with the expected number of key serializations for a {@link DataStructureAdapter#put}
@@ -105,6 +115,14 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
     protected abstract void addConfiguration(NearCacheSerializationCountConfigBuilder configBuilder);
 
     /**
+     * Assumes that the {@link DataStructureAdapter} created by the Near Cache test supports a given
+     * {@link DataStructureAdapterMethod}.
+     *
+     * @param method the {@link DataStructureAdapterMethod} to test for
+     */
+    protected abstract void assumeThatMethodIsAvailable(DataStructureAdapterMethod method);
+
+    /**
      * Creates the {@link NearCacheTestContext} used by the Near Cache tests.
      *
      * @param <K> key type of the created {@link DataStructureAdapter}
@@ -131,22 +149,52 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
      */
     @Test
     public void testSerializationCounts() {
-        NearCacheTestContext<KeySerializationCountingData, ValueSerializationCountingData, NK, NV> context = createContext();
+        assumeThatMethodIsAvailable(testMethod);
+        switch (testMethod) {
+            case GET:
+                assumeThatMethodIsAvailable(DataStructureMethods.PUT);
+                break;
+            case GET_ALL:
+                assumeThatMethodIsAvailable(DataStructureMethods.PUT_ALL);
+                break;
+            default:
+                fail("Unsupported method " + testMethod);
+        }
 
+        NearCacheTestContext<KeySerializationCountingData, ValueSerializationCountingData, NK, NV> context = createContext();
         KeySerializationCountingData key = new KeySerializationCountingData();
         ValueSerializationCountingData value = new ValueSerializationCountingData();
 
-        context.nearCacheAdapter.put(key, value);
-        if (isCacheOnUpdate(nearCacheConfig)) {
-            assertNearCacheSizeEventually(context, 1);
+        switch (testMethod) {
+            case GET:
+                context.nearCacheAdapter.put(key, value);
+                if (isCacheOnUpdate(nearCacheConfig)) {
+                    assertNearCacheSizeEventually(context, 1);
+                }
+                assertAndReset("put()", 0);
+
+                context.nearCacheAdapter.get(key);
+                assertAndReset("first get()", 1);
+
+                context.nearCacheAdapter.get(key);
+                assertAndReset("second get()", 2);
+                break;
+
+            case GET_ALL:
+                context.nearCacheAdapter.putAll(singletonMap(key, value));
+                if (isCacheOnUpdate(nearCacheConfig)) {
+                    assertNearCacheSizeEventually(context, 1);
+                }
+                assertAndReset("putAll()", 0);
+
+                Set<KeySerializationCountingData> keySet = singleton(key);
+                context.nearCacheAdapter.getAll(keySet);
+                assertAndReset("first getAll()", 1);
+
+                context.nearCacheAdapter.getAll(keySet);
+                assertAndReset("second getAll()", 2);
+                break;
         }
-        assertAndReset("put()", 0);
-
-        context.nearCacheAdapter.get(key);
-        assertAndReset("first get()", 1);
-
-        context.nearCacheAdapter.get(key);
-        assertAndReset("second get()", 2);
     }
 
     private void assertAndReset(String label, int index) {
@@ -172,25 +220,30 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
         configBuilder.append(expectedValueDeserializationCounts);
         addConfiguration(configBuilder);
 
-        assertTrue(format("key serializeCount on %s: expected %d, but was %d%n%s",
-                label, expectedKeySerializeCount, actualKeySerializeCount,
-                configBuilder.build(true, true, index, keySerializeStackTrace)),
-                expectedKeySerializeCount == actualKeySerializeCount);
-
-        assertTrue(format("key deserializeCount on %s: expected %d, but was %d%n%s",
-                label, expectedKeyDeserializeCount, actualKeyDeserializeCount,
-                configBuilder.build(true, false, index, keyDeserializeStackTrace)),
-                expectedKeyDeserializeCount == actualKeyDeserializeCount);
-
-        assertTrue(format("value serializeCount on %s: expected %d, but was %d%n%s",
-                label, expectedValueSerializeCount, actualValueSerializeCount,
-                configBuilder.build(false, true, index, valueSerializeStackTrace)),
-                expectedValueSerializeCount == actualValueSerializeCount);
-
-        assertTrue(format("value deserializeCount on %s: expected %d, but was %d%n%s",
-                label, expectedValueDeserializeCount, actualValueDeserializeCount,
-                configBuilder.build(false, false, index, valueDeserializeStackTrace)),
-                expectedValueDeserializeCount == actualValueDeserializeCount);
+        StringBuilder sb = new StringBuilder();
+        if (expectedKeySerializeCount != actualKeySerializeCount) {
+            sb.append(format("key serializeCount on %s: expected %d, but was %d%n%s%n",
+                    label, expectedKeySerializeCount, actualKeySerializeCount,
+                    configBuilder.build(true, true, index, keySerializeStackTrace)));
+        }
+        if (expectedKeyDeserializeCount != actualKeyDeserializeCount) {
+            sb.append(format("key deserializeCount on %s: expected %d, but was %d%n%s%n",
+                    label, expectedKeyDeserializeCount, actualKeyDeserializeCount,
+                    configBuilder.build(true, false, index, keyDeserializeStackTrace)));
+        }
+        if (expectedValueSerializeCount != actualValueSerializeCount) {
+            sb.append(format("value serializeCount on %s: expected %d, but was %d%n%s%n",
+                    label, expectedValueSerializeCount, actualValueSerializeCount,
+                    configBuilder.build(false, true, index, valueSerializeStackTrace)));
+        }
+        if (expectedValueDeserializeCount != actualValueDeserializeCount) {
+            sb.append(format("value deserializeCount on %s: expected %d, but was %d%n%s%n",
+                    label, expectedValueDeserializeCount, actualValueDeserializeCount,
+                    configBuilder.build(false, false, index, valueDeserializeStackTrace)));
+        }
+        if (sb.length() > 0) {
+            fail(sb.toString());
+        }
     }
 
     /**

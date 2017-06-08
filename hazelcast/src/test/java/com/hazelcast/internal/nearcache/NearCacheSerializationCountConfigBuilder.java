@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.nearcache;
 
+import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
+
 import java.util.List;
 
 import static java.lang.String.format;
@@ -27,6 +29,11 @@ public class NearCacheSerializationCountConfigBuilder {
     private final StringBuilder sb = new StringBuilder();
 
     private String baseString;
+    private DataStructureMethods method;
+
+    public void append(DataStructureMethods method) {
+        this.method = method;
+    }
 
     public void append(int[] intArray) {
         String delimiter = "";
@@ -46,12 +53,12 @@ public class NearCacheSerializationCountConfigBuilder {
         if (baseString == null) {
             baseString = sb.substring(0, sb.length() - DELIMITER.length());
         }
-        return format("%s%n%s%n%s", baseString, createPointer(isKey, isSerialization, index), stacktrace);
+        return format("%s, %s%n%s%n%s", method, baseString, createPointer(method, isKey, isSerialization, index), stacktrace);
     }
 
-    private static String createPointer(boolean isKey, boolean isSerialization, int index) {
+    private static String createPointer(DataStructureMethods method, boolean isKey, boolean isSerialization, int index) {
         int arrayWidth = 17;
-        int offset = 7;
+        int offset = 9 + method.name().length();
         if (!isKey) {
             offset += 2 * arrayWidth;
         }
