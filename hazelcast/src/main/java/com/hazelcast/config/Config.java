@@ -20,6 +20,8 @@ import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.io.File;
 import java.net.URL;
@@ -33,8 +35,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
+import static com.hazelcast.internal.config.ConfigValidator.checkMaxSizeEvictionConfig;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.lang.Integer.parseInt;
 
 /**
  * Contains all the configuration to start a {@link com.hazelcast.core.HazelcastInstance}. A Config
@@ -252,6 +256,8 @@ public class Config {
         MapConfig config = lookupByPattern(mapConfigs, baseName);
         if (config != null) {
             initDefaultMaxSizeForOnHeapMaps(config.getNearCacheConfig());
+            int partitionCount = parseInt(HazelcastProperties.getString(properties, GroupProperty.PARTITION_COUNT));
+            checkMaxSizeEvictionConfig(config, partitionCount);
             return config.getAsReadOnly();
         }
         return getMapConfig("default").getAsReadOnly();

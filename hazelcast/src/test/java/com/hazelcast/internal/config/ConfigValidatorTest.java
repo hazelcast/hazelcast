@@ -39,7 +39,9 @@ import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UP
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkMapConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkMaxSizeEvictionConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -297,6 +299,46 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
         nearCacheConfig.setLocalUpdatePolicy(INVALIDATE);
 
         checkNearCacheConfig(MAP_NAME, nearCacheConfig, false);
+    }
+
+    @Test
+    public void checkMaxSizeConfig_withEvictionPolicyAndMaxSizeLowerThanPartitionCount() {
+        MapConfig mapConfig = getMapConfig(BINARY);
+        mapConfig.getMaxSizeConfig().setSize(8);
+        mapConfig.setEvictionPolicy(EvictionPolicy.LFU);
+
+        checkMaxSizeEvictionConfig(mapConfig, 271);
+        assertEquals(271, mapConfig.getMaxSizeConfig().getSize());
+    }
+
+    @Test
+    public void checkMaxSizeConfig_withNoEvictionPolicyAndMaxSizeLowerThanPartitionCount() {
+        // when no eviction policy is configured, user-configured max-size is used anyway
+        MapConfig mapConfig = getMapConfig(BINARY);
+        mapConfig.getMaxSizeConfig().setSize(8);
+
+        checkMaxSizeEvictionConfig(mapConfig, 271);
+        assertEquals(8, mapConfig.getMaxSizeConfig().getSize());
+    }
+
+    @Test
+    public void checkMaxSizeConfig_withEvictionPolicyAndMaxSizeGreaterThanPartitionCount() {
+        MapConfig mapConfig = getMapConfig(BINARY);
+        mapConfig.getMaxSizeConfig().setSize(1000);
+        mapConfig.setEvictionPolicy(EvictionPolicy.LFU);
+
+        checkMaxSizeEvictionConfig(mapConfig, 271);
+        assertEquals(1000, mapConfig.getMaxSizeConfig().getSize());
+    }
+
+    @Test
+    public void checkMaxSizeConfig_withNoEvictionPolicyAndMaxSizeGreaterThanPartitionCount() {
+        // when no eviction policy is configured, user-configured max-size is used anyway
+        MapConfig mapConfig = getMapConfig(BINARY);
+        mapConfig.getMaxSizeConfig().setSize(1000);
+
+        checkMaxSizeEvictionConfig(mapConfig, 271);
+        assertEquals(1000, mapConfig.getMaxSizeConfig().getSize());
     }
 
     private MapConfig getMapConfig(InMemoryFormat inMemoryFormat) {

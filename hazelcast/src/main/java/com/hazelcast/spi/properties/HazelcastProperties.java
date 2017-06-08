@@ -99,39 +99,7 @@ public class HazelcastProperties {
      * @return the value or <tt>null</tt> if nothing has been configured
      */
     public String getString(HazelcastProperty property) {
-        String value = properties.getProperty(property.getName());
-        if (value != null) {
-            return value;
-        }
-
-        value = property.getSystemProperty();
-        if (value != null) {
-            return value;
-        }
-
-        HazelcastProperty parent = property.getParent();
-        if (parent != null) {
-            return getString(parent);
-        }
-
-        String deprecatedName = property.getDeprecatedName();
-        if (deprecatedName != null) {
-            value = get(deprecatedName);
-            if (value == null) {
-                value = System.getProperty(deprecatedName);
-            }
-
-            if (value != null) {
-                // we don't have a logger available, and the Logging service is constructed after the Properties are created.
-                System.err.print("Don't use deprecated '" + deprecatedName + "' "
-                        + "but use '" + property.getName() + "' instead. "
-                        + "The former name will be removed in the next Hazelcast release.");
-
-                return value;
-            }
-        }
-
-        return property.getDefaultValue();
+        return getString(properties, property);
     }
 
     /**
@@ -233,5 +201,50 @@ public class HazelcastProperties {
 
         throw new IllegalArgumentException(format("value '%s' for property '%s' is not a valid %s value",
                 value, property.getName(), enumClazz.getName()));
+    }
+
+    /**
+     * Lookup a {@link HazelcastProperty}'s {@link String} value in the given {@code properties} or in
+     * {@link System#getProperties()}, as specified in this class' javadoc.
+     * @param properties    user-provided {@link Properties}. If {@code null}, a {@link NullPointerException} will
+     *                      be thrown.
+     * @param property      the {@link HazelcastProperty} whose value is looked up
+     * @return              the configured value
+     */
+    public static String getString(Properties properties, HazelcastProperty property) {
+
+        String value = properties.getProperty(property.getName());
+        if (value != null) {
+            return value;
+        }
+
+        value = property.getSystemProperty();
+        if (value != null) {
+            return value;
+        }
+
+        HazelcastProperty parent = property.getParent();
+        if (parent != null) {
+            return getString(properties, parent);
+        }
+
+        String deprecatedName = property.getDeprecatedName();
+        if (deprecatedName != null) {
+            value = (String) properties.get(deprecatedName);
+            if (value == null) {
+                value = System.getProperty(deprecatedName);
+            }
+
+            if (value != null) {
+                // we don't have a logger available, and the Logging service is constructed after the Properties are created.
+                System.err.print("Don't use deprecated '" + deprecatedName + "' "
+                        + "but use '" + property.getName() + "' instead. "
+                        + "The former name will be removed in the next Hazelcast release.");
+
+                return value;
+            }
+        }
+
+        return property.getDefaultValue();
     }
 }
