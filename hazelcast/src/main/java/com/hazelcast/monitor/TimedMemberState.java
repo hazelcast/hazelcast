@@ -19,6 +19,7 @@ package com.hazelcast.monitor;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 
@@ -43,6 +44,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
     boolean master;
     String clusterName;
     boolean sslEnabled;
+    boolean lite;
 
     public List<String> getMemberList() {
         return memberList;
@@ -100,6 +102,14 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         this.sslEnabled = sslEnabled;
     }
 
+    public boolean isLite() {
+        return lite;
+    }
+
+    public void setLite(boolean lite) {
+        this.lite = lite;
+    }
+
     @Override
     public TimedMemberState clone() throws CloneNotSupportedException {
         TimedMemberState state = (TimedMemberState) super.clone();
@@ -110,6 +120,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         state.setMaster(master);
         state.setClusterName(clusterName);
         state.setSslEnabled(sslEnabled);
+        state.setLite(lite);
         return state;
     }
 
@@ -133,6 +144,9 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         }
         root.add("memberState", memberState.toJson());
         root.add("sslEnabled", sslEnabled);
+        if (memberState.getNodeState().getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
+            root.add("lite", lite);
+        }
         return root;
     }
 
@@ -155,6 +169,9 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         memberState = new MemberStateImpl();
         memberState.fromJson(jsonMemberState);
         sslEnabled = getBoolean(json, "sslEnabled", false);
+        if (memberState.getNodeState().getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
+            lite = getBoolean(json, "lite");
+        }
     }
 
     @Override
