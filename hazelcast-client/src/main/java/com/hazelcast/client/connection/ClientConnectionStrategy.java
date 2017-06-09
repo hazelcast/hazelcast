@@ -23,7 +23,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 
 /**
- *
+ * An abstract class called from {@link ClientConnectionManager} to customize how client connect to cluster
+ * and various behaviours like async start or restart.
  */
 public abstract class ClientConnectionStrategy {
 
@@ -33,59 +34,87 @@ public abstract class ClientConnectionStrategy {
     public ClientConnectionStrategy() {
     }
 
-    public final void init(ClientContext clientContext) {
-        this.clientContext = clientContext;
-        this.clientConnectionStrategyConfig = clientContext.getClientConfig().getConnectionStrategyConfig();
-        this.logger = clientContext.getLoggingService().getLogger(ClientConnectionStrategy.class);
+    /**
+     * Initialize this strategy with client context and config
+     * @param clientContext hazelcast client context to access internal services
+     */
+        public final void init(ClientContext clientContext) {
+            this.clientContext = clientContext;
+            this.clientConnectionStrategyConfig = clientContext.getClientConfig().getConnectionStrategyConfig();
+            this.logger = clientContext.getLoggingService().getLogger(ClientConnectionStrategy.class);
     }
 
     /**
+     * Called after {@link ClientConnectionManager} started.
+     * Connecting to cluster can be triggered from this method using one of
+     * {@link com.hazelcast.nio.ConnectionManager#connectToCluster} or
+     * {@link com.hazelcast.nio.ConnectionManager#connectToClusterAsync}
      */
-    public abstract void init();
+    public abstract void start();
 
     /**
-     * @param target
+     * If an already established connection is requested from {@link ClientConnectionManager}
+     * this method will be called.
+     *
+     * This request can be rejected by throwing an instance of non retryable exceptions;
+     * {@link java.io.IOException}, {@link com.hazelcast.core.HazelcastInstanceNotActiveException} or
+     * {@link com.hazelcast.spi.exception.RetryableException}
+     *
+     * @param target address of the requested connection
      */
     public abstract void beforeGetConnection(Address target);
 
     /**
-     * @param target
+     * If a new connection is required to open by {@link ClientConnectionManager},
+     * this method will be called.
+     *
+     * This request can be rejected by throwing an instance of non retryable exceptions;
+     * {@link java.io.IOException}, {@link com.hazelcast.core.HazelcastInstanceNotActiveException} or
+     * {@link com.hazelcast.spi.exception.RetryableException}
+     * @param target address of the requested connection
      */
     public abstract void beforeOpenConnection(Address target);
 
     /**
+     * On a cluster connection established, this method will be called.
+     * if an exception is thrown, the already established connection will be closed.
      */
     public abstract void onConnectToCluster();
 
     /**
+     * If the cluster connection is lost for any reason, this method will be called.
      *
      */
     public abstract void onDisconnectFromCluster();
 
     /**
-     * @param connection
+     * If the {@link ClientConnectionManager} opens a new connection to a member,
+     * this method will be called with the connection parameter
+     * @param connection the new established connection
      */
     public abstract void onConnect(ClientConnection connection);
 
     /**
-     * @param connection
+     * If a connection is disconnected, this method will be called with the connection parameter
+     * @param connection the closed connection
      */
     public abstract void onDisconnect(ClientConnection connection);
 
     /**
-     * @param connection
+     * {@link ClientConnectionManager} will inform this method that the provided connection's heartbeat stopped
+     * @param connection the connection that heartbeat failed
      */
     public abstract void onHeartbeatStopped(ClientConnection connection);
 
     /**
-     * @param connection
+     * {@link ClientConnectionManager} will inform this method that the provided connection's heartbeat resumed
+     * @param connection the connection that heartbeat resumed
      */
     public abstract void onHeartbeatResumed(ClientConnection connection);
 
     /**
-     *
+     * The the {@link ClientConnectionManager} will call this method as a last step of its shutdown.
      */
-    public void shutdown() {
-    }
+    public abstract void shutdown();
 
 }

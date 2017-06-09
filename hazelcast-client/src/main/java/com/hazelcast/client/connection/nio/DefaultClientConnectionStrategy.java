@@ -35,10 +35,9 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
     private ClientConnectionStrategyConfig.ReconnectMode reconnectMode;
 
     @Override
-    public void init() {
+    public void start() {
         clientStartAsync = clientConnectionStrategyConfig.isAsyncStart();
         reconnectMode = clientConnectionStrategyConfig.getReconnectMode();
-
         if (clientStartAsync) {
             clientContext.getConnectionManager().connectToClusterAsync();
         } else {
@@ -71,7 +70,6 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
 
     @Override
     public void onConnectToCluster() {
-
     }
 
     @Override
@@ -99,13 +97,17 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
     @Override
     public void onHeartbeatStopped(ClientConnection connection) {
         if (connection.isAuthenticatedAsOwner()) {
-            connection.close(null,
-                    new TargetDisconnectedException("Heartbeat timed out to owner connection " + connection));
+            connection.close(null, new TargetDisconnectedException("Heartbeat timed out to owner connection " + connection));
         }
     }
 
     @Override
     public void onHeartbeatResumed(ClientConnection connection) {
+
+    }
+
+    @Override
+    public void shutdown() {
 
     }
 

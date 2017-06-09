@@ -256,7 +256,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         heartbeat.start();
         addConnectionHeartbeatListener(this);
         connectionStrategy.init(clientContext);
-        connectionStrategy.init();
+        connectionStrategy.start();
     }
 
     protected void startEventLoopGroup() {

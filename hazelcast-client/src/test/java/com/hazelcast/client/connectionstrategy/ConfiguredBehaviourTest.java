@@ -328,7 +328,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
 
         clientConfig.getConnectionStrategyConfig().setImplementation(new ClientConnectionStrategy() {
             @Override
-            public void init() {
+            public void start() {
                 assertEquals(0, initCount.getAndIncrement());
                 assertEquals(0, onConnectToClusterCount.get());
                 assertEquals(0, onDisconnectFromClusterCount.get());
@@ -406,6 +406,11 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
             @Override
             public void onHeartbeatResumed(ClientConnection connection) {
                 fail("onHeartbeatResumed should not be called");
+            }
+
+            @Override
+            public void shutdown() {
+                fail("shutdown should not be called");
             }
         });
 
