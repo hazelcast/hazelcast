@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
@@ -40,7 +39,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 
@@ -132,9 +130,8 @@ public final class LifecycleServiceImpl implements LifecycleService {
         });
     }
 
-    public void setStarted() {
+    public void setActive() {
         active.set(true);
-        fireLifecycleEvent(STARTED);
     }
 
     @Override
