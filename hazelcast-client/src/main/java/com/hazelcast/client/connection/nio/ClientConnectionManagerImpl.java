@@ -415,6 +415,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             connection = getOrConnect(address, true);
             client.getClientClusterService().init();
             fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
+            connectionStrategy.onConnectToCluster();
         } catch (Exception e) {
             Level level = e instanceof AuthenticationException ? Level.WARNING : Level.FINEST;
             logger.log(level, "Exception during initial connection to " + ownerInetSocketAddress, e);

@@ -94,6 +94,7 @@ public class ConfiguredBehaviourTest
         client.getMap(randomMapName());
     }
 
+    @Test
     public void testAsyncStartTrue() {
         final CountDownLatch connectedLatch = new CountDownLatch(1);
 

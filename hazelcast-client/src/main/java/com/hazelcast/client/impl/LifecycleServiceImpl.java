@@ -125,7 +125,6 @@ public final class LifecycleServiceImpl implements LifecycleService {
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                ((ClientConnectionManagerImpl) client.getConnectionManager()).getConnectionStrategy().onConnectToCluster();
                 for (LifecycleListener lifecycleListener : lifecycleListeners.values()) {
                     lifecycleListener.stateChanged(lifecycleEvent);
                 }
