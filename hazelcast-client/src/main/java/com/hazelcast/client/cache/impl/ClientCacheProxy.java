@@ -68,10 +68,10 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@link com.hazelcast.cache.ICache} implementation for Hazelcast clients.
- *
+ * <p>
  * This proxy is the implementation of {@link com.hazelcast.cache.ICache} and {@link javax.cache.Cache} which is returned by
  * {@link HazelcastClientCacheManager}. Represents a cache on client.
- *
+ * <p>
  * This implementation is a thin proxy implementation using hazelcast client infrastructure.
  *
  * @param <K> key type
@@ -193,9 +193,9 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
     @Override
     public V getAndRemove(K key) {
         long start = nowInNanosOrDefault();
-        ICompletableFuture<V> future = getAndRemoveSyncInternal(key);
         try {
-            V removedValue = toObject(future.get());
+            Object response = getAndRemoveSyncInternal(key);
+            V removedValue = toObject(response);
             if (statisticsEnabled) {
                 statsHandler.onRemove(true, start, removedValue);
             }
@@ -262,12 +262,12 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
             throw new NullPointerException("Entry Processor is null");
         }
 
+        Data keyData = toData(key);
         Data epData = toData(entryProcessor);
-        return (T) invokeInternal(key, epData, arguments);
+        return (T) invokeInternal(key, keyData, epData, arguments);
     }
 
-    protected Object invokeInternal(Object key, Data epData, Object... arguments) {
-        Data keyData = toData(key);
+    protected Object invokeInternal(K key, Data keyData, Data epData, Object... arguments) {
         List<Data> argumentsData;
         if (arguments != null) {
             argumentsData = new ArrayList<Data>(arguments.length);

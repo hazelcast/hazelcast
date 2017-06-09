@@ -23,6 +23,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
@@ -54,9 +55,10 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
-import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
+import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.util.RandomPicker.getInt;
 import static java.lang.Integer.MAX_VALUE;
 import static java.util.Arrays.asList;
@@ -127,12 +129,6 @@ public class ClientCacheRecordStateStressTest extends HazelcastTestSupport {
 
         List<Thread> threads = new ArrayList<Thread>();
 
-        // member
-        for (int i = 0; i < PUT_THREAD_COUNT; i++) {
-            Put put = new Put(memberCache);
-            threads.add(put);
-        }
-
         // client
         HazelcastClientProxy client = (HazelcastClientProxy) factory.newHazelcastClient(clientConfig);
         CachingProvider clientCachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
@@ -140,59 +136,26 @@ public class ClientCacheRecordStateStressTest extends HazelcastTestSupport {
         CacheManager cacheManager = clientCachingProvider.getCacheManager();
         Cache<Integer, Integer> clientCache = cacheManager.createCache(CACHE_NAME, cacheConfig);
 
-        for (int i = 0; i < GET_ALL_THREAD_COUNT; i++) {
-            GetAll getAll = new GetAll(clientCache);
-            threads.add(getAll);
-        }
+        clientCache.put(1, 1);
+        clientCache.get(1);
 
-        for (int i = 0; i < PUT_ALL_THREAD_COUNT; i++) {
-            PutAll putAll = new PutAll(clientCache);
-            threads.add(putAll);
-        }
+        clientCache.get(1);
 
-        for (int i = 0; i < PUT_IF_ABSENT_THREAD_COUNT; i++) {
-            PutIfAbsent putIfAbsent = new PutIfAbsent(clientCache);
-            threads.add(putIfAbsent);
-        }
 
-        for (int i = 0; i < GET_THREAD_COUNT; i++) {
-            Get get = new Get(clientCache);
-            threads.add(get);
-        }
+        long hits = ((NearCachedClientCacheProxy<Integer, Integer>) clientCache).getNearCache().getNearCacheStats().getHits();
+        assert hits == 1;
 
-        for (int i = 0; i < REMOVE_THREAD_COUNT; i++) {
-            Remove remove = new Remove(clientCache);
-            threads.add(remove);
-        }
 
-        for (int i = 0; i < CLEAR_THREAD_COUNT; i++) {
-            Clear clear = new Clear(clientCache);
-            threads.add(clear);
-        }
-
-        // start threads
-        for (Thread thread : threads) {
-            thread.start();
-        }
-
-        // stress for a while
-        sleepSeconds(TEST_RUN_SECONDS);
-
-        // stop threads
-        stop.set(true);
-        for (Thread thread : threads) {
-            thread.join();
-        }
-
-        assertFinalRecordStateIsReadPermitted(clientCache, getSerializationService(member));
     }
 
     private NearCacheConfig newNearCacheConfig() {
         NearCacheConfig nearCacheConfig = new NearCacheConfig()
+                .setInMemoryFormat(BINARY)
                 .setName(CACHE_NAME)
                 .setInvalidateOnChange(true)
                 .setLocalUpdatePolicy(localUpdatePolicy);
-        nearCacheConfig.getEvictionConfig()
+
+        nearCacheConfig.getEvictionConfig().setEvictionPolicy(EvictionPolicy.NONE)
                 .setMaximumSizePolicy(ENTRY_COUNT)
                 .setSize(MAX_VALUE);
         return nearCacheConfig;
@@ -208,7 +171,7 @@ public class ClientCacheRecordStateStressTest extends HazelcastTestSupport {
             NearCacheRecord record = nearCacheRecordStore.getRecord(key);
 
             if (record != null) {
-                assertEquals(record.toString(), READ_PERMITTED, record.getRecordState());
+                assertEquals(record.toString(), NOT_RESERVED, record.getReservationId());
             }
         }
     }

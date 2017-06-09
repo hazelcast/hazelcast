@@ -41,7 +41,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
+import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.util.RandomPicker.getInt;
 import static org.junit.Assert.assertEquals;
 
@@ -158,7 +158,7 @@ public class MemberMapRecordStateStressTest extends HazelcastTestSupport {
             NearCacheRecord record = nearCacheRecordStore.getRecord(key);
 
             if (record != null) {
-                assertEquals(record.toString(), READ_PERMITTED, record.getRecordState());
+                assertEquals(record.toString(), NOT_RESERVED, record.getReservationId());
             }
         }
     }

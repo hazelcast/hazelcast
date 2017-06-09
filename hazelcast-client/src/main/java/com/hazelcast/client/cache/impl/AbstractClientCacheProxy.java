@@ -36,7 +36,6 @@ import com.hazelcast.spi.InternalCompletableFuture;
 
 import javax.cache.CacheException;
 import javax.cache.expiry.ExpiryPolicy;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -57,9 +56,9 @@ import static java.util.Collections.emptyMap;
 /**
  * Hazelcast provides extension functionality to default spec interface {@link javax.cache.Cache}.
  * {@link com.hazelcast.cache.ICache} is the designated interface.
- *
+ * <p>
  * AbstractCacheProxyExtension provides implementation of various {@link com.hazelcast.cache.ICache} methods.
- *
+ * <p>
  * Note: this partial implementation is used by client.
  *
  * @param <K> the type of key
@@ -80,10 +79,10 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         super(cacheConfig, context);
     }
 
-    protected V getSyncInternal(Object key, ExpiryPolicy expiryPolicy) {
+    protected V getSyncInternal(K key, Data keyData, ExpiryPolicy expiryPolicy) {
         long startNanos = nowInNanosOrDefault();
         try {
-            ClientDelegatingFuture<V> future = getInternal(key, expiryPolicy, false);
+            ClientDelegatingFuture<V> future = getInternal(key, keyData, expiryPolicy, false);
             V value = future.get();
             if (statisticsEnabled) {
                 statsHandler.onGet(startNanos, value != null);
@@ -106,19 +105,25 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         validateNotNull(key);
 
         ExecutionCallback<V> callback = !statisticsEnabled ? null : statsHandler.<V>newOnGetCallback(startNanos);
-        return getAsyncInternal(key, expiryPolicy, callback);
+        return getAsyncInternal(key, null, expiryPolicy, callback);
     }
 
-    protected InternalCompletableFuture<V> getAsyncInternal(Object key, ExpiryPolicy expiryPolicy,
+    protected InternalCompletableFuture<V> getAsyncInternal(K key, Data keyData, ExpiryPolicy expiryPolicy,
                                                             ExecutionCallback<V> callback) {
-        Data dataKey = toData(key);
-        ClientDelegatingFuture<V> future = getInternal(dataKey, expiryPolicy, true);
+        if (keyData == null) {
+            keyData = toData(key);
+        }
+
+        ClientDelegatingFuture<V> future = getInternal(key, keyData, expiryPolicy, true);
         addCallback(future, callback);
         return future;
     }
 
-    private ClientDelegatingFuture<V> getInternal(Object key, ExpiryPolicy expiryPolicy, boolean deserializeResponse) {
-        Data keyData = toData(key);
+    private ClientDelegatingFuture<V> getInternal(K key, Data keyData, ExpiryPolicy expiryPolicy, boolean deserializeResponse) {
+        if (keyData == null) {
+            keyData = toData(key);
+        }
+
         Data expiryPolicyData = toData(expiryPolicy);
 
         ClientMessage request = CacheGetCodec.encodeRequest(nameWithPrefix, keyData, expiryPolicyData);
@@ -141,12 +146,12 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
 
     @Override
     public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
-        return (ICompletableFuture<Boolean>) putIfAbsentInternal(key, value, null, false, true);
+        return (ICompletableFuture<Boolean>) putIfAbsentSyncInternal(key, value, null, false, true);
     }
 
     @Override
     public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return (ICompletableFuture<Boolean>) putIfAbsentInternal(key, value, expiryPolicy, false, true);
+        return (ICompletableFuture<Boolean>) putIfAbsentSyncInternal(key, value, expiryPolicy, false, true);
     }
 
     @Override
@@ -176,39 +181,39 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
 
     @Override
     public ICompletableFuture<Boolean> replaceAsync(K key, V value) {
-        return replaceAsyncInternal(key, null, value, null, false, false, true);
+        return replaceAsyncInternal(key, null, value, null, false, false);
     }
 
     @Override
     public ICompletableFuture<Boolean> replaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return replaceAsyncInternal(key, null, value, expiryPolicy, false, false, true);
+        return replaceAsyncInternal(key, null, value, expiryPolicy, false, false);
     }
 
     @Override
     public ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue) {
-        return replaceAsyncInternal(key, oldValue, newValue, null, true, false, true);
+        return replaceAsyncInternal(key, oldValue, newValue, null, true, false);
     }
 
     @Override
     public ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
-        return replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, false, true);
+        return replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, false);
     }
 
     @Override
     public ICompletableFuture<V> getAndReplaceAsync(K key, V value) {
-        return replaceAndGetAsyncInternal(key, null, value, null, false, false, true);
+        return replaceAndGetAsyncInternal(key, null, value, null, false, false);
     }
 
     @Override
     public ICompletableFuture<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return replaceAndGetAsyncInternal(key, null, value, expiryPolicy, false, false, true);
+        return replaceAndGetAsyncInternal(key, null, value, expiryPolicy, false, false);
     }
 
     @Override
     public V get(K key, ExpiryPolicy expiryPolicy) {
         ensureOpen();
         validateNotNull(key);
-        return toObject(getSyncInternal(key, expiryPolicy));
+        return toObject(getSyncInternal(key, null, expiryPolicy));
     }
 
     @Override
@@ -302,7 +307,44 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
                 entriesPerPartition[partitionId] = entries;
             }
 
-            entries.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyData, valueData));
+            entries.add(new QuartetMapEntry(key, keyData, value, valueData));
+        }
+    }
+
+    protected class QuartetMapEntry implements Map.Entry<Data, Data> {
+        private final K keyObject;
+        private final V valueObject;
+        private final Data keyData;
+        private final Data valueData;
+
+        public QuartetMapEntry(K keyObject, Data keyData, V valueObject, Data valueData) {
+            this.keyObject = keyObject;
+            this.valueObject = valueObject;
+            this.keyData = keyData;
+            this.valueData = valueData;
+        }
+
+        @Override
+        public Data getKey() {
+            return keyData;
+        }
+
+        @Override
+        public Data getValue() {
+            return valueData;
+        }
+
+        @Override
+        public Data setValue(Data value) {
+            throw new UnsupportedOperationException();
+        }
+
+        public K getKeyObject() {
+            return keyObject;
+        }
+
+        public V getValueObject() {
+            return valueObject;
         }
     }
 
@@ -317,9 +359,10 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         }
     }
 
-    private void putToAllPartitionsAndWaitForCompletion(List<Map.Entry<Data, Data>>[] entriesPerPartition,
-                                                        ExpiryPolicy expiryPolicy, long startNanos)
+    protected void putToAllPartitionsAndWaitForCompletion(List<Map.Entry<Data, Data>>[] entriesPerPartition,
+                                                          ExpiryPolicy expiryPolicy, long startNanos)
             throws ExecutionException, InterruptedException {
+
         Data expiryPolicyData = toData(expiryPolicy);
         List<FutureEntriesTuple> futureEntriesTuples = new ArrayList<FutureEntriesTuple>(entriesPerPartition.length);
 
@@ -384,7 +427,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
 
     @Override
     public boolean putIfAbsent(K key, V value, ExpiryPolicy expiryPolicy) {
-        return (Boolean) putIfAbsentInternal(key, value, expiryPolicy, true, false);
+        return (Boolean) putIfAbsentSyncInternal(key, value, expiryPolicy, true, false);
     }
 
     @Override
@@ -399,14 +442,8 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
 
     @Override
     public V getAndReplace(K key, V value, ExpiryPolicy expiryPolicy) {
-        long startNanos = nowInNanosOrDefault();
-        Future<V> future = replaceAndGetAsyncInternal(key, null, value, expiryPolicy, false, true, false);
         try {
-            V oldValue = future.get();
-            if (statisticsEnabled) {
-                statsHandler.onReplace(true, startNanos, oldValue);
-            }
-            return oldValue;
+            return toObject(replaceAndGetSyncInternal(key, null, value, expiryPolicy, false, true));
         } catch (Throwable e) {
             throw rethrowAllowedTypeFirst(e, CacheException.class);
         }

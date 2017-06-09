@@ -45,7 +45,7 @@ import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
-import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
+import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -238,8 +238,8 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
 
             NearCacheRecord record = getRecordFromNearCache(context, key);
             if (record != null) {
-                assertEquals(format("The NearCacheRecord for key %d should be READ_PERMITTED (%s)", i, record),
-                        READ_PERMITTED, record.getRecordState());
+                assertEquals(format("The NearCacheRecord for key %d should be NOT_RESERVED (%s)", i, record),
+                        NOT_RESERVED, record.getReservationId());
             }
         }
     }

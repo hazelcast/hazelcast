@@ -748,6 +748,31 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
             }
         }
 
+        V apply(K key, int hash, IBiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            lock();
+            try {
+                V oldValue = get(key, hash);
+                V newValue = remappingFunction.apply(key, oldValue);
+
+                if (oldValue != null) {
+                    if (newValue != null) {
+                        replaceInternal(key, hash, newValue);
+                        return newValue;
+                    } else {
+                        removeInternal(key, hash, oldValue, false);
+                        return null;
+                    }
+                } else if (newValue != null) {
+                    putInternal(key, hash, newValue, null, false);
+                    return newValue;
+                } else {
+                    return null;
+                }
+            } finally {
+                unlock();
+            }
+        }
+
 
         V merge(K key, V value, int hash, IBiFunction<? super V, ? super V, ? extends V> remappingFunction) {
             lock();
@@ -1445,6 +1470,17 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         }
 
         return segmentFor(hash).applyIfPresent(key, hash, remappingFunction);
+    }
+
+    @Override
+    public V apply(K key, IBiFunction<? super K, ? super V, ? extends V> mappingFunction) {
+        checkNotNull(key);
+        checkNotNull(mappingFunction);
+
+        int hash = hashOf(key);
+        Segment<K, V> segment = segmentFor(hash);
+
+        return segmentFor(hash).apply(key, hash, mappingFunction);
     }
 
     /**

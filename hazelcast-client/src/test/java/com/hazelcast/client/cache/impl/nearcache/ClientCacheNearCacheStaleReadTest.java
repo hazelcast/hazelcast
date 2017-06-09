@@ -29,7 +29,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,15 +38,20 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import javax.cache.Cache;
 import javax.cache.spi.CachingProvider;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
+import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static java.lang.Integer.parseInt;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -55,7 +60,8 @@ import static org.junit.Assert.fail;
  *
  * @see com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheStaleReadTest
  */
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientCacheNearCacheStaleReadTest extends HazelcastTestSupport {
 
@@ -65,6 +71,17 @@ public class ClientCacheNearCacheStaleReadTest extends HazelcastTestSupport {
     private static final String KEY = "key123";
     private static final ILogger LOGGER = Logger.getLogger(ClientCacheNearCacheStaleReadTest.class);
 
+    @Parameterized.Parameter
+    public NearCacheConfig.LocalUpdatePolicy localUpdatePolicy;
+
+    @Parameterized.Parameters(name = "localUpdatePolicy:{0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {CACHE_ON_UPDATE},
+                {INVALIDATE},
+        });
+    }
+
     private AtomicInteger valuePut;
     private AtomicBoolean stop;
     private AtomicInteger assertionViolationCount;
@@ -72,7 +89,6 @@ public class ClientCacheNearCacheStaleReadTest extends HazelcastTestSupport {
     private Cache<String, String> cache;
     private HazelcastInstance member;
     private HazelcastInstance client;
-    private NearCacheConfig.LocalUpdatePolicy localUpdatePolicy = NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
     private InMemoryFormat inMemoryFormat = InMemoryFormat.BINARY;
 
     @Before
@@ -275,8 +291,10 @@ public class ClientCacheNearCacheStaleReadTest extends HazelcastTestSupport {
 
                 // blindly get the value (to trigger the issue) and parse the value (to get some CPU load)
                 String valueMapStr = cache.get(KEY);
-                int i = parseInt(valueMapStr);
-                assertEquals("" + i, valueMapStr);
+                if (valueMapStr != null) {
+                    int i = parseInt(valueMapStr);
+                    assertEquals("" + i, valueMapStr);
+                }
             }
             LOGGER.info(Thread.currentThread().getName() + " performed " + n + " operations.");
         }

@@ -34,10 +34,7 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
 
     int TIME_NOT_SET = -1;
 
-    long NOT_RESERVED = -1;
-    long RESERVED = -2;
-    long UPDATE_STARTED = -3;
-    long READ_PERMITTED = -4;
+    int NOT_RESERVED = -1;
 
     /**
      * Sets the value of this {@link NearCacheRecord}.
@@ -58,7 +55,7 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
      *
      * @param time the latest access time of this {@link Evictable} in milliseconds
      */
-    void setAccessTime(long time);
+    void setLastAccessTime(long time);
 
     /**
      * Sets the access hit count of this {@link Evictable}.
@@ -73,11 +70,6 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
     void incrementAccessHit();
 
     /**
-     * Resets the access hit count of this {@link Evictable} to {@code 0}.
-     */
-    void resetAccessHit();
-
-    /**
      * Checks whether the maximum idle time is passed with respect to the provided time
      * without any access during this time period as {@code maxIdleSeconds}.
      *
@@ -86,19 +78,6 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
      * @return {@code true} if exceeds max idle seconds, otherwise {@code false}
      */
     boolean isIdleAt(long maxIdleMilliSeconds, long now);
-
-    /**
-     * @return current state of this record.
-     */
-    long getRecordState();
-
-    /**
-     * @param expect expected value
-     * @param update updated value
-     * @return {@code true} if successful. False return indicates that
-     * the actual value was not equal to the expected value.
-     */
-    boolean casRecordState(long expect, long update);
 
     /**
      * @return the partition ID of this record
@@ -121,7 +100,7 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
     void setInvalidationSequence(long sequence);
 
     /**
-     * @param uuid last known UUID of invalidation source at time of this records' creation
+     * @param uuid last known uuid of invalidation source at time of this records' creation
      */
     void setUuid(UUID uuid);
 
@@ -130,4 +109,17 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
      * or existing is null returns {@code false}
      */
     boolean hasSameUuid(UUID uuid);
+
+    void setMostSignificantBits(long mostSigBits);
+
+    void setLeastSignificantBits(long leastSigBits);
+
+    /**
+     * @return current state of this record.
+     */
+    long getReservationId();
+
+    void doReservable();
+
+    void reserveWithId(long reservationId);
 }
