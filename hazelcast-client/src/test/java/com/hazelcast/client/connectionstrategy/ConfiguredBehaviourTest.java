@@ -84,11 +84,36 @@ public class ConfiguredBehaviourTest
     }
 
     @Test(expected = HazelcastClientOfflineException.class)
-    public void testAsyncStartMode() {
+    public void testAsyncStartTrueNoCluster() {
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().setClientStartAsync(true);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        client.getMap(randomMapName());
+    }
+
+    public void testAsyncStartTrue() {
+        final CountDownLatch connectedLatch = new CountDownLatch(1);
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.addListenerConfig(new ListenerConfig(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState().equals(CLIENT_CONNECTED)) {
+                    connectedLatch.countDown();
+                }
+            }
+        }));
+        clientConfig.getConnectionStrategyConfig().setClientStartAsync(true);
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        assertTrue(client.getLifecycleService().isRunning());
+
+        hazelcastFactory.newHazelcastInstance();
+
+        assertOpenEventually(connectedLatch);
 
         client.getMap(randomMapName());
     }
@@ -200,25 +225,30 @@ public class ConfiguredBehaviourTest
 
     @Test
     public void testReconnectModeASYNCSingleMemberStartLate() {
-        final CountDownLatch connectedLatch = new CountDownLatch(1);
+        final CountDownLatch reconnectedLatch = new CountDownLatch(1);
+
+        HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.addListenerConfig(new ListenerConfig(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (event.getState().equals(CLIENT_CONNECTED)) {
-                    connectedLatch.countDown();
-                }
-            }
-        }));
         clientConfig.getConnectionStrategyConfig().setReconnectMode(ASYNC);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         assertTrue(client.getLifecycleService().isRunning());
 
+        hazelcastInstance.shutdown();
+
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState().equals(CLIENT_CONNECTED)) {
+                    reconnectedLatch.countDown();
+                }
+            }
+        });
+
         hazelcastFactory.newHazelcastInstance();
 
-        assertOpenEventually(connectedLatch);
+        assertOpenEventually(reconnectedLatch);
 
         client.getMap(randomMapName());
     }
