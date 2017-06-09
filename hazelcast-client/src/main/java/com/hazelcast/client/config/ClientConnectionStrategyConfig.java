@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.ClientConnectionStrategy;
 
 import java.util.Properties;
@@ -26,7 +27,7 @@ import java.util.Properties;
 public class ClientConnectionStrategyConfig {
 
     /**
-     * Reconnect options
+     * Reconnect options.
      */
     public enum ReconnectMode {
         /**
@@ -44,7 +45,7 @@ public class ClientConnectionStrategyConfig {
         ASYNC
     }
 
-    private boolean clientStartAsync = false;
+    private boolean asyncStart = false;
 
     private ReconnectMode reconnectMode = ReconnectMode.ON;
 
@@ -55,33 +56,39 @@ public class ClientConnectionStrategyConfig {
     private Properties properties = new Properties();
 
     /**
-     *
-     * @return
+     * Client instance creation won't block on {@link HazelcastClient#newHazelcastClient()} if this value is true
+     * @return if client connects to cluster asynchronously
      */
-    public boolean isClientStartAsync() {
-        return clientStartAsync;
+    public boolean isAsyncStart() {
+        return asyncStart;
     }
 
     /**
+     * Set true for non blocking {@link HazelcastClient#newHazelcastClient()}. The client creation won't wait to
+     * connect to cluster. The client instace will throw exception until it connects to cluster and become ready.
+     * If set to false, {@link HazelcastClient#newHazelcastClient()} will block until a cluster connection established and it's
+     * ready to use client instance
      *
-     * @param clientStartAsync
-     * @return
+     * default value is false
+     * @param asyncStart true for async client creation
+     * @return the updated ClientConnectionStrategyConfig
      */
-    public ClientConnectionStrategyConfig setClientStartAsync(boolean clientStartAsync) {
-        this.clientStartAsync = clientStartAsync;
+    public ClientConnectionStrategyConfig setAsyncStart(boolean asyncStart) {
+        this.asyncStart = asyncStart;
         return this;
     }
 
     /**
-     *
-     * @return
+     * @return reconnect mode
      */
     public ReconnectMode getReconnectMode() {
         return reconnectMode;
     }
 
     /**
-     *
+     * How a client reconnect to cluster after a disconnect can be configured. This parameter is used by default strategy and
+     * custom implementations may ignore it if configured.
+     * default value is {@link ReconnectMode#ON}
      * @param reconnectMode
      * @return
      */
@@ -91,17 +98,17 @@ public class ClientConnectionStrategyConfig {
     }
 
     /**
-     *
-     * @return
+     * @see ClientConnectionStrategy
+     * @return class name of client connection strategy implementation
      */
     public String getClassName() {
         return className;
     }
 
     /**
-     *
-     * @param className
-     * @return
+     * Class name of the strategy implementation where it should be a subclass of {@link ClientConnectionStrategy}
+     * @param className class name of client connection strategy implementation
+     * @return the updated ClientConnectionStrategyConfig
      */
     public ClientConnectionStrategyConfig setClassName(String className) {
         this.className = className;
@@ -109,17 +116,18 @@ public class ClientConnectionStrategyConfig {
     }
 
     /**
-     *
-     * @return
+     * An instance of the strategy implementation where it should be a subclass of {@link ClientConnectionStrategy}
+     * @return configured strategy implementation instance or null if none configured
      */
     public ClientConnectionStrategy getImplementation() {
         return implementation;
     }
 
     /**
-     *
-     * @param implementation
-     * @return
+     * A user created instance can be used to configure the client connection strategy.
+     * @param implementation An instance of the strategy implementation
+     *                      where it should be a subclass of {@link ClientConnectionStrategy}
+     * @return the updated ClientConnectionStrategyConfig
      */
     public ClientConnectionStrategyConfig setImplementation(ClientConnectionStrategy implementation) {
         this.implementation = implementation;
@@ -161,6 +169,7 @@ public class ClientConnectionStrategyConfig {
 
     /**
      * Sets the properties.
+     * These properties are populated into {@link ClientConnectionStrategy} to be used in implementations of it.
      *
      * @param properties the properties to set
      * @return the updated ClientConnectionStrategyConfig

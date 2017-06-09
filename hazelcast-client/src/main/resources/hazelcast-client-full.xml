@@ -160,5 +160,11 @@
         </query-cache>
     </query-caches>
 
+    <connection-strategy async-start="true" reconnect-mode="ASYNC">
+        <class-name>com.hazelcast.example.CustomConnectionStrategy</class-name>
+        <properties>
+            <property name="foo">bar</property>
+        </properties>
+    </connection-strategy>
 
 </hazelcast-client>

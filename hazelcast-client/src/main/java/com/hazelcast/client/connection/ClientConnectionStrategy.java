@@ -81,7 +81,7 @@ public abstract class ClientConnectionStrategy {
         connectionAttemptLimit = connAttemptLimit == 0 ? Integer.MAX_VALUE : connAttemptLimit;
 
         ClientConnectionStrategyConfig config = client.getClientConfig().getConnectionStrategyConfig();
-        clientStartAsync = config.isClientStartAsync();
+        clientStartAsync = config.isAsyncStart();
         reconnectMode = config.getReconnectMode();
     }
 

@@ -87,7 +87,7 @@ public class ConfiguredBehaviourTest
     public void testAsyncStartTrueNoCluster() {
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().setClientStartAsync(true);
+        clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         client.getMap(randomMapName());
