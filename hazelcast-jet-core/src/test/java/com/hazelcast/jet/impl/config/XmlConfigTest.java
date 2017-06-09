@@ -69,7 +69,7 @@ public class XmlConfigTest {
         File tempFile = File.createTempFile("jet", ".xml");
         try (FileOutputStream os = new FileOutputStream(tempFile)) {
             InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream(TEST_XML_1);
-            os.write(Util.read(resourceAsStream));
+            os.write(Util.readFully(resourceAsStream));
         }
 
         Properties properties = new Properties();
@@ -89,7 +89,7 @@ public class XmlConfigTest {
         File tempFile = File.createTempFile("imdg", ".xml");
         try (FileOutputStream os = new FileOutputStream(tempFile)) {
             InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream(TEST_XML_2);
-            os.write(Util.read(resourceAsStream));
+            os.write(Util.readFully(resourceAsStream));
         }
 
         Properties properties = new Properties();

@@ -31,6 +31,11 @@ public class AggregateOperationImpl<T, A, R> implements AggregateOperation<T, A,
     private final DistributedBiConsumer<? super A, ? super A> deductAccumulatorF;
     private final DistributedFunction<? super A, R> finishAccumulationF;
 
+    /**
+     * Use {@link AggregateOperation#of(DistributedSupplier,
+     * DistributedBiConsumer, DistributedBiConsumer, DistributedBiConsumer,
+     * DistributedFunction)} instead.
+     */
     public AggregateOperationImpl(
             @Nonnull DistributedSupplier<A> createAccumulatorF,
             @Nonnull DistributedBiConsumer<? super A, T> accumulateItemF,

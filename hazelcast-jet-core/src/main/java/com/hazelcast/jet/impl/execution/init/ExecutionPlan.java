@@ -45,7 +45,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.IOException;
@@ -77,13 +76,15 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     private Address[] partitionOwners;
     private List<VertexDef> vertices = new ArrayList<>();
+
     private final Map<String, ConcurrentConveyor<Object>[]> localConveyorMap = new HashMap<>();
     private final Map<String, Map<Address, ConcurrentConveyor<Object>>> edgeSenderConveyorMap = new HashMap<>();
+    private final List<Processor> processors = new ArrayList<>();
+
     private PartitionArrangement ptionArrgmt;
 
     private NodeEngine nodeEngine;
     private long executionId;
-
 
     ExecutionPlan() {
     }
@@ -107,8 +108,13 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         nodeEngine.getLogger(p.getClass().getName() + '.' + srcVertex.name() + '#' + processorIdx);
                 ProcCtx context =
                         new ProcCtx(instance, logger, srcVertex.name(), processorIdx + srcVertex.getProcIdxOffset());
-                String probePrefix = String.format("jet.job.%d.%s#%d", executionId, srcVertex.name(), processorIdx);
-                ((NodeEngineImpl) nodeEngine).getMetricsRegistry().scanAndRegister(p, probePrefix);
+
+                // Disabled due to causing memory leak: it keeps referencing the p.getClass()
+                // and prevents the classloader from being unloaded.
+                // TODO re-enable after 3.8.3 with PR #10725 is released
+                // String probePrefix = String.format("jet.job.%d.%s#%d", executionId, srcVertex.name(), processorIdx);
+                // ((NodeEngineImpl) nodeEngine).getMetricsRegistry().scanAndRegister(p, probePrefix);
+
                 // createOutboundEdgeStreams() populates localConveyorMap and edgeSenderConveyorMap.
                 // Also populates instance fields: senderMap, receiverMap, tasklets.
                 List<OutboundEdgeStream> outboundStreams = createOutboundEdgeStreams(srcVertex, processorIdx);
@@ -117,6 +123,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         ? new CooperativeProcessorTasklet(context, p, inboundStreams, outboundStreams)
                         : new BlockingProcessorTasklet(context, p, inboundStreams, outboundStreams)
                 );
+                processors.add(p);
                 processorIdx++;
             }
         }
@@ -385,5 +392,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         return inboundStreams;
     }
 
+    public List<Processor> getProcessors() {
+        return processors;
+    }
 }
 

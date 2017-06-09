@@ -29,7 +29,6 @@ import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.DistributedToDoubleFunction;
 import com.hazelcast.jet.function.DistributedToLongFunction;
-import com.hazelcast.jet.impl.AggregateOperationImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -314,7 +313,8 @@ public final class AggregateOperations {
     AggregateOperation<T, ?, R> mapping(@Nonnull DistributedFunction<? super T, ? extends U> mapF,
                                @Nonnull AggregateOperation<? super U, A, R> downstream) {
         DistributedBiConsumer<? super A, ? super U> downstreamAccumulateF = downstream.accumulateItemF();
-        return new AggregateOperationImpl<>(downstream.createAccumulatorF(),
+        return AggregateOperation.of(
+                downstream.createAccumulatorF(),
                 (r, t) -> {
                     U mapped = mapF.apply(t);
                     if (mapped != null) {
@@ -341,7 +341,7 @@ public final class AggregateOperations {
      */
     public static <T, C extends Collection<T>> AggregateOperation<T, C, C> toCollection(
             DistributedSupplier<C> createCollectionF) {
-        return new AggregateOperationImpl<>(
+        return AggregateOperation.of(
                 createCollectionF,
                 Collection::add,
                 Collection::addAll,
@@ -467,7 +467,7 @@ public final class AggregateOperations {
         DistributedBiConsumer<M, T> accumulateF =
                 (map, element) -> map.merge(getKeyF.apply(element),
                     getValueF.apply(element), mergeF);
-        return new AggregateOperationImpl<>(
+        return AggregateOperation.of(
                 createMapF,
                 accumulateF,
                 mapMerger(mergeF),
@@ -525,7 +525,7 @@ public final class AggregateOperations {
             @Nonnull DistributedBinaryOperator<A> combineAccValuesF,
             @Nullable DistributedBinaryOperator<A> deductAccValueF
     ) {
-        return new AggregateOperationImpl<>(
+        return AggregateOperation.of(
                 () -> new MutableReference<>(emptyAccValue),
                 (a, t) -> a.set(combineAccValuesF.apply(a.get(), toAccValueF.apply(t))),
                 (a, b) -> a.set(combineAccValuesF.apply(a.get(), b.get())),

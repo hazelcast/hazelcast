@@ -16,12 +16,15 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.HashSet;
 import java.util.List;
@@ -47,6 +50,8 @@ public class ExecutionContext {
     private Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap = emptyMap();
 
     private List<ProcessorSupplier> procSuppliers = emptyList();
+    private List<Processor> processors = emptyList();
+
     private Set<Address> participatingMembers = emptySet();
     private List<Tasklet> tasklets;
     private CompletionStage<Void> jobFuture;
@@ -66,6 +71,7 @@ public class ExecutionContext {
         // Must be populated early, so all processor suppliers are
         // available to be completed in the case of init failure
         procSuppliers = unmodifiableList(plan.getProcessorSuppliers());
+        processors = plan.getProcessors();
         plan.initialize(nodeEngine, executionId);
         receiverMap = unmodifiableMap(plan.getReceiverMap());
         senderMap = unmodifiableMap(plan.getSenderMap());
@@ -95,6 +101,8 @@ public class ExecutionContext {
 
     public void complete(Throwable error) {
         procSuppliers.forEach(s -> s.complete(error));
+        MetricsRegistry metricsRegistry = ((NodeEngineImpl) nodeEngine).getMetricsRegistry();
+        processors.forEach(metricsRegistry::deregister);
     }
 
     public void handlePacket(int vertexId, int ordinal, Address sender, BufferObjectDataInput in) {

@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.nio.Address;
@@ -111,7 +112,7 @@ public final class Util {
     }
 
     @Nonnull
-    public static byte[] read(@Nonnull InputStream in) throws IOException {
+    public static byte[] readFully(@Nonnull InputStream in) throws IOException {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] b = new byte[BUFFER_SIZE];
             for (int len; (len = in.read(b)) != -1; ) {
@@ -178,20 +179,20 @@ public final class Util {
             if (!(object instanceof Serializable)) {
                 throw new IllegalArgumentException("\"" + objectName + "\" must be serializable");
             }
-            try  (ObjectOutputStream os  = new ObjectOutputStream(new NullOutputStream())) {
+            try  (ObjectOutputStream os = new ObjectOutputStream(new NullOutputStream())) {
                 os.writeObject(object);
             } catch (NotSerializableException | InvalidClassException e) {
                 throw new IllegalArgumentException("\"" + objectName + "\" must be serializable", e);
             } catch (IOException e) {
                 // never really thrown, as the underlying stream never throws it
-                throw new RuntimeException(e);
+                throw new JetException(e);
             }
         }
     }
 
     private static class NullOutputStream extends OutputStream {
         @Override
-        public void write(int b) throws IOException {
+        public void write(int b) {
             // do nothing
         }
     }

@@ -18,7 +18,6 @@ package com.hazelcast.jet;
 
 import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.impl.AggregateOperationImpl;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
 import com.hazelcast.jet.impl.util.ProgressTracker;
@@ -297,7 +296,7 @@ public class ProcessorsTest {
     }
 
     private static <T> AggregateOperation<T, List<T>, String> aggregateToListAndString() {
-        return new AggregateOperationImpl<>(
+        return AggregateOperation.of(
                 ArrayList::new,
                 List::add,
                 List::addAll,

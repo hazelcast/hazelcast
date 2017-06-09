@@ -16,11 +16,7 @@
 
 package com.hazelcast.jet.config;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import javax.annotation.Nonnull;
 
 /**
  * General configuration options pertaining to a Jet instance.
@@ -52,7 +48,7 @@ public class InstanceConfig {
     }
 
     /**
-     * Sets the directory where Jet can place its temporary working files.
+     * Sets the directory where Jet can place its temporary working directories.
      */
     public InstanceConfig setTempDir(String tempDir) {
         this.tempDir = tempDir;
@@ -60,19 +56,12 @@ public class InstanceConfig {
     }
 
     /**
-     * Returns Jet's temp directory.
+     * Returns Jet's temp directory. Defaults to {@code java.io.tmpdir} system
+     * property.
      */
+    @Nonnull
     public String getTempDir() {
-        if (tempDir == null) {
-            try {
-                Path tempDirectory = Files.createTempDirectory("hazelcast-jet");
-                tempDirectory.toFile().deleteOnExit();
-                tempDir = tempDirectory.toString();
-            } catch (IOException e) {
-                throw rethrow(e);
-            }
-        }
-        return tempDir;
+        return tempDir == null ? System.getProperty("java.io.tmpdir") : tempDir;
     }
 
     /**

@@ -48,12 +48,15 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
 public class JetService
         implements ManagedService, ConfigurableService<JetConfig>, PacketHandler, LiveOperationsTracker,
@@ -155,6 +158,9 @@ public class JetService
         if (context != null) {
             context.complete(error);
         }
+        classLoaders.remove(executionId);
+        ResourceStore store = resourceStores.remove(executionId);
+        store.destroy();
     }
 
     public JetInstance getJetInstance() {
@@ -171,8 +177,8 @@ public class JetService
 
     public ResourceStore getResourceStore(long executionId) {
         return resourceStores.computeIfAbsent(executionId,
-                k -> new ResourceStore(config.getInstanceConfig().getTempDir()));
-    }
+                k -> uncheckCall(() -> new ResourceStore(Paths.get(config.getInstanceConfig().getTempDir()), nodeEngine)));
+}
 
     public ClassLoader getClassLoader(long executionId) {
         return classLoaders.computeIfAbsent(executionId, k -> AccessController.doPrivileged(
