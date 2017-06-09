@@ -21,7 +21,9 @@ import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ClientConnectionStrategy;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.connection.nio.DefaultClientConnectionStrategy;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.ListenerConfig;
@@ -44,6 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.ASYNC;
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
+import static com.hazelcast.client.spi.properties.ClientProperty.HEARTBEAT_TIMEOUT;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CONNECTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
@@ -53,11 +56,13 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ConfiguredBehaviourTest extends ClientTestSupport {
+public class ConfiguredBehaviourTest
+        extends ClientTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    private class StateTrackingListener implements LifecycleListener {
+    private class StateTrackingListener
+            implements LifecycleListener {
         private volatile LifecycleEvent.LifecycleState latestState = STARTING;
 
         @Override
@@ -439,7 +444,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
 
         IMap<Integer, Integer> map = client.getMap(randomMapName());
         // force connection open to both members
-        for (int i = 0;i < 1000; ++i) {
+        for (int i = 0; i < 1000; ++i) {
             map.put(i, 2 * i);
         }
 
@@ -465,5 +470,53 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         assertEquals(3, onConnectCount.get());
         assertEquals(1, onDisconnectCount.get());
 
+    }
+
+    private class HeartbeatAwareStrategy
+            extends DefaultClientConnectionStrategy {
+        CountDownLatch heartbeatStoppedLatch;
+        CountDownLatch heartbeatResumedLatch;
+
+        public HeartbeatAwareStrategy(CountDownLatch heartbeatStoppedLatch, CountDownLatch heartbeatResumedLatch) {
+            this.heartbeatStoppedLatch = heartbeatStoppedLatch;
+            this.heartbeatResumedLatch = heartbeatResumedLatch;
+        }
+
+        @Override
+        public void onHeartbeatStopped(ClientConnection connection) {
+            heartbeatStoppedLatch.countDown();
+        }
+
+        @Override
+        public void onHeartbeatResumed(ClientConnection connection) {
+            heartbeatResumedLatch.countDown();
+        }
+    }
+
+    @Test
+    public void testCustomStrategyHeartbeatCallbacks() {
+        CountDownLatch heartbeatStoppedLatch = new CountDownLatch(1);
+        CountDownLatch heartbeatResumedLatch = new CountDownLatch(1);
+
+        hazelcastFactory.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(HEARTBEAT_TIMEOUT.getName(), "4");
+        clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), "500");
+
+        clientConfig.getConnectionStrategyConfig()
+                    .setImplementation(new HeartbeatAwareStrategy(heartbeatStoppedLatch, heartbeatResumedLatch));
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        HazelcastInstance nonOwnerMember = hazelcastFactory.newHazelcastInstance();
+
+        blockMessagesFromInstance(nonOwnerMember, client);
+
+        assertOpenEventually(heartbeatStoppedLatch);
+
+        unblockMessagesFromInstance(nonOwnerMember, client);
+
+        assertOpenEventually(heartbeatResumedLatch);
     }
 }
