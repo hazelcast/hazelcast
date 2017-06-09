@@ -99,6 +99,8 @@ public class ConfiguredBehaviourTest
         final CountDownLatch connectedLatch = new CountDownLatch(1);
 
         ClientConfig clientConfig = new ClientConfig();
+        // trying 8.8.8.8 address will delay the initial connection since no such server exist
+        clientConfig.getNetworkConfig().addAddress("8.8.8.8", "localhost").setConnectionAttemptLimit(Integer.MAX_VALUE);
         clientConfig.addListenerConfig(new ListenerConfig(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
@@ -194,10 +196,13 @@ public class ConfiguredBehaviourTest
     @Test(expected = HazelcastClientOfflineException.class)
     public void testReconnectModeASYNCSingleMemberInitiallyOffline() {
         ClientConfig clientConfig = new ClientConfig();
+
+        HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
+
         clientConfig.getConnectionStrategyConfig().setReconnectMode(ASYNC);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
-        assertTrue(client.getLifecycleService().isRunning());
+        hazelcastInstance.shutdown();
 
         client.getMap(randomMapName());
     }
