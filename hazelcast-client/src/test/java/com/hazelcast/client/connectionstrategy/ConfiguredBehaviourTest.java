@@ -106,7 +106,7 @@ public class ConfiguredBehaviourTest
                 }
             }
         }));
-        clientConfig.getConnectionStrategyConfig().setClientStartAsync(true);
+        clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
@@ -331,36 +331,37 @@ public class ConfiguredBehaviourTest
                 assertEquals(0, onDisconnectCount.get());
 
                 assertEquals(STARTING, stateTrackingListener.getLatestState());
-                connectToCluster();
+                client.getConnectionManager().connectToCluster();
                 assertEquals(CLIENT_CONNECTED, stateTrackingListener.getLatestState());
             }
 
             @Override
             public void beforeGetConnection(Address target) {
-                assertEquals(0, initCount.get());
+                assertEquals(1, initCount.get());
             }
 
             @Override
             public void beforeOpenConnection(Address target) {
-                assertEquals(0, initCount.get());
+                assertEquals(1, initCount.get());
                 beforeOpenConnectionCount.incrementAndGet();
             }
 
             @Override
             public void onConnectToCluster() {
-                assertEquals(0, initCount.get());
+                assertEquals(1, initCount.get());
                 assertTrue(onConnectToClusterCount.getAndIncrement() < 2);
                 assertTrue(onDisconnectFromClusterCount.get() < 2);
                 assertTrue(beforeOpenConnectionCount.get() < 4);
                 assertTrue(onConnectCount.get() < 4);
                 assertTrue(onDisconnectCount.get() < 2);
 
-                assertEquals(CLIENT_CONNECTED, stateTrackingListener.getLatestState());
+                LifecycleEvent.LifecycleState latestState = stateTrackingListener.getLatestState();
+                assertTrue(CLIENT_CONNECTED.equals(latestState) );
             }
 
             @Override
             public void onDisconnectFromCluster() {
-                assertEquals(0, initCount.get());
+                assertEquals(1, initCount.get());
                 assertEquals(1, onConnectToClusterCount.get());
                 assertEquals(0, onDisconnectFromClusterCount.getAndIncrement());
                 assertEquals(2, beforeOpenConnectionCount.get());
@@ -368,12 +369,12 @@ public class ConfiguredBehaviourTest
                 assertEquals(1, onDisconnectCount.get());
 
                 assertEquals(CLIENT_DISCONNECTED, stateTrackingListener.getLatestState());
-                connectToCluster();
+                client.getConnectionManager().connectToCluster();
             }
 
             @Override
             public void onConnect(ClientConnection connection) {
-                assertEquals(0, initCount.get());
+                assertEquals(1, initCount.get());
                 assertTrue(onConnectToClusterCount.get() < 2);
                 assertTrue(onDisconnectFromClusterCount.get() < 2);
                 assertTrue(beforeOpenConnectionCount.get() < 4);
@@ -383,7 +384,7 @@ public class ConfiguredBehaviourTest
 
             @Override
             public void onDisconnect(ClientConnection connection) {
-                assertEquals(0, initCount.get());
+                assertEquals(1, initCount.get());
                 assertEquals(1, onConnectToClusterCount.get());
                 assertEquals(0, onDisconnectFromClusterCount.getAndIncrement());
                 assertEquals(2, beforeOpenConnectionCount.get());

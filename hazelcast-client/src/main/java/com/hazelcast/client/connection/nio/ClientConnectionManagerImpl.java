@@ -44,6 +44,7 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
@@ -61,7 +62,9 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -69,16 +72,23 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import static com.hazelcast.client.config.SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
 import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
+import static com.hazelcast.client.spi.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
 import static com.hazelcast.spi.properties.GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT;
 
 /**
@@ -119,6 +129,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     private HeartbeatManager heartbeat;
     private volatile ClientPrincipal principal;
     private final ClientConnectionStrategy connectionStrategy;
+    private final ExecutorService clusterConnectionExecutor;
+    private final int connectionAttemptPeriod;
+    private final int connectionAttemptLimit;
+    private final boolean shuffleMemberList;
+    private final Collection<AddressProvider> addressProviders;
 
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
                                        Collection<AddressProvider> addressProviders) {
@@ -145,11 +160,18 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         this.credentials = client.getCredentials();
         ClientConnectionStrategyConfig strategyConfig = client.getClientConfig().getConnectionStrategyConfig();
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
-        this.connectionStrategy = initializeStrategy(strategyConfig, addressProviders, classLoader);
+        this.connectionStrategy = initializeStrategy(strategyConfig, classLoader);
+        this.clusterConnectionExecutor = createSingleThreadExecutorService(client);
+        this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
+        this.addressProviders = addressProviders;
+        int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
+        connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
+        connectionAttemptLimit = connAttemptLimit == 0 ? Integer.MAX_VALUE : connAttemptLimit;
+
+
     }
 
     private ClientConnectionStrategy initializeStrategy(ClientConnectionStrategyConfig connectionStrategyConfig,
-                                                        Collection<AddressProvider> addressProviders,
                                                         ClassLoader configClassLoader) {
         ClientConnectionStrategy strategy;
         if (connectionStrategyConfig.getImplementation() != null) {
@@ -163,7 +185,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         } else {
             strategy = new DefaultClientConnectionStrategy();
         }
-        strategy.init(client, this, addressProviders);
+        strategy.init(client, connectionStrategyConfig);
         return strategy;
     }
 
@@ -248,6 +270,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             return;
         }
         alive = false;
+
+        clusterConnectionExecutor.shutdown();
+        ClientExecutionServiceImpl.shutdownExecutor("clusterExecutor", clusterConnectionExecutor, logger);
+        ;
         for (Connection connection : activeConnections.values()) {
             connection.close("Hazelcast client is shutting down", null);
         }
@@ -297,7 +323,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     }
 
     private Connection getConnection(Address target, boolean asOwner) throws IOException {
-        if(!asOwner){
+        if (!asOwner) {
             connectionStrategy.beforeGetConnection(target);
         }
         if (!asOwner && getOwnerConnection() == null) {
@@ -353,7 +379,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     }
 
     private AuthenticationFuture triggerConnect(Address target, boolean asOwner) {
-        if(!asOwner){
+        if (!asOwner) {
             connectionStrategy.beforeOpenConnection(target);
         }
         if (!alive) {
@@ -389,7 +415,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             connection = getOrConnect(address, true);
             client.getClientClusterService().init();
             fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
-            connectionStrategy.onConnectToCluster();
         } catch (Exception e) {
             Level level = e instanceof AuthenticationException ? Level.WARNING : Level.FINEST;
             logger.log(level, "Exception during initial connection to " + ownerInetSocketAddress, e);
@@ -697,5 +722,98 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                 }
             }
         }
+    }
+
+    public ClientConnectionStrategy getConnectionStrategy() {
+        return connectionStrategy;
+    }
+
+    @Override
+    public void connectToCluster() {
+        int attempt = 0;
+        Set<InetSocketAddress> triedAddresses = new HashSet<InetSocketAddress>();
+        while (attempt < connectionAttemptLimit) {
+            attempt++;
+            final long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
+
+            final Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
+            for (InetSocketAddress inetSocketAddress : socketAddresses) {
+                if (!client.getLifecycleService().isRunning()) {
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("Giving up on retrying to connect to cluster since client is shutdown.");
+                    }
+                    break;
+                }
+                triedAddresses.add(inetSocketAddress);
+                if (connectAsOwner(inetSocketAddress) != null) {
+                    return;
+                }
+            }
+
+            final long remainingTime = nextTry - Clock.currentTimeMillis();
+            logger.warning(String.format("Unable to get alive cluster connection, try in %d ms later, attempt %d of %d.",
+                    Math.max(0, remainingTime), attempt, connectionAttemptLimit));
+
+            if (remainingTime > 0) {
+                try {
+                    Thread.sleep(remainingTime);
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+        }
+        throw new IllegalStateException(
+                "Unable to connect to any address in the config!" + " The following addresses were tried: " + triedAddresses);
+    }
+
+    @Override
+    public void connectToClusterAsync() {
+        clusterConnectionExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    connectToCluster();
+                } catch (Exception e) {
+                    logger.warning("Could not re-connect to cluster shutting down the client" + e.getMessage());
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                client.getLifecycleService().shutdown();
+                            } catch (Exception exception) {
+                                logger.severe("Exception during client shutdown ", exception);
+                            }
+                        }
+                    }, client.getName() + ".clientShutdown-").start();
+                }
+            }
+        });
+
+    }
+
+    private Collection<InetSocketAddress> getSocketAddresses() {
+        final List<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
+
+        Collection<Member> memberList = client.getClientClusterService().getMemberList();
+        for (Member member : memberList) {
+            socketAddresses.add(member.getSocketAddress());
+        }
+
+        for (AddressProvider addressProvider : addressProviders) {
+            socketAddresses.addAll(addressProvider.loadAddresses());
+        }
+
+        if (shuffleMemberList) {
+            Collections.shuffle(socketAddresses);
+        }
+
+        return socketAddresses;
+    }
+
+    private ExecutorService createSingleThreadExecutorService(HazelcastClientInstanceImpl client) {
+        ClassLoader classLoader = client.getClientConfig().getClassLoader();
+        SingleExecutorThreadFactory threadFactory = new SingleExecutorThreadFactory(classLoader, client.getName() + ".cluster-");
+
+        return Executors.newSingleThreadExecutor(threadFactory);
     }
 }

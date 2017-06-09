@@ -79,4 +79,7 @@ public interface ClientConnectionManager extends ConnectionListenable {
 
     ClientConnection getOwnerConnection();
 
+    void connectToCluster();
+
+    void connectToClusterAsync();
 }

@@ -45,7 +45,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService,
     public static final HazelcastProperty INTERNAL_EXECUTOR_POOL_SIZE
             = new HazelcastProperty("hazelcast.client.internal.executor.pool.size", 3);
 
-    private static final long TERMINATE_TIMEOUT_SECONDS = 30;
+    public static final long TERMINATE_TIMEOUT_SECONDS = 30;
 
     private final ILogger logger;
     private final ExecutorService userExecutor;

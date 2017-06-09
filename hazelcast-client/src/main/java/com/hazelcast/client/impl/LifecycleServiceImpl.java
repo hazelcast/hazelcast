@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
@@ -62,7 +63,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
 
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
         executor = Executors.newSingleThreadExecutor(
-                new PoolExecutorThreadFactory(client.getName() +  ".lifecycle-", classLoader));
+                new PoolExecutorThreadFactory(client.getName() + ".lifecycle-", classLoader));
 
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
@@ -124,6 +125,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
         executor.execute(new Runnable() {
             @Override
             public void run() {
+                ((ClientConnectionManagerImpl) client.getConnectionManager()).getConnectionStrategy().onConnectToCluster();
                 for (LifecycleListener lifecycleListener : lifecycleListeners.values()) {
                     lifecycleListener.stateChanged(lifecycleEvent);
                 }

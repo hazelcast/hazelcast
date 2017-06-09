@@ -34,9 +34,9 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
     @Override
     public void init() {
         if (clientStartAsync) {
-            connectToClusterAsync();
+            client.getConnectionManager().connectToClusterAsync();
         } else {
-            connectToCluster();
+            client.getConnectionManager().connectToCluster();
         }
     }
 
@@ -76,7 +76,7 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
             return;
         }
         if (client.getLifecycleService().isRunning()) {
-            connectToClusterAsync();
+            client.getConnectionManager().connectToClusterAsync();
         }
     }
 
@@ -104,6 +104,6 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
     }
 
     private boolean isClusterAvailable() {
-        return connectionManager.getOwnerConnectionAddress() != null;
+        return client.getConnectionManager().getOwnerConnectionAddress() != null;
     }
 }
