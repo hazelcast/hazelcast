@@ -32,22 +32,12 @@ import java.util.Collection;
 public interface ClientConnectionManager extends ConnectionListenable {
 
     /**
-     * Shutdown clientConnectionManager
-     */
-    void shutdown();
-
-    /**
      * Check if client connection manager is alive.
      * ClientConnectionManager is not alive only when client is closing.
      *
      * @return true if alive, false otherwise.
      */
     boolean isAlive();
-
-    /**
-     * Start clientConnectionManager
-     */
-    void start() throws Exception ;
 
     /**
      * @param address to be connected

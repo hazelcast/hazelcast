@@ -93,7 +93,6 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
         return new XATransactionContextProxy(this, xid, timeoutInSeconds);
     }
 
-    @Override
     public void shutdown() {
     }
 

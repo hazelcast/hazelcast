@@ -22,9 +22,9 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.client.proxy.NearCachedClientMapProxy;
 import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.ClientProxyFactory;
-import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientProxyFactoryWithContext;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
@@ -33,6 +33,7 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCacheManager;
 import com.hazelcast.internal.networking.ChannelFactory;
+import com.hazelcast.internal.networking.nio.NioChannelFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -41,7 +42,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.SocketInterceptor;
-import com.hazelcast.internal.networking.nio.NioChannelFactory;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -146,7 +146,7 @@ public class DefaultClientExtension implements ClientExtension {
     @Override
     public NearCacheManager createNearCacheManager() {
         SerializationService ss = client.getSerializationService();
-        ClientExecutionServiceImpl es = client.getExecutionService();
+        ClientExecutionService es = client.getClientExecutionService();
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
 
         return new DefaultNearCacheManager(ss, es, classLoader);

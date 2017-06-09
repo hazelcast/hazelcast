@@ -52,8 +52,8 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ConfiguredBehaviourTest
-        extends ClientTestSupport {
+public class ConfiguredBehaviourTest extends ClientTestSupport {
+
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     private class StateTrackingListener implements LifecycleListener {
@@ -337,7 +337,7 @@ public class ConfiguredBehaviourTest
                 assertEquals(0, onDisconnectCount.get());
 
                 assertEquals(STARTING, stateTrackingListener.getLatestState());
-                client.getConnectionManager().connectToCluster();
+                clientContext.getConnectionManager().connectToCluster();
                 assertEquals(CLIENT_CONNECTED, stateTrackingListener.getLatestState());
             }
 
@@ -362,7 +362,7 @@ public class ConfiguredBehaviourTest
                 assertTrue(onDisconnectCount.get() < 2);
 
                 LifecycleEvent.LifecycleState latestState = stateTrackingListener.getLatestState();
-                assertTrue(CLIENT_CONNECTED.equals(latestState) );
+                assertTrue(CLIENT_CONNECTED.equals(latestState));
             }
 
             @Override
@@ -375,7 +375,7 @@ public class ConfiguredBehaviourTest
                 assertEquals(1, onDisconnectCount.get());
 
                 assertEquals(CLIENT_DISCONNECTED, stateTrackingListener.getLatestState());
-                client.getConnectionManager().connectToCluster();
+                clientContext.getConnectionManager().connectToCluster();
             }
 
             @Override

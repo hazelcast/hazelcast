@@ -18,7 +18,7 @@ package com.hazelcast.client.connection;
 
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 
@@ -27,19 +27,16 @@ import com.hazelcast.nio.Address;
  */
 public abstract class ClientConnectionStrategy {
 
-    protected HazelcastClientInstanceImpl client;
+    protected ClientContext clientContext;
     protected ILogger logger;
-    protected boolean clientStartAsync;
-    protected ClientConnectionStrategyConfig.ReconnectMode reconnectMode;
-
+    protected ClientConnectionStrategyConfig clientConnectionStrategyConfig;
     public ClientConnectionStrategy() {
     }
 
-    public final void init(HazelcastClientInstanceImpl client, ClientConnectionStrategyConfig config) {
-        this.client = client;
-        this.logger = client.getLoggingService().getLogger(ClientConnectionStrategy.class);
-        clientStartAsync = config.isAsyncStart();
-        reconnectMode = config.getReconnectMode();
+    public final void init(ClientContext clientContext) {
+        this.clientContext = clientContext;
+        this.clientConnectionStrategyConfig = clientContext.getClientConfig().getConnectionStrategyConfig();
+        this.logger = clientContext.getLoggingService().getLogger(ClientConnectionStrategy.class);
     }
 
     /**

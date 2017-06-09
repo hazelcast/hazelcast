@@ -22,7 +22,7 @@ import com.hazelcast.nio.Address;
 
 import java.io.IOException;
 
-public class ClientNonSmartInvocationServiceImpl extends ClientInvocationServiceSupport {
+public class ClientNonSmartInvocationServiceImpl extends ClientInvocationServiceImpl {
 
     public ClientNonSmartInvocationServiceImpl(HazelcastClientInstanceImpl client) {
         super(client);

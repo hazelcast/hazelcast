@@ -19,10 +19,12 @@ package com.hazelcast.client.spi;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.cache.impl.nearcache.invalidation.ClientCacheMetaDataFetcher;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.client.map.impl.nearcache.invalidation.ClientMapMetaDataFetcher;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataFetcher;
 import com.hazelcast.internal.nearcache.impl.invalidation.MinimalPartitionService;
@@ -53,6 +55,8 @@ public final class ClientContext {
     private final ClientInvocationService invocationService;
     private final ClientExecutionService executionService;
     private final ClientListenerService listenerService;
+    private final ClientConnectionManager clientConnectionManager;
+    private final LifecycleService lifecycleService;
     private final ClientTransactionManagerService transactionManager;
     private final ProxyManager proxyManager;
     private final ClientConfig clientConfig;
@@ -70,14 +74,16 @@ public final class ClientContext {
         }
     };
 
-    ClientContext(HazelcastClientInstanceImpl client, ProxyManager proxyManager) {
+    public ClientContext(HazelcastClientInstanceImpl client) {
         this.serializationService = client.getSerializationService();
         this.clusterService = client.getClientClusterService();
         this.partitionService = client.getClientPartitionService();
         this.invocationService = client.getInvocationService();
         this.executionService = client.getClientExecutionService();
         this.listenerService = client.getListenerService();
-        this.proxyManager = proxyManager;
+        this.clientConnectionManager = client.getConnectionManager();
+        this.lifecycleService = client.getLifecycleService();
+        this.proxyManager = client.getProxyManager();
         this.clientConfig = client.getClientConfig();
         this.transactionManager = client.getTransactionManager();
         this.loggingService = client.getLoggingService();
@@ -183,8 +189,16 @@ public final class ClientContext {
         return invocationService;
     }
 
-    public void removeProxy(ClientProxy proxy) {
-        proxyManager.removeProxy(proxy.getServiceName(), proxy.getDistributedObjectName());
+    public ClientConnectionManager getConnectionManager() {
+        return clientConnectionManager;
+    }
+
+    public LifecycleService getLifecycleService() {
+        return lifecycleService;
+    }
+
+    public ProxyManager getProxyManager() {
+        return proxyManager;
     }
 
     public ClientConfig getClientConfig() {

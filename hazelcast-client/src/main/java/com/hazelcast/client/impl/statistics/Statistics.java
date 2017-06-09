@@ -150,7 +150,7 @@ public class Statistics {
      * @param periodSeconds the interval at which the statistics collection and send is being run
      */
     private void schedulePeriodicStatisticsSendTask(long periodSeconds) {
-        client.getExecutionService().scheduleWithRepetition(new Runnable() {
+        client.getClientExecutionService().scheduleWithRepetition(new Runnable() {
             @Override
             public void run() {
                 ClientConnection ownerConnection = getOwnerConnection();

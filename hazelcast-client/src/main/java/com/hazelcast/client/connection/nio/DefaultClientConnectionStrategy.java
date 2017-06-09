@@ -17,6 +17,7 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.HazelcastClientOfflineException;
+import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.connection.ClientConnectionStrategy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
@@ -30,13 +31,18 @@ import static com.hazelcast.client.config.ClientConnectionStrategyConfig.Reconne
 public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
 
     private volatile boolean disconnectedFromCluster;
+    private boolean clientStartAsync;
+    private ClientConnectionStrategyConfig.ReconnectMode reconnectMode;
 
     @Override
     public void init() {
+        clientStartAsync = clientConnectionStrategyConfig.isAsyncStart();
+        reconnectMode = clientConnectionStrategyConfig.getReconnectMode();
+
         if (clientStartAsync) {
-            client.getConnectionManager().connectToClusterAsync();
+            clientContext.getConnectionManager().connectToClusterAsync();
         } else {
-            client.getConnectionManager().connectToCluster();
+            clientContext.getConnectionManager().connectToCluster();
         }
     }
 
@@ -72,11 +78,11 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
     public void onDisconnectFromCluster() {
         disconnectedFromCluster = true;
         if (reconnectMode == OFF) {
-            client.getLifecycleService().shutdown();
+            clientContext.getLifecycleService().shutdown();
             return;
         }
-        if (client.getLifecycleService().isRunning()) {
-            client.getConnectionManager().connectToClusterAsync();
+        if (clientContext.getLifecycleService().isRunning()) {
+            clientContext.getConnectionManager().connectToClusterAsync();
         }
     }
 
@@ -93,8 +99,8 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
     @Override
     public void onHeartbeatStopped(ClientConnection connection) {
         if (connection.isAuthenticatedAsOwner()) {
-            connection
-                    .close(null, new TargetDisconnectedException("HeartbeatManager timed out to owner connection " + connection));
+            connection.close(null,
+                    new TargetDisconnectedException("Heartbeat timed out to owner connection " + connection));
         }
     }
 
@@ -104,6 +110,6 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
     }
 
     private boolean isClusterAvailable() {
-        return client.getConnectionManager().getOwnerConnectionAddress() != null;
+        return clientContext.getConnectionManager().getOwnerConnectionAddress() != null;
     }
 }

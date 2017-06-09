@@ -26,7 +26,7 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
 
-public final class ClientSmartInvocationServiceImpl extends ClientInvocationServiceSupport {
+public final class ClientSmartInvocationServiceImpl extends ClientInvocationServiceImpl {
 
     private final LoadBalancer loadBalancer;
 

@@ -37,6 +37,7 @@ import com.hazelcast.client.impl.statistics.Statistics;
 import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
 import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientListenerService;
@@ -47,6 +48,7 @@ import com.hazelcast.client.spi.impl.AwsAddressProvider;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientNonSmartInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientSmartInvocationServiceImpl;
@@ -174,13 +176,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final String instanceName;
     private final ClientConfig config;
     private final LifecycleServiceImpl lifecycleService;
-    private final ClientConnectionManager connectionManager;
+    private final ClientConnectionManagerImpl connectionManager;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
-    private final ClientInvocationService invocationService;
+    private final ClientInvocationServiceImpl invocationService;
     private final ClientExecutionServiceImpl executionService;
     private final ClientListenerServiceImpl listenerService;
-    private final ClientTransactionManagerService transactionManager;
+    private final ClientTransactionManagerServiceImpl transactionManager;
     private final NearCacheManager nearCacheManager;
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
@@ -232,7 +234,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         partitionService = new ClientPartitionServiceImpl(this);
         discoveryService = initDiscoveryService(config);
         Collection<AddressProvider> addressProviders = createAddressProviders(externalAddressProvider);
-        connectionManager = clientConnectionManagerFactory
+        connectionManager = (ClientConnectionManagerImpl) clientConnectionManagerFactory
                 .createConnectionManager(config, this, discoveryService, addressProviders);
         clusterService = new ClientClusterServiceImpl(this);
 
@@ -355,7 +357,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return c;
     }
 
-    private ClientInvocationService initInvocationService() {
+    private ClientInvocationServiceImpl initInvocationService() {
         final ClientNetworkConfig networkConfig = config.getNetworkConfig();
         if (networkConfig.isSmartRouting()) {
             return new ClientSmartInvocationServiceImpl(this, loadBalancer);
@@ -401,11 +403,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     public void start() {
-        lifecycleService.setStarted();
         invocationService.start();
         clusterService.start();
+        ClientContext clientContext = new ClientContext(this);
         try {
-            connectionManager.start();
+            connectionManager.start(clientContext);
         } catch (Exception e) {
 //            TODO move to connection manager
             lifecycleService.shutdown();
@@ -421,22 +423,17 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                 new MetricsPlugin(loggingService.getLogger(MetricsPlugin.class), metricsRegistry, properties));
         diagnostics.register(
                 new SystemLogPlugin(properties, connectionManager, this, loggingService.getLogger(SystemLogPlugin.class)));
+        diagnostics.register(
+                new NetworkingPlugin(properties, connectionManager.getEventLoopGroup(), loggingService.getLogger(NetworkingPlugin.class)));
 
-        if (connectionManager instanceof ClientConnectionManagerImpl) {
-            ClientConnectionManagerImpl clientConnectionManager = (ClientConnectionManagerImpl) connectionManager;
-            diagnostics.register(
-                    new NetworkingPlugin(
-                            properties,
-                            clientConnectionManager.getEventLoopGroup(),
-                            loggingService.getLogger(NetworkingPlugin.class)));
-        }
         metricsRegistry.collectMetrics(listenerService);
 
-        proxyManager.init(config);
+        proxyManager.init(config, clientContext);
         listenerService.start();
         loadBalancer.init(getCluster(), config);
         partitionService.start();
         statistics.start();
+        lifecycleService.setStarted();
         clientExtension.afterStart(this);
     }
 
@@ -709,10 +706,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public ClientInvocationService getInvocationService() {
         return invocationService;
-    }
-
-    public ClientExecutionServiceImpl getExecutionService() {
-        return executionService;
     }
 
     public ClientListenerService getListenerService() {

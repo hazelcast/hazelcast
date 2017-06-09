@@ -34,6 +34,7 @@ import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
@@ -185,7 +186,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         } else {
             strategy = new DefaultClientConnectionStrategy();
         }
-        strategy.init(client, connectionStrategyConfig);
         return strategy;
     }
 
@@ -246,8 +246,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         return alive;
     }
 
-    @Override
-    public synchronized void start() throws Exception {
+    public synchronized void start(ClientContext clientContext) throws Exception {
         if (alive) {
             return;
         }
@@ -256,7 +255,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         heartbeat = new HeartbeatManager(this, client);
         heartbeat.start();
         addConnectionHeartbeatListener(this);
-
+        connectionStrategy.init(clientContext);
         connectionStrategy.init();
     }
 
@@ -264,7 +263,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         eventLoopGroup.start();
     }
 
-    @Override
     public synchronized void shutdown() {
         if (!alive) {
             return;
@@ -723,10 +721,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                 }
             }
         }
-    }
-
-    public ClientConnectionStrategy getConnectionStrategy() {
-        return connectionStrategy;
     }
 
     @Override

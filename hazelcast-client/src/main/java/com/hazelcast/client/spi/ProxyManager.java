@@ -159,8 +159,8 @@ public final class ProxyManager {
         }
     }
 
-    public void init(ClientConfig config) {
-        context = new ClientContext(client, this);
+    public void init(ClientConfig config, ClientContext clientContext) {
+        context = clientContext;
         // register defaults
         register(MapService.SERVICE_NAME, createServiceProxyFactory(MapService.class));
         if (JCacheDetector.isJCacheAvailable(config.getClassLoader())) {

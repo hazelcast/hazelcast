@@ -32,8 +32,6 @@ import java.io.IOException;
  */
 public interface ClientInvocationService {
 
-    void start();
-
     void invokeOnConnection(ClientInvocation invocation, ClientConnection connection) throws IOException;
 
     void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException;
@@ -43,8 +41,6 @@ public interface ClientInvocationService {
     void invokeOnTarget(ClientInvocation invocation, Address target) throws IOException;
 
     boolean isRedoOperation();
-
-    void shutdown();
 
     void handleClientMessage(ClientMessage message, Connection connection);
 }
