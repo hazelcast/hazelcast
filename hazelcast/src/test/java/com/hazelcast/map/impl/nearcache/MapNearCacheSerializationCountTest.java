@@ -147,7 +147,7 @@ public class MapNearCacheSerializationCountTest extends AbstractNearCacheSeriali
         IMap<K, V> nearCacheMap = nearCacheMember.getMap(DEFAULT_NEAR_CACHE_NAME);
         IMap<K, V> dataMap = dataMember.getMap(DEFAULT_NEAR_CACHE_NAME);
 
-        NearCacheManager nearCacheManager = getMapNearCacheManager(dataMember);
+        NearCacheManager nearCacheManager = getMapNearCacheManager(nearCacheMember);
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
 
         return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(dataMember))
