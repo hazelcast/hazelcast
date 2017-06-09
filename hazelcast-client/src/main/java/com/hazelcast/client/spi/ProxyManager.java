@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.client.ClientExtension;
+import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.cache.impl.ClientCacheProxyFactory;
 import com.hazelcast.client.config.ClientConfig;
@@ -372,6 +373,9 @@ public final class ProxyManager {
 
     public Address findNextAddressToSendCreateRequest() {
         int clusterSize = client.getClientClusterService().getSize();
+        if (clusterSize == 0) {
+            throw new HazelcastClientOfflineException("Client connecting to cluster");
+        }
         Member liteMember = null;
 
         final LoadBalancer loadBalancer = client.getLoadBalancer();

@@ -228,7 +228,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             if (!connection.isAlive()) {
                 ex = new TargetDisconnectedException(connection.getCloseReason(), connection.getCloseCause());
             } else {
-                ex = new TargetDisconnectedException("HeartbeatManager timed out to " + connection);
+                ex = new TargetDisconnectedException("Heartbeat timed out to " + connection);
             }
 
             invocation.notifyException(ex);

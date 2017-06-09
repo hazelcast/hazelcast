@@ -416,6 +416,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             listener.connectionRemoved(connection);
         }
         if (connection.isAuthenticatedAsOwner()) {
+            setOwnerConnectionAddress(null);
             connectionStrategy.onDisconnectFromCluster();
         }
         connectionStrategy.onDisconnect(connection);

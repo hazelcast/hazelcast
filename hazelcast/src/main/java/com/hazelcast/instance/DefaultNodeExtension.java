@@ -22,6 +22,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.hotrestart.InternalHotRestartService;
@@ -63,6 +64,7 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.UuidUtil;
+import com.hazelcast.util.function.Supplier;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanReplicationService;
@@ -151,6 +153,12 @@ public class DefaultNodeExtension implements NodeExtension {
                     .setPartitioningStrategy(partitioningStrategy)
                     .setHazelcastInstance(hazelcastInstance)
                     .setVersion(version)
+                    .setNotActiveExceptionSupplier(new Supplier<RuntimeException>() {
+                        @Override
+                        public RuntimeException get() {
+                            return new HazelcastInstanceNotActiveException();
+                        }
+                    })
                     .build();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

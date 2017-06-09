@@ -36,6 +36,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.util.function.Supplier;
 
 import java.io.Externalizable;
 import java.io.Serializable;
@@ -85,20 +86,21 @@ public abstract class AbstractSerializationService implements InternalSerializat
     private final int outputBufferSize;
     private volatile boolean active = true;
     private final byte version;
-
-    private ILogger logger = Logger.getLogger(InternalSerializationService.class);
+    private final ILogger logger = Logger.getLogger(InternalSerializationService.class);
 
     AbstractSerializationService(InputOutputFactory inputOutputFactory, byte version, ClassLoader classLoader,
                                  ManagedContext managedContext, PartitioningStrategy globalPartitionStrategy,
                                  int initialOutputBufferSize,
-                                 BufferPoolFactory bufferPoolFactory) {
+                                 BufferPoolFactory bufferPoolFactory,
+                                 Supplier<RuntimeException> notActiveExceptionSupplier) {
         this.inputOutputFactory = inputOutputFactory;
         this.version = version;
         this.classLoader = classLoader;
         this.managedContext = managedContext;
         this.globalPartitioningStrategy = globalPartitionStrategy;
         this.outputBufferSize = initialOutputBufferSize;
-        this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, bufferPoolFactory);
+        this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, bufferPoolFactory,
+                notActiveExceptionSupplier);
         this.nullSerializerAdapter = createSerializerAdapter(new ConstantSerializers.NullSerializer(), this);
     }
 
@@ -135,6 +137,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
         checkNotNull(obj);
 
         BufferPool pool = bufferPoolThreadLocal.get();
+        if(pool == null){
+
+        }
         BufferObjectDataOutput out = pool.takeOutputBuffer();
         try {
             out.position(leftPadding);

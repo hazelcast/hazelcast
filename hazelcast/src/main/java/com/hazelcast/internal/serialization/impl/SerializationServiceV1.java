@@ -36,6 +36,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.util.function.Supplier;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -88,9 +89,9 @@ public class SerializationServiceV1 extends AbstractSerializationService {
             Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
             Map<Integer, ? extends PortableFactory> portableFactories, ManagedContext managedContext,
             PartitioningStrategy globalPartitionStrategy, int initialOutputBufferSize, BufferPoolFactory bufferPoolFactory,
-            boolean enableCompression, boolean enableSharedObject) {
+            boolean enableCompression, boolean enableSharedObject, Supplier<RuntimeException> notActiveExceptionSupplier) {
         super(inputOutputFactory, version, classLoader, managedContext, globalPartitionStrategy, initialOutputBufferSize,
-                bufferPoolFactory);
+                bufferPoolFactory, notActiveExceptionSupplier);
 
         PortableHookLoader loader = new PortableHookLoader(portableFactories, classLoader);
         portableContext = new PortableContextImpl(this, portableVersion);

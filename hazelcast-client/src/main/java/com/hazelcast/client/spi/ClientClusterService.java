@@ -109,11 +109,4 @@ public interface ClientClusterService {
 
     void init() throws Exception;
 
-    //    /**
-//     * The owner connection is opened to owner member of the client in the cluster.
-//     * If the owner member dies, other members of the cluster assumes this client is dead.
-//     *
-//     * @return The address of the owner connection.
-//     */
-//    Address getOwnerConnectionAddress();
 }

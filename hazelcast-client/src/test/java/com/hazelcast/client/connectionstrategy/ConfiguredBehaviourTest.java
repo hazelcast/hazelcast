@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.connectionstrategy;
 
+import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ClientConnectionStrategy;
@@ -118,7 +119,7 @@ public class ConfiguredBehaviourTest
         client.getMap(randomMapName());
     }
 
-    @Test(expected = HazelcastClientOfflineException.class)
+    @Test(expected = HazelcastClientNotActiveException.class)
     public void testReconnectModeOFFSingleMember() {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 
@@ -135,9 +136,9 @@ public class ConfiguredBehaviourTest
         map.put(1, 5);
     }
 
-    @Test(expected = HazelcastClientOfflineException.class)
+    @Test(expected = HazelcastClientNotActiveException.class)
     public void testReconnectModeOFFTwoMembers() {
-        HazelcastInstance[] hazelcastInstances = hazelcastFactory.newInstances(getConfig(), 2);
+        hazelcastFactory.newInstances(getConfig(), 2);
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().setReconnectMode(OFF);
@@ -147,7 +148,9 @@ public class ConfiguredBehaviourTest
         IMap<Integer, Integer> map = client.getMap(randomMapName());
         map.put(1, 5);
 
-        hazelcastInstances[0].shutdown();
+        HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
+        HazelcastInstance ownerServer = getOwnerServer(hazelcastFactory, clientInstanceImpl);
+        ownerServer.shutdown();
 
         map.put(1, 5);
     }
@@ -258,6 +261,7 @@ public class ConfiguredBehaviourTest
         hazelcastFactory.newInstances(getConfig(), 2);
 
         final CountDownLatch connectedLatch = new CountDownLatch(1);
+        final CountDownLatch disconnectedLatch = new CountDownLatch(1);
         final CountDownLatch reconnectedLatch = new CountDownLatch(1);
 
         ClientConfig clientConfig = new ClientConfig();
@@ -282,15 +286,20 @@ public class ConfiguredBehaviourTest
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
-                reconnectedLatch.countDown();
+                if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED.equals(event.getState())) {
+                    disconnectedLatch.countDown();
+                }
+                if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED.equals(event.getState())) {
+                    reconnectedLatch.countDown();
+                }
             }
         });
-
-        assertOpenEventually(reconnectedLatch);
 
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         HazelcastInstance ownerServer = getOwnerServer(hazelcastFactory, clientInstanceImpl);
         ownerServer.shutdown();
+
+        assertOpenEventually(reconnectedLatch);
 
         map.get(1);
     }

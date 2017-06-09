@@ -29,7 +29,7 @@ import static com.hazelcast.client.config.ClientConnectionStrategyConfig.Reconne
  */
 public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
 
-    private boolean disconnectedFromCluster;
+    private volatile boolean disconnectedFromCluster;
 
     @Override
     public void init() {
@@ -42,17 +42,23 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
 
     @Override
     public void beforeGetConnection(Address target) {
-        if (clientStartAsync && !disconnectedFromCluster && !isClusterAvailable()) {
+        if (isClusterAvailable()) {
+            return;
+        }
+        if (clientStartAsync && !disconnectedFromCluster) {
             throw new HazelcastClientOfflineException("Client is connecting to cluster.");
         }
-        if (reconnectMode == ASYNC && disconnectedFromCluster && !isClusterAvailable()) {
+        if (reconnectMode == ASYNC && disconnectedFromCluster) {
             throw new HazelcastClientOfflineException("Client is offline.");
         }
     }
 
     @Override
     public void beforeOpenConnection(Address target) {
-        if (reconnectMode == ASYNC && disconnectedFromCluster && !isClusterAvailable()) {
+        if (isClusterAvailable()) {
+            return;
+        }
+        if (reconnectMode == ASYNC && disconnectedFromCluster) {
             throw new HazelcastClientOfflineException("Client is offline");
         }
     }
@@ -66,6 +72,7 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
     public void onDisconnectFromCluster() {
         disconnectedFromCluster = true;
         if (reconnectMode == OFF) {
+            client.getLifecycleService().shutdown();
             return;
         }
         if (client.getLifecycleService().isRunning()) {
