@@ -331,7 +331,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         int keysSize = keys.size();
         List<Data> dataKeys = new ArrayList<Data>(keysSize);
         List<Object> resultingKeyValuePairs = new ArrayList<Object>(keysSize * 2);
-        getAllObjectInternal(keys, dataKeys, resultingKeyValuePairs);
+        getAllInternal(keys, dataKeys, resultingKeyValuePairs);
 
         Map<K, V> result = createHashMap(keysSize);
         for (int i = 0; i < resultingKeyValuePairs.size(); ) {

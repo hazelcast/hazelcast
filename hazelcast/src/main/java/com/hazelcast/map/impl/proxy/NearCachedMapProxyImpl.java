@@ -38,6 +38,7 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.executor.CompletedFuture;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -368,20 +369,23 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected void getAllObjectInternal(Set<K> keys, List<Data> dataKeys, List<Object> resultingKeyValuePairs) {
+    protected void getAllInternal(Set<K> keys, List<Data> dataKeys, List<Object> resultingKeyValuePairs) {
         if (serializeKeys) {
             toDataCollection(keys, dataKeys);
         }
-        Collection ncKeys = serializeKeys ? dataKeys : keys;
+        Collection ncKeys = serializeKeys ? dataKeys : new ArrayList<K>(keys);
 
         getCachedValues(ncKeys, resultingKeyValuePairs);
+        if (ncKeys.isEmpty()) {
+            return;
+        }
 
         Map<Object, Long> reservations = emptyMap();
         try {
             reservations = tryReserveForUpdate(ncKeys);
             int currentSize = resultingKeyValuePairs.size();
 
-            super.getAllObjectInternal(keys, dataKeys, resultingKeyValuePairs);
+            super.getAllInternal(keys, dataKeys, resultingKeyValuePairs);
 
             for (int i = currentSize; i < resultingKeyValuePairs.size(); ) {
                 Object key = toNearCacheKeyWithStrategy(resultingKeyValuePairs.get(i++));

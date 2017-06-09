@@ -723,7 +723,7 @@ abstract class MapProxySupport<K, V>
         }
     }
 
-    protected void getAllObjectInternal(Set<K> keys, List<Data> dataKeys, List<Object> resultingKeyValuePairs) {
+    protected void getAllInternal(Set<K> keys, List<Data> dataKeys, List<Object> resultingKeyValuePairs) {
         if (keys == null || keys.isEmpty()) {
             return;
         }

@@ -52,8 +52,8 @@ import com.hazelcast.util.executor.CompletedFuture;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CompletionListener;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -234,14 +234,14 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     @Override
     protected List<Map.Entry<Data, Data>> getAllInternal(Set<? extends K> keys, Collection<Data> dataKeys,
                                                          ExpiryPolicy expiryPolicy, Map<K, V> resultMap, long startNanos) {
-        if (keys.isEmpty()) {
-            return Collections.emptyList();
-        }
         if (serializeKeys) {
             objectToDataCollection(keys, dataKeys, getSerializationService(), NULL_KEY_IS_NOT_ALLOWED);
         }
-        Collection<?> keySet = serializeKeys ? dataKeys : keys;
+        Collection<?> keySet = serializeKeys ? dataKeys : new ArrayList<Object>(keys);
         populateResultFromNearCache(keySet, resultMap);
+        if (keySet.isEmpty()) {
+            return null;
+        }
 
         Map<Object, Long> reservations = createHashMap(keys.size());
         for (Object key : keySet) {

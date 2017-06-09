@@ -51,6 +51,7 @@ import com.hazelcast.util.executor.CompletedFuture;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -391,18 +392,29 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"checkstyle:npathcomplexity", "unchecked"})
     protected List<MapGetAllCodec.ResponseParameters> getAllInternal(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData,
                                                                      Map<K, V> result) {
         Map<Object, Long> reservations = new HashMap<Object, Long>();
         try {
             if (serializeKeys) {
                 fillPartitionToKeyData(keys, partitionToKeyData);
+                boolean allEmpty = true;
                 for (List<Data> keyList : partitionToKeyData.values()) {
                     populateResultFromNearCache(result, reservations, keyList.iterator());
+                    if (!keyList.isEmpty()) {
+                        allEmpty = false;
+                    }
+                }
+                if (allEmpty) {
+                    return null;
                 }
             } else {
+                keys = new HashSet<K>(keys);
                 populateResultFromNearCache(result, reservations, keys.iterator());
+                if (keys.isEmpty()) {
+                    return null;
+                }
                 fillPartitionToKeyData(keys, partitionToKeyData);
             }
             List<MapGetAllCodec.ResponseParameters> responses = super.getAllInternal(keys, partitionToKeyData, result);
