@@ -30,6 +30,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.nio.Address;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -61,7 +62,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
 
         @Override
         public void stateChanged(LifecycleEvent event) {
-            latestState = STARTING;
+            latestState = event.getState();
         }
 
         LifecycleEvent.LifecycleState getLatestState() {
@@ -338,7 +339,13 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
 
                 assertEquals(STARTING, stateTrackingListener.getLatestState());
                 clientContext.getConnectionManager().connectToCluster();
-                assertEquals(CLIENT_CONNECTED, stateTrackingListener.getLatestState());
+                assertTrueEventually(new AssertTask() {
+                    @Override
+                    public void run()
+                            throws Exception {
+                        assertEquals(CLIENT_CONNECTED, stateTrackingListener.getLatestState());
+                    }
+                });
             }
 
             @Override
@@ -361,8 +368,13 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
                 assertTrue(onConnectCount.get() < 4);
                 assertTrue(onDisconnectCount.get() < 2);
 
-                LifecycleEvent.LifecycleState latestState = stateTrackingListener.getLatestState();
-                assertTrue(CLIENT_CONNECTED.equals(latestState));
+                assertTrueEventually(new AssertTask() {
+                    @Override
+                    public void run()
+                            throws Exception {
+                        assertEquals(CLIENT_CONNECTED, stateTrackingListener.getLatestState());
+                    }
+                });
             }
 
             @Override
@@ -374,7 +386,14 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
                 assertEquals(2, onConnectCount.get());
                 assertEquals(1, onDisconnectCount.get());
 
-                assertEquals(CLIENT_DISCONNECTED, stateTrackingListener.getLatestState());
+                assertTrueEventually(new AssertTask() {
+                    @Override
+                    public void run()
+                            throws Exception {
+                        assertEquals(CLIENT_DISCONNECTED, stateTrackingListener.getLatestState());
+                    }
+                });
+
                 clientContext.getConnectionManager().connectToCluster();
             }
 
@@ -419,8 +438,12 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         assertTrue(client.getLifecycleService().isRunning());
 
         IMap<Integer, Integer> map = client.getMap(randomMapName());
+        // force connection open to both members
+        for (int i = 0;i < 1000; ++i) {
+            map.put(i, 2 * i);
+        }
 
-        assertEquals(0, initCount.get());
+        assertEquals(1, initCount.get());
         assertEquals(1, onConnectToClusterCount.get());
         assertEquals(0, onDisconnectFromClusterCount.get());
         assertEquals(2, beforeOpenConnectionCount.get());
