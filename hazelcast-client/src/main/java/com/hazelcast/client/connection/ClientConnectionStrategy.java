@@ -62,6 +62,9 @@ public abstract class ClientConnectionStrategy {
     protected boolean clientStartAsync;
     protected ClientConnectionStrategyConfig.ReconnectMode reconnectMode;
 
+    public ClientConnectionStrategy() {
+    }
+
     public final void init(HazelcastClientInstanceImpl client,
                            ClientConnectionManagerImpl clientConnectionManager,
                            Collection<AddressProvider> addressProviders) {

@@ -18,6 +18,8 @@ package com.hazelcast.client.connectionstrategy;
 
 import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.connection.ClientConnectionStrategy;
+import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -26,9 +28,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.ExceptionUtil;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -43,7 +47,8 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ConfiguredBehaviourTest extends ClientTestSupport {
+public class ConfiguredBehaviourTest
+        extends ClientTestSupport {
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @After
@@ -227,6 +232,80 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         HazelcastInstance ownerServer = getOwnerServer(hazelcastFactory, clientInstanceImpl);
         ownerServer.shutdown();
 
+        map.get(1);
+    }
+
+    @Test
+    public void testCustomImplSyncReConnect() {
+        hazelcastFactory.newInstances(getConfig(), 2);
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getConnectionStrategyConfig().setImplementation(new ClientConnectionStrategy() {
+            @Override
+            public void init() {
+                try {
+                    connectToCluster();
+                } catch (Exception e) {
+                    ExceptionUtil.rethrow(e);
+                }
+            }
+
+            @Override
+            public void beforeGetConnection(Address target) {
+
+            }
+
+            @Override
+            public void beforeOpenConnection(Address target) {
+
+            }
+
+            @Override
+            public void onConnectToCluster() {
+
+            }
+
+            @Override
+            public void onDisconnectFromCluster() {
+                try {
+                    connectToCluster();
+                } catch (Exception e) {
+                    ExceptionUtil.rethrow(e);
+                }
+            }
+
+            @Override
+            public void onConnect(ClientConnection connection) {
+
+            }
+
+            @Override
+            public void onDisconnect(ClientConnection connection) {
+
+            }
+
+            @Override
+            public void onHeartbeatStopped(ClientConnection connection) {
+            }
+
+            @Override
+            public void onHeartbeatResumed(ClientConnection connection) {
+
+            }
+        });
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        assertTrue(client.getLifecycleService().isRunning());
+
+        IMap<Integer, Integer> map = client.getMap(randomMapName());
+
+        map.put(1, 5);
+
+        HazelcastInstance ownerServer = getOwnerServer(hazelcastFactory, getHazelcastClientInstanceImpl(client));
+        ownerServer.shutdown();
+
+        // no exception on this call
         map.get(1);
     }
 }
