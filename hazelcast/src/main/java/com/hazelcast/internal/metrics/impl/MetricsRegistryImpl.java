@@ -27,6 +27,7 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.ConcurrentReferenceHashMap;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,8 +65,10 @@ public class MetricsRegistryImpl implements MetricsRegistry {
             = new ScheduledThreadPoolExecutor(2, new ThreadFactoryImpl("MetricsRegistry-thread-"));
 
     private final ConcurrentMap<String, ProbeInstance> probeInstances = new ConcurrentHashMap<String, ProbeInstance>();
+
+    // use ConcurrentReferenceHashMap to allow unreferenced Class instances to be garbage collected
     private final ConcurrentMap<Class<?>, SourceMetadata> metadataMap
-            = new ConcurrentHashMap<Class<?>, SourceMetadata>();
+            = new ConcurrentReferenceHashMap<Class<?>, SourceMetadata>();
     private final LockStripe lockStripe = new LockStripe();
 
     private final AtomicReference<SortedProbeInstances> sortedProbeInstancesRef
