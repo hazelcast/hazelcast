@@ -32,24 +32,41 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.ExceptionUtil;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.ASYNC;
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CONNECTED;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ConfiguredBehaviourTest
         extends ClientTestSupport {
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
+    private class StateTrackingListener implements LifecycleListener {
+        private volatile LifecycleEvent.LifecycleState latestState = STARTING;
+
+        @Override
+        public void stateChanged(LifecycleEvent event) {
+            latestState = STARTING;
+        }
+
+        LifecycleEvent.LifecycleState getLatestState() {
+            return latestState;
+        }
+    }
 
     @After
     public void tearDown() {
@@ -147,19 +164,7 @@ public class ConfiguredBehaviourTest
 
     @Test(expected = HazelcastClientOfflineException.class)
     public void testReconnectModeASYNCSingleMemberInitiallyOffline() {
-        hazelcastFactory.newHazelcastInstance();
-
-        final CountDownLatch connectedLatch = new CountDownLatch(1);
-
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.addListenerConfig(new ListenerConfig(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (event.getState().equals(CLIENT_CONNECTED)) {
-                    connectedLatch.countDown();
-                }
-            }
-        }));
         clientConfig.getConnectionStrategyConfig().setReconnectMode(ASYNC);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
@@ -187,6 +192,31 @@ public class ConfiguredBehaviourTest
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         assertTrue(client.getLifecycleService().isRunning());
+
+        assertOpenEventually(connectedLatch);
+
+        client.getMap(randomMapName());
+    }
+
+    @Test
+    public void testReconnectModeASYNCSingleMemberStartLate() {
+        final CountDownLatch connectedLatch = new CountDownLatch(1);
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.addListenerConfig(new ListenerConfig(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState().equals(CLIENT_CONNECTED)) {
+                    connectedLatch.countDown();
+                }
+            }
+        }));
+        clientConfig.getConnectionStrategyConfig().setReconnectMode(ASYNC);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        assertTrue(client.getLifecycleService().isRunning());
+
+        hazelcastFactory.newHazelcastInstance();
 
         assertOpenEventually(connectedLatch);
 
@@ -236,61 +266,100 @@ public class ConfiguredBehaviourTest
     }
 
     @Test
-    public void testCustomImplSyncReConnect() {
+    public void testCustomStrategyImplSyncReConnect() {
+        final AtomicInteger initCount = new AtomicInteger(0);
+        final AtomicInteger onConnectToClusterCount = new AtomicInteger();
+        final AtomicInteger onDisconnectFromClusterCount = new AtomicInteger();
+        final AtomicInteger beforeOpenConnectionCount = new AtomicInteger();
+        final AtomicInteger onConnectCount = new AtomicInteger(0);
+        final AtomicInteger onDisconnectCount = new AtomicInteger(0);
+
         hazelcastFactory.newInstances(getConfig(), 2);
 
         ClientConfig clientConfig = new ClientConfig();
+
+        final StateTrackingListener stateTrackingListener = new StateTrackingListener();
+        clientConfig.addListenerConfig(new ListenerConfig(stateTrackingListener));
+
         clientConfig.getConnectionStrategyConfig().setImplementation(new ClientConnectionStrategy() {
             @Override
             public void init() {
-                try {
-                    connectToCluster();
-                } catch (Exception e) {
-                    ExceptionUtil.rethrow(e);
-                }
+                assertEquals(0, initCount.getAndIncrement());
+                assertEquals(0, onConnectToClusterCount.get());
+                assertEquals(0, onDisconnectFromClusterCount.get());
+                assertEquals(0, beforeOpenConnectionCount.get());
+                assertEquals(0, onConnectCount.get());
+                assertEquals(0, onDisconnectCount.get());
+
+                assertEquals(STARTING, stateTrackingListener.getLatestState());
+                connectToCluster();
+                assertEquals(CLIENT_CONNECTED, stateTrackingListener.getLatestState());
             }
 
             @Override
             public void beforeGetConnection(Address target) {
-
+                assertEquals(0, initCount.get());
             }
 
             @Override
             public void beforeOpenConnection(Address target) {
-
+                assertEquals(0, initCount.get());
+                beforeOpenConnectionCount.incrementAndGet();
             }
 
             @Override
             public void onConnectToCluster() {
+                assertEquals(0, initCount.get());
+                assertTrue(onConnectToClusterCount.getAndIncrement() < 2);
+                assertTrue(onDisconnectFromClusterCount.get() < 2);
+                assertTrue(beforeOpenConnectionCount.get() < 4);
+                assertTrue(onConnectCount.get() < 4);
+                assertTrue(onDisconnectCount.get() < 2);
 
+                assertEquals(CLIENT_CONNECTED, stateTrackingListener.getLatestState());
             }
 
             @Override
             public void onDisconnectFromCluster() {
-                try {
-                    connectToCluster();
-                } catch (Exception e) {
-                    ExceptionUtil.rethrow(e);
-                }
+                assertEquals(0, initCount.get());
+                assertEquals(1, onConnectToClusterCount.get());
+                assertEquals(0, onDisconnectFromClusterCount.getAndIncrement());
+                assertEquals(2, beforeOpenConnectionCount.get());
+                assertEquals(2, onConnectCount.get());
+                assertEquals(1, onDisconnectCount.get());
+
+                assertEquals(CLIENT_DISCONNECTED, stateTrackingListener.getLatestState());
+                connectToCluster();
             }
 
             @Override
             public void onConnect(ClientConnection connection) {
-
+                assertEquals(0, initCount.get());
+                assertTrue(onConnectToClusterCount.get() < 2);
+                assertTrue(onDisconnectFromClusterCount.get() < 2);
+                assertTrue(beforeOpenConnectionCount.get() < 4);
+                assertTrue(onConnectCount.getAndIncrement() < 3);
+                assertTrue(onDisconnectCount.get() < 2);
             }
 
             @Override
             public void onDisconnect(ClientConnection connection) {
-
+                assertEquals(0, initCount.get());
+                assertEquals(1, onConnectToClusterCount.get());
+                assertEquals(0, onDisconnectFromClusterCount.getAndIncrement());
+                assertEquals(2, beforeOpenConnectionCount.get());
+                assertEquals(2, onConnectCount.get());
+                assertEquals(0, onDisconnectCount.getAndIncrement());
             }
 
             @Override
             public void onHeartbeatStopped(ClientConnection connection) {
+                fail("onHeartbeatStopped should not be called");
             }
 
             @Override
             public void onHeartbeatResumed(ClientConnection connection) {
-
+                fail("onHeartbeatResumed should not be called");
             }
         });
 
@@ -300,6 +369,13 @@ public class ConfiguredBehaviourTest
 
         IMap<Integer, Integer> map = client.getMap(randomMapName());
 
+        assertEquals(0, initCount.get());
+        assertEquals(1, onConnectToClusterCount.get());
+        assertEquals(0, onDisconnectFromClusterCount.get());
+        assertEquals(2, beforeOpenConnectionCount.get());
+        assertEquals(2, onConnectCount.get());
+        assertEquals(0, onDisconnectCount.get());
+
         map.put(1, 5);
 
         HazelcastInstance ownerServer = getOwnerServer(hazelcastFactory, getHazelcastClientInstanceImpl(client));
@@ -307,5 +383,13 @@ public class ConfiguredBehaviourTest
 
         // no exception on this call
         map.get(1);
+
+        assertEquals(0, initCount.get());
+        assertEquals(1, onConnectToClusterCount.get());
+        assertEquals(1, onDisconnectFromClusterCount.get());
+        assertEquals(3, beforeOpenConnectionCount.get());
+        assertEquals(3, onConnectCount.get());
+        assertEquals(1, onDisconnectCount.get());
+
     }
 }
