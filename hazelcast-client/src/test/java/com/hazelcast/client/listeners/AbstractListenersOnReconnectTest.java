@@ -255,7 +255,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     public void testTemporaryBlockedNoDisconnectionSmartRouting() {
         factory.newHazelcastInstance();
 
-        ClientConfig clientConfig = getSmartClientConfig(4, 1);
+        ClientConfig clientConfig = getSmartClientConfigWithHeartbeat();
         client = factory.newHazelcastClient(clientConfig);
 
         testListenersTemporaryNetworkBlockage();
@@ -265,7 +265,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     public void testTemporaryBlockedNoDisconnectionNonSmartRouting() {
         factory.newHazelcastInstance();
 
-        ClientConfig clientConfig = getNonSmartClientConfig(4, 1);
+        ClientConfig clientConfig = getNonSmartClientConfigWithHeartbeat();
         client = factory.newHazelcastClient(clientConfig);
 
         testListenersTemporaryNetworkBlockage();
@@ -275,7 +275,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     public void testTemporaryBlockedNoDisconnectionMultipleServerSmartRouting() {
         factory.newInstances(null, 3);
 
-        ClientConfig clientConfig = getSmartClientConfig(4, 1);
+        ClientConfig clientConfig = getSmartClientConfigWithHeartbeat();
         client = factory.newHazelcastClient(clientConfig);
 
         testListenersTemporaryNetworkBlockage();
@@ -285,7 +285,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     public void testTemporaryBlockedNoDisconnectionMultipleServerNonSmartRouting() {
         factory.newInstances(null, 3);
 
-        ClientConfig clientConfig = getNonSmartClientConfig(4, 1);
+        ClientConfig clientConfig = getNonSmartClientConfigWithHeartbeat();
         client = factory.newHazelcastClient(clientConfig);
 
         testListenersTemporaryNetworkBlockage();
@@ -297,18 +297,12 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         HazelcastInstance server = getOwnerServer(factory, clientInstanceImpl);
 
-
         long timeout = clientInstanceImpl.getProperties().getMillis(HEARTBEAT_TIMEOUT);
-        long heartbeatTimeout = timeout > 0 ? timeout : Integer.parseInt(HEARTBEAT_TIMEOUT.getDefaultValue());
-        long waitTime = heartbeatTimeout / 2;
+        long waitTime = timeout / 2;
 
-        long endTime = System.currentTimeMillis() + waitTime;
         blockMessagesFromInstance(server, client);
-        long sleepTime = endTime - System.currentTimeMillis();
 
-        if (sleepTime > 0) {
-            sleepMillis((int) sleepTime);
-        }
+        sleepMillis((int) waitTime);
 
         unblockMessagesFromInstance(server, client);
 
@@ -321,7 +315,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     public void testClusterReconnectDueToHeartbeatSmartRouting() {
         factory.newHazelcastInstance();
 
-        ClientConfig clientConfig = getSmartClientConfig(4, 1);
+        ClientConfig clientConfig = getSmartClientConfigWithHeartbeat();
         client = factory.newHazelcastClient(clientConfig);
 
         testListenersHeartbeatTimeoutToOwner();
@@ -331,7 +325,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     public void testClusterReconnectMultipleServersDueToHeartbeatSmartRouting() {
         factory.newInstances(null, 3);
 
-        ClientConfig clientConfig = getSmartClientConfig(4, 1);
+        ClientConfig clientConfig = getSmartClientConfigWithHeartbeat();
         client = factory.newHazelcastClient(clientConfig);
 
         testListenersHeartbeatTimeoutToOwner();
@@ -341,7 +335,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     public void testClusterReconnectDueToHeartbeatNonSmartRouting() {
         factory.newHazelcastInstance();
 
-        ClientConfig clientConfig = getNonSmartClientConfig(4, 1);
+        ClientConfig clientConfig = getNonSmartClientConfigWithHeartbeat();
         client = factory.newHazelcastClient(clientConfig);
 
         testListenersHeartbeatTimeoutToOwner();
@@ -351,7 +345,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     public void testClusterReconnectMultipleServerDueToHeartbeatNonSmartRouting() {
         factory.newInstances(null, 3);
 
-        ClientConfig clientConfig = getNonSmartClientConfig(4, 1);
+        ClientConfig clientConfig = getNonSmartClientConfigWithHeartbeat();
         client = factory.newHazelcastClient(clientConfig);
 
         testListenersHeartbeatTimeoutToOwner();
@@ -540,18 +534,18 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         return listenerService.getActiveRegistrations(id);
     }
 
-    private ClientConfig getNonSmartClientConfig(int heartbeatTimeoutSeconds, int heartbeatIntervalSeconds) {
-        ClientConfig clientConfig = getSmartClientConfig(heartbeatTimeoutSeconds, heartbeatIntervalSeconds);
+    private ClientConfig getNonSmartClientConfigWithHeartbeat() {
+        ClientConfig clientConfig = getSmartClientConfigWithHeartbeat();
         clientConfig.getNetworkConfig().setSmartRouting(false);
         return clientConfig;
     }
 
-    private ClientConfig getSmartClientConfig(int heartbeatTimeoutSeconds, int heartbeatIntervalSeconds) {
+    private ClientConfig getSmartClientConfigWithHeartbeat() {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         clientConfig.getNetworkConfig().setRedoOperation(true);
-        clientConfig.setProperty(ClientProperty.HEARTBEAT_TIMEOUT.getName(), String.valueOf(TimeUnit.SECONDS.toMillis(heartbeatTimeoutSeconds)));
-        clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), String.valueOf(TimeUnit.SECONDS.toMillis(heartbeatIntervalSeconds)));
+        clientConfig.setProperty(ClientProperty.HEARTBEAT_TIMEOUT.getName(), String.valueOf(TimeUnit.SECONDS.toMillis(20)));
+        clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), String.valueOf(TimeUnit.SECONDS.toMillis(1)));
         return clientConfig;
     }
 
