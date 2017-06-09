@@ -85,6 +85,22 @@ Here are the definitions of the properties
 * `connection-timeout-seconds`: The maximum amount of time Hazelcast will try to connect to a well known member before giving up. Setting this value too low could mean that a member is not able to connect to a cluster. Setting the value too high means that member startup could slow down because of longer timeouts (for example, when a well known member is not up). Increasing this value is recommended if you have many IPs listed and the members cannot properly build up the cluster. Its default value is 5.
 * `hz-port`: You can set searching for other ports rather than 5701 if you've members on different ports. It is optional.
 
+### Configuring Hazelcast Cluster Members for AWS ECS 
+
+In order to enable discovery within AWS ECS Cluster, within `taskdef.json` or container settings, Hazelcast member should be bind to `host` network. Therefore, proper json representation for task should contain below segment:
+```
+"networkMode": "host"
+```
+
+Also, cluster member should have below interface binding in `hazelcast.xml` configuration file.
+```
+<interfaces enabled="true">
+    <interface>10.0.*.*</interface>
+</interfaces>
+```
+Please note that `10.0.*.*` value depends on your CIDR block definition.
+If more than one `subnet` or `custom VPC` is used for cluster, it should be checked that `container instances` within cluster have newtork connectivity or have `tracepath` to each other. 
+
 ### Configuring AWS Discovery using Discovery SPI for Hazelcast Client
 
 - Add the *hazelcast-aws.jar* dependency to your project. The hazelcast-aws plugin does not depend on any other third party modules.
