@@ -111,6 +111,7 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     @Override
     public V get(K key) {
         checkNotNull(key, "key cannot be null on get!");
+        checkKeyFormat(key);
 
         return nearCacheRecordStore.get(key);
     }
@@ -118,6 +119,7 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     @Override
     public void put(K key, Data keyData, V value) {
         checkNotNull(key, "key cannot be null on put!");
+        checkKeyFormat(key);
 
         nearCacheRecordStore.doEvictionIfRequired();
 
@@ -127,9 +129,7 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     @Override
     public boolean remove(K key) {
         checkNotNull(key, "key cannot be null on remove!");
-        if (!serializeKeys) {
-            checkNotInstanceOf(Data.class, key, "key cannot be of type Data!");
-        }
+        checkKeyFormat(key);
 
         return nearCacheRecordStore.remove(key);
     }
@@ -219,6 +219,12 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
 
     public NearCacheRecordStore<K, V> getNearCacheRecordStore() {
         return nearCacheRecordStore;
+    }
+
+    private void checkKeyFormat(K key) {
+        if (!serializeKeys) {
+            checkNotInstanceOf(Data.class, key, "key cannot be of type Data!");
+        }
     }
 
     private class ExpirationTask implements Runnable {

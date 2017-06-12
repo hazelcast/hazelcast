@@ -51,12 +51,13 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class NearCacheStatsStressTest extends HazelcastTestSupport {
 
-    final int keySpace = 1000;
-    final TestHazelcastFactory factory = new TestHazelcastFactory();
-    final AtomicBoolean stop = new AtomicBoolean(false);
+    private static final int KEY_SPACE = 1000;
 
-    InternalSerializationService ss;
-    NearCache nearCache;
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final AtomicBoolean stop = new AtomicBoolean(false);
+
+    private InternalSerializationService ss;
+    private NearCache<Object, Object> nearCache;
 
     @Before
     public void setUp() throws Exception {
@@ -107,18 +108,15 @@ public class NearCacheStatsStressTest extends HazelcastTestSupport {
         }
     }
 
-    private Data getKeyData() {
-        return ss.toData(getInt(keySpace));
-    }
-
     class Put implements Runnable {
         @Override
         public void run() {
             while (!stop.get()) {
-                Data keyData = getKeyData();
-                long reservationId = nearCache.tryReserveForUpdate(keyData, keyData);
+                Object key = getInt(KEY_SPACE);
+                Data keyData = ss.toData(key);
+                long reservationId = nearCache.tryReserveForUpdate(key, keyData);
                 if (reservationId != NOT_RESERVED) {
-                    nearCache.tryPublishReserved(keyData, keyData, reservationId, false);
+                    nearCache.tryPublishReserved(key, keyData, reservationId, false);
                 }
             }
         }
@@ -128,8 +126,8 @@ public class NearCacheStatsStressTest extends HazelcastTestSupport {
         @Override
         public void run() {
             while (!stop.get()) {
-                Data keyData = getKeyData();
-                nearCache.remove(keyData);
+                Object key = getInt(KEY_SPACE);
+                nearCache.remove(key);
             }
         }
     }

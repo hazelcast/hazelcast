@@ -136,7 +136,7 @@
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
-        <serialize-keys>false</serialize-keys>
+        <serialize-keys>true</serialize-keys>
         <local-update-policy>INVALIDATE</local-update-policy>
     </near-cache>
 

@@ -2527,7 +2527,7 @@
             <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="in-memory-format" type="in-memory-format" use="optional" default="BINARY"/>
-        <xs:attribute name="serialize-keys" use="optional" type="parameterized-boolean" default="true"/>
+        <xs:attribute name="serialize-keys" use="optional" type="parameterized-boolean" default="false"/>
         <xs:attribute name="invalidate-on-change" use="optional" type="parameterized-boolean" default="true"/>
         <xs:attribute name="time-to-live-seconds" use="optional" type="xs:string" default="0"/>
         <xs:attribute name="max-idle-seconds" use="optional" type="xs:string" default="0"/>
