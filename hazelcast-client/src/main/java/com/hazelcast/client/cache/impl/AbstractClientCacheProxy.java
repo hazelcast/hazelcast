@@ -147,9 +147,9 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             return delegatingFuture;
         } else {
             try {
-                V value = toObject(delegatingFuture.get());
+                V value = delegatingFuture.get();
                 if (nearCache != null) {
-                    storeInNearCache(keyData, (Data) delegatingFuture.getResponse(), value, reservationId, false);
+                    storeInNearCache(keyData, (Data) delegatingFuture.getRaw(), value, reservationId, false);
                 }
                 if (statisticsEnabled) {
                     handleStatisticsOnGet(start, value);

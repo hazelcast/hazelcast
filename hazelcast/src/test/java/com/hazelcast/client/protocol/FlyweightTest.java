@@ -17,7 +17,6 @@
 package com.hazelcast.client.protocol;
 
 import com.hazelcast.client.impl.protocol.util.MessageFlyweight;
-import com.hazelcast.client.impl.protocol.util.SafeBuffer;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -50,7 +49,7 @@ public class FlyweightTest {
     public void setUp() {
         byteBuffer = ByteBuffer.allocate(512);
 
-        flyweight.wrap(new SafeBuffer(byteBuffer.array()), 0);
+        flyweight.wrap(byteBuffer.array(), 0, true);
     }
 
     @After

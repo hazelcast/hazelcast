@@ -52,8 +52,8 @@ public class MessageFlyweight {
         offset = 0;
     }
 
-    public MessageFlyweight wrap(ClientProtocolBuffer buffer, int offset) {
-        this.buffer = buffer;
+    public MessageFlyweight wrap(byte[] buffer, int offset, boolean useUnsafe) {
+        this.buffer = useUnsafe ? new UnsafeBuffer(buffer) : new SafeBuffer(buffer);
         this.offset = offset;
         this.index = 0;
         return this;
