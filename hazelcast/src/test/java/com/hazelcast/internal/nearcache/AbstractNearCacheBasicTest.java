@@ -23,6 +23,7 @@ import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.ICacheCompletionListener;
 import com.hazelcast.internal.adapter.ICacheReplaceEntryProcessor;
 import com.hazelcast.internal.adapter.IMapReplaceEntryProcessor;
+import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
@@ -52,9 +53,9 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertThatMemo
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertThatMemoryCostsAreZero;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assumeThatLocalUpdatePolicyIsCacheOnUpdate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assumeThatLocalUpdatePolicyIsInvalidate;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getValueFromNearCache;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getFuture;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getNearCacheKey;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getValueFromNearCache;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdate;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.setEvictionConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.waitUntilLoaded;
@@ -97,6 +98,8 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
             DataStructureMethods.INVOKE,
             DataStructureMethods.EXECUTE_ON_KEY,
             DataStructureMethods.EXECUTE_ON_KEYS,
+            DataStructureMethods.EXECUTE_ON_ENTRIES,
+            DataStructureMethods.EXECUTE_ON_ENTRIES_WITH_PREDICATE,
             DataStructureMethods.INVOKE_ALL
     );
 
@@ -511,6 +514,40 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#EXECUTE_ON_ENTRIES} is used.
+     */
+    @Test
+    public void whenExecuteOnEntriesIsUsed_thenNearCacheIsInvalidated_onNearCacheAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.EXECUTE_ON_ENTRIES);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#EXECUTE_ON_ENTRIES} is used.
+     */
+    @Test
+    public void whenExecuteOnEntriesIsUsed_thenNearCacheIsInvalidated_onDataAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.EXECUTE_ON_ENTRIES);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#EXECUTE_ON_ENTRIES_WITH_PREDICATE}
+     * is used.
+     */
+    @Test
+    public void whenExecuteOnEntriesWithPredicateIsUsed_thenNearCacheIsInvalidated_onNearCacheAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.EXECUTE_ON_ENTRIES_WITH_PREDICATE);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#EXECUTE_ON_ENTRIES_WITH_PREDICATE}
+     * is used.
+     */
+    @Test
+    public void whenExecuteOnEntriesWithPredicateIsUsed_thenNearCacheIsInvalidated_onDataAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.EXECUTE_ON_ENTRIES_WITH_PREDICATE);
+    }
+
+    /**
      * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#PUT_ALL} is used.
      */
     @Test
@@ -561,6 +598,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         populateNearCache(context);
 
         // this should invalidate the Near Cache
+        IMapReplaceEntryProcessor mapEntryProcessor = new IMapReplaceEntryProcessor("value", "newValue");
         Map<Integer, String> invalidationMap = new HashMap<Integer, String>(DEFAULT_RECORD_COUNT);
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             String value = "value-" + i;
@@ -582,24 +620,29 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                     assertEquals(newValue, adapter.invoke(i, new ICacheReplaceEntryProcessor(), "value", "newValue"));
                     break;
                 case EXECUTE_ON_KEY:
-                    assertEquals(newValue, adapter.executeOnKey(i, new IMapReplaceEntryProcessor("value", "newValue")));
+                    assertEquals(newValue, adapter.executeOnKey(i, mapEntryProcessor));
                     break;
                 case EXECUTE_ON_KEYS:
                 case PUT_ALL:
                 case INVOKE_ALL:
                     invalidationMap.put(i, newValue);
                     break;
+                case EXECUTE_ON_ENTRIES:
+                case EXECUTE_ON_ENTRIES_WITH_PREDICATE:
+                    break;
                 default:
                     throw new IllegalArgumentException("Unexpected method: " + method);
             }
         }
         if (method == DataStructureMethods.EXECUTE_ON_KEYS) {
-            Map<Integer, Object> resultMap = adapter.executeOnKeys(invalidationMap.keySet(),
-                    new IMapReplaceEntryProcessor("value", "newValue"));
-            assertEquals(DEFAULT_RECORD_COUNT, resultMap.size());
-            for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-                assertEquals("newValue-" + i, resultMap.get(i));
-            }
+            Map<Integer, Object> resultMap = adapter.executeOnKeys(invalidationMap.keySet(), mapEntryProcessor);
+            assertResultMap(resultMap);
+        } else if (method == DataStructureMethods.EXECUTE_ON_ENTRIES) {
+            Map<Integer, Object> resultMap = adapter.executeOnEntries(mapEntryProcessor);
+            assertResultMap(resultMap);
+        } else if (method == DataStructureMethods.EXECUTE_ON_ENTRIES_WITH_PREDICATE) {
+            Map<Integer, Object> resultMap = adapter.executeOnEntries(mapEntryProcessor, TruePredicate.INSTANCE);
+            assertResultMap(resultMap);
         } else if (method == DataStructureMethods.PUT_ALL) {
             adapter.putAll(invalidationMap);
         } else if (method == DataStructureMethods.INVOKE_ALL) {
@@ -615,6 +658,13 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         assertNearCacheSizeEventually(context, 0, message);
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             assertEquals("newValue-" + i, context.dataAdapter.get(i));
+        }
+    }
+
+    private void assertResultMap(Map<Integer, Object> resultMap) {
+        assertEquals(DEFAULT_RECORD_COUNT, resultMap.size());
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            assertEquals("newValue-" + i, resultMap.get(i));
         }
     }
 
