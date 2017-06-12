@@ -494,7 +494,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         } finally {
             for (int i = 0; i < resultingKeyValuePairs.size(); i += 2) {
                 Data key = resultingKeyValuePairs.get(i);
-                invalidateNearCache(key);
+                invalidateNearCache(serializeKeys ? key : toObject(key));
             }
         }
     }
