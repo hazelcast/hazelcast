@@ -109,10 +109,10 @@ public class SlidingWindowPTest extends StreamingTestSupport {
     }
 
     @Test
-    public void when_noFramesReceived_then_onlyEmitPunc() {
+    public void when_noFramesReceived_then_onlyEmitWm() {
         // Given
         inbox.addAll(singletonList(
-                punc(1)
+                wm(1)
         ));
 
         // When
@@ -121,7 +121,7 @@ public class SlidingWindowPTest extends StreamingTestSupport {
 
         // Then
         assertOutbox(singletonList(
-                punc(1)
+                wm(1)
         ));
     }
 
@@ -134,13 +134,13 @@ public class SlidingWindowPTest extends StreamingTestSupport {
                 event(2, 1),
                 event(3, 1),
                 event(4, 1),
-                punc(1),
-                punc(2),
-                punc(3),
-                punc(4),
-                punc(5),
-                punc(6),
-                punc(7)
+                wm(1),
+                wm(2),
+                wm(3),
+                wm(4),
+                wm(5),
+                wm(6),
+                wm(7)
         ));
 
         // When
@@ -151,19 +151,19 @@ public class SlidingWindowPTest extends StreamingTestSupport {
         assertOutbox(asList(
                 outboxFrame(0, 1),
                 outboxFrame(1, 2),
-                punc(1),
+                wm(1),
                 outboxFrame(2, 3),
-                punc(2),
+                wm(2),
                 outboxFrame(3, 4),
-                punc(3),
+                wm(3),
                 outboxFrame(4, 4),
-                punc(4),
+                wm(4),
                 outboxFrame(5, 3),
-                punc(5),
+                wm(5),
                 outboxFrame(6, 2),
-                punc(6),
+                wm(6),
                 outboxFrame(7, 1),
-                punc(7)
+                wm(7)
         ));
     }
 
@@ -176,13 +176,13 @@ public class SlidingWindowPTest extends StreamingTestSupport {
                 event(2, 1),
                 event(1, 1),
                 event(0, 1),
-                punc(1),
-                punc(2),
-                punc(3),
-                punc(4),
-                punc(5),
-                punc(6),
-                punc(7)
+                wm(1),
+                wm(2),
+                wm(3),
+                wm(4),
+                wm(5),
+                wm(6),
+                wm(7)
         ));
 
         // When
@@ -193,19 +193,19 @@ public class SlidingWindowPTest extends StreamingTestSupport {
         assertOutbox(asList(
                 outboxFrame(0, 1),
                 outboxFrame(1, 2),
-                punc(1),
+                wm(1),
                 outboxFrame(2, 3),
-                punc(2),
+                wm(2),
                 outboxFrame(3, 4),
-                punc(3),
+                wm(3),
                 outboxFrame(4, 4),
-                punc(4),
+                wm(4),
                 outboxFrame(5, 3),
-                punc(5),
+                wm(5),
                 outboxFrame(6, 2),
-                punc(6),
+                wm(6),
                 outboxFrame(7, 1),
-                punc(7)
+                wm(7)
         ));
     }
 
@@ -218,7 +218,7 @@ public class SlidingWindowPTest extends StreamingTestSupport {
             inbox.add(event(ts, 1));
         }
         for (long i = 1; i <= 105; i++) {
-            inbox.add(punc(i));
+            inbox.add(wm(i));
         }
 
         // When
@@ -230,26 +230,26 @@ public class SlidingWindowPTest extends StreamingTestSupport {
         expectedOutbox.addAll(Arrays.asList(
                 outboxFrame(0, 1),
                 outboxFrame(1, 2),
-                punc(1),
+                wm(1),
                 outboxFrame(2, 3),
-                punc(2),
+                wm(2),
                 outboxFrame(3, 4),
-                punc(3)
+                wm(3)
         ));
         for (long ts = 4; ts < 100; ts++) {
             expectedOutbox.add(outboxFrame(ts, 4));
-            expectedOutbox.add(punc(ts));
+            expectedOutbox.add(wm(ts));
         }
         expectedOutbox.addAll(Arrays.asList(
                 outboxFrame(100, 3),
-                punc(100),
+                wm(100),
                 outboxFrame(101, 2),
-                punc(101),
+                wm(101),
                 outboxFrame(102, 1),
-                punc(102),
-                punc(103),
-                punc(104),
-                punc(105)
+                wm(102),
+                wm(103),
+                wm(104),
+                wm(105)
         ));
 
         assertOutbox(expectedOutbox);
@@ -262,9 +262,9 @@ public class SlidingWindowPTest extends StreamingTestSupport {
                 event(0, 1),
                 event(10, 1),
                 event(11, 1),
-                punc(15),
+                wm(15),
                 event(16, 3),
-                punc(19)
+                wm(19)
         ));
 
         // When
@@ -284,12 +284,12 @@ public class SlidingWindowPTest extends StreamingTestSupport {
                 outboxFrame(13, 2),
                 outboxFrame(14, 1),
 
-                punc(15),
+                wm(15),
                 outboxFrame(16, 3),
                 outboxFrame(17, 3),
                 outboxFrame(18, 3),
                 outboxFrame(19, 3),
-                punc(19)
+                wm(19)
         ));
     }
 
@@ -300,13 +300,13 @@ public class SlidingWindowPTest extends StreamingTestSupport {
                 event(10, 1),
                 event(11, 1),
                 event(12, 1),
-                punc(1),
+                wm(1),
                 event(2, 1),
                 event(3, 1),
                 event(4, 1),
-                punc(4),
-                punc(12),
-                punc(15)
+                wm(4),
+                wm(12),
+                wm(15)
         ));
 
         // When
@@ -315,11 +315,11 @@ public class SlidingWindowPTest extends StreamingTestSupport {
 
         // Then
         assertOutbox(asList(
-                punc(1),
+                wm(1),
                 outboxFrame(2, 1),
                 outboxFrame(3, 2),
                 outboxFrame(4, 3),
-                punc(4),
+                wm(4),
                 outboxFrame(5, 3),
                 outboxFrame(6, 2),
                 outboxFrame(7, 1),
@@ -327,11 +327,11 @@ public class SlidingWindowPTest extends StreamingTestSupport {
 
                 outboxFrame(11, 2),
                 outboxFrame(12, 3),
-                punc(12),
+                wm(12),
                 outboxFrame(13, 3),
                 outboxFrame(14, 2),
                 outboxFrame(15, 1),
-                punc(15)
+                wm(15)
         ));
     }
 

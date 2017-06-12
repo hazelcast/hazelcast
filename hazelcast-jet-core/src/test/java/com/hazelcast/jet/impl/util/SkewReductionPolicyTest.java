@@ -42,26 +42,26 @@ public class SkewReductionPolicyTest {
     private SkewReductionPolicy srp;
 
     @Test
-    public void when_skewedPunc_then_drainOrderCorrect() {
+    public void when_skewedWm_then_drainOrderCorrect() {
         srp = new SkewReductionPolicy(4, 1000, 500, false);
 
-        srp.observePunc(1, 2);
+        srp.observeWm(1, 2);
         assertQueuesOrdered();
-        srp.observePunc(2, 0);
+        srp.observeWm(2, 0);
         assertQueuesOrdered();
-        srp.observePunc(3, 3);
+        srp.observeWm(3, 3);
         assertQueuesOrdered();
-        srp.observePunc(0, 4);
+        srp.observeWm(0, 4);
         assertQueuesOrdered();
         // the most advanced becomes even more advanced
-        srp.observePunc(0, 5);
+        srp.observeWm(0, 5);
         assertQueuesOrdered();
         // the least advanced advances, but still the least advanced
-        srp.observePunc(2, 1);
+        srp.observeWm(2, 1);
         assertQueuesOrdered();
-        // all queue puncs become equal
+        // all queue wms become equal
         for (int i = 0; i < srp.drainOrderToQIdx.length; i++) {
-            srp.observePunc(i, 6);
+            srp.observeWm(i, 6);
             assertQueuesOrdered();
         }
     }
@@ -71,13 +71,13 @@ public class SkewReductionPolicyTest {
         // Given
         long maxSkew = Long.MAX_VALUE;
         srp = new SkewReductionPolicy(2, maxSkew, 10, true);
-        long[] puncs = srp.queuePuncs;
+        long[] wms = srp.queueWms;
 
         // When
-        srp.observePunc(0, 10);
+        srp.observeWm(0, 10);
 
         // Then
-        assertEquals(maxSkew, puncs[0] - puncs[1]);
+        assertEquals(maxSkew, wms[0] - wms[1]);
         assertFalse(srp.shouldStopDraining(0, false));
     }
 
@@ -85,13 +85,13 @@ public class SkewReductionPolicyTest {
     public void when_maxSkewIsMaxVal_and_notForceAdvancing_then_correctnessMaintained() {
         // Given
         srp = new SkewReductionPolicy(2, Long.MAX_VALUE, 10, false);
-        long[] puncs = srp.queuePuncs;
+        long[] wms = srp.queueWms;
 
         // When
-        srp.observePunc(0, 10);
+        srp.observeWm(0, 10);
 
         // Then
-        assertEquals(Long.MIN_VALUE, puncs[1]);
+        assertEquals(Long.MIN_VALUE, wms[1]);
         assertFalse(srp.shouldStopDraining(0, false));
     }
 
@@ -99,13 +99,13 @@ public class SkewReductionPolicyTest {
     public void when_maxSkewAlmostMaxVal_and_notForceAdvancing_then_correctnessMaintained() {
         // Given
         srp = new SkewReductionPolicy(2, Long.MAX_VALUE - 1, 10, false);
-        long[] puncs = srp.queuePuncs;
+        long[] wms = srp.queueWms;
 
         // When
-        srp.observePunc(0, 10);
+        srp.observeWm(0, 10);
 
         // Then
-        assertEquals(Long.MIN_VALUE, puncs[1]);
+        assertEquals(Long.MIN_VALUE, wms[1]);
         assertTrue(srp.shouldStopDraining(0, false));
     }
 
@@ -114,13 +114,13 @@ public class SkewReductionPolicyTest {
         // Given
         long maxSkew = Long.MAX_VALUE - 1;
         srp = new SkewReductionPolicy(2, maxSkew, 10, true);
-        long[] puncs = srp.queuePuncs;
+        long[] wms = srp.queueWms;
 
         // When
-        srp.observePunc(0, 10);
+        srp.observeWm(0, 10);
 
         // Then
-        assertEquals(maxSkew, puncs[0] - puncs[1]);
+        assertEquals(maxSkew, wms[0] - wms[1]);
         assertFalse(srp.shouldStopDraining(0, false));
     }
 
@@ -128,13 +128,13 @@ public class SkewReductionPolicyTest {
     public void when_priorityThresholdIsMaxVal_then_correctnessMaintained() {
         // Given
         srp = new SkewReductionPolicy(2, Long.MAX_VALUE, Long.MAX_VALUE, false);
-        long[] puncs = srp.queuePuncs;
+        long[] wms = srp.queueWms;
 
         // When
-        srp.observePunc(0, 10);
+        srp.observeWm(0, 10);
 
         // Then
-        assertEquals(Long.MIN_VALUE, puncs[1]);
+        assertEquals(Long.MIN_VALUE, wms[1]);
         assertFalse(srp.shouldStopDraining(0, true));
     }
 
@@ -142,23 +142,23 @@ public class SkewReductionPolicyTest {
     public void when_skewBeyondMaxVal_then_correctnessMaintained() {
         // Given
         srp = new SkewReductionPolicy(2, 20, 10, false);
-        long[] puncs = srp.queuePuncs;
+        long[] wms = srp.queueWms;
 
         // When
-        srp.observePunc(0, 10);
+        srp.observeWm(0, 10);
 
         // Then
-        assertEquals(Long.MIN_VALUE, puncs[1]);
+        assertEquals(Long.MIN_VALUE, wms[1]);
         assertTrue(srp.shouldStopDraining(0, true));
     }
 
 
     private void assertQueuesOrdered() {
         long lastValue = Long.MIN_VALUE;
-        for (int i = 1; i < srp.queuePuncs.length; i++) {
-            long thisValue = srp.queuePuncs[srp.drainOrderToQIdx[i]];
+        for (int i = 1; i < srp.queueWms.length; i++) {
+            long thisValue = srp.queueWms[srp.drainOrderToQIdx[i]];
             assertTrue("Queues not ordered"
-                            + "\nobservedPuncSeqs=" + Arrays.toString(srp.queuePuncs)
+                            + "\nobservedWmSeqs=" + Arrays.toString(srp.queueWms)
                             + "\norderedQueues=" + Arrays.toString(srp.drainOrderToQIdx),
                     lastValue <= thisValue);
             lastValue = thisValue;

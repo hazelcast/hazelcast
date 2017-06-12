@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.AggregateOperation;
-import com.hazelcast.jet.Punctuation;
+import com.hazelcast.jet.Watermark;
 import com.hazelcast.jet.Session;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.function.DistributedBiConsumer;
@@ -56,7 +56,7 @@ import static java.lang.System.arraycopy;
  * @param <R> type of the finished result
  */
 public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
-    private static final Punctuation COMPLETING_PUNC = new Punctuation(Long.MAX_VALUE);
+    private static final Watermark COMPLETING_WM = new Watermark(Long.MAX_VALUE);
 
     // exposed for testing, to check for memory leaks
     final Map<K, Windows> keyToWindows = new HashMap<>();
@@ -69,7 +69,7 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
     private final BiConsumer<? super A, ? super T> accumulateF;
     private final DistributedFunction<? super A, R> finishAccumulationF;
     private final DistributedBiConsumer<? super A, ? super A> combineAccF;
-    private final FlatMapper<Punctuation, Session<K, R>> expiredSessionFlatmapper;
+    private final FlatMapper<Watermark, Session<K, R>> expiredSessionFlatmapper;
 
     public SessionWindowP(
             long sessionTimeout,
@@ -98,27 +98,27 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcessPunc0(@Nonnull Punctuation punc) {
-        return expiredSessionFlatmapper.tryProcess(punc);
+    protected boolean tryProcessWm0(@Nonnull Watermark wm) {
+        return expiredSessionFlatmapper.tryProcess(wm);
     }
 
     @Override
     public boolean complete() {
-        return expiredSessionFlatmapper.tryProcess(COMPLETING_PUNC);
+        return expiredSessionFlatmapper.tryProcess(COMPLETING_WM);
     }
 
-    private Traverser<Session<K, R>> expiredSessionTraverser(Punctuation punc) {
+    private Traverser<Session<K, R>> expiredSessionTraverser(Watermark wm) {
         List<K> distinctKeys = deadlineToKeys
-                .headMap(punc.timestamp())
+                .headMap(wm.timestamp())
                 .values().stream()
                 .flatMap(Set::stream)
                 .distinct()
                 .collect(Collectors.toList());
 
-        deadlineToKeys.headMap(punc.timestamp()).clear();
+        deadlineToKeys.headMap(wm.timestamp()).clear();
 
         Stream<Session<K, R>> sessions = distinctKeys.stream()
-                .map(key -> keyToWindows.get(key).closeWindows(key, punc.timestamp()))
+                .map(key -> keyToWindows.get(key).closeWindows(key, wm.timestamp()))
                 .flatMap(List::stream);
 
         return traverseStream(sessions);
@@ -146,10 +146,10 @@ public class SessionWindowP<T, K, A, R> extends AbstractProcessor {
             accumulateF.accept(resolveAcc(key, timestamp), event);
         }
 
-        List<Session<K, R>> closeWindows(K key, long punc) {
+        List<Session<K, R>> closeWindows(K key, long wm) {
             List<Session<K, R>> sessions = new ArrayList<>();
             int i = 0;
-            for (; i < size && ends[i] < punc; i++) {
+            for (; i < size && ends[i] < wm; i++) {
                 sessions.add(new Session<>(key, starts[i], ends[i], finishAccumulationF.apply(accs[i])));
             }
             if (i != size) {

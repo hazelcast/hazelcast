@@ -22,36 +22,36 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.PunctuationPolicies.withFixedLag;
+import static com.hazelcast.jet.WatermarkPolicies.withFixedLag;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class PunctuationPolicies_withFixedLagTest {
+public class WatermarkPolicies_withFixedLagTest {
 
     private static final long LAG = 10;
-    private PunctuationPolicy p = withFixedLag(LAG);
+    private WatermarkPolicy p = withFixedLag(LAG);
 
     @Test
-    public void when_outOfOrderEvents_then_monotonicPunct() {
+    public void when_outOfOrderEvents_then_monotonicWm() {
         for (int i = 0; i < 10; i++) {
             assertEquals(i - LAG, p.reportEvent(i));
 
             // When - older events
-            // Then - the same punctuation
+            // Then - the same watermark
             assertEquals(i - LAG, p.reportEvent(i - 1));
             assertEquals(i - LAG, p.reportEvent(i - 2));
         }
     }
 
     @Test
-    public void when_eventsStop_then_puncStops() {
+    public void when_eventsStop_then_wmStops() {
         // When - an event and nothing more
         p.reportEvent(LAG);
 
-        // Then - punctuation stops
+        // Then - watermark stops
         for (int i = 0; i < 10; i++) {
-            assertEquals(0, p.getCurrentPunctuation());
+            assertEquals(0, p.getCurrentWatermark());
         }
 
     }
@@ -63,7 +63,7 @@ public class PunctuationPolicies_withFixedLagTest {
 
         // Then
         for (int i = 0; i < 10; i++) {
-            assertEquals(Long.MIN_VALUE, p.getCurrentPunctuation());
+            assertEquals(Long.MIN_VALUE, p.getCurrentWatermark());
         }
     }
 }

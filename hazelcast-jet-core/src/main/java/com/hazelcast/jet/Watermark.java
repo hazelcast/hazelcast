@@ -19,28 +19,28 @@ package com.hazelcast.jet;
 import java.io.Serializable;
 
 /**
- * Punctuation is an item occasionally inserted into a disordered
- * (sub)stream of timestamped items. The punctuation's timestamp value has
+ * Watermark is an item occasionally inserted into a disordered
+ * (sub)stream of timestamped items. The watermark's timestamp value has
  * the meaning "no items will follow with timestamp less than this." The
- * value of the punctuation is always monotonically increasing in the
+ * value of the watermark is always monotonically increasing in the
  * (sub)stream, with the effect of superimposing an ordered timestamp
- * sequence over the original disordered one. Punctuation items are used by
+ * sequence over the original disordered one. Watermark items are used by
  * windowing processors as anchoring points where the processor knows which
  * windows it can close and emit their aggregated results.
  */
-public final class Punctuation implements Serializable {
+public final class Watermark implements Serializable {
 
     private final long timestamp;
 
     /**
-     * Constructs a new punctuation item.
+     * Constructs a new watermark item.
      */
-    public Punctuation(long timestamp) {
+    public Watermark(long timestamp) {
         this.timestamp = timestamp;
     }
 
     /**
-     * Returns the timestamp of this punctuation item.
+     * Returns the timestamp of this watermark item.
      */
     public long timestamp() {
         return timestamp;
@@ -48,7 +48,7 @@ public final class Punctuation implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-        return this == o || o instanceof Punctuation && this.timestamp == ((Punctuation) o).timestamp;
+        return this == o || o instanceof Watermark && this.timestamp == ((Watermark) o).timestamp;
     }
 
     @Override
@@ -58,6 +58,6 @@ public final class Punctuation implements Serializable {
 
     @Override
     public String toString() {
-        return "Punctuation{timestamp=" + timestamp + '}';
+        return "Watermark{timestamp=" + timestamp + '}';
     }
 }

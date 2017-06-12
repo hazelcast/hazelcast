@@ -36,14 +36,14 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.AggregateOperations.counting;
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.PunctuationPolicies.limitingLagAndLull;
+import static com.hazelcast.jet.WatermarkPolicies.limitingLagAndLull;
 import static com.hazelcast.jet.StreamingTestSupport.streamToString;
 import static com.hazelcast.jet.WindowDefinition.slidingWindowDef;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.processor.Processors.accumulateByFrame;
 import static com.hazelcast.jet.processor.Processors.aggregateToSlidingWindow;
 import static com.hazelcast.jet.processor.Processors.combineToSlidingWindow;
-import static com.hazelcast.jet.processor.Processors.insertPunctuation;
+import static com.hazelcast.jet.processor.Processors.insertWatermarks;
 import static com.hazelcast.jet.processor.Sinks.writeList;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -96,7 +96,7 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
         DAG dag = new DAG();
         boolean isBatchLocal = isBatch;
         Vertex source = dag.newVertex("source", () -> new EmitListP(sourceEvents, isBatchLocal)).localParallelism(1);
-        Vertex insertPP = dag.newVertex("insertPP", insertPunctuation(MyEvent::getTimestamp,
+        Vertex insertPP = dag.newVertex("insertPP", insertWatermarks(MyEvent::getTimestamp,
                 () -> limitingLagAndLull(500, 1000).throttleByFrame(wDef)))
                 .localParallelism(1);
         Vertex sink = dag.newVertex("sink", writeList("sink"));

@@ -20,7 +20,7 @@ import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.Punctuation;
+import com.hazelcast.jet.Watermark;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedIntFunction;
@@ -94,7 +94,7 @@ public final class WriteBufferedP<B, T> implements Processor {
     @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
         inbox.drain(item -> {
-            if (!(item instanceof Punctuation)) {
+            if (!(item instanceof Watermark)) {
                 addToBuffer.accept(buffer, (T) item);
             }
         });

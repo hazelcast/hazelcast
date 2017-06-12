@@ -25,7 +25,7 @@ import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.Punctuation;
+import com.hazelcast.jet.Watermark;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.util.ArrayDequeInbox;
 import com.hazelcast.jet.processor.Sinks;
@@ -63,7 +63,7 @@ public class WriteBufferedPTest extends JetTestSupport {
         p.process(0, inbox);
         inbox.add(3);
         inbox.add(4);
-        inbox.add(new Punctuation(0)); // punctuation should not be written
+        inbox.add(new Watermark(0)); // watermark should not be written
         p.process(0, inbox);
         p.process(0, inbox); // empty flush
         p.complete();

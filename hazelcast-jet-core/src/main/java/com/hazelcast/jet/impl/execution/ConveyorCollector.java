@@ -39,8 +39,8 @@ public class ConveyorCollector implements OutboundCollector {
     }
 
     @Override
-    public ProgressState offerBroadcast(Object punc) {
-        return offerToConveyor(punc);
+    public ProgressState offerBroadcast(Object wm) {
+        return offerToConveyor(wm);
     }
 
     @Override

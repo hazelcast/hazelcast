@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.Processor.Context;
-import com.hazelcast.jet.PunctuationPolicies;
+import com.hazelcast.jet.WatermarkPolicies;
 import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -37,18 +37,18 @@ import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class InsertPunctuationPTest {
+public class InsertWatermarkPTest {
 
     private static final long LAG = 3;
 
     private MockClock clock;
-    private InsertPunctuationP<Item> p;
+    private InsertWatermarkP<Item> p;
     private ArrayDequeOutbox outbox;
     private List<String> resultToCheck = new ArrayList<>();
 
     public void setUp(int outboxCapacity) {
         clock = new MockClock(100);
-        p = new InsertPunctuationP<>(Item::getTimestamp, PunctuationPolicies.withFixedLag(LAG));
+        p = new InsertWatermarkP<>(Item::getTimestamp, WatermarkPolicies.withFixedLag(LAG));
 
         outbox = new ArrayDequeOutbox(new int[]{outboxCapacity}, new ProgressTracker());
         Context context = mock(Context.class);
@@ -75,19 +75,19 @@ public class InsertPunctuationPTest {
         String[] expected = {
                 "-- at 100",
                 "initialItem",
-                "Punctuation{timestamp=7}",
+                "Watermark{timestamp=7}",
                 "Item{timestamp=10}",
                 "Item{timestamp=8}",
                 "-- at 101",
-                "Punctuation{timestamp=8}",
+                "Watermark{timestamp=8}",
                 "Item{timestamp=11}",
                 "Item{timestamp=9}",
                 "-- at 102",
-                "Punctuation{timestamp=9}",
+                "Watermark{timestamp=9}",
                 "Item{timestamp=12}",
                 "Item{timestamp=10}",
                 "-- at 103",
-                "Punctuation{timestamp=10}",
+                "Watermark{timestamp=10}",
                 "Item{timestamp=13}",
                 "Item{timestamp=11}",
                 "-- at 104",
@@ -97,11 +97,11 @@ public class InsertPunctuationPTest {
                 "-- at 108",
                 "-- at 109",
                 "-- at 110",
-                "Punctuation{timestamp=17}",
+                "Watermark{timestamp=17}",
                 "Item{timestamp=20}",
                 "Item{timestamp=18}",
                 "-- at 111",
-                "Punctuation{timestamp=18}",
+                "Watermark{timestamp=18}",
                 "Item{timestamp=21}",
                 "Item{timestamp=19}",
                 "-- at 112",

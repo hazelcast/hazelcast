@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.AggregateOperation;
-import com.hazelcast.jet.Punctuation;
+import com.hazelcast.jet.Watermark;
 import com.hazelcast.jet.TimestampedEntry;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
@@ -56,7 +56,7 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
     private final Function<? super T, ?> getKeyF;
     private final AggregateOperation<? super T, A, R> aggrOp;
 
-    private final FlatMapper<Punctuation, Object> flatMapper;
+    private final FlatMapper<Watermark, Object> flatMapper;
 
     private long nextFrameTsToEmit = Long.MIN_VALUE;
     private final A emptyAcc;
@@ -74,8 +74,8 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
         this.aggrOp = aggrOp;
 
         this.flatMapper = flatMapper(
-                punc -> windowTraverserAndEvictor(punc.timestamp())
-                            .append(punc));
+                wm -> windowTraverserAndEvictor(wm.timestamp())
+                            .append(wm));
         this.emptyAcc = aggrOp.createAccumulatorF().get();
     }
 
@@ -92,8 +92,8 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcessPunc0(@Nonnull Punctuation punc) {
-        return flatMapper.tryProcess(punc);
+    protected boolean tryProcessWm0(@Nonnull Watermark wm) {
+        return flatMapper.tryProcess(wm);
     }
 
     @Override
@@ -116,9 +116,9 @@ public class SlidingWindowP<T, A, R> extends AbstractProcessor {
             if (tsToKeyToAcc.isEmpty()) {
                 return Traversers.empty();
             }
-            // This is the first punctuation we are acting upon. Find the lowest frame
+            // This is the first watermark we are acting upon. Find the lowest frame
             // timestamp that can be emitted: at most the top existing timestamp lower
-            // than punc, but even lower than that if there are older frames on record.
+            // than wm, but even lower than that if there are older frames on record.
             // The above guarantees that the sliding window can be correctly
             // initialized using the "add leading/deduct trailing" approach because we
             // start from a window that covers at most one existing frame -- the lowest

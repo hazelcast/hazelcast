@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.AggregateOperations;
 import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.Punctuation;
+import com.hazelcast.jet.Watermark;
 import com.hazelcast.jet.Session;
 import com.hazelcast.jet.StreamingTestSupport;
 import com.hazelcast.jet.accumulator.LongAccumulator;
@@ -105,8 +105,8 @@ public class SessionWindowPTest extends StreamingTestSupport {
     public void when_batchProcessing_then_flushEverything() {
         // Given
         inbox.addAll(eventsWithKey("a"));
-        // this punctuation will cause the first session to be emitted, but not the second
-        inbox.add(new Punctuation(25));
+        // this watermark will cause the first session to be emitted, but not the second
+        inbox.add(new Watermark(25));
 
         // When
         processor.process(0, inbox);
@@ -121,7 +121,7 @@ public class SessionWindowPTest extends StreamingTestSupport {
         long start = System.nanoTime();
         processor.complete();
         long processTime = System.nanoTime() - start;
-        // this is to test that there is no iteration from current punctuation up to Long.MAX_VALUE, which
+        // this is to test that there is no iteration from current watermark up to Long.MAX_VALUE, which
         // will take too long.
 
         // Then
@@ -140,7 +140,7 @@ public class SessionWindowPTest extends StreamingTestSupport {
         Set<Session> expectedSessions = keys.stream()
                                             .flatMap(SessionWindowPTest::expectedSessions)
                                             .collect(toSet());
-        inbox.add(new Punctuation(100));
+        inbox.add(new Watermark(100));
 
         // When
         processor.process(0, inbox);
@@ -178,19 +178,19 @@ public class SessionWindowPTest extends StreamingTestSupport {
         long eventsPerKey = eventCount / keyCount;
         int spread = 4000;
         int timestampStep = 20;
-        int puncLag = 2000;
-        long puncInterval = 100;
-        System.out.format("keyCount %,d eventsPerKey %,d puncInterval %,d%n", keyCount, eventsPerKey, puncInterval);
+        int wmLag = 2000;
+        long wmInterval = 100;
+        System.out.format("keyCount %,d eventsPerKey %,d wmInterval %,d%n", keyCount, eventsPerKey, wmInterval);
         for (long idx = 0; idx < eventsPerKey; idx++) {
             long timestampBase = idx * timestampStep;
             for (long key = (timestampBase / SESSION_TIMEOUT) % 2; key < keyCount; key += 2) {
                 while (!processor.tryProcess0(entry(key, timestampBase + rnd.nextInt(spread)))) { }
                 while (!processor.tryProcess0(entry(key, timestampBase + rnd.nextInt(spread)))) { }
             }
-            if (idx % puncInterval == 0) {
-                Punctuation punc = new Punctuation(timestampBase - puncLag);
+            if (idx % wmInterval == 0) {
+                Watermark wm = new Watermark(timestampBase - wmLag);
                 int winCount = 0;
-                while (!processor.tryProcessPunc0(punc)) {
+                while (!processor.tryProcessWm0(wm)) {
                     while (pollOutbox() != null) {
                         winCount++;
                     }

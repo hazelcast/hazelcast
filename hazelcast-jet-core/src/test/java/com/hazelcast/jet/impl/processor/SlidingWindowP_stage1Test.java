@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.Processor.Context;
-import com.hazelcast.jet.Punctuation;
+import com.hazelcast.jet.Watermark;
 import com.hazelcast.jet.StreamingTestSupport;
 import com.hazelcast.jet.TimestampKind;
 import com.hazelcast.jet.TimestampedEntry;
@@ -76,17 +76,17 @@ public class SlidingWindowP_stage1Test extends StreamingTestSupport {
         inbox.addAll(asList(
                 entry(0L, 1L), // to frame 4
                 entry(1L, 1L), // to frame 4
-                punc(3), // does not close anything
-                punc(4), // closes frame 4
+                wm(3), // does not close anything
+                wm(4), // closes frame 4
                 entry(4L, 1L), // to frame 8
                 entry(5L, 1L), // to frame 8
                 entry(8L, 1L), // to frame 12
-                punc(6), // no effect
-                punc(7), // no effect
+                wm(6), // no effect
+                wm(7), // no effect
                 entry(8L, 1L), // to frame 12
-                punc(8), // closes frame 8
+                wm(8), // closes frame 8
                 entry(8L, 1L), // to frame 12
-                punc(21) // closes everything
+                wm(21) // closes everything
         ));
 
         // When
@@ -95,38 +95,38 @@ public class SlidingWindowP_stage1Test extends StreamingTestSupport {
 
         // Then
         assertOutbox(asList(
-                punc(3),
+                wm(3),
                 frame(4, 2),
-                punc(4),
-                punc(6),
-                punc(7),
+                wm(4),
+                wm(6),
+                wm(7),
                 frame(8, 2),
-                punc(8),
+                wm(8),
                 frame(12, 3),
-                punc(21)
+                wm(21)
         ));
     }
 
     @Test
-    public void when_noEvents_then_punctsEmitted() {
+    public void when_noEvents_then_wmsEmitted() {
         // Given
         ArrayDequeInbox inbox = new ArrayDequeInbox();
-        List<Punctuation> somePuncs = asList(
-                punc(2),
-                punc(3),
-                punc(4),
-                punc(5),
-                punc(6),
-                punc(8),
-                punc(20)
+        List<Watermark> someWms = asList(
+                wm(2),
+                wm(3),
+                wm(4),
+                wm(5),
+                wm(6),
+                wm(8),
+                wm(20)
         );
-        inbox.addAll(somePuncs);
+        inbox.addAll(someWms);
 
         // When
         processor.process(0, inbox);
 
         // Then
-        assertOutbox(somePuncs);
+        assertOutbox(someWms);
     }
 
     @Test
@@ -135,7 +135,7 @@ public class SlidingWindowP_stage1Test extends StreamingTestSupport {
         ArrayDequeInbox inbox = new ArrayDequeInbox();
         inbox.addAll(asList(
                 entry(0L, 1L), // to frame 4
-                punc(4) // closes frame 4
+                wm(4) // closes frame 4
         ));
 
         // When
@@ -143,7 +143,7 @@ public class SlidingWindowP_stage1Test extends StreamingTestSupport {
         long start = System.nanoTime();
         processor.complete();
         long processTime = System.nanoTime() - start;
-        // this is to test that there is no iteration from current punctuation up to Long.MAX_VALUE, which
+        // this is to test that there is no iteration from current watermark up to Long.MAX_VALUE, which
         // will take too long.
         assertTrue("process took too long: " + processTime, processTime < MILLISECONDS.toNanos(100));
         assertTrue(inbox.isEmpty());
@@ -151,7 +151,7 @@ public class SlidingWindowP_stage1Test extends StreamingTestSupport {
         // Then
         assertOutbox(asList(
                 frame(4, 1),
-                punc(4)
+                wm(4)
         ));
     }
 

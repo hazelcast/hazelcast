@@ -146,7 +146,7 @@ public class TimestampHistoryTest {
     }
 
     @Test
-    public void when_minValuePunc_then_minValue() {
+    public void when_minValueWm_then_minValue() {
         for (int i = 0; i < 100; i++) {
             validateSample(i, Long.MIN_VALUE, Long.MIN_VALUE);
         }

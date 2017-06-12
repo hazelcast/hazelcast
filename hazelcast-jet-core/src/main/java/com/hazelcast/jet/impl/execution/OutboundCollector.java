@@ -36,7 +36,7 @@ public interface OutboundCollector {
     ProgressState offer(Object item);
 
     /**
-     * Offer a punctuation to this collector. Punctuations will be propagated to all sub-collectors
+     * Offer a watermark to this collector. Watermarks will be propagated to all sub-collectors
      * if the collector is a composite one.
      */
     ProgressState offerBroadcast(Object item);
@@ -89,13 +89,13 @@ public interface OutboundCollector {
         }
 
         @Override
-        public ProgressState offerBroadcast(Object punc) {
+        public ProgressState offerBroadcast(Object wm) {
             progTracker.reset();
             for (int i = 0; i < collectors.length; i++) {
                 if (broadcastTracker.get(i)) {
                     continue;
                 }
-                ProgressState result = collectors[i].offerBroadcast(punc);
+                ProgressState result = collectors[i].offerBroadcast(wm);
                 progTracker.mergeWith(result);
                 if (result.isDone()) {
                     broadcastTracker.set(i);

@@ -228,22 +228,22 @@ public class Edge implements IdentifiedDataSerializable {
      * Activates the {@link RoutingPolicy#PARTITIONED PARTITIONED} routing
      * policy and applies the {@link Partitioner#defaultPartitioner() default}
      * Hazelcast partitioning strategy. The strategy is applied to the result of
-     * the {@code keyExtractor} function.
+     * the {@code extractKeyF} function.
      */
-    public <T> Edge partitioned(DistributedFunction<T, ?> keyExtractor) {
-        return partitioned(keyExtractor, defaultPartitioner());
+    public <T> Edge partitioned(DistributedFunction<T, ?> extractKeyF) {
+        return partitioned(extractKeyF, defaultPartitioner());
     }
 
     /**
      * Activates the {@link RoutingPolicy#PARTITIONED PARTITIONED} routing
      * policy and applies the provided partitioning strategy. The strategy
-     * is applied to the result of the {@code keyExtractor} function.
+     * is applied to the result of the {@code extractKeyF} function.
      */
-    public <T, K> Edge partitioned(DistributedFunction<T, K> keyExtractor, Partitioner<? super K> partitioner) {
-        checkSerializable(keyExtractor, "keyExtractor");
+    public <T, K> Edge partitioned(DistributedFunction<T, K> extractKeyF, Partitioner<? super K> partitioner) {
+        checkSerializable(extractKeyF, "extractKeyF");
         checkSerializable(partitioner, "partitioner");
         this.routingPolicy = RoutingPolicy.PARTITIONED;
-        this.partitioner = new KeyPartitioner<>(keyExtractor, partitioner);
+        this.partitioner = new KeyPartitioner<>(extractKeyF, partitioner);
         return this;
     }
 
@@ -267,15 +267,15 @@ public class Edge implements IdentifiedDataSerializable {
 
     /**
      * Activates the {@link RoutingPolicy#ISOLATED ISOLATED} routing policy
-     * which ensures that the paths from upstream to downstream processors
-     * never cross. Each downstream processor is assigned exactly one upstream
-     * processor and each upstream processor is assigned a disjoint subset of
-     * downstream processors. This allows the selective application of
-     * backpressure to just one source processor that feeds a given downstream
-     * processor.
+     * which establishes isolated paths from upstream to downstream processors.
+     * Each downstream processor is assigned exactly one upstream processor and
+     * each upstream processor is assigned a disjoint subset of downstream
+     * processors. This allows the selective application of backpressure to
+     * just one source processor that feeds a given downstream processor.
      * <p>
-     * The downstream vertex's parallelism must be greater than or equal to the
-     * upstream's. This routing policy can only be applied to a local edge.
+     * These restrictions imply that the downstream's local parallelism
+     * cannot be less than upstream's. Since all traffic will be local, this
+     * policy doesn't make sense on a distributed edge.
      */
     public Edge isolated() {
         routingPolicy = RoutingPolicy.ISOLATED;

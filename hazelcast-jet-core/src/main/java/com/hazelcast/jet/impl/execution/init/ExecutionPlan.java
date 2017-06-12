@@ -282,8 +282,9 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         return new OutboundEdgeStream(edge.sourceOrdinal(), outboxLimit, compositeCollector);
     }
 
-    private OutboundCollector[] createOutboundCollectors(EdgeDef edge, int processorIndex,
-                                                      Map<Address, ConcurrentConveyor<Object>> senderConveyorMap) {
+    private OutboundCollector[] createOutboundCollectors(
+            EdgeDef edge, int processorIndex, Map<Address, ConcurrentConveyor<Object>> senderConveyorMap
+    ) {
         final int upstreamParallelism = edge.sourceVertex().parallelism();
         final int downstreamParallelism = edge.destVertex().parallelism();
         final int numRemoteMembers = ptionArrgmt.remotePartitionAssignment.get().size();
@@ -292,12 +293,12 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         final int[][] ptionsPerProcessor =
                 ptionArrgmt.assignPartitionsToProcessors(downstreamParallelism, edge.isDistributed());
 
-        // in a one to many edge, each downstream processor is assigned only one processor.
         if (edge.routingPolicy() == RoutingPolicy.ISOLATED) {
             if (downstreamParallelism < upstreamParallelism) {
-                throw new IllegalArgumentException("Downstream parallelism (" + downstreamParallelism
-                        + ") should be greater than or equal to upstream parallelism (" + upstreamParallelism
-                        + ") for a ONE_TO_MANY edge " + edge);
+                throw new IllegalArgumentException(String.format(
+                        "The edge %s specifies the %s routing policy, but the downstream vertex" +
+                        " parallelism (%d) is less than the upstream vertex parallelism (%d)",
+                        edge, RoutingPolicy.ISOLATED.name(), downstreamParallelism, upstreamParallelism));
             }
             if (edge.isDistributed()) {
                 throw new IllegalArgumentException("One to many edges must be local: " + edge);

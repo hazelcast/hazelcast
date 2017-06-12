@@ -22,20 +22,20 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.PunctuationPolicies.limitingTimestampAndWallClockLag;
+import static com.hazelcast.jet.WatermarkPolicies.limitingTimestampAndWallClockLag;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class PunctuationPolicies_limitingTimestampAndWallClockLag {
+public class WatermarkPolicies_limitingTimestampAndWallClockLag {
 
     private static final long TIMESTAMP_LAG = 3;
     private static final long WALL_CLOCK_LAG = 10;
     private long currTimeMs;
-    private PunctuationPolicy p = limitingTimestampAndWallClockLag(TIMESTAMP_LAG, WALL_CLOCK_LAG, () -> currTimeMs);
+    private WatermarkPolicy p = limitingTimestampAndWallClockLag(TIMESTAMP_LAG, WALL_CLOCK_LAG, () -> currTimeMs);
 
     @Test
-    public void when_outOfOrderEvents_then_monotonicPunct() {
+    public void when_outOfOrderEvents_then_monotonicWm() {
         // Given
         currTimeMs = -1_000_000;
 
@@ -48,16 +48,16 @@ public class PunctuationPolicies_limitingTimestampAndWallClockLag {
     }
 
     @Test
-    public void when_eventsStop_then_puncFollowsWallClock() {
+    public void when_eventsStop_then_wmFollowsWallClock() {
         for (currTimeMs = 100; currTimeMs < 110; currTimeMs++) {
             assertEquals(currTimeMs - WALL_CLOCK_LAG, p.reportEvent(0));
         }
     }
 
     @Test
-    public void when_noEventEver_then_puncFollowsWallClock() {
+    public void when_noEventEver_then_wmFollowsWallClock() {
         for (currTimeMs = 100; currTimeMs < 110; currTimeMs++) {
-            assertEquals(currTimeMs - WALL_CLOCK_LAG, p.getCurrentPunctuation());
+            assertEquals(currTimeMs - WALL_CLOCK_LAG, p.getCurrentWatermark());
         }
     }
 }

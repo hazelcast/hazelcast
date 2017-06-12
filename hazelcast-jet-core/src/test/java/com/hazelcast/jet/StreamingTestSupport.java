@@ -30,8 +30,8 @@ public class StreamingTestSupport {
     public ArrayDequeInbox inbox = new ArrayDequeInbox();
     public ArrayDequeOutbox outbox = new ArrayDequeOutbox(new int[] {1024}, new ProgressTracker());
 
-    protected static Punctuation punc(long timestamp) {
-        return new Punctuation(timestamp);
+    protected static Watermark wm(long timestamp) {
+        return new Watermark(timestamp);
     }
 
     protected void assertOutbox(List<?> items) {

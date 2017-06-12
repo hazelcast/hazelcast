@@ -19,7 +19,7 @@ package com.hazelcast.jet.processor;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.Punctuation;
+import com.hazelcast.jet.Watermark;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
@@ -46,7 +46,7 @@ public final class DiagnosticProcessors {
 
     /**
      * Returns a supplier of processor that acts as a sink and logs all items
-     * at the INFO level. {@link Punctuation} items are not logged.
+     * at the INFO level. {@link Watermark} items are not logged.
      * <p>
      * Note that the event will be logged on the cluster members, not on the
      * client, so it's mainly useful as a diagnostic tool.
@@ -80,7 +80,7 @@ public final class DiagnosticProcessors {
      * following logging category: {@link PeekWrappedP}.
      * <p>
      * <strong>Warning:</strong> The {@code toStringF} and {@code shouldLogF}
-     * functions will see all items, including {@link Punctuation}s.
+     * functions will see all items, including {@link Watermark}s.
      *
      * @param toStringF function that returns the string representation of the item
      * @param shouldLogF function to filter logged items. {@link
@@ -170,7 +170,7 @@ public final class DiagnosticProcessors {
      * following logging category: {@link PeekWrappedP}.
      * <p>
      * <strong>Warning:</strong> The {@code toStringF} and {@code shouldLogF}
-     * functions will see all items, including {@link Punctuation}s.
+     * functions will see all items, including {@link Watermark}s.
      *
      * @param toStringF function that returns the string representation of the item
      * @param shouldLogF function to filter logged items. {@link

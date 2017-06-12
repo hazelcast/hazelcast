@@ -21,12 +21,12 @@ import java.util.Arrays;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
- * Helper class to implement the logic needed to enforce a punctuation policy
+ * Helper class to implement the logic needed to enforce a watermark policy
  * that limits the delay between observing an item and advancing the
- * punctuation to that item's timestamp. To use this class, call {@link
+ * watermark to that item's timestamp. To use this class, call {@link
  * #sample(long, long) sample(now, currValue)} at regular intervals with the
  * current system time and the top event timestamp observed so far, and
- * interpret the returned value as the minimum value of punctuation that
+ * interpret the returned value as the minimum value of watermark that
  * should be/have been emitted. The current time should be obtained from
  * {@code System.nanoTime()} because, unlike {@code
  * System.currentTimeMillis()}, its source is a monotonic clock.

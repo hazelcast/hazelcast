@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.internal.util.concurrent.Pipe;
-import com.hazelcast.jet.Punctuation;
+import com.hazelcast.jet.Watermark;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.jet.impl.util.SkewReductionPolicy;
@@ -39,8 +39,8 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
     private final int priority;
     private final ConcurrentConveyor<Object> conveyor;
     private final ProgressTracker tracker = new ProgressTracker();
-    private final PunctuationDetector puncDetector = new PunctuationDetector();
-    private long lastEmittedPunc = Long.MIN_VALUE;
+    private final WatermarkDetector wmDetector = new WatermarkDetector();
+    private long lastEmittedWm = Long.MIN_VALUE;
 
     private final SkewReductionPolicy skewReductionPolicy;
 
@@ -74,20 +74,20 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
             if (q == null) {
                 continue;
             }
-            Punctuation punc = drainUpToPunc(q, dest);
-            if (puncDetector.isDone) {
+            Watermark wm = drainUpToWm(q, dest);
+            if (wmDetector.isDone) {
                 conveyor.removeQueue(queueIndex);
                 continue;
             }
-            if (punc != null && skewReductionPolicy.observePunc(queueIndex, punc.timestamp())) {
+            if (wm != null && skewReductionPolicy.observeWm(queueIndex, wm.timestamp())) {
                 break;
             }
         }
 
-        long bottomPunct = skewReductionPolicy.bottomObservedPunc();
-        if (bottomPunct > lastEmittedPunc) {
-            dest.add(new Punctuation(bottomPunct));
-            lastEmittedPunc = bottomPunct;
+        long bottomWm = skewReductionPolicy.bottomObservedWm();
+        if (bottomWm > lastEmittedWm) {
+            dest.add(new Watermark(bottomWm));
+            lastEmittedWm = bottomWm;
         }
 
         return tracker.toProgressState();
@@ -95,40 +95,40 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
 
     /**
      * Drains the supplied queue into a {@code dest} collection, up to the next
-     * {@link Punctuation}. Also updates the {@code tracker} with new status.
+     * {@link Watermark}. Also updates the {@code tracker} with new status.
      *
-     * @return the drained punctuation, if any; {@code null} otherwise
+     * @return the drained watermark, if any; {@code null} otherwise
      */
-    private Punctuation drainUpToPunc(Pipe<Object> queue, Collection<Object> dest) {
-        puncDetector.reset(dest);
+    private Watermark drainUpToWm(Pipe<Object> queue, Collection<Object> dest) {
+        wmDetector.reset(dest);
 
-        int drainedCount = queue.drain(puncDetector);
-        tracker.mergeWith(ProgressState.valueOf(drainedCount > 0, puncDetector.isDone));
+        int drainedCount = queue.drain(wmDetector);
+        tracker.mergeWith(ProgressState.valueOf(drainedCount > 0, wmDetector.isDone));
 
-        puncDetector.dest = null;
-        return puncDetector.punc;
+        wmDetector.dest = null;
+        return wmDetector.wm;
     }
 
     /**
-     * Drains a concurrent conveyor's queue while watching for {@link Punctuation}s.
-     * When encountering a punctuation, prevents draining more items.
+     * Drains a concurrent conveyor's queue while watching for {@link Watermark}s.
+     * When encountering a watermark, prevents draining more items.
      */
-    private static final class PunctuationDetector implements Predicate<Object> {
+    private static final class WatermarkDetector implements Predicate<Object> {
         Collection<Object> dest;
-        Punctuation punc;
+        Watermark wm;
         boolean isDone;
 
         void reset(Collection<Object> newDest) {
             dest = newDest;
-            punc = null;
+            wm = null;
             isDone = false;
         }
 
         @Override
         public boolean test(Object o) {
-            if (o instanceof Punctuation) {
-                assert punc == null : "Received multiple Punctuations without a call to reset()";
-                punc = (Punctuation) o;
+            if (o instanceof Watermark) {
+                assert wm == null : "Received multiple Watermarks without a call to reset()";
+                wm = (Watermark) o;
                 return false;
             }
             if (o == DONE_ITEM) {

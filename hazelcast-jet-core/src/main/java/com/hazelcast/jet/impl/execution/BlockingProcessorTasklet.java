@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.execution;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.Punctuation;
+import com.hazelcast.jet.Watermark;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.util.Preconditions;
@@ -132,7 +132,7 @@ public class BlockingProcessorTasklet extends ProcessorTaskletBase {
         private void submit(OutboundEdgeStream outstream, @Nonnull Object item) {
             OutboundCollector collector = outstream.getCollector();
             for (long idleCount = 0; ;) {
-                ProgressState result = (item instanceof Punctuation || item instanceof DoneItem)
+                ProgressState result = (item instanceof Watermark || item instanceof DoneItem)
                         ? collector.offerBroadcast(item)
                         : collector.offer(item);
                 if (result.isDone()) {

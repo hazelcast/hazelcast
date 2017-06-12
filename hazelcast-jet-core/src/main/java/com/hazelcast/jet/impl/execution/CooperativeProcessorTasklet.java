@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.Punctuation;
+import com.hazelcast.jet.Watermark;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
 import com.hazelcast.jet.impl.util.ProgressState;
@@ -96,7 +96,7 @@ public class CooperativeProcessorTasklet extends ProcessorTaskletBase {
             final Queue q = outbox.queueWithOrdinal(i);
             for (Object item; (item = q.peek()) != null; ) {
                 final OutboundCollector c = outstreams[i].getCollector();
-                final ProgressState state = (item instanceof Punctuation || item instanceof DoneItem ?
+                final ProgressState state = (item instanceof Watermark || item instanceof DoneItem ?
                         c.offerBroadcast(item) : c.offer(item));
                 progTracker.madeProgress(state.isMadeProgress());
                 if (!state.isDone()) {

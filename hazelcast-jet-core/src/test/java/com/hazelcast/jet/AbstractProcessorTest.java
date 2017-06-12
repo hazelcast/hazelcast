@@ -51,7 +51,7 @@ import static org.mockito.Mockito.mock;
 public class AbstractProcessorTest {
 
     private static final String MOCK_ITEM = "x";
-    private static final Punctuation MOCK_PUNC = new Punctuation(17);
+    private static final Watermark MOCK_WM = new Watermark(17);
     private static final int OUTBOX_BUCKET_COUNT = 4;
     private static final int ORDINAL_0 = 0;
     private static final int ORDINAL_1 = 1;
@@ -73,7 +73,7 @@ public class AbstractProcessorTest {
     public void before() {
         inbox = new ArrayDequeInbox();
         inbox.add(MOCK_ITEM);
-        inbox.add(MOCK_PUNC);
+        inbox.add(MOCK_WM);
         int[] capacities = new int[OUTBOX_BUCKET_COUNT];
         Arrays.fill(capacities, 1);
         outbox = new ArrayDequeOutbox(capacities, new ProgressTracker());
@@ -250,141 +250,141 @@ public class AbstractProcessorTest {
     }
 
     @Test
-    public void when_tryProcessPunc_then_passesOnPunc() {
+    public void when_tryProcessWm_then_passesOnWm() {
         // When
-        boolean done = nothingOverriddenP.tryProcessPunc(ORDINAL_0, MOCK_PUNC);
+        boolean done = nothingOverriddenP.tryProcessWm(ORDINAL_0, MOCK_WM);
 
         // Then
         assertTrue(done);
-        validateReceptionAtOrdinals(MOCK_PUNC, ALL_ORDINALS);
+        validateReceptionAtOrdinals(MOCK_WM, ALL_ORDINALS);
     }
 
     @Test
-    public void when_tryProcessPunc0_then_delegatesToTryProcessPunc() throws Exception {
+    public void when_tryProcessWm0_then_delegatesToTryProcessWm() throws Exception {
         // When
-        boolean done = p.tryProcessPunc0(MOCK_PUNC);
+        boolean done = p.tryProcessWm0(MOCK_WM);
 
         // Then
         assertTrue(done);
-        p.validateReceptionOfPunc(ORDINAL_0, MOCK_PUNC);
+        p.validateReceptionOfWm(ORDINAL_0, MOCK_WM);
     }
 
     @Test
-    public void when_tryProcessPunc1_then_delegatesToTryProcessPunc() throws Exception {
+    public void when_tryProcessWm1_then_delegatesToTryProcessWm() throws Exception {
         // When
-        boolean done = p.tryProcessPunc1(MOCK_PUNC);
+        boolean done = p.tryProcessWm1(MOCK_WM);
 
         // Then
         assertTrue(done);
-        p.validateReceptionOfPunc(ORDINAL_1, MOCK_PUNC);
+        p.validateReceptionOfWm(ORDINAL_1, MOCK_WM);
     }
 
     @Test
-    public void when_tryProcessPunc2_then_delegatesToTryProcessPunc() throws Exception {
+    public void when_tryProcessWm2_then_delegatesToTryProcessWm() throws Exception {
         // When
-        boolean done = p.tryProcessPunc2(MOCK_PUNC);
+        boolean done = p.tryProcessWm2(MOCK_WM);
 
         // Then
         assertTrue(done);
-        p.validateReceptionOfPunc(ORDINAL_2, MOCK_PUNC);
+        p.validateReceptionOfWm(ORDINAL_2, MOCK_WM);
     }
 
     @Test
-    public void when_tryProcessPunc3_then_delegatesToTryProcessPunc() throws Exception {
+    public void when_tryProcessWm3_then_delegatesToTryProcessWm() throws Exception {
         // When
-        boolean done = p.tryProcessPunc3(MOCK_PUNC);
+        boolean done = p.tryProcessWm3(MOCK_WM);
 
         // Then
         assertTrue(done);
-        p.validateReceptionOfPunc(ORDINAL_3, MOCK_PUNC);
+        p.validateReceptionOfWm(ORDINAL_3, MOCK_WM);
     }
 
     @Test
-    public void when_tryProcessPunc4_then_delegatesToTryProcessPunc() throws Exception {
+    public void when_tryProcessWm4_then_delegatesToTryProcessWm() throws Exception {
         // When
-        boolean done = p.tryProcessPunc4(MOCK_PUNC);
+        boolean done = p.tryProcessWm4(MOCK_WM);
 
         // Then
         assertTrue(done);
-        p.validateReceptionOfPunc(ORDINAL_4, MOCK_PUNC);
+        p.validateReceptionOfWm(ORDINAL_4, MOCK_WM);
     }
 
     @Test
     public void when_process0ButOutboxFull_then_itemNotRemoved() throws Exception {
         // Given
-        resetInboxToTwoPuncs();
+        resetInboxToTwoWms();
 
         // When
         nothingOverriddenP.process0(inbox);
 
         // Then
-        assertEquals(MOCK_PUNC, inbox.poll());
+        assertEquals(MOCK_WM, inbox.poll());
     }
 
     @Test
     public void when_process1ButOutboxFull_then_itemNotRemoved() throws Exception {
         // Given
-        resetInboxToTwoPuncs();
+        resetInboxToTwoWms();
 
         // When
         nothingOverriddenP.process1(inbox);
 
         // Then
-        assertEquals(MOCK_PUNC, inbox.poll());
+        assertEquals(MOCK_WM, inbox.poll());
     }
 
     @Test
     public void when_process2ButOutboxFull_then_itemNotRemoved() throws Exception {
         // Given
-        resetInboxToTwoPuncs();
+        resetInboxToTwoWms();
 
         // When
         nothingOverriddenP.process2(inbox);
 
         // Then
-        assertEquals(MOCK_PUNC, inbox.poll());
+        assertEquals(MOCK_WM, inbox.poll());
     }
 
     @Test
     public void when_process3ButOutboxFull_then_itemNotRemoved() throws Exception {
         // Given
-        resetInboxToTwoPuncs();
+        resetInboxToTwoWms();
 
         // When
         nothingOverriddenP.process3(inbox);
 
         // Then
-        assertEquals(MOCK_PUNC, inbox.poll());
+        assertEquals(MOCK_WM, inbox.poll());
     }
 
     @Test
     public void when_process4ButOutboxFull_then_itemNotRemoved() throws Exception {
         // Given
-        resetInboxToTwoPuncs();
+        resetInboxToTwoWms();
 
         // When
         nothingOverriddenP.process4(inbox);
 
         // Then
-        assertEquals(MOCK_PUNC, inbox.poll());
+        assertEquals(MOCK_WM, inbox.poll());
     }
 
     @Test
     public void when_processAnyButOutboxFull_then_itemNotRemoved() throws Exception {
         // Given
-        resetInboxToTwoPuncs();
+        resetInboxToTwoWms();
 
         // When
         nothingOverriddenP.processAny(5, inbox);
 
         // Then
-        assertEquals(MOCK_PUNC, inbox.poll());
+        assertEquals(MOCK_WM, inbox.poll());
     }
 
-    private void resetInboxToTwoPuncs() {
+    private void resetInboxToTwoWms() {
         inbox.clear();
-        inbox.add(MOCK_PUNC);
-        inbox.add(MOCK_PUNC);
+        inbox.add(MOCK_WM);
+        inbox.add(MOCK_WM);
     }
 
     @Test
@@ -559,7 +559,7 @@ public class AbstractProcessorTest {
     private static class RegisteringMethodCallsP extends AbstractProcessor {
         boolean initCalled;
         Object[] receivedByTryProcessN = new Object[6];
-        Object[] receivedByTryProcessPuncN = new Object[6];
+        Object[] receivedByTryProcessWmN = new Object[6];
 
         @Override
         protected void init(@Nonnull Context context) {
@@ -573,8 +573,8 @@ public class AbstractProcessorTest {
         }
 
         @Override
-        protected boolean tryProcessPunc(int ordinal, @Nonnull Punctuation punc) {
-            receivedByTryProcessPuncN[ordinal] = punc;
+        protected boolean tryProcessWm(int ordinal, @Nonnull Watermark wm) {
+            receivedByTryProcessWmN[ordinal] = wm;
             return true;
         }
 
@@ -584,9 +584,9 @@ public class AbstractProcessorTest {
             }
         }
 
-        void validateReceptionOfPunc(int ordinal, Punctuation punc) {
-            for (int i = 0; i < receivedByTryProcessPuncN.length; i++) {
-                assertSame(i == ordinal ? punc : null, receivedByTryProcessPuncN[i]);
+        void validateReceptionOfWm(int ordinal, Watermark wm) {
+            for (int i = 0; i < receivedByTryProcessWmN.length; i++) {
+                assertSame(i == ordinal ? wm : null, receivedByTryProcessWmN[i]);
             }
         }
     }

@@ -27,78 +27,78 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
- * Utility class with factories of several useful punctuation policies.
+ * Utility class with factories of several useful watermark policies.
  */
-public final class PunctuationPolicies {
+public final class WatermarkPolicies {
 
     private static final int DEFAULT_NUM_STORED_SAMPLES = 16;
 
-    private PunctuationPolicies() {
+    private WatermarkPolicies() {
     }
 
-    private abstract static class PunctuationPolicyBase implements PunctuationPolicy {
+    private abstract static class WatermarkPolicyBase implements WatermarkPolicy {
 
-        private long punc = Long.MIN_VALUE;
+        private long wm = Long.MIN_VALUE;
 
-        long makePuncAtLeast(long proposedPunc) {
-            punc = max(punc, proposedPunc);
-            return punc;
+        long makeWmAtLeast(long proposedWm) {
+            wm = max(wm, proposedWm);
+            return wm;
         }
 
-        long advancePuncBy(long amount) {
-            punc += amount;
-            return punc;
+        long advanceWmBy(long amount) {
+            wm += amount;
+            return wm;
         }
 
         @Override
-        public long getCurrentPunctuation() {
-            return punc;
+        public long getCurrentWatermark() {
+            return wm;
         }
     }
 
     /**
-     * Maintains punctuation that lags behind the top observed timestamp by the
-     * given amount. In the case of a stream lull the punctuation does not
+     * Maintains watermark that lags behind the top observed timestamp by the
+     * given amount. In the case of a stream lull the watermark does not
      * advance towards the top observed timestamp and remains behind it
      * indefinitely.
      *
      * @param lag the desired difference between the top observed timestamp
-     *            and the punctuation
+     *            and the watermark
      */
     @Nonnull
-    public static PunctuationPolicy withFixedLag(long lag) {
+    public static WatermarkPolicy withFixedLag(long lag) {
         checkNotNegative(lag, "lag must not be negative");
 
-        return new PunctuationPolicyBase() {
+        return new WatermarkPolicyBase() {
             @Override
             public long reportEvent(long timestamp) {
-                return makePuncAtLeast(timestamp - lag);
+                return makeWmAtLeast(timestamp - lag);
             }
         };
     }
 
     /**
-     * Maintains punctuation that lags behind the top observed timestamp by at
+     * Maintains watermark that lags behind the top observed timestamp by at
      * most the given amount and is additionally guaranteed to reach the
      * timestamp of any given event within {@code maxDelayMs} after observing
      * it.
      *
      * @param lag upper bound on the difference between the top observed timestamp and the
-     *               punctuation
+     *               watermark
      * @param maxDelayMs upper bound (in milliseconds) on how long it can take for the
-     *                   punctuation to reach any observed event's timestamp
+     *                   watermark to reach any observed event's timestamp
      */
     @Nonnull
-    public static PunctuationPolicy limitingLagAndDelay(long lag, long maxDelayMs) {
+    public static WatermarkPolicy limitingLagAndDelay(long lag, long maxDelayMs) {
         return limitingLagAndDelay(
                 lag, MILLISECONDS.toNanos(maxDelayMs), DEFAULT_NUM_STORED_SAMPLES, System::nanoTime);
     }
 
     @Nonnull
-    static PunctuationPolicy limitingLagAndDelay(
+    static WatermarkPolicy limitingLagAndDelay(
             long maxLag, long maxRetainNanos, int numStoredSamples, DistributedLongSupplier nanoClock
     ) {
-        return new PunctuationPolicyBase() {
+        return new WatermarkPolicyBase() {
 
             private long topTs = Long.MIN_VALUE;
             private final TimestampHistory history = new TimestampHistory(maxRetainNanos, numStoredSamples);
@@ -110,18 +110,18 @@ public final class PunctuationPolicies {
             }
 
             @Override
-            public long getCurrentPunctuation() {
-                return applyMaxRetain(super.getCurrentPunctuation());
+            public long getCurrentWatermark() {
+                return applyMaxRetain(super.getCurrentWatermark());
             }
 
-            private long applyMaxRetain(long punc) {
-                return makePuncAtLeast(Math.max(punc, history.sample(nanoClock.getAsLong(), topTs)));
+            private long applyMaxRetain(long wm) {
+                return makeWmAtLeast(Math.max(wm, history.sample(nanoClock.getAsLong(), topTs)));
             }
         };
     }
 
     /**
-     * Maintains punctuation that lags behind the top timestamp by at most
+     * Maintains watermark that lags behind the top timestamp by at most
      * {@code timestampLag} and behind wall-clock time by at most {@code
      * wallClockLag}. It assumes that the event timestamp is in milliseconds
      * since Unix epoch and will use that fact to correlate it with wall-clock
@@ -134,43 +134,43 @@ public final class PunctuationPolicies {
      * for cases where some substreams may never see an event.
      *
      * @param timestampLag maximum difference between the top observed timestamp
-     *                     and the punctuation
+     *                     and the watermark
      * @param wallClockLag maximum difference between the current value of
-     *                     {@code System.currentTimeMillis} and the punctuation
+     *                     {@code System.currentTimeMillis} and the watermark
      */
     @Nonnull
-    public static PunctuationPolicy limitingTimestampAndWallClockLag(long timestampLag, long wallClockLag) {
+    public static WatermarkPolicy limitingTimestampAndWallClockLag(long timestampLag, long wallClockLag) {
         return limitingTimestampAndWallClockLag(timestampLag, wallClockLag, System::currentTimeMillis);
     }
 
     @Nonnull
-    static PunctuationPolicy limitingTimestampAndWallClockLag(
+    static WatermarkPolicy limitingTimestampAndWallClockLag(
             long timestampLag, long wallClockLag, DistributedLongSupplier wallClock
     ) {
         checkNotNegative(timestampLag, "timestampLag must not be negative");
         checkNotNegative(wallClockLag, "wallClockLag must not be negative");
 
-        return new PunctuationPolicyBase() {
+        return new WatermarkPolicyBase() {
 
             @Override
             public long reportEvent(long timestamp) {
                 updateFromWallClock();
-                return makePuncAtLeast(timestamp - timestampLag);
+                return makeWmAtLeast(timestamp - timestampLag);
             }
 
             @Override
-            public long getCurrentPunctuation() {
+            public long getCurrentWatermark() {
                 return updateFromWallClock();
             }
 
             private long updateFromWallClock() {
-                return makePuncAtLeast(wallClock.getAsLong() - wallClockLag);
+                return makeWmAtLeast(wallClock.getAsLong() - wallClockLag);
             }
         };
     }
 
     /**
-     * Maintains punctuation that lags behind the top timestamp by the amount
+     * Maintains watermark that lags behind the top timestamp by the amount
      * specified with {@code lag}. Assumes that the event timestamp is given
      * in milliseconds and will use that fact to correlate it with the passage
      * of system time. There is no requirement on any specific point of origin
@@ -178,48 +178,48 @@ public final class PunctuationPolicies {
      * long as it is fixed.
      * <p>
      * When the defined {@code maxLullMs} period elapses without observing more
-     * events, punctuation will start advancing in lockstep with system time
+     * events, watermark will start advancing in lockstep with system time
      * acquired from the underlying OS's monotonic clock.
      * <p>
-     * If no event is ever observed, punctuation will advance from the initial
+     * If no event is ever observed, watermark will advance from the initial
      * value of {@code Long.MIN_VALUE}. Therefore this policy can be used only
      * when there is a guarantee that each substream will emit at least one
      * event that will initialize the timestamp. Otherwise the empty substream
      * will hold back the processing of all other substreams by keeping the
-     * punctuation below any realistic value.
+     * watermark below any realistic value.
      *
      * @param lag the desired difference between the top observed timestamp
-     *               and the punctuation
+     *               and the watermark
      * @param maxLullMs maximum duration of a lull period before starting to
-     *                  advance punctuation with system time
+     *                  advance watermark with system time
      */
     @Nonnull
-    public static PunctuationPolicy limitingLagAndLull(long lag, long maxLullMs) {
+    public static WatermarkPolicy limitingLagAndLull(long lag, long maxLullMs) {
         return limitingLagAndLull(lag, maxLullMs, System::nanoTime);
     }
 
     @Nonnull
-    static PunctuationPolicy limitingLagAndLull(long lag, long maxLullMs, DistributedLongSupplier nanoClock) {
+    static WatermarkPolicy limitingLagAndLull(long lag, long maxLullMs, DistributedLongSupplier nanoClock) {
         checkNotNegative(lag, "lag must not be negative");
         checkNotNegative(maxLullMs, "maxLullMs must not be negative");
 
-        return new PunctuationPolicyBase() {
+        return new WatermarkPolicyBase() {
 
             private long maxLullAt = Long.MIN_VALUE;
 
             @Override
             public long reportEvent(long timestamp) {
                 maxLullAt = monotonicTimeMillis() + maxLullMs;
-                return makePuncAtLeast(timestamp - lag);
+                return makeWmAtLeast(timestamp - lag);
             }
 
             @Override
-            public long getCurrentPunctuation() {
+            public long getCurrentWatermark() {
                 long now = monotonicTimeMillis();
                 ensureInitialized(now);
                 long millisPastMaxLull = max(0, now - maxLullAt);
                 maxLullAt += millisPastMaxLull;
-                return advancePuncBy(millisPastMaxLull);
+                return advanceWmBy(millisPastMaxLull);
             }
 
             private void ensureInitialized(long now) {
