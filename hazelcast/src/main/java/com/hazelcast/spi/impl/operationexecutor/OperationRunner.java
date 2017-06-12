@@ -106,12 +106,12 @@ public abstract class OperationRunner {
     }
 
     /**
-     * Returns the partitionId this OperationRunner is responsible for. If the partition id is smaller than 0,
+     * Returns the partitionId this OperationRunner is responsible for. If the partition ID is smaller than 0,
      * it is either a generic or ad hoc OperationRunner.
      * <p/>
      * The value will never change for this OperationRunner instance.
      *
-     * @return the partition id.
+     * @return the partition ID.
      */
     public final int getPartitionId() {
         return partitionId;

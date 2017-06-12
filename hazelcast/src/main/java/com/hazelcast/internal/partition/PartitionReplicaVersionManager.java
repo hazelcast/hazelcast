@@ -31,15 +31,15 @@ import java.util.Collection;
 public interface PartitionReplicaVersionManager {
 
     /**
-     * Returns all registered namespaces for given partition id
-     * @param partitionId partition id
-     * @return known namespaces for partition id
+     * Returns all registered namespaces for given partition ID
+     * @param partitionId partition ID
+     * @return known namespaces for partition ID
      */
     Collection<ServiceNamespace> getNamespaces(int partitionId);
 
     /**
      * Returns whether given replica version is behind the current version or not.
-     * @param partitionId partition id
+     * @param partitionId partition ID
      * @param namespace replica namespace
      * @param replicaVersions replica versions
      * @param replicaIndex specific replica index
@@ -50,7 +50,7 @@ public interface PartitionReplicaVersionManager {
 
     /**
      * Returns replica versions for given partition and namespace.
-     * @param partitionId partition id
+     * @param partitionId partition ID
      * @param namespace replica namespace
      * @return replica versions
      */
@@ -60,7 +60,7 @@ public interface PartitionReplicaVersionManager {
      * Updates the partition replica version and triggers replica sync if the replica is dirty (e.g. the
      * received version is not expected and this node might have missed an update)
      *
-     * @param partitionId the id of the partition for which we received a new version
+     * @param partitionId the ID of the partition for which we received a new version
      * @param namespace replica namespace
      * @param replicaVersions the received replica versions
      * @param replicaIndex the index of this replica
@@ -71,7 +71,7 @@ public interface PartitionReplicaVersionManager {
     /**
      * Increments replica versions for given partition and namespace by the number of backup count.
      *
-     * @param partitionId partition id
+     * @param partitionId partition ID
      * @param namespace replica namespace
      * @param backupCount number of desired backups
      * @return incremented replica versions

@@ -190,11 +190,11 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
         writeIntB(bytes, OFFSET_SERIALIZER_TYPE_ID, CONSTANT_TYPE_DATA_SERIALIZABLE);
         // identified or not
         bytes[OFFSET_IDENTIFIED] = 1;
-        // factory id
+        // factory ID
         writeInt(bytes, OFFSET_TYPE_FACTORY_ID, SpiDataSerializerHook.F_ID, useBigEndian);
-        // type id
+        // type ID
         writeInt(bytes, OFFSET_TYPE_ID, typeId, useBigEndian);
-        // call id
+        // call ID
         writeLong(bytes, OFFSET_CALL_ID, callId, useBigEndian);
         // urgent
         bytes[OFFSET_URGENT] = (byte) (urgent ? 1 : 0);

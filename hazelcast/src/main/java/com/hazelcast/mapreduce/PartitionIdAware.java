@@ -29,10 +29,9 @@ package com.hazelcast.mapreduce;
 public interface PartitionIdAware {
 
     /**
-     * Sets the partition id to the implementing instance it is executed against
+     * Sets the partition ID to the implementing instance it is executed against
      *
-     * @param partitionId current partitionId
+     * @param partitionId current partition ID
      */
     void setPartitionId(int partitionId);
-
 }

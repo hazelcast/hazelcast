@@ -167,7 +167,7 @@ public class EventServiceSegment<S> {
     }
 
     /**
-     * Removes the registration matching the {@code topic} and {@code id}.
+     * Removes the registration matching the {@code topic} and {@code ID}.
      * Returns the removed registration or {@code null} if none matched.
      *
      * @param topic the registration topic name

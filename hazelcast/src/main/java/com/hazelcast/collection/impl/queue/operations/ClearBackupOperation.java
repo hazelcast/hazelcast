@@ -28,7 +28,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Store items' id as set when ClearOperation run.
+ * Store items' ID as set when ClearOperation run.
  */
 public class ClearBackupOperation extends QueueOperation implements BackupOperation, MutatingOperation {
 

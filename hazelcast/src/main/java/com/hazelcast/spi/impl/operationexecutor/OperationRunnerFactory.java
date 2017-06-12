@@ -25,7 +25,7 @@ public interface OperationRunnerFactory {
      * Creates an OperationRunner for a given partition. This OperationRunner will only execute generic operations
      * and operations for that given partition.
      *
-     * @param partitionId the id of the partition.
+     * @param partitionId the ID of the partition.
      * @return the created OperationRunner.
      */
     OperationRunner createPartitionRunner(int partitionId);

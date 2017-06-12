@@ -45,16 +45,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Context which is needed by a map service.
- * <p/>
+ * <p>
  * Shared instances, configurations of all maps can be reached over this context.
- * <p/>
+ * <p>
  * Also this context provides some support methods which are used in map operations and {@link RecordStore} implementations.
  * For example all {@link PartitionContainer} and {@link MapContainer} instances
  * can also be reached by using this interface.
- * <p/>
+ * <p>
  * It is also responsible for providing methods which are used by lower layers of
  * Hazelcast and exposed on {@link MapService}.
- * <p/>
  *
  * @see MapManagedService
  */
@@ -78,7 +77,7 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
      * Clears all map partitions which are expected to have lesser backups
      * than given.
      *
-     * @param partitionId partition id
+     * @param partitionId partition ID
      * @param backupCount backup count
      */
     void clearMapsHavingLesserBackupCountThan(int partitionId, int backupCount);
@@ -90,8 +89,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     /**
      * Clears all partition based data allocated by MapService.
      *
-     * @param onShutdown true if {@code clearPartitions} is called during MapService shutdown,
-     *                   false otherwise.
+     * @param onShutdown {@code true} if {@code clearPartitions} is called during MapService shutdown,
+     *                   {@code false} otherwise
      */
     void clearPartitions(boolean onShutdown);
 
@@ -104,8 +103,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     void reset();
 
     /**
-     * Releases internal resources solely managed by Hazelcast. This method is
-     * called when MapService is shutting down.
+     * Releases internal resources solely managed by Hazelcast.
+     * This method is called when MapService is shutting down.
      */
     void shutdown();
 

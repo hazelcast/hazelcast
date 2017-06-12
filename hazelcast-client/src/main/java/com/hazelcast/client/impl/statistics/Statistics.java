@@ -52,14 +52,13 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class Statistics {
     /**
      * Use to enable the client statistics collection.
-     * <p/>
+     * <p>
      * The default is false.
      */
     public static final HazelcastProperty ENABLED = new HazelcastProperty("hazelcast.client.statistics.enabled", false);
 
     /**
      * The period in seconds the statistics runs.
-     * <p/>
      */
     public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty("hazelcast.client.statistics.period.seconds", 3,
             SECONDS);
@@ -93,7 +92,7 @@ public class Statistics {
     }
 
     /**
-     * Registers all client statistics and schedules peridic collection of stats.
+     * Registers all client statistics and schedules periodic collection of stats.
      */
     public final void start() {
         if (!enabled) {
@@ -119,8 +118,7 @@ public class Statistics {
     }
 
     /**
-     *
-     * @return The owner connection to the server for the client only if the server supports the client statistics feature.
+     * @return the owner connection to the server for the client only if the server supports the client statistics feature
      */
     private ClientConnection getOwnerConnection() {
         Address ownerConnectionAddress = client.getClientClusterService().getOwnerConnectionAddress();
@@ -153,8 +151,7 @@ public class Statistics {
     }
 
     /**
-     *
-     * @param periodSeconds The interval at which the statistics collection and send is being run.
+     * @param periodSeconds the interval at which the statistics collection and send is being run
      */
     private void schedulePeriodicStatisticsSendTask(long periodSeconds) {
         client.getExecutionService().scheduleWithRepetition(new Runnable() {
@@ -170,23 +167,23 @@ public class Statistics {
 
                 periodicStats.fillMetrics(stats, ownerConnection);
 
-                addNearCachStats(stats);
+                addNearCacheStats(stats);
 
                 sendStats(stats.toString(), ownerConnection);
             }
         }, 0, periodSeconds, SECONDS);
     }
 
-    private void addNearCachStats(final StringBuilder stats) {
+    private void addNearCacheStats(final StringBuilder stats) {
         for (NearCache nearCache : client.getNearCacheManager().listAllNearCaches()) {
             String nearCacheName = nearCache.getName();
-            StringBuilder nearCachNameWithPrefix = getNameWithPrefix(nearCacheName);
+            StringBuilder nearCacheNameWithPrefix = getNameWithPrefix(nearCacheName);
 
-            nearCachNameWithPrefix.append('.');
+            nearCacheNameWithPrefix.append('.');
 
             NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
 
-            String prefix = nearCachNameWithPrefix.toString();
+            String prefix = nearCacheNameWithPrefix.toString();
 
             addStat(stats, prefix, "creationTime", nearCacheStats.getCreationTime());
             addStat(stats, prefix, "evictions", nearCacheStats.getEvictions());
@@ -247,8 +244,7 @@ public class Statistics {
     }
 
     /**
-     *
-     * @param buffer The string for which the special characters ',', '=', '\' are escaped properly.
+     * @param buffer the string for which the special characters ',', '=', '\' are escaped properly
      */
     public static void escapeSpecialCharacters(StringBuilder buffer) {
         escapeSpecialCharacters(buffer, 0);
@@ -265,9 +261,8 @@ public class Statistics {
     }
 
     /**
-     *
-     * @param buffer The string for which the escape character '\' is removed properly.
-     * @return The unescaped string
+     * @param buffer the string for which the escape character '\' is removed properly
+     * @return the unescaped string
      */
     public static String unescapeSpecialCharacters(String buffer) {
         return unescapeSpecialCharacters(buffer, 0);
@@ -291,19 +286,18 @@ public class Statistics {
     /**
      * This method uses ',' character by default. It is for splitting into key=value tokens.
      *
-     * @param statString The statistics string to be split
-     * @return A list of splitted strings
+     * @param statString the statistics string to be split
+     * @return a list of split strings
      */
     public static List<String> split(String statString) {
         return split(statString, 0, STAT_SEPARATOR);
     }
 
     /**
-     *
-     * @param stat statistics string to be split
-     * @param start The start index for splitting
+     * @param stat      statistics string to be split
+     * @param start     the start index for splitting
      * @param splitChar A special character to be used for split, e.g. '='
-     * @return A list of splitted strings
+     * @return a list of split strings
      */
     public static List<String> split(String stat, int start, char splitChar) {
         int bufferLen = stat.length();
@@ -328,7 +322,7 @@ public class Statistics {
             }
         }
 
-        // Add the last string if exists
+        // add the last string if exists
         if (index > strStart) {
             result.add(stat.substring(strStart, index));
         }
@@ -354,7 +348,7 @@ public class Statistics {
                 "os.openFileDescriptorCount", "os.processCpuTime", "os.systemLoadAverage", "os.totalPhysicalMemorySize",
                 "os.totalSwapSpaceSize", "runtime.availableProcessors", "runtime.freeMemory", "runtime.maxMemory",
                 "runtime.totalMemory", "runtime.uptime", "runtime.usedMemory", "executionService.userExecutorQueueSize",
-                };
+        };
 
         private final Map<String, StringRenderer> allMetrics = new HashMap<String, StringRenderer>(statisticNames.length);
 
@@ -371,7 +365,7 @@ public class Statistics {
             addStat(stats, "clusterConnectionTimestamp", ownerConnection.getStartTime());
 
             stats.append(STAT_SEPARATOR).append("clientAddress").append(KEY_VALUE_SEPARATOR)
-                 .append(ownerConnection.getInetAddress().getHostAddress()).append(":").append(ownerConnection.getPort());
+                    .append(ownerConnection.getInetAddress().getHostAddress()).append(":").append(ownerConnection.getPort());
 
             addStat(stats, "clientName", client.getName());
 
@@ -386,5 +380,4 @@ public class Statistics {
             }
         }
     }
-
 }

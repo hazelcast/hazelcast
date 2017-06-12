@@ -18,11 +18,11 @@ package com.hazelcast.core;
 
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.LockAware;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.LegacyAsyncMap;
-import com.hazelcast.map.LockAware;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.mapreduce.JobTracker;
@@ -1108,7 +1108,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p/>
      *
      * @param interceptor map interceptor.
-     * @return id of registered interceptor.
+     * @return ID of registered interceptor.
      */
     String addInterceptor(MapInterceptor interceptor);
 
@@ -1116,7 +1116,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * Removes the given interceptor for this map so it will not intercept operations anymore.
      * <p/>
      *
-     * @param id registration id of the map interceptor.
+     * @param id registration ID of the map interceptor.
      */
     void removeInterceptor(String id);
 
@@ -1150,7 +1150,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * Removes the specified entry listener.
      * Returns silently if there is no such listener added before.
      *
-     * @param id id of registered listener.
+     * @param id ID of registered listener.
      * @return true if registration is removed, false otherwise.
      */
     boolean removeEntryListener(String id);
@@ -1159,7 +1159,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     /**
      * Adds a MapPartitionLostListener.
      * <p/>
-     * The addPartitionLostListener returns a register-id. This id is needed to remove the MapPartitionLostListener using the
+     * The addPartitionLostListener returns a register ID. This ID is needed to remove the MapPartitionLostListener using the
      * {@link #removePartitionLostListener(String)} method.
      * <p/>
      * There is no check for duplicate registrations, so if you register the listener twice, it will get events twice.
@@ -1168,7 +1168,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * to design limitations.
      *
      * @param listener the added MapPartitionLostListener.
-     * @return returns the registration id for the MapPartitionLostListener.
+     * @return returns the registration ID for the MapPartitionLostListener.
      * @throws java.lang.NullPointerException if listener is null.
      * @see #removePartitionLostListener(String)
      */
@@ -1178,7 +1178,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * Removes the specified map partition lost listener.
      * Returns silently if there is no such listener added before.
      *
-     * @param id id of registered listener.
+     * @param id ID of registered listener.
      * @return true if registration is removed, false otherwise.
      */
     boolean removePartitionLostListener(String id);

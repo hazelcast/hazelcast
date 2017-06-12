@@ -53,7 +53,7 @@ public interface ICacheInternal<K, V> extends ICache<K, V> {
      * Cluster-wide iterator for {@link ICache}
      *
      * @param fetchSize      batch fetching size
-     * @param partitionId    partition id of the entries to iterate on
+     * @param partitionId    partition ID of the entries to iterate on
      * @param prefetchValues prefetch values
      * @return iterator for the entries of the partition
      */

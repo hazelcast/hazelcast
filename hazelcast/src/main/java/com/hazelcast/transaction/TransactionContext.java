@@ -46,9 +46,9 @@ public interface TransactionContext extends TransactionalTaskContext {
     void rollbackTransaction();
 
     /**
-     * Gets the id that uniquely identifies the transaction.
+     * Gets the ID that uniquely identifies the transaction.
      *
-     * @return the transaction id.
+     * @return the transaction ID
      */
     String getTxnId();
 
@@ -60,5 +60,4 @@ public interface TransactionContext extends TransactionalTaskContext {
      */
     @Deprecated
     XAResource getXaResource();
-
 }

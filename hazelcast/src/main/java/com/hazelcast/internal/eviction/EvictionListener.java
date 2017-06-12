@@ -17,7 +17,7 @@
 package com.hazelcast.internal.eviction;
 
 /**
- * Interface for entries, records or whatever that can be evicted via its accessor (key or id).
+ * Interface for entries, records or whatever that can be evicted via its accessor (key or ID).
  *
  * @param <A> Type of the accessor
  * @param <E> Type of the {@link Evictable} value

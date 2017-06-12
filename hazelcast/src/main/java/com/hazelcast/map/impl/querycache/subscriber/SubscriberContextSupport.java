@@ -29,7 +29,7 @@ public interface SubscriberContextSupport {
      * @param mapName     map name.
      * @param cacheName   cache name.
      * @param sequence    sequence to be set.
-     * @param partitionId partitions id of broken sequence
+     * @param partitionId partitions ID of broken sequence
      * @return operation or request according to context.
      * @see QueryCache#tryRecover()
      */

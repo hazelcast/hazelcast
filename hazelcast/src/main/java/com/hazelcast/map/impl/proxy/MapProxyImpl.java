@@ -389,7 +389,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
 
     @Override
     public void removeInterceptor(String id) {
-        checkNotNull(id, "Interceptor id should not be null!");
+        checkNotNull(id, "Interceptor ID should not be null!");
 
         removeMapInterceptorInternal(id);
     }
@@ -502,7 +502,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
 
     @Override
     public boolean removeEntryListener(String id) {
-        checkNotNull(id, "Listener id should not be null!");
+        checkNotNull(id, "Listener ID should not be null!");
 
         return removeEntryListenerInternal(id);
     }
@@ -516,7 +516,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
 
     @Override
     public boolean removePartitionLostListener(String id) {
-        checkNotNull(id, "Listener id should not be null!");
+        checkNotNull(id, "Listener ID should not be null!");
 
         return removePartitionLostListenerInternal(id);
     }

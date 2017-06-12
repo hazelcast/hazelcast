@@ -115,7 +115,7 @@ public class TcpIpConnector {
                             ioService.getSocketConnectTimeoutSeconds() * MILLIS_PER_SECOND);
                 } else if (thisAddress.isIPv6() && thisAddress.getScopeId() != null) {
                     // Both remote and this addresses are IPv6.
-                    // This is a local IPv6 address and scope id is known.
+                    // This is a local IPv6 address and scope ID is known.
                     // find correct inet6 address for remote and connect...
                     Inet6Address inetAddress = AddressUtil
                             .getInetAddressFor((Inet6Address) address.getInetAddress(), thisAddress.getScopeId());

@@ -33,13 +33,13 @@ public interface ICollection<E> extends Collection<E>, DistributedObject {
     String getName();
 
     /**
-     * Adds an item listener for this collection. Listener will be notified
-     * for all collection add/remove events.
+     * Adds an item listener for this collection.
+     * The listener will be notified for all collection add/remove events.
      *
      * @param listener     the item listener
-     * @param includeValue <tt>true</tt> if the updated item should be passed
-     *                     to the item listener, <tt>false</tt> otherwise.
-     * @return returns the registration id.
+     * @param includeValue {@code true} if the updated item should be passed
+     *                     to the item listener, {@code false} otherwise
+     * @return returns the registration ID
      */
     String addItemListener(ItemListener<E> listener, boolean includeValue);
 
@@ -47,9 +47,8 @@ public interface ICollection<E> extends Collection<E>, DistributedObject {
      * Removes the specified item listener.
      * Returns silently if the specified listener was not added before.
      *
-     * @param registrationId Id of the listener registration.
-     *
-     * @return true if the item listener is removed, false otherwise
+     * @param registrationId ID of the listener registration
+     * @return {@code true} if the item listener is removed, {@code false} otherwise
      */
     boolean removeItemListener(String registrationId);
 }

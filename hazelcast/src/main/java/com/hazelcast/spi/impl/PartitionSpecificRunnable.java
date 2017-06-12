@@ -22,10 +22,10 @@ package com.hazelcast.spi.impl;
 public interface PartitionSpecificRunnable extends Runnable {
 
     /**
-     * Returns the partition-id. If the partition-id is smaller than 0, than it isn't specific to
+     * Returns the partition ID. If the partition ID is smaller than 0, than it isn't specific to
      * a partition.
      *
-     * @return the partition-id.
+     * @return the partition ID
      */
     int getPartitionId();
 }

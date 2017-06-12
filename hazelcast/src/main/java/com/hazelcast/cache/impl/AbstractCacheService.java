@@ -668,7 +668,7 @@ public abstract class AbstractCacheService implements ICacheService, PostJoinAwa
      * @param listener  the {@link com.hazelcast.cache.impl.CacheEventListener} to be registered for specified <code>cache</code>
      * @param localOnly true if only events originated from this member wants be listened, false if all invalidation events in the
      *                  cluster wants to be listened
-     * @return the id which is unique for current registration
+     * @return the ID which is unique for current registration
      */
     @Override
     public String addInvalidationListener(String name, CacheEventListener listener, boolean localOnly) {
@@ -688,7 +688,7 @@ public abstract class AbstractCacheService implements ICacheService, PostJoinAwa
      *
      * @param name       the name of the cache that invalidation event is sent for
      * @param key        the {@link com.hazelcast.nio.serialization.Data} represents the invalidation event
-     * @param sourceUuid an id that represents the source for invalidation event
+     * @param sourceUuid an ID that represents the source for invalidation event
      */
     @Override
     public void sendInvalidationEvent(String name, Data key, String sourceUuid) {

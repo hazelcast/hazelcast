@@ -36,9 +36,9 @@ public class MapPartitionLostEvent extends AbstractIMapEvent {
     }
 
     /**
-     * Returns the partition id that has been lost for the given map
+     * Returns the partition ID that has been lost for the given map
      *
-     * @return the partition id that has been lost for the given map
+     * @return the partition ID that has been lost for the given map
      */
     public int getPartitionId() {
         return partitionId;

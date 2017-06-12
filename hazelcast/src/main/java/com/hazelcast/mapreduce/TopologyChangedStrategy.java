@@ -29,7 +29,7 @@ package com.hazelcast.mapreduce;
  * throw an {@link TopologyChangedException}, but it is possible
  * to submit the same job configuration again if
  * {@link com.hazelcast.mapreduce.JobTracker#getTrackableJob(String)}
- * returns null for the requested job id.
+ * returns null for the requested job ID.
  *
  * @since 3.2
  * @deprecated MapReduce is deprecated and will be removed in 4.0.

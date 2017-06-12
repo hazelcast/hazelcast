@@ -57,7 +57,7 @@ class SubscriberAccumulatorHandler implements AccumulatorHandler<QueryCacheEvent
             case EVICTED:
                 queryCache.deleteInternal(keyData, false, entryEventType);
                 break;
-            // TODO if we want strongly consistent clear & evict, removal can be made based on sequence and partition-id.
+            // TODO: if we want strongly consistent clear & evict, removal can be made based on sequence and partition ID
             case CLEAR_ALL:
             case EVICT_ALL:
                 queryCache.clearInternal(entryEventType);

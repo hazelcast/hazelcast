@@ -57,7 +57,7 @@ public class ListContainer extends CollectionContainer {
         TxCollectionItem txItem = txMap.remove(itemId);
         if (txItem == null) {
             logger.warning("Transaction log cannot be found for rolling back 'remove()' operation."
-                    + " Missing log item id: " + itemId);
+                    + " Missing log item ID: " + itemId);
             return;
         }
         CollectionItem item = new CollectionItem(itemId, txItem.getValue());

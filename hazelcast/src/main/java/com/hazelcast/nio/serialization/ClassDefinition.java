@@ -19,7 +19,7 @@ package com.hazelcast.nio.serialization;
 import java.util.Set;
 
 /**
- * ClassDefinition defines a class schema for Portable classes. It allows to query field names, types, class id etc.
+ * ClassDefinition defines a class schema for Portable classes. It allows to query field names, types, class ID etc.
  * It can be created manually using {@link ClassDefinitionBuilder} or on-demand during serialization phase.
  *
  * @see com.hazelcast.nio.serialization.Portable
@@ -69,10 +69,10 @@ public interface ClassDefinition {
     FieldType getFieldType(String fieldName);
 
     /**
-     * Gets the class id of a field.
+     * Gets the class ID of a field.
      *
      * @param fieldName name of the field
-     * @return class id of given field
+     * @return class ID of given field
      * @throws java.lang.IllegalArgumentException if the field does not not exist
      */
     int getFieldClassId(String fieldName);
@@ -85,16 +85,16 @@ public interface ClassDefinition {
     int getFieldCount();
 
     /**
-     * Returns the factory id.
+     * Returns the factory ID.
      *
-     * @return factory id
+     * @return factory ID
      */
     int getFactoryId();
 
     /**
-     * Returns the class id.
+     * Returns the class ID.
      *
-     * @return class id
+     * @return class ID
      */
     int getClassId();
 
@@ -104,5 +104,4 @@ public interface ClassDefinition {
      * @return version
      */
     int getVersion();
-
 }

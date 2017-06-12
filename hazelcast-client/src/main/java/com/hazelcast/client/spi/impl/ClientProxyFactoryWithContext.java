@@ -33,7 +33,7 @@ public abstract class ClientProxyFactoryWithContext implements ClientProxyFactor
     }
 
     /**
-     * Creates a new client proxy with the given id.
+     * Creates a new client proxy with the given ID.
      *
      * @param id      the ID of the client proxy
      * @param context the {@link ClientContext} of the client proxy

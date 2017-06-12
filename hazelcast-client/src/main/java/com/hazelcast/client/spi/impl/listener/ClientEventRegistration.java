@@ -22,7 +22,7 @@ import com.hazelcast.nio.Connection;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
- * Keeps the information related to to an event registration made by clients
+ * Keeps the information related to to an event registration made by clients.
  */
 public class ClientEventRegistration {
 
@@ -31,8 +31,7 @@ public class ClientEventRegistration {
     private final long callId;
     private final ListenerMessageCodec codec;
 
-    public ClientEventRegistration(String serverRegistrationId,
-                                   long callId, Connection subscriber, ListenerMessageCodec codec) {
+    public ClientEventRegistration(String serverRegistrationId, long callId, Connection subscriber, ListenerMessageCodec codec) {
         isNotNull(serverRegistrationId, "serverRegistrationId");
         this.serverRegistrationId = serverRegistrationId;
         this.callId = callId;
@@ -41,12 +40,12 @@ public class ClientEventRegistration {
     }
 
     /**
-     * Alias registration id is same as registration id in the beginning. If listener had to be re-registered
-     * new registration id is stored as server registration id.
-     * When user try to remove the listener with registration id, related server registration is send to
+     * Alias registration ID is same as registration ID in the beginning. If listener had to be re-registered
+     * new registration ID is stored as server registration ID.
+     * When user try to remove the listener with registration ID, related server registration is send to
      * subscribed member to remove the listener.
      *
-     * @return server registration Id
+     * @return server registration ID
      */
     public String getServerRegistrationId() {
         return serverRegistrationId;
@@ -64,9 +63,9 @@ public class ClientEventRegistration {
     }
 
     /**
-     * Call id of first event registration request
+     * Call ID of first event registration request
      *
-     * @return call id
+     * @return call ID
      */
     public long getCallId() {
         return callId;
@@ -86,9 +85,7 @@ public class ClientEventRegistration {
         }
 
         ClientEventRegistration that = (ClientEventRegistration) o;
-
         return serverRegistrationId.equals(that.serverRegistrationId);
-
     }
 
     @Override
@@ -96,4 +93,3 @@ public class ClientEventRegistration {
         return serverRegistrationId.hashCode();
     }
 }
-

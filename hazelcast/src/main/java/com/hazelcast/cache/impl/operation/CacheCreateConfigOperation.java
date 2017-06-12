@@ -35,15 +35,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Used to create cluster wide cache configuration.
- * <p>This configuration is created using the following algorithm;
+ * <p>
+ * This configuration is created using the following algorithm;
  * <ul>
- * <li>Find partition id using the distributed object name of cache as a key.</li>
+ * <li>Find partition ID using the distributed object name of cache as a key.</li>
  * <li>Send the <code>CacheCreateConfigOperation</code> operation to the calculated partition which will force all
  * clusters to be single threaded.</li>
  * <li>{@link ICacheService#putCacheConfigIfAbsent(com.hazelcast.config.CacheConfig)} is called.</li>
- * </ul></p>
- * <p>This operation's purpose is to pass the required parameters into
- * {@link ICacheService#putCacheConfigIfAbsent(com.hazelcast.config.CacheConfig)}.</p>
+ * </ul>
+ * <p>
+ * This operation's purpose is to pass the required parameters into
+ * {@link ICacheService#putCacheConfigIfAbsent(com.hazelcast.config.CacheConfig)}.
  */
 public class CacheCreateConfigOperation
         extends AbstractNamedOperation
@@ -150,8 +152,7 @@ public class CacheCreateConfigOperation
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out)
-            throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(config);
         out.writeBoolean(createAlsoOnOthers);
@@ -159,8 +160,7 @@ public class CacheCreateConfigOperation
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in)
-            throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         config = in.readObject();
         createAlsoOnOthers = in.readBoolean();
@@ -176,5 +176,4 @@ public class CacheCreateConfigOperation
     public int getFactoryId() {
         return CacheDataSerializerHook.F_ID;
     }
-
 }

@@ -35,17 +35,17 @@ public class WanDataSerializerHook implements DataSerializerHook {
     public static final int F_ID = FactoryIdHelper.getFactoryId(WAN_REPLICATION_DS_FACTORY, WAN_REPLICATION_DS_FACTORY_ID);
 
     /**
-     * Id of {@link com.hazelcast.wan.WanReplicationEvent}
+     * ID of {@link com.hazelcast.wan.WanReplicationEvent}
      */
     public static final int WAN_REPLICATION_EVENT = 0;
 
     /**
-     * Id of {@link com.hazelcast.map.impl.wan.MapReplicationUpdate}
+     * ID of {@link com.hazelcast.map.impl.wan.MapReplicationUpdate}
      */
     public static final int MAP_REPLICATION_UPDATE = 1;
 
     /**
-     * Id of {@link com.hazelcast.map.impl.wan.MapReplicationRemove}
+     * ID of {@link com.hazelcast.map.impl.wan.MapReplicationRemove}
      */
     public static final int MAP_REPLICATION_REMOVE = 2;
 

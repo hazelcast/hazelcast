@@ -38,8 +38,8 @@ public final class PartitionOperationThread extends OperationThread {
     }
 
     /**
-     * For each partition there is a {@link com.hazelcast.spi.impl.operationexecutor.OperationRunner} instance. So we need to
-     * find the right one based on the partition-id.
+     * For each partition there is a {@link com.hazelcast.spi.impl.operationexecutor.OperationRunner} instance.
+     * So we need to find the right one based on the partition ID.
      */
     @Override
     public OperationRunner getOperationRunner(int partitionId) {

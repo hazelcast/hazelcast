@@ -169,7 +169,7 @@ public interface NearCache<K, V> extends InitializingObject {
      * If one thread takes reservation, only that thread can update the key.
      *
      * @param key key to be reserved for update
-     * @return reservation id if reservation succeeds, else returns {@link NearCacheRecord#NOT_RESERVED}
+     * @return reservation ID if reservation succeeds, else returns {@link NearCacheRecord#NOT_RESERVED}
      */
     long tryReserveForUpdate(K key);
 
@@ -179,7 +179,7 @@ public interface NearCache<K, V> extends InitializingObject {
      *
      * @param key           reserved key for update
      * @param value         value to be associated with reserved key
-     * @param reservationId id for this reservation
+     * @param reservationId ID for this reservation
      * @param deserialize   eagerly deserialize returning value
      * @return associated value if deserialize is {@code true} and update succeeds, otherwise returns null
      */

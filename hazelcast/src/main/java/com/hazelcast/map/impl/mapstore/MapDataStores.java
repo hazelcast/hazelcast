@@ -48,12 +48,12 @@ public final class MapDataStores {
     /**
      * Creates a write behind data store.
      *
-     * @param mapStoreContext      context for map store operations.
-     * @param partitionId          partition id of partition.
+     * @param mapStoreContext      context for map store operations
+     * @param partitionId          partition ID of partition
      * @param writeBehindProcessor the {@link WriteBehindProcessor}
-     * @param <K>                  type of key to store.
-     * @param <V>                  type of value to store.
-     * @return new write behind store manager.
+     * @param <K>                  type of key to store
+     * @param <V>                  type of value to store
+     * @return new write behind store manager
      */
     public static <K, V> MapDataStore<K, V> createWriteBehindStore(MapStoreContext mapStoreContext, int partitionId,
                                                                    WriteBehindProcessor writeBehindProcessor) {
@@ -76,10 +76,10 @@ public final class MapDataStores {
     /**
      * Creates a write through data store.
      *
-     * @param mapStoreContext context for map store operations.
-     * @param <K>             type of key to store.
-     * @param <V>             type of value to store.
-     * @return new write through store manager.
+     * @param mapStoreContext context for map store operations
+     * @param <K>             type of key to store
+     * @param <V>             type of value to store
+     * @return new write through store manager
      */
     public static <K, V> MapDataStore<K, V> createWriteThroughStore(MapStoreContext mapStoreContext) {
         final MapStoreWrapper store = mapStoreContext.getMapStoreWrapper();
@@ -94,9 +94,9 @@ public final class MapDataStores {
     /**
      * Used for providing neutral null behaviour.
      *
-     * @param <K> type of key to store.
-     * @param <V> type of value to store.
-     * @return empty store manager.
+     * @param <K> type of key to store
+     * @param <V> type of value to store
+     * @return empty store manager
      */
     public static <K, V> MapDataStore<K, V> emptyStore() {
         return (MapDataStore<K, V>) EMPTY_MAP_DATA_STORE;

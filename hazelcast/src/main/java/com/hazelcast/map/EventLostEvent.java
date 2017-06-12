@@ -29,7 +29,7 @@ import com.hazelcast.core.Member;
 public class EventLostEvent implements IMapEvent {
 
     /**
-     * Event type id.
+     * Event type ID.
      *
      * @see EntryEventType
      */
@@ -58,10 +58,10 @@ public class EventLostEvent implements IMapEvent {
     }
 
     /**
-     * Intentionally returns null.
+     * Intentionally returns {@code null}.
      * Used in {@link com.hazelcast.map.impl.querycache.subscriber.InternalQueryCacheListenerAdapter}.
      *
-     * @return null.
+     * @return {@code null}
      * @see com.hazelcast.map.impl.querycache.subscriber.InternalQueryCacheListenerAdapter
      */
     @Override
@@ -75,9 +75,9 @@ public class EventLostEvent implements IMapEvent {
     }
 
     /**
-     * Returns next event type id.
+     * Returns next event type ID.
      *
-     * @return next event type id.
+     * @return next event type ID
      * @see EntryEventType
      */
     private static int getNextEntryEventTypeId() {
@@ -101,4 +101,3 @@ public class EventLostEvent implements IMapEvent {
         return 1 << ++eventFlagPosition;
     }
 }
-

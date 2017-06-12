@@ -132,7 +132,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
             node.start();
 
             if (!node.isRunning()) {
-                    throw new IllegalStateException("Node failed to start!");
+                throw new IllegalStateException("Node failed to start!");
             }
 
             managementService = new ManagementService(this);
@@ -274,7 +274,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
 
     @Override
     public IdGenerator getIdGenerator(String name) {
-        checkNotNull(name, "Retrieving an id-generator instance with a null name is not allowed!");
+        checkNotNull(name, "Retrieving an ID-generator instance with a null name is not allowed!");
         return getDistributedObject(IdGeneratorService.SERVICE_NAME, name);
     }
 

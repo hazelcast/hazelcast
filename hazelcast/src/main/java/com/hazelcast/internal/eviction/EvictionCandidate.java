@@ -17,7 +17,7 @@
 package com.hazelcast.internal.eviction;
 
 /**
- * Interface for entries, records or whatever that can be evictable via its accessor (key or id).
+ * Interface for entries, records or whatever that can be evictable via its accessor (key or ID).
  *
  * @param <A> Type of the accessor
  * @param <E> Type of the {@link Evictable} value
@@ -26,9 +26,9 @@ public interface EvictionCandidate<A, E extends Evictable>
         extends EvictableEntryView {
 
     /**
-     * The accessor (key or id) of {@link Evictable} entry or record or whatever.
+     * The accessor (key or ID) of {@link Evictable} entry or record or whatever.
      *
-     * @return the accessor (key or id) of {@link Evictable} entry or record or whatever
+     * @return the accessor (key or ID) of {@link Evictable} entry or record or whatever
      */
     A getAccessor();
 

@@ -27,12 +27,12 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
 
 /**
- * Responsible for partition-sequence and partition-uuid generation.
+ * Responsible for partition-sequence and partition UUID generation.
  * Used by invalidator to generate metadata for invalidation events.
- *
+ * <p>
  * This metadata is used by {@link RepairingHandler} and {@link RepairingTask}
  * to act against possible invalidation-miss and partition-loss.
- *
+ * <p>
  * One instance per service is created. Used on member side.
  */
 public class MetaDataGenerator {
@@ -95,7 +95,7 @@ public class MetaDataGenerator {
     }
 
     public void removeUuidAndSequence(final int partitionId) {
-        // remove uuid.
+        // remove UUID
         uuids.remove(partitionId);
 
         // reset data-structures' sequence numbers

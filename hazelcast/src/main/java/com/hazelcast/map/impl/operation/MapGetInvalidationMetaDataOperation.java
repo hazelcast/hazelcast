@@ -77,7 +77,7 @@ public class MapGetInvalidationMetaDataOperation extends Operation implements Id
         private Map<String, List<Map.Entry<Integer, Long>>> namePartitionSequenceList;
 
         /**
-         * map of partition id and UUID
+         * map of partition ID and UUID
          */
         private Map<Integer, UUID> partitionUuidList;
 

@@ -35,7 +35,7 @@ public interface Data {
      * Returns serialization type of binary form. It's defined by
      * {@link Serializer#getTypeId()}
      *
-     * @return serializer type id
+     * @return serializer type ID
      */
     int getType();
 

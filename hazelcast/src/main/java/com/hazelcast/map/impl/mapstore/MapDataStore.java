@@ -23,8 +23,8 @@ import java.util.Map;
  * Map data stores general contract.
  * Provides an extra abstraction layer over write-through and write-behind map-store implementations.
  *
- * @param <K> type of key to store.
- * @param <V> type of value to store.
+ * @param <K> type of key to store
+ * @param <V> type of value to store
  */
 public interface MapDataStore<K, V> {
 
@@ -51,7 +51,7 @@ public interface MapDataStore<K, V> {
      * Removes keys from map store.
      * It also handles {@link com.hazelcast.nio.serialization.Data} to object conversions of keys.
      *
-     * @param keys to be removed.
+     * @param keys to be removed
      */
     void removeAll(Collection keys);
 

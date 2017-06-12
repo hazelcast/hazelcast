@@ -484,7 +484,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
      *
      * @param key           key to update in Near Cache
      * @param remoteValue   fetched value from server
-     * @param reservationId reservation id for this key
+     * @param reservationId reservation ID for this key
      * @param deserialize   deserialize returned value
      * @return last known value for the key
      */

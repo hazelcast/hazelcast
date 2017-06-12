@@ -61,7 +61,7 @@ public enum EntryEventType {
     }
 
     /**
-     * These constants represent type-id and bit-mask of events.
+     * These constants represent type ID and bit-mask of events.
      *
      * @see com.hazelcast.map.impl.MapListenerFlagOperator
      */

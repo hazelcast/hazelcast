@@ -68,7 +68,6 @@ final class StoreConstructor {
 
         final Properties properties = mapStoreConfig.getProperties();
         return factory.newMapStore(name, properties);
-
     }
 
     private static Object getStoreFromImplementationOrNull(MapStoreConfig mapStoreConfig) {

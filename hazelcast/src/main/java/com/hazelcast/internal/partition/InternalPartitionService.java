@@ -68,10 +68,14 @@ public interface InternalPartitionService extends IPartitionService {
 
     int getMemberGroupsSize();
 
-    /** Pause all migrations */
+    /**
+     * Pause all migrations
+     */
     void pauseMigration();
 
-    /** Resume all migrations */
+    /**
+     * Resume all migrations
+     */
     void resumeMigration();
 
     boolean isMemberAllowedToJoin(Address address);
@@ -87,10 +91,10 @@ public interface InternalPartitionService extends IPartitionService {
     /**
      * Causes the partition table to be arranged and published to members if :
      * <ul>
-     *     <li>the instance has started</li>
-     *     <li>the cluster is {@link ClusterState#ACTIVE}</li>
-     *     <li>if it has not already been arranged</li>
-     *     <li>if there is no cluster membership change</li>
+     * <li>the instance has started</li>
+     * <li>the cluster is {@link ClusterState#ACTIVE}</li>
+     * <li>if it has not already been arranged</li>
+     * <li>if there is no cluster membership change</li>
      * </ul>
      * If this node is not the master, it will trigger the master to assign the partitions.
      *
@@ -115,10 +119,10 @@ public interface InternalPartitionService extends IPartitionService {
     PartitionTableView createPartitionTableView();
 
     /**
-     * Returns partition id list assigned to given target if partitions are assigned when method is called.
+     * Returns partition ID list assigned to given target if partitions are assigned when method is called.
      * Does not trigger partition assignment otherwise.
      *
-     * @return partition id list assigned to given target if partitions are assigned already
+     * @return partition ID list assigned to given target if partitions are assigned already
      */
     List<Integer> getMemberPartitionsIfAssigned(Address target);
 }

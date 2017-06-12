@@ -114,7 +114,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 throw new IOException("Packet not send to " + connection.getEndPoint());
             } else {
                 if (invocationLogger.isFinestEnabled()) {
-                    invocationLogger.finest("Invocation not found to deregister for call id " + callId);
+                    invocationLogger.finest("Invocation not found to deregister for call ID " + callId);
                 }
                 return;
             }

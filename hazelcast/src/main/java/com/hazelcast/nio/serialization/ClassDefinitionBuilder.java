@@ -177,7 +177,7 @@ public final class ClassDefinitionBuilder {
     public ClassDefinitionBuilder addPortableField(String fieldName, ClassDefinition def) {
         check();
         if (def.getClassId() == 0) {
-            throw new IllegalArgumentException("Portable class id cannot be zero!");
+            throw new IllegalArgumentException("Portable class ID cannot be zero!");
         }
         fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName,
                 FieldType.PORTABLE, def.getFactoryId(), def.getClassId(), def.getVersion()));
@@ -187,7 +187,7 @@ public final class ClassDefinitionBuilder {
     public ClassDefinitionBuilder addPortableArrayField(String fieldName, ClassDefinition def) {
         check();
         if (def.getClassId() == 0) {
-            throw new IllegalArgumentException("Portable class id cannot be zero!");
+            throw new IllegalArgumentException("Portable class ID cannot be zero!");
         }
         fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName,
                 FieldType.PORTABLE_ARRAY, def.getFactoryId(), def.getClassId(), def.getVersion()));

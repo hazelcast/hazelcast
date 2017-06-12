@@ -28,7 +28,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * This class triggers backup method for items' id.
+ * This class triggers backup method for items' ID.
  */
 public class CompareAndRemoveBackupOperation extends QueueOperation implements BackupOperation, MutatingOperation {
 

@@ -109,6 +109,4 @@ public final class MapStoreContextFactory {
             return false;
         }
     }
-
-
 }

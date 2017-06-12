@@ -25,7 +25,7 @@ import static com.hazelcast.mapreduce.impl.MapReduceUtil.stateChange;
 /**
  * This {@link com.hazelcast.mapreduce.impl.task.JobProcessInformationImpl} extending class is
  * used in non partitionId based map reduce tasks where partitions are kind of simulated using
- * a unique id per member.
+ * a unique ID per member.
  */
 public class MemberAssigningJobProcessInformationImpl
         extends JobProcessInformationImpl {
@@ -48,5 +48,4 @@ public class MemberAssigningJobProcessInformationImpl
         }
         return -1;
     }
-
 }

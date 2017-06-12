@@ -63,7 +63,9 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("checkstyle:methodcount")
 public class QueueContainer implements IdentifiedDataSerializable {
     private static final int ID_PROMOTION_OFFSET = 100000;
-    /** Contains item ID to queue item mappings for current transactions */
+    /**
+     * Contains item ID to queue item mappings for current transactions
+     */
     private final Map<Long, TxQueueItem> txMap = new HashMap<Long, TxQueueItem>();
     private final Map<Long, Data> dataMap = new HashMap<Long, Data>();
     private QueueWaitNotifyKey pollWaitNotifyKey;
@@ -75,7 +77,9 @@ public class QueueContainer implements IdentifiedDataSerializable {
     private NodeEngine nodeEngine;
     private QueueService service;
     private ILogger logger;
-    /** The ID of the last item, used for generating unique IDs for queue items */
+    /**
+     * The ID of the last item, used for generating unique IDs for queue items
+     */
     private long idGenerator;
     private String name;
 
@@ -696,8 +700,8 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * Note: this method will trigger store load.
      *
      * @param dataList the list of items which are to be retained in the queue or which are to be removed from the queue
-     * @param retain does the method retain the items in the list (true) or remove them from the queue (false)
-     * @return map of removed items by id
+     * @param retain   does the method retain the items in the list (true) or remove them from the queue (false)
+     * @return map of removed items by ID
      */
     public Map<Long, Data> compareAndRemove(Collection<Data> dataList, boolean retain) {
         final LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>();

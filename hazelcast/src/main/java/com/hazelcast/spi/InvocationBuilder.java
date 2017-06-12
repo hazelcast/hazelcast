@@ -71,7 +71,7 @@ public abstract class InvocationBuilder {
      *
      * @param serviceName the name of the service
      * @param op          the operation to execute
-     * @param partitionId the id of the partition upon which to execute the operation
+     * @param partitionId the ID of the partition upon which to execute the operation
      * @param target      the target machine. Either the partitionId or the target needs to be set.
      */
     protected InvocationBuilder(String serviceName, Operation op, int partitionId, Address target) {
@@ -205,9 +205,9 @@ public abstract class InvocationBuilder {
     }
 
     /**
-     * Returns the partition id.
+     * Returns the partition ID.
      *
-     * @return the partition id.
+     * @return the partition ID.
      */
     public int getPartitionId() {
         return partitionId;

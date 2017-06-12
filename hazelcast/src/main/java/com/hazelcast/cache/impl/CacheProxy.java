@@ -356,7 +356,7 @@ public class CacheProxy<K, V>
 
     @Override
     public boolean removePartitionLostListener(String id) {
-        checkNotNull(id, "Listener id should not be null!");
+        checkNotNull(id, "Listener ID should not be null!");
         return getService().getNodeEngine().getEventService()
                 .deregisterListener(AbstractCacheService.SERVICE_NAME, name, id);
     }

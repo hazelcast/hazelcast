@@ -223,14 +223,14 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             throw new IllegalStateException("Cluster is in " + ClusterState.PASSIVE + " state! Operation: " + op);
         }
 
-        // Operation has no partition id. So it is sent to this node in purpose.
+        // Operation has no partition ID, so it's sent to this node in purpose.
         // Operation will fail since node is shutting down or cluster is passive.
         if (op.getPartitionId() < 0) {
             throw new HazelcastInstanceNotActiveException("Member " + localAddress + " is currently passive! Operation: " + op);
         }
 
         // Custer is not passive but this node is shutting down.
-        // Since operation has a partition id, it must be retried on another node.
+        // Since operation has a partition ID, it must be retried on another node.
         throw new RetryableHazelcastException("Member " + localAddress + " is currently shutting down! Operation: " + op);
     }
 

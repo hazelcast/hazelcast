@@ -28,7 +28,7 @@ public interface SubscriberSequencerProvider {
      *
      * @param expect      the expected sequence.
      * @param update      the new sequence.
-     * @param partitionId id of the partition.
+     * @param partitionId ID of the partition.
      * @return {@code true} if Compare-and-Set operation is successful, otherwise returns {@code false}.
      */
     boolean compareAndSetSequence(long expect, long update, int partitionId);
@@ -36,7 +36,7 @@ public interface SubscriberSequencerProvider {
     /**
      * Returns partition's current sequence number.
      *
-     * @param partitionId id of the partition.
+     * @param partitionId ID of the partition.
      * @return current sequence number.
      */
     long getSequence(int partitionId);
@@ -44,7 +44,7 @@ public interface SubscriberSequencerProvider {
     /**
      * Resets the sequence number for the supplied {@code partition} to zero.
      *
-     * @param partitionId id of the partition.
+     * @param partitionId ID of the partition.
      */
     void reset(int partitionId);
 }

@@ -19,19 +19,18 @@ package com.hazelcast.client.impl;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * This class generates unique (per client) incrementing reference id which is used during locking related requests.
- * The server side uses this id to match if any previous request with the same id was issued and shall not re-do the lock related
- * operation but it shall just return the previous result. Hence, this id identifies the outstanding request sent to the server
+ * This class generates unique (per client) incrementing reference ID which is used during locking related requests.
+ * The server side uses this ID to match if any previous request with the same ID was issued and shall not re-do the lock related
+ * operation but it shall just return the previous result. Hence, this ID identifies the outstanding request sent to the server
  * side for locking operations. Similarly, if the client resends the request to the server for some reason it will use the same
- * reference id to make sure that the operation is not executed more than once at the server side.
- *
+ * reference ID to make sure that the operation is not executed more than once at the server side.
  */
 public final class ClientLockReferenceIdGenerator {
+
     private AtomicLong referenceIdCounter = new AtomicLong();
 
     /**
-     *
-     * @return A per client unique reference id.
+     * @return A per client unique reference ID
      */
     public long getNextReferenceId() {
         return referenceIdCounter.incrementAndGet();

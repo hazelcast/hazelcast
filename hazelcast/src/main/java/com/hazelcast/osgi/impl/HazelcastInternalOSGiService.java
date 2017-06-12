@@ -28,7 +28,7 @@ public interface HazelcastInternalOSGiService
         extends HazelcastOSGiService {
 
     /**
-     * Default id for {@link HazelcastInternalOSGiService} instance
+     * Default ID for {@link HazelcastInternalOSGiService} instance
      */
     String DEFAULT_ID =
             BuildInfoProvider.BUILD_INFO.getVersion()

@@ -24,13 +24,11 @@ import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-public class TaskDefinition<V>
-        implements IdentifiedDataSerializable {
+public class TaskDefinition<V> implements IdentifiedDataSerializable {
 
     public enum Type {
 
         SINGLE_RUN(0),
-
         AT_FIXED_RATE(1);
 
         private final byte id;
@@ -49,28 +47,21 @@ public class TaskDefinition<V>
                     return as;
                 }
             }
-            throw new IllegalArgumentException("Unsupported id value");
+            throw new IllegalArgumentException("Unsupported ID value");
         }
-
     }
 
     private Type type;
-
     private String name;
-
     private Callable<V> command;
-
     private long initialDelay;
-
     private long period;
-
     private TimeUnit unit;
 
     public TaskDefinition() {
     }
 
-    public TaskDefinition(Type type, String name, Callable<V> command, long delay,
-                          TimeUnit unit) {
+    public TaskDefinition(Type type, String name, Callable<V> command, long delay, TimeUnit unit) {
         this.type = type;
         this.name = name;
         this.command = command;
@@ -78,8 +69,7 @@ public class TaskDefinition<V>
         this.unit = unit;
     }
 
-    public TaskDefinition(Type type, String name, Callable<V> command, long initialDelay,
-                          long period, TimeUnit unit) {
+    public TaskDefinition(Type type, String name, Callable<V> command, long initialDelay, long period, TimeUnit unit) {
         this.type = type;
         this.name = name;
         this.command = command;
@@ -123,8 +113,7 @@ public class TaskDefinition<V>
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(type.name());
         out.writeUTF(name);
         out.writeObject(command);
@@ -134,8 +123,7 @@ public class TaskDefinition<V>
     }
 
     @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         type = Type.valueOf(in.readUTF());
         name = in.readUTF();
         command = in.readObject();

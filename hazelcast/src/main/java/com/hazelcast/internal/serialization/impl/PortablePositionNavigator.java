@@ -373,7 +373,7 @@ final class PortablePositionNavigator {
             return false;
         }
 
-        // read factory and class Id and validate if it's the same as expected in the fieldDefinition
+        // read factory and class ID and validate if it's the same as expected in the fieldDefinition
         int factoryId = in.readInt();
         int classId = in.readInt();
         int versionId = in.readInt();
@@ -395,7 +395,7 @@ final class PortablePositionNavigator {
         // read array length and ignore
         in.readInt();
 
-        // read factory and class Id and validate if it's the same as expected in the fieldDefinition
+        // read factory and class ID and validate if it's the same as expected in the fieldDefinition
         int factoryId = in.readInt();
         int classId = in.readInt();
         validateFactoryAndClass(ctx.getCurrentFieldDefinition(), factoryId, classId, path.path());

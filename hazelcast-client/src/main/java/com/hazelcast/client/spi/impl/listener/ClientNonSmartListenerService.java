@@ -121,7 +121,7 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
                     removeEventHandler(registration.getCallId());
                     activeRegistrations.remove(key);
                 } catch (Exception e) {
-                    throw new HazelcastException("Listener with id " + userRegistrationId + " could not be removed", e);
+                    throw new HazelcastException("Listener with ID " + userRegistrationId + " could not be removed", e);
                 }
                 return true;
             }

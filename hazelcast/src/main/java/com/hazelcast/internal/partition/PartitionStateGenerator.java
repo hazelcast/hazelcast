@@ -28,13 +28,12 @@ public interface PartitionStateGenerator {
      * <p/>
      * This method does not actually change the partitions, but send back the updated layout.
      * <p/>
-     * A two-dimensional array of addresses is returned where the first index is the partition id, and
+     * A two-dimensional array of addresses is returned where the first index is the partition ID, and
      * the second index is the replica index.
      *
-     * @param groups member groups
+     * @param groups       member groups
      * @param currentState current partition state.
      * @return proposed partition table
      */
     Address[][] arrange(Collection<MemberGroup> groups, InternalPartition[] currentState);
-
 }

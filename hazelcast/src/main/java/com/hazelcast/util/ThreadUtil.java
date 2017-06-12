@@ -19,7 +19,7 @@ package com.hazelcast.util;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Utility class to manipulate and query thread id
+ * Utility class to manipulate and query thread ID.
  */
 public final class ThreadUtil {
 
@@ -29,9 +29,9 @@ public final class ThreadUtil {
     }
 
     /**
-     * Get the thread id
+     * Get the thread ID.
      *
-     * @return the thread id
+     * @return the thread ID
      */
     public static long getThreadId() {
         final Long threadId = THREAD_LOCAL.get();
@@ -42,16 +42,16 @@ public final class ThreadUtil {
     }
 
     /**
-     * Set the thread id
+     * Set the thread ID.
      *
-     * @param threadId thread id to set
+     * @param threadId thread ID to set
      */
     public static void setThreadId(long threadId) {
         THREAD_LOCAL.set(threadId);
     }
 
     /**
-     * Remove the thread id
+     * Remove the thread ID.
      */
     public static void removeThreadId() {
         THREAD_LOCAL.remove();

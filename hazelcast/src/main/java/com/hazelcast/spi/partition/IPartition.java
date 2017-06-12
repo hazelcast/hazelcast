@@ -22,11 +22,10 @@ import com.hazelcast.nio.Address;
 /**
  * Represents a Partition. It is comparable to the {@link com.hazelcast.core.Partition} but it is optimized for SPI
  * usage, so it exposes method not meant for regular Hazelcast users.
- * <p/>
+ * <p>
  * The IPartition provides access to information about a partition, most importantly the addresses of the
  * replica's and this information will be updated. So one can cache the IPartition and keep asking for
  * partition information.
- *
  */
 public interface IPartition {
 
@@ -39,53 +38,55 @@ public interface IPartition {
      * Checks if the partition is local.
      *
      * A partition is local if and only if the {@link #getOwnerOrNull()} returns the same address as 'this' address of the
-     * {@link ClusterService#getThisAddress()}. If the address is null or a different address, false
+     * {@link ClusterService#getThisAddress()}. If the address is {@code null} or a different address, {@code false}
      * is returned.
      *
-     * @return true if local, false otherwise.
+     * @return {@code true} if local, {@code false} otherwise
      * @since 3.5
      */
     boolean isLocal();
 
     /**
-     * Returns the partition id. The partition id will be between 0 and partitionCount (exclusive).
+     * Returns the partition ID.
+     * <p>
+     * The partition ID will be between 0 and partitionCount (exclusive).
      *
-     * @return the id of the partition.
+     * @return the ID of the partition
      */
     int getPartitionId();
 
     /**
-     * Returns the Address of the owner of this partition.
-     * <p/>
-     * If no owner has been set yet, null is returned. So be careful with assuming that a non null value is returned.
-     * <p/>
+     * Returns the address of the owner of this partition.
+     * <p>
+     * If no owner has been set yet, null is returned. So be careful with assuming that a non {@code null} value is returned.
+     * <p>
      * The value could be stale when returned.
      *
-     * @return the owner.
+     * @return the owner
      */
     Address getOwnerOrNull();
 
     /**
      * Checks if there currently is a migration going on in this partition.
-     * <p/>
+     * <p>
      * The returned value could be stale when it is returned.
      *
-     * @return true if there is a migration going on, false otherwise.
+     * @return {@code true} if there is a migration going on, {@code false} otherwise
      */
     boolean isMigrating();
 
     /**
-     * Returns Address of the replica.
-     * <p/>
+     * Returns the address of the replica.
+     * <p>
      * The owner has replica index 0.
-     * <p/>
-     * The returned value could be null if the owner/replica has not yet been set.
-     * <p/>
+     * <p>
+     * The returned value could be {@code null} if the owner/replica has not yet been set.
+     * <p>
      * The returned value could be stale when it is returned.
      *
-     * @param replicaIndex the index of the replica.
+     * @param replicaIndex the index of the replica
+     * @return the address of the replica
      * @throws ArrayIndexOutOfBoundsException when replica index is out of bounds
-     * @return the Address of the replica.
      */
     Address getReplicaAddress(int replicaIndex);
 
@@ -93,7 +94,7 @@ public interface IPartition {
      * Checks if given address is owner of primary or backup of this partition.
      *
      * @param address owner address
-     * @return true if address is owner or backup, false otherwise
+     * @return {@code true} if address is owner or backup, {@code false} otherwise
      */
     boolean isOwnerOrBackup(Address address);
 }

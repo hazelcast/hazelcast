@@ -37,21 +37,25 @@ import static com.hazelcast.spi.OperationAccessor.deactivate;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 
 /**
- * The InvocationsRegistry is responsible for the registration of all pending invocations. Using the InvocationRegistry the
- * Invocation and its response(s) can be linked to each other.
- * <p/>
- * When an invocation is registered, a callId is determined. Based on this call-id, when a
+ * Responsible for the registration of all pending invocations.
+ * <p>
+ * Using the InvocationRegistry the Invocation and its response(s) can be linked to each other.
+ * <p>
+ * When an invocation is registered, a callId is determined. Based on this call ID, when a
  * {@link com.hazelcast.spi.impl.operationservice.impl.responses.Response} comes in, the
  * appropriate invocation can be looked up.
- * <p/>
- * Some idea's:
- * - use an ringbuffer to store all invocations instead of a CHM. The call-id can be used as sequence-id for this
+ * <p>
+ * Some ideas:
+ * <ul>
+ * <li>Use a ringbuffer to store all invocations instead of a CHM. The call ID can be used as sequence ID for this
  * ringbuffer. It can be that you run in slots that have not been released; if that happens, just keep increasing
- * the sequence (although you now get sequence-gaps).
- * - pre-allocate all invocations. Because the ringbuffer has a fixed capacity, pre-allocation should be easy. Also
- * the PartitionInvocation and TargetInvocation can be folded into Invocation.
+ * the sequence (although you now get sequence-gaps).</li>
+ * <li>Pre-allocate all invocations. Because the ringbuffer has a fixed capacity, pre-allocation should be easy. Also
+ * the PartitionInvocation and TargetInvocation can be folded into Invocation.</li>
+ * </ul>
  */
 public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider {
+
     private static final int CORE_SIZE_CHECK = 8;
     private static final int CORE_SIZE_FACTOR = 4;
     private static final int CONCURRENCY_LEVEL = 16;
@@ -102,7 +106,7 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
      * Registers an invocation.
      *
      * @param invocation The invocation to register.
-     * @return false when InvocationRegistry is not alive and registration is not successful, true otherwise
+     * @return {@code false} when InvocationRegistry is not alive and registration is not successful, {@code true} otherwise
      */
     public boolean register(Invocation invocation) {
         final long callId;
@@ -113,7 +117,7 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
             throw new HazelcastOverloadException("Failed to start invocation due to overload: " + invocation, e);
         }
         try {
-            // Fails with IllegalStateException if the operation is already active
+            // fails with IllegalStateException if the operation is already active
             setCallId(invocation.op, callId);
         } catch (IllegalStateException e) {
             callIdSequence.complete();
@@ -129,7 +133,7 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
 
     /**
      * Deregisters an invocation. If the associated operation is inactive, takes no action and returns {@code false}.
-     * This ensures the idempotence of deregistration.
+     * This ensures the idempotency of deregistration.
      *
      * @param invocation The Invocation to deregister.
      * @return {@code true} if this call deregistered the invocation; {@code false} if the invocation wasn't registered
@@ -146,7 +150,7 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
     /**
      * Returns the number of pending invocations.
      *
-     * @return the number of pending invocations.
+     * @return the number of pending invocations
      */
     public int size() {
         return invocations.size();
@@ -167,10 +171,10 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
     }
 
     /**
-     * Gets the invocation for the given call id.
+     * Gets the invocation for the given call ID.
      *
-     * @param callId the callId.
-     * @return the Invocation for the given callId, or null if no invocation was found.
+     * @param callId the call ID
+     * @return the Invocation for the given call ID, or {@code null} if no invocation was found.
      */
     public Invocation get(long callId) {
         return invocations.get(callId);

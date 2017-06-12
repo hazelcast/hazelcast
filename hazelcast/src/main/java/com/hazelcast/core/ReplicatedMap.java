@@ -66,7 +66,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * Removes the specified entry listener.
      * Returns silently if there was no such listener added before.
      *
-     * @param id id of the registered entry listener.
+     * @param id ID of the registered entry listener.
      * @return true if registration is removed, false otherwise.
      */
     boolean removeEntryListener(String id);
