@@ -17,15 +17,15 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Watermark;
-import com.hazelcast.jet.WatermarkPolicy;
 import com.hazelcast.jet.ResettableSingletonTraverser;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
+import com.hazelcast.jet.Watermark;
+import com.hazelcast.jet.WatermarkEmissionPolicy;
+import com.hazelcast.jet.WatermarkPolicy;
 
 import javax.annotation.Nonnull;
 import java.util.function.ToLongFunction;
-
-import static com.hazelcast.jet.Traversers.empty;
 
 /**
  * A processor that inserts watermark into a data stream. See
@@ -39,34 +39,39 @@ import static com.hazelcast.jet.Traversers.empty;
 public class InsertWatermarkP<T> extends AbstractProcessor {
 
     private final ToLongFunction<T> getTimestampF;
-    private final WatermarkPolicy watermarkPolicy;
+    private final WatermarkPolicy wmPolicy;
+    private final WatermarkEmissionPolicy wmEmitPolicy;
     private final ResettableSingletonTraverser<Object> singletonTraverser;
     private final FlatMapper<Object, Object> flatMapper;
 
     private long currWm = Long.MIN_VALUE;
+    private long lastEmittedWm = Long.MIN_VALUE;
 
     /**
      * @param getTimestampF function that extracts the timestamp from the item
-     * @param watermarkPolicy the watermark policy
+     * @param wmPolicy the watermark policy
      */
-    public InsertWatermarkP(@Nonnull ToLongFunction<T> getTimestampF,
-                       @Nonnull WatermarkPolicy watermarkPolicy
+    public InsertWatermarkP(
+            @Nonnull ToLongFunction<T> getTimestampF,
+            @Nonnull WatermarkPolicy wmPolicy,
+            @Nonnull WatermarkEmissionPolicy wmEmitPolicy
     ) {
         this.getTimestampF = getTimestampF;
-        this.watermarkPolicy = watermarkPolicy;
+        this.wmPolicy = wmPolicy;
+        this.wmEmitPolicy = wmEmitPolicy;
         this.flatMapper = flatMapper(this::traverser);
         this.singletonTraverser = new ResettableSingletonTraverser<>();
     }
 
     @Override
     public boolean tryProcess() {
-        long newWm = watermarkPolicy.getCurrentWatermark();
-        if (newWm <= currWm) {
+        currWm = wmPolicy.getCurrentWatermark();
+        if (!wmEmitPolicy.shouldEmit(currWm, lastEmittedWm)) {
             return true;
         }
-        boolean didEmit = tryEmit(new Watermark(newWm));
+        boolean didEmit = tryEmit(new Watermark(currWm));
         if (didEmit) {
-            currWm = newWm;
+            lastEmittedWm = currWm;
         }
         return didEmit;
     }
@@ -80,12 +85,12 @@ public class InsertWatermarkP<T> extends AbstractProcessor {
         long timestamp = getTimestampF.applyAsLong((T) item);
         if (timestamp < currWm) {
             // drop late event
-            return empty();
+            return Traversers.empty();
         }
-        long newWm = watermarkPolicy.reportEvent(timestamp);
+        currWm = wmPolicy.reportEvent(timestamp);
         singletonTraverser.accept(item);
-        if (newWm > currWm) {
-            currWm = newWm;
+        if (wmEmitPolicy.shouldEmit(currWm, lastEmittedWm)) {
+            lastEmittedWm = currWm;
             return singletonTraverser.prepend(new Watermark(currWm));
         }
         return singletonTraverser;
