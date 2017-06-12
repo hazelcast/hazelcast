@@ -18,6 +18,7 @@ package com.hazelcast.internal.adapter;
 
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.query.Predicate;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.cache.integration.CompletionListener;
@@ -61,6 +62,10 @@ public interface DataStructureAdapter<K, V> {
     Object executeOnKey(K key, com.hazelcast.map.EntryProcessor entryProcessor);
 
     Map<K, Object> executeOnKeys(Set<K> keys, com.hazelcast.map.EntryProcessor entryProcessor);
+
+    Map<K, Object> executeOnEntries(com.hazelcast.map.EntryProcessor entryProcessor);
+
+    Map<K, Object> executeOnEntries(com.hazelcast.map.EntryProcessor entryProcessor, Predicate predicate);
 
     boolean containsKey(K key);
 
@@ -106,6 +111,8 @@ public interface DataStructureAdapter<K, V> {
         INVOKE("invoke", Object.class, EntryProcessor.class, Object[].class),
         EXECUTE_ON_KEY("executeOnKey", Object.class, com.hazelcast.map.EntryProcessor.class),
         EXECUTE_ON_KEYS("executeOnKeys", Set.class, com.hazelcast.map.EntryProcessor.class),
+        EXECUTE_ON_ENTRIES("executeOnEntries", com.hazelcast.map.EntryProcessor.class),
+        EXECUTE_ON_ENTRIES_WITH_PREDICATE("executeOnEntries", com.hazelcast.map.EntryProcessor.class, Predicate.class),
         CONTAINS_KEY("containsKey", Object.class),
         LOAD_ALL("loadAll", boolean.class),
         LOAD_ALL_WITH_KEYS("loadAll", Set.class, boolean.class),

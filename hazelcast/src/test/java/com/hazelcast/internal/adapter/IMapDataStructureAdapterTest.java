@@ -20,6 +20,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -220,6 +222,37 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
         assertEquals("value-42", map.get(42));
         assertEquals("newValue-65", map.get(65));
         assertNull(map.get(88));
+    }
+
+    @Test
+    public void testExecuteOnEntries() {
+        map.put(23, "value-23");
+        map.put(42, "value-42");
+
+        Map<Integer, Object> resultMap = adapter.executeOnEntries(new IMapReplaceEntryProcessor("value", "newValue"));
+        assertEquals(2, resultMap.size());
+        assertEquals("newValue-23", resultMap.get(23));
+        assertEquals("newValue-42", resultMap.get(42));
+
+        assertEquals("newValue-23", map.get(23));
+        assertEquals("newValue-42", map.get(42));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testExecuteOnEntriesWithPredicate() {
+        map.put(23, "value-23");
+        map.put(42, "value-42");
+        map.put(65, "value-65");
+
+        Predicate<Integer, Object> predicate = new SqlPredicate("__key IN (23, 65)");
+        Map<Integer, Object> resultMap = adapter.executeOnEntries(new IMapReplaceEntryProcessor("value", "newValue"), predicate);
+        assertEquals(2, resultMap.size());
+        assertEquals("newValue-23", resultMap.get(23));
+        assertEquals("newValue-65", resultMap.get(65));
+
+        assertEquals("newValue-23", map.get(23));
+        assertEquals("newValue-65", map.get(65));
     }
 
     @Test

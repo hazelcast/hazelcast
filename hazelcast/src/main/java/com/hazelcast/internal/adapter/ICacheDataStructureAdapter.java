@@ -19,6 +19,7 @@ package com.hazelcast.internal.adapter;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.query.Predicate;
 
 import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
@@ -109,6 +110,18 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     @Override
     @MethodNotAvailable
     public Map<K, Object> executeOnKeys(Set<K> keys, com.hazelcast.map.EntryProcessor entryProcessor) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public Map<K, Object> executeOnEntries(com.hazelcast.map.EntryProcessor entryProcessor) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public Map<K, Object> executeOnEntries(com.hazelcast.map.EntryProcessor entryProcessor, Predicate predicate) {
         throw new MethodNotAvailableException();
     }
 

@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.transaction.TransactionContext;
 
 import javax.cache.integration.CompletionListener;
@@ -29,6 +30,7 @@ import javax.cache.processor.EntryProcessorResult;
 import java.util.Map;
 import java.util.Set;
 
+@SuppressWarnings("checkstyle:methodcount")
 public class TransactionalMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V> {
 
     private final HazelcastInstance hazelcastInstance;
@@ -145,6 +147,18 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     @Override
     @MethodNotAvailable
     public Map<K, Object> executeOnKeys(Set<K> keys, com.hazelcast.map.EntryProcessor entryProcessor) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public Map<K, Object> executeOnEntries(com.hazelcast.map.EntryProcessor entryProcessor) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public Map<K, Object> executeOnEntries(com.hazelcast.map.EntryProcessor entryProcessor, Predicate predicate) {
         throw new MethodNotAvailableException();
     }
 
