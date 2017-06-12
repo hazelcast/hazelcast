@@ -27,9 +27,7 @@ import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
-import com.hazelcast.client.util.ClientAddressCancellableDelegatingFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
-import com.hazelcast.client.util.ClientPartitionCancellableDelegatingFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.IExecutorService;
@@ -504,8 +502,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             Executor userExecutor = getContext().getExecutionService().getUserExecutor();
             return new CompletedFuture<T>(getSerializationService(), response, userExecutor);
         } else {
-            return new ClientAddressCancellableDelegatingFuture<T>(f, getContext(), uuid, address, defaultValue,
-                    SUBMIT_TO_ADDRESS_DECODER);
+            return new IExecutorDelegatingFuture<T>(f, getContext(), uuid, defaultValue,
+                    SUBMIT_TO_ADDRESS_DECODER, address);
         }
     }
 
@@ -517,8 +515,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             Executor userExecutor = getContext().getExecutionService().getUserExecutor();
             return new CompletedFuture<T>(getSerializationService(), response, userExecutor);
         } else {
-            return new ClientPartitionCancellableDelegatingFuture<T>(f, getContext(), uuid, partitionId, defaultValue,
-                    SUBMIT_TO_PARTITION_DECODER);
+            return new IExecutorDelegatingFuture<T>(f, getContext(), uuid, defaultValue,
+                    SUBMIT_TO_PARTITION_DECODER, partitionId);
         }
     }
 

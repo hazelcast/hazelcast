@@ -24,11 +24,11 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
  * Client Delegating Future is used to delegate ClientInvocationFuture to user to be used with
@@ -38,20 +38,16 @@ import java.util.concurrent.TimeoutException;
  */
 public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
 
+    private static final AtomicReferenceFieldUpdater<ClientDelegatingFuture, Object> DECODED_RESPONSE =
+            AtomicReferenceFieldUpdater.newUpdater(ClientDelegatingFuture.class, Object.class, "decodedResponse");
+    private static final Object VOID = "VOID";
     private final ClientInvocationFuture future;
     private final SerializationService serializationService;
     private final ClientMessageDecoder clientMessageDecoder;
     private final boolean deserializeResponse;
     private final V defaultValue;
-    private final Object mutex = new Object();
     private final Executor userExecutor;
-    private Throwable error;
-    private V deserializedValue;
-    /**
-     * mutex object is used as an initial NIL value
-     */
-    private volatile Object response = mutex;
-    private volatile boolean done;
+    private volatile Object decodedResponse = VOID;
 
     public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
                                   SerializationService serializationService,
@@ -113,22 +109,17 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        done = true;
-        return false;
+        return future.cancel(mayInterruptIfRunning);
     }
 
     @Override
     public boolean isCancelled() {
-        return false;
+        return future.isCancelled();
     }
 
     @Override
     public final boolean isDone() {
-        return done ? done : future.isDone();
-    }
-
-    public Object getResponse() {
-        return response;
+        return future.isDone();
     }
 
     @Override
@@ -141,43 +132,10 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     public V get(long timeout, TimeUnit unit) throws InterruptedException,
             ExecutionException, TimeoutException {
-        if (!done || !isResponseSet()) {
-            synchronized (mutex) {
-                if (!done || !isResponseSet()) {
-                    try {
-                        response = resolveMessageToValue(future.get(timeout, unit));
-                        if (deserializeResponse && deserializedValue == null) {
-                            deserializedValue = serializationService.toObject(response);
-                        }
-                    } catch (InterruptedException e) {
-                        error = e;
-                    } catch (ExecutionException e) {
-                        error = e;
-                    }
-                    done = true;
-                }
-            }
-        }
-        if (error != null) {
-            if (error instanceof CancellationException) {
-                throw (CancellationException) error;
-            }
-            if (error.getCause() instanceof CancellationException) {
-                throw (CancellationException) error.getCause();
-            }
-            if (error instanceof ExecutionException) {
-                throw (ExecutionException) error;
-            }
-            if (error instanceof InterruptedException) {
-                throw (InterruptedException) error;
-            }
-            // should not happen!
-            throw new ExecutionException(error);
-        }
-        return (V) getResult();
+        ClientMessage response = future.get(timeout, unit);
+        return (V) resolveResponse(response, deserializeResponse);
     }
 
     @Override
@@ -189,86 +147,51 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
         }
     }
 
-    private Object getResult() {
+    private Object resolveResponse(ClientMessage clientMessage, boolean deserialize) {
         if (defaultValue != null) {
             return defaultValue;
         }
 
-        // If value is already deserialized, use it.
-        if (deserializedValue != null) {
-            return deserializedValue;
+        Object decodedResponse = decodeResponse(clientMessage);
+        if (deserialize) {
+            return serializationService.toObject(decodedResponse);
         }
-        if (deserializeResponse) {
-            // Otherwise, it is possible that received data may not be deserialized
-            // if "shouldDeserializeData" flag is not true in any of registered "DelegatingExecutionCallback".
-            // So, be sure that value is deserialized before returning to caller.
-            deserializedValue = serializationService.toObject(response);
-            return deserializedValue;
+        return decodedResponse;
+    }
+
+    private Object decodeResponse(ClientMessage clientMessage) {
+        if (decodedResponse != VOID) {
+            return decodedResponse;
         }
+        ClientMessage message = ClientMessage.createForDecode(clientMessage.buffer(), 0);
+        Object newDecodedResponse = clientMessageDecoder.decodeClientMessage(message);
 
-        return response;
-    }
-
-    private Object resolveMessageToValue(ClientMessage message) {
-        return clientMessageDecoder.decodeClientMessage(message);
-    }
-
-    protected void setError(Throwable error) {
-        this.error = error;
-    }
-
-    protected void setDone() {
-        this.done = true;
+        DECODED_RESPONSE.compareAndSet(this, VOID, newDecodedResponse);
+        return newDecodedResponse;
     }
 
     protected ClientInvocationFuture getFuture() {
         return future;
     }
 
-    private boolean isResponseSet() {
-        return response != mutex;
-    }
-
     class DelegatingExecutionCallback<T> implements ExecutionCallback<ClientMessage> {
 
         private final ExecutionCallback<T> callback;
-        private final boolean shouldDeserializeData;
+        private final boolean deserialize;
 
-        DelegatingExecutionCallback(ExecutionCallback<T> callback, boolean shouldDeserializeData) {
+        DelegatingExecutionCallback(ExecutionCallback<T> callback, boolean deserialize) {
             this.callback = callback;
-            this.shouldDeserializeData = shouldDeserializeData;
+            this.deserialize = deserialize;
         }
 
         @Override
         public void onResponse(ClientMessage message) {
-            if (!done || !isResponseSet()) {
-                synchronized (mutex) {
-                    if (!done || !isResponseSet()) {
-                        response = resolveMessageToValue(message);
-                        if (shouldDeserializeData && deserializedValue == null) {
-                            deserializedValue = serializationService.toObject(response);
-                        }
-                        done = true;
-                    }
-                }
-            }
-            if (shouldDeserializeData) {
-                callback.onResponse((T) deserializedValue);
-            } else {
-                callback.onResponse((T) response);
-            }
+            Object response = resolveResponse(message, deserialize);
+            callback.onResponse((T) response);
         }
 
         @Override
         public void onFailure(Throwable t) {
-            if (!done) {
-                synchronized (mutex) {
-                    if (!done) {
-                        error = t;
-                        done = true;
-                    }
-                }
-            }
             callback.onFailure(t);
         }
     }
