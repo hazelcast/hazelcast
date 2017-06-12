@@ -36,7 +36,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.AggregateOperations.counting;
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.WatermarkPolicies.emitByFrame;
+import static com.hazelcast.jet.WatermarkEmissionPolicy.emitByFrame;
 import static com.hazelcast.jet.WatermarkPolicies.limitingLagAndLull;
 import static com.hazelcast.jet.StreamingTestSupport.streamToString;
 import static com.hazelcast.jet.WindowDefinition.slidingWindowDef;

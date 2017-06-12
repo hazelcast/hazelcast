@@ -239,35 +239,4 @@ public final class WatermarkPolicies {
         };
     }
 
-    /**
-     * Returns a watermark emission policy that will decide to emit another
-     * watermark item when the watermark has advanced by at least the supplied
-     * {@code minStep} since the last emission.
-     */
-    @Nonnull
-    public static WatermarkEmissionPolicy emitByMinStep(long minStep) {
-        return (currentWm, lastEmittedWm) -> currentWm >= lastEmittedWm + minStep;
-    }
-
-    /**
-     * Returns a watermark emission policy that will decide to emit another
-     * watermark item whenever the watermark advances to the next frame as
-     * per the supplied {@code WindowDefinition}. This emission policy should
-     * be employed to drive a downstream processor that computes a
-     * sliding/tumbling window
-     * ({@link com.hazelcast.jet.processor.Processors#accumulateByFrame(
-     *      com.hazelcast.jet.function.DistributedFunction,
-     *      com.hazelcast.jet.function.DistributedToLongFunction,
-     *      TimestampKind, WindowDefinition, AggregateOperation)
-     * accumulateByFrame()} or
-     * {@link com.hazelcast.jet.processor.Processors#aggregateToSlidingWindow(
-     *      com.hazelcast.jet.function.DistributedFunction,
-     *      com.hazelcast.jet.function.DistributedToLongFunction,
-     *      TimestampKind, WindowDefinition, AggregateOperation)
-     * aggregateToSlidingWindow()}).
-     */
-    @Nonnull
-    public static WatermarkEmissionPolicy emitByFrame(WindowDefinition wDef) {
-        return (currentWm, lastEmittedWm) -> wDef.floorFrameTs(currentWm) > lastEmittedWm;
-    }
 }

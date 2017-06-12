@@ -23,6 +23,7 @@ import java.io.Serializable;
  * A policy object that decides when when the watermark has advanced
  * enough to emit a new watermark item.
  */
+@FunctionalInterface
 public interface WatermarkEmissionPolicy extends Serializable {
 
     /**
@@ -41,4 +42,35 @@ public interface WatermarkEmissionPolicy extends Serializable {
         return (currentWm, lastEmittedWm) -> currentWm > lastEmittedWm;
     }
 
+    /**
+     * Returns a watermark emission policy that ensures that each emitted
+     * watermark's value is at least {@code minStep} more than the previous
+     * one.
+     */
+    @Nonnull
+    static WatermarkEmissionPolicy emitByMinStep(long minStep) {
+        return (currentWm, lastEmittedWm) -> currentWm >= lastEmittedWm + minStep;
+    }
+
+    /**
+     * Returns a watermark emission policy that ensures that the value of
+     * the emitted watermark belongs to a frame higher than the previous
+     * watermark's frame, as per the supplied {@code WindowDefinition}. This
+     * emission policy should be employed to drive a downstream processor that
+     * computes a sliding/tumbling window
+     * ({@link com.hazelcast.jet.processor.Processors#accumulateByFrame(
+     *      com.hazelcast.jet.function.DistributedFunction,
+     *      com.hazelcast.jet.function.DistributedToLongFunction,
+     *      TimestampKind, WindowDefinition, AggregateOperation)
+     * accumulateByFrame()} or
+     * {@link com.hazelcast.jet.processor.Processors#aggregateToSlidingWindow(
+     *      com.hazelcast.jet.function.DistributedFunction,
+     *      com.hazelcast.jet.function.DistributedToLongFunction,
+     *      TimestampKind, WindowDefinition, AggregateOperation)
+     * aggregateToSlidingWindow()}).
+     */
+    @Nonnull
+    static WatermarkEmissionPolicy emitByFrame(WindowDefinition wDef) {
+        return (currentWm, lastEmittedWm) -> wDef.floorFrameTs(currentWm) > lastEmittedWm;
+    }
 }

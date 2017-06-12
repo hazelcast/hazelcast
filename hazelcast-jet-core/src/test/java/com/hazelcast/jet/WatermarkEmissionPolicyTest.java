@@ -22,8 +22,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.WatermarkPolicies.emitByFrame;
-import static com.hazelcast.jet.WatermarkPolicies.emitByMinStep;
+import static com.hazelcast.jet.WatermarkEmissionPolicy.emitByFrame;
+import static com.hazelcast.jet.WatermarkEmissionPolicy.emitByMinStep;
 import static com.hazelcast.jet.WindowDefinition.tumblingWindowDef;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
