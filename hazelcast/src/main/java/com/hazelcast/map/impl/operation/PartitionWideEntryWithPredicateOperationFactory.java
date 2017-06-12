@@ -25,7 +25,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
@@ -110,10 +109,10 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
     }
 
     private Set<Data> getKeysFromIndex(NodeEngine nodeEngine) {
-        // Do not use index in this case, because it requires full-table-scan.
-        if (predicate == TruePredicate.INSTANCE) {
-            return emptySet();
-        }
+//        // Do not use index in this case, because it requires full-table-scan.
+//        if (predicate == TruePredicate.INSTANCE) {
+//            return emptySet();
+//        }
 
         // get indexes
         MapService mapService = nodeEngine.getService(SERVICE_NAME);

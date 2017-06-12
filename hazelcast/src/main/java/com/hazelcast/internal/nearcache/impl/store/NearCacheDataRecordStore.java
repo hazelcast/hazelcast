@@ -99,8 +99,8 @@ public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore
     }
 
     @Override
-    protected void updateRecordValue(NearCacheDataRecord record, V value) {
-        record.setValue(toData(value));
+    protected Object toStorageType(V value) {
+        return toData(value);
     }
 
     @Override

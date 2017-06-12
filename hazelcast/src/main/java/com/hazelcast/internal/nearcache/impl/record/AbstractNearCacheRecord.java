@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
 
     // primitive long typed fields:
-    // "creationTime", "expirationTime" and "accessTime", "recordState", "sequence"
+    // "creationTime", "expirationTime" and "lastAccessTime", "reservationId", "sequence"
     public static final int NUMBER_OF_LONG_FIELD_TYPES = 5;
     // primitive int typed fields: "accessHit"
     public static final int NUMBER_OF_INTEGER_FIELD_TYPES = 1;
@@ -39,19 +39,23 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
             AtomicIntegerFieldUpdater.newUpdater(AbstractNearCacheRecord.class, "accessHit");
 
     private static final AtomicLongFieldUpdater<AbstractNearCacheRecord> RECORD_STATE =
-            AtomicLongFieldUpdater.newUpdater(AbstractNearCacheRecord.class, "recordState");
-
-    protected long creationTime = TIME_NOT_SET;
+            AtomicLongFieldUpdater.newUpdater(AbstractNearCacheRecord.class, "reservationId");
 
     protected volatile int partitionId;
-    protected volatile long sequence;
-    protected volatile UUID uuid;
+    protected volatile long creationTime = TIME_NOT_SET;
+    protected long sequence;
+    // longs of uuid
+    protected long mostSigBits;
+    protected long leastSigBits;
 
     protected volatile V value;
+    protected volatile long reservationId = NOT_RESERVED;
     protected volatile long expirationTime = TIME_NOT_SET;
-    protected volatile long accessTime = TIME_NOT_SET;
-    protected volatile long recordState = READ_PERMITTED;
+    protected volatile long lastAccessTime = TIME_NOT_SET;
     protected volatile int accessHit;
+
+    public AbstractNearCacheRecord() {
+    }
 
     public AbstractNearCacheRecord(V value, long creationTime, long expirationTime) {
         this.value = value;
@@ -91,12 +95,12 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
 
     @Override
     public long getLastAccessTime() {
-        return accessTime;
+        return lastAccessTime;
     }
 
     @Override
-    public void setAccessTime(long accessTime) {
-        this.accessTime = accessTime;
+    public void setLastAccessTime(long lastAccessTime) {
+        this.lastAccessTime = lastAccessTime;
     }
 
     @Override
@@ -115,46 +119,8 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
     }
 
     @Override
-    public void resetAccessHit() {
-        ACCESS_HIT.set(this, 0);
-    }
-
-    @Override
     public boolean isExpiredAt(long now) {
         return (expirationTime > TIME_NOT_SET) && (expirationTime <= now);
-    }
-
-    @Override
-    public boolean isIdleAt(long maxIdleMilliSeconds, long now) {
-        if (maxIdleMilliSeconds > 0) {
-            if (accessTime > TIME_NOT_SET) {
-                return accessTime + maxIdleMilliSeconds < now;
-            } else {
-                return creationTime + maxIdleMilliSeconds < now;
-            }
-        } else {
-            return false;
-        }
-    }
-
-    @Override
-    public long getRecordState() {
-        return recordState;
-    }
-
-    @Override
-    public boolean casRecordState(long expect, long update) {
-        return RECORD_STATE.compareAndSet(this, expect, update);
-    }
-
-    @Override
-    public int getPartitionId() {
-        return partitionId;
-    }
-
-    @Override
-    public void setPartitionId(int partitionId) {
-        this.partitionId = partitionId;
     }
 
     @Override
@@ -168,24 +134,77 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
     }
 
     @Override
-    public void setUuid(UUID uuid) {
-        this.uuid = uuid;
+    public boolean hasSameUuid(UUID thatUuid) {
+        if (thatUuid == null) {
+            return false;
+        }
+        return thatUuid.getMostSignificantBits() == mostSigBits
+                && thatUuid.getLeastSignificantBits() == leastSigBits;
     }
 
     @Override
-    public boolean hasSameUuid(UUID thatUuid) {
-        return uuid != null && thatUuid != null && uuid.equals(thatUuid);
+    public void setUuid(UUID uuid) {
+        this.mostSigBits = uuid.getMostSignificantBits();
+        this.leastSigBits = uuid.getLeastSignificantBits();
+    }
+
+    @Override
+    public boolean isIdleAt(long maxIdleMilliSeconds, long now) {
+        if (maxIdleMilliSeconds > 0) {
+            if (lastAccessTime > TIME_NOT_SET) {
+                return lastAccessTime + maxIdleMilliSeconds < now;
+            } else {
+                return creationTime + maxIdleMilliSeconds < now;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public long getReservationId() {
+        return reservationId;
+    }
+
+    @Override
+    public void reserveWithId(long reservationId) {
+        this.reservationId = reservationId;
+    }
+
+    @Override
+    public void doReservable() {
+        reserveWithId(NOT_RESERVED);
+    }
+
+    @Override
+    public void setMostSignificantBits(long mostSigBits) {
+        this.mostSigBits = mostSigBits;
+    }
+
+    @Override
+    public void setLeastSignificantBits(long leastSigBits) {
+        this.leastSigBits = leastSigBits;
+    }
+
+    @Override
+    public int getPartitionId() {
+        return partitionId;
+    }
+
+    @Override
+    public void setPartitionId(int partitionId) {
+        this.partitionId = partitionId;
     }
 
     @Override
     public String toString() {
         return "creationTime=" + creationTime
                 + ", sequence=" + sequence
-                + ", uuid=" + uuid
+                + ", uuid=" + new UUID(mostSigBits, leastSigBits)
                 + ", expirationTime=" + expirationTime
-                + ", accessTime=" + accessTime
+                + ", lastAccessTime=" + lastAccessTime
                 + ", accessHit=" + accessHit
-                + ", recordState=" + recordState
+                + ", reservationId=" + reservationId
                 + ", value=" + value;
     }
 }

@@ -17,9 +17,8 @@
 package com.hazelcast.internal.nearcache.impl.store;
 
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.IFunction;
+import com.hazelcast.core.IBiFunction;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
@@ -38,15 +37,15 @@ import com.hazelcast.util.Clock;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.config.EvictionPolicy.NONE;
 import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM_AVAILABLE;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
-import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
-import static com.hazelcast.internal.nearcache.NearCacheRecord.RESERVED;
-import static com.hazelcast.internal.nearcache.NearCacheRecord.UPDATE_STARTED;
+import static com.hazelcast.internal.nearcache.NearCacheRecord.TIME_NOT_SET;
 import static com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector.ALWAYS_FRESH;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 /**
@@ -63,9 +62,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         NCRM extends SampleableNearCacheRecordMap<KS, R>>
         implements NearCacheRecordStore<K, V>, EvictionListener<KS, R> {
 
-    protected static final AtomicLongFieldUpdater<AbstractNearCacheRecordStore> RESERVATION_ID
-            = newUpdater(AbstractNearCacheRecordStore.class, "reservationId");
-
     /**
      * If Unsafe is available, Object array index scale (every index represents a reference)
      * can be assumed as reference size.
@@ -75,17 +71,17 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
      * by ignoring compressed-references disable mode on 64 bit JVM.
      */
     protected static final int REFERENCE_SIZE = MEM_AVAILABLE ? MEM.arrayIndexScale(Object[].class) : (Integer.SIZE / Byte.SIZE);
-    protected static final int MILLI_SECONDS_IN_A_SECOND = 1000;
-
-    protected final long timeToLiveMillis;
-    protected final long maxIdleMillis;
-    protected final NearCacheConfig nearCacheConfig;
-    protected final SerializationService serializationService;
-    protected final ClassLoader classLoader;
-    protected final NearCacheStatsImpl nearCacheStats;
-    protected final IFunction<K, R> reserveForUpdate = new ReserveForUpdateFunction();
+    protected static final AtomicLongFieldUpdater<AbstractNearCacheRecordStore> NEXT_RESERVATION_ID
+            = newUpdater(AbstractNearCacheRecordStore.class, "nextReservationId");
 
     protected final boolean evictionDisabled;
+    protected final long timeToLiveMillis;
+    protected final long maxIdleMillis;
+    protected final ClassLoader classLoader;
+    protected final NearCacheConfig nearCacheConfig;
+    protected final SerializationService serializationService;
+    protected final NearCacheStatsImpl nearCacheStats;
+    protected final boolean expirationEnabled;
 
     protected EvictionChecker evictionChecker;
     protected SamplingEvictionStrategy<KS, R, NCRM> evictionStrategy;
@@ -93,7 +89,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     protected NCRM records;
 
     protected volatile StaleReadDetector staleReadDetector = ALWAYS_FRESH;
-    protected volatile long reservationId;
+    protected volatile long nextReservationId;
 
     public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, SerializationService serializationService,
                                         ClassLoader classLoader) {
@@ -104,13 +100,13 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     protected AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, NearCacheStatsImpl nearCacheStats,
                                            SerializationService serializationService, ClassLoader classLoader) {
         this.nearCacheConfig = nearCacheConfig;
-        this.timeToLiveMillis = nearCacheConfig.getTimeToLiveSeconds() * MILLI_SECONDS_IN_A_SECOND;
-        this.maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * MILLI_SECONDS_IN_A_SECOND;
+        this.timeToLiveMillis = SECONDS.toMillis(nearCacheConfig.getTimeToLiveSeconds());
+        this.maxIdleMillis = SECONDS.toMillis(nearCacheConfig.getMaxIdleSeconds());
         this.serializationService = serializationService;
         this.classLoader = classLoader;
         this.nearCacheStats = nearCacheStats;
-
-        this.evictionDisabled = nearCacheConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.NONE;
+        this.evictionDisabled = nearCacheConfig.getEvictionConfig().getEvictionPolicy() == NONE;
+        this.expirationEnabled = timeToLiveMillis != 0 || maxIdleMillis != 0;
     }
 
     @Override
@@ -134,9 +130,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         return staleReadDetector;
     }
 
-    @Override
-    public abstract R getRecord(K key);
-
     protected abstract EvictionChecker createNearCacheEvictionChecker(EvictionConfig evictionConfig,
                                                                       NearCacheConfig nearCacheConfig);
 
@@ -148,13 +141,21 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     protected abstract R valueToRecord(V value);
 
-    protected abstract void updateRecordValue(R record, V value);
-
     protected abstract V recordToValue(R record);
 
-    protected abstract R getOrCreateToReserve(K key);
+    /**
+     * Converts given object to near cache {@link com.hazelcast.config.InMemoryFormat}
+     *
+     * @return converted object
+     */
+    protected abstract Object toStorageType(V value);
 
-    protected abstract V updateAndGetReserved(K key, V value, long reservationId, boolean deserialize);
+    // public for tests
+    public abstract R getRecord(K key);
+
+    protected abstract R tryReserveForUpdateInternal(K key, long reservationId);
+
+    protected abstract R tryPublishReservedInternal(K key, V value, long reservationId);
 
     protected abstract R putRecord(K key, R record);
 
@@ -223,6 +224,11 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         }
     }
 
+    protected void onRecordAccess(R record) {
+        record.setLastAccessTime(Clock.currentTimeMillis());
+        record.incrementAccessHit();
+    }
+
     @SuppressWarnings("unused")
     protected void onGet(K key, V value, R record) {
     }
@@ -264,14 +270,14 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     @Override
     public V get(K key) {
-        checkAvailable();
-
         R record = null;
         V value = null;
         try {
             record = getRecord(key);
             if (record != null) {
-                if (record.getRecordState() != READ_PERMITTED) {
+                if (isTemporaryRecord(record)) {
+                    // handles pure reservation record which is newly
+                    // created and not like existing records
                     return null;
                 }
 
@@ -280,7 +286,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
                     return null;
                 }
 
-                if (isRecordExpired(record)) {
+                if (expirationEnabled && isRecordExpired(record)) {
                     remove(key);
                     onExpire(key, record);
                     return null;
@@ -301,6 +307,16 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         }
     }
 
+    /**
+     * @return {@code true} when the supplied record is temporarily created for reservation,
+     * otherwise returns {@code false} if the record is an already existing record in near cache, for example
+     * when {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE} is used this method can return
+     * {@code false} because the record we want to update can already be in near cache.
+     */
+    protected static boolean isTemporaryRecord(NearCacheRecord record) {
+        return record.getCreationTime() == TIME_NOT_SET;
+    }
+
     @Override
     public void put(K key, V value) {
         checkAvailable();
@@ -315,6 +331,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         try {
             record = valueToRecord(value);
             onRecordCreate(key, record);
+            record.setCreationTime(Clock.currentTimeMillis());
             oldRecord = putRecord(key, record);
             if (oldRecord == null) {
                 nearCacheStats.incrementOwnedEntryCount();
@@ -334,7 +351,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         boolean removed = false;
         try {
             record = removeRecord(key);
-            if (record != null && record.getRecordState() == READ_PERMITTED) {
+            if (record != null && !isTemporaryRecord(record)) {
                 removed = true;
                 nearCacheStats.decrementOwnedEntryCount();
             }
@@ -394,47 +411,38 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     @Override
     public long tryReserveForUpdate(K key) {
-        checkAvailable();
         // if there is no eviction configured we return if the Near Cache is full and it's a new key
         // (we have to check the key, otherwise we might lose updates on existing keys)
         if (evictionDisabled && evictionChecker.isEvictionRequired() && !containsRecordKey(key)) {
             return NOT_RESERVED;
         }
 
-        R reservedRecord = getOrCreateToReserve(key);
         long reservationId = nextReservationId();
-        if (reservedRecord.casRecordState(RESERVED, reservationId)) {
-            return reservationId;
-        } else {
-            return NOT_RESERVED;
-        }
+        R reservedRecord = tryReserveForUpdateInternal(key, reservationId);
+        return reservedRecord.getReservationId() == reservationId ? reservationId : NOT_RESERVED;
     }
 
     @Override
     public V tryPublishReserved(K key, final V value, final long reservationId, boolean deserialize) {
-        return updateAndGetReserved(key, value, reservationId, deserialize);
-    }
+        R existingRecord = tryPublishReservedInternal(key, value, reservationId);
 
-    protected R updateReservedRecordInternal(K key, V value, R reservedRecord, long reservationId) {
-        if (!reservedRecord.casRecordState(reservationId, UPDATE_STARTED)) {
-            return reservedRecord;
+        if (existingRecord == null || !deserialize) {
+            return null;
         }
 
-        updateRecordValue(reservedRecord, value);
-        reservedRecord.casRecordState(UPDATE_STARTED, READ_PERMITTED);
-
-        nearCacheStats.incrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, reservedRecord));
-        nearCacheStats.incrementOwnedEntryCount();
-        return reservedRecord;
+        return toValue(existingRecord.getValue());
     }
 
-    private void onRecordAccess(R record) {
-        record.setAccessTime(Clock.currentTimeMillis());
-        record.incrementAccessHit();
+    protected long nextReservationId() {
+        return NEXT_RESERVATION_ID.incrementAndGet(this);
     }
 
     private void onRecordCreate(K key, R record) {
-        record.setCreationTime(Clock.currentTimeMillis());
+        if (staleReadDetector == ALWAYS_FRESH) {
+            // this means invalidations are off and no need to track metadata.
+            return;
+        }
+
         int partitionId = staleReadDetector.getPartitionId(key);
         MetaDataContainer metaDataContainer = staleReadDetector.getMetaDataContainer(partitionId);
         if (metaDataContainer != null) {
@@ -444,23 +452,84 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         }
     }
 
-    private long nextReservationId() {
-        return RESERVATION_ID.incrementAndGet(this);
+    @SerializableByConvention
+    protected class ReserveWithId implements IBiFunction<K, R, R> {
+
+        private long reservationId;
+
+        public ReserveWithId() {
+        }
+
+        public void init(long reservationId) {
+            this.reservationId = reservationId;
+        }
+
+        @Override
+        public R apply(K key, R oldRecord) {
+            if (oldRecord == null) {
+                // There is no existing record and we can create a temporary reservation record.
+                R newRecord = null;
+                try {
+                    newRecord = valueToRecord(null);
+                    newRecord.setCreationTime(TIME_NOT_SET);
+                    newRecord.reserveWithId(reservationId);
+                    onRecordCreate(key, newRecord);
+                    return newRecord;
+                } catch (Throwable throwable) {
+                    onPutError(key, null, newRecord, null, throwable);
+                    throw rethrow(throwable);
+                }
+            } else {
+                // We are trying to reserve an already existing record.
+                // This can happen in 2 cases:
+                //  - there may be a previously reserved record.
+                //  - CACHE_ON_UPDATE policy is configured and we are trying to set reservation id to existing record
+                oldRecord.reserveWithId(reservationId);
+                return oldRecord;
+            }
+        }
     }
 
     @SerializableByConvention
-    private class ReserveForUpdateFunction implements IFunction<K, R> {
+    protected class UpdateWithId implements IBiFunction<K, R, R> {
+
+        private Object newValue;
+        private long reservationId;
+
+        public UpdateWithId() {
+        }
+
+        public void init(Object newValue, long reservationId) {
+            this.newValue = newValue;
+            this.reservationId = reservationId;
+        }
+
         @Override
-        public R apply(K key) {
-            R record = null;
-            try {
-                record = valueToRecord(null);
-                onRecordCreate(key, record);
-                record.casRecordState(READ_PERMITTED, RESERVED);
-            } catch (Throwable throwable) {
-                onPutError(key, null, record, null, throwable);
-                throw rethrow(throwable);
+        public R apply(K key, R record) {
+            if (reservationId != record.getReservationId()) {
+                // another reservation took place and existing reservationId became obsolete
+                return record;
             }
+
+            boolean temporaryRecord = isTemporaryRecord(record);
+
+            long netMemoryCost = 0;
+            if (!temporaryRecord) {
+                netMemoryCost -= getTotalStorageMemoryCost(key, record);
+            }
+
+            record.setValue(toStorageType((V) newValue));
+
+            netMemoryCost += getTotalStorageMemoryCost(key, record);
+            nearCacheStats.incrementOwnedEntryMemoryCost(netMemoryCost);
+
+            if (temporaryRecord) {
+                nearCacheStats.incrementOwnedEntryCount();
+                record.setCreationTime(Clock.currentTimeMillis());
+            }
+
+            record.doReservable();
+
             return record;
         }
     }

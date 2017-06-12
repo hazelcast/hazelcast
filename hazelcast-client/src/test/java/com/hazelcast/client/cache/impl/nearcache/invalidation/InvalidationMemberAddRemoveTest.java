@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.cache.impl.nearcache.invalidation;
 
+import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheEventHandler;
 import com.hazelcast.cache.impl.CacheProxy;
 import com.hazelcast.cache.impl.CacheService;
@@ -41,34 +42,65 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
+import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
+import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NO_SEQUENCE;
 import static com.hazelcast.util.RandomPicker.getInt;
 import static java.lang.Integer.MAX_VALUE;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category(NightlyTest.class)
 public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport {
 
-    private static final int NEAR_CACHE_POPULATOR_THREAD_COUNT = 5;
+    private static final int NEAR_CACHE_POPULATOR_GET_THREAD_COUNT = 2;
+    private static final int NEAR_CACHE_POPULATOR_PUT_THREAD_COUNT = 2;
+    private static final int NEAR_CACHE_POPULATOR_PUT_ALL_THREAD_COUNT = 2;
     private static final int TEST_RUN_SECONDS = 30;
     private static final int INVALIDATION_BATCH_SIZE = 100;
     private static final int KEY_COUNT = 1000;
     private static final int RECONCILIATION_INTERVAL_SECONDS = 30;
+
+    @Parameterized.Parameter
+    public NearCacheConfig.LocalUpdatePolicy localUpdatePolicy;
+
+    @Parameterized.Parameters(name = "localUpdatePolicy:{0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {CACHE_ON_UPDATE},
+                {INVALIDATE},
+        });
+    }
+
+    @Override
+    protected NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat) {
+        NearCacheConfig nearCacheConfig = super.createNearCacheConfig(inMemoryFormat);
+        nearCacheConfig.setInvalidateOnChange(true)
+                .setLocalUpdatePolicy(localUpdatePolicy)
+                .getEvictionConfig()
+                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setSize(MAX_VALUE);
+        return nearCacheConfig;
+    }
 
     @Override
     protected Config createConfig() {
@@ -107,8 +139,8 @@ public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport 
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
         CachingProvider clientCachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
 
-        final Cache<Integer, Integer> clientCache = clientCachingProvider.getCacheManager().createCache(
-                DEFAULT_CACHE_NAME, createCacheConfig(BINARY));
+        final ICache<Integer, Integer> clientCache = ((ICache) clientCachingProvider.getCacheManager().createCache(
+                DEFAULT_CACHE_NAME, createCacheConfig(BINARY)));
 
         ArrayList<Thread> threads = new ArrayList<Thread>();
 
@@ -126,7 +158,7 @@ public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport 
 
         threads.add(shadowMember);
 
-        for (int i = 0; i < NEAR_CACHE_POPULATOR_THREAD_COUNT; i++) {
+        for (int i = 0; i < NEAR_CACHE_POPULATOR_GET_THREAD_COUNT; i++) {
             // populates client Near Cache
             Thread populateClientNearCache = new Thread(new Runnable() {
                 public void run() {
@@ -134,6 +166,46 @@ public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport 
                         for (int i = 0; i < KEY_COUNT; i++) {
                             clientCache.get(i);
                         }
+                    }
+                }
+            });
+
+            threads.add(populateClientNearCache);
+        }
+
+        for (int i = 0; i < NEAR_CACHE_POPULATOR_PUT_THREAD_COUNT; i++) {
+            // populates client Near Cache
+            Thread populateClientNearCache = new Thread(new Runnable() {
+                public void run() {
+                    while (!stopTest.get()) {
+                        for (int i = 0; i < KEY_COUNT; i++) {
+                            int key = getInt(KEY_COUNT);
+                            int value = getInt(Integer.MAX_VALUE);
+                            if (i % 2 == 0) {
+                                clientCache.put(key, value);
+                            } else {
+                                clientCache.putAsync(key, value);
+                            }
+                        }
+                    }
+                }
+            });
+            threads.add(populateClientNearCache);
+        }
+
+        for (int i = 0; i < NEAR_CACHE_POPULATOR_PUT_ALL_THREAD_COUNT; i++) {
+            // populates client Near Cache
+            Thread populateClientNearCache = new Thread(new Runnable() {
+                public void run() {
+                    while (!stopTest.get()) {
+                        HashMap batch = new HashMap();
+                        for (int i = 0; i < KEY_COUNT; i++) {
+                            int key = getInt(KEY_COUNT);
+                            int value = getInt(Integer.MAX_VALUE);
+                            batch.put(key, value);
+                        }
+
+                        clientCache.putAll(batch);
                     }
                 }
             });
@@ -233,15 +305,5 @@ public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport 
                 .setMaximumSizePolicy(ENTRY_COUNT)
                 .setSize(MAX_VALUE);
         return cacheConfig;
-    }
-
-    @Override
-    protected NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat) {
-        NearCacheConfig nearCacheConfig = super.createNearCacheConfig(inMemoryFormat);
-        nearCacheConfig.setInvalidateOnChange(true)
-                .getEvictionConfig()
-                .setMaximumSizePolicy(ENTRY_COUNT)
-                .setSize(MAX_VALUE);
-        return nearCacheConfig;
     }
 }

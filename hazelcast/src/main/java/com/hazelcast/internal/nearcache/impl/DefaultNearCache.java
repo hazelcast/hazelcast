@@ -110,14 +110,14 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
 
     @Override
     public V get(K key) {
-        checkNotNull(key, "key cannot be null on get!");
+        assert key != null : "key cannot be null on get!";
 
         return nearCacheRecordStore.get(key);
     }
 
     @Override
     public void put(K key, V value) {
-        checkNotNull(key, "key cannot be null on put!");
+        assert key != null : "key cannot be null on get!";
 
         nearCacheRecordStore.doEvictionIfRequired();
 

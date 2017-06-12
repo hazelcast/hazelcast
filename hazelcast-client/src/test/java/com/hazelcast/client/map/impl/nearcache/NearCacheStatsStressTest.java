@@ -115,11 +115,15 @@ public class NearCacheStatsStressTest extends HazelcastTestSupport {
         public void run() {
             while (!stop.get()) {
                 Data keyData = getKeyData();
-                long reservationId = nearCache.tryReserveForUpdate(keyData);
-                if (reservationId != NOT_RESERVED) {
-                    nearCache.tryPublishReserved(keyData, keyData, reservationId, false);
-                }
+                putInternal(keyData);
             }
+        }
+    }
+
+    private void putInternal(Data keyData) {
+        long reservationId = nearCache.tryReserveForUpdate(keyData);
+        if (reservationId != NOT_RESERVED) {
+            nearCache.tryPublishReserved(keyData, keyData, reservationId, false);
         }
     }
 
@@ -128,11 +132,14 @@ public class NearCacheStatsStressTest extends HazelcastTestSupport {
         public void run() {
             while (!stop.get()) {
                 Data keyData = getKeyData();
-                nearCache.remove(keyData);
+                removeInternal(keyData);
             }
         }
     }
 
+    private void removeInternal(Data keyData) {
+        nearCache.remove(keyData);
+    }
 }
 
 

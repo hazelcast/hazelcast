@@ -24,6 +24,9 @@ package com.hazelcast.internal.nearcache.impl.record;
  */
 public class NearCacheObjectRecord<V> extends AbstractNearCacheRecord<V> {
 
+    public NearCacheObjectRecord() {
+    }
+
     public NearCacheObjectRecord(V value, long creationTime, long expiryTime) {
         super(value, creationTime, expiryTime);
         this.value = value;
@@ -33,4 +36,5 @@ public class NearCacheObjectRecord<V> extends AbstractNearCacheRecord<V> {
     public String toString() {
         return "NearCacheObjectRecord{" + super.toString() + '}';
     }
+
 }

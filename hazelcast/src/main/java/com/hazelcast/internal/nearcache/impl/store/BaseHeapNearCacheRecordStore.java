@@ -20,18 +20,15 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
-import com.hazelcast.core.IBiFunction;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.impl.maxsize.EntryCountNearCacheEvictionChecker;
 import com.hazelcast.internal.nearcache.impl.preloader.NearCachePreloader;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Map;
 
-import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
 import static java.lang.String.format;
 
 /**
@@ -47,6 +44,18 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     private static final int DEFAULT_INITIAL_CAPACITY = 1000;
 
     private final NearCachePreloader<K> nearCachePreloader;
+    private final ThreadLocal<ReserveWithId> reserveWithIdThreadLocal = new ThreadLocal<ReserveWithId>() {
+        @Override
+        protected ReserveWithId initialValue() {
+            return new ReserveWithId();
+        }
+    };
+    private final ThreadLocal<UpdateWithId> updateWithIdThreadLocal = new ThreadLocal<UpdateWithId>() {
+        @Override
+        protected UpdateWithId initialValue() {
+            return new UpdateWithId();
+        }
+    };
 
     BaseHeapNearCacheRecordStore(String name, NearCacheConfig nearCacheConfig, SerializationService serializationService,
                                  ClassLoader classLoader) {
@@ -90,7 +99,7 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     @Override
     protected R removeRecord(K key) {
         R removedRecord = records.remove(key);
-        if (removedRecord != null && removedRecord.getRecordState() == READ_PERMITTED) {
+        if (removedRecord != null && !isTemporaryRecord(removedRecord)) {
             nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, removedRecord));
         }
         return removedRecord;
@@ -142,24 +151,16 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     }
 
     @Override
-    protected R getOrCreateToReserve(K key) {
-        return records.applyIfAbsent(key, reserveForUpdate);
+    protected R tryReserveForUpdateInternal(K key, long reservationId) {
+        ReserveWithId reserveWithId = reserveWithIdThreadLocal.get();
+        reserveWithId.init(reservationId);
+        return records.apply(key, reserveWithId);
     }
 
     @Override
-    protected V updateAndGetReserved(K key, final V value, final long reservationId, boolean deserialize) {
-        R existingRecord = records.applyIfPresent(key, new IBiFunction<K, R, R>() {
-            @Override
-            public R apply(K key, R reservedRecord) {
-                return updateReservedRecordInternal(key, value, reservedRecord, reservationId);
-            }
-        });
-
-        if (existingRecord == null || !deserialize) {
-            return null;
-        }
-
-        Object cachedValue = existingRecord.getValue();
-        return cachedValue instanceof Data ? toValue(cachedValue) : (V) existingRecord.getValue();
+    protected R tryPublishReservedInternal(K key, V value, long reservationId) {
+        UpdateWithId updateWithId = updateWithIdThreadLocal.get();
+        updateWithId.init(value, reservationId);
+        return records.applyIfPresent(key, updateWithId);
     }
 }

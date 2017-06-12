@@ -99,4 +99,6 @@ public interface IConcurrentMap<K, V> extends java.util.concurrent.ConcurrentMap
      * @throws NullPointerException {@inheritDoc}
      */
     V applyIfPresent(K key, IBiFunction<? super K, ? super V, ? extends V> mappingFunction);
+
+    V apply(K key, IBiFunction<? super K, ? super V, ? extends V> mappingFunction);
 }

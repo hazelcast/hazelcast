@@ -65,17 +65,17 @@ public class NearCacheObjectRecordStore<K, V> extends BaseHeapNearCacheRecordSto
     }
 
     @Override
-    protected void updateRecordValue(NearCacheObjectRecord<V> record, V value) {
-        record.setValue(toValue(value));
-    }
-
-    @Override
     protected V recordToValue(NearCacheObjectRecord<V> record) {
         if (record.getValue() == null) {
             nearCacheStats.incrementMisses();
             return (V) CACHED_AS_NULL;
         }
         return record.getValue();
+    }
+
+    @Override
+    protected Object toStorageType(V value) {
+        return toValue(value);
     }
 
     @Override
