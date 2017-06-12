@@ -68,7 +68,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    protected static final int TEST_TIMEOUT = 300000;
+    protected static final int TEST_TIMEOUT = 6000000;
     protected static final int KEY_COUNT = 10023;
 
     protected final String defaultNearCache = randomName();
