@@ -17,9 +17,6 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.connection.ClientConnectionStrategy;
-
-import java.util.Properties;
 
 /**
  * Client connection strategy configuration is used for setting custom strategies and configuring strategy parameters.

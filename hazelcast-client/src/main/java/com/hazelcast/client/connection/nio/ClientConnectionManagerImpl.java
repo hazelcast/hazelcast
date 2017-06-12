@@ -170,10 +170,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     private ClientConnectionStrategy initializeStrategy(HazelcastClientInstanceImpl client) {
         ClientConnectionStrategy strategy;
         //internal property
-        String className =  client.getProperties().get("hazelcast.client.connection.strategy.classname");
+        String className = client.getProperties().get("hazelcast.client.connection.strategy.classname");
         if (className != null) {
             try {
-                ClassLoader configClassLoader=client.getClientConfig().getClassLoader();
+                ClassLoader configClassLoader = client.getClientConfig().getClassLoader();
                 return ClassLoaderUtil.newInstance(configClassLoader, className);
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
