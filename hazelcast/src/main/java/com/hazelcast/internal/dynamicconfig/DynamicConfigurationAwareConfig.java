@@ -53,6 +53,8 @@ import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.util.StringUtil;
+import com.hazelcast.security.SecurityService;
+import com.hazelcast.security.impl.NoOpSecurityService;
 
 import java.io.File;
 import java.net.URL;
@@ -72,7 +74,9 @@ import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBas
 public class DynamicConfigurationAwareConfig extends Config {
     private final Config staticConfig;
     private final ConfigPatternMatcher configPatternMatcher;
+
     private volatile ConfigurationService configurationService = new EmptyConfigurationService();
+    private volatile SecurityService securityService = new NoOpSecurityService();
 
     public DynamicConfigurationAwareConfig(Config staticConfig) {
         this.staticConfig = staticConfig;
@@ -1070,7 +1074,9 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public SecurityConfig getSecurityConfig() {
-        return staticConfig.getSecurityConfig();
+        DynamicSecurityConfig securityConfig = new DynamicSecurityConfig(staticConfig.getSecurityConfig());
+        securityConfig.setSecurityService(securityService);
+        return securityConfig;
     }
 
     @Override
@@ -1211,5 +1217,9 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     public void setConfigurationService(ConfigurationService configurationService) {
         this.configurationService = configurationService;
+    }
+
+    public void setSecurityService(SecurityService securityService) {
+        this.securityService = securityService;
     }
 }

@@ -27,7 +27,10 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.internal.management.operation.AddWanConfigOperation;
+import com.hazelcast.internal.management.request.UpdatePermissionConfigRequest;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.security.SecurityService;
+import com.hazelcast.security.impl.NoOpSecurityService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -95,6 +98,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 handleWanClearQueues(command);
             } else if (uri.startsWith(URI_ADD_WAN_CONFIG)) {
                 handleAddWanConfig(command);
+            } else if (uri.startsWith(URI_UPDATE_CLIENT_PERMISSIONS)) {
+                handleUpdateClientPermissions(command);
             } else {
                 command.setResponse(HttpCommand.RES_400);
             }
@@ -439,6 +444,40 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             logger.warning("Error occurred while adding WAN config", ex);
             res = exceptionResponse(ex);
         }
+        command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
+    }
+
+    private void handleUpdateClientPermissions(HttpPostCommand command) throws UnsupportedEncodingException {
+
+        if (!checkCredentials(command)) {
+            String res = response(ResponseType.FORBIDDEN);
+            command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
+            return;
+        }
+
+        SecurityService securityService = textCommandService.getNode().getSecurityService();
+        if (securityService instanceof NoOpSecurityService) {
+            String res = response(ResponseType.FAIL, "message", "Security features are only available on Hazelcast Enterprise!");
+            command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
+            return;
+        }
+
+        String res;
+        byte[] data = command.getData();
+        String[] strList = bytesToString(data).split("&");
+        //Start from 3rd item of strList as first two are used for credentials
+        String permConfigsJSON = URLDecoder.decode(strList[2], "UTF-8");
+
+        try {
+            UpdatePermissionConfigRequest request = new UpdatePermissionConfigRequest();
+            request.fromJson(Json.parse(permConfigsJSON).asObject());
+            securityService.refreshClientPermissions(request.getPermissionConfigs());
+            res = response(ResponseType.SUCCESS, "message", "Client permissions updated.");
+        } catch (Exception ex) {
+            logger.warning("Error occurred while updating permission config", ex);
+            res = exceptionResponse(ex);
+        }
+
         command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
     }
 

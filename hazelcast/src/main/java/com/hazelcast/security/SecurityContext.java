@@ -16,11 +16,14 @@
 
 package com.hazelcast.security;
 
+import com.hazelcast.config.PermissionConfig;
+
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.security.AccessControlException;
 import java.security.Permission;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 /**
@@ -103,5 +106,7 @@ public interface SecurityContext {
      * Destroys {@link SecurityContext} and all security elements.
      */
     void destroy();
+
+    void refreshClientPermissions(Set<PermissionConfig> permissionConfigs);
 
 }

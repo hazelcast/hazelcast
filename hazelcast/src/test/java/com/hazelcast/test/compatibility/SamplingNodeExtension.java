@@ -35,6 +35,7 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.security.SecurityService;
 import com.hazelcast.util.ByteArrayProcessor;
 import com.hazelcast.version.Version;
 
@@ -56,6 +57,11 @@ public class SamplingNodeExtension implements NodeExtension {
     public InternalSerializationService createSerializationService() {
         InternalSerializationService serializationService = nodeExtension.createSerializationService();
         return new SamplingSerializationService(serializationService);
+    }
+
+    @Override
+    public SecurityService getSecurityService() {
+        return nodeExtension.getSecurityService();
     }
 
     @Override
