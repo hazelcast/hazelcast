@@ -44,7 +44,5 @@ public interface ClientTransactionManagerService {
      */
     TransactionContext newXATransactionContext(Xid xid, int timeoutInSeconds);
 
-    void shutdown();
-
     String getGroupName();
 }

@@ -130,7 +130,7 @@ public abstract class ClientProxy implements DistributedObject {
         if (preDestroy()) {
             onDestroy();
             ClientMessage clientMessage = ClientDestroyProxyCodec.encodeRequest(getDistributedObjectName(), getServiceName());
-            getContext().removeProxy(this);
+            getContext().getProxyManager().removeProxy(getServiceName(), getDistributedObjectName());
             try {
                 new ClientInvocation(getClient(), clientMessage).invoke().get();
                 postDestroy();

@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.spi.impl;
 
+import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
@@ -100,15 +101,8 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     }
 
     private Connection getOwnerConnection() {
-        ClientClusterService clusterService = client.getClientClusterService();
-        Address ownerAddress = clusterService.getOwnerConnectionAddress();
-        if (ownerAddress == null) {
-            return null;
-        }
-        Connection connection = client.getConnectionManager().getConnection(ownerAddress);
-        if (connection == null) {
-            return null;
-        }
+        ClientConnectionManager connectionManager = client.getConnectionManager();
+        Connection connection = connectionManager.getOwnerConnection();
         return connection;
     }
 

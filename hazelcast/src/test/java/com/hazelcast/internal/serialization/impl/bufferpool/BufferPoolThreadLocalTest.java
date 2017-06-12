@@ -23,6 +23,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.function.Supplier;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -47,7 +48,13 @@ public class BufferPoolThreadLocalTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         serializationService = mock(InternalSerializationService.class);
-        bufferPoolThreadLocal = new BufferPoolThreadLocal(serializationService, new BufferPoolFactoryImpl());
+        bufferPoolThreadLocal = new BufferPoolThreadLocal(serializationService, new BufferPoolFactoryImpl()
+                , new Supplier<RuntimeException>() {
+            @Override
+            public RuntimeException get() {
+                return new HazelcastInstanceNotActiveException();
+            }
+        });
     }
 
     @Test
@@ -98,7 +105,7 @@ public class BufferPoolThreadLocalTest extends HazelcastTestSupport {
     @Test
     public void get_whenDifferentThreadLocals_thenDifferentInstances() throws Exception {
         BufferPoolThreadLocal bufferPoolThreadLocal2 = new BufferPoolThreadLocal(
-                serializationService, new BufferPoolFactoryImpl());
+                serializationService, new BufferPoolFactoryImpl(), null);
 
         BufferPool pool1 = bufferPoolThreadLocal.get();
         BufferPool pool2 = bufferPoolThreadLocal2.get();

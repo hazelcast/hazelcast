@@ -74,7 +74,7 @@ public class ClientTestSupport extends HazelcastTestSupport {
     }
 
     protected HazelcastInstance getOwnerServer(TestHazelcastFactory factory, HazelcastClientInstanceImpl client) {
-        Address ownerConnectionAddress = client.getClientClusterService().getOwnerConnectionAddress();
+        Address ownerConnectionAddress = client.getConnectionManager().getOwnerConnectionAddress();
         return factory.getInstance(ownerConnectionAddress);
     }
 

@@ -18,13 +18,11 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 
 import java.io.IOException;
 
-public class ClientNonSmartInvocationServiceImpl extends ClientInvocationServiceSupport {
+public class ClientNonSmartInvocationServiceImpl extends ClientInvocationServiceImpl {
 
     public ClientNonSmartInvocationServiceImpl(HazelcastClientInstanceImpl client) {
         super(client);
@@ -32,7 +30,7 @@ public class ClientNonSmartInvocationServiceImpl extends ClientInvocationService
 
     @Override
     public void invokeOnRandomTarget(ClientInvocation invocation) throws IOException {
-        sendToOwner(invocation);
+        send(invocation, getOwnerConnection());
     }
 
     @Override
@@ -46,24 +44,20 @@ public class ClientNonSmartInvocationServiceImpl extends ClientInvocationService
     @Override
     public void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException {
         invocation.getClientMessage().setPartitionId(partitionId);
-        sendToOwner(invocation);
+        send(invocation, getOwnerConnection());
     }
 
     @Override
     public void invokeOnTarget(ClientInvocation invocation, Address target) throws IOException {
-        sendToOwner(invocation);
+        send(invocation, getOwnerConnection());
     }
 
-    private void sendToOwner(ClientInvocation invocation) throws IOException {
-        ClientClusterService clusterService = client.getClientClusterService();
-        Address ownerConnectionAddress = clusterService.getOwnerConnectionAddress();
-        if (ownerConnectionAddress == null) {
-            throw new IOException("Packet is not send to owner address");
+    private ClientConnection getOwnerConnection() throws IOException {
+        Address ownerConnectionAddress = connectionManager.getOwnerConnectionAddress();
+        ClientConnection ownerConnection = (ClientConnection) connectionManager.getActiveConnection(ownerConnectionAddress);
+        if (ownerConnection == null) {
+            throw new IOException("ClientNonSmartInvocationServiceImpl: Owner connection is not available.");
         }
-        Connection conn = connectionManager.getConnection(ownerConnectionAddress);
-        if (conn == null) {
-            throw new IOException("Packet is not sent to owner address: " + ownerConnectionAddress);
-        }
-        send(invocation, (ClientConnection) conn);
+        return ownerConnection;
     }
 }

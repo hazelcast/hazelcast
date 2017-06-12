@@ -36,6 +36,7 @@ import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.util.function.Supplier;
 
 import java.nio.ByteOrder;
 import java.util.HashMap;
@@ -85,6 +86,8 @@ public class DefaultSerializationServiceBuilder
     protected PartitioningStrategy partitioningStrategy;
 
     protected HazelcastInstance hazelcastInstance;
+
+    protected Supplier<RuntimeException> notActiveExceptionSupplier;
 
     @Override
     public SerializationServiceBuilder setVersion(byte version) {
@@ -200,6 +203,12 @@ public class DefaultSerializationServiceBuilder
     }
 
     @Override
+    public SerializationServiceBuilder setNotActiveExceptionSupplier(Supplier<RuntimeException> notActiveExceptionSupplier) {
+        this.notActiveExceptionSupplier = notActiveExceptionSupplier;
+        return this;
+    }
+
+    @Override
     public SerializationServiceBuilder setInitialOutputBufferSize(int initialOutputBufferSize) {
         if (initialOutputBufferSize <= 0) {
             throw new IllegalArgumentException("Initial buffer size must be positive!");
@@ -218,7 +227,7 @@ public class DefaultSerializationServiceBuilder
         }
 
         InputOutputFactory inputOutputFactory = createInputOutputFactory();
-        InternalSerializationService ss = createSerializationService(inputOutputFactory);
+        InternalSerializationService ss = createSerializationService(inputOutputFactory, notActiveExceptionSupplier);
 
         registerSerializerHooks(ss);
 
@@ -261,13 +270,14 @@ public class DefaultSerializationServiceBuilder
         }
     }
 
-    protected InternalSerializationService createSerializationService(InputOutputFactory inputOutputFactory) {
+    protected InternalSerializationService createSerializationService(InputOutputFactory inputOutputFactory
+            , Supplier<RuntimeException> notActiveExceptionSupplier) {
         switch (version) {
             case 1:
                 SerializationServiceV1 serializationServiceV1 = new SerializationServiceV1(inputOutputFactory, version,
                         portableVersion, classLoader, dataSerializableFactories, portableFactories, managedContext,
                         partitioningStrategy, initialOutputBufferSize, new BufferPoolFactoryImpl(), enableCompression,
-                        enableSharedObject);
+                        enableSharedObject, notActiveExceptionSupplier);
                 serializationServiceV1.registerClassDefinitions(classDefinitions, checkClassDefErrors);
                 return serializationServiceV1;
 

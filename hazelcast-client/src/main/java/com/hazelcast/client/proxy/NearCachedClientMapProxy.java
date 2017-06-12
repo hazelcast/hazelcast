@@ -25,7 +25,6 @@ import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheInvalidationListe
 import com.hazelcast.client.impl.protocol.codec.MapGetAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
-import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
@@ -42,7 +41,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
@@ -766,12 +764,9 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     private int getConnectedServerVersion() {
-        ClientClusterService clusterService = getContext().getClusterService();
-        Address ownerConnectionAddress = clusterService.getOwnerConnectionAddress();
-
         HazelcastClientInstanceImpl client = getClient();
         ClientConnectionManager connectionManager = client.getConnectionManager();
-        Connection connection = connectionManager.getConnection(ownerConnectionAddress);
+        Connection connection = connectionManager.getOwnerConnection();
         if (connection == null) {
             logger.warning(format("No owner connection is available, near cached cache %s will be started in legacy mode", name));
             return UNKNOWN_HAZELCAST_VERSION;

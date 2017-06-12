@@ -16,7 +16,7 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.DefaultOutOfMemoryHandler;
@@ -52,7 +52,7 @@ public class ClientOutOfMemoryHandler extends DefaultOutOfMemoryHandler {
         }
 
         private static void closeSockets(HazelcastClientInstanceImpl client) {
-            final ClientConnectionManager connectionManager = client.getConnectionManager();
+            ClientConnectionManagerImpl connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
             if (connectionManager != null) {
                 try {
                     connectionManager.shutdown();

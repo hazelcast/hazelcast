@@ -160,5 +160,6 @@
         </query-cache>
     </query-caches>
 
+    <connection-strategy async-start="true" reconnect-mode="ASYNC"/>
 
 </hazelcast-client>

@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.serialization.impl.bufferpool;
 
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
+import com.hazelcast.util.function.Supplier;
 
 import java.lang.ref.WeakReference;
 import java.util.Map;
@@ -83,10 +83,14 @@ public final class BufferPoolThreadLocal {
     private final InternalSerializationService serializationService;
     private final BufferPoolFactory bufferPoolFactory;
     private final Map<Thread, BufferPool> strongReferences = new ConcurrentReferenceHashMap<Thread, BufferPool>(WEAK, STRONG);
+    private final Supplier<RuntimeException> notActiveExceptionSupplier;
 
-    public BufferPoolThreadLocal(InternalSerializationService serializationService, BufferPoolFactory bufferPoolFactory) {
+    public BufferPoolThreadLocal(InternalSerializationService serializationService,
+                                 BufferPoolFactory bufferPoolFactory,
+                                 Supplier<RuntimeException> notActiveExceptionSupplier) {
         this.serializationService = serializationService;
         this.bufferPoolFactory = bufferPoolFactory;
+        this.notActiveExceptionSupplier = notActiveExceptionSupplier;
     }
 
     public BufferPool get() {
@@ -100,7 +104,7 @@ public final class BufferPoolThreadLocal {
         } else {
             BufferPool pool = ref.get();
             if (pool == null) {
-                throw new HazelcastInstanceNotActiveException();
+                throw notActiveExceptionSupplier.get();
             }
             return pool;
         }

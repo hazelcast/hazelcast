@@ -49,7 +49,7 @@ import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIME
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 import static com.hazelcast.spi.impl.operationservice.impl.AsyncInboundResponseHandler.getIdleStrategy;
 
-abstract class ClientInvocationServiceSupport implements ClientInvocationService {
+public abstract class ClientInvocationServiceImpl implements ClientInvocationService {
 
     private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.client.responsequeue.idlestrategy", "block");
@@ -71,7 +71,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     private volatile boolean isShutdown;
     private final long invocationTimeoutMillis;
 
-    public ClientInvocationServiceSupport(HazelcastClientInstanceImpl client) {
+    public ClientInvocationServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.invocationLogger = client.getLoggingService().getLogger(ClientInvocationService.class);
         this.invocationTimeoutMillis = initInvocationTimeoutMillis();
@@ -83,7 +83,6 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         return waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
     }
 
-    @Override
     public void start() {
         connectionManager = client.getConnectionManager();
         clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
@@ -165,7 +164,6 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         return isShutdown;
     }
 
-    @Override
     public void shutdown() {
         isShutdown = true;
         responseThread.interrupt();

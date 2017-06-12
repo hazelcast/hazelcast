@@ -17,7 +17,7 @@
 package com.hazelcast.client.connection;
 
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -32,11 +32,6 @@ import java.util.Collection;
 public interface ClientConnectionManager extends ConnectionListenable {
 
     /**
-     * Shutdown clientConnectionManager
-     */
-    void shutdown();
-
-    /**
      * Check if client connection manager is alive.
      * ClientConnectionManager is not alive only when client is closing.
      *
@@ -45,41 +40,36 @@ public interface ClientConnectionManager extends ConnectionListenable {
     boolean isAlive();
 
     /**
-     * Start clientConnectionManager
-     */
-    void start();
-
-    /**
      * @param address to be connected
      * @return connection if available, null otherwise
      */
-    Connection getConnection(Address address);
+    Connection getActiveConnection(Address address);
 
     /**
      * @param address to be connected
-     * @param asOwner true if connection should be authenticated as owner, false otherwise
      * @return associated connection if available, creates new connection otherwise
      * @throws IOException if connection is not established
      */
-    Connection getOrConnect(Address address, boolean asOwner) throws IOException;
+    Connection getOrConnect(Address address) throws IOException;
 
     /**
      * @param address to be connected
-     * @param asOwner true if connection should be authenticated as owner, false otherwise
      * @return associated connection if available, returns null and triggers new connection creation otherwise
      * @throws IOException if connection is not able to triggered
      */
-    Connection getOrTriggerConnect(Address address, boolean asOwner) throws IOException;
-
-    /**
-     * Handles incoming network package
-     *
-     * @param message    to be processed
-     * @param connection that client message come from
-     */
-    void handleClientMessage(ClientMessage message, Connection connection);
+    Connection getOrTriggerConnect(Address address) throws IOException;
 
     void addConnectionHeartbeatListener(ConnectionHeartbeatListener connectionHeartbeatListener);
 
     Collection<ClientConnection> getActiveConnections();
+
+    Address getOwnerConnectionAddress() ;
+
+    ClientPrincipal getPrincipal();
+
+    ClientConnection getOwnerConnection();
+
+    void connectToCluster();
+
+    void connectToClusterAsync();
 }

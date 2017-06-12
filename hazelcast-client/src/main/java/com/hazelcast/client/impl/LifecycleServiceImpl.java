@@ -62,7 +62,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
 
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
         executor = Executors.newSingleThreadExecutor(
-                new PoolExecutorThreadFactory(client.getName() +  ".lifecycle-", classLoader));
+                new PoolExecutorThreadFactory(client.getName() + ".lifecycle-", classLoader));
 
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {

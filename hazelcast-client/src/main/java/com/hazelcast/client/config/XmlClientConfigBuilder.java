@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AbstractConfigBuilder;
@@ -55,6 +56,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.hazelcast.client.config.ClientXmlElements.CONNECTION_STRATEGY;
 import static com.hazelcast.client.config.ClientXmlElements.EXECUTOR_POOL_SIZE;
 import static com.hazelcast.client.config.ClientXmlElements.GROUP;
 import static com.hazelcast.client.config.ClientXmlElements.INSTANCE_NAME;
@@ -245,7 +247,20 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             clientConfig.setLicenseKey(getTextContent(node));
         } else if (INSTANCE_NAME.isEqual(nodeName)) {
             clientConfig.setInstanceName(getTextContent(node));
+        } else if (CONNECTION_STRATEGY.isEqual(nodeName)) {
+            handleConnectionStrategy(node);
         }
+    }
+
+    private void handleConnectionStrategy(Node node) {
+        ClientConnectionStrategyConfig strategyConfig = new ClientConnectionStrategyConfig();
+        String attrValue = getAttribute(node, "async-start");
+        strategyConfig.setAsyncStart(attrValue != null && getBooleanValue(attrValue.trim()));
+        attrValue = getAttribute(node, "reconnect-mode");
+        if (attrValue != null) {
+            strategyConfig.setReconnectMode(ReconnectMode.valueOf(upperCaseInternal(attrValue.trim())));
+        }
+        clientConfig.setConnectionStrategyConfig(strategyConfig);
     }
 
     private void handleExecutorPoolSize(Node node) {
@@ -576,4 +591,6 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         }
         clientConfig.setSecurityConfig(clientSecurityConfig);
     }
+
+
 }
