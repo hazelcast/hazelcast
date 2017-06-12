@@ -314,10 +314,6 @@
     <!--query-caches end-->
 
     <xs:complexType name="connection-strategy">
-        <xs:all>
-            <xs:element name="class-name" type="xs:string" minOccurs="0" maxOccurs="1" />
-            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
-        </xs:all>
         <xs:attribute name="async-start" type="xs:boolean" default="false" use="optional"/>
         <xs:attribute name="reconnect-mode" type="reconnect-mode" default="ON" use="optional"/>
     </xs:complexType>

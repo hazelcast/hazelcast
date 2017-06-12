@@ -260,16 +260,6 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         if (attrValue != null) {
             strategyConfig.setReconnectMode(ReconnectMode.valueOf(upperCaseInternal(attrValue.trim())));
         }
-        for (Node child : childElements(node)) {
-            String nodeName = cleanNodeName(child);
-            String value = getTextContent(child).trim();
-            if ("class-name".equals(nodeName)) {
-                strategyConfig.setClassName(value);
-            } else if ("properties".equals(nodeName)) {
-                Properties strategyProperties = strategyConfig.getProperties();
-                fillProperties(child, strategyProperties);
-            }
-        }
         clientConfig.setConnectionStrategyConfig(strategyConfig);
     }
 

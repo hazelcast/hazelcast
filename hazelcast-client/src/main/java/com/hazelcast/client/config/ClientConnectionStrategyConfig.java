@@ -49,12 +49,6 @@ public class ClientConnectionStrategyConfig {
 
     private ReconnectMode reconnectMode = ReconnectMode.ON;
 
-    private String className;
-
-    private ClientConnectionStrategy implementation;
-
-    private Properties properties = new Properties();
-
     /**
      * Client instance creation won't block on {@link HazelcastClient#newHazelcastClient()} if this value is true
      * @return if client connects to cluster asynchronously
@@ -96,91 +90,4 @@ public class ClientConnectionStrategyConfig {
         this.reconnectMode = reconnectMode;
         return this;
     }
-
-    /**
-     * @see ClientConnectionStrategy
-     * @return class name of client connection strategy implementation
-     */
-    public String getClassName() {
-        return className;
-    }
-
-    /**
-     * Class name of the strategy implementation where it should be a subclass of {@link ClientConnectionStrategy}
-     * @param className class name of client connection strategy implementation
-     * @return the updated ClientConnectionStrategyConfig
-     */
-    public ClientConnectionStrategyConfig setClassName(String className) {
-        this.className = className;
-        return this;
-    }
-
-    /**
-     * An instance of the strategy implementation where it should be a subclass of {@link ClientConnectionStrategy}
-     * @return configured strategy implementation instance or null if none configured
-     */
-    public ClientConnectionStrategy getImplementation() {
-        return implementation;
-    }
-
-    /**
-     * A user created instance can be used to configure the client connection strategy.
-     * @param implementation An instance of the strategy implementation
-     *                      where it should be a subclass of {@link ClientConnectionStrategy}
-     * @return the updated ClientConnectionStrategyConfig
-     */
-    public ClientConnectionStrategyConfig setImplementation(ClientConnectionStrategy implementation) {
-        this.implementation = implementation;
-        return this;
-    }
-
-    /**
-     * Sets a property.
-     *
-     * @param name  the name of the property to set
-     * @param value the value of the property to set
-     * @return the updated ClientConnectionStrategyConfig
-     * @throws NullPointerException if name or value is {@code null}
-     */
-    public ClientConnectionStrategyConfig setProperty(String name, String value) {
-        properties.put(name, value);
-        return this;
-    }
-
-    /**
-     * Gets a property.
-     *
-     * @param name the name of the property to get
-     * @return the value of the property, null if not found
-     * @throws NullPointerException if name is {@code null}
-     */
-    public String getProperty(String name) {
-        return properties.getProperty(name);
-    }
-
-    /**
-     * Gets all properties.
-     *
-     * @return the properties
-     */
-    public Properties getProperties() {
-        return properties;
-    }
-
-    /**
-     * Sets the properties.
-     * These properties are populated into {@link ClientConnectionStrategy} to be used in implementations of it.
-     *
-     * @param properties the properties to set
-     * @return the updated ClientConnectionStrategyConfig
-     * @throws IllegalArgumentException if properties is {@code null}
-     */
-    public ClientConnectionStrategyConfig setProperties(Properties properties) {
-        if (properties == null) {
-            throw new IllegalArgumentException("properties can't be null");
-        }
-        this.properties = properties;
-        return this;
-    }
-
 }

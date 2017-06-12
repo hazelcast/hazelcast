@@ -158,7 +158,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
         this.credentials = client.getCredentials();
         ClientConnectionStrategyConfig strategyConfig = client.getClientConfig().getConnectionStrategyConfig();
-        this.connectionStrategy = initializeStrategy(strategyConfig, client.getClientConfig().getClassLoader());
+        this.connectionStrategy = initializeStrategy(client);
         this.clusterConnectionExecutor = createSingleThreadExecutorService(client);
         this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
         this.addressProviders = addressProviders;
@@ -167,14 +167,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         connectionAttemptLimit = connAttemptLimit == 0 ? Integer.MAX_VALUE : connAttemptLimit;
     }
 
-    private ClientConnectionStrategy initializeStrategy(ClientConnectionStrategyConfig connectionStrategyConfig,
-                                                        ClassLoader configClassLoader) {
+    private ClientConnectionStrategy initializeStrategy(HazelcastClientInstanceImpl client) {
         ClientConnectionStrategy strategy;
-        if (connectionStrategyConfig.getImplementation() != null) {
-            strategy = connectionStrategyConfig.getImplementation();
-        } else if (connectionStrategyConfig.getClassName() != null) {
+        //internal property
+        String className =  client.getProperties().get("hazelcast.client.connection.strategy.classname");
+        if (className != null) {
             try {
-                return ClassLoaderUtil.newInstance(configClassLoader, connectionStrategyConfig.getClassName());
+                ClassLoader configClassLoader=client.getClientConfig().getClassLoader();
+                return ClassLoaderUtil.newInstance(configClassLoader, className);
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }

@@ -313,9 +313,6 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         ClientConnectionStrategyConfig connectionStrategyConfig = clientConfig.getConnectionStrategyConfig();
         assertTrue(connectionStrategyConfig.isAsyncStart());
         assertEquals(ClientConnectionStrategyConfig.ReconnectMode.ASYNC, connectionStrategyConfig.getReconnectMode());
-        assertEquals("com.hazelcast.example.CustomConnectionStrategy", connectionStrategyConfig.getClassName());
-        assertEquals(1, connectionStrategyConfig.getProperties().size());
-        assertEquals("bar", connectionStrategyConfig.getProperty("foo"));
     }
 
     @Test
