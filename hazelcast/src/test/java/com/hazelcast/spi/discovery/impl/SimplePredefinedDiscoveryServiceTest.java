@@ -88,5 +88,4 @@ public class SimplePredefinedDiscoveryServiceTest {
             return null;
         }
     }
-
 }

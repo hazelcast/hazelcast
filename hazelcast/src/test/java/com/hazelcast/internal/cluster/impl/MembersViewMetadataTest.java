@@ -14,6 +14,7 @@ import static org.junit.Assert.assertNotEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class MembersViewMetadataTest {
+
     @Test
     public void equalsAndHashCode() throws Exception {
         final MembersViewMetadata metadata
@@ -25,7 +26,6 @@ public class MembersViewMetadataTest {
         assertEqualAndHashCode(
                 metadata,
                 new MembersViewMetadata(new Address("localhost", 1234), "memberUUID", new Address("localhost", 4321), 0));
-
 
         assertNotEqualAndHashCode(
                 metadata,

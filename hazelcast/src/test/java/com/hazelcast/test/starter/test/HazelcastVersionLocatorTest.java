@@ -33,7 +33,7 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.io.IOException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({SlowTest.class, ParallelTest.class})
@@ -63,5 +63,4 @@ public class HazelcastVersionLocatorTest {
         HashCode eeClientHash = md5Hash.hashBytes(eeClientBytes);
         assertEquals("b1cf93ec4bb9bcda8809b81349f48cb3", eeClientHash.toString());
     }
-
 }

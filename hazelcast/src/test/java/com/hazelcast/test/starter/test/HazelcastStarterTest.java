@@ -41,7 +41,7 @@ public class HazelcastStarterTest {
 
         HazelcastInstance alwaysRunningMember = HazelcastStarter.newHazelcastInstance("3.8", config, false);
 
-        assertEquals(alwaysRunningMember.getName(),"test-name");
+        assertEquals(alwaysRunningMember.getName(), "test-name");
         alwaysRunningMember.shutdown();
     }
 
@@ -70,7 +70,7 @@ public class HazelcastStarterTest {
 
         clientMap.put(1, 2);
 
-        assertEquals(2, (int)memberMap.get(1));
+        assertEquals(2, (int) memberMap.get(1));
 
         clientInstance.shutdown();
         memberInstance.shutdown();

@@ -90,9 +90,9 @@ public class MapProxyImplTest extends HazelcastTestSupport {
     private Config getConfigWithMapStore(String mapName, InitialLoadMode loadMode) {
         Config config = new Config();
         config.getMapConfig(mapName)
-              .getMapStoreConfig().setClassName("com.hazelcast.config.helpers.DummyMapStore")
-              .setInitialLoadMode(loadMode)
-              .setEnabled(true);
+                .getMapStoreConfig().setClassName("com.hazelcast.config.helpers.DummyMapStore")
+                .setInitialLoadMode(loadMode)
+                .setEnabled(true);
         return config;
     }
 }
