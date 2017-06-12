@@ -443,7 +443,8 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     private class SyncReplicaVersionTask implements Runnable {
         @Override
         public void run() {
-            if (!node.nodeEngine.isRunning() || !partitionService.isReplicaSyncAllowed()) {
+            if (!node.nodeEngine.isRunning() || !node.getNodeExtension().isStartCompleted()
+                    || !partitionService.isReplicaSyncAllowed()) {
                 return;
             }
 
