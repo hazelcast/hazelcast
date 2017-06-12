@@ -68,6 +68,13 @@ The following are the other improvements performed to solve the enhancement issu
 
 This section lists the fixed issues for Hazelcast 3.8 and 3.8.x releases.
 
+*3.8.3 Fixes*
+
+- In the case when the master node is terminated in the middle of a 2-phase transaction, the rollback for that transaction is not performed. This causes loss of data. [#10637]
+- Adding/removing listeners fails if a member is removed in the progress. [#10595]
+- When two callbacks are registered as callback to ClientDelegatingFuture, if one of them wants to deserialize the response while the other is does not, Hazelcast falsely gives null response to the one waiting a deserialized value.
+- IOException at the client side must be produced only if hazelcast.client.invocation.timeout.seconds is passed. [#9696]
+
 *3.8.2 Fixes*
 
 - Even though a CachePermission already exists, the respective PermissionType does not exist and cannot be configured programmatically or declaratively. [#10503]
