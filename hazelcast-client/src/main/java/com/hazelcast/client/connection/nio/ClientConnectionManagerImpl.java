@@ -164,8 +164,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
         connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
         connectionAttemptLimit = connAttemptLimit == 0 ? Integer.MAX_VALUE : connAttemptLimit;
-
-
     }
 
     private ClientConnectionStrategy initializeStrategy(ClientConnectionStrategyConfig connectionStrategyConfig,
@@ -723,6 +721,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         try {
             connectToClusterInternal();
         } catch (Exception e) {
+            logger.warning("Could not re-connect to cluster shutting down the client" + e.getMessage());
             client.getLifecycleService().shutdown();
         }
     }
