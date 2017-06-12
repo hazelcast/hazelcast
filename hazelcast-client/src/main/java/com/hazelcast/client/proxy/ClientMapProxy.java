@@ -35,6 +35,7 @@ import com.hazelcast.client.impl.protocol.codec.MapContainsValueCodec;
 import com.hazelcast.client.impl.protocol.codec.MapDeleteCodec;
 import com.hazelcast.client.impl.protocol.codec.MapEntriesWithPagingPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapEntriesWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapEntrySetCodec;
 import com.hazelcast.client.impl.protocol.codec.MapEvictAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapEvictCodec;
 import com.hazelcast.client.impl.protocol.codec.MapExecuteOnAllKeysCodec;
@@ -46,6 +47,7 @@ import com.hazelcast.client.impl.protocol.codec.MapForceUnlockCodec;
 import com.hazelcast.client.impl.protocol.codec.MapGetAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
 import com.hazelcast.client.impl.protocol.codec.MapGetEntryViewCodec;
+import com.hazelcast.client.impl.protocol.codec.MapIsEmptyCodec;
 import com.hazelcast.client.impl.protocol.codec.MapIsLockedCodec;
 import com.hazelcast.client.impl.protocol.codec.MapKeySetCodec;
 import com.hazelcast.client.impl.protocol.codec.MapKeySetWithPagingPredicateCodec;
@@ -68,11 +70,13 @@ import com.hazelcast.client.impl.protocol.codec.MapRemovePartitionLostListenerCo
 import com.hazelcast.client.impl.protocol.codec.MapReplaceCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReplaceIfSameCodec;
 import com.hazelcast.client.impl.protocol.codec.MapSetCodec;
+import com.hazelcast.client.impl.protocol.codec.MapSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.MapSubmitToKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.MapTryLockCodec;
 import com.hazelcast.client.impl.protocol.codec.MapTryPutCodec;
 import com.hazelcast.client.impl.protocol.codec.MapTryRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapUnlockCodec;
+import com.hazelcast.client.impl.protocol.codec.MapValuesCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPagingPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
 import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
@@ -143,9 +147,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1079,27 +1081,26 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public Collection<V> values() {
-//        ClientMessage request = MapValuesCodec.encodeRequest(name);
-//        ClientMessage response = invoke(request);
-//        MapValuesCodec.ResponseParameters resultParameters = MapValuesCodec.decodeResponse(response);
-//        return new UnmodifiableLazyList<V>(resultParameters.response, getSerializationService());
-        return new LinkedList<V>();
+        ClientMessage request = MapValuesCodec.encodeRequest(name);
+        ClientMessage response = invoke(request);
+        MapValuesCodec.ResponseParameters resultParameters = MapValuesCodec.decodeResponse(response);
+        return new UnmodifiableLazyList<V>(resultParameters.response, getSerializationService());
     }
 
     @Override
     public Set<Entry<K, V>> entrySet() {
-//        ClientMessage request = MapEntrySetCodec.encodeRequest(name);
-//        ClientMessage response = invoke(request);
-//        MapEntrySetCodec.ResponseParameters resultParameters = MapEntrySetCodec.decodeResponse(response);
-//
-//        InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
-//        InternalSerializationService serializationService = ((InternalSerializationService) getContext()
-//                .getSerializationService());
-//        for (Entry<Data, Data> row : resultParameters.response) {
-//            LazyMapEntry<K, V> entry = new LazyMapEntry<K, V>(row.getKey(), row.getValue(), serializationService);
-//            setBuilder.add(entry);
-//        }
-        return new HashSet<Entry<K, V>>();
+        ClientMessage request = MapEntrySetCodec.encodeRequest(name);
+        ClientMessage response = invoke(request);
+        MapEntrySetCodec.ResponseParameters resultParameters = MapEntrySetCodec.decodeResponse(response);
+
+        InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
+        InternalSerializationService serializationService = ((InternalSerializationService) getContext()
+                .getSerializationService());
+        for (Entry<Data, Data> row : resultParameters.response) {
+            LazyMapEntry<K, V> entry = new LazyMapEntry<K, V>(row.getKey(), row.getValue(), serializationService);
+            setBuilder.add(entry);
+        }
+        return setBuilder.build();
     }
 
     @Override
@@ -1464,20 +1465,18 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public int size() {
-//        ClientMessage request = MapSizeCodec.encodeRequest(name);
-//        ClientMessage response = invoke(request);
-//        MapSizeCodec.ResponseParameters resultParameters = MapSizeCodec.decodeResponse(response);
-//        return resultParameters.response;
-        return 5;
+        ClientMessage request = MapSizeCodec.encodeRequest(name);
+        ClientMessage response = invoke(request);
+        MapSizeCodec.ResponseParameters resultParameters = MapSizeCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     @Override
     public boolean isEmpty() {
-//        ClientMessage request = MapIsEmptyCodec.encodeRequest(name);
-//        ClientMessage response = invoke(request);
-//        MapIsEmptyCodec.ResponseParameters resultParameters = MapIsEmptyCodec.decodeResponse(response);
-//        return resultParameters.response;
-        return true;
+        ClientMessage request = MapIsEmptyCodec.encodeRequest(name);
+        ClientMessage response = invoke(request);
+        MapIsEmptyCodec.ResponseParameters resultParameters = MapIsEmptyCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     @Override

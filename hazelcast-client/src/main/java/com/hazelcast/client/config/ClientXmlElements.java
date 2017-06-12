@@ -33,7 +33,7 @@ enum ClientXmlElements {
     EXECUTOR_POOL_SIZE("executor-pool-size", false),
     LICENSE_KEY("license-key", false),
     INSTANCE_NAME("instance-name", false),
-    CONNECTION_STRATEGY("connection-strategy",false);
+    CONNECTION_STRATEGY("connection-strategy", false);
 
 
     final String name;

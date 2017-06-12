@@ -137,9 +137,6 @@ public abstract class AbstractSerializationService implements InternalSerializat
         checkNotNull(obj);
 
         BufferPool pool = bufferPoolThreadLocal.get();
-        if(pool == null){
-
-        }
         BufferObjectDataOutput out = pool.takeOutputBuffer();
         try {
             out.position(leftPadding);

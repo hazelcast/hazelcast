@@ -21,11 +21,13 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.annotation.Beta;
 
 /**
  * An abstract class called from {@link ClientConnectionManager} to customize how client connect to cluster
  * and various behaviours like async start or restart.
  */
+@Beta
 public abstract class ClientConnectionStrategy {
 
     protected ClientContext clientContext;
@@ -47,8 +49,8 @@ public abstract class ClientConnectionStrategy {
     /**
      * Called after {@link ClientConnectionManager} started.
      * Connecting to cluster can be triggered from this method using one of
-     * {@link com.hazelcast.nio.ConnectionManager#connectToCluster} or
-     * {@link com.hazelcast.nio.ConnectionManager#connectToClusterAsync}
+     * {@link com.hazelcast.client.connection.ClientConnectionManager#connectToCluster} or
+     * {@link com.hazelcast.client.connection.ClientConnectionManager#connectToClusterAsync}
      */
     public abstract void start();
 

@@ -411,8 +411,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         try {
             connectionManager.start(clientContext);
         } catch (Exception e) {
-//            TODO move to connection manager
-            lifecycleService.shutdown();
             throw rethrow(e);
         }
 
@@ -426,7 +424,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         diagnostics.register(
                 new SystemLogPlugin(properties, connectionManager, this, loggingService.getLogger(SystemLogPlugin.class)));
         diagnostics.register(
-                new NetworkingPlugin(properties, connectionManager.getEventLoopGroup(), loggingService.getLogger(NetworkingPlugin.class)));
+                new NetworkingPlugin(properties, connectionManager.getEventLoopGroup(),
+                        loggingService.getLogger(NetworkingPlugin.class)));
 
         metricsRegistry.collectMetrics(listenerService);
 

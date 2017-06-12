@@ -38,6 +38,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.networking.OutboundFrame;
+import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -122,7 +123,8 @@ class TestClientRegistry {
         }
 
         @Override
-        protected void initEventLoopGroup(HazelcastClientInstanceImpl client) {
+        protected NioEventLoopGroup initEventLoopGroup(HazelcastClientInstanceImpl client) {
+            return null;
         }
 
         @Override

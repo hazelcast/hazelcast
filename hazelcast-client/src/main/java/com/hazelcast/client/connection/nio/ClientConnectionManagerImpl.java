@@ -19,7 +19,6 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.ClientTypes;
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.SocketOptions;
@@ -123,7 +122,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
     private final Credentials credentials;
     private final AtomicLong correlationIddOfLastAuthentication = new AtomicLong(0);
-    private NioEventLoopGroup eventLoopGroup;
+    private final NioEventLoopGroup eventLoopGroup;
 
     private volatile Address ownerConnectionAddress;
 
@@ -143,8 +142,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
         this.logger = client.getLoggingService().getLogger(ClientConnectionManager.class);
 
-        ClientConfig config = client.getClientConfig();
-        ClientNetworkConfig networkConfig = config.getNetworkConfig();
+        ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
 
         final int connTimeout = networkConfig.getConnectionTimeout();
         this.connectionTimeout = connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
@@ -152,16 +150,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         this.socketOptions = networkConfig.getSocketOptions();
 
-        initEventLoopGroup(client);
+        this.eventLoopGroup = initEventLoopGroup(client);
 
-        ClientExtension clientExtension = client.getClientExtension();
-        this.channelFactory = clientExtension.createSocketChannelWrapperFactory();
+        this.channelFactory = client.getClientExtension().createSocketChannelWrapperFactory();
         this.socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
 
         this.credentials = client.getCredentials();
         ClientConnectionStrategyConfig strategyConfig = client.getClientConfig().getConnectionStrategyConfig();
-        ClassLoader classLoader = client.getClientConfig().getClassLoader();
-        this.connectionStrategy = initializeStrategy(strategyConfig, classLoader);
+        this.connectionStrategy = initializeStrategy(strategyConfig, client.getClientConfig().getClassLoader());
         this.clusterConnectionExecutor = createSingleThreadExecutorService(client);
         this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
         this.addressProviders = addressProviders;
@@ -193,7 +189,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         return eventLoopGroup;
     }
 
-    protected void initEventLoopGroup(HazelcastClientInstanceImpl client) {
+    protected NioEventLoopGroup initEventLoopGroup(HazelcastClientInstanceImpl client) {
         HazelcastProperties properties = client.getProperties();
         boolean directBuffer = properties.getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
 
@@ -217,7 +213,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             outputThreads = configuredOutputThreads;
         }
 
-        eventLoopGroup = new NioEventLoopGroup(
+        return new NioEventLoopGroup(
                 client.getLoggingService(),
                 client.getMetricsRegistry(),
                 client.getName(),
@@ -271,7 +267,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
         clusterConnectionExecutor.shutdown();
         ClientExecutionServiceImpl.shutdownExecutor("clusterExecutor", clusterConnectionExecutor, logger);
-        ;
         for (Connection connection : activeConnections.values()) {
             connection.close("Hazelcast client is shutting down", null);
         }
@@ -725,6 +720,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
     @Override
     public void connectToCluster() {
+        try {
+            connectToClusterInternal();
+        } catch (Exception e) {
+            client.getLifecycleService().shutdown();
+        }
+    }
+
+    private void connectToClusterInternal() {
         int attempt = 0;
         Set<InetSocketAddress> triedAddresses = new HashSet<InetSocketAddress>();
         while (attempt < connectionAttemptLimit) {
@@ -767,7 +770,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             @Override
             public void run() {
                 try {
-                    connectToCluster();
+                    connectToClusterInternal();
                 } catch (Exception e) {
                     logger.warning("Could not re-connect to cluster shutting down the client" + e.getMessage());
                     new Thread(new Runnable() {

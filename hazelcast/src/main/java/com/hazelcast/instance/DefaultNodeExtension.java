@@ -78,7 +78,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
 
 @PrivateApi
-@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class DefaultNodeExtension implements NodeExtension {
 
     protected final Node node;
@@ -147,7 +147,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
             byte version = (byte) node.getProperties().getInteger(GroupProperty.SERIALIZATION_VERSION);
 
-            ss = (InternalSerializationService) builder.setClassLoader(configClassLoader)
+            ss = builder.setClassLoader(configClassLoader)
                     .setConfig(serializationConfig)
                     .setManagedContext(hazelcastInstance.managedContext)
                     .setPartitioningStrategy(partitioningStrategy)

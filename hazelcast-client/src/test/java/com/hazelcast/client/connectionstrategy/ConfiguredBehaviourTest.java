@@ -35,6 +35,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -312,6 +313,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
     }
 
     @Test
+    @Ignore
     public void testCustomStrategyImplSyncReConnect() {
         final AtomicInteger initCount = new AtomicInteger(0);
         final AtomicInteger onConnectToClusterCount = new AtomicInteger();
