@@ -26,7 +26,7 @@ import static com.hazelcast.client.config.ClientConnectionStrategyConfig.Reconne
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 
 /**
- *
+ * Default client connection strategy supporting async client start, reconnection modes and disabling reconnection.
  */
 public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
 
