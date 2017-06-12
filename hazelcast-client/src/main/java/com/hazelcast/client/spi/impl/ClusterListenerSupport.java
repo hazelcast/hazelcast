@@ -93,10 +93,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         return ownerConnectionAddress;
     }
 
-    public void setOwnerConnectionAddress(Address ownerConnectionAddress) {
-        this.ownerConnectionAddress = ownerConnectionAddress;
-    }
-
     public void shutdown() {
         clusterExecutor.shutdown();
         try {
@@ -196,7 +192,11 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                 Address address = new Address(inetSocketAddress);
                 logger.info("Trying to connect to " + address + " as owner member");
                 connection = connectionManager.getOrConnect(address, true);
-                clientMembershipListener.listenMembershipEvents(ownerConnectionAddress);
+                clientMembershipListener.listenMembershipEvents(connection);
+                ClientUserCodeDeploymentService userCodeDeploymentService = client.getUserCodeDeploymentService();
+                userCodeDeploymentService.deploy(client, connection);
+                ownerConnectionAddress = connection.getEndPoint();
+                logger.info("Setting " + connection + " as owner  with principal " + principal);
                 fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
                 return true;
             } catch (Exception e) {

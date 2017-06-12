@@ -76,11 +76,12 @@ public class ClassDataProviderTest {
                                                       String className, ClassSource classSource, ClassLoader parent) {
         ILogger logger = mock(ILogger.class);
         ConcurrentMap<String, ClassSource> classSourceMap = new ConcurrentHashMap<String, ClassSource>();
+        ConcurrentMap<String, ClassSource> clientClassSourceMap = new ConcurrentHashMap<String, ClassSource>();
         classSourceMap.put(className, classSource);
-        return new ClassDataProvider(providerMode, parent, classSourceMap, logger);
+        return new ClassDataProvider(providerMode, parent, classSourceMap, clientClassSourceMap, logger);
     }
 
     private static ClassSource newMockClassSource(String classname) {
-        return new ClassSource(classname, new byte[0], null, null);
+        return new ClassSource(null, null);
     }
 }

@@ -54,14 +54,22 @@ public final class UserCodeDeploymentService implements ManagedService {
         Filter<String> classNameFilter = parseClassNameFilters(config);
         Filter<Member> memberFilter = parseMemberFilter(config.getProviderFilter());
         ConcurrentMap<String, ClassSource> classMap = new ConcurrentHashMap<String, ClassSource>();
+        ConcurrentMap<String, ClassSource> clientClassMap = new ConcurrentHashMap<String, ClassSource>();
 
         UserCodeDeploymentConfig.ProviderMode providerMode = config.getProviderMode();
         ILogger providerLogger = nodeEngine.getLogger(ClassDataProvider.class);
-        provider = new ClassDataProvider(providerMode, parent, classMap, providerLogger);
+        provider = new ClassDataProvider(providerMode, parent, classMap, clientClassMap, providerLogger);
 
         UserCodeDeploymentConfig.ClassCacheMode classCacheMode = config.getClassCacheMode();
-        locator = new ClassLocator(classMap, parent, classNameFilter, memberFilter, classCacheMode, nodeEngine);
+        locator = new ClassLocator(classMap, clientClassMap, parent, classNameFilter, memberFilter, classCacheMode, nodeEngine);
         enabled = config.isEnabled();
+    }
+
+    public void defineClass(String name, byte[] classDefinition) {
+        if (!enabled) {
+            throw new IllegalStateException("User Code Deployment is not enabled.");
+        }
+        locator.defineClassFromClient(name, classDefinition);
     }
 
     // called by operations sent by other members

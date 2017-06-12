@@ -567,8 +567,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                             connection.setIsAuthenticatedAsOwner();
                             ClientPrincipal principal = new ClientPrincipal(result.uuid, result.ownerUuid);
                             clusterService.setPrincipal(principal);
-                            clusterService.setOwnerConnectionAddress(connection.getEndPoint());
-                            logger.info("Setting " + connection + " as owner  with principal " + principal);
                         }
                         onAuthenticated(target, connection);
                         callback.onSuccess(connection, asOwner);

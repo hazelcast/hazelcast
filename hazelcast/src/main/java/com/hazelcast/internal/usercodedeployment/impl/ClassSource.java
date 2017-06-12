@@ -18,6 +18,9 @@ package com.hazelcast.internal.usercodedeployment.impl;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Classloader created on a local member to define a class from a bytecode loaded from a remote source.
  *
@@ -27,33 +30,33 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * Delegation model:
  * 1. When the request matches the specific classname then it will provide the class on its own
  * 2. Then it delegates to the parent classloader - that's usually a regular classloader loading classes
- *    from a local classpath only
+ * from a local classpath only
  * 3. Finally it delegates to {@link ClassLocator} which may initiate a remote lookup
  */
 public final class ClassSource extends ClassLoader {
 
-    private final byte[] bytecode;
+    private Map<String, Class> classes = new ConcurrentHashMap<String, Class>();
+    private Map<String, byte[]> bytecodes = new ConcurrentHashMap<String, byte[]>();
     private final ClassLocator classLocator;
-    private Class clazz;
-    private final String name;
 
     @SuppressFBWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})
-    public ClassSource(String classname, byte[] bytecode, ClassLoader parent, ClassLocator classLocator) {
+    public ClassSource(ClassLoader parent, ClassLocator classLocator) {
         super(parent);
-        this.bytecode = bytecode;
-        this.name = classname;
         this.classLocator = classLocator;
     }
 
-    public Class<?> define() {
-        clazz = defineClass(name, bytecode, 0, bytecode.length);
+    public Class<?> define(String name, byte[] bytecode) {
+        Class clazz = defineClass(name, bytecode, 0, bytecode.length);
+        classes.put(name, clazz);
+        bytecodes.put(name, bytecode);
         return clazz;
     }
 
     @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        if (name.equals(this.name)) {
-            return clazz;
+        Class aClass = classes.get(name);
+        if (aClass != null) {
+            return aClass;
         }
         try {
             return super.loadClass(name, resolve);
@@ -63,11 +66,11 @@ public final class ClassSource extends ClassLoader {
     }
 
     @SuppressFBWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})
-    public byte[] getBytecode() {
-        return bytecode;
+    public byte[] getBytecode(String name) {
+        return bytecodes.get(name);
     }
 
-    public Class getClazz() {
-        return clazz;
+    public Class getClazz(String name) {
+        return classes.get(name);
     }
 }

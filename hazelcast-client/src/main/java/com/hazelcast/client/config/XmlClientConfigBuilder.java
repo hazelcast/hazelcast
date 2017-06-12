@@ -69,6 +69,7 @@ import static com.hazelcast.client.config.ClientXmlElements.PROXY_FACTORIES;
 import static com.hazelcast.client.config.ClientXmlElements.QUERY_CACHES;
 import static com.hazelcast.client.config.ClientXmlElements.SECURITY;
 import static com.hazelcast.client.config.ClientXmlElements.SERIALIZATION;
+import static com.hazelcast.client.config.ClientXmlElements.USER_CODE_DEPLOYMENT;
 import static com.hazelcast.client.config.ClientXmlElements.canOccurMultipleTimes;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
@@ -245,7 +246,34 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             clientConfig.setLicenseKey(getTextContent(node));
         } else if (INSTANCE_NAME.isEqual(nodeName)) {
             clientConfig.setInstanceName(getTextContent(node));
+        } else if (USER_CODE_DEPLOYMENT.isEqual(nodeName)) {
+            handleUserCodeDeployment(node);
         }
+    }
+
+    private void handleUserCodeDeployment(Node node) {
+        NamedNodeMap atts = node.getAttributes();
+        Node enabledNode = atts.getNamedItem("enabled");
+        boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
+        ClientUserCodeDeploymentConfig userCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+        userCodeDeploymentConfig.setEnabled(enabled);
+
+        for (Node child : childElements(node)) {
+            String childNodeName = cleanNodeName(child);
+            if ("classnames".equals(childNodeName)) {
+                for (Node classNameNode : childElements(child)) {
+                    userCodeDeploymentConfig.addClass(getTextContent(classNameNode));
+                }
+            } else if ("jarpaths".equals(childNodeName)) {
+                for (Node jarPathNode : childElements(child)) {
+                    userCodeDeploymentConfig.addJar(getTextContent(jarPathNode));
+                }
+            } else {
+                throw new InvalidConfigurationException("User code deployement can either be className or jarPath. "
+                        + childNodeName + " is invalid");
+            }
+        }
+        clientConfig.setUserCodeDeploymentConfig(userCodeDeploymentConfig);
     }
 
     private void handleExecutorPoolSize(Node node) {

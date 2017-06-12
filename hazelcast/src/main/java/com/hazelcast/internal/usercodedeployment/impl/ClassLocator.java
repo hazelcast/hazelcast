@@ -29,9 +29,12 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 
 import java.io.Closeable;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Provides classes to a local member.
@@ -43,7 +46,9 @@ import java.util.concurrent.Future;
  * remote members.
  */
 public final class ClassLocator {
+    private static final Pattern CLASS_PATTERN = Pattern.compile("^(.*)\\$.*");
     private final ConcurrentMap<String, ClassSource> classSourceMap;
+    private final ConcurrentMap<String, ClassSource> clientClassSourceMap;
     private final ClassLoader parent;
     private final Filter<String> classNameFilter;
     private final Filter<Member> memberFilter;
@@ -53,9 +58,11 @@ public final class ClassLocator {
     private final ILogger logger;
 
     public ClassLocator(ConcurrentMap<String, ClassSource> classSourceMap,
+                        ConcurrentMap<String, ClassSource> clientClassSourceMap,
                         ClassLoader parent, Filter<String> classNameFilter, Filter<Member> memberFilter,
                         UserCodeDeploymentConfig.ClassCacheMode classCacheMode, NodeEngine nodeEngine) {
         this.classSourceMap = classSourceMap;
+        this.clientClassSourceMap = clientClassSourceMap;
         this.parent = parent;
         this.classNameFilter = classNameFilter;
         this.memberFilter = memberFilter;
@@ -84,6 +91,36 @@ public final class ClassLocator {
         return tryToGetClassFromRemote(name);
     }
 
+    public void defineClassFromClient(String name, byte[] classDef) {
+        // we need to acquire a classloading lock before defining a class
+        // Java 7+ can use locks with per-class granularity while Java 6 has to use a single lock
+        // mutexFactory abstract these differences away
+        String parentClassName = extractParentClassName(name);
+        Closeable classMutex = mutexFactory.getMutexForClass(parentClassName);
+        try {
+            synchronized (classMutex) {
+                ClassSource classSource = clientClassSourceMap.get(parentClassName);
+                if (classSource != null) {
+                    if (classSource.getClazz(name) != null) {
+                        if (!Arrays.equals(classDef, classSource.getBytecode(name))) {
+                            throw new IllegalStateException("Class " + name
+                                    + " is already in a local cache and conflicting byte code representation");
+                        } else if (logger.isFineEnabled()) {
+                            logger.finest("Class " + name + " is already in a local cache. ");
+                        }
+                        return;
+                    }
+                } else {
+                    classSource = new ClassSource(parent, this);
+                    clientClassSourceMap.put(parentClassName, classSource);
+                }
+                classSource.define(name, classDef);
+            }
+        } finally {
+            IOUtil.closeResource(classMutex);
+        }
+    }
+
     private Class<?> tryToGetClassFromRemote(String name) throws ClassNotFoundException {
         // we need to acquire a classloading lock before defining a class
         // Java 7+ can use locks with per-class granularity while Java 6 has to use a single lock
@@ -96,7 +133,7 @@ public final class ClassLocator {
                     if (logger.isFineEnabled()) {
                         logger.finest("Class " + name + " is already in a local cache. ");
                     }
-                    return classSource.getClazz();
+                    return classSource.getClazz(name);
                 }
                 byte[] classDef = fetchBytecodeFromRemote(name);
                 if (classDef == null) {
@@ -115,26 +152,48 @@ public final class ClassLocator {
             if (logger.isFineEnabled()) {
                 logger.finest("Class " + name + " is already in a local cache. ");
             }
-            return classSource.getClazz();
+            return classSource.getClazz(name);
+        }
+
+        classSource = clientClassSourceMap.get(extractParentClassName(name));
+        if (classSource != null) {
+            Class clazz = classSource.getClazz(name);
+            if (clazz != null) {
+                if (logger.isFineEnabled()) {
+                    logger.finest("Class " + name + " is already in a local cache. ");
+                }
+                return clazz;
+            }
         }
 
         classSource = ThreadLocalClassCache.getFromCache(name);
         if (classSource != null) {
-            return classSource.getClazz();
+            return classSource.getClazz(name);
+        }
+        return null;
+    }
+
+    public static String extractParentClassName(String className) {
+        if (!className.contains("$")) {
+            return className;
+        }
+        Matcher matcher = CLASS_PATTERN.matcher(className);
+        if (matcher.matches()) {
+            return matcher.group(1);
         }
         return null;
     }
 
     // called while holding class lock
     private Class<?> defineAndCacheClass(String name, byte[] classDef) {
-        ClassSource classSource = new ClassSource(name, classDef, parent, this);
-        classSource.define();
+        ClassSource classSource = new ClassSource(parent, this);
+        classSource.define(name, classDef);
         if (classCacheMode != UserCodeDeploymentConfig.ClassCacheMode.OFF) {
             classSourceMap.put(name, classSource);
         } else {
             ThreadLocalClassCache.store(name, classSource);
         }
-        return classSource.getClazz();
+        return classSource.getClazz(name);
     }
 
     // called while holding class lock
@@ -201,6 +260,6 @@ public final class ClassLocator {
         if (classSource == null) {
             return null;
         }
-        return classSource.getClazz();
+        return classSource.getClazz(name);
     }
 }

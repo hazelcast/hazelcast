@@ -160,5 +160,13 @@
         </query-cache>
     </query-caches>
 
+    <user-code-deployment enabled="true">
+        <jarPaths>
+            <jarPath>/User/test/sample.jar</jarPath>
+        </jarPaths>
+        <classNames>
+            <className>test.sampleClassName</className>
+        </classNames>
+    </user-code-deployment>
 
 </hazelcast-client>

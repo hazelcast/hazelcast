@@ -111,6 +111,10 @@ public class PermissionConfig {
          */
         CACHE("cache-permission"),
         /**
+         * User code deployment
+         */
+        USER_CODE_DEPLOYMENT("user-code-deployment"),
+        /**
          * All
          */
         ALL("all-permissions");
