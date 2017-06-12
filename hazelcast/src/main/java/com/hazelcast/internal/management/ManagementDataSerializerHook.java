@@ -17,10 +17,12 @@
 package com.hazelcast.internal.management;
 
 import com.hazelcast.internal.management.dto.MapConfigDTO;
+import com.hazelcast.internal.management.dto.PermissionConfigDTO;
 import com.hazelcast.internal.management.operation.AddWanConfigOperation;
 import com.hazelcast.internal.management.operation.ScriptExecutorOperation;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
 import com.hazelcast.internal.management.operation.UpdateMapConfigOperation;
+import com.hazelcast.internal.management.operation.UpdatePermissionConfigOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
@@ -40,8 +42,10 @@ public class ManagementDataSerializerHook implements DataSerializerHook {
     public static final int UPDATE_MAP_CONFIG = 2;
     public static final int MAP_CONFIG_DTO = 3;
     public static final int ADD_WAN_CONFIG = 4;
+    public static final int UPDATE_PERMISSION_CONFIG_OPERATION = 5;
+    public static final int PERMISSION_CONFIG_DTO = 6;
 
-    private static final int LEN = ADD_WAN_CONFIG + 1;
+    private static final int LEN = PERMISSION_CONFIG_DTO + 1;
 
     @Override
     public int getFactoryId() {
@@ -78,6 +82,19 @@ public class ManagementDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new AddWanConfigOperation();
+            }
+        };
+        constructors[UPDATE_PERMISSION_CONFIG_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new UpdatePermissionConfigOperation();
+            }
+        };
+
+        constructors[PERMISSION_CONFIG_DTO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PermissionConfigDTO();
             }
         };
 
