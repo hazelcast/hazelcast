@@ -42,7 +42,16 @@
     </group>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <instance-name>dummy</instance-name>
-    <management-center enabled="true" update-interval="5">http://mywebserver:8080</management-center>
+    <management-center enabled="true" update-interval="5">
+        <url>http://mywebserver:8080</url>
+        <mutual-auth enabled="true">
+            <factory-class-name>com.hazelcast.examples.MySSLContextFactory</factory-class-name>
+            <properties>
+                <property name="foo">bar</property>
+            </properties>
+        </mutual-auth>
+    </management-center>
+
     <properties>
         <property name="foo">bar</property>
     </properties>

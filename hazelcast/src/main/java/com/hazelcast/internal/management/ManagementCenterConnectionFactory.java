@@ -14,26 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.ssl;
+package com.hazelcast.internal.management;
 
-import javax.net.ssl.SSLContext;
-import java.util.Properties;
+import com.hazelcast.config.MCMutualAuthConfig;
 
-/**
- * Factory class for creating {@link javax.net.ssl.SSLContext}
- */
-public interface SSLContextFactory {
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLConnection;
 
-    /**
-     * Initializes this class with config from {@link com.hazelcast.config.SSLConfig}
-     *
-     * @param properties properties form config
-     * @throws Exception
-     */
-    void init(Properties properties) throws Exception;
+public interface ManagementCenterConnectionFactory {
 
-    /**
-     * @return SSLContext
-     */
-    SSLContext getSSLContext();
+    void init(MCMutualAuthConfig config)
+            throws Exception;
+
+    URLConnection openConnection(URL url)
+            throws IOException;
+
 }

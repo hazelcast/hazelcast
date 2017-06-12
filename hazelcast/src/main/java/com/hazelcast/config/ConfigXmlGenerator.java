@@ -99,12 +99,8 @@ public class ConfigXmlGenerator {
                 .node("license-key", MASK_FOR_SESITIVE_DATA)
                 .node("instance-name", config.getInstanceName());
 
-        if (config.getManagementCenterConfig() != null) {
-            final ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
-            gen.node("management-center", mcConfig.getUrl(),
-                    "enabled", mcConfig.isEnabled(),
-                    "update-interval", mcConfig.getUpdateInterval());
-        }
+
+        manCenterXmlGenerator(gen, config);
         gen.appendProperties(config.getProperties());
         wanReplicationXmlGenerator(gen, config);
         networkConfigXmlGenerator(gen, config);
@@ -135,6 +131,20 @@ public class ConfigXmlGenerator {
         xml.append("</hazelcast>");
 
         return format(xml.toString(), INDENT);
+    }
+
+    private static void manCenterXmlGenerator(XmlGenerator gen, Config config) {
+        if (config.getManagementCenterConfig() != null) {
+            final ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
+            gen.open("management-center",
+                    "enabled", mcConfig.isEnabled(),
+                    "update-interval", mcConfig.getUpdateInterval());
+            gen.node("url", mcConfig.getUrl());
+            if (mcConfig.getUrl() != null) {
+                mcMutualAuthConfigXmlGenerator(gen, config.getManagementCenterConfig());
+            }
+            gen.close();
+        }
     }
 
     private static void collectionXmlGenerator(XmlGenerator gen, String type, Collection<? extends CollectionConfig> configs) {
@@ -857,6 +867,10 @@ public class ConfigXmlGenerator {
             Properties props = new Properties();
             props.putAll(ssl.getProperties());
 
+            if (props.containsKey("trustStorePassword")) {
+                props.setProperty("trustStorePassword", MASK_FOR_SESITIVE_DATA);
+            }
+
             if (props.containsKey("keyStorePassword")) {
                 props.setProperty("keyStorePassword", MASK_FOR_SESITIVE_DATA);
             }
@@ -864,6 +878,29 @@ public class ConfigXmlGenerator {
             gen.node("factory-class-name",
                     classNameOrImplClass(ssl.getFactoryClassName(), ssl.getFactoryImplementation()))
                     .appendProperties(props);
+        }
+        gen.close();
+    }
+
+    private static void mcMutualAuthConfigXmlGenerator(XmlGenerator gen, ManagementCenterConfig mcConfig) {
+        final MCMutualAuthConfig mutualAuthConfig = mcConfig.getMutualAuthConfig();
+        gen.open("mutual-auth", "enabled", mutualAuthConfig != null && mutualAuthConfig.isEnabled());
+        if (mutualAuthConfig != null) {
+
+            Properties props = new Properties();
+            props.putAll(mutualAuthConfig.getProperties());
+
+            if (props.containsKey("trustStorePassword")) {
+                props.setProperty("trustStorePassword", MASK_FOR_SESITIVE_DATA);
+            }
+
+            if (props.containsKey("keyStorePassword")) {
+                props.setProperty("keyStorePassword", MASK_FOR_SESITIVE_DATA);
+            }
+
+            gen.node("factory-class-name",
+                    classNameOrImplClass(mutualAuthConfig.getFactoryClassName(), mutualAuthConfig.getFactoryImplementation()))
+               .appendProperties(props);
         }
         gen.close();
     }

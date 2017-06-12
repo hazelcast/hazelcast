@@ -54,6 +54,7 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -1754,6 +1755,25 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         config.getNetworkConfig().setSSLConfig(sslConfig);
     }
 
+    private void handleMcMutualAuthConfig(Node node) {
+        MCMutualAuthConfig mcMutualAuthConfig = new MCMutualAuthConfig();
+        NamedNodeMap atts = node.getAttributes();
+        Node enabledNode = atts.getNamedItem("enabled");
+        boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
+        mcMutualAuthConfig.setEnabled(enabled);
+
+        for (Node n : childElements(node)) {
+            String nodeName = cleanNodeName(n);
+            if ("factory-class-name".equals(nodeName)) {
+                mcMutualAuthConfig.setFactoryClassName(getTextContent(n).trim());
+            } else if ("properties".equals(nodeName)) {
+                fillProperties(n, mcMutualAuthConfig.getProperties());
+            }
+        }
+
+        config.getManagementCenterConfig().setMutualAuthConfig(mcMutualAuthConfig);
+    }
+
     private void handleSocketInterceptorConfig(Node node) {
         SocketInterceptorConfig socketInterceptorConfig = parseSocketInterceptorConfig(node);
         config.getNetworkConfig().setSocketInterceptorConfig(socketInterceptorConfig);
@@ -1943,11 +1963,33 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         int interval = intervalNode != null ? getIntegerValue("update-interval",
                 getTextContent(intervalNode)) : ManagementCenterConfig.UPDATE_INTERVAL;
 
-        String url = getTextContent(node);
         ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();
         managementCenterConfig.setEnabled(enabled);
         managementCenterConfig.setUpdateInterval(interval);
-        managementCenterConfig.setUrl("".equals(url) ? null : url);
+
+        // < 3.9 - Backwards compatibility
+        boolean isComplexType = false;
+        List<String> complexTypeElements = Arrays.asList("url", "mutual-auth");
+        for (Node c : childElements(node)) {
+            if (complexTypeElements.contains(c.getNodeName())) {
+                isComplexType = true;
+                break;
+            }
+        }
+
+        if (!isComplexType) {
+            String url = getTextContent(node);
+            managementCenterConfig.setUrl("".equals(url) ? null : url);
+        } else {
+            for (Node child : childElements(node)) {
+                if ("url".equals(cleanNodeName(child))) {
+                    String url = getTextContent(child);
+                    managementCenterConfig.setUrl(url);
+                } else if ("mutual-auth".equals(cleanNodeName(child))) {
+                    handleMcMutualAuthConfig(child);
+                }
+            }
+        }
     }
 
     private void handleSecurity(Node node) throws Exception {

@@ -22,6 +22,7 @@ import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
+import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
@@ -233,6 +234,8 @@ public interface NodeExtension {
      * @return {@link TimedMemberStateFactory}
      */
     TimedMemberStateFactory createTimedMemberStateFactory(HazelcastInstanceImpl instance);
+
+    ManagementCenterConnectionFactory getManagementCenterConnectionFactory();
 
     /** Returns a byte array processor for incoming data on the Multicast joiner */
     ByteArrayProcessor createMulticastInputProcessor(IOService ioService);
