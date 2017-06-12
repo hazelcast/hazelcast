@@ -18,7 +18,6 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersViewMetadata;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -50,24 +49,8 @@ public class ExplicitSuspicionOp extends AbstractClusterOperation {
         Address suspectedAddress = getCallerAddress();
         getLogger().info("Received suspicion request from: " + suspectedAddress);
 
-        if (!isCallerValid(suspectedAddress)) {
-            return;
-        }
-
         final ClusterServiceImpl clusterService = getService();
         clusterService.handleExplicitSuspicion(membersViewMetadata, suspectedAddress);
-    }
-
-    private boolean isCallerValid(Address caller) {
-        ILogger logger = getLogger();
-
-        if (caller == null) {
-            if (logger.isFineEnabled()) {
-                logger.fine("Ignoring suspicion request, because sender is local or not known.");
-            }
-            return false;
-        }
-        return true;
     }
 
     @Override
