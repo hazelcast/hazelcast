@@ -174,7 +174,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         blockMessagesFromInstance(instance2, client);
 
         expectedException.expect(TargetDisconnectedException.class);
-        expectedException.expectMessage(containsString("HeartbeatManager"));
+        expectedException.expectMessage(containsString("Heartbeat"));
         map.put(keyOwnedByInstance2, randomString());
     }
 
@@ -192,7 +192,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         blockMessagesFromInstance(instance2, client);
 
         expectedException.expect(TargetDisconnectedException.class);
-        expectedException.expectMessage(containsString("HeartbeatManager"));
+        expectedException.expectMessage(containsString("Heartbeat"));
         try {
             map.putAsync(keyOwnedByInstance2, randomString()).get();
         } catch (ExecutionException e) {

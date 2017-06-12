@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 
@@ -130,8 +131,9 @@ public final class LifecycleServiceImpl implements LifecycleService {
         });
     }
 
-    public void setActive() {
+    public void setStarted() {
         active.set(true);
+        fireLifecycleEvent(STARTED);
     }
 
     @Override

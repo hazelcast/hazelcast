@@ -90,7 +90,6 @@ import com.hazelcast.core.ISemaphore;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.IdGenerator;
-import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
@@ -404,7 +403,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     public void start() {
-        lifecycleService.setActive();
+        lifecycleService.setStarted();
         invocationService.start();
         clusterService.start();
         ClientContext clientContext = new ClientContext(this);
@@ -434,7 +433,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         loadBalancer.init(getCluster(), config);
         partitionService.start();
         statistics.start();
-        lifecycleService.fireLifecycleEvent(LifecycleEvent.LifecycleState.STARTED);
         clientExtension.afterStart(this);
     }
 

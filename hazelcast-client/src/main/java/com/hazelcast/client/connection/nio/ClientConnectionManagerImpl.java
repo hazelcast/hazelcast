@@ -90,6 +90,7 @@ import static com.hazelcast.client.config.SocketOptions.DEFAULT_BUFFER_SIZE_BYTE
 import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
 import static com.hazelcast.client.spi.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
 import static com.hazelcast.spi.properties.GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
  * Implementation of {@link ClientConnectionManager}.
@@ -723,6 +724,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         } catch (Exception e) {
             logger.warning("Could not re-connect to cluster shutting down the client" + e.getMessage());
             client.getLifecycleService().shutdown();
+            throw rethrow(e);
         }
     }
 
