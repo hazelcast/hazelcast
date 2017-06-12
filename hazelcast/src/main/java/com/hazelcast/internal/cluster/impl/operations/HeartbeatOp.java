@@ -24,13 +24,14 @@ import com.hazelcast.internal.cluster.impl.MembersViewMetadata;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
 import static com.hazelcast.internal.cluster.impl.operations.VersionedClusterOperation.isGreaterOrEqualV39;
 
 /** A heartbeat sent from one cluster member to another. The sent timestamp is the cluster clock time of the sending member */
-public final class HeartbeatOp extends AbstractClusterOperation {
+public final class HeartbeatOp extends AbstractClusterOperation implements Versioned {
 
     private MembersViewMetadata senderMembersViewMetadata;
     private String targetUuid;

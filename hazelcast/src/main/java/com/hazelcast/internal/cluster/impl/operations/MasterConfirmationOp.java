@@ -22,12 +22,13 @@ import com.hazelcast.internal.cluster.impl.MembersViewMetadata;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
 import static com.hazelcast.internal.cluster.impl.operations.VersionedClusterOperation.isGreaterOrEqualV39;
 
-public class MasterConfirmationOp extends AbstractClusterOperation {
+public class MasterConfirmationOp extends AbstractClusterOperation implements Versioned {
 
     private static final String NON_AVAILABLE_UUID = "n/a";
 

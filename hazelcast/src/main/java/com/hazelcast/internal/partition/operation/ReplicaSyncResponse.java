@@ -29,6 +29,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -60,7 +61,8 @@ import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createError
  */
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class ReplicaSyncResponse extends AbstractPartitionOperation
-        implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation, AllowedDuringPassiveState {
+        implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation,
+        AllowedDuringPassiveState, Versioned {
 
     private Collection<Operation> operations;
     private ServiceNamespace namespace;
