@@ -110,7 +110,7 @@ public abstract class TcpIpConnection_BaseTest extends TcpIpConnection_AbstractT
 
         connAB.write(packet);
 
-        // wait for the packet to get written.
+        // wait for the packet to get written
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -155,7 +155,7 @@ public abstract class TcpIpConnection_BaseTest extends TcpIpConnection_AbstractT
 
         connAB.write(packet);
 
-        // wait for the packet to get read.
+        // wait for the packet to get read
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {

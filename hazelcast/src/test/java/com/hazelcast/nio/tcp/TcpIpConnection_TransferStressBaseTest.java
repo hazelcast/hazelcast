@@ -36,10 +36,11 @@ import static org.junit.Assert.assertEquals;
 /**
  * This test will concurrently write to a single connection and check if all the data transmitted, is received
  * on the other side.
- * <p/>
+ * <p>
  * In the past we had some issues with packet not getting written. So this test will write various size packets (from small
  * to very large).
  */
+@SuppressWarnings("WeakerAccess")
 public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnection_AbstractTest {
 
     // total running time for writer threads
@@ -59,40 +60,40 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
     }
 
     @Test
-    public void testTinyPackets() throws Exception {
+    public void testTinyPackets() {
         makePayloads(10);
         testPackets();
     }
 
     @Test
-    public void testSmallPackets() throws Exception {
+    public void testSmallPackets() {
         makePayloads(100);
         testPackets();
     }
 
     @Test
-    public void testMediumPackets() throws Exception {
+    public void testMediumPackets() {
         makePayloads(1000);
         testPackets();
     }
 
     @Test(timeout = 10 * 60 * 1000)
-    public void testLargePackets() throws Exception {
+    public void testLargePackets() {
         makePayloads(10000);
         testPackets((10 * 60 * 1000) - (WRITER_THREAD_RUNNING_TIME_IN_SECONDS * 1000));
     }
 
     @Test
-    public void testSemiRealisticPackets() throws Exception {
+    public void testSemiRealisticPackets() {
         makeSemiRealisticPayloads();
         testPackets();
     }
 
-    private void testPackets() throws Exception {
+    private void testPackets() {
         testPackets(ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
-    private void testPackets(long verifyTimeoutInMillis) throws Exception {
+    private void testPackets(long verifyTimeoutInMillis) {
         TcpIpConnection c = connect(connManagerA, addressB);
 
         WriteThread thread1 = new WriteThread(1, c);
@@ -259,7 +260,5 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
             }
             return packet;
         }
-
     }
-
 }

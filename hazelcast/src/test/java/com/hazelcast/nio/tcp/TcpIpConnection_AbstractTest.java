@@ -38,6 +38,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+@SuppressWarnings("WeakerAccess")
 public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport {
 
     protected EventLoopGroupFactory eventLoopGroupFactory = new Select_NioEventLoopGroupFactory();
@@ -47,18 +48,19 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
     protected InternalSerializationService serializationService;
 
     protected Address addressA;
-    protected TcpIpConnectionManager connManagerA;
-    protected MockIOService ioServiceA;
-    protected MetricsRegistryImpl metricsRegistryA;
-
     protected Address addressB;
-    protected TcpIpConnectionManager connManagerB;
-    protected MockIOService ioServiceB;
-    protected MetricsRegistryImpl metricsRegistryB;
-
-    protected TcpIpConnectionManager connManagerC;
     protected Address addressC;
+
+    protected TcpIpConnectionManager connManagerA;
+    protected TcpIpConnectionManager connManagerB;
+    protected TcpIpConnectionManager connManagerC;
+
+    protected MockIOService ioServiceA;
+    protected MockIOService ioServiceB;
     protected MockIOService ioServiceC;
+
+    protected MetricsRegistryImpl metricsRegistryA;
+    protected MetricsRegistryImpl metricsRegistryB;
     protected MetricsRegistryImpl metricsRegistryC;
 
     @Before
@@ -82,7 +84,7 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
         connManagerC = newConnectionManager(addressC.getPort(), metricsRegistryC);
         ioServiceC = (MockIOService) connManagerB.getIoService();
 
-        serializationService = (InternalSerializationService) new DefaultSerializationServiceBuilder()
+        serializationService = new DefaultSerializationServiceBuilder()
                 .addDataSerializableFactory(TestDataFactory.FACTORY_ID, new TestDataFactory())
                 .build();
     }

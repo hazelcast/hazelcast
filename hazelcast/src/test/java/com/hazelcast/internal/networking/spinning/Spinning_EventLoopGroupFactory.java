@@ -18,7 +18,6 @@ package com.hazelcast.internal.networking.spinning;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.ChannelFactory;
-import com.hazelcast.internal.networking.nio.NioChannelFactory;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.EventLoopGroupFactory;
 import com.hazelcast.nio.tcp.MemberChannelInitializer;
