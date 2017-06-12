@@ -19,6 +19,7 @@ package com.hazelcast.internal.adapter;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.query.Predicate;
 
 import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
@@ -118,6 +119,18 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     @Override
     @MethodNotAvailable
     public Map<K, Object> executeOnKeys(Set<K> keys, com.hazelcast.map.EntryProcessor entryProcessor) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public Map<K, Object> executeOnEntries(com.hazelcast.map.EntryProcessor entryProcessor) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public Map<K, Object> executeOnEntries(com.hazelcast.map.EntryProcessor entryProcessor, Predicate predicate) {
         throw new MethodNotAvailableException();
     }
 

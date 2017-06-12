@@ -18,6 +18,7 @@ package com.hazelcast.internal.adapter;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -145,6 +146,16 @@ public class ReplicatedMapDataStructureAdapterTest extends HazelcastTestSupport 
     public void testExecuteOnKeys() {
         Set<Integer> keys = new HashSet<Integer>(singleton(23));
         adapter.executeOnKeys(keys, new IMapReplaceEntryProcessor("value", "newValue"));
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testExecuteOnEntries() {
+        adapter.executeOnEntries(new IMapReplaceEntryProcessor("value", "newValue"));
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testExecuteOnEntriesWithPredicate() {
+        adapter.executeOnEntries(new IMapReplaceEntryProcessor("value", "newValue"), TruePredicate.INSTANCE);
     }
 
     @Test

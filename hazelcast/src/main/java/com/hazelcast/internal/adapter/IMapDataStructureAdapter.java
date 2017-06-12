@@ -20,6 +20,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 
 import javax.cache.integration.CompletionListener;
@@ -112,6 +113,16 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     @Override
     public Map<K, Object> executeOnKeys(Set<K> keys, com.hazelcast.map.EntryProcessor entryProcessor) {
         return map.executeOnKeys(keys, entryProcessor);
+    }
+
+    @Override
+    public Map<K, Object> executeOnEntries(com.hazelcast.map.EntryProcessor entryProcessor) {
+        return map.executeOnEntries(entryProcessor);
+    }
+
+    @Override
+    public Map<K, Object> executeOnEntries(com.hazelcast.map.EntryProcessor entryProcessor, Predicate predicate) {
+        return map.executeOnEntries(entryProcessor, predicate);
     }
 
     @Override
