@@ -17,11 +17,13 @@
 package com.hazelcast.security;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.PermissionConfig;
 
 import javax.security.auth.Subject;
 import java.security.Permission;
 import java.security.PermissionCollection;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * IPermissionPolicy is used to determine any {@link Subject}'s
@@ -45,6 +47,8 @@ public interface IPermissionPolicy {
      * @return PermissionCollection containing subject's permissions
      */
     PermissionCollection getPermissions(Subject subject, Class<? extends Permission> type);
+
+    boolean refreshClientPermissions(Set<PermissionConfig> permissionConfigs);
 
     /**
      * Destroys {@link IPermissionPolicy}.

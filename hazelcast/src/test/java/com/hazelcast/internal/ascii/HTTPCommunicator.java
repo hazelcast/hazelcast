@@ -190,6 +190,11 @@ public class HTTPCommunicator {
         return doPost(url, wanRepConfigJson).response;
     }
 
+    public String updateClientPermissions(String groupName, String groupPassword, String permConfJson) throws IOException {
+        String url = address + "mancenter/security/updateClientPermissions";
+        return doPost(url, groupName, groupPassword, permConfJson).response;
+    }
+
     private static HttpURLConnection setupConnection(String url, String method) throws IOException {
         HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
         urlConnection.setRequestMethod(method);

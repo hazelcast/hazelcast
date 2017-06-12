@@ -19,6 +19,7 @@ package com.hazelcast.internal.ascii;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
@@ -27,6 +28,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
+import com.hazelcast.internal.management.request.UpdatePermissionConfigRequest;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -38,6 +40,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -210,6 +214,16 @@ public class RestTest extends HazelcastTestSupport {
         WanReplicationConfigDTO dto = new WanReplicationConfigDTO(wanConfig);
         String result = communicator.addWanConfig(dto.toJson().toString());
         assertEquals("{\"status\":\"fail\",\"message\":\"java.lang.UnsupportedOperationException: Adding new WAN config is not supported.\"}", result);
+    }
+
+    @Test
+    public void updateClientPermissions() throws Exception {
+        Set<PermissionConfig> permissionConfigs = new HashSet<PermissionConfig>();
+        permissionConfigs.add(new PermissionConfig(PermissionConfig.PermissionType.MAP, "test", "*"));
+        UpdatePermissionConfigRequest request = new UpdatePermissionConfigRequest(permissionConfigs);
+        String result = communicator.updateClientPermissions(config.getGroupConfig().getName(),
+                config.getGroupConfig().getPassword(), request.toJson().toString());
+        assertEquals("{\"status\":\"fail\",\"message\":\"Security features are only available on Hazelcast Enterprise!\"}", result);
     }
 
     @Test

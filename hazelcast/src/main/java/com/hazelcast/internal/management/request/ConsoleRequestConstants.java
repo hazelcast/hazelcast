@@ -45,6 +45,7 @@ public final class ConsoleRequestConstants {
     public static final int REQUEST_TYPE_CLEAR_WAN_QUEUES = 40;
     public static final int REQUEST_TYPE_CACHE_ENTRY = 41;
     public static final int REQUEST_TYPE_PROMOTE_MEMBER = 42;
+    public static final int REQUEST_TYPE_UPDATE_PERMISSON_CONFIG = 43;
 
     private ConsoleRequestConstants() {
     }

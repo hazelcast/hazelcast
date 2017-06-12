@@ -130,6 +130,7 @@ import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.security.Credentials;
+import com.hazelcast.security.SecurityService;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryMode;
@@ -671,6 +672,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public LifecycleService getLifecycleService() {
         return lifecycleService;
+    }
+
+    @Override
+    public SecurityService getSecurityService() {
+        throw new UnsupportedOperationException();
     }
 
     @Override

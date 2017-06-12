@@ -55,6 +55,7 @@ import com.hazelcast.nio.tcp.MemberChannelOutboundHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -133,6 +134,8 @@ public class DefaultNodeExtension implements NodeExtension {
         return null;
     }
 
+
+
     public InternalSerializationService createSerializationService() {
         InternalSerializationService ss;
         try {
@@ -165,6 +168,12 @@ public class DefaultNodeExtension implements NodeExtension {
             throw ExceptionUtil.rethrow(e);
         }
         return ss;
+    }
+
+    @Override
+    public SecurityService getSecurityService() {
+        logger.warning("Security features are only available on Hazelcast Enterprise!");
+        return null;
     }
 
     protected PartitioningStrategy getPartitioningStrategy(ClassLoader configClassLoader) throws Exception {

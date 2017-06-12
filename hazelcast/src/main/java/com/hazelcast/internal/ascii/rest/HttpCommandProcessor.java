@@ -41,6 +41,7 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
     public static final String URI_WAN_SYNC_ALL_MAPS = URI_MANCENTER_BASE_URL + "/wan/sync/allmaps";
     public static final String URI_MANCENTER_WAN_CLEAR_QUEUES = URI_MANCENTER_BASE_URL + "/wan/clearWanQueues";
     public static final String URI_ADD_WAN_CONFIG = URI_MANCENTER_BASE_URL + "/wan/addWanConfig";
+    public static final String URI_UPDATE_CLIENT_PERMISSIONS = URI_MANCENTER_BASE_URL + "/security/updateClientPermissions";
     public static final String URI_HEALTH_URL = "/hazelcast/health";
 
     protected HttpCommandProcessor(TextCommandService textCommandService) {

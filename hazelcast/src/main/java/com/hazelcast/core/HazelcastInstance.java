@@ -25,6 +25,7 @@ import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
+import com.hazelcast.security.SecurityService;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -377,6 +378,13 @@ public interface HazelcastInstance {
     LifecycleService getLifecycleService();
 
     /**
+     *
+     * @return
+     */
+    SecurityService getSecurityService();
+
+    /**
+     *
      * @param serviceName name of the service
      * @param name        name of the object
      * @param <T>         type of the DistributedObject
