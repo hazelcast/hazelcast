@@ -469,7 +469,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         try {
             return super.executeOnKeysInternal(keys, dataKeys, entryProcessor);
         } finally {
-            for (Object key : serializeKeys ? dataKeys : keys) {
+            Set<?> ncKeys = serializeKeys ? dataKeys : keys;
+            for (Object key : ncKeys) {
                 invalidateNearCache(key);
             }
         }
