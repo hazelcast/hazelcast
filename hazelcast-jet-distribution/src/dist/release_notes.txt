@@ -1,6 +1,48 @@
-In this Release Notes document, you will find the new features, enhancements and fixes of the Hazelcast Jet release. 
+In this Release Notes document, you will find the new features and fixes of the Hazelcast Jet release. 
 The numbers in the square brackets refer to the issue number in Hazelcast Jet GitHub repository. You can reach to the full descriptions of the issues at https://github.com/hazelcast/hazelcast-jet/issues/<issue number>.
 The label in the brackets refer to the respective module.
+
+** Hazelcast Jet 0.4 **
+
+1. New Features
+
+[core] Infinite stream processing with event-time semantics using watermarks
+[core] Out of the box processsors for tumbling, sliding and session window aggregations. 
+[core] New AggregateOperation abstraction with several out of the box aggregators
+[core] Bootstrapper script for submitting a JAR and running a DAG from it [421]
+[core] Sources and Sinks reorganized into Sources and Sinks static classes
+[core] Added Sources.streamSocket() and Sinks.writeSocket() for reading from and writing to sockets [358, 363]
+[core] Added Sources.readFile(), Sources.streamFile() and Sources.writeFile() for reading and writing files [373, 376]
+[core] Added Sources.readCache() and Sinks.writeCache() for reading and writing to Hazelcast ICache [357]
+[core] Add diagnostic processors for debugging [426] 
+
+[java.util.stream] java.util.stream support for ICache [360]
+[pcf] Hazelcast Jet tile for Pivotal Cloud Foundry was released
+
+2. Enhancements 
+
+[core] Hazelcast IMDG updated to 3.8.2 and is now shaded in the Jet JAR [367]
+[core] Blocking outbox support for non-cooperative processors [372, 375]
+[core] JobFuture added to Processor.Context [381]
+[core] Processor.Context.index() renamed to globalProcessorIndex() and now returns a global index [405]
+[core] Fairer distribution of tasklets when number of cores is larger than number of tasklets in a job [443]
+[java.util.stream] Added configuration option to DistributedStream [359]
+
+3. Fixes
+
+[core] Missing return value for JobConfig.addJar() [393]
+[core] Improve reliability of ExecutionSerivce on shutdown [409]
+[core] Metaspace memory was not recovered fully when custom class loader is used [466]
+
+4. Code Samples Improvements
+
+- Sliding window Stock exchange streaming sample [19, 21]
+- Hazelcast IMap/IList/ICache sample [16]
+- PCF-integration with Spring Boot sample [17]
+- Socket reader and writer examples with Netty [15]
+- Read and write files example [24]
+- Top N streaming example [27]
+- HashJoin and CoGroup samples added [28, 29]
 
 ** Hazelcast Jet 0.3.1 **
 
