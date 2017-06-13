@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.Processor.Context;
-import com.hazelcast.jet.WatermarkPolicies;
 import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -31,24 +30,26 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.WatermarkEmissionPolicy.suppressDuplicates;
+import static com.hazelcast.jet.WatermarkPolicies.withFixedLag;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class InsertWatermarkPTest {
+public class InsertWatermarksPTest {
 
     private static final long LAG = 3;
 
     private MockClock clock;
-    private InsertWatermarkP<Item> p;
+    private InsertWatermarksP<Item> p;
     private ArrayDequeOutbox outbox;
     private List<String> resultToCheck = new ArrayList<>();
 
     public void setUp(int outboxCapacity) {
         clock = new MockClock(100);
-        p = new InsertWatermarkP<>(Item::getTimestamp, WatermarkPolicies.withFixedLag(LAG));
+        p = new InsertWatermarksP<>(Item::getTimestamp, withFixedLag(LAG).get(), suppressDuplicates());
 
         outbox = new ArrayDequeOutbox(new int[]{outboxCapacity}, new ProgressTracker());
         Context context = mock(Context.class);

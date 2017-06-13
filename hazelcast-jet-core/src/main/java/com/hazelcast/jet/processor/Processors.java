@@ -21,6 +21,7 @@ import com.hazelcast.jet.AggregateOperation;
 import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.WatermarkEmissionPolicy;
 import com.hazelcast.jet.WatermarkPolicy;
 import com.hazelcast.jet.ResettableSingletonTraverser;
 import com.hazelcast.jet.TimestampKind;
@@ -33,7 +34,7 @@ import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.jet.impl.processor.AggregateP;
 import com.hazelcast.jet.impl.processor.GroupByKeyP;
-import com.hazelcast.jet.impl.processor.InsertWatermarkP;
+import com.hazelcast.jet.impl.processor.InsertWatermarksP;
 import com.hazelcast.jet.impl.processor.SessionWindowP;
 import com.hazelcast.jet.impl.processor.SlidingWindowP;
 import com.hazelcast.jet.impl.processor.TransformP;
@@ -534,9 +535,10 @@ public final class Processors {
     @Nonnull
     public static <T> DistributedSupplier<Processor> insertWatermarks(
             @Nonnull DistributedToLongFunction<T> getTimestampF,
-            @Nonnull DistributedSupplier<WatermarkPolicy> newWmPolicyF
+            @Nonnull DistributedSupplier<WatermarkPolicy> newWmPolicyF,
+            @Nonnull WatermarkEmissionPolicy wmEmitPolicy
     ) {
-        return () -> new InsertWatermarkP<>(getTimestampF, newWmPolicyF.get());
+        return () -> new InsertWatermarksP<>(getTimestampF, newWmPolicyF.get(), wmEmitPolicy);
     }
 
     /**

@@ -32,7 +32,7 @@ public class WatermarkPolicies_limitingTimestampAndWallClockLag {
     private static final long TIMESTAMP_LAG = 3;
     private static final long WALL_CLOCK_LAG = 10;
     private long currTimeMs;
-    private WatermarkPolicy p = limitingTimestampAndWallClockLag(TIMESTAMP_LAG, WALL_CLOCK_LAG, () -> currTimeMs);
+    private WatermarkPolicy p = limitingTimestampAndWallClockLag(TIMESTAMP_LAG, WALL_CLOCK_LAG, () -> currTimeMs).get();
 
     @Test
     public void when_outOfOrderEvents_then_monotonicWm() {

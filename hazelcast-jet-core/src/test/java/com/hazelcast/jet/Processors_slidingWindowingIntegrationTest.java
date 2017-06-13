@@ -36,6 +36,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.AggregateOperations.counting;
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.WatermarkEmissionPolicy.emitByFrame;
 import static com.hazelcast.jet.WatermarkPolicies.limitingLagAndLull;
 import static com.hazelcast.jet.StreamingTestSupport.streamToString;
 import static com.hazelcast.jet.WindowDefinition.slidingWindowDef;
@@ -97,7 +98,7 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
         boolean isBatchLocal = isBatch;
         Vertex source = dag.newVertex("source", () -> new EmitListP(sourceEvents, isBatchLocal)).localParallelism(1);
         Vertex insertPP = dag.newVertex("insertPP", insertWatermarks(MyEvent::getTimestamp,
-                () -> limitingLagAndLull(500, 1000).throttleByFrame(wDef)))
+                limitingLagAndLull(500, 1000), emitByFrame(wDef)))
                 .localParallelism(1);
         Vertex sink = dag.newVertex("sink", writeList("sink"));
 

@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.function.DistributedLongSupplier;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.util.TimestampHistory;
 
 import javax.annotation.Nonnull;
@@ -66,10 +67,10 @@ public final class WatermarkPolicies {
      *            and the watermark
      */
     @Nonnull
-    public static WatermarkPolicy withFixedLag(long lag) {
+    public static DistributedSupplier<WatermarkPolicy> withFixedLag(long lag) {
         checkNotNegative(lag, "lag must not be negative");
 
-        return new WatermarkPolicyBase() {
+        return () -> new WatermarkPolicyBase() {
             @Override
             public long reportEvent(long timestamp) {
                 return makeWmAtLeast(timestamp - lag);
@@ -89,8 +90,8 @@ public final class WatermarkPolicies {
      *                   watermark to reach any observed event's timestamp
      */
     @Nonnull
-    public static WatermarkPolicy limitingLagAndDelay(long lag, long maxDelayMs) {
-        return limitingLagAndDelay(
+    public static DistributedSupplier<WatermarkPolicy> limitingLagAndDelay(long lag, long maxDelayMs) {
+        return () -> limitingLagAndDelay(
                 lag, MILLISECONDS.toNanos(maxDelayMs), DEFAULT_NUM_STORED_SAMPLES, System::nanoTime);
     }
 
@@ -139,18 +140,20 @@ public final class WatermarkPolicies {
      *                     {@code System.currentTimeMillis} and the watermark
      */
     @Nonnull
-    public static WatermarkPolicy limitingTimestampAndWallClockLag(long timestampLag, long wallClockLag) {
+    public static DistributedSupplier<WatermarkPolicy> limitingTimestampAndWallClockLag(
+            long timestampLag, long wallClockLag
+    ) {
         return limitingTimestampAndWallClockLag(timestampLag, wallClockLag, System::currentTimeMillis);
     }
 
     @Nonnull
-    static WatermarkPolicy limitingTimestampAndWallClockLag(
+    static DistributedSupplier<WatermarkPolicy> limitingTimestampAndWallClockLag(
             long timestampLag, long wallClockLag, DistributedLongSupplier wallClock
     ) {
         checkNotNegative(timestampLag, "timestampLag must not be negative");
         checkNotNegative(wallClockLag, "wallClockLag must not be negative");
 
-        return new WatermarkPolicyBase() {
+        return () -> new WatermarkPolicyBase() {
 
             @Override
             public long reportEvent(long timestamp) {
@@ -194,16 +197,18 @@ public final class WatermarkPolicies {
      *                  advance watermark with system time
      */
     @Nonnull
-    public static WatermarkPolicy limitingLagAndLull(long lag, long maxLullMs) {
+    public static DistributedSupplier<WatermarkPolicy> limitingLagAndLull(long lag, long maxLullMs) {
         return limitingLagAndLull(lag, maxLullMs, System::nanoTime);
     }
 
     @Nonnull
-    static WatermarkPolicy limitingLagAndLull(long lag, long maxLullMs, DistributedLongSupplier nanoClock) {
+    static DistributedSupplier<WatermarkPolicy> limitingLagAndLull(
+            long lag, long maxLullMs, DistributedLongSupplier nanoClock
+    ) {
         checkNotNegative(lag, "lag must not be negative");
         checkNotNegative(maxLullMs, "maxLullMs must not be negative");
 
-        return new WatermarkPolicyBase() {
+        return () -> new WatermarkPolicyBase() {
 
             private long maxLullAt = Long.MIN_VALUE;
 
@@ -233,4 +238,5 @@ public final class WatermarkPolicies {
             }
         };
     }
+
 }
