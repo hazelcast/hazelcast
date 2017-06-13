@@ -34,7 +34,7 @@ import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.jet.impl.processor.AggregateP;
 import com.hazelcast.jet.impl.processor.GroupByKeyP;
-import com.hazelcast.jet.impl.processor.InsertWatermarkP;
+import com.hazelcast.jet.impl.processor.InsertWatermarksP;
 import com.hazelcast.jet.impl.processor.SessionWindowP;
 import com.hazelcast.jet.impl.processor.SlidingWindowP;
 import com.hazelcast.jet.impl.processor.TransformP;
@@ -538,7 +538,7 @@ public final class Processors {
             @Nonnull DistributedSupplier<WatermarkPolicy> newWmPolicyF,
             @Nonnull WatermarkEmissionPolicy wmEmitPolicy
     ) {
-        return () -> new InsertWatermarkP<>(getTimestampF, newWmPolicyF.get(), wmEmitPolicy);
+        return () -> new InsertWatermarksP<>(getTimestampF, newWmPolicyF.get(), wmEmitPolicy);
     }
 
     /**

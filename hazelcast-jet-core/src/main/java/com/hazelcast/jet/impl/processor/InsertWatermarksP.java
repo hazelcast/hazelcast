@@ -36,7 +36,7 @@ import java.util.function.ToLongFunction;
  *
  * @param <T> type of the stream item
  */
-public class InsertWatermarkP<T> extends AbstractProcessor {
+public class InsertWatermarksP<T> extends AbstractProcessor {
 
     private final ToLongFunction<T> getTimestampF;
     private final WatermarkPolicy wmPolicy;
@@ -51,7 +51,7 @@ public class InsertWatermarkP<T> extends AbstractProcessor {
      * @param getTimestampF function that extracts the timestamp from the item
      * @param wmPolicy the watermark policy
      */
-    public InsertWatermarkP(
+    public InsertWatermarksP(
             @Nonnull ToLongFunction<T> getTimestampF,
             @Nonnull WatermarkPolicy wmPolicy,
             @Nonnull WatermarkEmissionPolicy wmEmitPolicy

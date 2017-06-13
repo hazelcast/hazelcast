@@ -38,18 +38,18 @@ import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class InsertWatermarkPTest {
+public class InsertWatermarksPTest {
 
     private static final long LAG = 3;
 
     private MockClock clock;
-    private InsertWatermarkP<Item> p;
+    private InsertWatermarksP<Item> p;
     private ArrayDequeOutbox outbox;
     private List<String> resultToCheck = new ArrayList<>();
 
     public void setUp(int outboxCapacity) {
         clock = new MockClock(100);
-        p = new InsertWatermarkP<>(Item::getTimestamp, withFixedLag(LAG).get(), suppressDuplicates());
+        p = new InsertWatermarksP<>(Item::getTimestamp, withFixedLag(LAG).get(), suppressDuplicates());
 
         outbox = new ArrayDequeOutbox(new int[]{outboxCapacity}, new ProgressTracker());
         Context context = mock(Context.class);
