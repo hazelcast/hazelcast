@@ -19,6 +19,8 @@ package com.hazelcast.jet;
 import javax.annotation.Nonnull;
 import java.io.Serializable;
 
+import static com.hazelcast.util.Preconditions.checkPositive;
+
 /**
  * A policy object that decides when when the watermark has advanced
  * enough to emit a new watermark item.
@@ -56,6 +58,7 @@ public interface WatermarkEmissionPolicy extends Serializable {
      */
     @Nonnull
     static WatermarkEmissionPolicy emitByMinStep(long minStep) {
+        checkPositive(minStep, "minStep");
         return (currentWm, lastEmittedWm) -> currentWm >= lastEmittedWm + minStep;
     }
 
