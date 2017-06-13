@@ -34,11 +34,11 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 
 /**
- * Implementation of helper class for the user to track the lifecycle state of the client.
+ * Helper class for the user to track the lifecycle state of the client.
  * The user will instantiate this listener and it will be registered to the client configuration.
  * If the provided client config is not used while instantiating the client, this helper class
- * will not work as expected. It is the user's responsibility to instantiate the client with the same
- * ClientConfig.
+ * will not be useful. It is the user's responsibility to instantiate the client with the same
+ * ClientConfig which was used to instantiate this helper.
  */
 public class ClientStateListener
         implements LifecycleListener {
@@ -64,7 +64,8 @@ public class ClientStateListener
             currentState = event.getState();
             if (currentState.equals(CLIENT_CONNECTED) || currentState.equals(SHUTTING_DOWN) || currentState.equals(SHUTDOWN)) {
                 connectedCondition.signalAll();
-            } else if (currentState.equals(CLIENT_DISCONNECTED) || currentState.equals(SHUTTING_DOWN) || currentState.equals(SHUTDOWN)) {
+            } else if (currentState.equals(CLIENT_DISCONNECTED) || currentState.equals(SHUTTING_DOWN) || currentState
+                    .equals(SHUTDOWN)) {
                 disconnectedCondition.signalAll();
             }
         } finally {
