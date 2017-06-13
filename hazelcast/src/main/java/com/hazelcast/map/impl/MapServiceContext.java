@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
+import com.hazelcast.map.impl.query.IndexProvider;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.PartitionScanRunner;
 import com.hazelcast.map.impl.query.QueryRunner;
@@ -143,6 +144,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     MapOperationProvider getMapOperationProvider(String name);
 
     MapOperationProvider getMapOperationProvider(MapConfig mapConfig);
+
+    IndexProvider getIndexProvider(MapConfig mapConfig);
 
     Extractors getExtractors(String mapName);
 

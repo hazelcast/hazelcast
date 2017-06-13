@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.map.impl.query.DefaultIndexProvider;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SampleTestObjects.Employee;
@@ -45,7 +46,7 @@ public class IndexesTest {
 
     @Test
     public void testAndWithSingleEntry() throws Exception {
-        Indexes indexes = new Indexes(serializationService, Extractors.empty());
+        Indexes indexes = new Indexes(serializationService, new DefaultIndexProvider(), Extractors.empty(), true);
         indexes.addOrGetIndex("name", false);
         indexes.addOrGetIndex("age", true);
         indexes.addOrGetIndex("salary", true);
@@ -67,7 +68,7 @@ public class IndexesTest {
 
     @Test
     public void testIndex() throws Exception {
-        Indexes indexes = new Indexes(serializationService, Extractors.empty());
+        Indexes indexes = new Indexes(serializationService, new DefaultIndexProvider(), Extractors.empty(), true);
         indexes.addOrGetIndex("name", false);
         indexes.addOrGetIndex("age", true);
         indexes.addOrGetIndex("salary", true);
@@ -85,7 +86,7 @@ public class IndexesTest {
 
     @Test
     public void testIndex2() throws Exception {
-        Indexes indexes = new Indexes(serializationService, Extractors.empty());
+        Indexes indexes = new Indexes(serializationService, new DefaultIndexProvider(), Extractors.empty(), true);
         indexes.addOrGetIndex("name", false);
         indexes.saveEntryIndex(new QueryEntry(serializationService, toData(1), new Value("abc"), Extractors.empty()), null);
         indexes.saveEntryIndex(new QueryEntry(serializationService, toData(2), new Value("xyz"), Extractors.empty()), null);
@@ -106,7 +107,7 @@ public class IndexesTest {
      */
     @Test
     public void shouldNotThrowException_withNullValues_whenIndexAddedForValueField() throws Exception {
-        Indexes indexes = new Indexes(serializationService, Extractors.empty());
+        Indexes indexes = new Indexes(serializationService, new DefaultIndexProvider(), Extractors.empty(), true);
         indexes.addOrGetIndex("name", false);
 
         shouldReturnNull_whenQueryingOnKeys(indexes);
@@ -114,7 +115,7 @@ public class IndexesTest {
 
     @Test
     public void shouldNotThrowException_withNullValues_whenNoIndexAdded() throws Exception {
-        Indexes indexes = new Indexes(serializationService, Extractors.empty());
+        Indexes indexes = new Indexes(serializationService, new DefaultIndexProvider(), Extractors.empty(), true);
 
         shouldReturnNull_whenQueryingOnKeys(indexes);
     }
@@ -132,7 +133,7 @@ public class IndexesTest {
 
     @Test
     public void shouldNotThrowException_withNullValue_whenIndexAddedForKeyField() throws Exception {
-        Indexes indexes = new Indexes(serializationService, Extractors.empty());
+        Indexes indexes = new Indexes(serializationService, new DefaultIndexProvider(), Extractors.empty(), true);
         indexes.addOrGetIndex("__key", false);
 
         for (int i = 0; i < 100; i++) {
