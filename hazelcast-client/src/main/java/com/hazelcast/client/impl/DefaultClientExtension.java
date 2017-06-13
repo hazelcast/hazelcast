@@ -50,6 +50,7 @@ import com.hazelcast.util.function.Supplier;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
+@SuppressWarnings("WeakerAccess")
 public class DefaultClientExtension implements ClientExtension {
 
     protected static final ILogger LOGGER = Logger.getLogger(ClientExtension.class);
@@ -67,21 +68,22 @@ public class DefaultClientExtension implements ClientExtension {
 
     @Override
     public InternalSerializationService createSerializationService(byte version) {
-        InternalSerializationService ss;
         try {
             ClientConfig config = client.getClientConfig();
             ClassLoader configClassLoader = config.getClassLoader();
 
             HazelcastInstance hazelcastInstance = client;
             PartitioningStrategy partitioningStrategy = getPartitioningStrategy(configClassLoader);
+            SerializationConfig serializationConfig = config.getSerializationConfig() != null
+                    ? config.getSerializationConfig()
+                    : new SerializationConfig();
 
             SerializationServiceBuilder builder = new DefaultSerializationServiceBuilder();
-            SerializationConfig serializationConfig = config.getSerializationConfig() != null ? config
-                    .getSerializationConfig() : new SerializationConfig();
             if (version > 0) {
                 builder.setVersion(version);
             }
-            ss = builder.setClassLoader(configClassLoader)
+            return builder
+                    .setClassLoader(configClassLoader)
                     .setConfig(serializationConfig)
                     .setManagedContext(new HazelcastClientManagedContext(client, config.getManagedContext()))
                     .setPartitioningStrategy(partitioningStrategy)
@@ -96,7 +98,6 @@ public class DefaultClientExtension implements ClientExtension {
         } catch (Exception e) {
             throw rethrow(e);
         }
-        return ss;
     }
 
     protected PartitioningStrategy getPartitioningStrategy(ClassLoader configClassLoader) throws Exception {
@@ -124,7 +125,6 @@ public class DefaultClientExtension implements ClientExtension {
         if (MapService.class.isAssignableFrom(service)) {
             return createClientMapProxyFactory();
         }
-
         throw new IllegalArgumentException("Proxy factory cannot be created. Unknown service: " + service);
     }
 

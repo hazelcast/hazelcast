@@ -47,38 +47,32 @@ import java.util.Set;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.nio.ByteOrder.nativeOrder;
 
-public class DefaultSerializationServiceBuilder
-        implements SerializationServiceBuilder {
+public class DefaultSerializationServiceBuilder implements SerializationServiceBuilder {
 
     private static final int DEFAULT_OUT_BUFFER_SIZE = 4 * 1024;
-
-    protected ClassLoader classLoader;
-
-    protected SerializationConfig config;
-
-    protected byte version = -1;
-
-    protected int portableVersion = -1;
 
     protected final Map<Integer, DataSerializableFactory> dataSerializableFactories =
             new HashMap<Integer, DataSerializableFactory>();
 
     protected final Map<Integer, PortableFactory> portableFactories = new HashMap<Integer, PortableFactory>();
 
-    protected boolean checkClassDefErrors = true;
-
     protected final Set<ClassDefinition> classDefinitions = new HashSet<ClassDefinition>();
+
+    protected ClassLoader classLoader;
+    protected SerializationConfig config;
+
+    protected byte version = -1;
+    protected int portableVersion = -1;
+
+    protected boolean checkClassDefErrors = true;
 
     protected ManagedContext managedContext;
 
     protected boolean useNativeByteOrder;
-
     protected ByteOrder byteOrder = BIG_ENDIAN;
 
     protected boolean enableCompression;
-
     protected boolean enableSharedObject;
-
     protected boolean allowUnsafe;
 
     protected int initialOutputBufferSize = DEFAULT_OUT_BUFFER_SIZE;
@@ -270,8 +264,8 @@ public class DefaultSerializationServiceBuilder
         }
     }
 
-    protected InternalSerializationService createSerializationService(InputOutputFactory inputOutputFactory
-            , Supplier<RuntimeException> notActiveExceptionSupplier) {
+    protected InternalSerializationService createSerializationService(InputOutputFactory inputOutputFactory,
+                                                                      Supplier<RuntimeException> notActiveExceptionSupplier) {
         switch (version) {
             case 1:
                 SerializationServiceV1 serializationServiceV1 = new SerializationServiceV1(inputOutputFactory, version,
@@ -281,8 +275,7 @@ public class DefaultSerializationServiceBuilder
                 serializationServiceV1.registerClassDefinitions(classDefinitions, checkClassDefErrors);
                 return serializationServiceV1;
 
-            //Future version note: add new versions here
-            //adding case's for each version and instantiate it properly
+            // future version note: add new versions here by adding cases for each version and instantiate it properly
             default:
                 throw new IllegalArgumentException("Serialization version is not supported!");
         }
@@ -322,7 +315,6 @@ public class DefaultSerializationServiceBuilder
 
     private void addConfigDataSerializableFactories(Map<Integer, DataSerializableFactory> dataSerializableFactories,
                                                     SerializationConfig config, ClassLoader cl) {
-
         registerDataSerializableFactories(dataSerializableFactories, config);
         buildDataSerializableFactories(dataSerializableFactories, config, cl);
 
@@ -351,7 +343,6 @@ public class DefaultSerializationServiceBuilder
 
     private void buildDataSerializableFactories(Map<Integer, DataSerializableFactory> dataSerializableFactories,
                                                 SerializationConfig config, ClassLoader cl) {
-
         for (Map.Entry<Integer, String> entry : config.getDataSerializableFactoryClasses().entrySet()) {
             int factoryId = entry.getKey();
             String factoryClassName = entry.getValue();
@@ -373,9 +364,8 @@ public class DefaultSerializationServiceBuilder
         }
     }
 
-    private void addConfigPortableFactories(final Map<Integer, PortableFactory> portableFactories, SerializationConfig config,
+    private void addConfigPortableFactories(Map<Integer, PortableFactory> portableFactories, SerializationConfig config,
                                             ClassLoader cl) {
-
         registerPortableFactories(portableFactories, config);
         buildPortableFactories(portableFactories, config, cl);
 
@@ -402,8 +392,7 @@ public class DefaultSerializationServiceBuilder
 
     private void buildPortableFactories(Map<Integer, PortableFactory> portableFactories, SerializationConfig config,
                                         ClassLoader cl) {
-
-        final Map<Integer, String> portableFactoryClasses = config.getPortableFactoryClasses();
+        Map<Integer, String> portableFactoryClasses = config.getPortableFactoryClasses();
         for (Map.Entry<Integer, String> entry : portableFactoryClasses.entrySet()) {
             int factoryId = entry.getKey();
             String factoryClassName = entry.getValue();
