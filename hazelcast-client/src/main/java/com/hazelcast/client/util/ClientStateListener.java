@@ -32,6 +32,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Helper class for the user to track the lifecycle state of the client.
@@ -94,8 +95,8 @@ public class ClientStateListener
                 return false;
             }
 
-            if (!connectedCondition.await(timeout, unit)) {
-                return false;
+            long duration = unit.toNanos(timeout);
+            while ((duration = connectedCondition.awaitNanos(duration)) > 0) {
             }
 
             return currentState.equals(CLIENT_CONNECTED);
@@ -112,7 +113,7 @@ public class ClientStateListener
      */
     public void awaitConnected()
             throws InterruptedException {
-        awaitConnected(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        awaitConnected(Long.MAX_VALUE, MILLISECONDS);
     }
 
     /**
@@ -132,8 +133,8 @@ public class ClientStateListener
                 return true;
             }
 
-            if (!disconnectedCondition.await(timeout, unit)) {
-                return false;
+            long duration = unit.toNanos(timeout);
+            while ((duration = disconnectedCondition.awaitNanos(duration)) > 0) {
             }
 
             if (currentState.equals(CLIENT_DISCONNECTED) || currentState.equals(SHUTTING_DOWN) || currentState.equals(SHUTDOWN)) {
@@ -154,7 +155,7 @@ public class ClientStateListener
      */
     public void awaitDisconnected()
             throws InterruptedException {
-        awaitDisconnected(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        awaitDisconnected(Long.MAX_VALUE, MILLISECONDS);
     }
 
     /**
