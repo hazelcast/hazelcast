@@ -894,7 +894,7 @@
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <argLine>
-                                -Xms128m -Xmx1G -XX:MaxPermSize=128M
+                                -Xms128m -Xmx1G -XX:MaxPermSize=1024M
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
@@ -937,7 +937,7 @@
                             <useFile>false</useFile>
                             <parallel>none</parallel>
                             <argLine>
-                                -Xms512m -Xmx2G -XX:MaxPermSize=128M
+                                -Xms512m -Xmx2G -XX:MaxPermSize=1024M
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
