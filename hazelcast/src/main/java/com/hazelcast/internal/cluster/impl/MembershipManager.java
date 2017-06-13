@@ -939,6 +939,14 @@ public class MembershipManager {
                     return;
                 }
 
+                MemberImpl localMember = clusterService.getLocalMember();
+                if (!newMembersView.containsMember(localMember.getAddress(), localMember.getUuid())) {
+                    // local member uuid is changed because of force start or split brain merge...
+                    logger.fine("Ignoring decided members view after mastership claim: " + newMembersView
+                            + ", because current local member: " + localMember + " not in decided members view.");
+                    return;
+                }
+
                 updateMembers(newMembersView);
                 clusterService.getClusterHeartbeatManager().resetMemberMasterConfirmations();
                 clusterService.getClusterJoinManager().reset();
