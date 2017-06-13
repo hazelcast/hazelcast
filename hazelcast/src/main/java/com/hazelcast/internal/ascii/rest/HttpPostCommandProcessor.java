@@ -172,14 +172,9 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass))) {
                 res = response(ResponseType.FORBIDDEN);
             } else {
-                Version version;
-                try {
-                    version = Version.of(versionParam);
-                    clusterService.changeClusterVersion(version);
-                    res = response(ResponseType.SUCCESS, "version", clusterService.getClusterVersion().toString());
-                } catch (Exception ex) {
-                    res = response(ResponseType.FAIL, "version", clusterService.getClusterVersion().toString());
-                }
+                Version version = Version.of(versionParam);
+                clusterService.changeClusterVersion(version);
+                res = response(ResponseType.SUCCESS, "version", clusterService.getClusterVersion().toString());
             }
         } catch (Throwable throwable) {
             logger.warning("Error occurred while changing cluster version", throwable);
