@@ -80,7 +80,8 @@ public class ClientStateListener
      *
      * @param timeout the maximum time to wait
      * @param unit    the time unit of the {@code timeout} argument
-     * @return true if the client is connected to the cluster.
+     * @return true if the client is connected to the cluster. On returning false,
+     * you can check if timeout occured or the client is shutdown using {@code isShutdown} {@code getCurrentState}
      * @throws InterruptedException
      */
     public boolean awaitConnected(long timeout, TimeUnit unit)
@@ -98,9 +99,13 @@ public class ClientStateListener
             long duration = unit.toNanos(timeout);
             while (duration > 0) {
                 duration = connectedCondition.awaitNanos(duration);
+
+                if (currentState.equals(CLIENT_CONNECTED)) {
+                    return true;
+                }
             }
 
-            return currentState.equals(CLIENT_CONNECTED);
+            return false;
         } finally {
             lock.unlock();
         }
@@ -110,11 +115,12 @@ public class ClientStateListener
      * Waits until the client is connected to cluster.
      * Does not wait if the client is already shutting down or shutdown.
      *
+     * @return returns whatever {@code awaitConnected(long timeout, TimeUnit unit)} returns.
      * @throws InterruptedException
      */
-    public void awaitConnected()
+    public boolean awaitConnected()
             throws InterruptedException {
-        awaitConnected(Long.MAX_VALUE, MILLISECONDS);
+        return awaitConnected(Long.MAX_VALUE, MILLISECONDS);
     }
 
     /**
@@ -123,7 +129,8 @@ public class ClientStateListener
      *
      * @param timeout the maximum time to wait
      * @param unit    the time unit of the {@code timeout} argument
-     * @return true if the client is disconnected to the cluster.
+     * @return true if the client is disconnected to the cluster. On returning false,
+     * you can check if timeout occured or the client is shutdown using {@code isShutdown} {@code getCurrentState}
      * @throws InterruptedException
      */
     public boolean awaitDisconnected(long timeout, TimeUnit unit)
@@ -137,10 +144,11 @@ public class ClientStateListener
             long duration = unit.toNanos(timeout);
             while (duration > 0) {
                 duration = disconnectedCondition.awaitNanos(duration);
-            }
 
-            if (currentState.equals(CLIENT_DISCONNECTED) || currentState.equals(SHUTTING_DOWN) || currentState.equals(SHUTDOWN)) {
-                return true;
+                if (currentState.equals(CLIENT_DISCONNECTED) || currentState.equals(SHUTTING_DOWN) || currentState
+                        .equals(SHUTDOWN)) {
+                    return true;
+                }
             }
 
             return false;
@@ -153,11 +161,12 @@ public class ClientStateListener
      * Waits until the client is disconnected from the cluster.
      * Does not wait if the client is already shutting down or shutdown.
      *
+     * @return returns whatever {@code awaitDisconnected(long timeout, TimeUnit unit)} returns.
      * @throws InterruptedException
      */
-    public void awaitDisconnected()
+    public boolean awaitDisconnected()
             throws InterruptedException {
-        awaitDisconnected(Long.MAX_VALUE, MILLISECONDS);
+        return awaitDisconnected(Long.MAX_VALUE, MILLISECONDS);
     }
 
     /**
