@@ -59,14 +59,24 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
     }
 
     public void addMapIndex(MapServiceContext mapServiceContext, MapContainer mapContainer) {
-        for (PartitionContainer partitionContainer : mapServiceContext.getPartitionContainers()) {
-            final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
-            if (indexes != null && indexes.hasIndex()) {
-                MapIndexInfo mapIndexInfo = new MapIndexInfo(mapContainer.getName());
-                for (Index index : indexes.getIndexes()) {
-                    mapIndexInfo.addIndexInfo(index.getAttributeName(), index.isOrdered());
+        if (mapContainer.isGlobalIndexEnabled()) {
+            // global-index
+            MapIndexInfo mapIndexInfo = new MapIndexInfo(mapContainer.getName());
+            for (Index index : mapContainer.getIndexes().getIndexes()) {
+                mapIndexInfo.addIndexInfo(index.getAttributeName(), index.isOrdered());
+            }
+            indexInfoList.add(mapIndexInfo);
+        } else {
+            // partitioned-index
+            for (PartitionContainer partitionContainer : mapServiceContext.getPartitionContainers()) {
+                final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
+                if (indexes != null && indexes.hasIndex()) {
+                    MapIndexInfo mapIndexInfo = new MapIndexInfo(mapContainer.getName());
+                    for (Index index : indexes.getIndexes()) {
+                        mapIndexInfo.addIndexInfo(index.getAttributeName(), index.isOrdered());
+                    }
+                    indexInfoList.add(mapIndexInfo);
                 }
-                indexInfoList.add(mapIndexInfo);
             }
         }
     }
@@ -141,10 +151,16 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
         for (MapIndexInfo mapIndex : indexInfoList) {
             MapContainer mapContainer = mapServiceContext.getMapContainer(mapIndex.mapName);
             for (MapIndexInfo.IndexInfo indexInfo : mapIndex.lsIndexes) {
-                mapContainer.addIndexDefinition(indexInfo.attributeName, indexInfo.ordered);
-                for (PartitionContainer partitionContainer : mapServiceContext.getPartitionContainers()) {
-                    final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
+                if (mapContainer.isGlobalIndexEnabled()) {
+                    // global-index
+                    Indexes indexes = mapContainer.getIndexes();
                     indexes.addOrGetIndex(indexInfo.attributeName, indexInfo.ordered);
+                } else {
+                    // partitioned-index
+                    for (PartitionContainer partitionContainer : mapServiceContext.getPartitionContainers()) {
+                        final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
+                        indexes.addOrGetIndex(indexInfo.attributeName, indexInfo.ordered);
+                    }
                 }
             }
         }

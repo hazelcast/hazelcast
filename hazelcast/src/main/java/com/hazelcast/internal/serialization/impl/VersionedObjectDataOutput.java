@@ -18,7 +18,6 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.VersionAware;
-import com.hazelcast.nio.VersionSettable;
 import com.hazelcast.version.Version;
 
 import java.io.OutputStream;
@@ -28,7 +27,7 @@ import java.io.OutputStream;
  * What the version means it's up to the Serializer/Deserializer.
  * If the serializer supports versioning it may set the version to use for the serialization on this object.
  */
-abstract class VersionedObjectDataOutput extends OutputStream implements ObjectDataOutput, VersionAware, VersionSettable {
+abstract class VersionedObjectDataOutput extends OutputStream implements ObjectDataOutput, VersionAware {
 
     protected Version version = Version.UNKNOWN;
 
@@ -37,7 +36,6 @@ abstract class VersionedObjectDataOutput extends OutputStream implements ObjectD
      *
      * @param version version to set
      */
-    @Override
     public void setVersion(Version version) {
         this.version = version;
     }

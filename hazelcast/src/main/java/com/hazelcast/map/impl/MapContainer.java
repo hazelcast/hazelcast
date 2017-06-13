@@ -36,6 +36,7 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -51,10 +52,8 @@ import com.hazelcast.util.RuntimeMemoryInfoAccessor;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -80,9 +79,9 @@ public class MapContainer {
     protected final InterceptorRegistry interceptorRegistry = new InterceptorRegistry();
     protected final IFunction<Object, Data> toDataFunction = new ObjectToData();
     protected final ConstructorFunction<Void, RecordFactory> recordFactoryConstructor;
-    protected final boolean globalIndex;
-    protected final Indexes indexes;
-    protected final ConcurrentHashMap<String, Boolean> indexDefinitions = new ConcurrentHashMap<String, Boolean>();
+    // On-heap indexes are global, meaning there is only one index per map, stored in the mapContainer.
+    // If globalIndexes is null it means that global index is not in use.
+    protected final Indexes globalIndexes;
 
     /**
      * Holds number of registered {@link InvalidationListener} from clients.
@@ -116,14 +115,11 @@ public class MapContainer {
         this.objectNamespace = new DistributedObjectNamespace(MapService.SERVICE_NAME, name);
         initWanReplication(nodeEngine);
         this.extractors = new Extractors(mapConfig.getMapAttributeConfigs(), config.getClassLoader());
-        if (!mapConfig.getInMemoryFormat().equals(NATIVE)) {
-            // for non-native memory populate a single global index
-            this.globalIndex = true;
-            this.indexes = new Indexes((InternalSerializationService) serializationService,
+        if (shouldUseGlobalIndex(mapConfig)) {
+            this.globalIndexes = new Indexes((InternalSerializationService) serializationService,
                     mapServiceContext.getIndexProvider(mapConfig), extractors, true);
         } else {
-            this.globalIndex = false;
-            this.indexes = null;
+            this.globalIndexes = null;
         }
         this.mapStoreContext = createMapStoreContext(this);
         this.mapStoreContext.start();
@@ -141,6 +137,11 @@ public class MapContainer {
             IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
             evictor = new EvictorImpl(mapEvictionPolicy, evictionChecker, partitionService);
         }
+    }
+
+    protected boolean shouldUseGlobalIndex(MapConfig mapConfig) {
+        // for non-native memory populate a single global index
+        return !mapConfig.getInMemoryFormat().equals(NATIVE);
     }
 
     protected static MemoryInfoAccessor getMemoryInfoAccessor() {
@@ -198,27 +199,22 @@ public class MapContainer {
      * @return the global index, if the global index is in use (on-heap) or null.
      */
     public Indexes getIndexes() {
-        if (globalIndex) {
-            return indexes;
-        }
-        return null;
+        return globalIndexes;
     }
 
     /**
-     *
-     * @return the global index, if the global index is in use (on-heap) or null, or a partitioned-index (off-heap).
      * @param partitionId partitionId
      * @return
      */
     public Indexes getIndexes(int partitionId) {
-        if (globalIndex) {
-            return indexes;
+        if (globalIndexes != null) {
+            return globalIndexes;
         }
         return mapServiceContext.getPartitionContainer(partitionId).getIndexes(name);
     }
 
-    public boolean isGlobalIndex() {
-        return globalIndex;
+    public boolean isGlobalIndexEnabled() {
+        return globalIndexes != null;
     }
 
     public WanReplicationPublisher getWanReplicationPublisher() {
@@ -335,12 +331,20 @@ public class MapContainer {
         return objectNamespace;
     }
 
-    public void addIndexDefinition(String name, Boolean ordered) {
-        indexDefinitions.put(name, ordered);
-    }
-
-    public Set<Map.Entry<String, Boolean>> getIndexDefinitionsEntrySet() {
-        return Collections.unmodifiableSet(indexDefinitions.entrySet());
+    public Map<String, Boolean> getIndexDefinitions() {
+        Map<String, Boolean> definitions = new HashMap<String, Boolean>();
+        if (isGlobalIndexEnabled()) {
+            for (Index index : globalIndexes.getIndexes()) {
+                definitions.put(index.getAttributeName(), index.isOrdered());
+            }
+        } else {
+            for (PartitionContainer container : mapServiceContext.getPartitionContainers()) {
+                for (Index index : container.getIndexes(name).getIndexes()) {
+                    definitions.put(index.getAttributeName(), index.isOrdered());
+                }
+            }
+        }
+        return definitions;
     }
 
     @SerializableByConvention

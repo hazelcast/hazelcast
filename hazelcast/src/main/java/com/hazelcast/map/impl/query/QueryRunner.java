@@ -119,20 +119,14 @@ public class QueryRunner {
         }
 
         updateStatistics(mapContainer);
-        if (entries != null) {
-            // if results have been returned and partition state has not changed, set the partition IDs
-            // so that caller is aware of partitions from which results were obtained.
-            return populateNonEmptyResult(query, entries, initialPartitions);
-        } else {
-            // else: if fallback to full table scan also failed to return any results due to migrations,
-            // then return empty result set without any partition IDs set (so that it is ignored by callers).
-            return populateEmptyResult(query, initialPartitions);
-        }
+        return populateResult(query, initialPartitions, entries);
     }
 
     // MIGRATION UNSAFE QUERYING - MIGRATION STAMPTS ARE NOT VALIDATED, so assumes a run on partition-thread
     // for a single partition. If the index is global it won't be asked
     public Result runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(Query query, int partitionId) {
+        assert nodeEngine.getPartitionService().isPartitionOwner(partitionId);
+
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
         List<Integer> partitions = Collections.singletonList(partitionId);
 
@@ -152,7 +146,7 @@ public class QueryRunner {
         return populateResult(query, partitions, entries);
     }
 
-    private Result populateResult(Query query, List<Integer> partitions, Collection<QueryableEntry> entries) {
+    private Result populateResult(Query query, Collection<Integer> partitions, Collection<QueryableEntry> entries) {
         if (entries != null) {
             // if results have been returned and partition state has not changed, set the partition IDs
             // so that caller is aware of partitions from which results were obtained.
@@ -165,6 +159,8 @@ public class QueryRunner {
     }
 
     Result runPartitionScanQueryOnGivenOwnedPartition(Query query, int partitionId) {
+        assert nodeEngine.getPartitionService().isPartitionOwner(partitionId);
+
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
         Collection<QueryableEntry> entries = partitionScanExecutor.execute(query.getMapName(), predicate,

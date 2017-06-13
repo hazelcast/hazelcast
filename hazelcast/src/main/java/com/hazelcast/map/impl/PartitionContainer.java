@@ -121,10 +121,10 @@ public class PartitionContainer {
 
         InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
         IndexProvider indexProvider = serviceContext.getIndexProvider(mapConfig);
-        final boolean globalIndex = false;
-        Indexes indexesForMap = new Indexes(ss, indexProvider, mapContainer.getExtractors(), globalIndex);
-        indexes.putIfAbsent(name, indexesForMap);
-
+        if (!mapContainer.isGlobalIndexEnabled()) {
+            Indexes indexesForMap = new Indexes(ss, indexProvider, mapContainer.getExtractors(), false);
+            indexes.putIfAbsent(name, indexesForMap);
+        }
         RecordStore recordStore = serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);
         recordStore.init();
         return recordStore;
@@ -239,22 +239,26 @@ public class PartitionContainer {
         this.lastCleanupTimeCopy = lastCleanupTimeCopy;
     }
 
-    // -------------------------------------------------------------------
-    // WATCH OUT: never use directly! use MapContainer.getIndex() instead
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------------------------------------------------------
+    // IMPORTANT: never use directly! use MapContainer.getIndex() instead.
+    // There are cases where a global index is used. In this case, the global-index is stored in the MapContainer.
+    // By using this method in the context of global index an exception will be thrown.
+    // -------------------------------------------------------------------------------------------------------------
     Indexes getIndexes(String name) {
-        final boolean globalIndex = false;
+
         Indexes ixs = indexes.get(name);
         if (ixs == null) {
-
             MapServiceContext mapServiceContext = mapService.getMapServiceContext();
             MapContainer mapContainer = mapServiceContext.getMapContainer(name);
+            if (mapContainer.isGlobalIndexEnabled()) {
+                throw new IllegalStateException("Can't use a partitioned-index in the context of a global-index.");
+            }
 
             InternalSerializationService ss = (InternalSerializationService)
                     mapServiceContext.getNodeEngine().getSerializationService();
             Extractors extractors = mapServiceContext.getMapContainer(name).getExtractors();
             IndexProvider indexProvider = mapServiceContext.getIndexProvider(mapContainer.getMapConfig());
-            Indexes indexesForMap = new Indexes(ss, indexProvider, extractors, globalIndex);
+            Indexes indexesForMap = new Indexes(ss, indexProvider, extractors, false);
             ixs = indexes.putIfAbsent(name, indexesForMap);
             if (ixs == null) {
                 ixs = indexesForMap;

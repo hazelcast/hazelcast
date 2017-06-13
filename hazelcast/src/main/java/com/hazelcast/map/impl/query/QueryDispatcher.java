@@ -104,8 +104,8 @@ final class QueryDispatcher {
         return futures;
     }
 
-    // for rolling-upgrade compatibility, can be deleted in 4.0
     private Operation createQueryOperation(Query query, Version clusterVersion) {
+        // for rolling-upgrade compatibility, the else-clause can be deleted in 4.0
         boolean isVersion39orGreater = clusterVersion.isGreaterOrEqual(Versions.V3_9);
         if (isVersion39orGreater) {
             return mapServiceContext.getMapOperationProvider(query.getMapName()).createQueryOperation(query);
@@ -137,8 +137,8 @@ final class QueryDispatcher {
         }
     }
 
-    // for rolling-upgrade compatibility, can be deleted in 4.0
     private Operation createQueryPartitionOperation(Query query, Version clusterVersion) {
+        // for rolling-upgrade compatibility, the else-clause can be deleted in 4.0
         boolean isVersion39orGreater = clusterVersion.isGreaterOrEqual(Versions.V3_9);
         if (isVersion39orGreater) {
             return mapServiceContext.getMapOperationProvider(query.getMapName()).createQueryPartitionOperation(query);
