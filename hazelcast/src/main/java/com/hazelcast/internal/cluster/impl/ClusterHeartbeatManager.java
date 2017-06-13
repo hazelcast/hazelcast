@@ -20,6 +20,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
+import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatComplaintOp;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatOp;
 import com.hazelcast.internal.cluster.impl.operations.MasterConfirmationOp;
@@ -163,9 +164,12 @@ public class ClusterHeartbeatManager {
                 if (clusterService.getThisUuid().equals(receiverUuid)) {
                     logger.fine("Ignoring heartbeat of sender: " + senderMembersViewMetadata + ", because node is not joined!");
                 } else {
+                    // we know that sender version is 3.9 so we send explicit suspicion back even if we are not joined...
                     logger.fine("Sending explicit suspicion to " + senderAddress + " for heartbeat " + senderMembersViewMetadata
                             + ", because this node has received an invalid heartbeat before it joins to the cluster");
-                    clusterService.sendExplicitSuspicion(senderMembersViewMetadata);
+                    OperationService operationService = nodeEngine.getOperationService();
+                    Operation op = new ExplicitSuspicionOp(senderMembersViewMetadata);
+                    operationService.send(op, senderAddress);
                 }
                 return;
             }
