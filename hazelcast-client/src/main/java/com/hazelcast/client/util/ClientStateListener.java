@@ -96,7 +96,8 @@ public class ClientStateListener
             }
 
             long duration = unit.toNanos(timeout);
-            while ((duration = connectedCondition.awaitNanos(duration)) > 0) {
+            while (duration > 0) {
+                duration = connectedCondition.awaitNanos(duration);
             }
 
             return currentState.equals(CLIENT_CONNECTED);
@@ -134,7 +135,8 @@ public class ClientStateListener
             }
 
             long duration = unit.toNanos(timeout);
-            while ((duration = disconnectedCondition.awaitNanos(duration)) > 0) {
+            while (duration > 0) {
+                duration = disconnectedCondition.awaitNanos(duration);
             }
 
             if (currentState.equals(CLIENT_DISCONNECTED) || currentState.equals(SHUTTING_DOWN) || currentState.equals(SHUTDOWN)) {
