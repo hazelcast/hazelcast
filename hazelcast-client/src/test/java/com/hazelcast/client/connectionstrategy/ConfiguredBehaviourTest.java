@@ -49,19 +49,6 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    private class StateTrackingListener implements LifecycleListener {
-        private volatile LifecycleEvent.LifecycleState latestState = STARTING;
-
-        @Override
-        public void stateChanged(LifecycleEvent event) {
-            latestState = event.getState();
-        }
-
-        LifecycleEvent.LifecycleState getLatestState() {
-            return latestState;
-        }
-    }
-
     @After
     public void tearDown() {
         hazelcastFactory.terminateAll();
