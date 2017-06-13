@@ -54,7 +54,7 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
 
         NearCachePreloaderConfig preloaderConfig = nearCacheConfig.getPreloaderConfig();
         this.nearCachePreloader = preloaderConfig.isEnabled() ? new NearCachePreloader<K>(name, preloaderConfig, nearCacheStats,
-                serializationService, nearCacheConfig.isSerializeKeys()) : null;
+                serializationService) : null;
     }
 
     @Override
@@ -142,11 +142,12 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     }
 
     @Override
-    protected R getOrCreateToReserve(K key) {
-        return records.applyIfAbsent(key, reserveForUpdate);
+    protected R getOrCreateToReserve(K key, Data keyData) {
+        return records.applyIfAbsent(key, new ReserveForUpdateFunction(keyData));
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected V updateAndGetReserved(K key, final V value, final long reservationId, boolean deserialize) {
         R existingRecord = records.applyIfPresent(key, new IBiFunction<K, R, R>() {
             @Override
@@ -160,6 +161,6 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
         }
 
         Object cachedValue = existingRecord.getValue();
-        return cachedValue instanceof Data ? toValue(cachedValue) : (V) existingRecord.getValue();
+        return cachedValue instanceof Data ? toValue(cachedValue) : (V) cachedValue;
     }
 }

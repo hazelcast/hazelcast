@@ -185,7 +185,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
         try {
             Data keyData = toData(key);
-            long reservationId = tryReserveForUpdate(key);
+            long reservationId = tryReserveForUpdate(key, keyData);
             ClientMessage request = ReplicatedMapGetCodec.encodeRequest(name, keyData);
             ClientMessage response = invoke(request, keyData);
 
@@ -515,11 +515,11 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         }
     }
 
-    private long tryReserveForUpdate(K key) {
+    private long tryReserveForUpdate(K key, Data keyData) {
         if (nearCache == null) {
             return NOT_RESERVED;
         }
-        return nearCache.tryReserveForUpdate(key);
+        return nearCache.tryReserveForUpdate(key, keyData);
     }
 
     private void invalidate(K key) {

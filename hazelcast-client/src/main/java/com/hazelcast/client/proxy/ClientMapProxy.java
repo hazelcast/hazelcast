@@ -1024,21 +1024,26 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         if (CollectionUtil.isEmpty(keys)) {
             return emptyMap();
         }
+
+        int keysSize = keys.size();
         Map<Integer, List<Data>> partitionToKeyData = new HashMap<Integer, List<Data>>();
-        Map<K, V> result = new HashMap<K, V>();
-        getAllInternal(keys, partitionToKeyData, result);
+        List<Object> resultingKeyValuePairs = new ArrayList<Object>(keysSize * 2);
+        getAllInternal(keys, partitionToKeyData, resultingKeyValuePairs);
+
+        Map<K, V> result = createHashMap(keysSize);
+        for (int i = 0; i < resultingKeyValuePairs.size(); ) {
+            K key = toObject(resultingKeyValuePairs.get(i++));
+            V value = toObject(resultingKeyValuePairs.get(i++));
+            result.put(key, value);
+        }
         return result;
     }
 
-    protected List<MapGetAllCodec.ResponseParameters> getAllInternal(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData,
-                                                                     Map<K, V> result) {
+    protected void getAllInternal(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData, List<Object> resultingKeyValuePairs) {
         if (partitionToKeyData.isEmpty()) {
-            fillPartitionToKeyData(keys, partitionToKeyData);
+            fillPartitionToKeyData(keys, partitionToKeyData, null);
         }
         List<Future<ClientMessage>> futures = new ArrayList<Future<ClientMessage>>(partitionToKeyData.size());
-        List<MapGetAllCodec.ResponseParameters> responses = new ArrayList<MapGetAllCodec.ResponseParameters>(
-                partitionToKeyData.size());
-
         for (Map.Entry<Integer, List<Data>> entry : partitionToKeyData.entrySet()) {
             int partitionId = entry.getKey();
             List<Data> keyList = entry.getValue();
@@ -1053,19 +1058,16 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
                 ClientMessage response = future.get();
                 MapGetAllCodec.ResponseParameters resultParameters = MapGetAllCodec.decodeResponse(response);
                 for (Entry<Data, Data> entry : resultParameters.response) {
-                    V value = toObject(entry.getValue());
-                    K key = toObject(entry.getKey());
-                    result.put(key, value);
+                    resultingKeyValuePairs.add(entry.getKey());
+                    resultingKeyValuePairs.add(entry.getValue());
                 }
-                responses.add(resultParameters);
             } catch (Exception e) {
                 throw rethrow(e);
             }
         }
-        return responses;
     }
 
-    protected void fillPartitionToKeyData(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData) {
+    protected void fillPartitionToKeyData(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData, Map<Object, Data> keyMap) {
         ClientPartitionService partitionService = getContext().getPartitionService();
         for (K key : keys) {
             Data keyData = toData(key);
@@ -1076,6 +1078,9 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
                 partitionToKeyData.put(partitionId, keyList);
             }
             keyList.add(keyData);
+            if (keyMap != null) {
+                keyMap.put(key, keyData);
+            }
         }
     }
 

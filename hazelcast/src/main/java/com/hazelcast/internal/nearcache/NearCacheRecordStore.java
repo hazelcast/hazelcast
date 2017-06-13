@@ -19,6 +19,7 @@ package com.hazelcast.internal.nearcache;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
 import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InitializingObject;
 
 /**
@@ -49,10 +50,11 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
     /**
      * Puts (associates) a value with the given {@code key}.
      *
-     * @param key   the key to which the given value will be associated.
-     * @param value the value that will be associated with the key.
+     * @param key     the key to which the given value will be associated.
+     * @param keyData the key as {@link Data} to which the given value will be associated.
+     * @param value   the value that will be associated with the key.
      */
-    void put(K key, V value);
+    void put(K key, Data keyData, V value);
 
     /**
      * Removes the value associated with the given {@code key}.
@@ -131,8 +133,7 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
      */
     StaleReadDetector getStaleReadDetector();
 
-    long tryReserveForUpdate(K key);
+    long tryReserveForUpdate(K key, Data keyData);
 
     V tryPublishReserved(K key, V value, long reservationId, boolean deserialize);
-
 }

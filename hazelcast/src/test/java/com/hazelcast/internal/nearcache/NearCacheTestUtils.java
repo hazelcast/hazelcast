@@ -29,10 +29,13 @@ import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
 import com.hazelcast.internal.adapter.MethodAvailableMatcher;
 import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
+import com.hazelcast.internal.nearcache.impl.record.NearCacheDataRecord;
+import com.hazelcast.internal.nearcache.impl.record.NearCacheObjectRecord;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -48,6 +51,8 @@ import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UP
 import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeThat;
@@ -229,18 +234,60 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      * @param context the {@link NearCacheTestContext} to retrieve the Near Cache from
      * @param size    the number of entries to check
      */
-    public static void assertNearCacheContent(NearCacheTestContext<Integer, String, ?, ?> context, int size) {
+    public static void assertNearCacheContent(NearCacheTestContext<?, ?, ?, ?> context, int size) {
+        InMemoryFormat inMemoryFormat = context.nearCacheConfig.getInMemoryFormat();
         for (int i = 0; i < size; i++) {
-            Object key = getNearCacheKey(context, i);
+            Object nearCacheKey = getNearCacheKey(context, i);
 
-            String value = context.serializationService.toObject(getValueFromNearCache(context, key));
+            String value = context.serializationService.toObject(getValueFromNearCache(context, nearCacheKey));
             assertEquals("value-" + i, value);
 
-            NearCacheRecord record = getRecordFromNearCache(context, key);
-            if (record != null) {
-                assertEquals(format("The NearCacheRecord for key %d should be READ_PERMITTED (%s)", i, record),
-                        READ_PERMITTED, record.getRecordState());
-            }
+            assertNearCacheRecord(getRecordFromNearCache(context, nearCacheKey), i, inMemoryFormat);
+        }
+    }
+
+    /**
+     * Asserts the state and class of a {@link NearCacheRecord} and its value.
+     *
+     * @param record         the {@link NearCacheRecord}
+     * @param key            the key for the {@link NearCacheRecord}
+     * @param inMemoryFormat the {@link InMemoryFormat} of the Near Cache
+     */
+    public static void assertNearCacheRecord(NearCacheRecord record, int key, InMemoryFormat inMemoryFormat) {
+        assertNotNull(format("NearCacheRecord for key %d could not be found", key), record);
+        assertEquals(format("RecordState of NearCacheRecord for key %d should be READ_PERMITTED (%s)", key, record),
+                READ_PERMITTED, record.getRecordState());
+
+        Class<? extends NearCacheRecord> recordClass = record.getClass();
+        Class<?> recordValueClass = record.getValue().getClass();
+        switch (inMemoryFormat) {
+            case OBJECT:
+                assertTrue(
+                        format("NearCacheRecord for key %d should be a NearCacheObjectRecord, but was %s", key, recordClass),
+                        NearCacheObjectRecord.class.isAssignableFrom(recordClass));
+                assertFalse(
+                        format("Value of NearCacheRecord for key %d should not be Data", key),
+                        Data.class.isAssignableFrom(recordValueClass));
+                break;
+            case BINARY:
+                assertTrue(
+                        format("NearCacheRecord for key %d should be a NearCacheDataRecord, but was %s", key, recordClass),
+                        NearCacheDataRecord.class.isAssignableFrom(recordClass));
+                assertTrue(
+                        format("Value of NearCacheRecord for key %d should be Data, but was %s", key, recordValueClass),
+                        Data.class.isAssignableFrom(recordValueClass));
+                break;
+            case NATIVE:
+                assertFalse(
+                        format("NearCacheRecord for key %d should be a HDNearCacheRecord, but was NearCacheObjectRecord", key),
+                        NearCacheObjectRecord.class.isAssignableFrom(recordClass));
+                assertFalse(
+                        format("NearCacheRecord for key %d should be a HDNearCacheRecord, but was NearCacheDataRecord", key),
+                        NearCacheDataRecord.class.isAssignableFrom(recordClass));
+                assertTrue(
+                        format("Value of NearCacheRecord for key %d should be Data, but was %s", key, recordValueClass),
+                        Data.class.isAssignableFrom(recordValueClass));
+                break;
         }
     }
 
