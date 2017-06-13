@@ -62,9 +62,9 @@ public class ClientStateListener
         lock.lock();
         try {
             currentState = event.getState();
-            if (event.getState().equals(CLIENT_CONNECTED)) {
+            if (currentState.equals(CLIENT_CONNECTED) || currentState.equals(SHUTTING_DOWN) || currentState.equals(SHUTDOWN)) {
                 connectedCondition.signalAll();
-            } else if (event.getState().equals(CLIENT_DISCONNECTED)) {
+            } else if (currentState.equals(CLIENT_DISCONNECTED) || currentState.equals(SHUTTING_DOWN) || currentState.equals(SHUTDOWN)) {
                 disconnectedCondition.signalAll();
             }
         } finally {
@@ -93,7 +93,11 @@ public class ClientStateListener
                 return false;
             }
 
-            return connectedCondition.await(timeout, unit);
+            if (!connectedCondition.await(timeout, unit)) {
+                return false;
+            }
+
+            return currentState.equals(CLIENT_CONNECTED);
         } finally {
             lock.unlock();
         }
@@ -107,24 +111,10 @@ public class ClientStateListener
      */
     public void awaitConnected()
             throws InterruptedException {
-        lock.lock();
-        try {
-            if (currentState.equals(CLIENT_CONNECTED)) {
-                return;
-            }
-
-            if (currentState.equals(SHUTTING_DOWN) || currentState.equals(SHUTDOWN)) {
-                return;
-            }
-
-            connectedCondition.await();
-        } finally {
-            lock.unlock();
-        }
+        awaitConnected(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
     }
 
     /**
-     *
      * Waits until the client is disconnected from the cluster or the timeout expires.
      * Does not wait if the client is already shutting down or shutdown.
      *
@@ -137,15 +127,19 @@ public class ClientStateListener
             throws InterruptedException {
         lock.lock();
         try {
-            if (currentState.equals(CLIENT_DISCONNECTED)) {
+            if (currentState.equals(CLIENT_DISCONNECTED) || currentState.equals(SHUTTING_DOWN) || currentState.equals(SHUTDOWN)) {
                 return true;
             }
 
-            if (currentState.equals(SHUTTING_DOWN) || currentState.equals(SHUTDOWN)) {
+            if (!disconnectedCondition.await(timeout, unit)) {
                 return false;
             }
 
-            return disconnectedCondition.await(timeout, unit);
+            if (currentState.equals(CLIENT_DISCONNECTED) || currentState.equals(SHUTTING_DOWN) || currentState.equals(SHUTDOWN)) {
+                return true;
+            }
+
+            return false;
         } finally {
             lock.unlock();
         }
@@ -159,24 +153,10 @@ public class ClientStateListener
      */
     public void awaitDisconnected()
             throws InterruptedException {
-        lock.lock();
-        try {
-            if (currentState.equals(CLIENT_DISCONNECTED)) {
-                return;
-            }
-
-            if (currentState.equals(SHUTTING_DOWN) || currentState.equals(SHUTDOWN)) {
-                return;
-            }
-
-            disconnectedCondition.await();
-        } finally {
-            lock.unlock();
-        }
+        awaitDisconnected(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
     }
 
     /**
-     *
      * @return true if the client is connected.
      */
     public boolean isConnected() {
@@ -189,7 +169,6 @@ public class ClientStateListener
     }
 
     /**
-     *
      * @return true if the client is shutdown.
      */
     public boolean isShutdown() {
@@ -202,7 +181,6 @@ public class ClientStateListener
     }
 
     /**
-     *
      * @return true if the client is started.
      */
     public boolean isStarted() {
@@ -216,7 +194,6 @@ public class ClientStateListener
     }
 
     /**
-     *
      * @return The current lifecycle state of the client.
      */
     public LifecycleEvent.LifecycleState getCurrentState() {
