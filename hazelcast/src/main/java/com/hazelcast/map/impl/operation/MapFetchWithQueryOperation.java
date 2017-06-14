@@ -16,8 +16,11 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
+import com.hazelcast.map.impl.query.Query;
+import com.hazelcast.map.impl.query.QueryRunner;
+import com.hazelcast.map.impl.query.ResultSegment;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ReadonlyOperation;
@@ -25,29 +28,36 @@ import com.hazelcast.spi.ReadonlyOperation;
 import java.io.IOException;
 
 /**
- * Operation for fetching a chunk of keys from a single {@link com.hazelcast.core.IMap} partition.
- * The starting offset is defined by the {@link #lastTableIndex} and the soft limit is defined by the {@link #fetchSize}.
+ * Fetches by query a batch of {@code fetchSize} items from a single partition ID for a map. The query is run by the query
+ * engine which means it supports projections and filtering. The {@code lastTableIndex} denotes the position from which
+ * to resume the query on the partition.
+ * This is an operation for maps configured with {@link InMemoryFormat#BINARY} or {{@link InMemoryFormat#OBJECT} format.
  *
- * @see com.hazelcast.map.impl.proxy.MapProxyImpl#iterator(int, int, boolean)
+ * @see com.hazelcast.map.impl.proxy.MapProxyImpl#iterator(int, int, com.hazelcast.projection.Projection,
+ * com.hazelcast.query.Predicate)
+ * @since 3.9
  */
-public class MapFetchKeysOperation extends MapOperation implements ReadonlyOperation {
+public class MapFetchWithQueryOperation extends MapOperation implements ReadonlyOperation {
 
+    private Query query;
     private int fetchSize;
     private int lastTableIndex;
-    private transient MapKeysWithCursor response;
+    private transient ResultSegment response;
 
-    public MapFetchKeysOperation() {
+    public MapFetchWithQueryOperation() {
     }
 
-    public MapFetchKeysOperation(String name, int lastTableIndex, int fetchSize) {
+    public MapFetchWithQueryOperation(String name, int lastTableIndex, int fetchSize, Query query) {
         super(name);
         this.lastTableIndex = lastTableIndex;
         this.fetchSize = fetchSize;
+        this.query = query;
     }
 
     @Override
     public void run() throws Exception {
-        response = recordStore.fetchKeys(lastTableIndex, fetchSize);
+        final QueryRunner runner = mapServiceContext.getMapQueryRunner(query.getMapName());
+        response = runner.runPartitionScanQueryOnPartitionChunk(query, getPartitionId(), lastTableIndex, fetchSize);
     }
 
     @Override
@@ -60,6 +70,7 @@ public class MapFetchKeysOperation extends MapOperation implements ReadonlyOpera
         super.readInternal(in);
         fetchSize = in.readInt();
         lastTableIndex = in.readInt();
+        query = in.readObject();
     }
 
     @Override
@@ -67,10 +78,11 @@ public class MapFetchKeysOperation extends MapOperation implements ReadonlyOpera
         super.writeInternal(out);
         out.writeInt(fetchSize);
         out.writeInt(lastTableIndex);
+        out.writeObject(query);
     }
 
     @Override
     public int getId() {
-        return MapDataSerializerHook.FETCH_KEYS;
+        return MapDataSerializerHook.FETCH_WITH_QUERY;
     }
 }

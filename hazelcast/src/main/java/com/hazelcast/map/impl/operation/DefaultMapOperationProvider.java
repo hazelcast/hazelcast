@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.tx.TxnDeleteOperation;
 import com.hazelcast.map.impl.tx.TxnLockAndGetOperation;
 import com.hazelcast.map.impl.tx.TxnSetOperation;
@@ -244,4 +245,8 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
         return new MapFetchEntriesOperation(name, lastTableIndex, fetchSize);
     }
 
+    @Override
+    public MapOperation createFetchWithQueryOperation(String name, int lastTableIndex, int fetchSize, Query query) {
+        return new MapFetchWithQueryOperation(name, lastTableIndex, fetchSize, query);
+    }
 }

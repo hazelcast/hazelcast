@@ -17,32 +17,39 @@
 package com.hazelcast.map.impl.iterator;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.impl.LazyMapEntry;
+import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.projection.Projection;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.IterationType;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
+import static com.hazelcast.util.CollectionUtil.isNotEmpty;
+
 /**
- * Base class for iterating a partition. When iterating you can control:
+ * Base class for iterating a partition with a {@link Predicate} and a {@link Projection}.
+ * When iterating you can control:
  * <ul>
  * <li>the fetch size</li>
- * <li>whether values are prefetched or fetched when iterating</li>
+ * <li>whether a projection was applied to the entries</li>
+ * <li>whether a predicate was applied to the entries</li>
  * </ul>
  *
  * @param <K> the key type
  * @param <V> the value type
+ * @param <R> in the case {@link #query} is null, this is {@code Map.Entry<K,V>}, otherwise it is the return type of
+ *            the projection
  */
-public abstract class AbstractMapPartitionIterator<K, V> implements Iterator<Map.Entry<K, V>> {
-
-    protected IMap<K, V> map;
+public abstract class AbstractMapQueryPartitionIterator<K, V, R> implements Iterator<R> {
+    protected final IMap<K, V> map;
     protected final int fetchSize;
     protected final int partitionId;
-    protected boolean prefetchValues;
+    protected final Query query;
 
     /**
      * The table is segment table of hash map, which is an array that stores the actual records.
@@ -56,42 +63,39 @@ public abstract class AbstractMapPartitionIterator<K, V> implements Iterator<Map
     protected int index;
     protected int currentIndex = -1;
 
-    protected List result;
+    protected List<Data> segment;
 
-    public AbstractMapPartitionIterator(IMap<K, V> map, int fetchSize, int partitionId, boolean prefetchValues) {
+    public AbstractMapQueryPartitionIterator(IMap<K, V> map, int fetchSize, int partitionId,
+                                             Predicate<K, V> predicate, Projection<Entry<K, V>, R> projection) {
         this.map = map;
         this.fetchSize = fetchSize;
         this.partitionId = partitionId;
-        this.prefetchValues = prefetchValues;
+        this.query = Query.of()
+                          .mapName(map.getName())
+                          .iterationType(IterationType.VALUE)
+                          .predicate(predicate)
+                          .projection(projection)
+                          .build();
     }
 
     @Override
     public boolean hasNext() {
-        return (result != null && index < result.size()) || advance();
+        return (segment != null && index < segment.size()) || advance();
     }
 
     @Override
-    public Map.Entry<K, V> next() {
-        while (hasNext()) {
+    public R next() {
+        if (hasNext()) {
             currentIndex = index;
             index++;
-            final Data keyData = getKey(currentIndex);
-            final Object value = getValue(currentIndex, keyData);
-            if (value != null) {
-                return new LazyMapEntry(keyData, value, (InternalSerializationService) getSerializationService());
-            }
+            return getSerializationService().toObject(getQueryResult(currentIndex));
         }
         throw new NoSuchElementException();
     }
 
     @Override
     public void remove() {
-        if (result == null || currentIndex < 0) {
-            throw new IllegalStateException("Iterator.next() must be called before remove()!");
-        }
-        Data keyData = getKey(currentIndex);
-        map.remove(keyData);
-        currentIndex = -1;
+        throw new UnsupportedOperationException("Removing when iterating map with query is not supported");
     }
 
     protected boolean advance() {
@@ -99,44 +103,27 @@ public abstract class AbstractMapPartitionIterator<K, V> implements Iterator<Map
             lastTableIndex = Integer.MAX_VALUE;
             return false;
         }
-        result = fetch();
-        if (result != null && result.size() > 0) {
+        segment = fetch();
+        if (isNotEmpty(segment)) {
             index = 0;
             return true;
         }
         return false;
     }
 
-    protected void setLastTableIndex(List response, int lastTableIndex) {
-        if (response != null && response.size() > 0) {
+    protected void setLastTableIndex(List<Data> segment, int lastTableIndex) {
+        if (isNotEmpty(segment)) {
             this.lastTableIndex = lastTableIndex;
         }
     }
 
-    protected abstract List fetch();
+    protected abstract List<Data> fetch();
 
     protected abstract SerializationService getSerializationService();
 
-    private Data getKey(int index) {
-        if (result != null) {
-            if (prefetchValues) {
-                Map.Entry<Data, Data> entry = (Map.Entry<Data, Data>) result.get(index);
-                return entry.getKey();
-            } else {
-                return (Data) result.get(index);
-            }
-        }
-        return null;
-    }
-
-    private Object getValue(int index, Data keyData) {
-        if (result != null) {
-            if (prefetchValues) {
-                Map.Entry<Data, Data> entry = (Map.Entry<Data, Data>) result.get(index);
-                return entry.getValue();
-            } else {
-                return map.get(keyData);
-            }
+    private Data getQueryResult(int index) {
+        if (segment != null) {
+            return segment.get(index);
         }
         return null;
     }

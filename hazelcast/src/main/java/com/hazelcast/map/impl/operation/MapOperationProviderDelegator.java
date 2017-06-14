@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
@@ -239,5 +240,10 @@ abstract class MapOperationProviderDelegator implements MapOperationProvider {
     @Override
     public MapOperation createFetchEntriesOperation(String name, int lastTableIndex, int fetchSize) {
         return getDelegate().createFetchEntriesOperation(name, lastTableIndex, fetchSize);
+    }
+
+    @Override
+    public MapOperation createFetchWithQueryOperation(String name, int lastTableIndex, int fetchSize, Query query) {
+        return getDelegate().createFetchWithQueryOperation(name, lastTableIndex, fetchSize, query);
     }
 }

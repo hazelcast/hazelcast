@@ -18,45 +18,59 @@ package com.hazelcast.map.impl.iterator;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.operation.MapOperation;
-import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.query.QueryResult;
+import com.hazelcast.map.impl.query.QueryResultRow;
+import com.hazelcast.map.impl.query.ResultSegment;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.projection.Projection;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.serialization.SerializationService;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 
 /**
  * Iterator for iterating map entries in the {@code partitionId}. The values are not fetched one-by-one but rather in batches.
+ * The {@link Iterator#remove()} method is not supported and will throw an {@link UnsupportedOperationException}.
  * <b>NOTE</b>
  * Iterating the map should be done only when the {@link IMap} is not being
  * mutated and the cluster is stable (there are no migrations or membership changes).
  * In other cases, the iterator may not return some entries or may return an entry twice.
  */
-public class MapPartitionIterator<K, V> extends AbstractMapPartitionIterator<K, V> {
+public class MapQueryPartitionIterator<K, V, R> extends AbstractMapQueryPartitionIterator<K, V, R> {
 
     private final MapProxyImpl<K, V> mapProxy;
 
-    public MapPartitionIterator(MapProxyImpl<K, V> mapProxy, int fetchSize, int partitionId, boolean prefetchValues) {
-        super(mapProxy, fetchSize, partitionId, prefetchValues);
+    public MapQueryPartitionIterator(MapProxyImpl<K, V> mapProxy, int fetchSize, int partitionId,
+                                     Predicate<K, V> predicate, Projection<Entry<K, V>, R> projection) {
+        super(mapProxy, fetchSize, partitionId, predicate, projection);
         this.mapProxy = mapProxy;
         advance();
     }
 
-    protected List fetch() {
-        final String name = mapProxy.getName();
-        final MapOperationProvider operationProvider = mapProxy.getOperationProvider();
-        final MapOperation operation = prefetchValues
-                    ? operationProvider.createFetchEntriesOperation(name, lastTableIndex, fetchSize)
-                    : operationProvider.createFetchKeysOperation(name, lastTableIndex, fetchSize);
+    protected List<Data> fetch() {
+        final MapOperation op = mapProxy.getOperationProvider()
+                                        .createFetchWithQueryOperation(mapProxy.getName(), lastTableIndex, fetchSize, query);
 
-        final AbstractCursor cursor = invoke(operation);
-        setLastTableIndex(cursor.getBatch(), cursor.getNextTableIndexToReadFrom());
-        return cursor.getBatch();
+        final ResultSegment segment = invoke(op);
+        final QueryResult queryResult = (QueryResult) segment.getResult();
+
+        final List<Data> serialized = new ArrayList<Data>(queryResult.size());
+        for (QueryResultRow row : queryResult) {
+            serialized.add(row.getValue());
+        }
+
+        setLastTableIndex(serialized, segment.getNextTableIndexToReadFrom());
+        return serialized;
     }
 
-    private <T extends AbstractCursor> T invoke(Operation operation) {
-        final InternalCompletableFuture<T> future =
+    private ResultSegment invoke(Operation operation) {
+        final InternalCompletableFuture<ResultSegment> future =
                 mapProxy.getOperationService().invokeOnPartition(mapProxy.getServiceName(), operation, partitionId);
         return future.join();
     }

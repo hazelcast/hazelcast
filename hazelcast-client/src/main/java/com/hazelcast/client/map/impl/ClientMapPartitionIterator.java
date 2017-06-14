@@ -24,12 +24,20 @@ import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
+import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.iterator.AbstractMapPartitionIterator;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.List;
 
+/**
+ * Iterator for iterating map entries in the {@code partitionId}. The values are not fetched one-by-one but rather in batches.
+ * <b>NOTE</b>
+ * Iterating the map should be done only when the {@link IMap} is not being
+ * mutated and the cluster is stable (there are no migrations or membership changes).
+ * In other cases, the iterator may not return some entries or may return an entry twice.
+ */
 public class ClientMapPartitionIterator<K, V> extends AbstractMapPartitionIterator<K, V> {
 
     private final ClientMapProxy<K, V> mapProxy;

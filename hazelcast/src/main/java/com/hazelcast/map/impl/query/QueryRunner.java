@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.QueryableEntriesSegment;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.NodeEngine;
@@ -67,6 +68,32 @@ public class QueryRunner {
         this.partitionScanExecutor = partitionScanExecutor;
         this.resultProcessorRegistry = resultProcessorRegistry;
     }
+
+    /**
+     * Runs a query on a chunk of a single partition. The chunk is defined by the offset {@code tableIndex}
+     * and the soft limit {@code fetchSize}.
+     *
+     * @param query       the query
+     * @param partitionId the partition which is queried
+     * @param tableIndex  the index at which to start querying
+     * @param fetchSize   the soft limit for the number of items to be queried
+     * @return the queryied entries along with the next {@code tableIndex} to resume querying
+     */
+    public ResultSegment runPartitionScanQueryOnPartitionChunk(Query query, int partitionId, int tableIndex, int fetchSize) {
+        final MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
+        final Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes());
+        final QueryableEntriesSegment entries =
+                partitionScanExecutor.execute(query.getMapName(), predicate, partitionId, tableIndex, fetchSize);
+
+        updateStatistics(mapContainer);
+
+        final ResultProcessor processor = resultProcessorRegistry.get(query.getResultType());
+        final Result result = processor.populateResult(query, Long.MAX_VALUE, entries.getEntries(),
+                Collections.singletonList(partitionId));
+
+        return new ResultSegment(result, entries.getNextTableIndexToReadFrom());
+    }
+
 
     // full query = index query (if possible), then partition-scan query
     public Result runIndexOrPartitionScanQueryOnOwnedPartitions(Query query)

@@ -20,65 +20,43 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
-public class MapEntriesWithCursor implements IdentifiedDataSerializable {
-
-    private List<Map.Entry<Data, Data>> entries;
-    private int nextTableIndexToReadFrom;
+/**
+ * Container class for a collection of entries along with an offset from which new entries can be fetched.
+ * This class is usually used when iterating the map entries.
+ *
+ * @see com.hazelcast.map.impl.proxy.MapProxyImpl#iterator
+ */
+public class MapEntriesWithCursor extends AbstractCursor<Map.Entry<Data, Data>> {
 
     public MapEntriesWithCursor() {
     }
 
     public MapEntriesWithCursor(List<Map.Entry<Data, Data>> entries, int nextTableIndexToReadFrom) {
-        this.entries = entries;
-        this.nextTableIndexToReadFrom = nextTableIndexToReadFrom;
-    }
-
-    public List<Map.Entry<Data, Data>> getEntries() {
-        return entries;
-    }
-
-    public int getNextTableIndexToReadFrom() {
-        return nextTableIndexToReadFrom;
+        super(entries, nextTableIndexToReadFrom);
     }
 
     @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
+    void writeElement(ObjectDataOutput out, Entry<Data, Data> entry) throws IOException {
+        out.writeData(entry.getKey());
+        out.writeData(entry.getValue());
+    }
+
+    @Override
+    Entry<Data, Data> readElement(ObjectDataInput in) throws IOException {
+        final Data key = in.readData();
+        final Data value = in.readData();
+        return new AbstractMap.SimpleEntry<Data, Data>(key, value);
     }
 
     @Override
     public int getId() {
         return MapDataSerializerHook.ENTRIES_WITH_CURSOR;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(nextTableIndexToReadFrom);
-        int size = entries.size();
-        out.writeInt(size);
-        for (Map.Entry<Data, Data> entry : entries) {
-            out.writeData(entry.getKey());
-            out.writeData(entry.getValue());
-        }
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        nextTableIndexToReadFrom = in.readInt();
-        int size = in.readInt();
-        entries = new ArrayList<Map.Entry<Data, Data>>(size);
-        for (int i = 0; i < size; i++) {
-            Data key = in.readData();
-            Data value = in.readData();
-            entries.add(new AbstractMap.SimpleEntry<Data, Data>(key, value));
-        }
     }
 }

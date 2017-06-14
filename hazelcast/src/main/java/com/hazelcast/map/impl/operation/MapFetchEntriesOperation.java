@@ -24,6 +24,12 @@ import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 
+/**
+ * Operation for fetching a chunk of entries from a single {@link com.hazelcast.core.IMap} partition.
+ * The starting offset is defined by the {@link #lastTableIndex} and the soft limit is defined by the {@link #fetchSize}.
+ *
+ * @see com.hazelcast.map.impl.proxy.MapProxyImpl#iterator(int, int, boolean)
+ */
 public class MapFetchEntriesOperation extends MapOperation implements ReadonlyOperation {
 
     private int fetchSize;

@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.QueryableEntriesSegment;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
@@ -59,6 +60,15 @@ public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
             result = getSortedSubList(result, (PagingPredicate) predicate, nearestAnchorEntry);
         }
         return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     * Parallel execution for a partition chunk query is not supported.
+     */
+    @Override
+    public QueryableEntriesSegment execute(String mapName, Predicate predicate, int partitionId, int tableIndex, int fetchSize) {
+        return partitionScanRunner.run(mapName, predicate, partitionId, tableIndex, fetchSize);
     }
 
     protected List<QueryableEntry> runUsingPartitionScanWithoutPaging(
