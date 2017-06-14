@@ -134,7 +134,7 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
         ICache<Object, String> memberCache = member.getCacheManager().getCache(
                 CacheUtil.getPrefixedCacheName(DEFAULT_CACHE_NAME, null, null));
 
-        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(
+        NearCache<Object, String> nearCache = nearCacheManager.getNearCache(
                 cacheManager.getCacheNameWithPrefix(DEFAULT_CACHE_NAME));
 
         testContext = new NearCacheTestContext(client, member, cacheManager, memberCacheManager, nearCacheManager, cache,

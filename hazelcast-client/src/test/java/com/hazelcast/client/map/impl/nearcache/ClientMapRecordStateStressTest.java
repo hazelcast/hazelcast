@@ -25,8 +25,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -133,7 +131,7 @@ public class ClientMapRecordStateStressTest extends HazelcastTestSupport {
             thread.join();
         }
 
-        assertFinalRecordStateIsReadPermitted(clientMap, getSerializationService(member));
+        assertFinalRecordStateIsReadPermitted(clientMap);
     }
 
     private NearCacheConfig newNearCacheConfig() {
@@ -142,14 +140,13 @@ public class ClientMapRecordStateStressTest extends HazelcastTestSupport {
                 .setInvalidateOnChange(true);
     }
 
-    private static void assertFinalRecordStateIsReadPermitted(IMap clientMap, InternalSerializationService serializationService) {
+    private static void assertFinalRecordStateIsReadPermitted(IMap clientMap) {
         NearCachedClientMapProxy proxy = (NearCachedClientMapProxy) clientMap;
         DefaultNearCache nearCache = (DefaultNearCache) proxy.getNearCache().unwrap(DefaultNearCache.class);
         NearCacheRecordStore nearCacheRecordStore = nearCache.getNearCacheRecordStore();
 
         for (int i = 0; i < KEY_SPACE; i++) {
-            Data key = serializationService.toData(i);
-            NearCacheRecord record = nearCacheRecordStore.getRecord(key);
+            NearCacheRecord record = nearCacheRecordStore.getRecord(i);
 
             if (record != null) {
                 assertEquals(record.toString(), READ_PERMITTED, record.getRecordState());

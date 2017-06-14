@@ -92,7 +92,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     private String name = "default";
     private InMemoryFormat inMemoryFormat = DEFAULT_MEMORY_FORMAT;
-    private boolean serializeKeys = true;
+    private boolean serializeKeys;
     private boolean invalidateOnChange = true;
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
     private int maxIdleSeconds = DEFAULT_MAX_IDLE_SECONDS;

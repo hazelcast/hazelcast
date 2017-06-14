@@ -2411,14 +2411,14 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="serialize-keys" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+            <xs:element name="serialize-keys" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
                 <xs:annotation>
                     <xs:documentation>
                         Defines if the Near Cache keys should be serialized or not.
                         Keys should be serialized if they are mutable and need to be cloned via serialization.
                         NOTE: It's not supported to disable key serialization with in-memory-format NATIVE.
                         This setting will have no effect in that case.
-                        Default value is true.
+                        Default value is false.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

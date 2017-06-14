@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 
 /**
@@ -38,11 +37,11 @@ public class NearCacheTestContext {
     protected final NearCacheManager nearCacheManager;
     protected final ICache<Object, String> cache;
     protected final ICache<Object, String> memberCache;
-    protected final NearCache<Data, String> nearCache;
+    protected final NearCache<Object, String> nearCache;
 
     NearCacheTestContext(HazelcastClientProxy client, HazelcastClientCacheManager cacheManager,
                          NearCacheManager nearCacheManager, ICache<Object, String> cache,
-                         NearCache<Data, String> nearCache) {
+                         NearCache<Object, String> nearCache) {
         this.client = client;
         this.member = null;
         this.serializationService = client.getSerializationService();
@@ -58,7 +57,7 @@ public class NearCacheTestContext {
                          HazelcastClientCacheManager cacheManager, HazelcastServerCacheManager memberCacheManager,
                          NearCacheManager nearCacheManager,
                          ICache<Object, String> cache, ICache<Object, String> memberCache,
-                         NearCache<Data, String> nearCache) {
+                         NearCache<Object, String> nearCache) {
         this.client = client;
         this.member = member;
         this.serializationService = client.getSerializationService();
