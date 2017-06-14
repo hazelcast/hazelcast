@@ -95,7 +95,7 @@ public abstract class AbstractParameterizedHazelcastClassRunner extends BlockJUn
     @Override
     protected void validateConstructor(List<Throwable> errors) {
         validateOnlyOneConstructor(errors);
-        if (fieldsAreAnnotated() || !isParameterized) {
+        if (fieldsAreAnnotated()) {
             validateZeroArgConstructor(errors);
         }
     }
