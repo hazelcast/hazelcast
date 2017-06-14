@@ -103,6 +103,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
@@ -154,6 +155,11 @@ public class ReferenceObjects {
                 }
             }
             return !(e1.hasNext() || e2.hasNext());
+        }
+        if (a instanceof Entry && b instanceof Entry) {
+            final Entry entryA = (Entry) a;
+            final Entry entryB = (Entry) b;
+            return isEqual(entryA.getKey(), entryB.getKey()) && isEqual(entryA.getValue(), entryB.getValue());
         }
         return a.equals(b);
     }
