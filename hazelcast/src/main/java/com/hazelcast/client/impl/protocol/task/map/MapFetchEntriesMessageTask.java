@@ -53,7 +53,7 @@ public class MapFetchEntriesMessageTask extends AbstractMapPartitionMessageTask<
         }
         MapEntriesWithCursor mapEntriesWithCursor = (MapEntriesWithCursor) response;
         return MapFetchEntriesCodec.encodeResponse(mapEntriesWithCursor.getNextTableIndexToReadFrom(),
-                mapEntriesWithCursor.getEntries());
+                mapEntriesWithCursor.getBatch());
     }
 
     @Override

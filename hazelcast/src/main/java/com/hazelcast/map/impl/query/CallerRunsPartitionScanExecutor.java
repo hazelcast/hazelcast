@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.QueryableEntriesSegment;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 
@@ -55,5 +56,10 @@ public class CallerRunsPartitionScanExecutor implements PartitionScanExecutor {
             throw storedException;
         }
         return result;
+    }
+
+    @Override
+    public QueryableEntriesSegment execute(String mapName, Predicate predicate, int partitionId, int tableIndex, int fetchSize) {
+        return partitionScanRunner.run(mapName, predicate, partitionId, tableIndex, fetchSize);
     }
 }

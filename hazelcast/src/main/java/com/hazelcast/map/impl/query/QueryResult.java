@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Contains the result of a query or projection evaluation.
@@ -40,7 +41,7 @@ import java.util.LinkedList;
  */
 public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializable, Iterable<QueryResultRow> {
 
-    private final Collection<QueryResultRow> rows = new LinkedList<QueryResultRow>();
+    private final List<QueryResultRow> rows = new LinkedList<QueryResultRow>();
 
     private Collection<Integer> partitionIds;
 
@@ -144,7 +145,7 @@ public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializa
         this.partitionIds = new ArrayList<Integer>(partitionIds);
     }
 
-    public Collection<QueryResultRow> getRows() {
+    public List<QueryResultRow> getRows() {
         return rows;
     }
 

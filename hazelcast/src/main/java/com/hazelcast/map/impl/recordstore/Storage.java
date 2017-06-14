@@ -74,8 +74,32 @@ public interface Storage<K, R> {
      */
     Iterable<LazyEntryViewFromRecord> getRandomSamples(int sampleCount);
 
+    /**
+     * Fetch minimally {@code size} keys from the {@code tableIndex} position. The key is fetched on-heap.
+     * <p>
+     * NOTE: The implementation is free to return more than {@code size} items. This can happen if we cannot easily resume
+     * from the last returned item by receiving the {@code tableIndex} of the last item. The index can represent a bucket
+     * with multiple items and in this case the returned object will contain all items in that bucket, regardless if we exceed
+     * the requested {@code size}.
+     *
+     * @param tableIndex the index (position) from which to resume
+     * @param size       the minimal count of returned items
+     * @return fetched keys and the table index for keys AFTER the last returned key
+     */
     MapKeysWithCursor fetchKeys(int tableIndex, int size);
 
+    /**
+     * Fetch minimally {@code size} items from the {@code tableIndex} position. Both the key and value are fetched on-heap.
+     * <p>
+     * NOTE: The implementation is free to return more than {@code size} items. This can happen if we cannot easily resume
+     * from the last returned item by receiving the {@code tableIndex} of the last item. The index can represent a bucket
+     * with multiple items and in this case the returned object will contain all items in that bucket, regardless if we exceed
+     * the requested {@code size}.
+     *
+     * @param tableIndex the index (position) from which to resume
+     * @param size       the minimal count of returned items
+     * @return fetched entries and the table index for entries AFTER the last returned entry
+     */
     MapEntriesWithCursor fetchEntries(int tableIndex, int size, SerializationService serializationService);
 
 }

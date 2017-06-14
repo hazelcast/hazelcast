@@ -51,7 +51,7 @@ public class MapFetchKeysMessageTask extends AbstractMapPartitionMessageTask<Map
             return MapFetchKeysCodec.encodeResponse(0, Collections.<Data>emptyList());
         }
         MapKeysWithCursor mapKeysWithCursor = (MapKeysWithCursor) response;
-        return MapFetchKeysCodec.encodeResponse(mapKeysWithCursor.getNextTableIndexToReadFrom(), mapKeysWithCursor.getKeys());
+        return MapFetchKeysCodec.encodeResponse(mapKeysWithCursor.getNextTableIndexToReadFrom(), mapKeysWithCursor.getBatch());
     }
 
     @Override

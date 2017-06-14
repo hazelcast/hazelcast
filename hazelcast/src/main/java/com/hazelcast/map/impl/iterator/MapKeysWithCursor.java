@@ -20,65 +20,37 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
-public class MapKeysWithCursor implements IdentifiedDataSerializable {
-
-    private int nextTableIndexToReadFrom;
-    private List<Data> keys;
+/**
+ * Container class for a collection of keys along with an offset from which new keys can be fetched.
+ * This class is usually used when iterating the map keys.
+ *
+ * @see com.hazelcast.map.impl.proxy.MapProxyImpl#iterator
+ */
+public class MapKeysWithCursor extends AbstractCursor<Data> {
 
     public MapKeysWithCursor() {
     }
 
     public MapKeysWithCursor(List<Data> keys, int nextTableIndexToReadFrom) {
-        this.keys = keys;
-        this.nextTableIndexToReadFrom = nextTableIndexToReadFrom;
-    }
-
-    public int getNextTableIndexToReadFrom() {
-        return nextTableIndexToReadFrom;
-    }
-
-    public List<Data> getKeys() {
-        return keys;
+        super(keys, nextTableIndexToReadFrom);
     }
 
     public int getCount() {
-        return keys != null ? keys.size() : 0;
-    }
-
-    public Data getKey(int index) {
-        return keys != null ? keys.get(index) : null;
+        return getBatch() != null ? getBatch().size() : 0;
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(nextTableIndexToReadFrom);
-        int size = keys.size();
-        out.writeInt(size);
-        for (Data o : keys) {
-            out.writeData(o);
-        }
+    void writeElement(ObjectDataOutput out, Data element) throws IOException {
+        out.writeData(element);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        nextTableIndexToReadFrom = in.readInt();
-        int size = in.readInt();
-        keys = new ArrayList<Data>(size);
-        for (int i = 0; i < size; i++) {
-            Data data = in.readData();
-            keys.add(data);
-        }
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
+    Data readElement(ObjectDataInput in) throws IOException {
+        return in.readData();
     }
 
     @Override

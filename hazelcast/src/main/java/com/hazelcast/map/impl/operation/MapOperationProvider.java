@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
@@ -92,6 +93,14 @@ public interface MapOperationProvider {
     MapOperation createFetchKeysOperation(String name, int lastTableIndex, int fetchSize);
 
     MapOperation createFetchEntriesOperation(String name, int lastTableIndex, int fetchSize);
+
+    /**
+     * Creates an operation for fetching a segment of a query result from a single partition.
+     *
+     * @see com.hazelcast.map.impl.proxy.MapProxyImpl#iterator(int, int, com.hazelcast.projection.Projection, Predicate)
+     * @since 3.9
+     */
+    MapOperation createFetchWithQueryOperation(String name, int lastTableIndex, int fetchSize, Query query);
 
     OperationFactory createPartitionWideEntryOperationFactory(String name, EntryProcessor entryProcessor);
 

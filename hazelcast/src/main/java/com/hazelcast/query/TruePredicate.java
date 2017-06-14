@@ -27,14 +27,22 @@ import java.util.Map;
 
 /**
  * A {@link com.hazelcast.query.Predicate} which always returns true.
+ *
+ * @param <K> map key type
+ * @param <V> map value type
  */
 @BinaryInterface
-public class TruePredicate implements IdentifiedDataSerializable, Predicate {
+public class TruePredicate<K, V> implements IdentifiedDataSerializable, Predicate<K, V> {
 
     /**
      * An instance of the TruePredicate.
      */
     public static final TruePredicate INSTANCE = new TruePredicate();
+
+    @SuppressWarnings("unchecked")
+    public static <K, V> TruePredicate<K, V> truePredicate() {
+        return INSTANCE;
+    }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {

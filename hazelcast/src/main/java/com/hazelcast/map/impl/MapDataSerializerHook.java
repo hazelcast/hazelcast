@@ -60,6 +60,7 @@ import com.hazelcast.map.impl.operation.LoadAllOperation;
 import com.hazelcast.map.impl.operation.LoadMapOperation;
 import com.hazelcast.map.impl.operation.MapFetchEntriesOperation;
 import com.hazelcast.map.impl.operation.MapFetchKeysOperation;
+import com.hazelcast.map.impl.operation.MapFetchWithQueryOperation;
 import com.hazelcast.map.impl.operation.MapFlushBackupOperation;
 import com.hazelcast.map.impl.operation.MapFlushOperation;
 import com.hazelcast.map.impl.operation.MapFlushOperationFactory;
@@ -114,6 +115,7 @@ import com.hazelcast.map.impl.query.QueryOperation;
 import com.hazelcast.map.impl.query.QueryPartitionOperation;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
+import com.hazelcast.map.impl.query.ResultSegment;
 import com.hazelcast.map.impl.query.Target;
 import com.hazelcast.map.impl.querycache.subscriber.operation.DestroyQueryCacheOperation;
 import com.hazelcast.map.impl.querycache.subscriber.operation.MadePublishableOperation;
@@ -286,8 +288,10 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int ENTRY_REMOVING_PROCESSOR = 135;
     public static final int ENTRY_OFFLOADABLE_SET_UNLOCK = 136;
     public static final int LOCK_AWARE_LAZY_MAP_ENTRY = 137;
+    public static final int FETCH_WITH_QUERY = 138;
+    public static final int RESULT_SEGMENT = 139;
 
-    private static final int LEN = LOCK_AWARE_LAZY_MAP_ENTRY + 1;
+    private static final int LEN = RESULT_SEGMENT + 1;
 
     @Override
     public int getFactoryId() {
@@ -966,6 +970,16 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[LOCK_AWARE_LAZY_MAP_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new LockAwareLazyMapEntry();
+            }
+        };
+        constructors[FETCH_WITH_QUERY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MapFetchWithQueryOperation();
+            }
+        };
+        constructors[RESULT_SEGMENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ResultSegment();
             }
         };
 

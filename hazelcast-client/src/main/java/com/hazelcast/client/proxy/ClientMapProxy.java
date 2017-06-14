@@ -82,6 +82,7 @@ import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
 import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.client.impl.querycache.subscriber.ClientQueryCacheEndToEndConstructor;
 import com.hazelcast.client.map.impl.ClientMapPartitionIterator;
+import com.hazelcast.client.map.impl.ClientMapQueryPartitionIterator;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
@@ -180,6 +181,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
     protected static final String NULL_PREDICATE_IS_NOT_ALLOWED = "Predicate should not be null!";
     protected static final String NULL_AGGREGATOR_IS_NOT_ALLOWED = "Aggregator should not be null!";
+    protected static final String NULL_PROJECTION_IS_NOT_ALLOWED = "Projection should not be null!";
 
     @SuppressWarnings("unchecked")
     private static final ClientMessageDecoder GET_ASYNC_RESPONSE_DECODER = new ClientMessageDecoder() {
@@ -1535,9 +1537,70 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         return "IMap{" + "name='" + name + '\'' + '}';
     }
 
-    // used for testing
+    /**
+     * Returns an iterator for iterating entries in the {@code partitionId}. If {@code prefetchValues} is
+     * {@code true}, all values will be sent along with the keys and no additional data will be fetched when
+     * iterating. If {@code false}, the values will be fetched when iterating the entries.
+     * <p>
+     * The values are not fetched one-by-one but rather in batches.
+     * You may control the size of the batch by changing the {@code fetchSize} parameter.
+     * A too small {@code fetchSize} can affect performance since more data will have to be sent to and from the partition owner.
+     * A too high {@code fetchSize} means that more data will be sent which can block other operations from being sent,
+     * including internal operations.
+     * The underlying implementation may send more values in one batch than {@code fetchSize} if it needs to get to
+     * a "safepoint" to later resume iteration.
+     * <p>
+     * <b>NOTE</b>
+     * Iterating the map should be done only when the {@link IMap} is not being
+     * mutated and the cluster is stable (there are no migrations or membership changes).
+     * In other cases, the iterator may not return some entries or may return an entry twice.
+     *
+     * @param fetchSize   the size of the batches which will be sent when iterating the data
+     * @param partitionId the partition ID which is being iterated
+     * @return the iterator for the projected entries
+     */
     public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {
         return new ClientMapPartitionIterator<K, V>(this, getContext(), fetchSize, partitionId, prefetchValues);
+    }
+
+    /**
+     * Returns an iterator for iterating the result of the projection on entries in the {@code partitionId} which
+     * satisfy the {@code predicate}. The {@link Iterator#remove()} method is not supported and will throw an
+     * {@link UnsupportedOperationException}.
+     * <p>
+     * The values are not fetched one-by-one but rather in batches.
+     * You may control the size of the batch by changing the {@code fetchSize} parameter.
+     * A too small {@code fetchSize} can affect performance since more data will have to be sent to and from the partition owner.
+     * A too high {@code fetchSize} means that more data will be sent which can block other operations from being sent,
+     * including internal operations.
+     * The underlying implementation may send more values in one batch than {@code fetchSize} if it needs to get to
+     * a "safepoint" to later resume iteration.
+     * Predicates of type {@link PagingPredicate} are not supported.
+     * <p>
+     * <b>NOTE</b>
+     * Iterating the map should be done only when the {@link IMap} is not being
+     * mutated and the cluster is stable (there are no migrations or membership changes).
+     * In other cases, the iterator may not return some entries or may return an entry twice.
+     *
+     * @param fetchSize   the size of the batches which will be sent when iterating the data
+     * @param partitionId the partition ID which is being iterated
+     * @param projection  the projection to apply before returning the value. {@code null} value is not allowed
+     * @param predicate   the predicate which the entries must match. {@code null} value is not allowed
+     * @param <R>         the return type
+     * @return the iterator for the projected entries
+     * @throws UnsupportedOperationException if {@link Iterator#remove()} is invoked
+     * @throws IllegalArgumentException if the predicate is of type {@link PagingPredicate}
+     * @since 3.9
+     */
+    public <R> Iterator<R> iterator(int fetchSize, int partitionId, Projection<Map.Entry<K, V>, R> projection,
+                                    Predicate<K, V> predicate) {
+        checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        if (predicate instanceof PagingPredicate) {
+            throw new IllegalArgumentException("Paging predicate is not allowed when iterating map by query");
+        }
+        return new ClientMapQueryPartitionIterator<K, V, R>(this, getContext(), fetchSize, partitionId,
+                predicate, projection);
     }
 
     // used for testing
