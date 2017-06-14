@@ -384,6 +384,10 @@ public class ClientCompatibilityNullTest_1_1 {
 
 
 
+
+
+
+
 {
     ClientMessage clientMessage = MapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong   );
     int length = inputStream.readInt();
@@ -1482,6 +1486,12 @@ public class ClientCompatibilityNullTest_1_1 {
                 assertTrue(isEqual(anInt, params.tableIndex));
                 assertTrue(isEqual(aListOfEntry, params.entries));
 }
+
+
+
+
+
+
 
 
 
@@ -5447,6 +5457,10 @@ public class ClientCompatibilityNullTest_1_1 {
 
 
 
+
+
+
+
 {
     ClientMessage clientMessage = XATransactionClearRemoteCodec.encodeRequest(    anXid   );
     int length = inputStream.readInt();
@@ -5860,9 +5874,14 @@ public class ClientCompatibilityNullTest_1_1 {
 {
     ClientMessage clientMessage = RingbufferReadManyCodec.encodeRequest(    aString ,    aLong ,    anInt ,    anInt ,    null   );
     int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
+    // Since the test is generated for protocol version (1.1) which is earlier than latest change in the message
+    // (version 1.5), only the bytes after frame length fields are compared
+    int frameLength = clientMessage.getFrameLength();
+    assertTrue(frameLength >= length);
+    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
+    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
 }
 {
     int length = inputStream.readInt();
@@ -5871,6 +5890,7 @@ public class ClientCompatibilityNullTest_1_1 {
     RingbufferReadManyCodec.ResponseParameters params = RingbufferReadManyCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(anInt, params.readCount));
                 assertTrue(isEqual(datas, params.items));
+                assertFalse(params.itemSeqsExist);
 }
 
 

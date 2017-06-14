@@ -386,6 +386,10 @@ public class ClientCompatibilityTest_1_4 {
 }
 
 
+
+
+
+
 {
     ClientMessage clientMessage = MapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong   );
     int length = inputStream.readInt();
@@ -1694,6 +1698,12 @@ public class ClientCompatibilityTest_1_4 {
         handler.handle(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
      }
 }
+
+
+
+
+
+
 
 
 {
@@ -5878,6 +5888,10 @@ public class ClientCompatibilityTest_1_4 {
 }
 
 
+
+
+
+
 {
     ClientMessage clientMessage = XATransactionClearRemoteCodec.encodeRequest(    anXid   );
     int length = inputStream.readInt();
@@ -6312,9 +6326,14 @@ public class ClientCompatibilityTest_1_4 {
 {
     ClientMessage clientMessage = RingbufferReadManyCodec.encodeRequest(    aString ,    aLong ,    anInt ,    anInt ,    aData   );
     int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
+    // Since the test is generated for protocol version (1.4) which is earlier than latest change in the message
+    // (version 1.5), only the bytes after frame length fields are compared
+    int frameLength = clientMessage.getFrameLength();
+    assertTrue(frameLength >= length);
+    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
+    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
 
 }
 {
@@ -6324,6 +6343,7 @@ public class ClientCompatibilityTest_1_4 {
     RingbufferReadManyCodec.ResponseParameters params = RingbufferReadManyCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(anInt, params.readCount));
                 assertTrue(isEqual(datas, params.items));
+                assertFalse(params.itemSeqsExist);
 }
 
 

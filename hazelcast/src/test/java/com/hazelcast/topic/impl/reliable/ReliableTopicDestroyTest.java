@@ -19,6 +19,7 @@ package com.hazelcast.topic.impl.reliable;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -29,10 +30,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.ConcurrentMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -81,8 +83,11 @@ public class ReliableTopicDestroyTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                ConcurrentMap<String, RingbufferContainer> containers = ringbufferService.getContainers();
-                assertFalse(containers.containsKey(topic.ringbuffer.getName()));
+                final String name = topic.ringbuffer.getName();
+                final Map<ObjectNamespace, RingbufferContainer> partitionContainers =
+                        ringbufferService.getContainers().get(ringbufferService.getRingbufferPartitionId(name));
+                assertTrue(partitionContainers != null);
+                assertFalse(partitionContainers.containsKey(RingbufferService.getRingbufferNamespace(name)));
             }
         });
     }

@@ -49,7 +49,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -82,7 +84,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         Config config = new Config();
         PartitioningStrategy partitioningStrategy = StringAndPartitionAwarePartitioningStrategy.INSTANCE;
         config.getMapConfig("default")
-                .setPartitioningStrategyConfig(new PartitioningStrategyConfig(partitioningStrategy));
+              .setPartitioningStrategyConfig(new PartitioningStrategyConfig(partitioningStrategy));
 
         TestHazelcastInstanceFactory instanceFactory = new TestHazelcastInstanceFactory(4);
         instances = instanceFactory.newInstances(config);
@@ -154,13 +156,16 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         String partitionKey = "hazelcast";
         HazelcastInstance hz = getHazelcastInstance(partitionKey);
 
-        Ringbuffer ringbuffer = hz.getRingbuffer("ringbuffer@" + partitionKey);
+        Ringbuffer<String> ringbuffer = hz.getRingbuffer("ringbuffer@" + partitionKey);
         ringbuffer.add("foo");
         assertEquals("ringbuffer@" + partitionKey, ringbuffer.getName());
         assertEquals(partitionKey, ringbuffer.getPartitionKey());
 
         RingbufferService service = getNodeEngine(hz).getService(RingbufferService.SERVICE_NAME);
-        assertTrue(service.getContainers().containsKey(ringbuffer.getName()));
+        final Map<ObjectNamespace, RingbufferContainer> partitionContainers =
+                service.getContainers().get(service.getRingbufferPartitionId(ringbuffer.getName()));
+        assertNotNull(partitionContainers);
+        assertTrue(partitionContainers.containsKey(RingbufferService.getRingbufferNamespace(ringbuffer.getName())));
     }
 
     @Test

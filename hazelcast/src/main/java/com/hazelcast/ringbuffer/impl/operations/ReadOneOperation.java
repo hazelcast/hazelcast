@@ -55,7 +55,7 @@ public class ReadOneOperation extends AbstractRingBufferOperation implements Blo
     @Override
     public void run() throws Exception {
         RingbufferContainer ringbuffer = getRingBufferContainer();
-        result = ringbuffer.read(sequence);
+        result = ringbuffer.readAsData(sequence);
     }
 
     @Override
