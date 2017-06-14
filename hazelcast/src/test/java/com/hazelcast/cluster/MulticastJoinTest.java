@@ -26,10 +26,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.instance.Node;
-import com.hazelcast.internal.cluster.impl.JoinMessage;
-import com.hazelcast.internal.cluster.impl.MulticastListener;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,17 +34,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -120,44 +109,6 @@ public class MulticastJoinTest extends AbstractJoinTest {
         config2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
 
         assertIndependentClusters(config1, config2);
-    }
-
-    @Test
-    public void testGroupPasswordNotLeakedInJoinMsg() {
-        final Config config1 = new Config();
-        config1.getNetworkConfig().getJoin().getMulticastConfig()
-               .setEnabled(true).setMulticastTimeoutSeconds(3);
-        config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
-
-        final AtomicBoolean leaked = new AtomicBoolean(false);
-        Node node1 = getNode(Hazelcast.newHazelcastInstance(config1));
-        node1.multicastService.addMulticastListener(new MulticastListener() {
-            @Override
-            public void onMessage(Object msg) {
-                JoinMessage join = (JoinMessage) msg;
-                ObjectDataOutput odo = mock(ObjectDataOutput.class);
-
-                try {
-                    join.getConfigCheck().writeData(odo);
-                } catch (IOException e) {
-                    fail(e.getMessage());
-                }
-
-                try {
-                    ArgumentCaptor<String> captor =  ArgumentCaptor.forClass(String.class);
-                    verify(odo, times(7)).writeUTF(captor.capture());
-                    List<String> values = captor.getAllValues();
-                    if (values.contains(config1.getGroupConfig().getPassword())) {
-                        leaked.set(true);
-                    }
-                } catch (IOException e) {
-                    fail(e.getMessage());
-                }
-            }
-        });
-
-        Hazelcast.newHazelcastInstance(config1);
-        assertEquals("Password leaked in output stream.", false, leaked.get());
     }
 
     @Test
