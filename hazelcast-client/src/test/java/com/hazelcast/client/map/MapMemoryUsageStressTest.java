@@ -31,19 +31,25 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.TimeUnit;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
+import static java.lang.String.format;
+import static java.util.Collections.synchronizedList;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertTrue;
 
-//https://github.com/hazelcast/hazelcast/issues/2138
+/**
+ * Test for issue https://github.com/hazelcast/hazelcast/issues/2138
+ */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(NightlyTest.class)
 public class MapMemoryUsageStressTest extends HazelcastTestSupport {
 
-    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private final ILogger logger = Logger.getLogger(MapMemoryUsageStressTest.class);
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
     private HazelcastInstance client;
 
     @Before
@@ -59,28 +65,33 @@ public class MapMemoryUsageStressTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 30 * 60 * 1000)
-    public void voidCacher() throws Exception {
-        final AtomicInteger counter = new AtomicInteger(200000);
-        final AtomicInteger errors = new AtomicInteger();
+    public void voidCacher() {
+        AtomicInteger counter = new AtomicInteger(200000);
+        AtomicInteger errors = new AtomicInteger();
+        List<String> errorList = synchronizedList(new LinkedList<String>());
+
         Thread[] threads = new Thread[8];
-        for (int k = 0; k < threads.length; k++) {
-            StressThread stressThread = new StressThread(counter, errors);
-            threads[k] = stressThread;
+        for (int i = 0; i < threads.length; i++) {
+            StressThread stressThread = new StressThread(counter, errors, errorList);
+            threads[i] = stressThread;
             stressThread.start();
         }
 
-        assertJoinable(TimeUnit.MINUTES.toSeconds(30), threads);
-        assertEquals(0, errors.get());
-        assertTrue(counter.get() <= 0);
+        assertJoinable(MINUTES.toSeconds(30), threads);
+        assertEqualsStringFormat("Expected %d errors, but got %d (" + errorList + ")", 0, errors.get());
+        assertTrue(format("Expected the counter to be <= 0, but was %d", counter.get()), counter.get() <= 0);
     }
 
     private class StressThread extends Thread {
+
         private final AtomicInteger counter;
         private final AtomicInteger errors;
+        private final List<String> errorList;
 
-        public StressThread(AtomicInteger counter, AtomicInteger errors) {
+        StressThread(AtomicInteger counter, AtomicInteger errors, List<String> errorList) {
             this.counter = counter;
             this.errors = errors;
+            this.errorList = errorList;
         }
 
         @Override
@@ -103,6 +114,7 @@ public class MapMemoryUsageStressTest extends HazelcastTestSupport {
                 }
             } catch (Throwable t) {
                 errors.incrementAndGet();
+                errorList.add(t.getClass().getSimpleName() + ": " + t.getMessage());
                 t.printStackTrace();
             }
         }
