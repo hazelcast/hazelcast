@@ -16,16 +16,23 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
@@ -45,8 +52,72 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
     @Override
     public void run() throws Exception {
         QueryRunner queryRunner = mapServiceContext.getMapQueryRunner(getName());
-        result = queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
+        if (isNativeFormat()) {
+            result = queryRunner.runIndexQueryOnOwnedPartitions(query);
+            if (result == null) {
+                // Optimization that runs partition-thread queries from query operation in case of native memory.
+                // if the index yields no result we need to run QueryPartitionOperation,
+                // it would be costly (4 times slower) to spawn these operation as remote operation from the
+                // query engine, so this operation is used as the caller.
+                runAsyncPartitionThreadScanForNative(queryRunner);
+            }
+        } else {
+            result = queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
+        }
     }
+
+    private void runAsyncPartitionThreadScanForNative(QueryRunner queryRunner) {
+        final OperationServiceImpl ops = (OperationServiceImpl) getNodeEngine().getOperationService();
+        ops.onStartAsyncOperation(this);
+        runPartitionScanOnPartitionThreadsAsync(query, queryRunner);
+    }
+
+    void runPartitionScanOnPartitionThreadsAsync(final Query query, final QueryRunner queryRunner) {
+        final List<Integer> initialPartitions = new ArrayList<Integer>(mapServiceContext.getOwnedPartitions());
+        PartitionIteratingOperation opf = new PartitionIteratingOperation(
+                new QueryPartitionOperationFactory(query, initialPartitions), initialPartitions);
+
+        final OperationServiceImpl ops = (OperationServiceImpl) getNodeEngine().getOperationService();
+        ops.invokeOnTarget(MapService.SERVICE_NAME, opf, getNodeEngine().getThisAddress()).andThen(
+                new ExecutionCallback<Object>() {
+                    @Override
+                    public void onResponse(Object response) {
+                        try {
+                            Result modifiableResult = queryRunner.populateEmptyResult(query, initialPartitions);
+                            populateResult((PartitionIteratingOperation.PartitionResponse) response, modifiableResult);
+                            QueryOperation.this.sendResponse(modifiableResult);
+                        } finally {
+                            ops.onCompletionAsyncOperation(QueryOperation.this);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        try {
+                            QueryOperation.this.sendResponse(t);
+                        } finally {
+                            ops.onCompletionAsyncOperation(QueryOperation.this);
+                        }
+                    }
+                });
+    }
+
+    private Result populateResult(PartitionIteratingOperation.PartitionResponse response, Result result) {
+        // translate from Object[] (holding multiple Results) to a single Result object
+        for (Object resultObject : response.getResults()) {
+            if (resultObject instanceof Result) {
+                Result partitionResult = (Result) resultObject;
+                result.combine(partitionResult);
+            }
+            // otherwise the error will be handled anyway.
+        }
+        return result;
+    }
+
+    private boolean isNativeFormat() {
+        return mapContainer.getMapConfig().getInMemoryFormat().equals(InMemoryFormat.NATIVE);
+    }
+
 
     @Override
     public ExceptionAction onInvocationException(Throwable throwable) {
@@ -59,6 +130,23 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
     @Override
     public Object getResponse() {
         return result;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return result != null;
+    }
+
+    @Override
+    public void onExecutionFailure(Throwable e) {
+        if (returnsResponse()) {
+            super.onExecutionFailure(e);
+        } else {
+            // This is required since if the returnsResponse() method returns false there won't be any response sent
+            // to the invoking party - this means that the operation won't be retried if the exception is instanceof
+            // HazelcastRetryableException
+            sendResponse(e);
+        }
     }
 
     @Override
