@@ -30,13 +30,6 @@ public class ConsoleCommandRequest implements ConsoleRequest {
 
     private String command;
 
-    public ConsoleCommandRequest() {
-    }
-
-    public ConsoleCommandRequest(String command) {
-        this.command = command;
-    }
-
     @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_CONSOLE_COMMAND;
@@ -53,18 +46,6 @@ public class ConsoleCommandRequest implements ConsoleRequest {
             result.add("output", "Error: " + e.getClass().getSimpleName() + "[" + e.getMessage() + "]");
         }
         root.add("result", result);
-    }
-
-    @Override
-    public Object readResponse(JsonObject json) {
-        return getString(json, "output", "Error while reading response " + ConsoleCommandRequest.class.getName());
-    }
-
-    @Override
-    public JsonObject toJson() {
-        final JsonObject root = new JsonObject();
-        root.add("command", command);
-        return root;
     }
 
     @Override

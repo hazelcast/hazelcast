@@ -29,7 +29,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.util.JsonUtil.getBoolean;
+import static com.hazelcast.util.JsonUtil.getString;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -53,7 +56,8 @@ public class ThreadDumpRequestTest extends HazelcastTestSupport {
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
-        assertNotNull(request.readResponse(result));
+        assertTrue(getBoolean(result, "hasDump"));
+        assertNotNull(getString(result, "dump"));
     }
 
     @Test
@@ -64,6 +68,7 @@ public class ThreadDumpRequestTest extends HazelcastTestSupport {
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
-        assertNotNull(request.readResponse(result));
+        assertTrue(getBoolean(result, "hasDump"));
+        assertNotNull(getString(result, "dump"));
     }
 }

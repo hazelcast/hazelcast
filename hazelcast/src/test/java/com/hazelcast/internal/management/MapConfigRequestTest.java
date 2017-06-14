@@ -31,8 +31,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.util.JsonUtil.getBoolean;
+import static com.hazelcast.util.JsonUtil.getObject;
+import static com.hazelcast.util.JsonUtil.getString;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -60,7 +65,12 @@ public class MapConfigRequestTest extends HazelcastTestSupport {
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
-        MapConfig mapConfig = (MapConfig) request.readResponse(result);
+        assertFalse(getBoolean(result, "update"));
+        assertTrue(getBoolean(result, "hasMapConfig", false));
+        final MapConfigDTO adapter = new MapConfigDTO();
+        adapter.fromJson(getObject(result, "mapConfig"));
+        MapConfig mapConfig = adapter.getMapConfig();
+
         assertNotNull(mapConfig);
         assertEquals("default", mapConfig.getName());
     }
@@ -73,6 +83,6 @@ public class MapConfigRequestTest extends HazelcastTestSupport {
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
-        assertEquals("success", request.readResponse(result));
+        assertEquals("success", getString(result, "updateResult"));
     }
 }

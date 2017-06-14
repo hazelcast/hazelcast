@@ -21,10 +21,6 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.logging.ILogger;
 
-import java.io.IOException;
-
-import static com.hazelcast.util.JsonUtil.getString;
-
 /**
  * Request coming from Management Center to trigger a force start the node during hot-restart.
  */
@@ -46,11 +42,6 @@ public class ForceStartNodeRequest implements ConsoleRequest {
     }
 
     @Override
-    public Object readResponse(JsonObject in) throws IOException {
-        return getString(in, "result", "FAIL");
-    }
-
-    @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
         String resultString;
         HazelcastInstanceImpl instance = mcs.getHazelcastInstance();
@@ -65,11 +56,6 @@ public class ForceStartNodeRequest implements ConsoleRequest {
 
         JsonObject result = new JsonObject().add("result", resultString);
         out.add("result", result);
-    }
-
-    @Override
-    public JsonObject toJson() {
-        return new JsonObject();
     }
 
     @Override

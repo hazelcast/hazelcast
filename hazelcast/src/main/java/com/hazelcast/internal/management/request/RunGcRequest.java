@@ -34,20 +34,10 @@ public class RunGcRequest implements ConsoleRequest {
     }
 
     @Override
-    public Object readResponse(JsonObject in) {
-        return "Successfully garbage collected.";
-    }
-
-    @Override
     @SuppressFBWarnings(value = "DM_GC", justification = "Explicit GC is the point of this class")
     public void writeResponse(ManagementCenterService mcs, JsonObject root) throws Exception {
         System.gc();
         root.add("result", new JsonObject());
-    }
-
-    @Override
-    public JsonObject toJson() {
-        return new JsonObject();
     }
 
     @Override

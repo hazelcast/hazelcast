@@ -22,8 +22,6 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.logging.ILogger;
 
-import java.io.IOException;
-
 import static com.hazelcast.util.JsonUtil.getString;
 
 /**
@@ -48,11 +46,6 @@ public class ChangeClusterStateRequest implements AsyncConsoleRequest {
     }
 
     @Override
-    public Object readResponse(JsonObject in) throws IOException {
-        return getString(in, "result", "FAILURE");
-    }
-
-    @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
         String resultString = "SUCCESS";
         try {
@@ -69,13 +62,6 @@ public class ChangeClusterStateRequest implements AsyncConsoleRequest {
 
     private static ClusterState getClusterState(String state) {
         return ClusterState.valueOf(state);
-    }
-
-    @Override
-    public JsonObject toJson() {
-        JsonObject root = new JsonObject();
-        root.add("state", state);
-        return root;
     }
 
     @Override

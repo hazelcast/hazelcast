@@ -21,10 +21,6 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.management.ManagementCenterService;
 
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import static com.hazelcast.util.JsonUtil.getString;
 
 /**
@@ -48,17 +44,6 @@ public class GetMapEntryRequest implements ConsoleRequest {
     @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_MAP_ENTRY;
-    }
-
-    @Override
-    public Object readResponse(JsonObject in) {
-        Map<String, String> properties = new LinkedHashMap<String, String>();
-        final Iterator<JsonObject.Member> iterator = in.iterator();
-        while (iterator.hasNext()) {
-            final JsonObject.Member property = iterator.next();
-            properties.put(property.getName(), property.getValue().asString());
-        }
-        return properties;
     }
 
     @Override
@@ -86,15 +71,6 @@ public class GetMapEntryRequest implements ConsoleRequest {
             result.add("browse_version", Long.toString(entry.getVersion()));
         }
         root.add("result", result);
-    }
-
-    @Override
-    public JsonObject toJson() {
-        JsonObject root = new JsonObject();
-        root.add("mapName", mapName);
-        root.add("type", type);
-        root.add("key", key);
-        return root;
     }
 
     @Override

@@ -20,10 +20,6 @@ import com.eclipsesource.json.JsonObject;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.internal.management.ManagementCenterService;
 
-import java.io.IOException;
-
-import static com.hazelcast.util.JsonUtil.getString;
-
 /**
  * Request coming from Management Center for getting the {@link ClusterState}
  */
@@ -35,21 +31,11 @@ public class GetClusterStateRequest implements ConsoleRequest {
     }
 
     @Override
-    public Object readResponse(JsonObject in) throws IOException {
-        return getString(in, "result", "UNKNOWN");
-    }
-
-    @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
         ClusterState clusterState = mcs.getHazelcastInstance().getCluster().getClusterState();
         JsonObject result = new JsonObject();
         result.add("result", clusterState.toString());
         out.add("result", result);
-    }
-
-    @Override
-    public JsonObject toJson() {
-        return new JsonObject();
     }
 
     @Override

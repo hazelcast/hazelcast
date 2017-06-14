@@ -19,17 +19,10 @@ package com.hazelcast.internal.management.request;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
 
-import java.io.IOException;
-
 public class PromoteMemberRequest implements AsyncConsoleRequest {
     @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_PROMOTE_MEMBER;
-    }
-
-    @Override
-    public Object readResponse(JsonObject in) throws IOException {
-        return null;
     }
 
     @Override
@@ -45,11 +38,6 @@ public class PromoteMemberRequest implements AsyncConsoleRequest {
         }
 
         out.add("result", result);
-    }
-
-    @Override
-    public JsonObject toJson() {
-        return new JsonObject();
     }
 
     @Override

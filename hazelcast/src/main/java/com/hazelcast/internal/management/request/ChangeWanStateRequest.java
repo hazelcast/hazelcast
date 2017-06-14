@@ -20,8 +20,6 @@ import com.eclipsesource.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ChangeWanStateOperation;
 
-import java.io.IOException;
-
 import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getString;
 
@@ -54,11 +52,6 @@ public class ChangeWanStateRequest implements ConsoleRequest {
     }
 
     @Override
-    public Object readResponse(JsonObject in) throws IOException {
-        return getString(in, "result", "FAILURE");
-    }
-
-    @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
         Object operationResult = mcs.callOnThis(new ChangeWanStateOperation(schemeName, publisherName, start));
         JsonObject result = new JsonObject();
@@ -71,30 +64,9 @@ public class ChangeWanStateRequest implements ConsoleRequest {
     }
 
     @Override
-    public JsonObject toJson() {
-        JsonObject root = new JsonObject();
-        root.add("schemeName", schemeName);
-        root.add("publisherName", publisherName);
-        root.add("start", start);
-        return root;
-    }
-
-    @Override
     public void fromJson(JsonObject json) {
         schemeName = getString(json, "schemeName");
         publisherName = getString(json, "publisherName");
         start = getBoolean(json, "start");
-    }
-
-    public String getSchemeName() {
-        return schemeName;
-    }
-
-    public String getPublisherName() {
-        return publisherName;
-    }
-
-    public boolean isStart() {
-        return start;
     }
 }
