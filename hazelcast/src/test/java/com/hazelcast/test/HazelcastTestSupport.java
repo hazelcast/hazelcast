@@ -76,6 +76,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
+import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.Integer.getInteger;
 import static java.lang.String.format;
@@ -143,7 +144,7 @@ public abstract class HazelcastTestSupport {
         if (factory != null) {
             throw new IllegalStateException("Node factory is already created!");
         }
-        if (TestEnvironment.isRunningCompatibilityTest()) {
+        if (isRunningCompatibilityTest()) {
             throw new UnsupportedOperationException(
                     "Cannot start a factory with specific addresses when running compatibility tests");
         } else {
@@ -163,7 +164,7 @@ public abstract class HazelcastTestSupport {
         if (factory != null) {
             throw new IllegalStateException("Node factory is already created!");
         }
-        if (TestEnvironment.isRunningCompatibilityTest()) {
+        if (isRunningCompatibilityTest()) {
             throw new UnsupportedOperationException(
                     "Cannot start a factory with specific addresses when running compatibility tests");
         } else {
@@ -1199,16 +1200,15 @@ public abstract class HazelcastTestSupport {
         return new DefaultMapOperationProvider();
     }
 
+    @SuppressWarnings("unchecked")
     private static TestHazelcastInstanceFactory createHazelcastInstanceFactory0(Integer nodeCount) {
-        if (TestEnvironment.isRunningCompatibilityTest() && BuildInfoProvider.BUILD_INFO.isEnterprise()) {
-            Class<? extends TestHazelcastInstanceFactory> compatibilityTestFactoryClass = null;
+        if (isRunningCompatibilityTest() && BuildInfoProvider.BUILD_INFO.isEnterprise()) {
             try {
-                compatibilityTestFactoryClass = (Class<? extends TestHazelcastInstanceFactory>)
-                        Class.forName("com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory");
+                String className = "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
+                Class<? extends TestHazelcastInstanceFactory> compatibilityTestFactoryClass
+                        = (Class<? extends TestHazelcastInstanceFactory>) Class.forName(className);
                 // nodeCount is ignored when constructing compatibility test factory
-                Constructor<? extends TestHazelcastInstanceFactory> ctor = compatibilityTestFactoryClass
-                            .getConstructor();
-                return ctor.newInstance();
+                return compatibilityTestFactoryClass.getConstructor().newInstance();
             } catch (Exception e) {
                 throw rethrow(e);
             }
