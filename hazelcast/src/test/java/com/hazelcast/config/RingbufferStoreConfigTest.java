@@ -20,6 +20,7 @@ import com.hazelcast.core.RingbufferStore;
 import com.hazelcast.core.RingbufferStoreFactory;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.RingbufferStoreWrapper;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -57,7 +58,9 @@ public class RingbufferStoreConfigTest {
     @Test
     public void setStoreImplementation() {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-        RingbufferStore<Data> store = RingbufferStoreWrapper.create("name", config, OBJECT, serializationService, null);
+        RingbufferStore<Data> store = RingbufferStoreWrapper.create(
+                RingbufferService.getRingbufferNamespace("name"),
+                config, OBJECT, serializationService, null);
 
         config.setStoreImplementation(store);
 

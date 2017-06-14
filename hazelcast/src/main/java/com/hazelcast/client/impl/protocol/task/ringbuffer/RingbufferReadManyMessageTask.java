@@ -59,13 +59,17 @@ public class RingbufferReadManyMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         // we are not deserializing the whole content, only the enclosing portable. The actual items remain un
-        ReadResultSetImpl resultSet = nodeEngine.getSerializationService().toObject(response);
-        List<Data> items = new ArrayList<Data>(resultSet.size());
+        final ReadResultSetImpl resultSet = nodeEngine.getSerializationService().toObject(response);
+        final List<Data> items = new ArrayList<Data>(resultSet.size());
+        final long[] seqs = new long[resultSet.size()];
+        final Data[] dataItems = resultSet.getDataItems();
+
         for (int k = 0; k < resultSet.size(); k++) {
-            items.add(resultSet.getDataItems()[k]);
+            items.add(dataItems[k]);
+            seqs[k] = resultSet.getSequence(k);
         }
 
-        return RingbufferReadManyCodec.encodeResponse(resultSet.readCount(), items);
+        return RingbufferReadManyCodec.encodeResponse(resultSet.readCount(), items, seqs);
     }
 
     @Override

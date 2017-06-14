@@ -16,20 +16,21 @@
 
 package com.hazelcast.ringbuffer.impl;
 
-import com.hazelcast.spi.AbstractWaitNotifyKey;
+import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.WaitNotifyKey;
 
-import static com.hazelcast.ringbuffer.impl.RingbufferService.SERVICE_NAME;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * A {@link com.hazelcast.spi.AbstractWaitNotifyKey} to make it possible to wait for an item to be published in the ringbuffer.
  */
-public class RingbufferWaitNotifyKey extends AbstractWaitNotifyKey {
+public class RingbufferWaitNotifyKey implements WaitNotifyKey {
 
-    private final String type;
+    private final ObjectNamespace namespace;
 
-    public RingbufferWaitNotifyKey(String name, String type) {
-        super(SERVICE_NAME, name);
-        this.type = type;
+    public RingbufferWaitNotifyKey(ObjectNamespace namespace) {
+        checkNotNull(namespace);
+        this.namespace = namespace;
     }
 
     @Override
@@ -40,19 +41,25 @@ public class RingbufferWaitNotifyKey extends AbstractWaitNotifyKey {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        if (!super.equals(o)) {
-            return false;
-        }
 
         RingbufferWaitNotifyKey that = (RingbufferWaitNotifyKey) o;
-        return type.equals(that.type);
+
+        return namespace.equals(that.namespace);
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + type.hashCode();
-        return result;
+        return namespace.hashCode();
+    }
+
+    @Override
+    public String getServiceName() {
+        return namespace.getServiceName();
+    }
+
+    @Override
+    public String getObjectName() {
+        return namespace.getObjectName();
     }
 }
 

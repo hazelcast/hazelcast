@@ -21,6 +21,7 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.StaleSequenceException;
+import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -65,8 +66,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
     @Test
     public void constructionNoTTL() {
         final RingbufferConfig config = new RingbufferConfig("foo").setCapacity(100).setTimeToLiveSeconds(0);
-        final RingbufferContainer rbContainer = new RingbufferContainer(config.getName(), config,
-                nodeEngine.getSerializationService(), nodeEngine.getConfigClassLoader());
+        final RingbufferContainer rbContainer = getRingbufferContainer(config);
 
         assertEquals(config.getCapacity(), rbContainer.getCapacity());
         final ArrayRingbuffer ringbuffer = (ArrayRingbuffer) rbContainer.getRingbuffer();
@@ -81,8 +81,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
     @Test
     public void constructionWithTTL() {
         RingbufferConfig config = new RingbufferConfig("foo").setCapacity(100).setTimeToLiveSeconds(30);
-        RingbufferContainer ringbuffer = new RingbufferContainer(config.getName(), config,
-                nodeEngine.getSerializationService(), nodeEngine.getConfigClassLoader());
+        RingbufferContainer ringbuffer = getRingbufferContainer(config);
 
         assertEquals(config.getCapacity(), ringbuffer.getCapacity());
         assertNotNull(ringbuffer.getExpirationPolicy());
@@ -95,8 +94,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
     @Test
     public void remainingCapacity_whenTTLDisabled() {
         RingbufferConfig config = new RingbufferConfig("foo").setCapacity(100).setTimeToLiveSeconds(0);
-        RingbufferContainer ringbuffer = new RingbufferContainer(config.getName(), config,
-                nodeEngine.getSerializationService(), nodeEngine.getConfigClassLoader());
+        RingbufferContainer ringbuffer = getRingbufferContainer(config);
 
         assertEquals(config.getCapacity(), ringbuffer.remainingCapacity());
 
@@ -105,11 +103,16 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
         assertEquals(config.getCapacity(), ringbuffer.remainingCapacity());
     }
 
+    private RingbufferContainer getRingbufferContainer(RingbufferConfig config) {
+        return new RingbufferContainer(
+                RingbufferService.getRingbufferNamespace(config.getName()), config,
+                nodeEngine.getSerializationService(), nodeEngine.getConfigClassLoader());
+    }
+
     @Test
     public void remainingCapacity_whenTTLEnabled() {
         RingbufferConfig config = new RingbufferConfig("foo").setCapacity(100).setTimeToLiveSeconds(1);
-        RingbufferContainer ringbuffer = new RingbufferContainer(config.getName(), config,
-                nodeEngine.getSerializationService(), nodeEngine.getConfigClassLoader());
+        RingbufferContainer ringbuffer = getRingbufferContainer(config);
 
         assertEquals(config.getCapacity(), ringbuffer.remainingCapacity());
 
@@ -125,8 +128,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
     @Test
     public void size_whenEmpty() {
         RingbufferConfig config = new RingbufferConfig("foo").setCapacity(100);
-        RingbufferContainer ringbuffer = new RingbufferContainer(config.getName(), config,
-                nodeEngine.getSerializationService(), nodeEngine.getConfigClassLoader());
+        RingbufferContainer ringbuffer = getRingbufferContainer(config);
 
         assertEquals(0, ringbuffer.size());
         assertTrue(ringbuffer.isEmpty());
@@ -135,8 +137,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
     @Test
     public void size_whenAddingManyItems() {
         RingbufferConfig config = new RingbufferConfig("foo").setCapacity(100);
-        RingbufferContainer ringbuffer = new RingbufferContainer(config.getName(), config,
-                nodeEngine.getSerializationService(), nodeEngine.getConfigClassLoader());
+        RingbufferContainer ringbuffer = getRingbufferContainer(config);
 
         for (int k = 0; k < config.getCapacity(); k++) {
             ringbuffer.add(toData(""));
@@ -157,8 +158,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
     @Test
     public void add() {
         RingbufferConfig config = new RingbufferConfig("foo").setCapacity(10);
-        RingbufferContainer ringbuffer = new RingbufferContainer(config.getName(), config,
-                nodeEngine.getSerializationService(), nodeEngine.getConfigClassLoader());
+        RingbufferContainer ringbuffer = getRingbufferContainer(config);
         ringbuffer.add(toData("foo"));
         ringbuffer.add(toData("bar"));
 
@@ -169,47 +169,45 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
     @Test
     public void add_whenWrapped() {
         RingbufferConfig config = new RingbufferConfig("foo").setInMemoryFormat(InMemoryFormat.OBJECT).setCapacity(3);
-        RingbufferContainer ringbuffer = new RingbufferContainer(config.getName(), config,
-                nodeEngine.getSerializationService(), nodeEngine.getConfigClassLoader());
+        RingbufferContainer ringbuffer = getRingbufferContainer(config);
 
         ringbuffer.add(toData("1"));
         assertEquals(0, ringbuffer.headSequence());
         assertEquals(0, ringbuffer.tailSequence());
-        assertEquals(toData("1"), ringbuffer.read(0));
+        assertEquals(toData("1"), ringbuffer.readAsData(0));
 
         ringbuffer.add(toData("2"));
         assertEquals(1, ringbuffer.tailSequence());
         assertEquals(0, ringbuffer.headSequence());
-        assertEquals(toData("1"), ringbuffer.read(0));
-        assertEquals(toData("2"), ringbuffer.read(1));
+        assertEquals(toData("1"), ringbuffer.readAsData(0));
+        assertEquals(toData("2"), ringbuffer.readAsData(1));
 
         ringbuffer.add(toData("3"));
         assertEquals(2, ringbuffer.tailSequence());
         assertEquals(0, ringbuffer.headSequence());
-        assertEquals(toData("1"), ringbuffer.read(0));
-        assertEquals(toData("2"), ringbuffer.read(1));
-        assertEquals(toData("3"), ringbuffer.read(2));
+        assertEquals(toData("1"), ringbuffer.readAsData(0));
+        assertEquals(toData("2"), ringbuffer.readAsData(1));
+        assertEquals(toData("3"), ringbuffer.readAsData(2));
 
         ringbuffer.add(toData("4"));
         assertEquals(3, ringbuffer.tailSequence());
         assertEquals(1, ringbuffer.headSequence());
-        assertEquals(toData("2"), ringbuffer.read(1));
-        assertEquals(toData("3"), ringbuffer.read(2));
-        assertEquals(toData("4"), ringbuffer.read(3));
+        assertEquals(toData("2"), ringbuffer.readAsData(1));
+        assertEquals(toData("3"), ringbuffer.readAsData(2));
+        assertEquals(toData("4"), ringbuffer.readAsData(3));
 
         ringbuffer.add(toData("5"));
         assertEquals(4, ringbuffer.tailSequence());
         assertEquals(2, ringbuffer.headSequence());
-        assertEquals(toData("3"), ringbuffer.read(2));
-        assertEquals(toData("4"), ringbuffer.read(3));
-        assertEquals(toData("5"), ringbuffer.read(4));
+        assertEquals(toData("3"), ringbuffer.readAsData(2));
+        assertEquals(toData("4"), ringbuffer.readAsData(3));
+        assertEquals(toData("5"), ringbuffer.readAsData(4));
     }
 
     @Test(expected = StaleSequenceException.class)
     public void read_whenStaleSequence() {
         RingbufferConfig config = new RingbufferConfig("foo").setCapacity(3);
-        RingbufferContainer ringbuffer = new RingbufferContainer(config.getName(), config,
-                nodeEngine.getSerializationService(), nodeEngine.getConfigClassLoader());
+        RingbufferContainer<Data> ringbuffer = getRingbufferContainer(config);
 
         ringbuffer.add(toData("1"));
         ringbuffer.add(toData("2"));
@@ -217,14 +215,13 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
         // this one will overwrite the first item
         ringbuffer.add(toData("4"));
 
-        ringbuffer.read(0);
+        ringbuffer.readAsData(0);
     }
 
     @Test
     public void add_whenBinaryInMemoryFormat() {
         final RingbufferConfig config = new RingbufferConfig("foo").setInMemoryFormat(InMemoryFormat.BINARY);
-        final RingbufferContainer rbContainer = new RingbufferContainer(config.getName(), config,
-                nodeEngine.getSerializationService(), nodeEngine.getConfigClassLoader());
+        final RingbufferContainer rbContainer = getRingbufferContainer(config);
         final ArrayRingbuffer ringbuffer = (ArrayRingbuffer) rbContainer.getRingbuffer();
 
         rbContainer.add(toData("foo"));
@@ -234,8 +231,7 @@ public class RingbufferContainerTest extends HazelcastTestSupport {
     @Test
     public void add_inObjectInMemoryFormat() {
         final RingbufferConfig config = new RingbufferConfig("foo").setInMemoryFormat(InMemoryFormat.OBJECT);
-        final RingbufferContainer rbContainer = new RingbufferContainer(config.getName(), config,
-                nodeEngine.getSerializationService(), nodeEngine.getConfigClassLoader());
+        final RingbufferContainer rbContainer = getRingbufferContainer(config);
         final ArrayRingbuffer ringbuffer = (ArrayRingbuffer) rbContainer.getRingbuffer();
 
         rbContainer.add(toData("foo"));

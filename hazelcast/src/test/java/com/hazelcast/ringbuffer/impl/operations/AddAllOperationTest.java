@@ -20,7 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -45,6 +47,7 @@ public class AddAllOperationTest extends HazelcastTestSupport {
     private NodeEngineImpl nodeEngine;
     private SerializationService serializationService;
     private Ringbuffer<Object> ringbuffer;
+    private RingbufferService ringbufferService;
 
     @Before
     public void setup() {
@@ -56,6 +59,7 @@ public class AddAllOperationTest extends HazelcastTestSupport {
         nodeEngine = getNodeEngineImpl(hz);
         serializationService = getSerializationService(hz);
         ringbuffer = hz.getRingbuffer(rbConfig.getName());
+        ringbufferService = nodeEngine.getService(RingbufferService.SERVICE_NAME);
     }
 
     @Test
@@ -66,8 +70,7 @@ public class AddAllOperationTest extends HazelcastTestSupport {
 
         Data item = serializationService.toData("newItem");
 
-        AddAllOperation addOperation = new AddAllOperation(ringbuffer.getName(), new Data[]{item}, FAIL);
-        addOperation.setNodeEngine(nodeEngine);
+        AddAllOperation addOperation = getAddAllOperation(new Data[]{item}, FAIL);
         addOperation.run();
 
         assertFalse(addOperation.shouldNotify());
@@ -83,8 +86,7 @@ public class AddAllOperationTest extends HazelcastTestSupport {
 
         Data item = serializationService.toData("newItem");
 
-        AddAllOperation addOperation = new AddAllOperation(ringbuffer.getName(), new Data[]{item}, FAIL);
-        addOperation.setNodeEngine(nodeEngine);
+        AddAllOperation addOperation = getAddAllOperation(new Data[]{item}, FAIL);
         addOperation.run();
 
         assertTrue(addOperation.shouldNotify());
@@ -100,8 +102,7 @@ public class AddAllOperationTest extends HazelcastTestSupport {
 
         Data item = serializationService.toData("newItem");
 
-        AddAllOperation addOperation = new AddAllOperation(ringbuffer.getName(), new Data[]{item}, OVERWRITE);
-        addOperation.setNodeEngine(nodeEngine);
+        AddAllOperation addOperation = getAddAllOperation(new Data[]{item}, OVERWRITE);
         addOperation.run();
 
         assertTrue(addOperation.shouldNotify());
@@ -117,12 +118,18 @@ public class AddAllOperationTest extends HazelcastTestSupport {
 
         Data item = serializationService.toData("newItem");
 
-        AddAllOperation addOperation = new AddAllOperation(ringbuffer.getName(), new Data[]{item}, OVERWRITE);
-        addOperation.setNodeEngine(nodeEngine);
+        AddAllOperation addOperation = getAddAllOperation(new Data[]{item}, OVERWRITE);
         addOperation.run();
 
         assertTrue(addOperation.shouldNotify());
         assertTrue(addOperation.shouldBackup());
         assertEquals(ringbuffer.tailSequence(), addOperation.getResponse());
+    }
+
+    private AddAllOperation getAddAllOperation(Data[] items, OverflowPolicy policy) {
+        AddAllOperation op = new AddAllOperation(ringbuffer.getName(), items, policy);
+        op.setPartitionId(ringbufferService.getRingbufferPartitionId(ringbuffer.getName()));
+        op.setNodeEngine(nodeEngine);
+        return op;
     }
 }

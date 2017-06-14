@@ -21,9 +21,13 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.VersionAware;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.ringbuffer.StaleSequenceException;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
@@ -31,6 +35,7 @@ import java.io.IOException;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.config.InMemoryFormat.values;
+import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 
@@ -43,12 +48,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * it is null to save space.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class RingbufferContainer implements IdentifiedDataSerializable {
+public class RingbufferContainer<T> implements IdentifiedDataSerializable, Versioned {
 
     private static final long TTL_DISABLED = 0;
-    private static final String EMPTY = "empty";
 
-    private String name;
+    private ObjectNamespace namespace;
 
     // a cached version of the wait notify key needed to wait for a change if the ringbuffer is empty
     private RingbufferWaitNotifyKey emptyRingWaitNotifyKey;
@@ -58,11 +62,18 @@ public class RingbufferContainer implements IdentifiedDataSerializable {
     private RingbufferStoreWrapper store;
     private SerializationService serializationService;
 
+    /**
+     * The ringbuffer containing the items. The type of contained items depends on the {@link #inMemoryFormat} :
+     * <ul>
+     * <li>{@link InMemoryFormat#OBJECT} - the type is the same as the type {@link T}</li>
+     * <li>{@link InMemoryFormat#BINARY} or {@link InMemoryFormat#NATIVE} - the type is {@link Data}</li>
+     * </ul>
+     */
     private Ringbuffer ringbuffer;
 
     /**
-     * This constructor only supports IdentifiedDataSerializable instance creation. For any other purpose, use other
-     * constructors in this class.
+     * For purposes of {@link IdentifiedDataSerializable} instance creation.
+     * For any other purpose, use other constructors in this class.
      */
     public RingbufferContainer() {
     }
@@ -70,20 +81,20 @@ public class RingbufferContainer implements IdentifiedDataSerializable {
     /**
      * Constructs the ring buffer container with only the name and the key for blocking operations. This does not fully
      * prepare the container for usage. The caller must invoke the
-     * {@link #init(String, RingbufferConfig, SerializationService, ClassLoader)} method to complete the initialization before
-     * usage.
+     * {@link #init(RingbufferConfig, SerializationService, ClassLoader)}
+     * method to complete the initialization before usage.
      *
-     * @param name the name of the ring buffer container
+     * @param namespace the namespace of the ring buffer container
      */
-    public RingbufferContainer(String name) {
-        this.name = name;
-        this.emptyRingWaitNotifyKey = new RingbufferWaitNotifyKey(name, EMPTY);
+    public RingbufferContainer(ObjectNamespace namespace) {
+        this.namespace = namespace;
+        this.emptyRingWaitNotifyKey = new RingbufferWaitNotifyKey(namespace);
     }
 
-    public RingbufferContainer(String name, RingbufferConfig config,
+    public RingbufferContainer(ObjectNamespace namespace, RingbufferConfig config,
                                SerializationService serializationService,
                                ClassLoader configClassLoader) {
-        this(name);
+        this(namespace);
 
         this.inMemoryFormat = config.getInMemoryFormat();
         this.ringbuffer = new ArrayRingbuffer(config.getCapacity());
@@ -92,7 +103,7 @@ public class RingbufferContainer implements IdentifiedDataSerializable {
         if (ttlMs != TTL_DISABLED) {
             this.expirationPolicy = new RingbufferExpirationPolicy(ringbuffer.getCapacity(), ttlMs);
         }
-        init(name, config, serializationService, configClassLoader);
+        init(config, serializationService, configClassLoader);
     }
 
     /**
@@ -100,22 +111,21 @@ public class RingbufferContainer implements IdentifiedDataSerializable {
      * on a replication operation the container is only partially constructed. The init method finishes the configuration
      * of the ring buffer container for further usage.
      *
-     * @param name                 the name of the ring buffer
      * @param config               the configuration of the ring buffer
      * @param serializationService the serialization service
      * @param configClassLoader    the class loader for which the ring buffer store classes will be loaded
      */
-    public void init(String name, RingbufferConfig config,
+    public void init(RingbufferConfig config,
                      SerializationService serializationService,
                      ClassLoader configClassLoader) {
         this.config = config;
         this.serializationService = serializationService;
-        initRingbufferStore(name, config, serializationService, configClassLoader);
+        initRingbufferStore(config, serializationService, configClassLoader);
     }
 
-    private void initRingbufferStore(String name, RingbufferConfig config,
-                                     SerializationService serializationService, ClassLoader configClassLoader) {
-        this.store = RingbufferStoreWrapper.create(name,
+    private void initRingbufferStore(RingbufferConfig config, SerializationService serializationService,
+                                     ClassLoader configClassLoader) {
+        this.store = RingbufferStoreWrapper.create(namespace,
                 config.getRingbufferStoreConfig(),
                 config.getInMemoryFormat(),
                 serializationService,
@@ -211,20 +221,21 @@ public class RingbufferContainer implements IdentifiedDataSerializable {
 
     /**
      * Adds one item to the ring buffer. Sets the expiration time if TTL is configured and also attempts to store the item
-     * in the data store if one is configured.
+     * in the data store if one is configured. The provided {@code item} can be {@link Data} or the deserialized object.
+     * The provided item will be transformed to the configured ringbuffer {@link InMemoryFormat} if necessary.
      *
-     * @param item item to be stored in the ring buffer and data store
+     * @param item item to be stored in the ring buffer and data store, can be {@link Data} or an deserialized object
      * @return the sequence ID of the item stored in the ring buffer
-     * @throws HazelcastException                                              if there was any exception thrown by the data store
-     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException if the ring buffer is configured to keep items
-     *                                                                         in object format and the item could not be
-     *                                                                         deserialized
+     * @throws HazelcastException              if there was any exception thrown by the data store
+     * @throws HazelcastSerializationException if the ring buffer is configured to keep items
+     *                                         in object format and the item could not be
+     *                                         deserialized
      */
-    public long add(Data item) {
+    public long add(T item) {
         final long sequence = addInternal(item);
         if (store.isEnabled()) {
             try {
-                store.store(sequence, item);
+                store.store(sequence, convertToData(item));
             } catch (Exception e) {
                 throw new HazelcastException(e);
             }
@@ -238,12 +249,12 @@ public class RingbufferContainer implements IdentifiedDataSerializable {
      *
      * @param items items to be stored in the ring buffer and data store
      * @return the sequence ID of the last item stored in the ring buffer
-     * @throws HazelcastException                                              if there was any exception thrown by the data store
-     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException if the ring buffer is configured to keep items
-     *                                                                         in object format and the item could not be
-     *                                                                         deserialized
+     * @throws HazelcastException              if there was any exception thrown by the data store
+     * @throws HazelcastSerializationException if the ring buffer is configured to keep items
+     *                                         in object format and the item could not be
+     *                                         deserialized
      */
-    public long addAll(Data[] items) {
+    public long addAll(T[] items) {
         long firstSequence = -1;
         long lastSequence = -1;
 
@@ -255,7 +266,7 @@ public class RingbufferContainer implements IdentifiedDataSerializable {
         }
         if (store.isEnabled() && items.length != 0) {
             try {
-                store.storeAll(firstSequence, items);
+                store.storeAll(firstSequence, convertToData(items));
             } catch (Exception e) {
                 throw new HazelcastException(e);
             }
@@ -264,23 +275,24 @@ public class RingbufferContainer implements IdentifiedDataSerializable {
     }
 
     /**
-     * Sets the item at the given sequence ID and updates the expiration time if TTL is configured.  Unlike other methods
-     * for adding items into the ring buffer, does not attempt to store the item in the data store. This method expand the
-     * ring buffer tail and head sequence to accommodate for the sequence. This means that it will move the head or tail
-     * sequence to the target sequence if the target sequence is less than the head sequence or greater than the tail sequence.
+     * Sets the item at the given sequence ID and updates the expiration time if TTL is configured.
+     * Unlike other methods for adding items into the ring buffer, does not attempt to store the
+     * item in the data store. This method expands the ring buffer tail and head sequence to
+     * accommodate for the sequence. This means that it will move the head or tail sequence to
+     * the target sequence if the target sequence is less than the head sequence or greater than the tail sequence.
      *
      * @param sequenceId the sequence ID under which the item is stored
-     * @param dataItem   item to be stored in the ring buffer and data store
-     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException if the ring buffer is configured to keep items
-     *                                                                         in object format and the item could not be
-     *                                                                         deserialized
+     * @param item       item to be stored in the ring buffer and data store
+     * @throws HazelcastSerializationException if the ring buffer is configured to keep items
+     *                                         in object format and the item could not be
+     *                                         deserialized
      */
     @SuppressWarnings("unchecked")
-    public void set(long sequenceId, Data dataItem) {
-        final Object item = getRingbufferFormat(dataItem);
+    public void set(long sequenceId, T item) {
+        final Object rbItem = convertToRingbufferFormat(item);
 
         // first we write the dataItem in the ring.
-        ringbuffer.set(sequenceId, item);
+        ringbuffer.set(sequenceId, rbItem);
 
         if (sequenceId > tailSequence()) {
             ringbuffer.setTailSequence(sequenceId);
@@ -296,7 +308,9 @@ public class RingbufferContainer implements IdentifiedDataSerializable {
     }
 
     /**
-     * Reads one item from the ring buffer.
+     * Reads one item from the ring buffer and returns the serialized format.
+     * If the item is not available, it will try and load it from the ringbuffer store.
+     * If the stored format is already serialized, there is no serialization.
      *
      * @param sequence The sequence of the item to be read
      * @return The item read
@@ -304,10 +318,10 @@ public class RingbufferContainer implements IdentifiedDataSerializable {
      *                                1. larger than the tailSequence or
      *                                2. smaller than the headSequence and the data store is disabled
      */
-    public Data read(long sequence) {
+    public Data readAsData(long sequence) {
         checkReadSequence(sequence);
-        Object item = readOrLoadItem(sequence);
-        return serializationService.toData(item);
+        Object rbItem = readOrLoadItem(sequence);
+        return serializationService.toData(rbItem);
     }
 
     /**
@@ -323,7 +337,7 @@ public class RingbufferContainer implements IdentifiedDataSerializable {
 
         long seq = beginSequence;
         while (seq <= ringbuffer.tailSequence()) {
-            result.addItem(readOrLoadItem(seq));
+            result.addItem(seq, readOrLoadItem(seq));
             seq++;
             if (result.isMaxSizeReached()) {
                 // we have found all items we are looking for. We are done.
@@ -341,10 +355,13 @@ public class RingbufferContainer implements IdentifiedDataSerializable {
     }
 
     /**
-     * Check if the sequence is of an item that can be read immediately or is the sequence of the next item to be added
-     * into the ringbuffer. Since this method allows the sequence to be one larger than the {@code {@link #tailSequence()}},
-     * the caller can use this method to determine if he is checking the sequence ID before performing a possibly blocking
-     * read.  Also, the requested sequence can be smaller than the head sequence if the data store is enabled.
+     * Check if the sequence is of an item that can be read immediately
+     * or is the sequence of the next item to be added into the ringbuffer.
+     * Since this method allows the sequence to be one larger than
+     * the {@link #tailSequence()}, the caller can use this method
+     * to check the sequence before performing a possibly blocking read.
+     * Also, the requested sequence can be smaller than the head sequence
+     * if the data store is enabled.
      *
      * @param readSequence the sequence wanting to be read
      * @throws StaleSequenceException   if the requested sequence is smaller than the head sequence and the data store is
@@ -392,6 +409,11 @@ public class RingbufferContainer implements IdentifiedDataSerializable {
         }
     }
 
+    /**
+     * Reads the item at the specified sequence or loads it from the ringbuffer
+     * store if one is enabled. The type of the returned object is equal to the
+     * ringbuffer format.
+     */
     private Object readOrLoadItem(long sequence) {
         Object item;
         if (sequence < ringbuffer.headSequence() && store.isEnabled()) {
@@ -403,11 +425,11 @@ public class RingbufferContainer implements IdentifiedDataSerializable {
     }
 
     @SuppressWarnings("unchecked")
-    private long addInternal(Data dataItem) {
-        final Object item = getRingbufferFormat(dataItem);
+    private long addInternal(T item) {
+        final Object rbItem = convertToRingbufferFormat(item);
 
         // first we write the dataItem in the ring.
-        final long tailSequence = ringbuffer.add(item);
+        final long tailSequence = ringbuffer.add(rbItem);
 
         // and then we optionally write the expiration.
         if (expirationPolicy != null) {
@@ -417,22 +439,56 @@ public class RingbufferContainer implements IdentifiedDataSerializable {
     }
 
     /**
-     * Deserializes the dataItem if the ring buffer configured {@code inMemoryFormat} is set to {@code OBJECT}.
+     * Converts the {@code item} into the ringbuffer {@link InMemoryFormat} or keeps
+     * it unchanged if the supplied argument is already in the ringbuffer format.
      *
-     * @param dataItem the item in binary format
+     * @param item the item
      * @return the binary or deserialized format, depending on the {@link RingbufferContainer#inMemoryFormat}
-     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException if the ring buffer is configured to keep items
-     *                                                                         in object format and the item could not be
-     *                                                                         deserialized
+     * @throws HazelcastSerializationException if the ring buffer is configured to keep items
+     *                                         in object format and the item could not be deserialized
      */
-    private Object getRingbufferFormat(Data dataItem) {
-        return inMemoryFormat == OBJECT ? serializationService.toObject(dataItem) : dataItem;
+    private Object convertToRingbufferFormat(Object item) {
+        return inMemoryFormat == OBJECT
+                ? serializationService.toObject(item)
+                : serializationService.toData(item);
+    }
+
+    /**
+     * Convert the supplied argument into serialized format.
+     *
+     * @throws HazelcastSerializationException when serialization fails.
+     */
+    private Data convertToData(Object item) {
+        return serializationService.toData(item);
+    }
+
+    /**
+     * Convert the supplied argument into serialized format.
+     *
+     * @throws HazelcastSerializationException when serialization fails.
+     */
+    private Data[] convertToData(T[] items) {
+        if (items == null || items.length == 0) {
+            return new Data[0];
+        }
+        if (items[0] instanceof Data) {
+            return (Data[]) items;
+        }
+        final Data[] ret = new Data[items.length];
+        for (int i = 0; i < items.length; i++) {
+            ret[i] = convertToData(items[i]);
+        }
+        return ret;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        assert !out.getVersion().isUnknown();
         boolean ttlEnabled = expirationPolicy != null;
-        out.writeUTF(name);
+        if (!isGreaterOrEqualV39(out)) {
+            // 3.8 requires ringbuffer name at this point
+            out.writeUTF(namespace.getObjectName());
+        }
         out.writeLong(ringbuffer.tailSequence());
         out.writeLong(ringbuffer.headSequence());
         out.writeInt((int) ringbuffer.getCapacity());
@@ -464,8 +520,10 @@ public class RingbufferContainer implements IdentifiedDataSerializable {
     @Override
     @SuppressWarnings("unchecked")
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        emptyRingWaitNotifyKey = new RingbufferWaitNotifyKey(name, EMPTY);
+        if (!isGreaterOrEqualV39(in)) {
+            // used to be ringbuffer name, it is replaced with namespace in 3.9 which is set in the constructor
+            in.readUTF();
+        }
         final long tailSequence = in.readLong();
         final long headSequence = in.readLong();
         final int capacity = in.readInt();
@@ -496,8 +554,8 @@ public class RingbufferContainer implements IdentifiedDataSerializable {
         }
     }
 
-    String getName() {
-        return name;
+    private static boolean isGreaterOrEqualV39(VersionAware versionAware) {
+        return versionAware.getVersion().isGreaterOrEqual(V3_9);
     }
 
     Ringbuffer getRingbuffer() {
@@ -506,6 +564,10 @@ public class RingbufferContainer implements IdentifiedDataSerializable {
 
     RingbufferExpirationPolicy getExpirationPolicy() {
         return expirationPolicy;
+    }
+
+    public ObjectNamespace getNamespace() {
+        return namespace;
     }
 
     @Override

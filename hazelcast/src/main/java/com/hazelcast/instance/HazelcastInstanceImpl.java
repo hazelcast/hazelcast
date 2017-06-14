@@ -72,6 +72,7 @@ import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.HazelcastXAResource;
@@ -92,7 +93,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 @PrivateApi
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
-public class HazelcastInstanceImpl implements HazelcastInstance {
+public class HazelcastInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
     public final Node node;
@@ -388,6 +389,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
         return proxyService.removeProxyListener(registrationId);
     }
 
+    @Override
     public InternalSerializationService getSerializationService() {
         return node.getSerializationService();
     }
