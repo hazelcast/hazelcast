@@ -76,6 +76,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -331,7 +332,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         }
 
         int keysSize = keys.size();
-        List<Data> dataKeys = new ArrayList<Data>(keysSize);
+        List<Data> dataKeys = new LinkedList<Data>();
         List<Object> resultingKeyValuePairs = new ArrayList<Object>(keysSize * 2);
         getAllInternal(keys, dataKeys, resultingKeyValuePairs);
 

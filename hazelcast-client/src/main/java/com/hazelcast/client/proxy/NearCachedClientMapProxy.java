@@ -46,9 +46,9 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -393,24 +393,26 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     protected void getAllInternal(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData, List<Object> resultingKeyValuePairs) {
         Map<Object, Data> keyMap = createHashMap(keys.size());
         if (serializeKeys) {
-            fillPartitionToKeyData(keys, partitionToKeyData, keyMap);
+            fillPartitionToKeyData(keys, partitionToKeyData, keyMap, null);
         }
-        Collection<?> ncKeys = serializeKeys ? keyMap.values() : new ArrayList<K>(keys);
+        Collection<?> ncKeys = serializeKeys ? keyMap.values() : new LinkedList<K>(keys);
 
         populateResultFromNearCache(ncKeys, resultingKeyValuePairs);
         if (ncKeys.isEmpty()) {
             return;
         }
 
+        Map<Data, Object> reverseKeyMap = null;
         if (!serializeKeys) {
-            fillPartitionToKeyData(keys, partitionToKeyData, keyMap);
+            reverseKeyMap = createHashMap(ncKeys.size());
+            fillPartitionToKeyData(keys, partitionToKeyData, keyMap, reverseKeyMap);
         }
 
         Map<Object, Long> reservations = getNearCacheReservations(ncKeys, keyMap);
         try {
             int currentSize = resultingKeyValuePairs.size();
             super.getAllInternal(keys, partitionToKeyData, resultingKeyValuePairs);
-            populateResultFromRemote(currentSize, resultingKeyValuePairs, reservations);
+            populateResultFromRemote(currentSize, resultingKeyValuePairs, reservations, reverseKeyMap);
         } finally {
             releaseRemainingReservedKeys(reservations);
         }
@@ -441,12 +443,13 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         return reservations;
     }
 
-    private void populateResultFromRemote(int currentSize, List<Object> resultingKeyValuePairs, Map<Object, Long> reservations) {
+    private void populateResultFromRemote(int currentSize, List<Object> resultingKeyValuePairs, Map<Object, Long> reservations,
+                                          Map<Data, Object> reverseKeyMap) {
         for (int i = currentSize; i < resultingKeyValuePairs.size(); i += 2) {
             Data keyData = (Data) resultingKeyValuePairs.get(i);
             Data valueData = (Data) resultingKeyValuePairs.get(i + 1);
 
-            Object ncKey = serializeKeys ? keyData : toObject(keyData);
+            Object ncKey = serializeKeys ? keyData : reverseKeyMap.get(keyData);
             if (!serializeKeys) {
                 resultingKeyValuePairs.set(i, ncKey);
             }

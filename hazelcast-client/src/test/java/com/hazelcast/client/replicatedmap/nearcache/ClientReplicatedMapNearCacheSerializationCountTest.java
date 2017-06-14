@@ -96,11 +96,11 @@ public class ClientReplicatedMapNearCacheSerializationCountTest extends Abstract
                 {GET, newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), BINARY, OBJECT, true},
                 {GET, newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 0), BINARY, OBJECT, false},
 
-                {GET, newInt(1, 1, 1), newInt(1, 1, 1), newInt(1, 1, 1), newInt(1, 1, 1), OBJECT, null, null},
-                {GET, newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 2, 0), newInt(1, 1, 1), OBJECT, BINARY, true},
-                {GET, newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 2, 0), newInt(1, 1, 1), OBJECT, BINARY, false},
-                {GET, newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 1, 0), OBJECT, OBJECT, true},
-                {GET, newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 1, 0), OBJECT, OBJECT, false},
+                {GET, newInt(1, 1, 1), newInt(1, 1, 1), newInt(1, 0, 0), newInt(1, 0, 0), OBJECT, null, null},
+                {GET, newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 0, 0), newInt(1, 0, 0), OBJECT, BINARY, true},
+                {GET, newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 0, 0), newInt(1, 0, 0), OBJECT, BINARY, false},
+                {GET, newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 0, 0), newInt(1, 0, 0), OBJECT, OBJECT, true},
+                {GET, newInt(1, 1, 0), newInt(1, 1, 0), newInt(1, 0, 0), newInt(1, 0, 0), OBJECT, OBJECT, false},
         });
     }
 

@@ -1043,7 +1043,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     protected void getAllInternal(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData, List<Object> resultingKeyValuePairs) {
         if (partitionToKeyData.isEmpty()) {
-            fillPartitionToKeyData(keys, partitionToKeyData, null);
+            fillPartitionToKeyData(keys, partitionToKeyData, null, null);
         }
         List<Future<ClientMessage>> futures = new ArrayList<Future<ClientMessage>>(partitionToKeyData.size());
         for (Map.Entry<Integer, List<Data>> entry : partitionToKeyData.entrySet()) {
@@ -1069,7 +1069,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         }
     }
 
-    protected void fillPartitionToKeyData(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData, Map<Object, Data> keyMap) {
+    protected void fillPartitionToKeyData(Set<K> keys, Map<Integer, List<Data>> partitionToKeyData, Map<Object, Data> keyMap,
+                                          Map<Data, Object> reverseKeyMap) {
         ClientPartitionService partitionService = getContext().getPartitionService();
         for (K key : keys) {
             Data keyData = toData(key);
@@ -1082,6 +1083,9 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             keyList.add(keyData);
             if (keyMap != null) {
                 keyMap.put(key, keyData);
+            }
+            if (reverseKeyMap != null) {
+                reverseKeyMap.put(keyData, key);
             }
         }
     }
