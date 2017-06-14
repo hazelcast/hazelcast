@@ -30,6 +30,9 @@ public final class Versions {
      */
     public static final Version V3_9 = Version.of(3, 9);
 
+    public static final Version PREVIOUS_CLUSTER_VERSION = V3_8;
+    public static final Version CURRENT_CLUSTER_VERSION = V3_9;
+
     private Versions() {
     }
 }
