@@ -85,7 +85,7 @@ public class TxnMapNearCacheSerializationCountTest extends AbstractNearCacheSeri
     @Parameter(value = 7)
     public Boolean serializeKeys;
 
-    private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory();
+    private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory(2);
 
     @Parameters(name = "method:{0} mapFormat:{5} nearCacheFormat:{6} serializeKeys:{7}")
     public static Collection<Object[]> parameters() {

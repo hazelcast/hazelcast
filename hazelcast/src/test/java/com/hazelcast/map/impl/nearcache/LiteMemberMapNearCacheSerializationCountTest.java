@@ -90,7 +90,7 @@ public class LiteMemberMapNearCacheSerializationCountTest extends AbstractNearCa
     @Parameter(value = 8)
     public Boolean serializeKeys;
 
-    private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory();
+    private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory(2);
 
     @Parameters(name = "method:{0} mapFormat:{5} nearCacheFormat:{6} invalidateOnChange:{7} serializeKeys:{8}")
     public static Collection<Object[]> parameters() {

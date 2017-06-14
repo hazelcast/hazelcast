@@ -70,7 +70,7 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     @Parameter(value = 1)
     public boolean serializeKeys;
 
-    private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory();
+    private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory(2);
 
     @Parameters(name = "format:{0} serializeKeys:{1}")
     public static Collection<Object[]> parameters() {
