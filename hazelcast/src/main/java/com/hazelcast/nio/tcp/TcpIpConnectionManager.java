@@ -39,6 +39,8 @@ import com.hazelcast.util.executor.StripedRunnable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Collections;
@@ -56,12 +58,19 @@ import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.System.getProperty;
 
 public class TcpIpConnectionManager implements ConnectionManager, PacketHandler {
 
     private static final int RETRY_NUMBER = 5;
     private static final int DELAY_FACTOR = 100;
     private static final int SCHEDULER_POOL_SIZE = 4;
+
+    // TODO Introducing this to allow disabling the spoofing checks on-demand
+    // if there is a use-case that gets affected by the change. If there are no reports of misbehaviour we can remove than in
+    // next release.
+    private static final boolean SPOOFING_CHECKS = parseBoolean(getProperty("hazelcast.nio.tcp.spoofing.checks", "true"));
 
     final LoggingService loggingService;
 
@@ -193,23 +202,75 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         if (logger.isFinestEnabled()) {
             logger.finest("Binding " + connection + " to " + remoteEndPoint + ", reply is " + reply);
         }
+
         final Address thisAddress = ioService.getThisAddress();
-        if (ioService.isSocketBindAny() && !connection.isClient() && !thisAddress.equals(localEndpoint)) {
-            String msg = "Wrong bind request from " + remoteEndPoint
-                    + "! This node is not requested endpoint: " + localEndpoint;
-            logger.warning(msg);
-            connection.close(msg, null);
+
+        // Some simple spoofing attack prevention
+        // Prevent BINDs from src that doesn't match the BIND local address
+        // Prevent BINDs from src that match us (same host & port)
+        if (SPOOFING_CHECKS
+                && (!ensureValidBindSource(connection, remoteEndPoint)
+                 || !ensureBindNotFromSelf(connection, remoteEndPoint, thisAddress))) {
             return false;
         }
+
+        // Prevent BINDs that don't have this node as the destination
+        if (!ensureValidBindTarget(connection, remoteEndPoint, localEndpoint, thisAddress)) {
+            return false;
+        }
+
         connection.setEndPoint(remoteEndPoint);
         ioService.onSuccessfulConnection(remoteEndPoint);
         if (reply) {
             sendBindRequest(connection, remoteEndPoint, false);
         }
+
         if (checkAlreadyConnected(connection, remoteEndPoint)) {
             return false;
         }
+
         return registerConnection(remoteEndPoint, connection);
+    }
+
+    private boolean ensureValidBindSource(TcpIpConnection connection, Address remoteEndPoint) {
+        try {
+            InetAddress originalRemoteAddr = connection.getRemoteSocketAddress().getAddress();
+            InetAddress presentedRemoteAddr = remoteEndPoint.getInetAddress();
+            if (!originalRemoteAddr.equals(presentedRemoteAddr)) {
+                String msg =  "Wrong bind request from " + originalRemoteAddr + ", identified as " + presentedRemoteAddr;
+                logger.warning(msg);
+                connection.close(msg, null);
+                return false;
+            }
+        } catch (UnknownHostException e) {
+            String msg = e.getMessage();
+            logger.warning(msg);
+            connection.close(msg, e);
+            return false;
+        }
+        return true;
+    }
+
+    private boolean ensureValidBindTarget(TcpIpConnection connection, Address remoteEndPoint, Address localEndpoint,
+                                          Address thisAddress) {
+        if (ioService.isSocketBindAny() && !connection.isClient() && !thisAddress.equals(localEndpoint)) {
+            String msg = "Wrong bind request from " + remoteEndPoint
+                       + "! This node is not the requested endpoint: " + localEndpoint;
+            logger.warning(msg);
+            connection.close(msg, null);
+            return false;
+        }
+        return true;
+    }
+
+    private boolean ensureBindNotFromSelf(TcpIpConnection connection, Address remoteEndPoint, Address thisAddress) {
+        if (thisAddress.equals(remoteEndPoint)) {
+            String msg = "Wrong bind request. Remote endpoint is same to this endpoint.";
+            logger.warning(msg);
+            connection.close(msg, null);
+            return false;
+        }
+        return true;
     }
 
     @Override
