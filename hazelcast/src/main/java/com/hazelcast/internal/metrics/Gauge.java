@@ -14,13 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.metrics.renderers;
+package com.hazelcast.internal.metrics;
 
-public interface StringRenderer {
+/**
+ * A Gauge is {@link Metric} where a particular value is read instantaneous. E.g. the current size of the
+ * pending operations queue.
+ *
+ * The Gauge interface has not methods for retrieving the actual value, because it depends on the type of
+ * value to read.
+ *
+ * @see LongGauge
+ * @see DoubleGauge
+ */
+public interface Gauge extends Metric {
+
     /**
-     * The interface is used to fill a StringBuilder buffer with the current value of a probe.
+     * Renders the value from the gauge.
      *
-     * @param stringBuilder the string builder to be filled
+     * @param stringBuilder the {@link StringBuilder} to write to.
      */
     void render(StringBuilder stringBuilder);
 }

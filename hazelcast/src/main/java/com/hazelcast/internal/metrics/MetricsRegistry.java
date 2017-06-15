@@ -17,7 +17,6 @@
 package com.hazelcast.internal.metrics;
 
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
-import com.hazelcast.internal.metrics.renderers.StringRenderer;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -59,7 +58,7 @@ public interface MetricsRegistry {
     ProbeLevel minimumLevel();
 
     /**
-     * Creates a LongGauge for a given metric name.
+     * Creates a {@link LongGauge} for a given metric name.
      *
      * If no gauge exists for the name, it will be created but no probe is set. The reason to do so is that you don't want to
      * depend on the order of registration. Perhaps you want to read out e.g. operations.count gauge, but the OperationService
@@ -77,7 +76,7 @@ public interface MetricsRegistry {
     LongGauge newLongGauge(String name);
 
     /**
-     * Creates a DoubleProbe for a given metric name.
+     * Creates a {@link DoubleGauge} for a given metric name.
      *
      * @param name name of the metric
      * @return the create DoubleGauge
@@ -87,14 +86,15 @@ public interface MetricsRegistry {
     DoubleGauge newDoubleGauge(String name);
 
     /**
-     * Creates a String probe for a given metric name.
+     * Creates a {@link Gauge} for a given metric name.
      *
      * @param name name of the metric
-     * @return the created gauge which implements the StringRenderer.
+     * @return the created gauge
      * @throws NullPointerException if name is null.
-     * @see #newLongGauge(String)#newDoubleGauge(String)
+     * @see #newLongGauge(String)
+     * @see #newDoubleGauge(String)
      */
-    StringRenderer newStringRendererGauge(String name);
+    Gauge newGauge(String name);
 
     /**
      * Gets a set of all current probe names.
