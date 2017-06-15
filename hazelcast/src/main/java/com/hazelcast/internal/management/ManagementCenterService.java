@@ -80,6 +80,7 @@ import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemo
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
@@ -106,6 +107,7 @@ public class ManagementCenterService {
     private final ManagementCenterIdentifier identifier;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final TimedMemberStateFactory timedMemberStateFactory;
+    private final ManagementCenterConnectionFactory connectionFactory;
 
     private volatile String managementCenterUrl;
     private volatile boolean urlChanged;
@@ -123,6 +125,8 @@ public class ManagementCenterService {
         this.stateSendThread = new StateSendThread();
         this.prepareStateThread = new PrepareStateThread();
         this.timedMemberStateFactory = instance.node.getNodeExtension().createTimedMemberStateFactory(instance);
+        this.connectionFactory = instance.node.getNodeExtension().getManagementCenterConnectionFactory();
+
         this.identifier = newManagementCenterIdentifier();
 
         if (this.managementCenterConfig.isEnabled()) {
@@ -169,6 +173,12 @@ public class ManagementCenterService {
         }
 
         timedMemberStateFactory.init();
+        try {
+            connectionFactory.init(managementCenterConfig.getMutualAuthConfig());
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+
         taskPollThread.start();
         prepareStateThread.start();
         stateSendThread.start();
@@ -398,7 +408,10 @@ public class ManagementCenterService {
                 logger.finest("Opening collector connection:" + url);
             }
 
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            HttpURLConnection connection = (HttpURLConnection) (connectionFactory != null
+                ? connectionFactory.openConnection(url)
+                : url.openConnection());
+
             connection.setDoOutput(true);
             connection.setConnectTimeout(CONNECTION_TIMEOUT_MILLIS);
             connection.setReadTimeout(CONNECTION_TIMEOUT_MILLIS);
@@ -462,7 +475,9 @@ public class ManagementCenterService {
             if (logger.isFinestEnabled()) {
                 logger.finest("Opening sendResponse connection:" + url);
             }
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            HttpURLConnection connection = (HttpURLConnection) (connectionFactory != null
+                    ? connectionFactory.openConnection(url)
+                    : url.openConnection());
             connection.setDoOutput(true);
             connection.setRequestMethod("POST");
             connection.setConnectTimeout(CONNECTION_TIMEOUT_MILLIS);
@@ -564,7 +579,10 @@ public class ManagementCenterService {
             if (logger.isFinestEnabled()) {
                 logger.finest("Opening getTask connection:" + url);
             }
-            URLConnection connection = url.openConnection();
+            URLConnection connection = connectionFactory != null
+                                        ? connectionFactory.openConnection(url)
+                                        : url.openConnection();
+
             connection.setRequestProperty("Connection", "keep-alive");
             return connection;
         }

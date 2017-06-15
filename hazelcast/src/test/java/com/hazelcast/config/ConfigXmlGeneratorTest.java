@@ -65,6 +65,36 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
+    public void testManagementCenterConfigGenerator() {
+        ManagementCenterConfig managementCenterConfig = new ManagementCenterConfig()
+                .setEnabled(true)
+                .setUpdateInterval(8)
+                .setUrl("http://foomybar.ber")
+                .setMutualAuthConfig(
+                        new MCMutualAuthConfig()
+                            .setEnabled(true)
+                            .setProperty("keyStore", "/tmp/foo_keystore")
+                            .setProperty("keyStorePassword", "myp@ss1")
+                            .setProperty("trustStore", "/tmp/foo_truststore")
+                            .setProperty("trustStorePassword", "myp@ss2")
+                );
+
+        Config config = new Config()
+                .setManagementCenterConfig(managementCenterConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        ManagementCenterConfig xmlManCenterConfig = xmlConfig.getManagementCenterConfig();
+        assertEquals(managementCenterConfig.isEnabled(), xmlManCenterConfig.isEnabled());
+        assertEquals(managementCenterConfig.getUpdateInterval(), xmlManCenterConfig.getUpdateInterval());
+        assertEquals(managementCenterConfig.getUrl(), xmlManCenterConfig.getUrl());
+        assertEquals(managementCenterConfig.getMutualAuthConfig().isEnabled(), xmlManCenterConfig.getMutualAuthConfig().isEnabled());
+        assertEquals(managementCenterConfig.getMutualAuthConfig().getFactoryClassName(), xmlManCenterConfig.getMutualAuthConfig().getFactoryClassName());
+        assertEquals(managementCenterConfig.getMutualAuthConfig().getProperty("keyStore"), xmlManCenterConfig.getMutualAuthConfig().getProperty("keyStore"));
+        assertEquals(managementCenterConfig.getMutualAuthConfig().getProperty("trustStore"), xmlManCenterConfig.getMutualAuthConfig().getProperty("trustStore"));
+    }
+
+    @Test
     public void testReplicatedMapConfigGenerator() {
         ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig()
                 .setName("replicated-map-name")

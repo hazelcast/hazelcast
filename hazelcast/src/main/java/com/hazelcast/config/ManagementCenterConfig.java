@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * Contains the configuration for a Management Center.
  */
@@ -28,6 +30,8 @@ public class ManagementCenterConfig {
     private String url;
 
     private int updateInterval = UPDATE_INTERVAL;
+
+    private MCMutualAuthConfig mutualAuthConfig;
 
     public ManagementCenterConfig() {
     }
@@ -101,8 +105,37 @@ public class ManagementCenterConfig {
         return this;
     }
 
+
+    /**
+     * Sets the management center mutual auth config
+     *
+     * @param mutualAuthConfig  the mutual auth config
+     * @return the updated ManagementCenterConfig
+     * @throws NullPointerException if mutualAuthConfig {@code null}
+     */
+    public ManagementCenterConfig setMutualAuthConfig(MCMutualAuthConfig mutualAuthConfig) {
+        checkNotNull(mutualAuthConfig);
+        this.mutualAuthConfig = mutualAuthConfig;
+        return this;
+    }
+
+    /**
+     * Gets a property.
+     *
+     * @return the value of the property, null if not found
+     * @throws NullPointerException if name is {@code null}
+     */
+    public MCMutualAuthConfig getMutualAuthConfig() {
+        return mutualAuthConfig;
+    }
+
     @Override
     public String toString() {
-        return "ManagementCenterConfig{enabled=" + enabled + ", url='" + url + "', updateInterval=" + updateInterval + '}';
+        return "ManagementCenterConfig{"
+                + "enabled=" + enabled
+                + ", url='" + url + "'"
+                + ", updateInterval=" + updateInterval
+                + ", mcMutualAuthConfig=" + mutualAuthConfig
+                + "}";
     }
 }

@@ -480,6 +480,30 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testManagementCenterConfigComplex() {
+        String xml = HAZELCAST_START_TAG
+                + "<management-center enabled=\"true\">"
+                + "<url>wowUrl</url>"
+                + "<mutual-auth enabled=\"true\">"
+                + "<properties>"
+                + "<property name=\"keyStore\">/tmp/foo_keystore</property>"
+                + "<property name=\"trustStore\">/tmp/foo_truststore</property>"
+                + "</properties>"
+                + "</mutual-auth>"
+                + "</management-center>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
+
+        assertTrue(manCenterCfg.isEnabled());
+        assertEquals("wowUrl", manCenterCfg.getUrl());
+        assertTrue(manCenterCfg.getMutualAuthConfig().isEnabled());
+        assertEquals("/tmp/foo_keystore", manCenterCfg.getMutualAuthConfig().getProperty("keyStore"));
+        assertEquals("/tmp/foo_truststore", manCenterCfg.getMutualAuthConfig().getProperty("trustStore"));
+    }
+
+    @Test
     public void testNullManagementCenterConfig() {
         String xml = HAZELCAST_START_TAG
                 + "<management-center>"
@@ -530,6 +554,24 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
         assertFalse(manCenterCfg.isEnabled());
         assertEquals("http://localhost:8080/mancenter", manCenterCfg.getUrl());
+    }
+
+    @Test
+    public void testManagementCenterConfigComplexDisabledMutualAuth() {
+        String xml = HAZELCAST_START_TAG
+                + "<management-center enabled=\"true\">"
+                + "<url>wowUrl</url>"
+                + "<mutual-auth enabled=\"false\">"
+                + "</mutual-auth>"
+                + "</management-center>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
+
+        assertTrue(manCenterCfg.isEnabled());
+        assertEquals("wowUrl", manCenterCfg.getUrl());
+        assertFalse(manCenterCfg.getMutualAuthConfig().isEnabled());
     }
 
     @Test

@@ -22,6 +22,7 @@ import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
+import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
@@ -189,6 +190,11 @@ public class SamplingNodeExtension implements NodeExtension {
     @Override
     public TimedMemberStateFactory createTimedMemberStateFactory(HazelcastInstanceImpl instance) {
         return nodeExtension.createTimedMemberStateFactory(instance);
+    }
+
+    @Override
+    public ManagementCenterConnectionFactory getManagementCenterConnectionFactory() {
+        return nodeExtension.getManagementCenterConnectionFactory();
     }
 
     @Override
