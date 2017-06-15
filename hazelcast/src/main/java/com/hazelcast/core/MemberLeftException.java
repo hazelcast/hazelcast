@@ -24,12 +24,11 @@ import com.hazelcast.version.MemberVersion;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.concurrent.ExecutionException;
 
 /**
- * A {@link ExecutionException} thrown when a member left during an invocation or execution.
+ * A {@link HazelcastException} thrown when a member left during an invocation or execution.
  */
-public class MemberLeftException extends ExecutionException implements RetryableException {
+public class MemberLeftException extends HazelcastException implements RetryableException {
 
     private transient Member member;
 
