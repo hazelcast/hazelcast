@@ -40,9 +40,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.cluster.ClusterState.ACTIVE;
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.map.impl.eviction.ExpirationManager.SYS_PROP_EXPIRATION_CLEANUP_OPERATION_COUNT;
-import static com.hazelcast.map.impl.eviction.ExpirationManager.SYS_PROP_EXPIRATION_CLEANUP_PERCENTAGE;
-import static com.hazelcast.map.impl.eviction.ExpirationManager.SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS;
+import static com.hazelcast.map.impl.eviction.ExpirationManager.PROP_CLEANUP_OPERATION_COUNT;
+import static com.hazelcast.map.impl.eviction.ExpirationManager.PROP_CLEANUP_PERCENTAGE;
+import static com.hazelcast.map.impl.eviction.ExpirationManager.PROP_PRIMARY_DRIVES_BACKUP;
+import static com.hazelcast.map.impl.eviction.ExpirationManager.PROP_TASK_PERIOD_SECONDS;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
@@ -61,17 +62,31 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
 
     @Test
     public void testTaskPeriodSeconds_set_viaSystemProperty() throws Exception {
-        String previous = getProperty(SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS);
+        String previous = getProperty(PROP_TASK_PERIOD_SECONDS);
         try {
             int expectedPeriodSeconds = 12;
-            setProperty(SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS, valueOf(expectedPeriodSeconds));
+            setProperty(PROP_TASK_PERIOD_SECONDS, valueOf(expectedPeriodSeconds));
 
             int actualTaskPeriodSeconds = newExpirationManager(createHazelcastInstance()).getTaskPeriodSeconds();
 
             assertEquals(expectedPeriodSeconds, actualTaskPeriodSeconds);
         } finally {
-            restoreProperty(SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS, previous);
+            restoreProperty(PROP_TASK_PERIOD_SECONDS, previous);
 
+        }
+    }
+
+    @Test
+    public void testPrimaryDrivesEvictions_set_viaSystemProperty() throws Exception {
+        String previous = getProperty(PROP_PRIMARY_DRIVES_BACKUP);
+        try {
+            setProperty(PROP_PRIMARY_DRIVES_BACKUP, "False");
+
+            boolean primaryDrivesEviction = newExpirationManager(createHazelcastInstance()).isPrimaryDrivesEviction();
+
+            assertEquals(false, primaryDrivesEviction);
+        } finally {
+            restoreProperty(PROP_PRIMARY_DRIVES_BACKUP, previous);
         }
     }
 
@@ -85,76 +100,76 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
 
     @Test
     public void testTaskPeriodSeconds_throwsIllegalArgumentException_whenNotPositive() throws Exception {
-        String previous = getProperty(SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS);
+        String previous = getProperty(PROP_TASK_PERIOD_SECONDS);
         try {
-            setProperty(SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS, valueOf(0));
+            setProperty(PROP_TASK_PERIOD_SECONDS, valueOf(0));
 
             thrown.expectMessage("taskPeriodSeconds should be a positive number");
             thrown.expect(IllegalArgumentException.class);
 
             newExpirationManager(createHazelcastInstance());
         } finally {
-            restoreProperty(SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS, previous);
+            restoreProperty(PROP_TASK_PERIOD_SECONDS, previous);
         }
     }
 
     @Test
     public void testCleanupPercentage_set_viaSystemProperty() throws Exception {
-        String previous = getProperty(SYS_PROP_EXPIRATION_CLEANUP_PERCENTAGE);
+        String previous = getProperty(PROP_CLEANUP_PERCENTAGE);
         try {
             int expectedCleanupPercentage = 77;
-            setProperty(SYS_PROP_EXPIRATION_CLEANUP_PERCENTAGE, valueOf(expectedCleanupPercentage));
+            setProperty(PROP_CLEANUP_PERCENTAGE, valueOf(expectedCleanupPercentage));
 
             int actualCleanupPercentage = newExpirationManager(createHazelcastInstance()).getCleanupPercentage();
 
             assertEquals(expectedCleanupPercentage, actualCleanupPercentage);
         } finally {
-            restoreProperty(SYS_PROP_EXPIRATION_CLEANUP_PERCENTAGE, previous);
+            restoreProperty(PROP_CLEANUP_PERCENTAGE, previous);
         }
     }
 
     @Test
     public void testCleanupPercentage_throwsIllegalArgumentException_whenNotInRange() throws Exception {
-        String previous = getProperty(SYS_PROP_EXPIRATION_CLEANUP_PERCENTAGE);
+        String previous = getProperty(PROP_CLEANUP_PERCENTAGE);
         try {
-            setProperty(SYS_PROP_EXPIRATION_CLEANUP_PERCENTAGE, valueOf(0));
+            setProperty(PROP_CLEANUP_PERCENTAGE, valueOf(0));
 
             thrown.expectMessage("cleanupPercentage should be in range (0,100]");
             thrown.expect(IllegalArgumentException.class);
 
             newExpirationManager(createHazelcastInstance());
         } finally {
-            restoreProperty(SYS_PROP_EXPIRATION_CLEANUP_PERCENTAGE, previous);
+            restoreProperty(PROP_CLEANUP_PERCENTAGE, previous);
         }
     }
 
     @Test
     public void testCleanupOperationCount_set_viaSystemProperty() throws Exception {
-        String previous = getProperty(SYS_PROP_EXPIRATION_CLEANUP_OPERATION_COUNT);
+        String previous = getProperty(PROP_CLEANUP_OPERATION_COUNT);
         try {
             int expectedCleanupOperationCount = 19;
-            setProperty(SYS_PROP_EXPIRATION_CLEANUP_OPERATION_COUNT, valueOf(expectedCleanupOperationCount));
+            setProperty(PROP_CLEANUP_OPERATION_COUNT, valueOf(expectedCleanupOperationCount));
 
             int actualCleanupOperationCount = newExpirationManager(createHazelcastInstance()).getCleanupOperationCount();
 
             assertEquals(expectedCleanupOperationCount, actualCleanupOperationCount);
         } finally {
-            restoreProperty(SYS_PROP_EXPIRATION_CLEANUP_OPERATION_COUNT, previous);
+            restoreProperty(PROP_CLEANUP_OPERATION_COUNT, previous);
         }
     }
 
     @Test
     public void testCleanupOperationCount_throwsIllegalArgumentException_whenNotPositive() throws Exception {
-        String previous = getProperty(SYS_PROP_EXPIRATION_CLEANUP_OPERATION_COUNT);
+        String previous = getProperty(PROP_CLEANUP_OPERATION_COUNT);
         try {
-            setProperty(SYS_PROP_EXPIRATION_CLEANUP_OPERATION_COUNT, valueOf(0));
+            setProperty(PROP_CLEANUP_OPERATION_COUNT, valueOf(0));
 
             thrown.expectMessage("cleanupOperationCount should be a positive number");
             thrown.expect(IllegalArgumentException.class);
 
             newExpirationManager(createHazelcastInstance());
         } finally {
-            restoreProperty(SYS_PROP_EXPIRATION_CLEANUP_OPERATION_COUNT, previous);
+            restoreProperty(PROP_CLEANUP_OPERATION_COUNT, previous);
         }
     }
 
@@ -162,7 +177,7 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
     public void gets_taskPeriodSeconds_from_config() throws Exception {
         Config config = new Config();
         String taskPeriodSeconds = "77";
-        config.setProperty(SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS, taskPeriodSeconds);
+        config.setProperty(PROP_TASK_PERIOD_SECONDS, taskPeriodSeconds);
         HazelcastInstance node = createHazelcastInstance(config);
         ExpirationManager expirationManager = newExpirationManager(node);
 
@@ -173,7 +188,7 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
     public void gets_cleanupPercentage_from_config() throws Exception {
         Config config = new Config();
         String cleanupPercentage = "99";
-        config.setProperty(SYS_PROP_EXPIRATION_CLEANUP_PERCENTAGE, cleanupPercentage);
+        config.setProperty(PROP_CLEANUP_PERCENTAGE, cleanupPercentage);
         HazelcastInstance node = createHazelcastInstance(config);
         ExpirationManager expirationManager = newExpirationManager(node);
 
@@ -184,7 +199,7 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
     public void gets_cleanupOperationCount_from_config() throws Exception {
         Config config = new Config();
         String cleanupOperationCount = "777";
-        config.setProperty(SYS_PROP_EXPIRATION_CLEANUP_OPERATION_COUNT, cleanupOperationCount);
+        config.setProperty(PROP_CLEANUP_OPERATION_COUNT, cleanupOperationCount);
         HazelcastInstance node = createHazelcastInstance(config);
         ExpirationManager expirationManager = newExpirationManager(node);
 
@@ -194,7 +209,7 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
     @Test
     public void stops_running_when_clusterState_turns_passive() throws Exception {
         Config config = new Config();
-        config.setProperty(SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS, "1");
+        config.setProperty(PROP_TASK_PERIOD_SECONDS, "1");
         HazelcastInstance node = createHazelcastInstance(config);
 
         final AtomicInteger expirationCounter = new AtomicInteger();
@@ -221,7 +236,7 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
     @Test
     public void starts_running_when_clusterState_turns_active() throws Exception {
         Config config = new Config();
-        config.setProperty(SYS_PROP_EXPIRATION_TASK_PERIOD_SECONDS, "1");
+        config.setProperty(PROP_TASK_PERIOD_SECONDS, "1");
         HazelcastInstance node = createHazelcastInstance(config);
 
         final AtomicInteger expirationCounter = new AtomicInteger();

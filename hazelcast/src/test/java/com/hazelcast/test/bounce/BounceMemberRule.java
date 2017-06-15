@@ -195,6 +195,14 @@ public class BounceMemberRule implements TestRule {
         testRepeatedly(tasks, durationSeconds);
     }
 
+    public AtomicReferenceArray<HazelcastInstance> getMembers() {
+        return members;
+    }
+
+    public AtomicReferenceArray<HazelcastInstance> getTestDrivers() {
+        return testDrivers;
+    }
+
     /**
      * Submit Runnables to be executed repeatedly until test is done.
      * The {@code task} is executed in a loop until either the configured test's duration is reached or an exception
