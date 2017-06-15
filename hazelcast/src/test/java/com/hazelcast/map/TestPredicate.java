@@ -52,8 +52,8 @@ class TestPredicate implements IndexAwarePredicate<String, TestData> {
         return queryContext.getIndex("attr1") != null;
     }
 
-    boolean isFilteredAndAppliedOnlyOnce() {
-        return filtered && applied == 1;
+    boolean isFilteredAndApplied(int times) {
+        return filtered && applied == times;
     }
 
     int getApplied() {

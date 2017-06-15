@@ -32,7 +32,6 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -95,7 +94,7 @@ public class PartitionScanRunner {
                 continue;
             }
             //we want to always use CachedQueryEntry as these are short-living objects anyway
-            QueryableEntry queryEntry = new CachedQueryEntry(serializationService, key, value, extractors);
+            QueryableEntry queryEntry = new LazyMapEntry(key, value, serializationService, extractors);
 
             if (predicate.apply(queryEntry) && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
                 resultList.add(queryEntry);

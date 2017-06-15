@@ -22,7 +22,6 @@ import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryOperation;
 import com.hazelcast.map.impl.query.QueryPartitionOperation;
-import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.tx.TxnDeleteOperation;
 import com.hazelcast.map.impl.tx.TxnLockAndGetOperation;
 import com.hazelcast.map.impl.tx.TxnSetOperation;

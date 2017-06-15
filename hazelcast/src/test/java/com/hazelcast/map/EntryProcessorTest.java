@@ -284,8 +284,11 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         Map<String, Object> entries = map.executeOnEntries(new TestLoggingEntryProcessor(), predicate);
 
         assertEquals("The predicate should only relate to one entry!", 1, entries.size());
-        assertEquals("The predicate's apply method should only be invoked once!", 1, predicate.getApplied());
-        assertTrue("The predicate should only be used via index service!", predicate.isFilteredAndAppliedOnlyOnce());
+        // for native memory EP with index query the predicate won't be applied since everything happens on partition-threads
+        // so there is no chance of data being modified after the index has been queried.
+        int predicateApplied = inMemoryFormat == NATIVE ? 0 : 1;
+        assertEquals("The predicate's apply method should only be invoked once!", predicateApplied, predicate.getApplied());
+        assertTrue("The predicate should only be used via index service!", predicate.isFilteredAndApplied(predicateApplied));
     }
 
     /**
@@ -1464,6 +1467,9 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         final IMap<Integer, Integer> map = instance1.getMap(MAP_NAME);
         map.addIndex("__key", true);
 
+        // for native memory EP with index query the predicate won't be applied since everything happens on partition-threads
+        // so there is no chance of data being modified after the index has been queried.
+        final int expectedApplyCount = inMemoryFormat == NATIVE ? 0 : 2;
         AssertTask task = new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -1474,7 +1480,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                     map.executeOnEntries(new DeleteEntryProcessor(), predicate);
 
                     assertEquals("Expecting two predicate#apply method call one on owner, other one on backup",
-                            2, PREDICATE_APPLY_COUNT.get());
+                            expectedApplyCount, PREDICATE_APPLY_COUNT.get());
                 } finally {
                     // set predicateApplyCount to zero, in case we repeat this test
                     PREDICATE_APPLY_COUNT.set(0);
