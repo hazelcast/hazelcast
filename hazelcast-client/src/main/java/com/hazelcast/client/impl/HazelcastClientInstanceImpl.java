@@ -53,6 +53,7 @@ import com.hazelcast.client.spi.impl.ClientNonSmartInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientSmartInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientTransactionManagerServiceImpl;
+import com.hazelcast.client.spi.impl.ClientUserCodeDeploymentService;
 import com.hazelcast.client.spi.impl.DefaultAddressProvider;
 import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressProvider;
 import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
@@ -121,6 +122,7 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -196,10 +198,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final Diagnostics diagnostics;
     private final SerializationService serializationService;
     private final ClientICacheManager hazelcastCacheManager;
-
     private final ClientLockReferenceIdGenerator lockReferenceIdGenerator;
     private final ClientExceptionFactory clientExceptionFactory;
     private final CallIdSequence callIdSequence;
+    private final ClientUserCodeDeploymentService userCodeDeploymentService;
 
     public HazelcastClientInstanceImpl(ClientConfig config,
                                        ClientConnectionManagerFactory clientConnectionManagerFactory,
@@ -215,7 +217,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         String loggingType = config.getProperty(GroupProperty.LOGGING_TYPE.getName());
         loggingService = new ClientLoggingService(groupConfig.getName(),
                 loggingType, BuildInfoProvider.BUILD_INFO, instanceName);
-        clientExtension = createClientInitializer(config.getClassLoader());
+        ClassLoader classLoader = config.getClassLoader();
+        clientExtension = createClientInitializer(classLoader);
         clientExtension.beforeStart(this);
 
         credentials = initCredentials(config);
@@ -256,8 +259,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         lockReferenceIdGenerator = new ClientLockReferenceIdGenerator();
         nearCacheManager = clientExtension.createNearCacheManager();
         clientExceptionFactory = initClientExceptionFactory();
-
         statistics = new Statistics(this);
+        userCodeDeploymentService = new ClientUserCodeDeploymentService(config.getUserCodeDeploymentConfig(), classLoader);
     }
 
     private Diagnostics initDiagnostics() {
@@ -408,6 +411,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clusterService.start();
         ClientContext clientContext = new ClientContext(this);
         try {
+            userCodeDeploymentService.start();
             connectionManager.start(clientContext);
         } catch (Exception e) {
             throw rethrow(e);
@@ -434,6 +438,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         partitionService.start();
         statistics.start();
         clientExtension.afterStart(this);
+    }
+
+    public void onClusterConnect(Connection ownerConnection) throws Exception {
+        clusterService.listenMembershipEvents(ownerConnection);
+        userCodeDeploymentService.deploy(this, ownerConnection);
     }
 
     public MetricsRegistryImpl getMetricsRegistry() {
@@ -681,6 +690,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public SerializationService getSerializationService() {
         return serializationService;
+    }
+
+    public ClientUserCodeDeploymentService getUserCodeDeploymentService() {
+        return userCodeDeploymentService;
     }
 
     public ProxyManager getProxyManager() {

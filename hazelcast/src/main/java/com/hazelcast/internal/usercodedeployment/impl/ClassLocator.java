@@ -29,9 +29,13 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 
 import java.io.Closeable;
+import java.security.PrivilegedAction;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+
+import static java.security.AccessController.doPrivileged;
 
 /**
  * Provides classes to a local member.
@@ -44,6 +48,7 @@ import java.util.concurrent.Future;
  */
 public final class ClassLocator {
     private final ConcurrentMap<String, ClassSource> classSourceMap;
+    private final ConcurrentMap<String, ClassSource> clientClassSourceMap;
     private final ClassLoader parent;
     private final Filter<String> classNameFilter;
     private final Filter<Member> memberFilter;
@@ -53,9 +58,11 @@ public final class ClassLocator {
     private final ILogger logger;
 
     public ClassLocator(ConcurrentMap<String, ClassSource> classSourceMap,
+                        ConcurrentMap<String, ClassSource> clientClassSourceMap,
                         ClassLoader parent, Filter<String> classNameFilter, Filter<Member> memberFilter,
                         UserCodeDeploymentConfig.ClassCacheMode classCacheMode, NodeEngine nodeEngine) {
         this.classSourceMap = classSourceMap;
+        this.clientClassSourceMap = clientClassSourceMap;
         this.parent = parent;
         this.classNameFilter = classNameFilter;
         this.memberFilter = memberFilter;
@@ -82,6 +89,38 @@ public final class ClassLocator {
             return clazz;
         }
         return tryToGetClassFromRemote(name);
+    }
+
+    public void defineClassFromClient(final String name, final byte[] classDef) {
+        // we need to acquire a classloading lock before defining a class
+        // Java 7+ can use locks with per-class granularity while Java 6 has to use a single lock
+        // mutexFactory abstract these differences away
+        Closeable classMutex = mutexFactory.getMutexForClass(name);
+        try {
+            synchronized (classMutex) {
+                ClassSource classSource = clientClassSourceMap.get(name);
+                if (classSource != null) {
+                    if (!Arrays.equals(classDef, classSource.getBytecode())) {
+                        throw new IllegalStateException("Class " + name
+                                + " is already in a local cache and conflicting byte code representation");
+                    } else if (logger.isFineEnabled()) {
+                        logger.finest("Class " + name + " is already in a local cache. ");
+                    }
+                    return;
+                }
+                classSource = doPrivileged(new PrivilegedAction<ClassSource>() {
+                    @Override
+                    public ClassSource run() {
+                        return new ClassSource(name, classDef, parent, ClassLocator.this);
+                    }
+                });
+
+                classSource.define();
+                clientClassSourceMap.put(name, classSource);
+            }
+        } finally {
+            IOUtil.closeResource(classMutex);
+        }
     }
 
     private Class<?> tryToGetClassFromRemote(String name) throws ClassNotFoundException {
@@ -111,6 +150,14 @@ public final class ClassLocator {
 
     private Class<?> tryToGetClassFromLocalCache(String name) {
         ClassSource classSource = classSourceMap.get(name);
+        if (classSource != null) {
+            if (logger.isFineEnabled()) {
+                logger.finest("Class " + name + " is already in a local cache. ");
+            }
+            return classSource.getClazz();
+        }
+
+        classSource = clientClassSourceMap.get(name);
         if (classSource != null) {
             if (logger.isFineEnabled()) {
                 logger.finest("Class " + name + " is already in a local cache. ");

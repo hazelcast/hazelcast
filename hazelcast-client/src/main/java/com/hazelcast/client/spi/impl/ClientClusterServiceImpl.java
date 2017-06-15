@@ -37,6 +37,7 @@ import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
 
@@ -185,9 +186,8 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         return listeners.remove(registrationId) != null;
     }
 
-    @Override
-    public void init() throws Exception {
-        this.clientMembershipListener.listenMembershipEvents();
+    public void listenMembershipEvents(Connection ownerConnection) throws Exception {
+        this.clientMembershipListener.listenMembershipEvents(ownerConnection);
     }
 
     public void start() {

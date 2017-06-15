@@ -110,7 +110,7 @@ public interface ClientEndpoint extends Client {
      *
      * @param stats the latest statistics retrieved from the client
      */
-    void setClientStatictics(String stats);
+    void setClientStatistics(String stats);
 
     /**
      * @return statistics string for the client

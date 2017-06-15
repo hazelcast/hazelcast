@@ -1320,6 +1320,7 @@ public class Config {
     /**
      * Get current configuration of User Code Deployment.
      *
+     * @return User Code Deployment configuration
      * @since 3.8
      */
     public UserCodeDeploymentConfig getUserCodeDeploymentConfig() {
@@ -1330,7 +1331,7 @@ public class Config {
      * Set User Code Deployment configuration
      *
      * @param userCodeDeploymentConfig
-     * @return User Code Deployment configuration
+     * @return this config instance
      * @since 3.8
      */
     public Config setUserCodeDeploymentConfig(UserCodeDeploymentConfig userCodeDeploymentConfig) {
