@@ -28,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
-import static com.hazelcast.util.Preconditions.isNotNull;
 
 public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessage> {
 
@@ -77,9 +76,12 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
 
     @Override
     public void andThen(ExecutionCallback<ClientMessage> callback) {
-        isNotNull(callback, "callback");
-
         super.andThen(new InternalDelegatingExecutionCallback(callback));
+    }
+
+    @Override
+    public void andThen(ExecutionCallback<ClientMessage> callback, Executor executor) {
+        super.andThen(new InternalDelegatingExecutionCallback(callback), executor);
     }
 
     @Override
