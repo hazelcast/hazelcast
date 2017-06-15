@@ -21,7 +21,6 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
@@ -33,10 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
@@ -114,7 +110,7 @@ public class BatchInvalidator extends Invalidator {
         sendInvalidations(dataStructureName, invalidations);
     }
 
-    private List<Invalidation> pollInvalidations(InvalidationQueue invalidationQueue) {
+    private List<Invalidation> pollInvalidations(InvalidationQueue<Invalidation> invalidationQueue) {
         final int size = invalidationQueue.size();
 
         List<Invalidation> invalidations = new ArrayList<Invalidation>(size);
@@ -224,78 +220,5 @@ public class BatchInvalidator extends Invalidator {
         invalidationQueues.clear();
 
         super.reset();
-    }
-
-    @SerializableByConvention
-    public static class InvalidationQueue extends ConcurrentLinkedQueue<Invalidation> {
-        private final AtomicInteger elementCount = new AtomicInteger(0);
-        private final AtomicBoolean flushingInProgress = new AtomicBoolean(false);
-
-        @Override
-        public int size() {
-            return elementCount.get();
-        }
-
-        @Override
-        public boolean offer(Invalidation invalidation) {
-            boolean offered = super.offer(invalidation);
-            if (offered) {
-                elementCount.incrementAndGet();
-            }
-            return offered;
-        }
-
-        @Override
-        public Invalidation poll() {
-            Invalidation invalidation = super.poll();
-            if (invalidation != null) {
-                elementCount.decrementAndGet();
-            }
-            return invalidation;
-        }
-
-        public boolean tryAcquire() {
-            return flushingInProgress.compareAndSet(false, true);
-        }
-
-        public void release() {
-            flushingInProgress.set(false);
-        }
-
-        @Override
-        public boolean add(Invalidation invalidation) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Invalidation remove() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean remove(Object o) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean addAll(Collection<? extends Invalidation> c) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean removeAll(Collection<?> c) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean retainAll(Collection<?> c) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void clear() {
-            throw new UnsupportedOperationException();
-        }
-
     }
 }

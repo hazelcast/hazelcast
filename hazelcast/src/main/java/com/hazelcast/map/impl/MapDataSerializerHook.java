@@ -46,6 +46,7 @@ import com.hazelcast.map.impl.operation.EvictAllBackupOperation;
 import com.hazelcast.map.impl.operation.EvictAllOperation;
 import com.hazelcast.map.impl.operation.EvictAllOperationFactory;
 import com.hazelcast.map.impl.operation.EvictBackupOperation;
+import com.hazelcast.map.impl.operation.EvictBatchBackupOperation;
 import com.hazelcast.map.impl.operation.EvictOperation;
 import com.hazelcast.map.impl.operation.GetAllOperation;
 import com.hazelcast.map.impl.operation.GetEntryViewOperation;
@@ -290,8 +291,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int LOCK_AWARE_LAZY_MAP_ENTRY = 137;
     public static final int FETCH_WITH_QUERY = 138;
     public static final int RESULT_SEGMENT = 139;
+    public static final int EVICT_BATCH_BACKUP = 140;
 
-    private static final int LEN = RESULT_SEGMENT + 1;
+    private static final int LEN = EVICT_BATCH_BACKUP + 1;
 
     @Override
     public int getFactoryId() {
@@ -980,6 +982,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[RESULT_SEGMENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ResultSegment();
+            }
+        };
+        constructors[EVICT_BATCH_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new EvictBatchBackupOperation();
             }
         };
 

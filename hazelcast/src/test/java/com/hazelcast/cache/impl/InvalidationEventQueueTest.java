@@ -16,7 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.internal.nearcache.impl.invalidation.BatchInvalidator.InvalidationQueue;
+import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.nearcache.impl.invalidation.SingleNearCacheInvalidation;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.test.HazelcastParallelClassRunner;

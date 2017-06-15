@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
@@ -402,4 +403,5 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
      **/
     boolean isKeyLoadFinished();
 
+    InvalidationQueue<ExpiredKey> getExpiredKeys();
 }
