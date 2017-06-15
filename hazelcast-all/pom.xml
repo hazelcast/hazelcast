@@ -100,6 +100,7 @@
                                             org.apache.log4j.*;resolution:=optional,
                                             org.apache.logging.log4j;resolution:=optional,
                                             org.apache.logging.log4j.*;resolution:=optional,
+                                            org.apache.commons.logging;resolution:=optional,
                                             javax.script.*;resolution:=optional,
                                             org.jclouds.*;resolution:=optional,
                                             com.google.*;resolution:=optional

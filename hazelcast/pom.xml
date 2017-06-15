@@ -133,6 +133,7 @@
                                     org.apache.logging.log4j;resolution:=optional,
                                     org.apache.logging.log4j.*;resolution:=optional,
                                     org.slf4j;resolution:=optional,
+                                    org.apache.commons.logging;resolution:=optional,
                                     org.codehaus.groovy.jsr223;resolution:=optional,
                                     org.jruby.embed.jsr223;resolution:=optional,
                                     *

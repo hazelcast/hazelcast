@@ -98,6 +98,7 @@
                                     org.apache.logging.log4j;resolution:=optional,
                                     org.apache.logging.log4j.*;resolution:=optional,
                                     org.slf4j;resolution:=optional,
+                                    org.apache.commons.logging;resolution:=optional,
                                     *
                                 </Import-Package>
                                 <Fragment-Host>com.hazelcast</Fragment-Host>
