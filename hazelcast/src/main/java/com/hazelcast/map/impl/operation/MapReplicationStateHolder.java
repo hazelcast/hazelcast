@@ -28,6 +28,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.util.Clock;
@@ -46,7 +48,7 @@ import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
  * Holder for raw IMap key-value pairs and their metadata.
  */
 // keep this `protected`, extended in another context.
-public class MapReplicationStateHolder implements IdentifiedDataSerializable {
+public class MapReplicationStateHolder implements IdentifiedDataSerializable, Versioned {
 
     protected Map<String, Set<RecordReplicationInfo>> data;
     // propagates the information if the given record store has been already loaded with map-loaded
@@ -108,6 +110,14 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
                 RecordStore recordStore = mapReplicationOperation.getRecordStore(mapName);
                 recordStore.reset();
                 recordStore.setPreMigrationLoadedStatus(loaded.get(mapName));
+
+                MapContainer mapContainer = recordStore.getMapContainer();
+                PartitionContainer partitionContainer = recordStore.getMapContainer().getMapServiceContext()
+                        .getPartitionContainer(mapReplicationOperation.getPartitionId());
+                for (Map.Entry<String, Boolean> indexDefinition : mapContainer.getIndexDefinitions().entrySet()) {
+                    Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
+                    indexes.addOrGetIndex(indexDefinition.getKey(), indexDefinition.getValue());
+                }
 
                 for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
                     Data key = recordReplicationInfo.getKey();

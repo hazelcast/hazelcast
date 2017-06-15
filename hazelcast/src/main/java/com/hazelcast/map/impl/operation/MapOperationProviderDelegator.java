@@ -243,6 +243,16 @@ abstract class MapOperationProviderDelegator implements MapOperationProvider {
     }
 
     @Override
+    public MapOperation createQueryOperation(Query query) {
+        return getDelegate().createQueryOperation(query);
+    }
+
+    @Override
+    public MapOperation createQueryPartitionOperation(Query query) {
+        return getDelegate().createQueryPartitionOperation(query);
+    }
+
+    @Override
     public MapOperation createFetchWithQueryOperation(String name, int lastTableIndex, int fetchSize, Query query) {
         return getDelegate().createFetchWithQueryOperation(name, lastTableIndex, fetchSize, query);
     }

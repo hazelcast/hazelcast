@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.impl.query.IndexProvider;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
@@ -37,11 +38,17 @@ public class Indexes {
     private final AtomicReference<Index[]> indexes = new AtomicReference<Index[]>(EMPTY_INDEX);
     private volatile boolean hasIndex;
     private final InternalSerializationService serializationService;
-    private Extractors extractors;
+    private final IndexProvider indexProvider;
+    private final Extractors extractors;
+    private final boolean global;
 
-    public Indexes(InternalSerializationService serializationService, Extractors extractors) {
+
+    public Indexes(InternalSerializationService serializationService, IndexProvider indexProvider,
+                   Extractors extractors, boolean global) {
         this.serializationService = serializationService;
+        this.indexProvider = indexProvider;
         this.extractors = extractors;
+        this.global = global;
     }
 
     public synchronized Index destroyIndex(String attribute) {
@@ -53,7 +60,7 @@ public class Indexes {
         if (index != null) {
             return index;
         }
-        index = new IndexImpl(attribute, ordered, serializationService, extractors);
+        index = indexProvider.createIndex(attribute, ordered, extractors, serializationService);
         mapIndexes.put(attribute, index);
         Object[] indexObjects = mapIndexes.values().toArray();
         Index[] newIndexes = new Index[indexObjects.length];
@@ -91,6 +98,17 @@ public class Indexes {
         for (Index index : indexes) {
             index.saveEntryIndex(queryableEntry, oldValue);
         }
+    }
+
+    /**
+     * @return true if the index is global-per map, meaning there is just a single instance of this object per map.
+     * Global indexes are used in on-heap maps, since they give a significant performance boost.
+     * The opposite of global indexes are partitioned-indexes which are stored locally per partition.
+     * In case of a partitioned-index, each query has to query the index in each partition separately, which all-together
+     * may be around 3 times slower than querying a single global index.
+     */
+    public boolean isGlobal() {
+        return global;
     }
 
     /**

@@ -288,10 +288,10 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int REMOVE_FROM_LOAD_ALL = 134;
     public static final int ENTRY_REMOVING_PROCESSOR = 135;
     public static final int ENTRY_OFFLOADABLE_SET_UNLOCK = 136;
-    public static final int LOCK_AWARE_LAZY_MAP_ENTRY = 137;
-    public static final int FETCH_WITH_QUERY = 138;
-    public static final int RESULT_SEGMENT = 139;
-    public static final int EVICT_BATCH_BACKUP = 140;
+    public static final int LOCK_AWARE_LAZY_MAP_ENTRY = 138;
+    public static final int FETCH_WITH_QUERY = 139;
+    public static final int RESULT_SEGMENT = 140;
+    public static final int EVICT_BATCH_BACKUP = 141;
 
     private static final int LEN = EVICT_BATCH_BACKUP + 1;
 

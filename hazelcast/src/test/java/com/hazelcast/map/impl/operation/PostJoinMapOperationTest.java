@@ -254,7 +254,10 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         // then: index & interceptor exist on internal MapContainer on node that joined the cluster
         MapService mapService = getNodeEngineImpl(hz2).getService(MapService.SERVICE_NAME);
         MapContainer mapContainerOnNode2 = mapService.getMapServiceContext().getMapContainer("map");
+
+
         assertEquals(1, mapContainerOnNode2.getIndexes().getIndexes().length);
+
         assertEquals(1, mapContainerOnNode2.getInterceptorRegistry().getInterceptors().size());
         assertEquals(Person.class,
                 mapContainerOnNode2.getInterceptorRegistry().getInterceptors().get(0).interceptGet("anything").getClass());

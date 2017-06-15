@@ -20,6 +20,8 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.query.Query;
+import com.hazelcast.map.impl.query.QueryOperation;
+import com.hazelcast.map.impl.query.QueryPartitionOperation;
 import com.hazelcast.map.impl.tx.TxnDeleteOperation;
 import com.hazelcast.map.impl.tx.TxnLockAndGetOperation;
 import com.hazelcast.map.impl.tx.TxnSetOperation;
@@ -213,6 +215,16 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     @Override
     public MapOperation createGetOperation(String name, Data dataKey) {
         return new GetOperation(name, dataKey);
+    }
+
+    @Override
+    public MapOperation createQueryOperation(Query query) {
+        return new QueryOperation(query);
+    }
+
+    @Override
+    public MapOperation createQueryPartitionOperation(Query query) {
+        return new QueryPartitionOperation(query);
     }
 
     @Override

@@ -21,8 +21,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryOperation;
 import com.hazelcast.map.impl.query.QueryPartitionOperation;
@@ -35,6 +38,7 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.BitSetUtils;
 import com.hazelcast.util.IterationType;
+import com.hazelcast.version.Version;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -116,10 +120,16 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
         List<Future> futures = new ArrayList<Future>(members.size());
         final InternalOperationService operationService = nodeEngine.getOperationService();
         final Query query = buildQuery(predicate);
+
+        Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
+        MapService mapService = nodeEngine.getService(getServiceName());
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+
         for (Member member : members) {
             try {
                 Future future = operationService.createInvocationBuilder(SERVICE_NAME,
-                        new QueryOperation(query), member.getAddress())
+                        createQueryOperation(query, clusterVersion, mapServiceContext),
+                        member.getAddress())
                         .invoke();
                 futures.add(future);
             } catch (Throwable t) {
@@ -139,9 +149,9 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
 
     private Query buildQuery(Predicate predicate) {
         Query.QueryBuilder builder =
-            Query.of().mapName(getDistributedObjectName())
-                      .predicate(predicate)
-                      .iterationType(getIterationType());
+                Query.of().mapName(getDistributedObjectName())
+                        .predicate(predicate)
+                        .iterationType(getIterationType());
 
         if (getAggregator() != null) {
             builder = builder.aggregator(getAggregator());
@@ -205,9 +215,14 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
                                                        Predicate predicate) {
 
         final InternalOperationService operationService = nodeEngine.getOperationService();
+        Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
+        MapService mapService = nodeEngine.getService(getServiceName());
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+
         Query query = buildQuery(predicate);
         for (Integer partitionId : missingPartitionsList) {
-            QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(query);
+            MapOperation queryPartitionOperation = createQueryPartitionOperation(
+                    query, clusterVersion, mapServiceContext);
             queryPartitionOperation.setPartitionId(partitionId);
             try {
                 Future future = operationService.invokeOnPartition(SERVICE_NAME,
@@ -229,6 +244,28 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
                 extractAndAppendResult(result, queryResult);
                 BitSetUtils.setBits(finishedPartitions, queryResult.getPartitionIds());
             }
+        }
+    }
+
+    private MapOperation createQueryOperation(Query query, Version clusterVersion, MapServiceContext mapServiceContext) {
+        boolean isVersion39orGreater = clusterVersion.isGreaterOrEqual(Versions.V3_9);
+        // for rolling-upgrade compatibility, the else-clause can be deleted in 4.0
+        if (isVersion39orGreater) {
+            return mapServiceContext.getMapOperationProvider(query.getMapName()).createQueryOperation(query);
+        } else {
+            return new QueryOperation(query);
+        }
+    }
+
+    private MapOperation createQueryPartitionOperation(Query query, Version clusterVersion,
+                                                       MapServiceContext mapServiceContext) {
+        // for rolling-upgrade compatibility, the else-clause can be deleted in 4.0
+        boolean isVersion39orGreater = clusterVersion.isGreaterOrEqual(Versions.V3_9);
+        if (isVersion39orGreater) {
+            return mapServiceContext.getMapOperationProvider(
+                    query.getMapName()).createQueryPartitionOperation(query);
+        } else {
+            return new QueryPartitionOperation(query);
         }
     }
 }

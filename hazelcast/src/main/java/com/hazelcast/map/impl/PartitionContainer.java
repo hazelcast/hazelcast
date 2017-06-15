@@ -18,7 +18,11 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.impl.query.IndexProvider;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
@@ -43,6 +47,9 @@ public class PartitionContainer {
     final MapService mapService;
     final int partitionId;
     final ConcurrentMap<String, RecordStore> maps = new ConcurrentHashMap<String, RecordStore>(1000);
+
+    final ConcurrentMap<String, Indexes> indexes = new ConcurrentHashMap<String, Indexes>(10);
+
     final ConstructorFunction<String, RecordStore> recordStoreConstructor
             = new ConstructorFunction<String, RecordStore>() {
 
@@ -111,6 +118,13 @@ public class PartitionContainer {
         keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getMaxSizeConfig()));
         keyLoader.setHasBackup(mapConfig.getTotalBackupCount() > 0);
         keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
+
+        InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
+        IndexProvider indexProvider = serviceContext.getIndexProvider(mapConfig);
+        if (!mapContainer.isGlobalIndexEnabled()) {
+            Indexes indexesForMap = new Indexes(ss, indexProvider, mapContainer.getExtractors(), false);
+            indexes.putIfAbsent(name, indexesForMap);
+        }
         RecordStore recordStore = serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);
         recordStore.init();
         return recordStore;
@@ -223,6 +237,35 @@ public class PartitionContainer {
 
     public void setLastCleanupTimeCopy(long lastCleanupTimeCopy) {
         this.lastCleanupTimeCopy = lastCleanupTimeCopy;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+    // IMPORTANT: never use directly! use MapContainer.getIndex() instead.
+    // There are cases where a global index is used. In this case, the global-index is stored in the MapContainer.
+    // By using this method in the context of global index an exception will be thrown.
+    // -------------------------------------------------------------------------------------------------------------
+    Indexes getIndexes(String name) {
+
+        Indexes ixs = indexes.get(name);
+        if (ixs == null) {
+            MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+            MapContainer mapContainer = mapServiceContext.getMapContainer(name);
+            if (mapContainer.isGlobalIndexEnabled()) {
+                throw new IllegalStateException("Can't use a partitioned-index in the context of a global-index.");
+            }
+
+            InternalSerializationService ss = (InternalSerializationService)
+                    mapServiceContext.getNodeEngine().getSerializationService();
+            Extractors extractors = mapServiceContext.getMapContainer(name).getExtractors();
+            IndexProvider indexProvider = mapServiceContext.getIndexProvider(mapContainer.getMapConfig());
+            Indexes indexesForMap = new Indexes(ss, indexProvider, extractors, false);
+            ixs = indexes.putIfAbsent(name, indexesForMap);
+            if (ixs == null) {
+                ixs = indexesForMap;
+            }
+
+        }
+        return ixs;
     }
 
 }

@@ -34,7 +34,7 @@ abstract class VersionedObjectDataInput extends InputStream implements ObjectDat
     /**
      * If the serializer supports versioning it may set the version to use for the serialization on this object.
      *
-     * @param version
+     * @param version version to set
      */
     public void setVersion(Version version) {
         this.version = version;

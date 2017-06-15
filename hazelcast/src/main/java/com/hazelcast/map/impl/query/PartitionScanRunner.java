@@ -83,7 +83,7 @@ public class PartitionScanRunner {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         Iterator<Record> iterator = partitionContainer.getRecordStore(mapName).loadAwareIterator(getNow(), false);
         Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry(pagingPredicate);
-        boolean useCachedValues = isUseCachedDeserializedValuesEnabled(mapContainer);
+        boolean useCachedValues = isUseCachedDeserializedValuesEnabled(mapContainer, partitionId);
         Extractors extractors = mapServiceContext.getExtractors(mapName);
         while (iterator.hasNext()) {
             Record record = iterator.next();
@@ -144,7 +144,7 @@ public class PartitionScanRunner {
         return new QueryableEntriesSegment(resultList, lastIndex);
     }
 
-    protected boolean isUseCachedDeserializedValuesEnabled(MapContainer mapContainer) {
+    protected boolean isUseCachedDeserializedValuesEnabled(MapContainer mapContainer, int partitionId) {
         CacheDeserializedValues cacheDeserializedValues = mapContainer.getMapConfig().getCacheDeserializedValues();
         switch (cacheDeserializedValues) {
             case NEVER:
@@ -153,7 +153,7 @@ public class PartitionScanRunner {
                 return true;
             default:
                 //if index exists then cached value is already set -> let's use it
-                return mapContainer.getIndexes().hasIndex();
+                return mapContainer.getIndexes(partitionId).hasIndex();
         }
     }
 

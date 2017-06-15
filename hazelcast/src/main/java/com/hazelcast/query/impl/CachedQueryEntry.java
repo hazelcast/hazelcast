@@ -139,4 +139,5 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
     public int hashCode() {
         return keyData.hashCode();
     }
+
 }

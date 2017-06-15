@@ -34,11 +34,12 @@ abstract class VersionedObjectDataOutput extends OutputStream implements ObjectD
     /**
      * If the serializer supports versioning it may set the version to use for the serialization on this object.
      *
-     * @param version
+     * @param version version to set
      */
     public void setVersion(Version version) {
         this.version = version;
     }
+
 
     /**
      * If the serializer supports versioning it may set the version to use for the serialization on this object.
