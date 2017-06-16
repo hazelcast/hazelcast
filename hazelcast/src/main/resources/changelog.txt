@@ -1,5 +1,26 @@
 You can also see the Release Notes document at http://docs.hazelcast.org/docs/release-notes/.
 
+??, Release 3.9-EA
+
+- WAN Replication on Amazon EC2.
+- Dynamic Creation of Distributed Objects Configuration.
+- Dynamic Role Update: You can update security permissions in a running cluster without the performing a rolling restart.
+- Search Indexes in High-Density Memory Store: Now, sorted and unsorted indexes for High-Density Memory Store are supported.
+- Members-only License Installation: Licenses are installed only at the member side, not the client side.
+- Client Support for User Code Deployment.
+- Client Statistics in Management Center.
+- OpenSSL Integration.
+- Filtering and Projection Support for MapPartitionIterator.
+- Fine-Grained Anti-Entropy Mechanism.
+- Offloadable and Readonly entry processors.
+- Gigantic Cache Migration Enhancements: It enables manual control on the partition migrations.
+- Keeping JCache Implementation Updated.
+- Storing Near Cache Keys by Reference.
+- Client Connection Strategy Enhancements: Allows lazy initiation for Hazelcast Clients.
+- All Statistics as JMX Beans: All statistics shown on the Hazelcast Management Center are now available as JMX beans.
+- Default Group Password and Symmetric Encryption Default Credentials Policy.
+- Hazelcast Consistency Model Documentation.
+
 
 2017.02.17, Release 3.8
 
