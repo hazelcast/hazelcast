@@ -2089,6 +2089,14 @@
         </xs:sequence>
     </xs:complexType>
 
+    <xs:complexType name="mutual-auth">
+        <xs:all>
+            <xs:element name="factory-class-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="enabled" default="false" type="xs:string"/>
+    </xs:complexType>
+
     <xs:complexType name="ssl">
         <xs:sequence>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
@@ -2180,7 +2188,11 @@
         <xs:attribute name="group-type" type="xs:string" use="optional"/>
     </xs:complexType>
 
-    <xs:complexType name="management-center">
+    <xs:complexType name="management-center" mixed="true">
+        <xs:sequence minOccurs="0">
+            <xs:element name="url" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="mutual-auth" type="mutual-auth" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
         <xs:attribute name="enabled" type="xs:string" default="false" use="optional"/>
         <xs:attribute name="url" type="xs:string" use="optional"/>
         <xs:attribute name="update-interval" type="xs:string" default="3" use="optional"/>
