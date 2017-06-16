@@ -39,12 +39,14 @@
     <hz:hazelcast id="instance1" lazy-init="true" scope="singleton">
         <hz:config>
             <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
+            <hz:management-center>e</hz:management-center>
             <hz:network port="${cluster.port}">
                 <hz:join>
                     <hz:multicast enabled="false"/>
                     <hz:tcp-ip enabled="true"/>
                 </hz:join>
             </hz:network>
+
         </hz:config>
     </hz:hazelcast>
 

@@ -838,7 +838,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(managementCenterConfig);
         assertTrue(managementCenterConfig.isEnabled());
         assertEquals("myserver:80", managementCenterConfig.getUrl());
-        assertEquals(4, managementCenterConfig.getUpdateInterval());
+        assertEquals(2, managementCenterConfig.getUpdateInterval());
+        assertTrue(managementCenterConfig.getMutualAuthConfig().isEnabled());
+        assertEquals(1, managementCenterConfig.getMutualAuthConfig().getProperties().size());
+        assertEquals("who.let.the.cat.out.class", managementCenterConfig.getMutualAuthConfig().getFactoryClassName());
     }
 
     @Test
