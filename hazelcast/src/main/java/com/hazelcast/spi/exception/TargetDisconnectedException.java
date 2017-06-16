@@ -19,8 +19,8 @@ package com.hazelcast.spi.exception;
 import com.hazelcast.core.HazelcastException;
 
 /**
- * A {@link com.hazelcast.spi.exception.RetryableHazelcastException} that indicates that an operation is about to
- * be send to a non existing machine.
+ * Thrown when a client invocation is failed because related target is disconnected and
+ * whether the invocation is run or not is indeterminate
  */
 public class TargetDisconnectedException extends HazelcastException {
 
