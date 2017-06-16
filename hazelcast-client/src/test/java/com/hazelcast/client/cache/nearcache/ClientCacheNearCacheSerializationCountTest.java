@@ -149,13 +149,13 @@ public class ClientCacheNearCacheSerializationCountTest extends AbstractNearCach
                 {GET_ALL, newInt(1, 1, 1), newInt(0, 1, 1), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, null, null, null, null},
                 {GET_ALL, newInt(1, 1, 1), newInt(0, 1, 1), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, BINARY, true, true, INVALIDATE},
                 {GET_ALL, newInt(1, 1, 1), newInt(0, 1, 1), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, BINARY, true, true, CACHE_ON_UPDATE},
-                {GET_ALL, newInt(1, 1, 0), newInt(0, 1, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, BINARY, true, false, INVALIDATE},
+                {GET_ALL, newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 0, 0), newInt(0, 1, 1), BINARY, BINARY, true, false, INVALIDATE},
                 {GET_ALL, newInt(1, 0, 0), newInt(0, 0, 0), newInt(2, 0, 0), newInt(0, 1, 1), BINARY, BINARY, true, false, CACHE_ON_UPDATE},
 
                 {GET_ALL, newInt(1, 1, 1), newInt(0, 1, 1), newInt(1, 1, 1), newInt(1, 1, 1), OBJECT, null, null, null, null},
                 {GET_ALL, newInt(1, 1, 1), newInt(0, 1, 1), newInt(1, 1, 0), newInt(1, 1, 0), OBJECT, OBJECT, false, true, INVALIDATE},
                 {GET_ALL, newInt(1, 1, 1), newInt(0, 1, 1), newInt(1, 0, 0), newInt(2, 0, 0), OBJECT, OBJECT, false, true, CACHE_ON_UPDATE},
-                {GET_ALL, newInt(1, 1, 0), newInt(0, 1, 0), newInt(1, 1, 0), newInt(1, 1, 0), OBJECT, OBJECT, false, false, INVALIDATE},
+                {GET_ALL, newInt(1, 1, 0), newInt(0, 0, 0), newInt(1, 1, 0), newInt(1, 1, 0), OBJECT, OBJECT, false, false, INVALIDATE},
                 {GET_ALL, newInt(1, 0, 0), newInt(0, 0, 0), newInt(1, 0, 0), newInt(1, 0, 0), OBJECT, OBJECT, false, false, CACHE_ON_UPDATE},
         });
     }

@@ -39,6 +39,7 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -221,11 +222,11 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         }
 
         int keysSize = keys.size();
-        List<Data> dataKeys = new ArrayList<Data>(keys.size());
+        List<Data> dataKeys = new LinkedList<Data>();
         List<Object> resultingKeyValuePairs = new ArrayList<Object>(keysSize * 2);
         getAllInternal(keys, dataKeys, expiryPolicy, resultingKeyValuePairs, startNanos);
 
-        Map<K, V> result = createHashMap(keys.size());
+        Map<K, V> result = createHashMap(keysSize);
         for (int i = 0; i < resultingKeyValuePairs.size(); ) {
             K key = toObject(resultingKeyValuePairs.get(i++));
             V value = toObject(resultingKeyValuePairs.get(i++));

@@ -21,6 +21,7 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
 import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
+import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -160,11 +161,32 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
             default:
                 fail("Unsupported method: " + testMethod);
         }
-
         NearCacheTestContext<KeySerializationCountingData, ValueSerializationCountingData, NK, NV> context = createContext();
-        KeySerializationCountingData key = new KeySerializationCountingData("myKey");
-        ValueSerializationCountingData value = new ValueSerializationCountingData("myValue");
 
+        // execute the test with key/value classes which provide no custom equals()/hashCode() methods
+        KeySerializationCountingData key = new KeySerializationCountingData(false);
+        ValueSerializationCountingData value = new ValueSerializationCountingData(false);
+        runTest(context, key, value);
+
+        // FIXME: the ReplicatedMap was not adapted yet, so the expected numbers differ when equals()/hashCode() is provided
+        if (context.nearCacheAdapter instanceof ReplicatedMapDataStructureAdapter) {
+            return;
+        }
+
+        // reset the Near Cache for the next round
+        if (context.nearCache != null) {
+            context.nearCache.clear();
+            assertNearCacheSizeEventually(context, 0);
+        }
+
+        // execute the test with key/value classes which provide custom equals()/hashCode() methods
+        key = new KeySerializationCountingData(true);
+        value = new ValueSerializationCountingData(true);
+        runTest(context, key, value);
+    }
+
+    private void runTest(NearCacheTestContext<KeySerializationCountingData, ValueSerializationCountingData, ?, ?> context,
+                         KeySerializationCountingData key, ValueSerializationCountingData value) {
         switch (testMethod) {
             case GET:
                 context.nearCacheAdapter.put(key, value);
@@ -265,11 +287,11 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
      */
     protected static void prepareSerializationConfig(SerializationConfig serializationConfig) {
         ClassDefinition keyClassDefinition = new ClassDefinitionBuilder(KeySerializationCountingData.FACTORY_ID,
-                KeySerializationCountingData.CLASS_ID).addUTFField("id").build();
+                KeySerializationCountingData.CLASS_ID).addBooleanField("b").build();
         serializationConfig.addClassDefinition(keyClassDefinition);
 
         ClassDefinition valueClassDefinition = new ClassDefinitionBuilder(ValueSerializationCountingData.FACTORY_ID,
-                ValueSerializationCountingData.CLASS_ID).addUTFField("id").build();
+                ValueSerializationCountingData.CLASS_ID).addBooleanField("b").build();
         serializationConfig.addClassDefinition(valueClassDefinition);
 
         serializationConfig.addPortableFactory(KeySerializationCountingData.FACTORY_ID, new PortableFactory() {
@@ -298,13 +320,13 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
         private static int FACTORY_ID = 1;
         private static int CLASS_ID = 1;
 
-        private String id;
+        private boolean executeEqualsAndHashCode;
 
         KeySerializationCountingData() {
         }
 
-        KeySerializationCountingData(String id) {
-            this.id = id;
+        KeySerializationCountingData(boolean executeEqualsAndHashCode) {
+            this.executeEqualsAndHashCode = executeEqualsAndHashCode;
         }
 
         @Override
@@ -319,34 +341,41 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTF("id", id);
+            writer.writeBoolean("b", executeEqualsAndHashCode);
             KEY_SERIALIZE_COUNT.incrementAndGet();
-            KEY_SERIALIZE_STACKTRACE.get().add(getStackTrace("invoked key serialization for " + id));
+            KEY_SERIALIZE_STACKTRACE.get().add(getStackTrace("invoked key serialization (executeEqualsAndHashCode: "
+                    + executeEqualsAndHashCode + ")"));
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            id = reader.readUTF("id");
+            executeEqualsAndHashCode = reader.readBoolean("b");
             KEY_DESERIALIZE_COUNT.incrementAndGet();
-            KEY_DESERIALIZE_STACKTRACE.get().add(getStackTrace("invoked key deserialization for " + id));
+            KEY_DESERIALIZE_STACKTRACE.get().add(getStackTrace("invoked key deserialization (executeEqualsAndHashCode: "
+                    + executeEqualsAndHashCode + ")"));
         }
 
         @Override
         public boolean equals(Object o) {
+            if (!executeEqualsAndHashCode) {
+                return super.equals(o);
+            }
             if (this == o) {
                 return true;
             }
             if (!(o instanceof KeySerializationCountingData)) {
                 return false;
             }
-
             KeySerializationCountingData that = (KeySerializationCountingData) o;
-            return id != null ? id.equals(that.id) : that.id == null;
+            return that.executeEqualsAndHashCode;
         }
 
         @Override
         public int hashCode() {
-            return id != null ? id.hashCode() : 0;
+            if (!executeEqualsAndHashCode) {
+                return super.hashCode();
+            }
+            return 1;
         }
     }
 
@@ -355,13 +384,13 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
         private static int FACTORY_ID = 2;
         private static int CLASS_ID = 2;
 
-        private String id;
+        private boolean executeEqualsAndHashCode;
 
         ValueSerializationCountingData() {
         }
 
-        ValueSerializationCountingData(String id) {
-            this.id = id;
+        ValueSerializationCountingData(boolean executeEqualsAndHashCode) {
+            this.executeEqualsAndHashCode = executeEqualsAndHashCode;
         }
 
         @Override
@@ -376,34 +405,41 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTF("id", id);
+            writer.writeBoolean("b", executeEqualsAndHashCode);
             VALUE_SERIALIZE_COUNT.incrementAndGet();
-            VALUE_SERIALIZE_STACKTRACE.get().add(getStackTrace("invoked value serialization for " + id));
+            VALUE_SERIALIZE_STACKTRACE.get().add(getStackTrace("invoked value serialization for (executeEqualsAndHashCode: "
+                    + executeEqualsAndHashCode + ")"));
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            id = reader.readUTF("id");
+            executeEqualsAndHashCode = reader.readBoolean("b");
             VALUE_DESERIALIZE_COUNT.incrementAndGet();
-            VALUE_DESERIALIZE_STACKTRACE.get().add(getStackTrace("invoked value deserialization for " + id));
+            VALUE_DESERIALIZE_STACKTRACE.get().add(getStackTrace("invoked value deserialization for (executeEqualsAndHashCode: "
+                    + executeEqualsAndHashCode + ")"));
         }
 
         @Override
         public boolean equals(Object o) {
+            if (!executeEqualsAndHashCode) {
+                return super.equals(o);
+            }
             if (this == o) {
                 return true;
             }
             if (!(o instanceof ValueSerializationCountingData)) {
                 return false;
             }
-
             ValueSerializationCountingData that = (ValueSerializationCountingData) o;
-            return id != null ? id.equals(that.id) : that.id == null;
+            return that.executeEqualsAndHashCode;
         }
 
         @Override
         public int hashCode() {
-            return id != null ? id.hashCode() : 0;
+            if (!executeEqualsAndHashCode) {
+                return super.hashCode();
+            }
+            return 1;
         }
     }
 }
