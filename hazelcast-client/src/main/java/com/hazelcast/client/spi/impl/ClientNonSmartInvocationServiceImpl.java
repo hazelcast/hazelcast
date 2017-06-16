@@ -35,9 +35,7 @@ public class ClientNonSmartInvocationServiceImpl extends ClientInvocationService
 
     @Override
     public void invokeOnConnection(ClientInvocation invocation, ClientConnection connection) throws IOException {
-        if (connection == null) {
-            throw new NullPointerException("Connection can not be null");
-        }
+        assert connection != null;
         send(invocation, connection);
     }
 
