@@ -29,6 +29,7 @@ import javax.cache.CacheManager;
 /**
  * Context for unified Near Cache tests.
  */
+@SuppressWarnings("WeakerAccess")
 public class NearCacheTestContext<K, V, NK, NV> {
 
     /**
