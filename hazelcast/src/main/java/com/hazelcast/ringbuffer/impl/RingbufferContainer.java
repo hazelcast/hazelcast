@@ -27,7 +27,9 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.ringbuffer.StaleSequenceException;
+import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
@@ -48,7 +50,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * it is null to save space.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class RingbufferContainer<T> implements IdentifiedDataSerializable, Versioned {
+public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notifier, Versioned {
 
     private static final long TTL_DISABLED = 0;
 
@@ -578,5 +580,15 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Versi
     @Override
     public int getId() {
         return RingbufferDataSerializerHook.RINGBUFFER_CONTAINER;
+    }
+
+    @Override
+    public boolean shouldNotify() {
+        return true;
+    }
+
+    @Override
+    public WaitNotifyKey getNotifiedKey() {
+        return emptyRingWaitNotifyKey;
     }
 }

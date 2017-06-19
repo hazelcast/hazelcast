@@ -19,6 +19,8 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
+import com.hazelcast.cache.impl.journal.CacheEventJournal;
+import com.hazelcast.cache.impl.journal.RingbufferCacheEventJournalImpl;
 import com.hazelcast.cache.impl.operation.PostJoinCacheOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -105,6 +107,7 @@ public abstract class AbstractCacheService implements ICacheService, PostJoinAwa
     protected CachePartitionSegment[] segments;
     protected CacheEventHandler cacheEventHandler;
     protected CacheSplitBrainHandler cacheSplitBrainHandler;
+    protected RingbufferCacheEventJournalImpl eventJournal;
     protected ILogger logger;
 
     @Override
@@ -118,6 +121,7 @@ public abstract class AbstractCacheService implements ICacheService, PostJoinAwa
         this.cacheEventHandler = new CacheEventHandler(nodeEngine);
         this.cacheSplitBrainHandler = new CacheSplitBrainHandler(nodeEngine, configs, segments);
         this.logger = nodeEngine.getLogger(getClass());
+        this.eventJournal = new RingbufferCacheEventJournalImpl(nodeEngine);
         postInit(nodeEngine, properties);
     }
 
@@ -702,5 +706,10 @@ public abstract class AbstractCacheService implements ICacheService, PostJoinAwa
 
     public CacheEventHandler getCacheEventHandler() {
         return cacheEventHandler;
+    }
+
+    @Override
+    public CacheEventJournal getEventJournal() {
+        return eventJournal;
     }
 }

@@ -22,7 +22,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
 		http://www.hazelcast.com/schema/spring
-		http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd
+		hazelcast-spring-3.9.xsd
 		http://www.hazelcast.com/schema/sample
 		hazelcast-sample-service.xsd">
 
@@ -409,6 +409,9 @@
                 </hz:wan-replication-ref>
                 <hz:hot-restart enabled="true" fsync="true" />
             </hz:cache>
+
+            <hz:event-journal map-name="mapName" cache-name="cacheName" enabled="true"
+                              capacity="123" time-to-live-seconds="321"/>
 
             <hz:multimap name="testMultimap"
                          value-collection-type="LIST" binary="false" statistics-enabled="false">

@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.MapStoreManager;
@@ -61,6 +62,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final MapStoreContext mapStoreContext;
     protected final InMemoryFormat inMemoryFormat;
     protected final int partitionId;
+    protected final MapEventJournal eventJournal;
 
     protected Storage<Data, Record> storage;
 
@@ -81,6 +83,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         MapStoreManager mapStoreManager = mapStoreContext.getMapStoreManager();
         this.mapDataStore = mapStoreManager.getMapDataStore(name, partitionId);
         this.lockStore = createLockStore();
+        this.eventJournal = mapServiceContext.getEventJournal();
     }
 
     @Override
@@ -131,6 +134,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected void updateRecord(Data key, Record record, Object value, long now) {
         updateStatsOnPut(false, now);
         record.onUpdate(now);
+        eventJournal.writeUpdateEvent(mapContainer.getObjectNamespace(), partitionId, record.getKey(), record.getValue(), value);
         storage.updateRecordValue(key, record, value);
     }
 
