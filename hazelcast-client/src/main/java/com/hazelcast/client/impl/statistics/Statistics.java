@@ -25,7 +25,7 @@ import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.renderers.StringRenderer;
+import com.hazelcast.internal.metrics.Gauge;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -346,11 +346,11 @@ public class Statistics {
                 "runtime.totalMemory", "runtime.uptime", "runtime.usedMemory", "executionService.userExecutorQueueSize",
         };
 
-        private final Map<String, StringRenderer> allMetrics = new HashMap<String, StringRenderer>(statisticNames.length);
+        private final Map<String, Gauge> allMetrics = new HashMap<String, Gauge>(statisticNames.length);
 
         PeriodicStatistics(final MetricsRegistry metricsRegistry) {
             for (String name : statisticNames) {
-                allMetrics.put(name, metricsRegistry.newStringRendererGauge(name));
+                allMetrics.put(name, metricsRegistry.newGauge(name));
             }
         }
 
@@ -370,7 +370,7 @@ public class Statistics {
                 addStat(stats, "credentials.principal", credentials.getPrincipal());
             }
 
-            for (Map.Entry<String, StringRenderer> entry : allMetrics.entrySet()) {
+            for (Map.Entry<String, Gauge> entry : allMetrics.entrySet()) {
                 stats.append(STAT_SEPARATOR).append(entry.getKey()).append(KEY_VALUE_SEPARATOR);
                 entry.getValue().render(stats);
             }

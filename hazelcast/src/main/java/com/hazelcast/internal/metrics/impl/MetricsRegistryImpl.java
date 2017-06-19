@@ -24,8 +24,8 @@ import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.Gauge;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
-import com.hazelcast.internal.metrics.renderers.StringRenderer;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
@@ -231,7 +231,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     }
 
     @Override
-    public StringRenderer newStringRendererGauge(final String name) {
+    public Gauge newGauge(final String name) {
         checkNotNull(name, "name can't be null");
 
         ProbeInstance probeInstance = getProbeInstance(name);
