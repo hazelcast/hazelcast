@@ -55,16 +55,16 @@ import java.util.Collections;
  * </ul>
  * An empty response can be sent if the current replica version is 0.
  */
-public final class ReplicaSyncRequest extends AbstractPartitionOperation
+public final class PartitionReplicaSyncRequest extends AbstractPartitionOperation
         implements PartitionAwareOperation, MigrationCycleOperation, Versioned {
 
     private Collection<ServiceNamespace> allNamespaces;
 
-    public ReplicaSyncRequest() {
+    public PartitionReplicaSyncRequest() {
         allNamespaces = Collections.emptySet();
     }
 
-    public ReplicaSyncRequest(int partitionId, Collection<ServiceNamespace> namespaces, int replicaIndex) {
+    public PartitionReplicaSyncRequest(int partitionId, Collection<ServiceNamespace> namespaces, int replicaIndex) {
         this.allNamespaces = namespaces;
         setPartitionId(partitionId);
         setReplicaIndex(replicaIndex);
@@ -163,7 +163,7 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
 
-        ReplicaSyncRetryResponse response = new ReplicaSyncRetryResponse(allNamespaces);
+        PartitionReplicaSyncRetryResponse response = new PartitionReplicaSyncRetryResponse(allNamespaces);
         response.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         Address target = getCallerAddress();
         OperationService operationService = nodeEngine.getOperationService();
@@ -174,7 +174,7 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
     private void sendResponse(Collection<Operation> operations, ServiceNamespace ns) throws IOException {
         NodeEngine nodeEngine = getNodeEngine();
 
-        ReplicaSyncResponse syncResponse = createResponse(operations, ns);
+        PartitionReplicaSyncResponse syncResponse = createResponse(operations, ns);
         Address target = getCallerAddress();
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
@@ -185,7 +185,7 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
         operationService.send(syncResponse, target);
     }
 
-    private ReplicaSyncResponse createResponse(Collection<Operation> operations, ServiceNamespace ns)
+    private PartitionReplicaSyncResponse createResponse(Collection<Operation> operations, ServiceNamespace ns)
             throws IOException {
 
         int partitionId = getPartitionId();
@@ -194,7 +194,7 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
         PartitionReplicaVersionManager versionManager = partitionService.getPartitionReplicaVersionManager();
 
         long[] versions = versionManager.getPartitionReplicaVersions(partitionId, ns);
-        ReplicaSyncResponse syncResponse = new ReplicaSyncResponse(operations, ns, versions);
+        PartitionReplicaSyncResponse syncResponse = new PartitionReplicaSyncResponse(operations, ns, versions);
         syncResponse.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         return syncResponse;
     }

@@ -38,7 +38,7 @@ import com.hazelcast.internal.partition.operation.MigrationCommitOperation;
 import com.hazelcast.internal.partition.operation.MigrationRequestOperation;
 import com.hazelcast.internal.partition.operation.PartitionStateOperation;
 import com.hazelcast.internal.partition.operation.PromotionCommitOperation;
-import com.hazelcast.internal.partition.operation.ReplicaSyncRequest;
+import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRequest;
 import com.hazelcast.internal.partition.operation.ShutdownResponseOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -188,7 +188,7 @@ public class MigrationManager {
      * @see MigrationRunnable
      * @see PublishPartitionRuntimeStateTask
      * @see PartitionStateOperation
-     * @see ReplicaSyncRequest
+     * @see PartitionReplicaSyncRequest
      */
     boolean isMigrationAllowed() {
         return migrationAllowed.get();

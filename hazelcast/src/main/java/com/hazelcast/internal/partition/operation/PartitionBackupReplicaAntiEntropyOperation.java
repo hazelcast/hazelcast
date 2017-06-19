@@ -21,7 +21,6 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
@@ -36,18 +35,21 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.PARTITION_BACKUP_REPLICA_ANTI_ENTROPY;
+
 // should not be an urgent operation. required to be in order with backup operations on target node
-public final class CheckReplicaVersion extends AbstractPartitionOperation
+public final class PartitionBackupReplicaAntiEntropyOperation
+        extends AbstractPartitionOperation
         implements PartitionAwareOperation, AllowedDuringPassiveState, Versioned {
 
     private Map<ServiceNamespace, Long> versions;
     private boolean returnResponse;
     private boolean response = true;
 
-    public CheckReplicaVersion() {
+    public PartitionBackupReplicaAntiEntropyOperation() {
     }
 
-    public CheckReplicaVersion(Map<ServiceNamespace, Long> versions, boolean returnResponse) {
+    public PartitionBackupReplicaAntiEntropyOperation(Map<ServiceNamespace, Long> versions, boolean returnResponse) {
         this.versions = versions;
         this.returnResponse = returnResponse;
     }
@@ -158,6 +160,6 @@ public final class CheckReplicaVersion extends AbstractPartitionOperation
 
     @Override
     public int getId() {
-        return PartitionDataSerializerHook.CHECK_REPLICA_VERSION;
+        return PARTITION_BACKUP_REPLICA_ANTI_ENTROPY;
     }
 }

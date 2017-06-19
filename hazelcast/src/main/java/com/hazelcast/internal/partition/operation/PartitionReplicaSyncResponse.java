@@ -60,18 +60,17 @@ import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createError
  * </ul>
  */
 @SuppressFBWarnings("EI_EXPOSE_REP")
-public class ReplicaSyncResponse extends AbstractPartitionOperation
-        implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation,
-        AllowedDuringPassiveState, Versioned {
+public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
+        implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation, AllowedDuringPassiveState, Versioned {
 
     private Collection<Operation> operations;
     private ServiceNamespace namespace;
     private long[] versions;
 
-    public ReplicaSyncResponse() {
+    public PartitionReplicaSyncResponse() {
     }
 
-    public ReplicaSyncResponse(Collection<Operation> operations, ServiceNamespace namespace, long[] versions) {
+    public PartitionReplicaSyncResponse(Collection<Operation> operations, ServiceNamespace namespace, long[] versions) {
         this.operations = operations;
         this.namespace = namespace;
         this.versions = versions;
