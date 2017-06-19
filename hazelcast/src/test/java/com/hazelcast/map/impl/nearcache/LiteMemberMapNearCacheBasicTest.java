@@ -18,17 +18,23 @@ package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
-import com.hazelcast.internal.nearcache.AbstractBasicNearCacheTest;
+import com.hazelcast.internal.adapter.IMapMapStore;
+import com.hazelcast.internal.nearcache.AbstractNearCacheBasicTest;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
+import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
+import com.hazelcast.internal.nearcache.NearCacheTestUtils;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -37,20 +43,23 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.util.Arrays;
 import java.util.Collection;
 
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getMapNearCacheManager;
+import static com.hazelcast.map.impl.nearcache.MapInvalidationListener.createInvalidationEventHandler;
+import static com.hazelcast.map.impl.nearcache.MapNearCacheBasicTest.addMapStoreConfig;
+import static java.util.Arrays.asList;
 
 /**
  * Basic Near Cache tests for {@link IMap} on Hazelcast Lite members.
  */
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category(QuickTest.class)
-public class BasicLiteMemberMapNearCacheTest extends AbstractBasicNearCacheTest<Data, String> {
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class LiteMemberMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, String> {
 
     @Parameter
     public InMemoryFormat inMemoryFormat;
@@ -59,7 +68,7 @@ public class BasicLiteMemberMapNearCacheTest extends AbstractBasicNearCacheTest<
 
     @Parameters(name = "format:{0}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {InMemoryFormat.BINARY},
                 {InMemoryFormat.OBJECT},
         });
@@ -72,13 +81,22 @@ public class BasicLiteMemberMapNearCacheTest extends AbstractBasicNearCacheTest<
 
     @After
     public void tearDown() {
-        hazelcastFactory.shutdownAll();
+        hazelcastFactory.terminateAll();
     }
 
     @Override
-    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(createConfig(nearCacheConfig, false));
-        HazelcastInstance liteMember = hazelcastFactory.newHazelcastInstance(createConfig(nearCacheConfig, true));
+    protected void assumeThatMethodIsAvailable(DataStructureAdapterMethod method) {
+        NearCacheTestUtils.assumeThatMethodIsAvailable(IMapDataStructureAdapter.class, method);
+    }
+
+    @Override
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean loaderEnabled) {
+        IMapMapStore mapStore = loaderEnabled ? new IMapMapStore() : null;
+        Config config = createConfig(mapStore, false);
+        Config liteMemberConfig = createConfig(mapStore, true);
+
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance liteMember = hazelcastFactory.newHazelcastInstance(liteMemberConfig);
 
         IMap<K, V> memberMap = member.getMap(DEFAULT_NEAR_CACHE_NAME);
         IMap<K, V> liteMemberMap = liteMember.getMap(DEFAULT_NEAR_CACHE_NAME);
@@ -86,22 +104,28 @@ public class BasicLiteMemberMapNearCacheTest extends AbstractBasicNearCacheTest<
         NearCacheManager nearCacheManager = getMapNearCacheManager(liteMember);
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
 
-        return new NearCacheTestContext<K, V, Data, String>(
-                getSerializationService(member),
-                liteMember,
-                member,
-                new IMapDataStructureAdapter<K, V>(liteMemberMap),
-                new IMapDataStructureAdapter<K, V>(memberMap),
-                true,
-                nearCache,
-                nearCacheManager);
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(member))
+                .setNearCacheInstance(liteMember)
+                .setDataInstance(member)
+                .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(liteMemberMap))
+                .setDataAdapter(new IMapDataStructureAdapter<K, V>(memberMap))
+                .setNearCache(nearCache)
+                .setNearCacheManager(nearCacheManager)
+                .setLoader(mapStore)
+                .setInvalidationListener(createInvalidationEventHandler(liteMemberMap))
+                .build();
     }
 
-    protected Config createConfig(NearCacheConfig nearCacheConfig, boolean liteMember) {
+    protected Config createConfig(IMapMapStore mapStore, boolean liteMember) {
         Config config = getConfig()
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), PARTITION_COUNT)
                 .setLiteMember(liteMember);
 
-        config.getMapConfig(DEFAULT_NEAR_CACHE_NAME).setNearCacheConfig(nearCacheConfig);
+        MapConfig mapConfig = config.getMapConfig(DEFAULT_NEAR_CACHE_NAME);
+        addMapStoreConfig(mapStore, mapConfig);
+        if (liteMember) {
+            mapConfig.setNearCacheConfig(nearCacheConfig);
+        }
 
         return config;
     }

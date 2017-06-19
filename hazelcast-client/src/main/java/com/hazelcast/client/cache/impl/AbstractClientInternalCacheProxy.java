@@ -1085,17 +1085,17 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         }
     }
 
+    public String addNearCacheInvalidationListener(EventHandler eventHandler) {
+        return registerListener(createInvalidationListenerCodec(), eventHandler);
+    }
 
     private void registerInvalidationListener() {
         if (nearCache == null || !nearCache.isInvalidatedOnChange()) {
             return;
         }
 
-        ListenerMessageCodec listenerCodec = createInvalidationListenerCodec();
-        ClientListenerService listenerService = clientContext.getListenerService();
-
         EventHandler eventHandler = createInvalidationEventHandler();
-        nearCacheMembershipRegistrationId = listenerService.registerListener(listenerCodec, eventHandler);
+        nearCacheMembershipRegistrationId = addNearCacheInvalidationListener(eventHandler);
     }
 
     private EventHandler createInvalidationEventHandler() {

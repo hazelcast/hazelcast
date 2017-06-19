@@ -69,6 +69,9 @@ public final class TestUtil {
 
     public static void warmUpPartitions(HazelcastInstance... instances) throws InterruptedException {
         for (HazelcastInstance instance : instances) {
+            if (instance == null) {
+                continue;
+            }
             final PartitionService ps = instance.getPartitionService();
             for (Partition partition : ps.getPartitions()) {
                 while (partition.getOwner() == null) {
@@ -80,6 +83,9 @@ public final class TestUtil {
 
     public static void warmUpPartitions(Collection<HazelcastInstance> instances) throws InterruptedException {
         for (HazelcastInstance instance : instances) {
+            if (instance == null) {
+                continue;
+            }
             final PartitionService ps = instance.getPartitionService();
             for (Partition partition : ps.getPartitions()) {
                 while (partition.getOwner() == null) {

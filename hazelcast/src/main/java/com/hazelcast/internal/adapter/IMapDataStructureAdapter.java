@@ -18,8 +18,15 @@ package com.hazelcast.internal.adapter;
 
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.TruePredicate;
 
+import javax.cache.integration.CompletionListener;
+import javax.cache.processor.EntryProcessor;
+import javax.cache.processor.EntryProcessorException;
+import javax.cache.processor.EntryProcessorResult;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,18 +39,8 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
-    public void clear() {
-        map.clear();
-    }
-
-    @Override
-    public void set(K key, V value) {
-        map.set(key, value);
-    }
-
-    @Override
-    public V put(K key, V value) {
-        return map.put(key, value);
+    public int size() {
+        return map.size();
     }
 
     @Override
@@ -57,13 +54,34 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
-    public void putAll(Map<K, V> map) {
-        this.map.putAll(map);
+    public void set(K key, V value) {
+        map.set(key, value);
     }
 
     @Override
-    public Map<K, V> getAll(Set<K> keys) {
-        return map.getAll(keys);
+    public V put(K key, V value) {
+        return map.put(key, value);
+    }
+
+    @Override
+    public boolean putIfAbsent(K key, V value) {
+        return map.putIfAbsent(key, value) == null;
+    }
+
+    @Override
+    @MethodNotAvailable
+    public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    public V replace(K key, V newValue) {
+        return map.replace(key, newValue);
+    }
+
+    @Override
+    public boolean replace(K key, V oldValue, V newValue) {
+        return map.replace(key, oldValue, newValue);
     }
 
     @Override
@@ -72,12 +90,109 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
-    public LocalMapStats getLocalMapStats() {
-        return map.getLocalMapStats();
+    public boolean remove(K key, V oldValue) {
+        return map.remove(key, oldValue);
+    }
+
+    @Override
+    public ICompletableFuture<V> removeAsync(K key) {
+        return map.removeAsync(key);
+    }
+
+    @Override
+    @MethodNotAvailable
+    public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments) throws EntryProcessorException {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    public Object executeOnKey(K key, com.hazelcast.map.EntryProcessor entryProcessor) {
+        return map.executeOnKey(key, entryProcessor);
+    }
+
+    @Override
+    public Map<K, Object> executeOnKeys(Set<K> keys, com.hazelcast.map.EntryProcessor entryProcessor) {
+        return map.executeOnKeys(keys, entryProcessor);
+    }
+
+    @Override
+    public Map<K, Object> executeOnEntries(com.hazelcast.map.EntryProcessor entryProcessor) {
+        return map.executeOnEntries(entryProcessor);
+    }
+
+    @Override
+    public Map<K, Object> executeOnEntries(com.hazelcast.map.EntryProcessor entryProcessor, Predicate predicate) {
+        return map.executeOnEntries(entryProcessor, predicate);
     }
 
     @Override
     public boolean containsKey(K key) {
         return map.containsKey(key);
+    }
+
+    @Override
+    public void loadAll(boolean replaceExistingValues) {
+        map.loadAll(replaceExistingValues);
+    }
+
+    @Override
+    public void loadAll(Set<K> keys, boolean replaceExistingValues) {
+        map.loadAll(keys, replaceExistingValues);
+    }
+
+    @Override
+    @MethodNotAvailable
+    public void loadAll(Set<? extends K> keys, boolean replaceExistingValues, CompletionListener completionListener) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    public Map<K, V> getAll(Set<K> keys) {
+        return map.getAll(keys);
+    }
+
+    @Override
+    public void putAll(Map<K, V> map) {
+        this.map.putAll(map);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void removeAll() {
+        map.removeAll(TruePredicate.INSTANCE);
+    }
+
+    @Override
+    @MethodNotAvailable
+    public void removeAll(final Set<K> keys) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor,
+                                                         Object... arguments) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    public void clear() {
+        map.clear();
+    }
+
+    @Override
+    public void destroy() {
+        map.destroy();
+    }
+
+    @Override
+    public LocalMapStats getLocalMapStats() {
+        return map.getLocalMapStats();
+    }
+
+    public void waitUntilLoaded() {
+        if (map instanceof MapProxyImpl) {
+            ((MapProxyImpl) map).waitUntilLoaded();
+        }
     }
 }

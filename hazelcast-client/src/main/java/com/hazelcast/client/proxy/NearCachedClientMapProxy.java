@@ -79,9 +79,8 @@ import static java.util.Collections.emptyMap;
 @SuppressWarnings("checkstyle:anoninnerlength")
 public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
-    // Eventually consistent near cache can only be used with server versions >= 3.8.
+    // eventually consistent near cache can only be used with server versions >= 3.8.
     private final int minConsistentNearCacheSupportingServerVersion = calculateVersion("3.8");
-    private boolean invalidateOnChange;
     private NearCache<Object, Object> nearCache;
     private ILogger logger;
 
@@ -101,10 +100,9 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         NearCacheManager nearCacheManager = context.getNearCacheManager();
         IMapDataStructureAdapter<K, V> adapter = new IMapDataStructureAdapter<K, V>(this);
         nearCache = nearCacheManager.getOrCreateNearCache(name, nearCacheConfig, adapter);
-        invalidateOnChange = nearCache.isInvalidatedOnChange();
 
-        if (invalidateOnChange) {
-            addNearCacheInvalidationListener(new ConnectedServerVersionAwareNearCacheEventHandler());
+        if (nearCacheConfig.isInvalidateOnChange()) {
+            registerInvalidationListener();
         }
     }
 
@@ -476,12 +474,16 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
     }
 
-    public void addNearCacheInvalidationListener(EventHandler handler) {
+    public String addNearCacheInvalidationListener(EventHandler handler) {
+        return registerListener(createNearCacheEntryListenerCodec(), handler);
+    }
+
+    private void registerInvalidationListener() {
         try {
-            invalidationListenerId = registerListener(createNearCacheEntryListenerCodec(), handler);
+            invalidationListenerId = addNearCacheInvalidationListener(new ConnectedServerVersionAwareNearCacheEventHandler());
         } catch (Exception e) {
             ILogger logger = getContext().getLoggingService().getLogger(getClass());
-            logger.severe("-----------------\n Near Cache is not initialized!!! \n-----------------", e);
+            logger.severe("-----------------\nNear Cache is not initialized!\n-----------------", e);
         }
     }
 

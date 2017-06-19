@@ -66,6 +66,24 @@ public class NearCacheStatsImpl implements NearCacheStats {
         this.creationTime = Clock.currentTimeMillis();
     }
 
+    public NearCacheStatsImpl(NearCacheStats nearCacheStats) {
+        NearCacheStatsImpl stats = (NearCacheStatsImpl) nearCacheStats;
+        creationTime = stats.creationTime;
+        ownedEntryCount = stats.ownedEntryCount;
+        ownedEntryMemoryCost = stats.ownedEntryMemoryCost;
+        hits = stats.hits;
+        misses = stats.misses;
+        evictions = stats.evictions;
+        expirations = stats.expirations;
+
+        persistenceCount = stats.persistenceCount;
+        lastPersistenceTime = stats.lastPersistenceTime;
+        lastPersistenceDuration = stats.lastPersistenceDuration;
+        lastPersistenceWrittenBytes = stats.lastPersistenceWrittenBytes;
+        lastPersistenceKeyCount = stats.lastPersistenceKeyCount;
+        lastPersistenceFailure = stats.lastPersistenceFailure;
+    }
+
     @Override
     public long getCreationTime() {
         return creationTime;
