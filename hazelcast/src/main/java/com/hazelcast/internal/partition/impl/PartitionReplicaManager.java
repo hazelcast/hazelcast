@@ -22,16 +22,17 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
-import com.hazelcast.internal.partition.operation.ReplicaSyncRequest;
+import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRequest;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
@@ -224,7 +225,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         }
         replicaSyncRequestsCounter.inc();
 
-        ReplicaSyncRequest syncRequest = new ReplicaSyncRequest(partitionId, namespaces, replicaIndex);
+        PartitionReplicaSyncRequest syncRequest = new PartitionReplicaSyncRequest(partitionId, namespaces, replicaIndex);
         nodeEngine.getOperationService().send(syncRequest, target);
     }
 
@@ -407,7 +408,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         long definedBackupSyncCheckInterval = node.getProperties().getSeconds(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL);
         long backupSyncCheckInterval = definedBackupSyncCheckInterval > 0 ? definedBackupSyncCheckInterval : 1;
 
-        executionService.scheduleWithRepetition(new SyncReplicaVersionTask(),
+        executionService.scheduleWithRepetition(new AntiEntropyTask(),
                 backupSyncCheckInterval, backupSyncCheckInterval, TimeUnit.SECONDS);
     }
 
@@ -440,7 +441,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         }
     }
 
-    private class SyncReplicaVersionTask implements Runnable {
+    private class AntiEntropyTask implements Runnable {
         @Override
         public void run() {
             if (!node.nodeEngine.isRunning() || !node.getNodeExtension().isStartCompleted()
@@ -449,17 +450,8 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
             }
 
             for (InternalPartition partition : partitionStateManager.getPartitions()) {
-                if (!partition.isLocal()) {
-                    continue;
-                }
-
-                for (int index = 1; index < InternalPartition.MAX_REPLICA_COUNT; index++) {
-                    if (partition.getReplicaAddress(index) != null) {
-                        CheckReplicaVersionTask task = new CheckReplicaVersionTask(nodeEngine, partitionService,
-                                partition.getPartitionId(), index, null);
-                        nodeEngine.getOperationService().execute(task);
-                    }
-                }
+                PartitionSpecificRunnable r = new PartitionPrimaryReplicaAntiEntropyTask(nodeEngine, partition.getPartitionId());
+                nodeEngine.getOperationService().execute(r);
             }
         }
     }

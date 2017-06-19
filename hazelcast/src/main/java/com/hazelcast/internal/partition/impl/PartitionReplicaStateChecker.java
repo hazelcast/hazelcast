@@ -29,6 +29,7 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.util.Clock;
 
 import java.util.concurrent.Semaphore;
@@ -266,8 +267,8 @@ public class PartitionReplicaStateChecker {
                     continue;
                 }
 
-                CheckReplicaVersionTask task = new CheckReplicaVersionTask(nodeEngine, partitionService,
-                        partition.getPartitionId(), index, callback);
+                int partitionId = partition.getPartitionId();
+                PartitionSpecificRunnable task = new CheckPartitionReplicaVersionTask(nodeEngine, partitionId, index, callback);
                 nodeEngine.getOperationService().execute(task);
             }
         }

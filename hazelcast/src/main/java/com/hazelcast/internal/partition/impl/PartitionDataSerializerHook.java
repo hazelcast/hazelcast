@@ -20,7 +20,7 @@ import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.ReplicaFragmentMigrationState;
 import com.hazelcast.internal.partition.operation.AssignPartitions;
-import com.hazelcast.internal.partition.operation.CheckReplicaVersion;
+import com.hazelcast.internal.partition.operation.PartitionBackupReplicaAntiEntropyOperation;
 import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
 import com.hazelcast.internal.partition.operation.MigrationOperation;
 import com.hazelcast.internal.partition.operation.MigrationRequestOperation;
@@ -30,9 +30,9 @@ import com.hazelcast.internal.partition.operation.LegacyMigrationOperation;
 import com.hazelcast.internal.partition.operation.LegacyMigrationRequestOperation;
 import com.hazelcast.internal.partition.operation.PartitionStateOperation;
 import com.hazelcast.internal.partition.operation.PromotionCommitOperation;
-import com.hazelcast.internal.partition.operation.ReplicaSyncRequest;
-import com.hazelcast.internal.partition.operation.ReplicaSyncResponse;
-import com.hazelcast.internal.partition.operation.ReplicaSyncRetryResponse;
+import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRequest;
+import com.hazelcast.internal.partition.operation.PartitionReplicaSyncResponse;
+import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRetryResponse;
 import com.hazelcast.internal.partition.operation.SafeStateCheckOperation;
 import com.hazelcast.internal.partition.operation.ShutdownRequestOperation;
 import com.hazelcast.internal.partition.operation.ShutdownResponseOperation;
@@ -52,7 +52,7 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
 
     public static final int PARTITION_RUNTIME_STATE = 1;
     public static final int ASSIGN_PARTITIONS = 2;
-    public static final int CHECK_REPLICA_VERSION = 3;
+    public static final int PARTITION_BACKUP_REPLICA_ANTI_ENTROPY = 3;
     public static final int FETCH_PARTITION_STATE = 4;
     public static final int HAS_ONGOING_MIGRATION = 5;
     public static final int MIGRATION_COMMIT = 6;
@@ -92,9 +92,9 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
                 return new AssignPartitions();
             }
         };
-        constructors[CHECK_REPLICA_VERSION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[PARTITION_BACKUP_REPLICA_ANTI_ENTROPY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CheckReplicaVersion();
+                return new PartitionBackupReplicaAntiEntropyOperation();
             }
         };
         constructors[FETCH_PARTITION_STATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -134,17 +134,17 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
         };
         constructors[REPLICA_SYNC_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ReplicaSyncRequest();
+                return new PartitionReplicaSyncRequest();
             }
         };
         constructors[REPLICA_SYNC_RESPONSE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ReplicaSyncResponse();
+                return new PartitionReplicaSyncResponse();
             }
         };
         constructors[REPLICA_SYNC_RETRY_RESPONSE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ReplicaSyncRetryResponse();
+                return new PartitionReplicaSyncRetryResponse();
             }
         };
         constructors[SAFE_STATE_CHECK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
