@@ -293,6 +293,9 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         return eventService.getRegistrations(SERVICE_NAME, mapName);
     }
 
+    /**
+     * Returns the hashCode of the {@code key} or -1 if {@code null}
+     */
     private int pickOrderKey(Data key) {
         return key == null ? -1 : key.hashCode();
     }

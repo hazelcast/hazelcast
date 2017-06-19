@@ -206,6 +206,23 @@
 
     </map>
 
+    <!--
+           Configuration for an event journal. The event journal keeps events related
+           to a specific partition and data structure. For instance, it could keep
+           map add, update, remove, merge events along with the key, old value, new value and so on.
+        -->
+    <event-journal enabled="false">
+        <mapName>mapName</mapName>
+        <capacity>10000</capacity>
+        <time-to-live-seconds>0</time-to-live-seconds>
+    </event-journal>
+
+    <event-journal enabled="false">
+        <cacheName>cacheName</cacheName>
+        <capacity>10000</capacity>
+        <time-to-live-seconds>0</time-to-live-seconds>
+    </event-journal>
+
     <multimap name="default">
         <backup-count>1</backup-count>
         <value-collection-type>SET</value-collection-type>

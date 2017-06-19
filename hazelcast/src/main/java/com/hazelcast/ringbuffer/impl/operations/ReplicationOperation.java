@@ -16,7 +16,12 @@
 
 package com.hazelcast.ringbuffer.impl.operations;
 
+import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.journal.CacheEventJournal;
+import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.RingbufferConfig;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.VersionAware;
@@ -61,7 +66,22 @@ public class ReplicationOperation extends Operation implements IdentifiedDataSer
     }
 
     private RingbufferConfig getRingbufferConfig(RingbufferService service, ObjectNamespace ns) {
-        return service.getRingbufferConfig(ns.getObjectName());
+        final String serviceName = ns.getServiceName();
+        if (RingbufferService.SERVICE_NAME.equals(serviceName)) {
+            return service.getRingbufferConfig(ns.getObjectName());
+        } else if (MapService.SERVICE_NAME.equals(serviceName)) {
+            final MapService mapService = getNodeEngine().getService(MapService.SERVICE_NAME);
+            final MapEventJournal journal = mapService.getMapServiceContext().getEventJournal();
+            final EventJournalConfig journalConfig = journal.getEventJournalConfig(ns);
+            return journal.toRingbufferConfig(journalConfig);
+        } else if (CacheService.SERVICE_NAME.equals(serviceName)) {
+            final CacheService cacheService = getNodeEngine().getService(CacheService.SERVICE_NAME);
+            final CacheEventJournal journal = cacheService.getEventJournal();
+            final EventJournalConfig journalConfig = journal.getEventJournalConfig(ns);
+            return journal.toRingbufferConfig(journalConfig);
+        } else {
+            throw new IllegalArgumentException("Unsupported ringbuffer service name " + serviceName);
+        }
     }
 
     @Override

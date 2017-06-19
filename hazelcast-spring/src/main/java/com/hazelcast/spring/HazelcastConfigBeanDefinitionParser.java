@@ -30,6 +30,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartConfig;
@@ -165,6 +166,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap<String, AbstractBeanDefinition> executorManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> durableExecutorManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> scheduledExecutorManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> mapEventJournalManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> cacheEventJournalManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> cardinalityEstimatorManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> wanReplicationManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> jobTrackerManagedMap;
@@ -188,6 +191,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.executorManagedMap = createManagedMap("executorConfigs");
             this.durableExecutorManagedMap = createManagedMap("durableExecutorConfigs");
             this.scheduledExecutorManagedMap = createManagedMap("scheduledExecutorConfigs");
+            this.mapEventJournalManagedMap = createManagedMap("mapEventJournalConfigs");
+            this.cacheEventJournalManagedMap = createManagedMap("cacheEventJournalConfigs");
             this.cardinalityEstimatorManagedMap = createManagedMap("cardinalityEstimatorConfigs");
             this.wanReplicationManagedMap = createManagedMap("wanReplicationConfigs");
             this.jobTrackerManagedMap = createManagedMap("jobTrackerConfigs");
@@ -222,6 +227,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleDurableExecutor(node);
                     } else if ("scheduled-executor-service".equals(nodeName)) {
                         handleScheduledExecutor(node);
+                    } else if ("event-journal".equals(nodeName)) {
+                        handleEventJournal(node);
                     } else if ("cardinality-estimator".equals(nodeName)) {
                         handleCardinalityEstimator(node);
                     } else if ("queue".equals(nodeName)) {
@@ -561,7 +568,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node n : childElements(node)) {
                 String name = cleanNodeName(n);
                 if ("trusted-interfaces".equals(name)) {
-                    for (Node i: childElements(n)) {
+                    for (Node i : childElements(n)) {
                         name = cleanNodeName(i);
                         if ("interface".equals(name)) {
                             String value = getTextContent(i);
@@ -622,6 +629,19 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             lockManagedMap.put(getAttribute(node, "name"), lockConfigBuilder.getBeanDefinition());
+        }
+
+        public void handleEventJournal(Node node) {
+            final BeanDefinitionBuilder eventJournalBuilder = createBeanBuilder(EventJournalConfig.class);
+            fillAttributeValues(node, eventJournalBuilder);
+            final String mapName = getAttribute(node, "map-name");
+            final String cacheName = getAttribute(node, "cache-name");
+            if (!StringUtil.isNullOrEmpty(mapName)) {
+                mapEventJournalManagedMap.put(mapName, eventJournalBuilder.getBeanDefinition());
+            }
+            if (!StringUtil.isNullOrEmpty(cacheName)) {
+                cacheEventJournalManagedMap.put(cacheName, eventJournalBuilder.getBeanDefinition());
+            }
         }
 
         public void handleRingbuffer(Node node) {

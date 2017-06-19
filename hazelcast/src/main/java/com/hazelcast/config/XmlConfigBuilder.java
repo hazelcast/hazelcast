@@ -64,6 +64,7 @@ import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.CARDINALITY_ESTIMATOR;
 import static com.hazelcast.config.XmlElements.DURABLE_EXECUTOR_SERVICE;
+import static com.hazelcast.config.XmlElements.EVENT_JOURNAL;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.GROUP;
 import static com.hazelcast.config.XmlElements.HOT_RESTART_PERSISTENCE;
@@ -318,6 +319,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleDurableExecutor(node);
         } else if (SCHEDULED_EXECUTOR_SERVICE.isEqual(nodeName)) {
             handleScheduledExecutor(node);
+        } else if (EVENT_JOURNAL.isEqual(nodeName)) {
+            handleEventJournal(node);
         } else if (SERVICES.isEqual(nodeName)) {
             handleServices(node);
         } else if (QUEUE.isEqual(nodeName)) {
@@ -1879,6 +1882,12 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             }
         }
         config.addSemaphoreConfig(sConfig);
+    }
+
+    private void handleEventJournal(Node node) throws Exception {
+        final EventJournalConfig journalConfig = new EventJournalConfig();
+        handleViaReflection(node, config, journalConfig);
+        config.addEventJournalConfig(journalConfig);
     }
 
     private void handleRingbuffer(Node node) {

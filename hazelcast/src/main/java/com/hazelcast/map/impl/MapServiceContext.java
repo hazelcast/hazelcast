@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
@@ -132,6 +133,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     MergePolicyProvider getMergePolicyProvider();
 
     MapEventPublisher getMapEventPublisher();
+
+    MapEventJournal getEventJournal();
 
     MapQueryEngine getMapQueryEngine(String name);
 
