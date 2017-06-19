@@ -450,6 +450,10 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
             }
 
             for (InternalPartition partition : partitionStateManager.getPartitions()) {
+                if (!partition.isLocal()) {
+                    continue;
+                }
+
                 PartitionSpecificRunnable r = new PartitionPrimaryReplicaAntiEntropyTask(nodeEngine, partition.getPartitionId());
                 nodeEngine.getOperationService().execute(r);
             }
