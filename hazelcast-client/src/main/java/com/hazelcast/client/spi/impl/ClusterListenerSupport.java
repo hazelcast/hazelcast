@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
@@ -44,7 +43,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
 
@@ -200,8 +198,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                 fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
                 return true;
             } catch (Exception e) {
-                Level level = e instanceof AuthenticationException ? Level.WARNING : Level.FINEST;
-                logger.log(level, "Exception during initial connection to " + inetSocketAddress, e);
+                logger.warning("Exception during initial connection to " + inetSocketAddress + ", exception " + e);
                 if (null != connection) {
                     connection.close("Could not connect to " + inetSocketAddress + " as owner", e);
                 }
