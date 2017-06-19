@@ -21,13 +21,20 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.Clock;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -63,7 +70,8 @@ public class BackupExpirationTest extends HazelcastTestSupport {
         });
     }
 
-    protected void configureAndStartNodes(int maxIdleSeconds, int partitionCount, int expirationTaskPeriodSeconds) {
+    protected void configureAndStartNodes(int maxIdleSeconds, int partitionCount,
+                                          int expirationTaskPeriodSeconds) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
 
         Config config = getConfig();
@@ -124,6 +132,25 @@ public class BackupExpirationTest extends HazelcastTestSupport {
 
         // key 1 should still be in all replicas
         assertEquals(REPLICA_COUNT, total);
+    }
+
+    @Test
+    public void dont_collect_expired_keys_if_expiration_reason_is_TTL() throws Exception {
+        configureAndStartNodes(30, 1, 5);
+
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(nodes[0]);
+        MapService mapService = nodeEngineImpl.getService(MapService.SERVICE_NAME);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        RecordStore recordStore = mapServiceContext.getRecordStore(0, MAP_NAME);
+
+        long now = Clock.currentTimeMillis();
+        Record record = recordStore.createRecord("value", 100, now);
+        sleepSeconds(1);
+        recordStore.doPostEvictionOperations(record, false);
+
+        InvalidationQueue expiredKeys = recordStore.getExpiredKeys();
+
+        assertEquals(0, expiredKeys.size());
     }
 
     public static long getTotalEntryCount(IMap map) {
