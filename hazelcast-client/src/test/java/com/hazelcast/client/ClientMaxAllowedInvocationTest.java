@@ -39,6 +39,8 @@ import java.io.Serializable;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -109,7 +111,37 @@ public class ClientMaxAllowedInvocationTest extends ClientTestSupport {
     }
 
     @Test(expected = HazelcastOverloadException.class)
-    public void testMaxAllowed_withUnfinishedCallback() throws ExecutionException, InterruptedException {
+    public void testMaxAllowed_andThenInternal() throws ExecutionException, InterruptedException {
+        testMaxAllowed(new RegisterCallback() {
+            @Override
+            public void call(ClientDelegatingFuture future, ExecutionCallback callback) {
+                future.andThenInternal(callback, false);
+            }
+        });
+    }
+
+    @Test(expected = HazelcastOverloadException.class)
+    public void testMaxAllowed_andThen() throws ExecutionException, InterruptedException {
+        testMaxAllowed(new RegisterCallback() {
+            @Override
+            public void call(ClientDelegatingFuture future, ExecutionCallback callback) {
+                future.andThen(callback);
+            }
+        });
+    }
+
+    @Test(expected = HazelcastOverloadException.class)
+    public void testMaxAllowed_andThenExecutor() throws ExecutionException, InterruptedException {
+        testMaxAllowed(new RegisterCallback() {
+            @Override
+            public void call(ClientDelegatingFuture future, ExecutionCallback callback) {
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                future.andThen(callback, executor);
+            }
+        });
+    }
+
+    private void testMaxAllowed(RegisterCallback registerCallbackCall) throws ExecutionException, InterruptedException {
         int MAX_ALLOWED = 10;
         hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
@@ -123,17 +155,76 @@ public class ClientMaxAllowedInvocationTest extends ClientTestSupport {
             executorService.submit(new SleepyProcessor(Integer.MAX_VALUE));
         }
 
-        ClientDelegatingFuture future = (ClientDelegatingFuture) executorService.submit(new SleepyProcessor(2000));
+        ClientDelegatingFuture future = (ClientDelegatingFuture) executorService.submit(new SleepyProcessor(0));
         CountDownLatch countDownLatch = new CountDownLatch(1);
-        future.andThenInternal(new SleepyCallback(countDownLatch), false);
+        SleepyCallback sleepyCallback = new SleepyCallback(countDownLatch);
+        registerCallbackCall.call(future, sleepyCallback);
         future.get();
         try {
             map.get(1);
-        } catch (HazelcastOverloadException e) {
-            throw e;
         } finally {
             countDownLatch.countDown();
         }
+    }
+
+    @Test(expected = HazelcastOverloadException.class)
+    public void testMaxAllowed_withWaitingCallbacks_andThenInternal() throws ExecutionException, InterruptedException {
+        testMaxAllowed_withWaitingCallbacks(new RegisterCallback() {
+            @Override
+            public void call(ClientDelegatingFuture future, ExecutionCallback callback) {
+                future.andThenInternal(callback, false);
+            }
+        });
+    }
+
+    @Test(expected = HazelcastOverloadException.class)
+    public void testMaxAllowed_withWaitingCallbacks_a_andThen() throws ExecutionException, InterruptedException {
+        testMaxAllowed_withWaitingCallbacks(new RegisterCallback() {
+            @Override
+            public void call(ClientDelegatingFuture future, ExecutionCallback callback) {
+                future.andThen(callback);
+            }
+        });
+    }
+
+    @Test(expected = HazelcastOverloadException.class)
+    public void testMaxAllowed_withWaitingCallbacks_andThenExecutor() throws ExecutionException, InterruptedException {
+        testMaxAllowed_withWaitingCallbacks(new RegisterCallback() {
+            @Override
+            public void call(ClientDelegatingFuture future, ExecutionCallback callback) {
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                future.andThen(callback, executor);
+            }
+        });
+    }
+
+    private void testMaxAllowed_withWaitingCallbacks(RegisterCallback registerCallbackCall) throws ExecutionException, InterruptedException {
+        int MAX_ALLOWED = 10;
+        hazelcastFactory.newHazelcastInstance();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(ClientProperty.MAX_CONCURRENT_INVOCATIONS.getName(), String.valueOf(MAX_ALLOWED));
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+        String name = randomString();
+        IMap map = client.getMap(name);
+
+        IExecutorService executorService = client.getExecutorService(randomString());
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        SleepyCallback sleepyCallback = new SleepyCallback(countDownLatch);
+
+        for (int i = 0; i < MAX_ALLOWED; i++) {
+            ClientDelegatingFuture future = (ClientDelegatingFuture) executorService.submit(new SleepyProcessor(0));
+            registerCallbackCall.call(future, sleepyCallback);
+            future.get();
+        }
+        try {
+            map.get(1);
+        } finally {
+            countDownLatch.countDown();
+        }
+    }
+
+    interface RegisterCallback {
+        void call(ClientDelegatingFuture clientDelegatingFuture, ExecutionCallback countDownLatch);
     }
 
     static class SleepyCallback implements ExecutionCallback<ClientMessage> {
