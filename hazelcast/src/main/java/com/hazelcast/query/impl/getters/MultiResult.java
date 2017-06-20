@@ -70,6 +70,18 @@ public class MultiResult<T> {
 
     private List<T> results;
 
+    /**
+     * Indicates that the result of a multi-result evaluation using [any] operator
+     * didn't reach any data since the field where the [any] operator is used was null or empty.
+     *
+     * Allows differentiating whether there is a null value in the MultiResult
+     * that is a result of a null or empty target in the expression.
+     *
+     * For query evaluation the difference is not important - and we need to return null in both cases there.
+     * For aggregations it makes a difference and we need this context knowledge there.
+     */
+    private boolean nullOrEmptyTarget;
+
     public MultiResult() {
         this.results = new ArrayList<T>();
     }
@@ -85,6 +97,15 @@ public class MultiResult<T> {
         results.add(result);
     }
 
+    public void addNullOrEmptyTarget() {
+        if (!nullOrEmptyTarget) {
+            // we don't want to store more than one null if we reach a null/empty target
+            // it's enough to have one for the query evaluation (it's for null matching)
+            nullOrEmptyTarget = true;
+            results.add(null);
+        }
+    }
+
     /**
      * @return a mutable underlying list of collected results
      */
@@ -97,6 +118,14 @@ public class MultiResult<T> {
      */
     public boolean isEmpty() {
         return results.isEmpty();
+    }
+
+    public boolean isNullEmptyTarget() {
+        return nullOrEmptyTarget;
+    }
+
+    public void setNullOrEmptyTarget(boolean nullOrEmptyTarget) {
+        this.nullOrEmptyTarget = nullOrEmptyTarget;
     }
 
 }

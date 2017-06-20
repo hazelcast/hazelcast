@@ -28,6 +28,7 @@ import com.hazelcast.query.extractor.ValueCallback;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueReader;
 import com.hazelcast.query.extractor.ValueReadingException;
+import com.hazelcast.query.impl.getters.ImmutableMultiResult;
 import com.hazelcast.query.impl.getters.MultiResult;
 
 import java.io.IOException;
@@ -40,6 +41,14 @@ import static com.hazelcast.internal.serialization.impl.PortableUtils.getPortabl
  * Can't be accessed concurrently
  */
 public class DefaultPortableReader extends ValueReader implements PortableReader {
+
+    private static final MultiResult NULL_EMPTY_TARGET_MULTIRESULT;
+
+    static {
+        MultiResult<Object> result = new MultiResult<Object>();
+        result.addNullOrEmptyTarget();
+        NULL_EMPTY_TARGET_MULTIRESULT = new ImmutableMultiResult<Object>(result);
+    }
 
     protected final ClassDefinition cd;
     protected final PortableSerializer serializer;
@@ -597,11 +606,17 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
             if (position.isMultiPosition()) {
                 return readMultiPosition(position.asMultiPosition());
             } else if (position.isNull()) {
+                if (position.isAny()) {
+                    return NULL_EMPTY_TARGET_MULTIRESULT;
+                }
                 return null;
             } else if (position.isEmpty()) {
                 if (position.isLeaf() && position.getType() != null) {
                     return readSinglePosition(position);
                 } else {
+                    if (position.isAny()) {
+                        return NULL_EMPTY_TARGET_MULTIRESULT;
+                    }
                     return null;
                 }
             } else {
@@ -615,11 +630,12 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
     private <T> MultiResult<T> readMultiPosition(List<PortablePosition> positions) throws IOException {
         MultiResult<T> result = new MultiResult<T>();
         for (PortablePosition position : positions) {
-            T read = null;
             if (!position.isNullOrEmpty()) {
-                read = readSinglePosition(position);
+                T read = readSinglePosition(position);
+                result.add(read);
+            } else {
+                result.addNullOrEmptyTarget();
             }
-            result.add(read);
         }
         return result;
     }

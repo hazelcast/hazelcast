@@ -166,10 +166,20 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         // assert the condition
         Object result = Invoker.invoke(reader(inputObject), readMethodNameToInvoke, pathToRead);
         if (result instanceof MultiResult) {
-            // in case of multi result while invoking generic "read" method deal with the multi results
-            result = ((MultiResult) result).getResults().toArray();
+            MultiResult multiResult = (MultiResult) result;
+            if(multiResult.getResults().size() == 1
+                    && multiResult.getResults().get(0) == null && multiResult.isNullEmptyTarget()) {
+                // explode null in case of a single multi-result target result
+                result = null;
+            } else {
+                // in case of multi result while invoking generic "read" method deal with the multi results
+                result = ((MultiResult) result).getResults().toArray();
+            }
+            assertThat(result, equalTo(resultToMatch));
+        } else {
+            assertThat(result, equalTo(resultToMatch));
         }
-        assertThat(result, equalTo(resultToMatch));
+
     }
 
     private void printlnScenarioDescription(Object resultToMatch) {
@@ -791,23 +801,23 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         result.add(scenario(input, expectedUtfArray, UTFArray, "portables[any].portables[any].string_", p));
 
         result.addAll(asList(
-                scenario(input, list(null, p1.byte_, p10.byte_, null, p20.byte_), Generic,
+                scenario(input, list(null, p1.byte_, p10.byte_, p20.byte_), Generic,
                         "portables[any].portables[any].byte_", p),
-                scenario(input, list(null, p1.short_, p10.short_, null, p20.short_), Generic,
+                scenario(input, list(null, p1.short_, p10.short_, p20.short_), Generic,
                         "portables[any].portables[any].short_", p),
-                scenario(input, list(null, p1.int_, p10.int_, null, p20.int_), Generic,
+                scenario(input, list(null, p1.int_, p10.int_, p20.int_), Generic,
                         "portables[any].portables[any].int_", p),
-                scenario(input, list(null, p1.long_, p10.long_, null, p20.long_), Generic,
+                scenario(input, list(null, p1.long_, p10.long_, p20.long_), Generic,
                         "portables[any].portables[any].long_", p),
-                scenario(input, list(null, p1.char_, p10.char_, null, p20.char_), Generic,
+                scenario(input, list(null, p1.char_, p10.char_, p20.char_), Generic,
                         "portables[any].portables[any].char_", p),
-                scenario(input, list(null, p1.float_, p10.float_, null, p20.float_), Generic,
+                scenario(input, list(null, p1.float_, p10.float_, p20.float_), Generic,
                         "portables[any].portables[any].float_", p),
-                scenario(input, list(null, p1.double_, p10.double_, null, p20.double_), Generic,
+                scenario(input, list(null, p1.double_, p10.double_, p20.double_), Generic,
                         "portables[any].portables[any].double_", p),
-                scenario(input, list(null, p1.boolean_, p10.boolean_, null, p20.boolean_), Generic,
+                scenario(input, list(null, p1.boolean_, p10.boolean_, p20.boolean_), Generic,
                         "portables[any].portables[any].boolean_", p),
-                scenario(input, list(null, p1.string_, p10.string_, null, p20.string_), Generic,
+                scenario(input, list(null, p1.string_, p10.string_, p20.string_), Generic,
                         "portables[any].portables[any].string_", p)
         ));
 
@@ -905,23 +915,23 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         result.add(scenario(input, expectedUtfArray, UTFArray, "portables[any].portables[any].strings[any]", p));
 
         result.addAll(asList(
-                scenario(input, list(null, null, p10.bytes, null, null, p20.bytes, null), Generic,
+                scenario(input, list(null, p10.bytes, p20.bytes), Generic,
                         "portables[any].portables[any].bytes[any]", p),
-                scenario(input, list(null, null, p10.shorts, null, null, p20.shorts, null), Generic,
+                scenario(input, list(null, p10.shorts, p20.shorts), Generic,
                         "portables[any].portables[any].shorts[any]", p),
-                scenario(input, list(null, null, p10.ints, null, null, p20.ints, null), Generic,
+                scenario(input, list(null, p10.ints, p20.ints), Generic,
                         "portables[any].portables[any].ints[any]", p),
-                scenario(input, list(null, null, p10.longs, null, null, p20.longs, null), Generic,
+                scenario(input, list(null, p10.longs, p20.longs), Generic,
                         "portables[any].portables[any].longs[any]", p),
-                scenario(input, list(null, null, p10.chars, null, null, p20.chars, null), Generic,
+                scenario(input, list(null, p10.chars, p20.chars), Generic,
                         "portables[any].portables[any].chars[any]", p),
-                scenario(input, list(null, null, p10.floats, null, null, p20.floats, null), Generic,
+                scenario(input, list(null, p10.floats, p20.floats), Generic,
                         "portables[any].portables[any].floats[any]", p),
-                scenario(input, list(null, null, p10.doubles, null, null, p20.doubles, null), Generic,
+                scenario(input, list(null, p10.doubles, p20.doubles), Generic,
                         "portables[any].portables[any].doubles[any]", p),
-                scenario(input, list(null, null, p10.booleans, null, null, p20.booleans, null), Generic,
+                scenario(input, list(null, p10.booleans, p20.booleans), Generic,
                         "portables[any].portables[any].booleans[any]", p),
-                scenario(input, list(null, null, p10.strings, null, null, p20.strings, null), Generic,
+                scenario(input, list(null, p10.strings, p20.strings), Generic,
                         "portables[any].portables[any].strings[any]", p)
         ));
 
@@ -1230,14 +1240,6 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
 
     private static Object[] scenario(Portable input, Object result, Method method, String path, String parent) {
         return new Object[]{input, result, method, path, parent};
-    }
-
-    private static Collection<Object[]> test(Object[]... scenarios) {
-        List<Object[]> result = new ArrayList<Object[]>();
-        for (Object[] scenario : scenarios) {
-            result.add(scenario);
-        }
-        return result;
     }
 
     /**

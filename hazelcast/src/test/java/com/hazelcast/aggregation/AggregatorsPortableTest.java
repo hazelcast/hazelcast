@@ -22,6 +22,10 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -31,9 +35,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.Serializable;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -42,11 +45,10 @@ import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class AggregatorsTest extends HazelcastTestSupport {
+public class AggregatorsPortableTest extends HazelcastTestSupport {
 
     @Test
     public void testConstructors() {
@@ -54,57 +56,48 @@ public class AggregatorsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void aggregate_emptyNullSkipped_nullInValues() {
+    public void aggregate_emptyNullSkipped_nullInValues_nullFirst() {
         // GIVEN
         IMap<Integer, Car> map = getMapWithNodeCount(1, false, InMemoryFormat.OBJECT);
-        Car cornerCaseCar = getCornerCaseCar(null, 1L);
+        Car cornerCaseCar = getCornerCaseCar(null, "1");
         map.put(0, cornerCaseCar);
 
         // WHEN
-        List<Long> accumulatedArray = map.aggregate(new TestAggregator("wheelsA[any].tiresA[any]"));
-        List<Long> accumulatedCollection = map.aggregate(new TestAggregator("wheelsC[any].tiresC[any]"));
+        List<String> accumulated = map.aggregate(new TestAggregator("wheels[any]"));
 
         // THEN
-        assertThat(accumulatedCollection, containsInAnyOrder(accumulatedArray.toArray()));
-        assertThat(accumulatedArray, containsInAnyOrder(accumulatedCollection.toArray()));
-        assertThat(accumulatedArray, containsInAnyOrder(1L, null));
-        assertThat(accumulatedArray, hasSize(2));
+        assertThat(accumulated, containsInAnyOrder(null, "1"));
+        assertThat(accumulated, hasSize(2));
+    }
+
+    @Test
+    public void aggregate_emptyNullSkipped_nullInValues() {
+        // GIVEN
+        IMap<Integer, Car> map = getMapWithNodeCount(1, false, InMemoryFormat.OBJECT);
+        Car cornerCaseCar = getCornerCaseCar("1", null, "2", null);
+        map.put(0, cornerCaseCar);
+
+        // WHEN
+        List<String> accumulated = map.aggregate(new TestAggregator("wheels[any]"));
+
+        // THEN
+        assertThat(accumulated, containsInAnyOrder("1", null, "2", null));
+        assertThat(accumulated, hasSize(4));
     }
 
     @Test
     public void aggregate_emptyNullSkipped_noNullInValues() {
         // GIVEN
         IMap<Integer, Car> map = getMapWithNodeCount(1, false, InMemoryFormat.OBJECT);
-        Car cornerCaseCar = getCornerCaseCar(2L, 1L);
+        Car cornerCaseCar = getCornerCaseCar("2", "1");
         map.put(0, cornerCaseCar);
 
         // WHEN
-        List<Long> accumulatedArray = map.aggregate(new TestAggregator("wheelsA[any].tiresA[any]"));
-        List<Long> accumulatedCollection = map.aggregate(new TestAggregator("wheelsC[any].tiresC[any]"));
+        List<String> accumulated = map.aggregate(new TestAggregator("wheels[any]"));
 
         // THEN
-        assertThat(accumulatedCollection, containsInAnyOrder(accumulatedArray.toArray()));
-        assertThat(accumulatedArray, containsInAnyOrder(accumulatedCollection.toArray()));
-        assertThat(accumulatedArray, containsInAnyOrder(1L, 2L));
-        assertThat(accumulatedArray, hasSize(2));
-    }
-
-    @Test
-    public void aggregate_emptyNullSkipped_moreThanOneNullInValues() {
-        // GIVEN
-        IMap<Integer, Car> map = getMapWithNodeCount(1, false, InMemoryFormat.OBJECT);
-        Car cornerCaseCar = getCornerCaseCar(2L, null, 1L, null);
-        map.put(0, cornerCaseCar);
-
-        // WHEN
-        List<Long> accumulatedArray = map.aggregate(new TestAggregator("wheelsA[any].tiresA[any]"));
-        List<Long> accumulatedCollection = map.aggregate(new TestAggregator("wheelsC[any].tiresC[any]"));
-
-        // THEN
-        assertThat(accumulatedCollection, containsInAnyOrder(accumulatedArray.toArray()));
-        assertThat(accumulatedArray, containsInAnyOrder(accumulatedCollection.toArray()));
-        assertThat(accumulatedArray, containsInAnyOrder(1L, 2L, null, null));
-        assertThat(accumulatedArray, hasSize(4));
+        assertThat(accumulated, containsInAnyOrder("1", "2"));
+        assertThat(accumulated, hasSize(2));
     }
 
     @Test
@@ -115,48 +108,43 @@ public class AggregatorsTest extends HazelcastTestSupport {
         map.put(0, cornerCaseCar);
 
         // WHEN
-        List<Long> accumulatedArray = map.aggregate(new TestAggregator("wheelsA[any].tiresA[any]"));
-        List<Long> accumulatedCollection = map.aggregate(new TestAggregator("wheelsC[any].tiresC[any]"));
+        List<String> accumulated = map.aggregate(new TestAggregator("wheels[any]"));
 
         // THEN
-        assertThat(accumulatedCollection, containsInAnyOrder(accumulatedArray.toArray()));
-        assertThat(accumulatedArray, containsInAnyOrder(accumulatedCollection.toArray()));
-        assertThat(accumulatedCollection, hasSize(0));
+        assertThat(accumulated, hasSize(0));
     }
 
-    private Car getCornerCaseCar(Long... values) {
-        Wheel nullWheel = new Wheel();
+    @Test
+    public void aggregate_emptyFirstArray() {
+        // GIVEN
+        IMap<Integer, Car> map = getMapWithNodeCount(1, false, InMemoryFormat.OBJECT);
+        Car cornerCaseCar = new Car();
+        cornerCaseCar.wheels = new String[]{};
+        map.put(0, cornerCaseCar);
 
-        Wheel emptyWheel = new Wheel();
-        emptyWheel.tiresA = new Long[0];
-        emptyWheel.tiresC = new ArrayList<Long>();
+        // WHEN
+        List<String> accumulated = map.aggregate(new TestAggregator("wheels[any]"));
 
-        Wheel wheel = new Wheel();
-        wheel.tiresA = values;
-        wheel.tiresC = new ArrayList<Long>();
-        for (Long value : values) {
-            wheel.tiresC.add(value);
-        }
 
+        // THEN
+        assertThat(accumulated, hasSize(0));
+    }
+
+    private Car getCornerCaseCar(String... values) {
         Car car = new Car();
-        car.wheelsA = new Wheel[]{wheel, emptyWheel, nullWheel};
-        car.wheelsC = new ArrayList<Wheel>();
-        car.wheelsC.add(emptyWheel);
-        car.wheelsC.add(wheel);
-        car.wheelsC.add(nullWheel);
-
+        car.wheels = values;
         return car;
     }
 
-    private static class TestAggregator extends AbstractAggregator<Map.Entry<Integer, Car>, Long, List<Long>> {
-        private List<Long> accumulated = new ArrayList<Long>();
+    private static class TestAggregator extends AbstractAggregator<Map.Entry<Integer, Car>, String, List<String>> {
+        private List<String> accumulated = new ArrayList<String>();
 
         public TestAggregator(String attribute) {
             super(attribute);
         }
 
         @Override
-        protected void accumulateExtracted(Long value) {
+        protected void accumulateExtracted(String value) {
             accumulated.add(value);
         }
 
@@ -166,7 +154,7 @@ public class AggregatorsTest extends HazelcastTestSupport {
         }
 
         @Override
-        public List<Long> aggregate() {
+        public List<String> aggregate() {
             return accumulated;
         }
     }
@@ -185,18 +173,47 @@ public class AggregatorsTest extends HazelcastTestSupport {
                 .setProperty(AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION.getName(), String.valueOf(parallelAccumulation))
                 .addMapConfig(mapConfig);
 
+        config.getSerializationConfig().addPortableFactory(CarFactory.ID, new CarFactory());
+
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
         HazelcastInstance instance = factory.newInstances(config)[0];
         return instance.getMap("aggr");
     }
 
-    static class Car implements Serializable {
-        Collection<Wheel> wheelsC;
-        Wheel[] wheelsA;
+    static class Car implements Portable {
+        String[] wheels;
+
+        @Override
+        public int getFactoryId() {
+            return CarFactory.ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return 1;
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer) throws IOException {
+            writer.writeUTFArray("wheels", wheels);
+        }
+
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+            wheels = reader.readUTFArray("wheels");
+        }
     }
 
-    static class Wheel implements Serializable {
-        Collection<Long> tiresC;
-        Long[] tiresA;
+    static class CarFactory implements PortableFactory {
+        static final int ID = 1;
+
+        @Override
+        public Portable create(int classId) {
+            if (classId == 1) {
+                return new Car();
+            } else {
+                return null;
+            }
+        }
     }
 }

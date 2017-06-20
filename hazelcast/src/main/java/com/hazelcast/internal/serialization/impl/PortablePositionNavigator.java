@@ -514,6 +514,7 @@ final class PortablePositionNavigator {
             int currentIndex = 0;
             while (index > currentIndex) {
                 int indexElementLen = in.readInt();
+                indexElementLen = indexElementLen < 0 ? 0 : indexElementLen;
                 in.position(in.position() + indexElementLen);
                 currentIndex++;
             }
