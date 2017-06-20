@@ -48,6 +48,9 @@
                     <hz:interface>127.0.0.1</hz:interface>
                 </hz:interfaces>
             </hz:network>
+            <hz:management-center>
+                <hz:url
+            </hz:management-center>
             <hz:map name="map1" backup-count="${backup.count}" statistics-enabled="${boolean.false}"/>
             <hz:native-memory enabled="false" allocator-type="POOLED" metadata-space-percentage="10.2"
                               min-block-size="10"
