@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -47,6 +48,9 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.isCacheOnUpdat
 import static java.lang.String.format;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 /**
@@ -162,16 +166,13 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
                 fail("Unsupported method: " + testMethod);
         }
         NearCacheTestContext<KeySerializationCountingData, ValueSerializationCountingData, NK, NV> context = createContext();
+        KeySerializationCountingData key;
+        ValueSerializationCountingData value;
 
         // execute the test with key/value classes which provide no custom equals()/hashCode() methods
-        KeySerializationCountingData key = new KeySerializationCountingData(false);
-        ValueSerializationCountingData value = new ValueSerializationCountingData(false);
+        key = new KeySerializationCountingData(false);
+        value = new ValueSerializationCountingData(false);
         runTest(context, key, value);
-
-        // FIXME: the ReplicatedMap was not adapted yet, so the expected numbers differ when equals()/hashCode() is provided
-        if (context.nearCacheAdapter instanceof ReplicatedMapDataStructureAdapter) {
-            return;
-        }
 
         // reset the Near Cache for the next round
         if (context.nearCache != null) {
@@ -187,39 +188,72 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
 
     private void runTest(NearCacheTestContext<KeySerializationCountingData, ValueSerializationCountingData, ?, ?> context,
                          KeySerializationCountingData key, ValueSerializationCountingData value) {
+        if (context.nearCacheAdapter instanceof ReplicatedMapDataStructureAdapter && !key.executeEqualsAndHashCode) {
+            // FIXME: the ReplicatedMap cannot handle key/value objects without equals()/hashCode() properly
+            return;
+        }
+
         switch (testMethod) {
             case GET:
+                ValueSerializationCountingData resultValue;
+
                 context.nearCacheAdapter.put(key, value);
                 if (isCacheOnUpdate(nearCacheConfig)) {
                     assertNearCacheSizeEventually(context, 1);
                 }
-                assertAndReset("put()", 0);
+                assertAndResetSerializationCounts("put()", 0);
 
-                context.nearCacheAdapter.get(key);
-                assertAndReset("first get()", 1);
+                resultValue = context.nearCacheAdapter.get(key);
+                assertResultValue("first get()", value, resultValue);
+                assertAndResetSerializationCounts("first get()", 1);
 
-                context.nearCacheAdapter.get(key);
-                assertAndReset("second get()", 2);
+                resultValue = context.nearCacheAdapter.get(key);
+                assertResultValue("second get()", value, resultValue);
+                assertAndResetSerializationCounts("second get()", 2);
                 break;
 
             case GET_ALL:
+                Set<KeySerializationCountingData> keySet = singleton(key);
+                Map<KeySerializationCountingData, ValueSerializationCountingData> resultMap;
+
                 context.nearCacheAdapter.putAll(singletonMap(key, value));
                 if (isCacheOnUpdate(nearCacheConfig)) {
                     assertNearCacheSizeEventually(context, 1);
                 }
-                assertAndReset("putAll()", 0);
+                assertAndResetSerializationCounts("putAll()", 0);
 
-                Set<KeySerializationCountingData> keySet = singleton(key);
-                context.nearCacheAdapter.getAll(keySet);
-                assertAndReset("first getAll()", 1);
+                resultMap = context.nearCacheAdapter.getAll(keySet);
+                assertResultMap("first getAll()", value, resultMap);
+                assertAndResetSerializationCounts("first getAll()", 1);
 
-                context.nearCacheAdapter.getAll(keySet);
-                assertAndReset("second getAll()", 2);
+                resultMap = context.nearCacheAdapter.getAll(keySet);
+                assertResultMap("second getAll()", value, resultMap);
+                assertAndResetSerializationCounts("second getAll()", 2);
                 break;
         }
     }
 
-    private void assertAndReset(String label, int index) {
+    private void assertResultValue(String label, ValueSerializationCountingData expected, ValueSerializationCountingData actual) {
+        assertNotNull("The returned value should not be null on " + label, actual);
+        if (expected.executeEqualsAndHashCode) {
+            // we can properly compare both values
+            assertEqualsStringFormat("Expected to retrieve %s on " + label + " , but got %s", expected, actual);
+        } else {
+            // we can only manually check the class and the executeEqualsAndHashCode field
+            assertEqualsStringFormat("Expected to retrieve class %s on " + label + ", but got %s",
+                    expected.getClass(), actual.getClass());
+            assertFalse(actual.executeEqualsAndHashCode);
+        }
+    }
+
+    private void assertResultMap(String label, ValueSerializationCountingData expected,
+                                 Map<KeySerializationCountingData, ValueSerializationCountingData> actual) {
+        assertEquals("Expected to retrieve a single result on " + label, 1, actual.size());
+        KeySerializationCountingData key = actual.keySet().iterator().next();
+        assertResultValue(label, expected, actual.get(key));
+    }
+
+    private void assertAndResetSerializationCounts(String label, int index) {
         int expectedKeySerializeCount = expectedKeySerializationCounts[index];
         int expectedKeyDeserializeCount = expectedKeyDeserializationCounts[index];
         int expectedValueSerializeCount = expectedValueSerializationCounts[index];
