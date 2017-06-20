@@ -44,7 +44,15 @@
                     name="${cluster.group.name}"
                     password="${cluster.group.password}"/>
             <hz:license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</hz:license-key>
-            <hz:management-center enabled="true" url="myserver:80" update-interval="4"/>
+            <hz:management-center enabled="true" update-interval="2">
+                <hz:url>myserver:80</hz:url>
+                <hz:mutual-auth enabled="true">
+                    <hz:factory-class-name>who.let.the.cat.out.class</hz:factory-class-name>
+                    <hz:properties>
+                        <hz:property name="bool">ean</hz:property>
+                    </hz:properties>
+                </hz:mutual-auth>
+            </hz:management-center>
             <hz:properties>
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
                 <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
