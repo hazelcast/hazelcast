@@ -141,7 +141,7 @@ import static com.hazelcast.util.StringUtil.upperCaseInternal;
  * &lt;/hz:config&gt;
  * </pre>
  */
-@SuppressWarnings("checkstyle:executablestatementcount")
+@SuppressWarnings({"checkstyle:executablestatementcount"})
 public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
@@ -438,24 +438,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
             configBuilder.addPropertyValue("networkConfig", beanDefinition);
         }
-
-/*
-        protected void handleViaReflection(org.w3c.dom.Node child) {
-            final String methodName = xmlToJavaName("handle-" + cleanNodeName(child));
-            final Method method;
-            try {
-                method = getClass().getMethod(methodName, new Class[]{org.w3c.dom.Node.class});
-            } catch (NoSuchMethodException e) {
-                e.printStackTrace();
-                return;
-            }
-            try {
-                method.invoke(this, new Object[]{child});
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-*/
 
         public void handleGroup(Node node) {
             createAndFillBeanBuilder(node, GroupConfig.class, "groupConfig", configBuilder);
@@ -1059,7 +1041,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private void handleManagementCenter(final Node node) {
             final BeanDefinitionBuilder managementCenterConfigBuilder = createBeanBuilder(ManagementCenterConfig.class);
             fillAttributeValues(node, managementCenterConfigBuilder);
-
             // < 3.9 - Backwards compatibility
             boolean isComplexType = false;
             List<String> complexTypeElements = Arrays.asList("url", "hz:url", "mutual-auth", "hz:mutual-auth");
@@ -1069,7 +1050,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     break;
                 }
             }
-
             if (isComplexType) {
                 for (Node child : childElements(node)) {
                     if ("url".equals(cleanNodeName(child))) {
@@ -1081,14 +1061,12 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     }
                 }
             }
-
             configBuilder.addPropertyValue("managementCenterConfig", managementCenterConfigBuilder.getBeanDefinition());
         }
 
         private BeanDefinitionBuilder handleMcMutualAuthConfig(Node node) {
             final BeanDefinitionBuilder mcMutualAuthConfigBuilder = createBeanBuilder(MCMutualAuthConfig.class);
             fillAttributeValues(node, mcMutualAuthConfigBuilder);
-
             for (Node n : childElements(node)) {
                 String nodeName = cleanNodeName(n);
                 if ("factory-class-name".equals(nodeName)) {
@@ -1097,7 +1075,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleProperties(n, mcMutualAuthConfigBuilder);
                 }
             }
-
             return mcMutualAuthConfigBuilder;
         }
 
