@@ -298,6 +298,10 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
 
         if (sequenceId > tailSequence()) {
             ringbuffer.setTailSequence(sequenceId);
+
+            if (ringbuffer.size() > ringbuffer.getCapacity()) {
+                ringbuffer.setHeadSequence(ringbuffer.tailSequence() - ringbuffer.getCapacity() + 1);
+            }
         }
         if (sequenceId < headSequence()) {
             ringbuffer.setHeadSequence(sequenceId);
