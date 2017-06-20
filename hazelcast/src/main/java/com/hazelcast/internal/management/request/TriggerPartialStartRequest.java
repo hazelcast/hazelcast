@@ -21,8 +21,6 @@ import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 
-import java.io.IOException;
-
 /**
  * Request coming from Management Center to trigger partial start during Hot Restart process
  */
@@ -50,16 +48,6 @@ public class TriggerPartialStartRequest implements ConsoleRequest {
         final boolean done = hotRestartService.triggerPartialStart();
         String result = done ? SUCCESS_RESULT : FAILED_RESULT;
         out.add("result", result);
-    }
-
-    @Override
-    public Object readResponse(JsonObject in) throws IOException {
-        return in.getString("result", FAILED_RESULT);
-    }
-
-    @Override
-    public JsonObject toJson() {
-        return new JsonObject();
     }
 
     @Override

@@ -20,24 +20,15 @@ import com.eclipsesource.json.JsonObject;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.util.JsonUtil;
 
 /**
  * Request for fetching member XML configuration.
  */
 public class MemberConfigRequest implements ConsoleRequest {
 
-    public MemberConfigRequest() {
-    }
-
     @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_MEMBER_CONFIG;
-    }
-
-    @Override
-    public Object readResponse(JsonObject json) {
-        return JsonUtil.getString(json, "configXmlString", "Error while reading response " + MemberConfigRequest.class.getName());
     }
 
     @Override
@@ -48,11 +39,6 @@ public class MemberConfigRequest implements ConsoleRequest {
         String configXmlString = configXmlGenerator.generate(config);
         result.add("configXmlString", configXmlString);
         root.add("result", result);
-    }
-
-    @Override
-    public JsonObject toJson() {
-        return new JsonObject();
     }
 
     @Override

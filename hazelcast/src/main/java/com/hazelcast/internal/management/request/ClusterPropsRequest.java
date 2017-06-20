@@ -22,9 +22,6 @@ import com.hazelcast.spi.partition.IPartitionService;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
  *  Request for cluster properties.
@@ -37,17 +34,6 @@ public class ClusterPropsRequest implements ConsoleRequest {
     @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_CLUSTER_PROPERTIES;
-    }
-
-    @Override
-    public Object readResponse(JsonObject in) {
-        Map<String, String> properties = new LinkedHashMap<String, String>();
-        final Iterator<JsonObject.Member> iterator = in.iterator();
-        while (iterator.hasNext()) {
-            final JsonObject.Member property = iterator.next();
-            properties.put(property.getName(), property.getValue().asString());
-        }
-        return properties;
     }
 
     @Override
@@ -66,11 +52,6 @@ public class ClusterPropsRequest implements ConsoleRequest {
         properties.add("return.hasOngoingMigration", Boolean.toString(partitionService.hasOnGoingMigration()));
         properties.add("data.cl_migrationTasksCount", Long.toString(partitionService.getMigrationQueueSize()));
         root.add("result", properties);
-    }
-
-    @Override
-    public JsonObject toJson() {
-        return new JsonObject();
     }
 
     @Override

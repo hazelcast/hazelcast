@@ -21,7 +21,6 @@ import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ThreadDumpOperation;
 
 import static com.hazelcast.util.JsonUtil.getBoolean;
-import static com.hazelcast.util.JsonUtil.getString;
 
 /**
  * Request for generating thread dumps.
@@ -53,22 +52,6 @@ public class ThreadDumpRequest implements ConsoleRequest {
             result.add("hasDump", false);
         }
         root.add("result", result);
-    }
-
-    @Override
-    public String readResponse(JsonObject json) {
-        final boolean hasDump = getBoolean(json, "hasDump", false);
-        if (hasDump) {
-            return getString(json, "dump");
-        }
-        return null;
-    }
-
-    @Override
-    public JsonObject toJson() {
-        final JsonObject root = new JsonObject();
-        root.add("dumpDeadlocks", dumpDeadlocks);
-        return root;
     }
 
     @Override

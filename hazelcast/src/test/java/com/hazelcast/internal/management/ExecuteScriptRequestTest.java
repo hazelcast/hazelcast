@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.util.JsonUtil.getString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -74,7 +75,7 @@ public class ExecuteScriptRequestTest extends HazelcastTestSupport {
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
-        String response = (String) request.readResponse(result);
+        String response = getString(result, "scriptResult");
         assertEquals("", response.trim());
     }
 
@@ -86,7 +87,7 @@ public class ExecuteScriptRequestTest extends HazelcastTestSupport {
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
-        String response = (String) request.readResponse(result);
+        String response = getString(result, "scriptResult");
         assertEquals("error\nerror\n", response);
     }
 
@@ -100,7 +101,7 @@ public class ExecuteScriptRequestTest extends HazelcastTestSupport {
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
-        String response = (String) request.readResponse(result);
+        String response = getString(result, "scriptResult");
         assertEquals("error", response.trim());
     }
 
@@ -112,7 +113,7 @@ public class ExecuteScriptRequestTest extends HazelcastTestSupport {
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
-        String response = (String) request.readResponse(result);
+        String response = getString(result, "scriptResult");
         assertContains(response, "IllegalArgumentException");
     }
 
@@ -124,7 +125,7 @@ public class ExecuteScriptRequestTest extends HazelcastTestSupport {
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
-        String response = (String) request.readResponse(result);
+        String response = getString(result, "scriptResult");
         assertNotNull(response);
     }
 }
