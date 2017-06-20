@@ -26,6 +26,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.JsonUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -59,7 +60,7 @@ public class ShutdownClusterRequestTest extends HazelcastTestSupport {
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
-        assertEquals("SUCCESS", request.readResponse(result));
+        assertEquals("SUCCESS", JsonUtil.getString(result, "result"));
 
         assertTrueEventually(new AssertTask() {
             @Override

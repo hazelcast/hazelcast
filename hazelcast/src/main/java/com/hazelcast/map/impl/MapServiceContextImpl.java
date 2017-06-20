@@ -26,6 +26,8 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.event.MapEventPublisherImpl;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
+import com.hazelcast.map.impl.journal.MapEventJournal;
+import com.hazelcast.map.impl.journal.RingbufferMapEventJournalImpl;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.BasePutOperation;
@@ -134,12 +136,13 @@ class MapServiceContextImpl implements MapServiceContext {
     protected final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
     protected final PartitioningStrategyFactory partitioningStrategyFactory;
     protected final QueryCacheContext queryCacheContext;
-    protected MapEventPublisher mapEventPublisher;
+    protected final MapEventJournal eventJournal;
+    protected final MapEventPublisher mapEventPublisher;
+    protected final EventService eventService;
+    protected final MapOperationProviders operationProviders;
+    protected final ResultProcessorRegistry resultProcessorRegistry;
     protected MapService mapService;
-    protected EventService eventService;
     protected IndexProvider indexProvider;
-    protected MapOperationProviders operationProviders;
-    protected ResultProcessorRegistry resultProcessorRegistry;
 
     MapServiceContextImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -152,6 +155,7 @@ class MapServiceContextImpl implements MapServiceContext {
         this.localMapStatsProvider = createLocalMapStatsProvider();
         this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
         this.mapEventPublisher = createMapEventPublisherSupport();
+        this.eventJournal = createEventJournal();
         this.queryOptimizer = newOptimizer(nodeEngine.getProperties());
         this.resultProcessorRegistry = createResultProcessorRegistry(nodeEngine.getSerializationService());
         this.partitionScanRunner = createPartitionScanRunner();
@@ -175,6 +179,10 @@ class MapServiceContextImpl implements MapServiceContext {
     // this method is overridden in another context.
     MapEventPublisherImpl createMapEventPublisherSupport() {
         return new MapEventPublisherImpl(this);
+    }
+
+    private MapEventJournal createEventJournal() {
+        return new RingbufferMapEventJournalImpl(getNodeEngine());
     }
 
     private LocalMapStatsProvider createLocalMapStatsProvider() {
@@ -266,8 +274,10 @@ class MapServiceContextImpl implements MapServiceContext {
             Iterator<RecordStore> iter = container.getMaps().values().iterator();
             while (iter.hasNext()) {
                 RecordStore recordStore = iter.next();
-                if (backupCount > recordStore.getMapContainer().getTotalBackupCount()) {
+                final MapContainer mapContainer = recordStore.getMapContainer();
+                if (backupCount > mapContainer.getTotalBackupCount()) {
                     recordStore.clearPartition(false);
+                    eventJournal.destroy(mapContainer.getObjectNamespace(), partitionId);
                     iter.remove();
                 }
             }
@@ -280,6 +290,7 @@ class MapServiceContextImpl implements MapServiceContext {
         if (container != null) {
             for (RecordStore mapPartition : container.getMaps().values()) {
                 mapPartition.clearPartition(false);
+                eventJournal.destroy(mapPartition.getMapContainer().getObjectNamespace(), partitionId);
             }
             container.getMaps().clear();
         }
@@ -430,6 +441,11 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public MapEventPublisher getMapEventPublisher() {
         return mapEventPublisher;
+    }
+
+    @Override
+    public MapEventJournal getEventJournal() {
+        return eventJournal;
     }
 
     @Override

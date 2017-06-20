@@ -25,7 +25,6 @@ import com.hazelcast.internal.management.operation.ScriptExecutorOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.AddressUtil;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -115,25 +114,6 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         }
         jsonResult.add("scriptResult", sb.toString());
         root.add("result", jsonResult);
-    }
-
-    @Override
-    public Object readResponse(JsonObject json) throws IOException {
-        return getString(json, "scriptResult", "Error while reading response " + ExecuteScriptRequest.class.getName());
-    }
-
-    @Override
-    public JsonObject toJson() {
-        JsonObject root = new JsonObject();
-        root.add("script", script);
-        root.add("engine", engine);
-        JsonArray jsonTargets = new JsonArray();
-        for (String target : targets) {
-            jsonTargets.add(target);
-        }
-        root.add("targets", jsonTargets);
-        root.add("targetAllMembers", targetAllMembers);
-        return root;
     }
 
     @Override

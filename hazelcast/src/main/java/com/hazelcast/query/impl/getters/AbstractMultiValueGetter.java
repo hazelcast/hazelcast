@@ -101,8 +101,8 @@ public abstract class AbstractMultiValueGetter extends Getter {
         return inputType.getComponentType();
     }
 
-    private void collectResult(MultiResult collector, Object parentObject) throws IllegalAccessException,
-            InvocationTargetException {
+    private void collectResult(MultiResult collector, Object parentObject)
+            throws IllegalAccessException, InvocationTargetException {
         // re-add nulls from parent extraction without extracting further down the path
         if (parentObject == null) {
             collector.add(null);
@@ -119,8 +119,10 @@ public abstract class AbstractMultiValueGetter extends Getter {
     private Object extractFromMultiResult(MultiResult parentMultiResult) throws IllegalAccessException,
             InvocationTargetException {
         MultiResult collector = new MultiResult();
-        for (Object parentResult : parentMultiResult.getResults()) {
-            collectResult(collector, parentResult);
+        collector.setNullOrEmptyTarget(parentMultiResult.isNullEmptyTarget());
+        int size = parentMultiResult.getResults().size();
+        for (int i = 0; i < size; i++) {
+            collectResult(collector, parentMultiResult.getResults().get(i));
         }
 
         return collector;
@@ -160,7 +162,7 @@ public abstract class AbstractMultiValueGetter extends Getter {
     private void reduceArrayInto(MultiResult collector, Object[] currentObject) {
         Object[] array = currentObject;
         if (array.length == 0) {
-            collector.add(null);
+            collector.addNullOrEmptyTarget();
         } else {
             for (int i = 0; i < array.length; i++) {
                 collector.add(array[i]);
@@ -171,7 +173,7 @@ public abstract class AbstractMultiValueGetter extends Getter {
     private void reducePrimitiveArrayInto(MultiResult collector, Object primitiveArray) {
         int length = Array.getLength(primitiveArray);
         if (length == 0) {
-            collector.add(null);
+            collector.addNullOrEmptyTarget();
         } else {
             for (int i = 0; i < length; i++) {
                 collector.add(Array.get(primitiveArray, i));
@@ -182,7 +184,7 @@ public abstract class AbstractMultiValueGetter extends Getter {
     protected void reduceCollectionInto(MultiResult collector, Collection currentObject) {
         Collection collection = currentObject;
         if (collection.isEmpty()) {
-            collector.add(null);
+            collector.addNullOrEmptyTarget();
         } else {
             for (Object o : collection) {
                 collector.add(o);
@@ -198,8 +200,7 @@ public abstract class AbstractMultiValueGetter extends Getter {
         }
 
         if (currentObject == null) {
-            // collect null since it's a valid result
-            collector.add(null);
+            collector.addNullOrEmptyTarget();
         } else if (currentObject instanceof Collection) {
             reduceCollectionInto(collector, (Collection) currentObject);
         } else if (currentObject instanceof Object[]) {

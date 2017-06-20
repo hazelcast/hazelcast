@@ -37,19 +37,20 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * The response to a {@link ReplicaSyncRequest} that the replica should retry. This will reset the current ongoing
+ * The response to a {@link PartitionReplicaSyncRequest} that the replica should retry. This will reset the current ongoing
  * synchronization request state and retry the request if this node is still a replica of this partition.
  */
-public class ReplicaSyncRetryResponse extends AbstractPartitionOperation
+public class PartitionReplicaSyncRetryResponse
+        extends AbstractPartitionOperation
         implements PartitionAwareOperation, BackupOperation, MigrationCycleOperation, Versioned {
 
     private Collection<ServiceNamespace> namespaces;
 
-    public ReplicaSyncRetryResponse() {
+    public PartitionReplicaSyncRetryResponse() {
         namespaces = Collections.emptySet();
     }
 
-    public ReplicaSyncRetryResponse(Collection<ServiceNamespace> namespaces) {
+    public PartitionReplicaSyncRetryResponse(Collection<ServiceNamespace> namespaces) {
         this.namespaces = namespaces;
     }
 

@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.util.JsonUtil.getString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -54,7 +55,7 @@ public class ChangeClusterStateRequestTest extends HazelcastTestSupport {
         changeClusterStateRequest.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
-        assertEquals("SUCCESS", changeClusterStateRequest.readResponse(result));
+        assertEquals("SUCCESS", getString(result, "result"));
 
         assertEquals(ClusterState.valueOf("FROZEN"), cluster.getClusterState());
     }
@@ -66,7 +67,7 @@ public class ChangeClusterStateRequestTest extends HazelcastTestSupport {
         changeClusterStateRequest.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
-        String resultString = (String) changeClusterStateRequest.readResponse(result);
+        String resultString = getString(result, "result");
         assertTrue(resultString.startsWith("FAILURE"));
     }
 
@@ -77,7 +78,7 @@ public class ChangeClusterStateRequestTest extends HazelcastTestSupport {
         changeClusterStateRequest.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
-        String resultString = (String) changeClusterStateRequest.readResponse(result);
+        String resultString = getString(result, "result");
         assertTrue(resultString.startsWith("FAILURE"));
     }
 }

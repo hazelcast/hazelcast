@@ -14,13 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.metrics.renderers;
+package com.hazelcast.nio.serialization;
 
-public interface StringRenderer {
+/**
+ * Defines type of the Data: heap or native.
+ */
+public enum DataType {
+
     /**
-     * The interface is used to fill a StringBuilder buffer with the current value of a probe.
-     *
-     * @param stringBuilder the string builder to be filled
+     * Heap data type.
      */
-    void render(StringBuilder stringBuilder);
+    HEAP,
+
+    /**
+     * Native data type.
+     */
+    NATIVE
 }

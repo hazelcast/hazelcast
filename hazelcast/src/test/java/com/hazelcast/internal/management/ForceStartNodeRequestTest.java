@@ -23,6 +23,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.JsonUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,6 +51,6 @@ public class ForceStartNodeRequestTest extends HazelcastTestSupport {
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
-        assertEquals(ForceStartNodeRequest.FAILED_RESULT, request.readResponse(result));
+        assertEquals(ForceStartNodeRequest.FAILED_RESULT, JsonUtil.getString(result, "result"));
     }
 }

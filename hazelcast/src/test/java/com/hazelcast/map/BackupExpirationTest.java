@@ -20,8 +20,16 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
+import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -34,6 +42,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Collection;
+import java.util.Map;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
@@ -63,7 +72,8 @@ public class BackupExpirationTest extends HazelcastTestSupport {
         });
     }
 
-    protected void configureAndStartNodes(int maxIdleSeconds, int partitionCount, int expirationTaskPeriodSeconds) {
+    protected void configureAndStartNodes(int maxIdleSeconds, int partitionCount,
+                                          int expirationTaskPeriodSeconds) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
 
         Config config = getConfig();
@@ -124,6 +134,47 @@ public class BackupExpirationTest extends HazelcastTestSupport {
 
         // key 1 should still be in all replicas
         assertEquals(REPLICA_COUNT, total);
+    }
+
+    @Test
+    public void dont_collect_expired_keys_if_expiration_reason_is_TTL() throws Exception {
+        configureAndStartNodes(30, 1, 5);
+
+        IMap map = nodes[0].getMap(MAP_NAME);
+        Object expirationQueueLength = map.executeOnKey("1", new BackupExpirationQueueLengthFinder());
+
+        assertEquals(0, ((Integer) expirationQueueLength).intValue());
+    }
+
+    // This EP mimics TTL expiration process by creating a record
+    // which expires after 100 millis. TTL expired key should not be added to the expiration queue
+    // after `recordStore.get`.
+    public static final class BackupExpirationQueueLengthFinder
+            extends AbstractEntryProcessor implements HazelcastInstanceAware {
+
+        private transient HazelcastInstance node;
+
+        @Override
+        public Object process(Map.Entry entry) {
+            NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(node);
+            SerializationService ss = nodeEngineImpl.getSerializationService();
+            MapService mapService = nodeEngineImpl.getService(MapService.SERVICE_NAME);
+            MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+            RecordStore recordStore = mapServiceContext.getRecordStore(0, MAP_NAME);
+
+            Data dataKey = ss.toData(1);
+            recordStore.put(dataKey, "value", 100);
+            sleepSeconds(1);
+            recordStore.get(dataKey, false);
+
+            InvalidationQueue expiredKeys = recordStore.getExpiredKeys();
+            return expiredKeys.size();
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.node = hazelcastInstance;
+        }
     }
 
     public static long getTotalEntryCount(IMap map) {

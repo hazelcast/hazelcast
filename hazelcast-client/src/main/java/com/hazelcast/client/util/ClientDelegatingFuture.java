@@ -88,17 +88,17 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
      *                              otherwise execution result will be in {@link com.hazelcast.nio.serialization.Data} format
      * @param <T>                   type of the execution result which is passed to {@link ExecutionCallback#onResponse}
      */
-    public <T> void andThenInternal(final ExecutionCallback<T> callback, boolean shouldDeserializeData) {
+    public <T> void andThenInternal(ExecutionCallback<T> callback, boolean shouldDeserializeData) {
         future.andThen(new DelegatingExecutionCallback<T>(callback, shouldDeserializeData));
     }
 
     @Override
-    public void andThen(final ExecutionCallback<V> callback) {
+    public void andThen(ExecutionCallback<V> callback) {
         future.andThen(new DelegatingExecutionCallback<V>(callback, true), userExecutor);
     }
 
     @Override
-    public void andThen(final ExecutionCallback<V> callback, Executor executor) {
+    public void andThen(ExecutionCallback<V> callback, Executor executor) {
         future.andThen(new DelegatingExecutionCallback<V>(callback, true), executor);
     }
 

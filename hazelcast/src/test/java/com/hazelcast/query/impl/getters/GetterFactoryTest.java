@@ -110,7 +110,7 @@ public class GetterFactoryTest {
         OuterObject object = OuterObject.emptyInner("name");
         Getter getter = GetterFactory.newFieldGetter(object, null, innersCollectionField, "[any]");
 
-        assertSame(NullGetter.NULL_GETTER, getter);
+        assertSame(NullMultiValueGetter.NULL_MULTIVALUE_GETTER, getter);
     }
 
     @Test
@@ -119,7 +119,7 @@ public class GetterFactoryTest {
         OuterObject object = OuterObject.emptyInner("name");
         Getter getter = GetterFactory.newMethodGetter(object, null, innersCollectionMethod, "[any]");
 
-        assertSame(NullGetter.NULL_GETTER, getter);
+        assertSame(NullMultiValueGetter.NULL_MULTIVALUE_GETTER, getter);
     }
 
     @Test
@@ -128,7 +128,7 @@ public class GetterFactoryTest {
         OuterObject object = OuterObject.nullInner("name");
         Getter getter = GetterFactory.newFieldGetter(object, null, innersCollectionField, "[any]");
 
-        assertSame(NullGetter.NULL_GETTER, getter);
+        assertSame(NullMultiValueGetter.NULL_MULTIVALUE_GETTER, getter);
     }
 
     @Test
@@ -137,7 +137,7 @@ public class GetterFactoryTest {
         OuterObject object = OuterObject.nullInner("name");
         Getter getter = GetterFactory.newMethodGetter(object, null, innersCollectionMethod, "[any]");
 
-        assertSame(NullGetter.NULL_GETTER, getter);
+        assertSame(NullMultiValueGetter.NULL_MULTIVALUE_GETTER, getter);
     }
 
     @Test
@@ -252,7 +252,7 @@ public class GetterFactoryTest {
         Getter parentGetter = GetterFactory.newFieldGetter(object, null, innersCollectionField, "[any]");
         Getter innerObjectNameGetter = GetterFactory.newFieldGetter(object, parentGetter, innerAttributesCollectionField, "[any]");
 
-        assertSame(NullGetter.NULL_GETTER, innerObjectNameGetter);
+        assertSame(NullMultiValueGetter.NULL_MULTIVALUE_GETTER, innerObjectNameGetter);
     }
 
     @Test
@@ -263,7 +263,7 @@ public class GetterFactoryTest {
         Getter parentGetter = GetterFactory.newMethodGetter(object, null, innersCollectionMethod, "[any]");
         Getter innerObjectNameGetter = GetterFactory.newMethodGetter(object, parentGetter, innerAttributesCollectionMethod, "[any]");
 
-        assertSame(NullGetter.NULL_GETTER, innerObjectNameGetter);
+        assertSame(NullMultiValueGetter.NULL_MULTIVALUE_GETTER, innerObjectNameGetter);
     }
 
     @Test
@@ -274,7 +274,7 @@ public class GetterFactoryTest {
         Getter parentGetter = GetterFactory.newFieldGetter(object, null, innersCollectionField, "[any]");
         Getter innerObjectNameGetter = GetterFactory.newFieldGetter(object, parentGetter, innerAttributesCollectionField, "[any]");
 
-        assertSame(NullGetter.NULL_GETTER, innerObjectNameGetter);
+        assertSame(NullMultiValueGetter.NULL_MULTIVALUE_GETTER, innerObjectNameGetter);
     }
 
     @Test
@@ -285,7 +285,7 @@ public class GetterFactoryTest {
         Getter parentGetter = GetterFactory.newMethodGetter(object, null, innersCollectionMethod, "[any]");
         Getter innerObjectNameGetter = GetterFactory.newMethodGetter(object, parentGetter, innerAttributesCollectionMethod, "[any]");
 
-        assertSame(NullGetter.NULL_GETTER, innerObjectNameGetter);
+        assertSame(NullMultiValueGetter.NULL_MULTIVALUE_GETTER, innerObjectNameGetter);
     }
 
     @Test

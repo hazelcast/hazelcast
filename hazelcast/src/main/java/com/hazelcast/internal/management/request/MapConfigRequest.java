@@ -76,31 +76,6 @@ public class MapConfigRequest implements ConsoleRequest {
     }
 
     @Override
-    public Object readResponse(JsonObject json) {
-        update = getBoolean(json, "update", false);
-        if (!update) {
-            boolean hasMapConfig = getBoolean(json, "hasMapConfig", false);
-            if (hasMapConfig) {
-                final MapConfigDTO adapter = new MapConfigDTO();
-                adapter.fromJson(getObject(json, "mapConfig"));
-                return adapter.getMapConfig();
-            } else {
-                return null;
-            }
-        }
-        return getString(json, "updateResult");
-    }
-
-    @Override
-    public JsonObject toJson() {
-        JsonObject root = new JsonObject();
-        root.add("mapName", mapName);
-        root.add("update", update);
-        root.add("config", config.toJson());
-        return root;
-    }
-
-    @Override
     public void fromJson(JsonObject json) {
         mapName = getString(json, "mapName");
         update = getBoolean(json, "update");

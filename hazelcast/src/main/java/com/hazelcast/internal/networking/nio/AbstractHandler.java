@@ -39,8 +39,10 @@ public abstract class AbstractHandler
     // for the time being we configure using a int until we have decided which load strategy to use.
     protected static final int LOAD_TYPE = Integer.getInteger("hazelcast.io.load", LOAD_BALANCING_BYTE);
 
-    @Probe(name = "handleCount")
+    @Probe
     protected final SwCounter handleCount = newSwCounter();
+    @Probe
+    protected final SwCounter completedMigrations = newSwCounter();
     protected final ILogger logger;
     protected final Channel channel;
     protected NioThread ioThread;
@@ -173,6 +175,7 @@ public abstract class AbstractHandler
     private void completeMigration(NioThread newOwner) throws IOException {
         assert ioThread == newOwner;
 
+        completedMigrations.inc();
         ioBalancer.signalMigrationComplete();
 
         if (!socketChannel.isOpen()) {

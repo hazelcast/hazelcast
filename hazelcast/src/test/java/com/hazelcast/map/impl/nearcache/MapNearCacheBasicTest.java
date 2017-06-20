@@ -71,7 +71,7 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
 
     private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory(2);
 
-    @Parameters(name = "format:{0}, serializeKeys:{1}")
+    @Parameters(name = "format:{0} serializeKeys:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {InMemoryFormat.BINARY, true},

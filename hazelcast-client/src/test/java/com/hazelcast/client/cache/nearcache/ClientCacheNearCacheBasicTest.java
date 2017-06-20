@@ -82,7 +82,7 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @Parameters(name = "format:{0} serializeKeys:{1} {2}")
+    @Parameters(name = "format:{0} serializeKeys:{1} localUpdatePolicy:{2}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {InMemoryFormat.BINARY, true, LocalUpdatePolicy.INVALIDATE},

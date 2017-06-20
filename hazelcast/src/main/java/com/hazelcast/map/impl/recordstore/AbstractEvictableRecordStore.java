@@ -203,39 +203,39 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     public boolean isExpired(Record record, long now, boolean backup) {
         return record == null
-                || isIdleExpired(record, now, backup) == null
-                || isTTLExpired(record, now, backup) == null;
+                || isIdleExpired(record, now, backup)
+                || isTTLExpired(record, now, backup);
     }
 
-    private Record isIdleExpired(Record record, long now, boolean backup) {
+    private boolean isIdleExpired(Record record, long now, boolean backup) {
         if (backup && expirationManager.canPrimaryDriveExpiration()) {
             // don't check idle expiry on backup
-            return record;
+            return false;
         }
 
         long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
         if (maxIdleMillis == Long.MAX_VALUE) {
-            return record;
+            return false;
         }
         long idlenessStartTime = getIdlenessStartTime(record);
         long idleMillis = calculateExpirationWithDelay(maxIdleMillis, expiryDelayMillis, backup);
         long elapsedMillis = now - idlenessStartTime;
-        return elapsedMillis >= idleMillis ? null : record;
+        return elapsedMillis >= idleMillis;
     }
 
-    private Record isTTLExpired(Record record, long now, boolean backup) {
+    private boolean isTTLExpired(Record record, long now, boolean backup) {
         if (record == null) {
-            return null;
+            return false;
         }
         long ttl = record.getTtl();
         // when ttl is zero or negative or Long.MAX_VALUE, it should remain eternally.
         if (ttl < 1L || ttl == Long.MAX_VALUE) {
-            return record;
+            return false;
         }
         long ttlStartTime = getLifeStartTime(record);
         long ttlMillis = calculateExpirationWithDelay(ttl, expiryDelayMillis, backup);
         long elapsedMillis = now - ttlStartTime;
-        return elapsedMillis >= ttlMillis ? null : record;
+        return elapsedMillis >= ttlMillis;
     }
 
     @Override
@@ -252,7 +252,11 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             mapEventPublisher.publishEvent(thisAddress, name, EVICTED, key, value, null);
         }
 
-        boolean expired = isExpired(record, getNow(), backup);
+        long now = getNow();
+        boolean idleExpired = isIdleExpired(record, now, backup);
+        boolean ttlExpired = isTTLExpired(record, now, backup);
+        boolean expired = idleExpired || ttlExpired;
+
         if (expired && hasEventRegistration) {
             // We will be in this if in two cases:
             // 1. In case of TTL or max-idle-seconds expiration.
@@ -262,7 +266,8 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             mapEventPublisher.publishEvent(thisAddress, name, EXPIRED, key, value, null);
         }
 
-        if (expired) {
+        if (!ttlExpired && idleExpired) {
+            // only send expired key to backup if it is expired according to idleness.
             accumulateOrSendExpiredKey(record);
         }
     }
@@ -273,7 +278,8 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     private void accumulateOrSendExpiredKey(Record record) {
-        if (mapContainer.getMapConfig().getMaxIdleSeconds() <= 0) {
+        if (mapContainer.getMapConfig().getMaxIdleSeconds() <= 0
+                || mapContainer.getTotalBackupCount() == 0) {
             return;
         }
 

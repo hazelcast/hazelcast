@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.util.JsonUtil.getString;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -47,6 +48,6 @@ public class TriggerPartialStartRequestTest extends HazelcastTestSupport {
         ConsoleRequest request = new TriggerPartialStartRequest();
         JsonObject jsonObject = new JsonObject();
         request.writeResponse(managementCenterService, jsonObject);
-        return String.valueOf(request.readResponse(jsonObject));
+        return String.valueOf(getString(jsonObject, "result"));
     }
 }
