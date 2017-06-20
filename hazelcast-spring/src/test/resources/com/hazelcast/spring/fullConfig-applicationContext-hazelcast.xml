@@ -23,6 +23,7 @@
 		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
 		http://www.hazelcast.com/schema/spring
 		hazelcast-spring-3.9.xsd
+		http://www.hazelcast.com/schema/sample
 		hazelcast-sample-service.xsd">
 
     <!--xmlns="http://www.hazelcast.com/schema/config"-->

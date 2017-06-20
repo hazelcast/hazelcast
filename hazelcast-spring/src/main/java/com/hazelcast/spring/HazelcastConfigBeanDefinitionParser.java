@@ -1043,9 +1043,9 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             fillAttributeValues(node, managementCenterConfigBuilder);
             // < 3.9 - Backwards compatibility
             boolean isComplexType = false;
-            List<String> complexTypeElements = Arrays.asList("url", "hz:url", "mutual-auth", "hz:mutual-auth");
+            List<String> complexTypeElements = Arrays.asList("url", "mutual-auth");
             for (Node c : childElements(node)) {
-                if (complexTypeElements.contains(c.getNodeName())) {
+                if (complexTypeElements.contains(cleanNodeName(c))) {
                     isComplexType = true;
                     break;
                 }
