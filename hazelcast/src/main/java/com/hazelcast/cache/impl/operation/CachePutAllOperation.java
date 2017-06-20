@@ -16,9 +16,11 @@
 
 package com.hazelcast.cache.impl.operation;
 
+import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -39,6 +41,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.hazelcast.cache.impl.CacheEntryViews.createDefaultEntryView;
 
 public class CachePutAllOperation
         extends AbstractNamedOperation
@@ -81,11 +85,17 @@ public class CachePutAllOperation
         ICacheService service = getService();
         cache = service.getOrCreateRecordStore(name, partitionId);
         backupRecords = new HashMap<Data, CacheRecord>(entries.size());
+        CacheWanEventPublisher publisher = service.getCacheWanEventPublisher();
         for (Map.Entry<Data, Data> entry : entries) {
             Data key = entry.getKey();
             Data value = entry.getValue();
             CacheRecord backupRecord = cache.put(key, value, expiryPolicy, callerUuid, completionId);
             backupRecords.put(key, backupRecord);
+
+            if (cache.isWanReplicationEnabled()) {
+                CacheEntryView<Data, Data> entryView = createDefaultEntryView(key, value, backupRecord);
+                publisher.publishWanReplicationUpdate(name, entryView);
+            }
         }
     }
 
