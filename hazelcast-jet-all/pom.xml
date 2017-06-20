@@ -82,6 +82,28 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>unshaded</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-shade-plugin</artifactId>
+                        <configuration>
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>com.hazelcast:hazelcast:*</exclude>
+                                    <exclude>com.hazelcast:hazelcast-client:*</exclude>
+                                </excludes>
+                            </artifactSet>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <dependencies>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
