@@ -21,7 +21,9 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
@@ -44,6 +46,8 @@ public class ClientNetworkConfig {
     private SSLConfig sslConfig;
     private ClientAwsConfig clientAwsConfig;
     private DiscoveryConfig discoveryConfig;
+    private Collection<String> outboundPortDefinitions;
+    private Collection<Integer> outboundPorts;
 
     /**
      * Returns the configuration of the Hazelcast Discovery SPI and configured discovery providers
@@ -298,5 +302,29 @@ public class ClientNetworkConfig {
      */
     public ClientAwsConfig getAwsConfig() {
         return clientAwsConfig;
+    }
+
+    public Collection<Integer> getOutboundPorts() {
+        return outboundPorts;
+    }
+
+    public Collection<String> getOutboundPortDefinitions() {
+        return outboundPortDefinitions;
+    }
+
+    public ClientNetworkConfig addOutboundPort(int port) {
+        if (outboundPorts == null) {
+            outboundPorts = new HashSet<Integer>();
+        }
+        outboundPorts.add(port);
+        return this;
+    }
+
+    public ClientNetworkConfig addOutboundPortDefinition(String portDef) {
+        if (outboundPortDefinitions == null) {
+            outboundPortDefinitions = new HashSet<String>();
+        }
+        outboundPortDefinitions.add(portDef);
+        return this;
     }
 }

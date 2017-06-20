@@ -30,6 +30,9 @@ import java.util.Deque;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Set;
+
+import static java.util.Collections.emptySet;
 
 /**
  * AddressUtil contains Address helper methods.
@@ -333,6 +336,31 @@ public final class AddressUtil {
         return matcher;
     }
 
+    public static Collection<Integer> getOutboundPorts(Collection<Integer> ports,
+                                                       Collection<String> portDefinitions) {
+        if (ports == null) {
+            ports = emptySet();
+        }
+        if (portDefinitions == null) {
+            portDefinitions = emptySet();
+        }
+        if (portDefinitions.isEmpty() && ports.isEmpty()) {
+            // means any port
+            return emptySet();
+        }
+        if (portDefinitions.contains("*") || portDefinitions.contains("0")) {
+            // means any port
+            return emptySet();
+        }
+        Set<Integer> selectedPorts = new HashSet<Integer>(ports);
+        transformPortDefinitionsToPorts(portDefinitions, selectedPorts);
+        if (selectedPorts.contains(0)) {
+            // means any port
+            return emptySet();
+        }
+        return selectedPorts;
+    }
+
     private static void parseIpv4(AddressMatcher matcher, String address) {
         final String[] parts = address.split("\\.");
         if (parts.length != IPV4_LENGTH) {
@@ -383,6 +411,29 @@ public final class AddressUtil {
             isValid = false;
         }
         return isValid;
+    }
+
+    private static void transformPortDefinitionsToPorts(Collection<String> portDefinitions, Set<Integer> ports) {
+        // not checking port ranges...
+        for (String portDef : portDefinitions) {
+            String[] portDefs = portDef.split("[,; ]");
+            for (String def : portDefs) {
+                def = def.trim();
+                if (def.isEmpty()) {
+                    continue;
+                }
+                final int dashPos = def.indexOf('-');
+                if (dashPos > 0) {
+                    final int start = Integer.parseInt(def.substring(0, dashPos));
+                    final int end = Integer.parseInt(def.substring(dashPos + 1));
+                    for (int port = start; port <= end; port++) {
+                        ports.add(port);
+                    }
+                } else {
+                    ports.add(Integer.parseInt(def));
+                }
+            }
+        }
     }
 
     private static void parseIpv6(AddressMatcher matcher, String addrs) {
