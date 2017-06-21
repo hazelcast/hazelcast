@@ -43,9 +43,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ThreadUtil.createThreadName;
