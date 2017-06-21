@@ -3,14 +3,14 @@ package com.hazelcast.client;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.XmlConfigBuilder;
+
 import com.hazelcast.core.Client;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.discovery.multicast.MulticastDiscoveryStrategy;
+
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestEnvironment;
-import com.hazelcast.test.annotation.ParallelTest;
+
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -18,14 +18,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.InputStream;
+
 import java.util.Arrays;
 
 /**
  * Created by gokhan oner on 6/21/17.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class})
 public class ClientOutBoundPortTest extends ClientTestSupport {
 
     private TestHazelcastFactory hazelcastFactory;
