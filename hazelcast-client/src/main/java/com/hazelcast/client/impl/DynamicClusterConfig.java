@@ -102,6 +102,9 @@ public class DynamicClusterConfig extends Config {
     private final HazelcastClientInstanceImpl instance;
     private final SerializationService serializationService;
 
+    private static final String UNSUPPORTED_ERROR_MESSAGE =
+            "Client config object only supports adding new data structure configurations";
+
     public DynamicClusterConfig(HazelcastClientInstanceImpl instance) {
         this.instance = instance;
         this.serializationService = instance.getSerializationService();
@@ -320,618 +323,618 @@ public class DynamicClusterConfig extends Config {
 
     @Override
     public Config addQuorumConfig(QuorumConfig quorumConfig) {
-        throw new UnsupportedOperationException("Dynamically adding quorum configuration is not supported");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config addListenerConfig(ListenerConfig listenerConfig) {
-        throw new UnsupportedOperationException("Dynamically adding listener configuration is not supported");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public ClassLoader getClassLoader() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setClassLoader(ClassLoader classLoader) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public ConfigPatternMatcher getConfigPatternMatcher() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public String getProperty(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setProperty(String name, String value) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public MemberAttributeConfig getMemberAttributeConfig() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public void setMemberAttributeConfig(MemberAttributeConfig memberAttributeConfig) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Properties getProperties() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setProperties(Properties properties) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public String getInstanceName() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setInstanceName(String instanceName) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public GroupConfig getGroupConfig() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setGroupConfig(GroupConfig groupConfig) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public NetworkConfig getNetworkConfig() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setNetworkConfig(NetworkConfig networkConfig) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public MapConfig findMapConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public MapConfig getMapConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Map<String, MapConfig> getMapConfigs() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setMapConfigs(Map<String, MapConfig> mapConfigs) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public CacheSimpleConfig findCacheConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public CacheSimpleConfig getCacheConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Map<String, CacheSimpleConfig> getCacheConfigs() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setCacheConfigs(Map<String, CacheSimpleConfig> cacheConfigs) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public QueueConfig findQueueConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public QueueConfig getQueueConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Map<String, QueueConfig> getQueueConfigs() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setQueueConfigs(Map<String, QueueConfig> queueConfigs) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public LockConfig findLockConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public LockConfig getLockConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Map<String, LockConfig> getLockConfigs() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setLockConfigs(Map<String, LockConfig> lockConfigs) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public ListConfig findListConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public ListConfig getListConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Map<String, ListConfig> getListConfigs() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setListConfigs(Map<String, ListConfig> listConfigs) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public SetConfig findSetConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public SetConfig getSetConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Map<String, SetConfig> getSetConfigs() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setSetConfigs(Map<String, SetConfig> setConfigs) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public MultiMapConfig findMultiMapConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public MultiMapConfig getMultiMapConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Map<String, MultiMapConfig> getMultiMapConfigs() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setMultiMapConfigs(Map<String, MultiMapConfig> multiMapConfigs) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public ReplicatedMapConfig findReplicatedMapConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public ReplicatedMapConfig getReplicatedMapConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Map<String, ReplicatedMapConfig> getReplicatedMapConfigs() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setReplicatedMapConfigs(Map<String, ReplicatedMapConfig> replicatedMapConfigs) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public RingbufferConfig findRingbufferConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public RingbufferConfig getRingbufferConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Map<String, RingbufferConfig> getRingbufferConfigs() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setRingbufferConfigs(Map<String, RingbufferConfig> ringbufferConfigs) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public TopicConfig findTopicConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public TopicConfig getTopicConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public ReliableTopicConfig findReliableTopicConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public ReliableTopicConfig getReliableTopicConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Map<String, ReliableTopicConfig> getReliableTopicConfigs() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setReliableTopicConfigs(Map<String, ReliableTopicConfig> reliableTopicConfigs) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Map<String, TopicConfig> getTopicConfigs() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setTopicConfigs(Map<String, TopicConfig> mapTopicConfigs) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public ExecutorConfig findExecutorConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public DurableExecutorConfig findDurableExecutorConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public ScheduledExecutorConfig findScheduledExecutorConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public CardinalityEstimatorConfig findCardinalityEstimatorConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public ExecutorConfig getExecutorConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public DurableExecutorConfig getDurableExecutorConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public ScheduledExecutorConfig getScheduledExecutorConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public CardinalityEstimatorConfig getCardinalityEstimatorConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Map<String, ExecutorConfig> getExecutorConfigs() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setExecutorConfigs(Map<String, ExecutorConfig> executorConfigs) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Map<String, DurableExecutorConfig> getDurableExecutorConfigs() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setDurableExecutorConfigs(Map<String, DurableExecutorConfig> durableExecutorConfigs) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Map<String, ScheduledExecutorConfig> getScheduledExecutorConfigs() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setScheduledExecutorConfigs(Map<String, ScheduledExecutorConfig> scheduledExecutorConfigs) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Map<String, CardinalityEstimatorConfig> getCardinalityEstimatorConfigs() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setCardinalityEstimatorConfigs(
             Map<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public SemaphoreConfig findSemaphoreConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public SemaphoreConfig getSemaphoreConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Collection<SemaphoreConfig> getSemaphoreConfigs() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setSemaphoreConfigs(Map<String, SemaphoreConfig> semaphoreConfigs) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public WanReplicationConfig getWanReplicationConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Map<String, WanReplicationConfig> getWanReplicationConfigs() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setWanReplicationConfigs(Map<String, WanReplicationConfig> wanReplicationConfigs) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public JobTrackerConfig findJobTrackerConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public JobTrackerConfig getJobTrackerConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Map<String, JobTrackerConfig> getJobTrackerConfigs() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setJobTrackerConfigs(Map<String, JobTrackerConfig> jobTrackerConfigs) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Map<String, QuorumConfig> getQuorumConfigs() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public QuorumConfig getQuorumConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public QuorumConfig findQuorumConfig(String name) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setQuorumConfigs(Map<String, QuorumConfig> quorumConfigs) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public ManagementCenterConfig getManagementCenterConfig() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setManagementCenterConfig(ManagementCenterConfig managementCenterConfig) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public ServicesConfig getServicesConfig() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setServicesConfig(ServicesConfig servicesConfig) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public SecurityConfig getSecurityConfig() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setSecurityConfig(SecurityConfig securityConfig) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public List<ListenerConfig> getListenerConfigs() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setListenerConfigs(List<ListenerConfig> listenerConfigs) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public SerializationConfig getSerializationConfig() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setSerializationConfig(SerializationConfig serializationConfig) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public PartitionGroupConfig getPartitionGroupConfig() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setPartitionGroupConfig(PartitionGroupConfig partitionGroupConfig) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public HotRestartPersistenceConfig getHotRestartPersistenceConfig() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setHotRestartPersistenceConfig(HotRestartPersistenceConfig hrConfig) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public ManagedContext getManagedContext() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setManagedContext(ManagedContext managedContext) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public ConcurrentMap<String, Object> getUserContext() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setUserContext(ConcurrentMap<String, Object> userContext) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public NativeMemoryConfig getNativeMemoryConfig() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setNativeMemoryConfig(NativeMemoryConfig nativeMemoryConfig) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public URL getConfigurationUrl() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setConfigurationUrl(URL configurationUrl) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public File getConfigurationFile() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setConfigurationFile(File configurationFile) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public String getLicenseKey() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setLicenseKey(String licenseKey) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public boolean isLiteMember() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setLiteMember(boolean liteMember) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public UserCodeDeploymentConfig getUserCodeDeploymentConfig() {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
     public Config setUserCodeDeploymentConfig(UserCodeDeploymentConfig userCodeDeploymentConfig) {
-        throw new UnsupportedOperationException("This config object only supports adding new configuration.");
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
