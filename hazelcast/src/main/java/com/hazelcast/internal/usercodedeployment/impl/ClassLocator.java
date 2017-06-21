@@ -31,9 +31,12 @@ import com.hazelcast.spi.OperationService;
 import java.io.Closeable;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static java.security.AccessController.doPrivileged;
 
@@ -47,6 +50,7 @@ import static java.security.AccessController.doPrivileged;
  * remote members.
  */
 public final class ClassLocator {
+    private static final Pattern CLASS_PATTERN = Pattern.compile("^(.*)\\$.*");
     private final ConcurrentMap<String, ClassSource> classSourceMap;
     private final ConcurrentMap<String, ClassSource> clientClassSourceMap;
     private final ClassLoader parent;
@@ -95,28 +99,31 @@ public final class ClassLocator {
         // we need to acquire a classloading lock before defining a class
         // Java 7+ can use locks with per-class granularity while Java 6 has to use a single lock
         // mutexFactory abstract these differences away
-        Closeable classMutex = mutexFactory.getMutexForClass(name);
+        String mainClassName = extractMainClassName(name);
+        Closeable classMutex = mutexFactory.getMutexForClass(mainClassName);
         try {
             synchronized (classMutex) {
-                ClassSource classSource = clientClassSourceMap.get(name);
+                ClassSource classSource = clientClassSourceMap.get(mainClassName);
                 if (classSource != null) {
-                    if (!Arrays.equals(classDef, classSource.getBytecode())) {
-                        throw new IllegalStateException("Class " + name
-                                + " is already in a local cache and conflicting byte code representation");
-                    } else if (logger.isFineEnabled()) {
-                        logger.finest("Class " + name + " is already in a local cache. ");
+                    if (classSource.getClazz(name) != null) {
+                        if (!Arrays.equals(classDef, classSource.getClassDefinition(name))) {
+                            throw new IllegalStateException("Class " + name
+                                    + " is already in a local cache and conflicting byte code representation");
+                        } else if (logger.isFineEnabled()) {
+                            logger.finest("Class " + name + " is already in a local cache. ");
+                        }
+                        return;
                     }
-                    return;
+                } else {
+                    classSource = doPrivileged(new PrivilegedAction<ClassSource>() {
+                        @Override
+                        public ClassSource run() {
+                            return new ClassSource(parent, ClassLocator.this);
+                        }
+                    });
+                    clientClassSourceMap.put(mainClassName, classSource);
                 }
-                classSource = doPrivileged(new PrivilegedAction<ClassSource>() {
-                    @Override
-                    public ClassSource run() {
-                        return new ClassSource(name, classDef, parent, ClassLocator.this);
-                    }
-                });
-
-                classSource.define();
-                clientClassSourceMap.put(name, classSource);
+                classSource.define(name, classDef);
             }
         } finally {
             IOUtil.closeResource(classMutex);
@@ -127,21 +134,36 @@ public final class ClassLocator {
         // we need to acquire a classloading lock before defining a class
         // Java 7+ can use locks with per-class granularity while Java 6 has to use a single lock
         // mutexFactory abstract these differences away
-        Closeable classMutex = mutexFactory.getMutexForClass(name);
+        String mainClassName = extractMainClassName(name);
+        Closeable classMutex = mutexFactory.getMutexForClass(mainClassName);
         try {
             synchronized (classMutex) {
-                ClassSource classSource = classSourceMap.get(name);
+                ClassSource classSource = classSourceMap.get(mainClassName);
                 if (classSource != null) {
-                    if (logger.isFineEnabled()) {
-                        logger.finest("Class " + name + " is already in a local cache. ");
+                    Class clazz = classSource.getClazz(name);
+                    if (clazz != null) {
+                        if (logger.isFineEnabled()) {
+                            logger.finest("Class " + name + " is already in a local cache. ");
+                        }
+                        return clazz;
                     }
-                    return classSource.getClazz();
+                } else if (ThreadLocalClassCache.getFromCache(mainClassName) != null) {
+                    classSource = ThreadLocalClassCache.getFromCache(mainClassName);
+                } else {
+                    classSource = new ClassSource(parent, this);
                 }
-                byte[] classDef = fetchBytecodeFromRemote(name);
-                if (classDef == null) {
+                ClassData classData = fetchBytecodeFromRemote(name);
+                if (classData == null) {
                     throw new ClassNotFoundException("Failed to load class " + name + " from other members.");
                 }
-                return defineAndCacheClass(name, classDef);
+
+                Map<String, byte[]> innerClassDefinitions = classData.getInnerClassDefinitions();
+                classSource.define(name, classData.getMainClassDefinition());
+                for (Map.Entry<String, byte[]> entry : innerClassDefinitions.entrySet()) {
+                    classSource.define(entry.getKey(), entry.getValue());
+                }
+                cacheClass(classSource, mainClassName);
+                return classSource.getClazz(name);
             }
         } finally {
             IOUtil.closeResource(classMutex);
@@ -149,43 +171,55 @@ public final class ClassLocator {
     }
 
     private Class<?> tryToGetClassFromLocalCache(String name) {
-        ClassSource classSource = classSourceMap.get(name);
+        String mainClassDefinition = extractMainClassName(name);
+        ClassSource classSource = classSourceMap.get(mainClassDefinition);
         if (classSource != null) {
-            if (logger.isFineEnabled()) {
-                logger.finest("Class " + name + " is already in a local cache. ");
+            Class clazz = classSource.getClazz(name);
+            if (clazz != null) {
+                if (logger.isFineEnabled()) {
+                    logger.finest("Class " + name + " is already in a local cache. ");
+                }
+                return clazz;
             }
-            return classSource.getClazz();
         }
 
-        classSource = clientClassSourceMap.get(name);
+        classSource = clientClassSourceMap.get(mainClassDefinition);
         if (classSource != null) {
-            if (logger.isFineEnabled()) {
-                logger.finest("Class " + name + " is already in a local cache. ");
+            Class clazz = classSource.getClazz(name);
+            if (clazz != null) {
+                if (logger.isFineEnabled()) {
+                    logger.finest("Class " + name + " is already in a local cache. ");
+                }
+                return clazz;
             }
-            return classSource.getClazz();
         }
 
-        classSource = ThreadLocalClassCache.getFromCache(name);
+        classSource = ThreadLocalClassCache.getFromCache(mainClassDefinition);
         if (classSource != null) {
-            return classSource.getClazz();
+            return classSource.getClazz(name);
         }
         return null;
     }
 
-    // called while holding class lock
-    private Class<?> defineAndCacheClass(String name, byte[] classDef) {
-        ClassSource classSource = new ClassSource(name, classDef, parent, this);
-        classSource.define();
-        if (classCacheMode != UserCodeDeploymentConfig.ClassCacheMode.OFF) {
-            classSourceMap.put(name, classSource);
-        } else {
-            ThreadLocalClassCache.store(name, classSource);
+    static String extractMainClassName(String className) {
+        Matcher matcher = CLASS_PATTERN.matcher(className);
+        if (matcher.matches()) {
+            return matcher.group(1);
         }
-        return classSource.getClazz();
+        return className;
     }
 
     // called while holding class lock
-    private byte[] fetchBytecodeFromRemote(String className) {
+    private void cacheClass(ClassSource classSource, String outerClassName) {
+        if (classCacheMode != UserCodeDeploymentConfig.ClassCacheMode.OFF) {
+            classSourceMap.put(outerClassName, classSource);
+        } else {
+            ThreadLocalClassCache.store(outerClassName, classSource);
+        }
+    }
+
+    // called while holding class lock
+    private ClassData fetchBytecodeFromRemote(String className) {
         ClusterService cluster = nodeEngine.getClusterService();
         ClassData classData;
         boolean interrupted = false;
@@ -199,13 +233,7 @@ public final class ClassLocator {
                     if (logger.isFineEnabled()) {
                         logger.finest("Loaded class " + className + " from " + member);
                     }
-                    byte[] classDef = classData.getClassDefinition();
-                    if (classDef != null) {
-                        if (interrupted) {
-                            Thread.currentThread().interrupt();
-                        }
-                        return classDef;
-                    }
+                    return classData;
                 }
             } catch (InterruptedException e) {
                 // question: should we give-up on loading and this point and simply throw ClassNotFoundException?
@@ -244,10 +272,10 @@ public final class ClassLocator {
     }
 
     public Class<?> findLoadedClass(String name) {
-        ClassSource classSource = classSourceMap.get(name);
+        ClassSource classSource = classSourceMap.get(extractMainClassName(name));
         if (classSource == null) {
             return null;
         }
-        return classSource.getClazz();
+        return classSource.getClazz(name);
     }
 }

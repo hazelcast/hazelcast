@@ -19,31 +19,49 @@ package com.hazelcast.internal.usercodedeployment.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.hazelcast.internal.cluster.Versions.V3_9;
 
 /**
- * Bytecode of a class.
+ * Carries byte code of a class along with its inner classes.
+ *
  *
  * It's wrapped inside own object as it allows to add additional metadata and maintain compatibility
  * with Hazelcast Rolling Upgrade.
  */
-public class ClassData implements IdentifiedDataSerializable {
+public class ClassData implements IdentifiedDataSerializable, Versioned {
 
-    private byte[] classDefinition;
+    private Map<String, byte[]> innerClassDefinitions = Collections.emptyMap();
+
+    //this field needed for compatibility with 3.8
+    private byte[] mainClassDefinition;
 
     public ClassData() {
     }
 
-    @SuppressFBWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})
-    public ClassData(byte[] classDefinition) {
-        this.classDefinition = classDefinition;
+    Map<String, byte[]> getInnerClassDefinitions() {
+        return innerClassDefinitions;
     }
 
-    @SuppressFBWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})
-    public byte[] getClassDefinition() {
-        return classDefinition;
+    public void setInnerClassDefinitions(Map<String, byte[]> innerClassDefinitions) {
+        this.innerClassDefinitions = innerClassDefinitions;
+    }
+
+    //this method and related field is for compatibility with 3.8
+    void setMainClassDefinition(byte[] mainClassDefinition) {
+        this.mainClassDefinition = mainClassDefinition;
+    }
+
+    //this method and related field is for compatibility with 3.8
+    byte[] getMainClassDefinition() {
+        return mainClassDefinition;
     }
 
     @Override
@@ -58,11 +76,29 @@ public class ClassData implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeByteArray(classDefinition);
+        out.writeByteArray(mainClassDefinition);
+        if (isGreaterOrEqualV39(out.getVersion())) {
+            out.writeInt(innerClassDefinitions.size());
+            for (Map.Entry<String, byte[]> entry : innerClassDefinitions.entrySet()) {
+                out.writeUTF(entry.getKey());
+                out.writeByteArray(entry.getValue());
+            }
+        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        classDefinition = in.readByteArray();
+        mainClassDefinition = in.readByteArray();
+        if (isGreaterOrEqualV39(in.getVersion())) {
+            int size = in.readInt();
+            innerClassDefinitions = new HashMap<String, byte[]>();
+            for (int i = 0; i < size; i++) {
+                innerClassDefinitions.put(in.readUTF(), in.readByteArray());
+            }
+        }
+    }
+
+    private static boolean isGreaterOrEqualV39(Version version) {
+        return version.isGreaterOrEqual(V3_9);
     }
 }

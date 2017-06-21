@@ -23,6 +23,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,6 +35,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
+import usercodedeployment.EntryProcessorWithAnonymousAndInner;
 import usercodedeployment.IncrementingEntryProcessor;
 
 import java.util.Collection;
@@ -92,53 +94,68 @@ public class ClientUserCodeDeploymentTest extends HazelcastTestSupport {
 
     @Test
     public void testSingleMember() {
-        ClientConfig config = createClientConfig();
-        Config clientConfig = createNodeConfig();
+        ClientConfig clientConfig = createClientConfig();
+        Config config = createNodeConfig();
 
-        factory.newHazelcastInstance(clientConfig);
-        HazelcastInstance client = factory.newHazelcastClient(config);
+        factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
 
-        assertCodeDeploymentWorking(client);
+        assertCodeDeploymentWorking(client, new IncrementingEntryProcessor());
     }
 
     @Test
     public void testWithMultipleMembers() {
-        ClientConfig config = createClientConfig();
-        Config clientConfig = createNodeConfig();
+        ClientConfig clientConfig = createClientConfig();
+        Config config = createNodeConfig();
 
-        factory.newHazelcastInstance(clientConfig);
-        HazelcastInstance client = factory.newHazelcastClient(config);
-        factory.newHazelcastInstance(clientConfig);
+        factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+        factory.newHazelcastInstance(config);
 
-        assertCodeDeploymentWorking(client);
+        assertCodeDeploymentWorking(client, new IncrementingEntryProcessor());
     }
 
     @Test
     public void testWithMultipleNodes_clientReconnectsToNewNode() {
-        ClientConfig config = createClientConfig();
-        Config clientConfig = createNodeConfig();
+        ClientConfig clientConfig = createClientConfig();
+        Config config = createNodeConfig();
 
-        HazelcastInstance firstInstance = factory.newHazelcastInstance(clientConfig);
-        HazelcastInstance client = factory.newHazelcastClient(config);
-        factory.newHazelcastInstance(clientConfig);
+        HazelcastInstance firstInstance = factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+        factory.newHazelcastInstance(config);
         firstInstance.getLifecycleService().shutdown();
 
-        assertCodeDeploymentWorking(client);
+        assertCodeDeploymentWorking(client, new IncrementingEntryProcessor());
     }
 
-    private void assertCodeDeploymentWorking(HazelcastInstance client) {
-        IncrementingEntryProcessor incrementingEntryProcessor = new IncrementingEntryProcessor();
+    private void assertCodeDeploymentWorking(HazelcastInstance client, EntryProcessor entryProcessor) {
         int keyCount = 100;
         IMap<Integer, Integer> map = client.getMap(randomName());
 
         for (int i = 0; i < keyCount; i++) {
             map.put(i, 0);
         }
-        map.executeOnEntries(incrementingEntryProcessor);
+        map.executeOnEntries(entryProcessor);
 
         for (int i = 0; i < keyCount; i++) {
             assertEquals(1, (int) map.get(i));
         }
+    }
+
+    @Test
+    public void testWithMultipleMembers_anonymousAndInnerClasses() {
+        ClientConfig clientConfig = new ClientConfig();
+        ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
+        clientUserCodeDeploymentConfig.addJar("EntryProcessorWithAnonymousAndInner.jar");
+        clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig.setEnabled(true));
+
+        Config config = createNodeConfig();
+
+        factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+        factory.newHazelcastInstance(config);
+
+        assertCodeDeploymentWorking(client, new EntryProcessorWithAnonymousAndInner());
     }
 
 }
