@@ -52,4 +52,9 @@ public class QuorumListenerConfig extends ListenerConfig {
     public boolean isLocal() {
         return true;
     }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.QUORUM_LISTENER_CONFIG;
+    }
 }

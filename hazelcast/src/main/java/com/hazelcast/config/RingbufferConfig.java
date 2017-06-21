@@ -325,7 +325,7 @@ public class RingbufferConfig implements IdentifiedDataSerializable {
      * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public RingbufferConfig getAsReadOnly() {
-        return new RingbufferConfigReadonly(this);
+        return new RingbufferConfigReadOnly(this);
     }
 
     @Override
@@ -409,9 +409,9 @@ public class RingbufferConfig implements IdentifiedDataSerializable {
      * A readonly version of the {@link RingbufferConfig}.
      */
     @Beta
-    private static class RingbufferConfigReadonly extends RingbufferConfig {
+    private static class RingbufferConfigReadOnly extends RingbufferConfig {
 
-        RingbufferConfigReadonly(RingbufferConfig config) {
+        RingbufferConfigReadOnly(RingbufferConfig config) {
             super(config);
         }
 

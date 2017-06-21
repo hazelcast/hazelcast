@@ -118,7 +118,7 @@ public class LockConfig implements IdentifiedDataSerializable {
      * @deprecated this method will be removed in 4.0; it is meant for internal usage only
      */
     public LockConfig getAsReadOnly() {
-        return new LockConfigReadonly(this);
+        return new LockConfigReadOnly(this);
     }
 
     @Override
@@ -177,9 +177,9 @@ public class LockConfig implements IdentifiedDataSerializable {
     /**
      * A readonly version of the {@link LockConfig}.
      */
-    private static class LockConfigReadonly extends LockConfig {
+    private static class LockConfigReadOnly extends LockConfig {
 
-        LockConfigReadonly(LockConfig config) {
+        LockConfigReadOnly(LockConfig config) {
             super(config);
         }
 

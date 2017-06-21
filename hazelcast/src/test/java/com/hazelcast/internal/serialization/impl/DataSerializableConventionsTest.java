@@ -175,7 +175,7 @@ public class DataSerializableConventionsTest {
         Set<Class<? extends IdentifiedDataSerializable>> identifiedDataSerializables = getIDSConcreteClasses();
         for (Class<? extends IdentifiedDataSerializable> klass : identifiedDataSerializables) {
             // exclude classes which are known to be meant for local use only
-            if (!AbstractLocalOperation.class.isAssignableFrom(klass)) {
+            if (!AbstractLocalOperation.class.isAssignableFrom(klass) && !isReadOnlyConfig(klass)) {
                 // wrap all of this in try-catch, as it is legitimate for some classes to throw UnsupportedOperationException
                 try {
                     Constructor<? extends IdentifiedDataSerializable> ctor = klass.getDeclaredConstructor();
@@ -241,6 +241,9 @@ public class DataSerializableConventionsTest {
             if (AbstractLocalOperation.class.isAssignableFrom(klass)) {
                 continue;
             }
+            if (isReadOnlyConfig(klass)) {
+                continue;
+            }
             // wrap all of this in try-catch, as it is legitimate for some classes to throw UnsupportedOperationException
             try {
                 Constructor<? extends IdentifiedDataSerializable> ctor = klass.getDeclaredConstructor();
@@ -263,6 +266,11 @@ public class DataSerializableConventionsTest {
                 // expected from local operation classes not meant for serialization
             }
         }
+    }
+
+    private boolean isReadOnlyConfig(Class<? extends IdentifiedDataSerializable> klass) {
+        String className = klass.getName();
+        return className.endsWith("ReadOnly") && className.contains("Config");
     }
 
     /**
