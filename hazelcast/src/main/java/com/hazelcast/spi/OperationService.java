@@ -16,12 +16,10 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.core.MemberSelector;
 import com.hazelcast.nio.Address;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * The OperationService is responsible for executing operations.

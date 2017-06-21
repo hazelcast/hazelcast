@@ -99,12 +99,11 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class ClientDynamicClusterConfig extends Config {
+    private static final String UNSUPPORTED_ERROR_MESSAGE =
+            "Client config object only supports adding new data structure configurations";
 
     private final HazelcastClientInstanceImpl instance;
     private final SerializationService serializationService;
-
-    private static final String UNSUPPORTED_ERROR_MESSAGE =
-            "Client config object only supports adding new data structure configurations";
 
     public ClientDynamicClusterConfig(HazelcastClientInstanceImpl instance) {
         this.instance = instance;
