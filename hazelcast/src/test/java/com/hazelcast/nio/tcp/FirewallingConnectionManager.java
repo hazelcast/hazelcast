@@ -111,12 +111,12 @@ public class FirewallingConnectionManager implements ConnectionManager, PacketHa
     }
 
     private boolean isAllowed(Packet packet, Address target) {
-        boolean allowed = true;
-        PacketFilter filter = droppingPacketFilter;
-        if (filter != null) {
-            allowed = filter.allow(packet, target);
+        if (blockedAddresses.contains(target)) {
+            return false;
         }
-        return allowed;
+
+        PacketFilter filter = droppingPacketFilter;
+        return filter == null || filter.allow(packet, target);
     }
 
     private long getDelayMs(Packet packet, Address target) {
