@@ -77,7 +77,7 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
             getBoolean("hazelcast.dynamicconfig.ignore.conflicts");
 
     private final DynamicConfigListener listener;
-    private Object journalMutex = new Object();
+    private final Object journalMutex = new Object();
 
     private NodeEngine nodeEngine;
     private final ConcurrentMap<String, MapConfig> mapConfigs = new ConcurrentHashMap<String, MapConfig>();
