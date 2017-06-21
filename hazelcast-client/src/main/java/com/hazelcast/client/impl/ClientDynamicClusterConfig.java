@@ -93,11 +93,12 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
- * Provides means to submit a new data structure configuration from a client.
+ * Client implementation of member side config. Clients use this to submit new data structure configurations into
+ * a live Hazelcast cluster.
  *
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
-public class DynamicClusterConfig extends Config {
+public class ClientDynamicClusterConfig extends Config {
 
     private final HazelcastClientInstanceImpl instance;
     private final SerializationService serializationService;
@@ -105,7 +106,7 @@ public class DynamicClusterConfig extends Config {
     private static final String UNSUPPORTED_ERROR_MESSAGE =
             "Client config object only supports adding new data structure configurations";
 
-    public DynamicClusterConfig(HazelcastClientInstanceImpl instance) {
+    public ClientDynamicClusterConfig(HazelcastClientInstanceImpl instance) {
         this.instance = instance;
         this.serializationService = instance.getSerializationService();
     }

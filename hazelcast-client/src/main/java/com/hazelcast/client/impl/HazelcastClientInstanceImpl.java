@@ -456,7 +456,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     @Override
     public Config getConfig() {
-        return new DynamicClusterConfig(this);
+        return new ClientDynamicClusterConfig(this);
     }
 
     public HazelcastProperties getProperties() {
