@@ -38,6 +38,10 @@
             <address>127.0.0.1</address>
             <address>127.0.0.2</address>
         </cluster-members>
+        <outbound-ports>
+            <ports>34600</ports>
+            <ports>34700-34710</ports>
+        </outbound-ports>
         <smart-routing>true</smart-routing>
         <redo-operation>true</redo-operation>
         <connection-timeout>60000</connection-timeout>

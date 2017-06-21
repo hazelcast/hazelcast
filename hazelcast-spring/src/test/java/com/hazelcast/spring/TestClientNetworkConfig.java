@@ -33,6 +33,8 @@ import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -116,4 +118,15 @@ public class TestClientNetworkConfig {
         DiscoveryStrategyConfig discoveryStrategyConfig4 = discoveryStrategyConfigs.get(3);
         assertTrue(discoveryStrategyConfig4.getDiscoveryStrategyFactory() instanceof DummyDiscoveryStrategyFactory);
     }
+
+    @Test
+    public void smokeOutboundPorts() {
+        ClientConfig config = client.getClientConfig();
+        Collection<String> allowedPorts = config.getNetworkConfig().getOutboundPortDefinitions();
+        assertEquals(2, allowedPorts.size());
+        Iterator portIter = allowedPorts.iterator();
+        assertEquals("34600", portIter.next());
+        assertEquals("34700-34710", portIter.next());
+    }
+
 }
