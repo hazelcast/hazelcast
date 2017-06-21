@@ -312,6 +312,16 @@ public class ClientNetworkConfig {
         return outboundPortDefinitions;
     }
 
+    public ClientNetworkConfig setOutboundPortDefinitions(final Collection<String> outboundPortDefs) {
+        this.outboundPortDefinitions = outboundPortDefs;
+        return this;
+    }
+
+    public ClientNetworkConfig setOutboundPorts(final Collection<Integer> outboundPorts) {
+        this.outboundPorts = outboundPorts;
+        return this;
+    }
+
     public ClientNetworkConfig addOutboundPort(int port) {
         if (outboundPorts == null) {
             outboundPorts = new HashSet<Integer>();
