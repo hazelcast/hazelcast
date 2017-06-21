@@ -45,6 +45,8 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelFactory;
@@ -94,14 +96,13 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
  * Implementation of {@link ClientConnectionManager}.
  */
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
-public class ClientConnectionManagerImpl implements ClientConnectionManager, ConnectionHeartbeatListener {
+public class ClientConnectionManagerImpl implements ClientConnectionManager, ConnectionHeartbeatListener, MetricsProvider {
 
     private static final int DEFAULT_SSL_THREAD_COUNT = 3;
 
     protected final AtomicInteger connectionIdGen = new AtomicInteger();
 
     protected volatile boolean alive;
-
 
     private final ILogger logger;
     private final int connectionTimeout;
@@ -162,6 +163,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
         connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
         connectionAttemptLimit = connAttemptLimit == 0 ? Integer.MAX_VALUE : connAttemptLimit;
+    }
+
+    @Override
+    public void provideMetrics(MetricsRegistry registry) {
+        registry.collectMetrics(eventLoopGroup);
     }
 
     private ClientConnectionStrategy initializeStrategy(HazelcastClientInstanceImpl client) {
