@@ -96,6 +96,7 @@ public class DynamicConfigSmokeTest extends HazelcastTestSupport {
 
         //start an instance AFTER the config was already submitted
         HazelcastInstance i3 = factory.newHazelcastInstance();
+        waitAllForSafeState(i1, i2, i3);
 
         multiMapConfig = i3.getConfig().getMultiMapConfig(mapName);
         assertEquals(TestConfigUtils.NON_DEFAULT_BACKUP_COUNT, multiMapConfig.getBackupCount());
