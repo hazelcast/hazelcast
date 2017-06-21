@@ -28,10 +28,6 @@ import com.hazelcast.spi.partition.IPartitionService;
 import java.util.Collection;
 import java.util.UUID;
 
-import static com.hazelcast.internal.nearcache.impl.invalidation.ToHeapDataConverter.toHeapData;
-import static java.lang.String.format;
-
-
 /**
  * Invalidates near caches. Contains shared functionality.
  */
@@ -92,20 +88,18 @@ public abstract class Invalidator {
 
     private Invalidation newKeyInvalidation(Data key, String dataStructureName, String sourceUuid) {
         int partitionId = getPartitionId(key);
-        long sequence = metaDataGenerator.nextSequence(dataStructureName, partitionId);
-        UUID partitionUuid = metaDataGenerator.getOrCreateUuid(partitionId);
-        if (logger.isFinestEnabled()) {
-            logger.finest(format("dataStructureName=%s, partition=%d, sequence=%d, uuid=%s",
-                    dataStructureName, partitionId, sequence, partitionUuid));
-        }
-        return new SingleNearCacheInvalidation(toHeapData(key), dataStructureName, sourceUuid, partitionUuid, sequence);
+        return newInvalidation(key, dataStructureName, sourceUuid, partitionId);
     }
 
     protected final Invalidation newClearInvalidation(String dataStructureName, String sourceUuid) {
         int partitionId = getPartitionId(dataStructureName);
+        return newInvalidation(null, dataStructureName, sourceUuid, partitionId);
+    }
+
+    protected Invalidation newInvalidation(Data key, String dataStructureName, String sourceUuid, int partitionId) {
         long sequence = metaDataGenerator.nextSequence(dataStructureName, partitionId);
         UUID partitionUuid = metaDataGenerator.getOrCreateUuid(partitionId);
-        return new SingleNearCacheInvalidation(null, dataStructureName, sourceUuid, partitionUuid, sequence);
+        return new SingleNearCacheInvalidation(key, dataStructureName, sourceUuid, partitionUuid, sequence);
     }
 
     private int getPartitionId(Data o) {

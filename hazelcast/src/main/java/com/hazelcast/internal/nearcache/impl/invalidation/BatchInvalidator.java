@@ -21,6 +21,7 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
@@ -69,6 +70,7 @@ public class BatchInvalidator extends Invalidator {
     private final int batchSize;
     private final int batchFrequencySeconds;
     private final String nodeShutdownListenerId;
+    private final AtomicBoolean runningBackgroundTask = new AtomicBoolean(false);
 
     public BatchInvalidator(String serviceName, int batchSize, int batchFrequencySeconds,
                             IFunction<EventRegistration, Boolean> eventFilter, NodeEngine nodeEngine) {
@@ -78,7 +80,12 @@ public class BatchInvalidator extends Invalidator {
         this.batchFrequencySeconds = batchFrequencySeconds;
         this.nodeShutdownListenerId = registerNodeShutdownListener();
         this.invalidationExecutorName = serviceName + getClass();
-        startBackgroundBatchProcessor();
+    }
+
+    @Override
+    protected Invalidation newInvalidation(Data key, String dataStructureName, String sourceUuid, int partitionId) {
+        checkBackgroundTaskIsRunning();
+        return super.newInvalidation(key, dataStructureName, sourceUuid, partitionId);
     }
 
     @Override
@@ -167,11 +174,17 @@ public class BatchInvalidator extends Invalidator {
         });
     }
 
-    private void startBackgroundBatchProcessor() {
-        ExecutionService executionService = nodeEngine.getExecutionService();
-        executionService.scheduleWithRepetition(invalidationExecutorName,
-                new BatchInvalidationEventSender(), batchFrequencySeconds, batchFrequencySeconds, SECONDS);
+    private void checkBackgroundTaskIsRunning() {
+        if (runningBackgroundTask.get()) {
+            // return if already started
+            return;
+        }
 
+        if (runningBackgroundTask.compareAndSet(false, true)) {
+            ExecutionService executionService = nodeEngine.getExecutionService();
+            executionService.scheduleWithRepetition(invalidationExecutorName,
+                    new BatchInvalidationEventSender(), batchFrequencySeconds, batchFrequencySeconds, SECONDS);
+        }
     }
 
     /**
