@@ -430,7 +430,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                 new NetworkingPlugin(properties, connectionManager.getEventLoopGroup(),
                         loggingService.getLogger(NetworkingPlugin.class)));
 
-        metricsRegistry.collectMetrics(listenerService);
+        metricsRegistry.collectMetrics(listenerService, connectionManager);
 
         proxyManager.init(config, clientContext);
         listenerService.start();
