@@ -72,7 +72,7 @@ import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBas
 public class DynamicConfigurationAwareConfig extends Config {
     private final Config staticConfig;
     private final ConfigPatternMatcher configPatternMatcher;
-    private ConfigurationService configurationService = new EmptyConfigurationService();
+    private volatile ConfigurationService configurationService = new EmptyConfigurationService();
 
     public DynamicConfigurationAwareConfig(Config staticConfig) {
         this.staticConfig = staticConfig;
