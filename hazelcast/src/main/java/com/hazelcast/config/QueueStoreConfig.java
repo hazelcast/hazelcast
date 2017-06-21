@@ -165,4 +165,48 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
         storeImplementation = in.readObject();
         factoryImplementation = in.readObject();
     }
+
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        QueueStoreConfig that = (QueueStoreConfig) o;
+        if (isEnabled() != that.isEnabled()) {
+            return false;
+        }
+        if (getClassName() != null ? !getClassName().equals(that.getClassName()) : that.getClassName() != null) {
+            return false;
+        }
+        if (getFactoryClassName() != null ? !getFactoryClassName().equals(that.getFactoryClassName())
+                : that.getFactoryClassName() != null) {
+            return false;
+        }
+        if (getProperties() != null ? !getProperties().equals(that.getProperties()) : that.getProperties() != null) {
+            return false;
+        }
+        if (getStoreImplementation() != null ? !getStoreImplementation().equals(that.getStoreImplementation())
+                : that.getStoreImplementation() != null) {
+            return false;
+        }
+        return getFactoryImplementation() != null ? getFactoryImplementation().equals(that.getFactoryImplementation())
+                : that.getFactoryImplementation() == null;
+    }
+
+    @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    public int hashCode() {
+        int result = (isEnabled() ? 1 : 0);
+        result = 31 * result + (getClassName() != null ? getClassName().hashCode() : 0);
+        result = 31 * result + (getFactoryClassName() != null ? getFactoryClassName().hashCode() : 0);
+        result = 31 * result + (getProperties() != null ? getProperties().hashCode() : 0);
+        result = 31 * result + (getStoreImplementation() != null ? getStoreImplementation().hashCode() : 0);
+        result = 31 * result + (getFactoryImplementation() != null ? getFactoryImplementation().hashCode() : 0);
+        return result;
+    }
 }

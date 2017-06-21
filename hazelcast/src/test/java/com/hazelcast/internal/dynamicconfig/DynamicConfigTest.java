@@ -32,6 +32,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.QueueConfig;
+import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
@@ -218,6 +220,24 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testQueueConfig() {
+        QueueConfig config = getQueueConfig();
+
+        driver.getConfig().addQueueConfig(config);
+
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
+    public void testQueueConfig_withListeners() {
+        QueueConfig config = getQueueConfig_withListeners();
+
+        driver.getConfig().addQueueConfig(config);
+
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
     public void testRingbufferConfig_whenConfiguredWithRingbufferStore_byClassName() {
         RingbufferConfig config = getRingbufferConfig();
         config.getRingbufferStoreConfig().setEnabled(true).setClassName("com.hazelcast.Foo");
@@ -293,6 +313,14 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         driver.getConfig().addSetConfig(setConfig);
 
         assertConfigurationsEqualsOnAllMembers(setConfig);
+    }
+
+    private void assertConfigurationsEqualsOnAllMembers(QueueConfig queueConfig) {
+        String name = queueConfig.getName();
+        for (HazelcastInstance instance : members) {
+            QueueConfig registeredConfig = instance.getConfig().getQueueConfig(name);
+            assertEquals(queueConfig, registeredConfig);
+        }
     }
 
     private void assertConfigurationsEqualsOnAllMembers(LockConfig lockConfig) {
@@ -434,6 +462,34 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         config.setBackupCount(4);
         config.setAsyncBackupCount(2);
         return config;
+    }
+
+    public QueueConfig getQueueConfig() {
+        String name = randomName();
+        QueueConfig queueConfig = new QueueConfig(name);
+        queueConfig.setBackupCount(2);
+        queueConfig.setAsyncBackupCount(2);
+        // no explicit max size - let's test encoding of the default value
+        queueConfig.setEmptyQueueTtl(10);
+        queueConfig.setQueueStoreConfig(new QueueStoreConfig().setClassName("foo.bar.ImplName").setEnabled(true));
+        queueConfig.setStatisticsEnabled(false);
+        queueConfig.setQuorumName("myQuorum");
+        return queueConfig;
+    }
+
+    public QueueConfig getQueueConfig_withListeners() {
+        String name = randomName();
+        QueueConfig queueConfig = new QueueConfig(name);
+        queueConfig.addItemListenerConfig(new ItemListenerConfig("foo.bar.SampleItemListener", true));
+        queueConfig.addItemListenerConfig(new ItemListenerConfig(new SampleItemListener(), false));
+        queueConfig.setBackupCount(2);
+        queueConfig.setAsyncBackupCount(2);
+        queueConfig.setMaxSize(1000);
+        queueConfig.setEmptyQueueTtl(10);
+        queueConfig.setQueueStoreConfig(new QueueStoreConfig().setClassName("foo.bar.ImplName").setEnabled(true));
+        queueConfig.setStatisticsEnabled(false);
+        queueConfig.setQuorumName("myQuorum");
+        return queueConfig;
     }
 
     public static class SampleEntryListener implements EntryAddedListener, Serializable {

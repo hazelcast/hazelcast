@@ -378,7 +378,7 @@ public class QueueConfig implements IdentifiedDataSerializable {
         if (asyncBackupCount != that.asyncBackupCount) {
             return false;
         }
-        if (maxSize != that.maxSize) {
+        if (getMaxSize() != getMaxSize()) {
             return false;
         }
         if (emptyQueueTtl != that.emptyQueueTtl) {
@@ -390,7 +390,7 @@ public class QueueConfig implements IdentifiedDataSerializable {
         if (!name.equals(that.name)) {
             return false;
         }
-        if (listenerConfigs != null ? !listenerConfigs.equals(that.listenerConfigs) : that.listenerConfigs != null) {
+        if (!getItemListenerConfigs().equals(that.getItemListenerConfigs())) {
             return false;
         }
         if (queueStoreConfig != null
@@ -403,10 +403,10 @@ public class QueueConfig implements IdentifiedDataSerializable {
     @Override
     public int hashCode() {
         int result = name.hashCode();
-        result = 31 * result + (listenerConfigs != null ? listenerConfigs.hashCode() : 0);
+        result = 31 * result + getItemListenerConfigs().hashCode();
         result = 31 * result + backupCount;
         result = 31 * result + asyncBackupCount;
-        result = 31 * result + maxSize;
+        result = 31 * result + getMaxSize();
         result = 31 * result + emptyQueueTtl;
         result = 31 * result + (queueStoreConfig != null ? queueStoreConfig.hashCode() : 0);
         result = 31 * result + (statisticsEnabled ? 1 : 0);
