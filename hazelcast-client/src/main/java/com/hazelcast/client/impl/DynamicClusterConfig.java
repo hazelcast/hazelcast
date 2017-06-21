@@ -310,7 +310,7 @@ public class DynamicClusterConfig extends Config {
 
     @Override
     public Config addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
-        throw new UnsupportedOperationException("Dynamically adding WAN replication config is not supported");
+        return super.addWanReplicationConfig(wanReplicationConfig);
     }
 
     @Override
