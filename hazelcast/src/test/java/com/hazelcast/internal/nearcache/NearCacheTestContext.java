@@ -13,11 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.cache.impl.HazelcastServerCacheManager;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
+import com.hazelcast.internal.adapter.DataStructureLoader;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -26,64 +29,106 @@ import javax.cache.CacheManager;
 /**
  * Context for unified Near Cache tests.
  */
+@SuppressWarnings("WeakerAccess")
 public class NearCacheTestContext<K, V, NK, NV> {
 
+    /**
+     * The {@link NearCacheConfig} of the configured Near Cache.
+     */
+    public final NearCacheConfig nearCacheConfig;
+    /**
+     * The {@link SerializationService} used by the configured Near Cache.
+     */
     public final SerializationService serializationService;
-    public final HazelcastInstance nearCacheInstance;
-    public final HazelcastInstance dataInstance;
-    public final DataStructureAdapter<K, V> nearCacheAdapter;
-    public final DataStructureAdapter<K, V> dataAdapter;
-    public final boolean hasLocalData;
 
+    /**
+     * The {@link HazelcastInstance} which has the configured Near Cache.
+     *
+     * In a scenario with Hazelcast client and member, this will be the client.
+     */
+    public final HazelcastInstance nearCacheInstance;
+    /**
+     * The {@link HazelcastInstance} which holds backing data structure for the Near Cache.
+     *
+     * In a scenario with Hazelcast client and member, this will be the member.
+     */
+    public final HazelcastInstance dataInstance;
+    /**
+     * The {@link DataStructureAdapter} which has the configured Near Cache.
+     *
+     * In a scenario with Hazelcast client and member, this will be the near cached data structure on the client.
+     */
+    public final DataStructureAdapter<K, V> nearCacheAdapter;
+    /**
+     * The {@link DataStructureAdapter} which has the original data.
+     *
+     * In a scenario with Hazelcast client and member, this will be the original data structure on the member.
+     */
+    public final DataStructureAdapter<K, V> dataAdapter;
+
+    /**
+     * The configured {@link NearCache}.
+     */
     public final NearCache<NK, NV> nearCache;
+    /**
+     * The {@link NearCacheStats} of the configured Near Cache.
+     */
     public final NearCacheStats stats;
+    /**
+     * The {@link NearCacheManager} which manages the configured Near Cache.
+     */
     public final NearCacheManager nearCacheManager;
+    /**
+     * The {@link CacheManager} if the configured {@link DataStructureAdapter} is a JCache implementation.
+     */
     public final CacheManager cacheManager;
+    /**
+     * The {@link HazelcastServerCacheManager} if the configured {@link DataStructureAdapter} is a JCache implementation.
+     */
     public final HazelcastServerCacheManager memberCacheManager;
 
-    public NearCacheTestContext(SerializationService serializationService,
-                                HazelcastInstance nearCacheInstance,
-                                DataStructureAdapter<K, V> nearCacheAdapter,
-                                boolean hasLocalData,
-                                NearCache<NK, NV> nearCache,
-                                NearCacheManager nearCacheManager) {
-        this(serializationService, nearCacheInstance, nearCacheInstance, nearCacheAdapter, nearCacheAdapter, hasLocalData,
-                nearCache, nearCacheManager, null, null);
-    }
+    /**
+     * Specifies if the we are able to retrieve {@link DataStructureAdapter#getLocalMapStats()}.
+     */
+    public final boolean hasLocalData;
+    /**
+     * The {@link DataStructureLoader} which loads entries into the data structure.
+     */
+    public final DataStructureLoader loader;
+    /**
+     * The {@link NearCacheInvalidationListener} which monitors invalidation events.
+     */
+    public final NearCacheInvalidationListener invalidationListener;
 
-    public NearCacheTestContext(SerializationService serializationService,
-                                HazelcastInstance nearCacheInstance,
-                                HazelcastInstance dataInstance,
-                                DataStructureAdapter<K, V> nearCacheAdapter,
-                                DataStructureAdapter<K, V> dataAdapter,
-                                boolean hasLocalData,
-                                NearCache<NK, NV> nearCache,
-                                NearCacheManager nearCacheManager) {
-        this(serializationService, nearCacheInstance, dataInstance, nearCacheAdapter, dataAdapter, hasLocalData,
-                nearCache, nearCacheManager, null, null);
-    }
-
-    public NearCacheTestContext(SerializationService serializationService,
-                                HazelcastInstance nearCacheInstance,
-                                HazelcastInstance dataInstance,
-                                DataStructureAdapter<K, V> nearCacheAdapter,
-                                DataStructureAdapter<K, V> dataAdapter,
-                                boolean hasLocalData,
-                                NearCache<NK, NV> nearCache,
-                                NearCacheManager nearCacheManager,
-                                CacheManager cacheManager,
-                                HazelcastServerCacheManager memberCacheManager) {
+    NearCacheTestContext(NearCacheConfig nearCacheConfig,
+                         SerializationService serializationService,
+                         HazelcastInstance nearCacheInstance,
+                         HazelcastInstance dataInstance,
+                         DataStructureAdapter<K, V> nearCacheAdapter,
+                         DataStructureAdapter<K, V> dataAdapter,
+                         NearCache<NK, NV> nearCache,
+                         NearCacheManager nearCacheManager,
+                         CacheManager cacheManager,
+                         HazelcastServerCacheManager memberCacheManager,
+                         boolean hasLocalData,
+                         DataStructureLoader loader,
+                         NearCacheInvalidationListener invalidationListener) {
+        this.nearCacheConfig = nearCacheConfig;
         this.serializationService = serializationService;
+
         this.nearCacheInstance = nearCacheInstance;
         this.dataInstance = dataInstance;
         this.nearCacheAdapter = nearCacheAdapter;
         this.dataAdapter = dataAdapter;
-        this.hasLocalData = hasLocalData;
 
         this.nearCache = nearCache;
         this.stats = (nearCache == null) ? null : nearCache.getNearCacheStats();
         this.nearCacheManager = nearCacheManager;
         this.cacheManager = cacheManager;
         this.memberCacheManager = memberCacheManager;
+
+        this.hasLocalData = hasLocalData;
+        this.loader = loader;
+        this.invalidationListener = invalidationListener;
     }
 }

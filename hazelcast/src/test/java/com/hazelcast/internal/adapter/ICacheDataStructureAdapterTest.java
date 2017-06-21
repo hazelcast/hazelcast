@@ -19,7 +19,9 @@ package com.hazelcast.internal.adapter;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CacheConfiguration;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -31,11 +33,18 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.cache.CacheManager;
+import javax.cache.configuration.FactoryBuilder;
+import javax.cache.processor.EntryProcessorResult;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.HazelcastServerCachingProvider.createCachingProvider;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -46,7 +55,10 @@ import static org.junit.Assert.assertTrue;
 public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
 
     private ICache<Integer, String> cache;
+    private ICache<Integer, String> cacheWithLoader;
+
     private ICacheDataStructureAdapter<Integer, String> adapter;
+    private ICacheDataStructureAdapter<Integer, String> adapterWithLoader;
 
     @Before
     public void setUp() {
@@ -57,34 +69,24 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
 
         CacheConfig<Integer, String> cacheConfig = new CacheConfig<Integer, String>();
 
+        CacheConfiguration<Integer, String> cacheConfigWithLoader = new CacheConfig<Integer, String>()
+                .setReadThrough(true)
+                .setCacheLoaderFactory(FactoryBuilder.factoryOf(ICacheCacheLoader.class));
+
         cache = (ICache<Integer, String>) cacheManager.createCache("CacheDataStructureAdapterTest", cacheConfig);
+        cacheWithLoader = (ICache<Integer, String>) cacheManager.createCache("CacheDataStructureAdapterLoaderTest",
+                cacheConfigWithLoader);
+
         adapter = new ICacheDataStructureAdapter<Integer, String>(cache);
+        adapterWithLoader = new ICacheDataStructureAdapter<Integer, String>(cacheWithLoader);
     }
 
     @Test
-    public void testClear() {
-        cache.put(23, "foobar");
+    public void testSize() {
+        cache.put(23, "foo");
+        cache.put(42, "bar");
 
-        adapter.clear();
-
-        assertEquals(0, cache.size());
-    }
-
-    @Test
-    public void testSet() {
-        adapter.set(23, "test");
-
-        assertEquals("test", cache.get(23));
-    }
-
-    @Test
-    public void testPut() {
-        cache.put(42, "oldValue");
-
-        String oldValue = adapter.put(42, "newValue");
-
-        assertEquals("oldValue", oldValue);
-        assertEquals("newValue", cache.get(42));
+        assertEquals(2, adapter.size());
     }
 
     @Test
@@ -105,17 +107,154 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutAll() {
-        Map<Integer, String> expectedResult = new HashMap<Integer, String>();
-        expectedResult.put(23, "value-23");
-        expectedResult.put(42, "value-42");
+    public void testSet() {
+        adapter.set(23, "test");
 
-        adapter.putAll(expectedResult);
+        assertEquals("test", cache.get(23));
+    }
 
-        assertEquals(expectedResult.size(), cache.size());
-        for (Integer key : expectedResult.keySet()) {
-            assertTrue(cache.containsKey(key));
-        }
+    @Test
+    public void testPut() {
+        cache.put(42, "oldValue");
+
+        String oldValue = adapter.put(42, "newValue");
+
+        assertEquals("oldValue", oldValue);
+        assertEquals("newValue", cache.get(42));
+    }
+
+    @Test
+    public void testPutIfAbsent() {
+        cache.put(42, "oldValue");
+
+        assertTrue(adapter.putIfAbsent(23, "newValue"));
+        assertFalse(adapter.putIfAbsent(42, "newValue"));
+
+        assertEquals("newValue", cache.get(23));
+        assertEquals("oldValue", cache.get(42));
+    }
+
+    @Test
+    public void testPutIfAbsentAsync() throws Exception {
+        cache.put(42, "oldValue");
+
+        assertTrue(adapter.putIfAbsentAsync(23, "newValue").get());
+        assertFalse(adapter.putIfAbsentAsync(42, "newValue").get());
+
+        assertEquals("newValue", cache.get(23));
+        assertEquals("oldValue", cache.get(42));
+    }
+
+    @Test
+    public void testReplace() {
+        cache.put(42, "oldValue");
+
+        String oldValue = adapter.replace(42, "newValue");
+
+        assertEquals("oldValue", oldValue);
+        assertEquals("newValue", cache.get(42));
+    }
+
+    @Test
+    public void testReplaceWithOldValue() {
+        cache.put(42, "oldValue");
+
+        assertFalse(adapter.replace(42, "foobar", "newValue"));
+        assertTrue(adapter.replace(42, "oldValue", "newValue"));
+
+        assertEquals("newValue", cache.get(42));
+    }
+
+    @Test
+    public void testRemove() {
+        cache.put(23, "value-23");
+        assertTrue(cache.containsKey(23));
+
+        adapter.remove(23);
+        assertFalse(cache.containsKey(23));
+    }
+
+    @Test
+    public void testRemoveWithOldValue() {
+        cache.put(23, "value-23");
+        assertTrue(cache.containsKey(23));
+
+        assertFalse(adapter.remove(23, "foobar"));
+        assertTrue(adapter.remove(23, "value-23"));
+        assertFalse(cache.containsKey(23));
+    }
+
+    @Test
+    public void testRemoveAsync() throws Exception {
+        cache.put(23, "value-23");
+        assertTrue(cache.containsKey(23));
+
+        String value = adapter.removeAsync(23).get();
+        assertEquals("value-23", value);
+
+        assertFalse(cache.containsKey(23));
+    }
+
+    @Test
+    public void testInvoke() {
+        cache.put(23, "value-23");
+        cache.put(42, "value-42");
+
+        String result = adapter.invoke(23, new ICacheReplaceEntryProcessor(), "value", "newValue");
+        assertEquals("newValue-23", result);
+
+        assertEquals("newValue-23", cache.get(23));
+        assertEquals("value-42", cache.get(42));
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testExecuteOnKey() {
+        adapter.executeOnKey(23, new IMapReplaceEntryProcessor("value", "newValue"));
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testExecuteOnKeys() {
+        Set<Integer> keys = new HashSet<Integer>(singleton(23));
+        adapter.executeOnKeys(keys, new IMapReplaceEntryProcessor("value", "newValue"));
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testExecuteOnEntries() {
+        adapter.executeOnEntries(new IMapReplaceEntryProcessor("value", "newValue"));
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testExecuteOnEntriesWithPredicate() {
+        adapter.executeOnEntries(new IMapReplaceEntryProcessor("value", "newValue"), TruePredicate.INSTANCE);
+    }
+
+    @Test
+    public void testContainsKey() {
+        cache.put(23, "value-23");
+
+        assertTrue(adapter.containsKey(23));
+        assertFalse(adapter.containsKey(42));
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testLoadAll() {
+        adapterWithLoader.loadAll(true);
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testLoadAllWithKeys() {
+        adapterWithLoader.loadAll(Collections.<Integer>emptySet(), true);
+    }
+
+    @Test
+    public void testLoadAllWithListener() {
+        ICacheCompletionListener listener = new ICacheCompletionListener();
+        cacheWithLoader.put(23, "value-23");
+
+        adapterWithLoader.loadAll(Collections.singleton(23), true, listener);
+        listener.await();
+
+        assertEquals("newValue-23", cacheWithLoader.get(23));
     }
 
     @Test
@@ -132,24 +271,78 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemove() {
+    public void testPutAll() {
+        Map<Integer, String> expectedResult = new HashMap<Integer, String>();
+        expectedResult.put(23, "value-23");
+        expectedResult.put(42, "value-42");
+
+        adapter.putAll(expectedResult);
+
+        assertEquals(expectedResult.size(), cache.size());
+        for (Integer key : expectedResult.keySet()) {
+            assertTrue(cache.containsKey(key));
+        }
+    }
+
+    @Test
+    public void testRemoveAll() {
         cache.put(23, "value-23");
+        cache.put(42, "value-42");
+
+        adapter.removeAll();
+
+        assertEquals(0, cache.size());
+    }
+
+    @Test
+    public void testRemoveAllWithKeys() {
+        cache.put(23, "value-23");
+        cache.put(42, "value-42");
+
+        adapter.removeAll(singleton(42));
+
+        assertEquals(1, cache.size());
         assertTrue(cache.containsKey(23));
-
-        adapter.remove(23);
-        assertFalse(cache.containsKey(23));
+        assertFalse(cache.containsKey(42));
     }
 
     @Test
-    public void testGetLocalMapStats() {
-        assertNull(adapter.getLocalMapStats());
-    }
-
-    @Test
-    public void testContainsKey() {
+    public void testInvokeAll() {
         cache.put(23, "value-23");
+        cache.put(42, "value-42");
+        cache.put(65, "value-65");
 
-        assertTrue(adapter.containsKey(23));
-        assertFalse(adapter.containsKey(42));
+        Set<Integer> keys = new HashSet<Integer>(asList(23, 65, 88));
+        Map<Integer, EntryProcessorResult<String>> resultMap = adapter.invokeAll(keys, new ICacheReplaceEntryProcessor(),
+                "value", "newValue");
+        assertEquals(2, resultMap.size());
+        assertEquals("newValue-23", resultMap.get(23).get());
+        assertEquals("newValue-65", resultMap.get(65).get());
+
+        assertEquals("newValue-23", cache.get(23));
+        assertEquals("value-42", cache.get(42));
+        assertEquals("newValue-65", cache.get(65));
+        assertNull(cache.get(88));
+    }
+
+    @Test
+    public void testClear() {
+        cache.put(23, "foobar");
+
+        adapter.clear();
+
+        assertEquals(0, cache.size());
+    }
+
+    @Test
+    public void testDestroy() {
+        adapter.destroy();
+
+        assertTrue(cache.isDestroyed());
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testGetLocalMapStats() {
+        adapter.getLocalMapStats();
     }
 }

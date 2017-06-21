@@ -20,12 +20,17 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.transaction.TransactionContext;
 
-import java.util.HashMap;
+import javax.cache.integration.CompletionListener;
+import javax.cache.processor.EntryProcessor;
+import javax.cache.processor.EntryProcessorException;
+import javax.cache.processor.EntryProcessorResult;
 import java.util.Map;
 import java.util.Set;
 
+@SuppressWarnings("checkstyle:methodcount")
 public class TransactionalMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V> {
 
     private final HazelcastInstance hazelcastInstance;
@@ -40,12 +45,25 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
-    public void clear() {
+    public int size() {
         begin();
-        for (K key : transactionalMap.keySet()) {
-            transactionalMap.remove(key);
-        }
+        int size = transactionalMap.size();
         commit();
+        return size;
+    }
+
+    @Override
+    public V get(K key) {
+        begin();
+        V value = transactionalMap.get(key);
+        commit();
+        return value;
+    }
+
+    @Override
+    @MethodNotAvailable
+    public ICompletableFuture<V> getAsync(K key) {
+        throw new MethodNotAvailableException();
     }
 
     @Override
@@ -64,37 +82,31 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
-    public V get(K key) {
+    public boolean putIfAbsent(K key, V value) {
         begin();
-        V value = transactionalMap.get(key);
+        V oldValue = transactionalMap.putIfAbsent(key, value);
         commit();
-        return value;
+        return oldValue == null;
     }
 
     @Override
-    public ICompletableFuture<V> getAsync(K key) {
-        begin();
-        V value = transactionalMap.get(key);
-        commit();
-        return new SimpleCompletedFuture<V>(value);
+    @MethodNotAvailable
+    public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
+        throw new MethodNotAvailableException();
     }
 
     @Override
-    public void putAll(Map<K, V> map) {
+    public V replace(K key, V newValue) {
         begin();
-        for (Map.Entry<K, V> entry : map.entrySet()) {
-            transactionalMap.put(entry.getKey(), entry.getValue());
-        }
+        V oldValue = transactionalMap.replace(key, newValue);
         commit();
+        return oldValue;
     }
 
     @Override
-    public Map<K, V> getAll(Set<K> keys) {
+    public boolean replace(K key, V oldValue, V newValue) {
         begin();
-        Map<K, V> result = new HashMap<K, V>(keys.size());
-        for (K key : keys) {
-            result.put(key, transactionalMap.get(key));
-        }
+        boolean result = transactionalMap.replace(key, oldValue, newValue);
         commit();
         return result;
     }
@@ -107,8 +119,97 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
+    public boolean remove(K key, V oldValue) {
+        begin();
+        boolean result = transactionalMap.remove(key, oldValue);
+        commit();
+        return result;
+    }
+
+    @Override
+    @MethodNotAvailable
+    public ICompletableFuture<V> removeAsync(K key) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments) throws EntryProcessorException {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public Object executeOnKey(K key, com.hazelcast.map.EntryProcessor entryProcessor) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public Map<K, Object> executeOnKeys(Set<K> keys, com.hazelcast.map.EntryProcessor entryProcessor) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public Map<K, Object> executeOnEntries(com.hazelcast.map.EntryProcessor entryProcessor) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public Map<K, Object> executeOnEntries(com.hazelcast.map.EntryProcessor entryProcessor, Predicate predicate) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public Map<K, V> getAll(Set<K> keys) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public void putAll(Map<K, V> map) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public void removeAll() {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public void removeAll(Set<K> keys) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor,
+                                                         Object... arguments) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public void clear() {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    public void destroy() {
+        begin();
+        transactionalMap.destroy();
+        commit();
+    }
+
+    @Override
+    @MethodNotAvailable
     public LocalMapStats getLocalMapStats() {
-        return null;
+        throw new MethodNotAvailableException();
     }
 
     @Override
@@ -117,6 +218,24 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
         boolean result = transactionalMap.containsKey(key);
         commit();
         return result;
+    }
+
+    @Override
+    @MethodNotAvailable
+    public void loadAll(boolean replaceExistingValues) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public void loadAll(Set<K> keys, boolean replaceExistingValues) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public void loadAll(Set<? extends K> keys, boolean replaceExistingValues, CompletionListener completionListener) {
+        throw new MethodNotAvailableException();
     }
 
     private void begin() {

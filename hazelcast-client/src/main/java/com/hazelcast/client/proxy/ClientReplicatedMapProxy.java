@@ -35,7 +35,6 @@ import com.hazelcast.client.impl.protocol.codec.ReplicatedMapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapValuesCodec;
-import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
@@ -102,14 +101,12 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     }
 
     private void initNearCache() {
-        ClientContext context = getContext();
-        NearCacheConfig nearCacheConfig = context.getClientConfig().getNearCacheConfig(name);
-        if (nearCacheConfig == null) {
-            return;
-        }
-        nearCache = context.getNearCacheManager().getOrCreateNearCache(name, nearCacheConfig);
-        if (nearCache.isInvalidatedOnChange()) {
-            addNearCacheInvalidateListener();
+        NearCacheConfig nearCacheConfig = getContext().getClientConfig().getNearCacheConfig(name);
+        if (nearCacheConfig != null) {
+            nearCache = getContext().getNearCacheManager().getOrCreateNearCache(name, nearCacheConfig);
+            if (nearCache.isInvalidatedOnChange()) {
+                registerInvalidationListener();
+            }
         }
     }
 
@@ -416,13 +413,16 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         return new ReplicatedMapEventHandler(listener);
     }
 
-    private void addNearCacheInvalidateListener() {
+    public String addNearCacheInvalidationListener(EventHandler handler) {
+        return registerListener(createNearCacheInvalidationListenerCodec(), handler);
+    }
+
+    private void registerInvalidationListener() {
         try {
-            EventHandler handler = new ReplicatedMapAddNearCacheEventHandler();
-            invalidationListenerId = registerListener(createNearCacheInvalidationListenerCodec(), handler);
+            invalidationListenerId = addNearCacheInvalidationListener(new ReplicatedMapAddNearCacheEventHandler());
         } catch (Exception e) {
             ILogger logger = getContext().getLoggingService().getLogger(ClientReplicatedMapProxy.class);
-            logger.severe("-----------------\n Near Cache is not initialized!!! \n-----------------", e);
+            logger.severe("-----------------\nNear Cache is not initialized!\n-----------------", e);
         }
     }
 
