@@ -394,6 +394,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
             final ClientConnection clientConnection = new ClientConnection(
                     client, ioThreadingModel, connectionIdGen.incrementAndGet(), socketChannelWrapper);
+
+            client.getMetricsRegistry().collectMetrics(clientConnection);
+
             socketChannel.configureBlocking(true);
             if (socketInterceptor != null) {
                 socketInterceptor.onConnect(socket);
@@ -420,6 +423,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     void onClose(Connection connection) {
         removeFromActiveConnections(connection);
+        client.getMetricsRegistry().discardMetrics(connection);
     }
 
     private void removeFromActiveConnections(Connection connection) {
