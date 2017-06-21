@@ -23,6 +23,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -115,10 +116,12 @@ public class ClientMapNearCacheStalenessTest extends HazelcastTestSupport {
             thread.join();
         }
 
-        // give some-time to receive possible latest invalidation events
-        sleepSeconds(5);
-
-        assertNoStaleDataExistInNearCache(clientMap);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertNoStaleDataExistInNearCache(clientMap);
+            }
+        });
     }
 
     private void assertNoStaleDataExistInNearCache(IMap<Integer, Integer> map) {
