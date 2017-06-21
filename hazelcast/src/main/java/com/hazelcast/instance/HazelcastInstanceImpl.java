@@ -332,8 +332,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
 
     @Override
     public Config getConfig() {
-        Config nodeConfig = node.getConfig();
-        return nodeConfig;
+        return node.getConfig();
     }
 
     @Override
