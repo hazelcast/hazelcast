@@ -45,6 +45,8 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.internal.networking.SocketChannelWrapper;
 import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
@@ -88,7 +90,7 @@ import static com.hazelcast.spi.properties.GroupProperty.SOCKET_CLIENT_BUFFER_DI
  * Implementation of {@link ClientConnectionManager}.
  */
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
-public class ClientConnectionManagerImpl implements ClientConnectionManager {
+public class ClientConnectionManagerImpl implements ClientConnectionManager, MetricsProvider {
 
     private static final int DEFAULT_SSL_THREAD_COUNT = 3;
 
@@ -154,6 +156,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
 
         this.credentials = client.getCredentials();
+    }
+
+    @Override
+    public void provideMetrics(MetricsRegistry registry) {
+        registry.collectMetrics(ioThreadingModel);
     }
 
     protected void initIOThreads(HazelcastClientInstanceImpl client) {

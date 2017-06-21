@@ -397,7 +397,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         diagnostics.register(
                 new SystemLogPlugin(properties, connectionManager, this, loggingService.getLogger(SystemLogPlugin.class)));
 
-        metricsRegistry.collectMetrics(listenerService);
+        metricsRegistry.collectMetrics(listenerService, connectionManager);
 
         try {
             clusterService.start();
