@@ -318,27 +318,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     }
 
     @Override
-    public <E> Set<InternalCompletableFuture<E>> invokeOnCluster(OperationFactory operationFactory,
-                                                                 MemberSelector memberSelector) {
-        Collection<Member> members;
-        if (memberSelector == null) {
-            members = nodeEngine.getClusterService().getMembers();
-        } else {
-            members = nodeEngine.getClusterService().getMembers(memberSelector);
-        }
-
-        Set<InternalCompletableFuture<E>> futures = new HashSet<InternalCompletableFuture<E>>(members.size());
-
-        for (Member member : members) {
-            Address target = member.getAddress();
-            Operation operation = operationFactory.createOperation();
-            InternalCompletableFuture<E> future = invokeOnTarget(operation.getServiceName(), operation, target);
-            futures.add(future);
-        }
-        return futures;
-    }
-
-    @Override
     @SuppressWarnings("unchecked")
     public <V> void asyncInvokeOnPartition(String serviceName, Operation op, int partitionId, ExecutionCallback<V> callback) {
         op.setServiceName(serviceName).setPartitionId(partitionId).setReplicaIndex(DEFAULT_REPLICA_INDEX);
