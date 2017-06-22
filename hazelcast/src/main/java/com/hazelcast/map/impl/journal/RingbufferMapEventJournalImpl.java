@@ -21,6 +21,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataType;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
@@ -46,9 +47,11 @@ import static com.hazelcast.core.EntryEventType.UPDATED;
  */
 public class RingbufferMapEventJournalImpl implements MapEventJournal {
     private final NodeEngineImpl nodeEngine;
+    private final ILogger logger;
 
     public RingbufferMapEventJournalImpl(NodeEngine engine) {
         this.nodeEngine = (NodeEngineImpl) engine;
+        this.logger = this.nodeEngine.getLogger(RingbufferMapEventJournalImpl.class);
     }
 
     @Override
@@ -83,7 +86,14 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
 
     @Override
     public void destroy(ObjectNamespace namespace, int partitionId) {
-        getRingbufferService().destroyContainer(partitionId, namespace);
+        final RingbufferService service;
+        try {
+            service = getRingbufferService();
+        } catch (Exception e) {
+            logger.fine("Could not destroy event journal " + namespace, e);
+            return;
+        }
+        service.destroyContainer(partitionId, namespace);
     }
 
     @Override
