@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -123,8 +124,20 @@ public final class AggregatingMap<K, V> implements Map<K, V> {
 
     @Override
     public Set<Entry<K, V>> entrySet() {
-        HashSet<Entry<K, V>> entrySet = new HashSet<Entry<K, V>>(map1.entrySet());
-        entrySet.addAll(map2.entrySet());
-        return unmodifiableSet(entrySet);
+        Set<Entry<K, V>> entrySet1 = map1.entrySet();
+        Set<Entry<K, V>> entrySet2 = map2.entrySet();
+
+        HashSet<Entry<K, V>> aggregatedEntrySet = new HashSet<Entry<K, V>>();
+        copyEntries(entrySet1, aggregatedEntrySet);
+        copyEntries(entrySet2, aggregatedEntrySet);
+        return unmodifiableSet(aggregatedEntrySet);
+    }
+
+    private void copyEntries(Set<Entry<K, V>> source, Set<Entry<K, V>> destination) {
+        for (Entry<K, V> entry : source) {
+            K key = entry.getKey();
+            V value = entry.getValue();
+            destination.add(new AbstractMap.SimpleEntry<K, V>(key, value));
+        }
     }
 }
