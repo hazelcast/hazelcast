@@ -140,4 +140,19 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         server.shutdown();
         test.get("key");
     }
+
+    @Test(expected = HazelcastClientNotActiveException.class)
+    public void testExceptionAfterClientShutdown() throws Exception {
+        hazelcastFactory.newHazelcastInstance();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(1);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        IMap<Object, Object> test = client.getMap("test");
+        test.put("key", "value");
+        client.shutdown();
+        //to force weak references to be cleaned and get not active exception from serialization service
+        System.gc();
+        test.get("key");
+    }
 }
