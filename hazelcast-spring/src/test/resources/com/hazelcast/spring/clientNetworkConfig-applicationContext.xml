@@ -109,6 +109,10 @@
                 <hz:discovery-strategy class-name="com.hazelcast.spring.DummyDiscoveryStrategy"/>
                 <hz:discovery-strategy discovery-strategy-factory="dummyDiscoveryStrategyFactory"/>
             </hz:discovery-strategies>
+            <hz:outbound-ports>
+                <hz:ports>34600</hz:ports>
+                <hz:ports>34700-34710</hz:ports>
+            </hz:outbound-ports>
         </hz:network>
 
         <hz:listeners>

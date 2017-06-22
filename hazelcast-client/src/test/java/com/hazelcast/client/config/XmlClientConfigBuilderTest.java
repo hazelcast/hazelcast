@@ -55,10 +55,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.nio.ByteOrder;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 import static com.hazelcast.nio.IOUtil.delete;
 import static org.junit.Assert.assertEquals;
@@ -176,6 +173,11 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(2, networkConfig.getAddresses().size());
         assertContains(networkConfig.getAddresses(), "127.0.0.1");
         assertContains(networkConfig.getAddresses(), "127.0.0.2");
+        Collection<String> allowedPorts = networkConfig.getOutboundPortDefinitions();
+        assertEquals(2, allowedPorts.size());
+        Iterator portIter = allowedPorts.iterator();
+        assertEquals("34600", portIter.next());
+        assertEquals("34700-34710", portIter.next());
 
         assertTrue(networkConfig.isSmartRouting());
         assertTrue(networkConfig.isRedoOperation());
