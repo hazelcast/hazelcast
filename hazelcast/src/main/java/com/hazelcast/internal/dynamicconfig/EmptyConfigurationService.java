@@ -228,11 +228,6 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
-    public void registerConfigLocally(IdentifiedDataSerializable config, ConfigCheckMode configCheckMode) {
-        throw new IllegalStateException("Cannot add a new config while Hazelcast is starting.");
-    }
-
-    @Override
     public void broadcastConfig(IdentifiedDataSerializable config) {
         throw new IllegalStateException("Cannot add a new config while Hazelcast is starting.");
     }

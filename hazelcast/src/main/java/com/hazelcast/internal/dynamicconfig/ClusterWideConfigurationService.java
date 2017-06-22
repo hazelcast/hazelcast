@@ -226,7 +226,15 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
         return serializationService.toObject(data);
     }
 
-    @Override
+
+    /**
+     * Register a dynamic configuration in a local member. When a dynamic configuration with the same name already
+     * exists then this call has no effect.
+     *
+     * @param newConfig Configuration to register.
+     * @param configCheckMode behaviour when a config is detected
+     * @throws UnsupportedOperationException when given configuration type is not supported
+     */
     @SuppressWarnings("checkstyle:methodlength")
     public void registerConfigLocally(IdentifiedDataSerializable newConfig,
                                       ConfigCheckMode configCheckMode) {

@@ -48,16 +48,6 @@ import java.util.Map;
 public interface ConfigurationService {
 
     /**
-     * Register a dynamic configuration in a local member. When a dynamic configuration with the same name already
-     * exists then this call has no effect.
-     *
-     * @param config Configuration to register.
-     * @param configCheckMode behaviour when a config is detected
-     * @throws UnsupportedOperationException when given configuration type is not supported
-     */
-    void registerConfigLocally(IdentifiedDataSerializable config, ConfigCheckMode configCheckMode);
-
-    /**
      * Register a dynamic configurations to all cluster members.
      *
      * @param config Configuration to register

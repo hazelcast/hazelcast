@@ -1209,7 +1209,7 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
 
-    public void setConfigurationService(ClusterWideConfigurationService configurationService) {
+    public void setConfigurationService(ConfigurationService configurationService) {
         this.configurationService = configurationService;
     }
 }
