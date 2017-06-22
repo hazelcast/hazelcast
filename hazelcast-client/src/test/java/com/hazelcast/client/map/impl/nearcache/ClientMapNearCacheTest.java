@@ -738,20 +738,6 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void testNearCacheMisses_whenRepeatedOnSameKey() {
-        IMap<String, Integer> map = getNearCachedMapFromClient(newInvalidationEnabledNearCacheConfig());
-
-        int expectedCacheMisses = 17;
-        for (int i = 0; i < expectedCacheMisses; i++) {
-            assertNull(map.get("NOT_THERE"));
-        }
-
-        NearCacheStats stats = getNearCacheStats(map);
-        assertEquals(1, stats.getOwnedEntryCount());
-        assertEquals(expectedCacheMisses, stats.getMisses());
-    }
-
-    @Test
     public void testMapRemove_WithNearCache() {
         IMap<Integer, Integer> map = getNearCachedMapFromClient(newInvalidationEnabledNearCacheConfig());
 
