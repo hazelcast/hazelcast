@@ -23,6 +23,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
 import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.util.RoundRobinLB;
@@ -99,6 +100,9 @@ public class TestClientApplicationContext {
 
     @Resource(name = "client8")
     private HazelcastClientProxy client8;
+
+    @Resource(name = "user-code-deployment-test")
+    private HazelcastClientProxy userCodeDeploymentTestClient;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -301,6 +305,20 @@ public class TestClientApplicationContext {
         assertEquals(EvictionPolicy.LRU, getNearCacheEvictionPolicy("lruNearCacheEviction", config));
         assertEquals(EvictionPolicy.NONE, getNearCacheEvictionPolicy("noneNearCacheEviction", config));
         assertEquals(EvictionPolicy.RANDOM, getNearCacheEvictionPolicy("randomNearCacheEviction", config));
+    }
+
+    @Test
+    public void testUserCodeDeploymentConfig() {
+        ClientConfig config = userCodeDeploymentTestClient.getClientConfig();
+        ClientUserCodeDeploymentConfig userCodeDeploymentConfig = config.getUserCodeDeploymentConfig();
+        List<String> classNames = userCodeDeploymentConfig.getClassNames();
+        assertFalse(userCodeDeploymentConfig.isEnabled());
+        assertEquals(2, classNames.size());
+        assertTrue(classNames.contains("SampleClassName1"));
+        assertTrue(classNames.contains("SampleClassName2"));
+        List<String> jarPaths = userCodeDeploymentConfig.getJarPaths();
+        assertEquals(1, jarPaths.size());
+        assertTrue(jarPaths.contains("/User/jar/path/test.jar"));
     }
 
     private EvictionPolicy getNearCacheEvictionPolicy(String mapName, ClientConfig clientConfig) {

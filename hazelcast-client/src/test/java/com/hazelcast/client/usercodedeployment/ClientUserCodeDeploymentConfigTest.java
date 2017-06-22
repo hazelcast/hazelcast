@@ -18,6 +18,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -78,6 +79,30 @@ public class ClientUserCodeDeploymentConfigTest extends HazelcastTestSupport {
         List<Map.Entry<String, byte[]>> list = service.getClassDefinitionList();
         assertClassLoaded(list, "usercodedeployment.IncrementingEntryProcessor");
     }
+
+    @Test
+    public void testConfigWithClasses() throws ClassNotFoundException, IOException {
+        ClientUserCodeDeploymentConfig config = new ClientUserCodeDeploymentConfig();
+        config.setEnabled(true);
+        config.setClassNames(Collections.singletonList("usercodedeployment.IncrementingEntryProcessor"));
+        ClientUserCodeDeploymentService service = new ClientUserCodeDeploymentService(config, this.getClass().getClassLoader());
+        service.start();
+        List<Map.Entry<String, byte[]>> list = service.getClassDefinitionList();
+        assertClassLoaded(list, IncrementingEntryProcessor.class.getName());
+    }
+
+    @Test
+    public void testConfigWithJarPaths() throws ClassNotFoundException, IOException {
+        ClientUserCodeDeploymentConfig config = new ClientUserCodeDeploymentConfig();
+        config.setEnabled(true);
+        ClassLoader classLoader = getClass().getClassLoader();
+        config.setJarPaths(Collections.singletonList("IncrementingEntryProcessor.jar"));
+        ClientUserCodeDeploymentService service = new ClientUserCodeDeploymentService(config, classLoader);
+        service.start();
+        List<Map.Entry<String, byte[]>> list = service.getClassDefinitionList();
+        assertClassLoaded(list, "usercodedeployment.IncrementingEntryProcessor");
+    }
+
 
     @Test
     public void testConfigWithURLPath() throws ClassNotFoundException, IOException {
