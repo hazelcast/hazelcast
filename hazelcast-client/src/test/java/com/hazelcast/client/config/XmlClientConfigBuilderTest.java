@@ -55,7 +55,11 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.nio.ByteOrder;
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import static com.hazelcast.nio.IOUtil.delete;
 import static org.junit.Assert.assertEquals;
