@@ -66,6 +66,31 @@ public class ClientUserCodeDeploymentConfig {
     }
 
     /**
+     * @param classNames names of the classes that will be send to cluster
+     * @return this for chaining
+     */
+    public ClientUserCodeDeploymentConfig setClassNames(List<String> classNames) {
+        this.classNames.clear();
+        this.classNames.addAll(classNames);
+        return this;
+    }
+
+    /**
+     * String jarPath is searched in following order:
+     * 1. as absolute path,
+     * 2. as URL,
+     * 3. and in classpath.
+     *
+     * @param jarPaths add list of jarPaths that will be send to clusters
+     * @return this for chaining
+     */
+    public ClientUserCodeDeploymentConfig setJarPaths(List<String> jarPaths) {
+        this.jarPaths.clear();
+        this.jarPaths.addAll(jarPaths);
+        return this;
+    }
+
+    /**
      * @param className name of the class that will be send to cluster
      * @return this for chaining
      */

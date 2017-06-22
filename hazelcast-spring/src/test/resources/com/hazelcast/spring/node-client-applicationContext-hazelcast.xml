@@ -254,6 +254,23 @@
         <hz:connection-strategy async-start="true" reconnect-mode="ASYNC"/>
     </hz:client>
 
+    <hz:client id="user-code-deployment-test" credentials-ref="credentials">
+        <hz:network connection-attempt-limit="0">
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+        </hz:network>
+
+        <hz:user-code-deployment enabled="false">
+            <hz:jarPaths>
+                <hz:jarPath>/User/jar/path/test.jar</hz:jarPath>
+            </hz:jarPaths>
+            <hz:classNames>
+                <hz:className>SampleClassName1</hz:className>
+                <hz:className>SampleClassName2</hz:className>
+            </hz:classNames>
+        </hz:user-code-deployment>
+    </hz:client>
+
 
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
         <property name="username" value="spring-group"/>

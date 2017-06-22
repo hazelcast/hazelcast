@@ -1536,6 +1536,7 @@
                         <xs:element name="near-cache" type="near-cache-client" minOccurs="0" maxOccurs="unbounded"/>
                         <xs:element name="query-caches" type="query-caches-client" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="connection-strategy" type="connection-strategy" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="user-code-deployment" type="user-code-deployment-client" minOccurs="0" maxOccurs="1"/>
                     </xs:choice>
                     <xs:attribute name="executor-pool-size" type="xs:int" use="optional"/>
                     <xs:attribute name="credentials-ref" type="xs:string" use="optional"/>
@@ -2703,6 +2704,33 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
+    <xs:complexType name="user-code-deployment-client">
+        <xs:all>
+            <xs:element name="jarPaths" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="jarPath" type="xs:string" minOccurs="1" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+
+            <xs:element name="classNames" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="className" type="xs:string" minOccurs="1" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    True to enable User Code Deployment on this client, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="predicate">
         <xs:simpleContent>
             <xs:extension base="xs:string">

@@ -21,6 +21,7 @@ import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.util.RandomLB;
@@ -133,9 +134,40 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("connection-strategy".equals(nodeName)) {
                     createAndFillBeanBuilder(node, ClientConnectionStrategyConfig.class, "connectionStrategyConfig",
                             configBuilder);
+                } else if ("user-code-deployment".equals(nodeName)) {
+                    handleUserCodeDeployment(node);
                 }
             }
             builder.addConstructorArgValue(configBuilder.getBeanDefinition());
+        }
+
+        private void handleUserCodeDeployment(Node node) {
+            BeanDefinitionBuilder userCodeDeploymentConfig = createBeanBuilder(ClientUserCodeDeploymentConfig.class);
+            List<String> jarPaths = new ArrayList<String>(INITIAL_CAPACITY);
+            List<String> classNames = new ArrayList<String>(INITIAL_CAPACITY);
+            fillAttributeValues(node, userCodeDeploymentConfig);
+            for (Node child : childElements(node)) {
+                final String nodeName = cleanNodeName(child);
+                if ("jarpaths".equals(nodeName)) {
+                    for (Node child1 : childElements(child)) {
+                        final String nodeName1 = cleanNodeName(child1);
+                        if ("jarpath".equals(nodeName1)) {
+                            jarPaths.add(getTextContent(child1));
+                        }
+                    }
+                } else if ("classnames".equals(nodeName)) {
+                    for (Node child1 : childElements(child)) {
+                        final String nodeName1 = cleanNodeName(child1);
+                        if ("classname".equals(nodeName1)) {
+                            classNames.add(getTextContent(child1));
+                        }
+                    }
+                }
+            }
+            userCodeDeploymentConfig.addPropertyValue("jarPaths", jarPaths);
+            userCodeDeploymentConfig.addPropertyValue("classNames", classNames);
+
+            configBuilder.addPropertyValue("userCodeDeploymentConfig", userCodeDeploymentConfig.getBeanDefinition());
         }
 
         private void handleClientAttributes(Element element) {
