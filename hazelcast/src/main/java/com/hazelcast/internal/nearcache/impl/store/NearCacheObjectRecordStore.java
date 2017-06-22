@@ -65,7 +65,6 @@ public class NearCacheObjectRecordStore<K, V> extends BaseHeapNearCacheRecordSto
     @Override
     protected V recordToValue(NearCacheObjectRecord record) {
         if (record.getValue() == null) {
-            nearCacheStats.incrementMisses();
             return (V) CACHED_AS_NULL;
         }
 
