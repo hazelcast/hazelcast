@@ -1840,7 +1840,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         Operation operation = new MultipleEntryWithPredicateOperation(MAP_NAME, dataKeys,
-                new NOOPEntryProcessor(), new SqlPredicate("this < " + keyCount));
+                new NoOpEntryProcessor(), new SqlPredicate("this < " + keyCount));
 
         OperationFactory operationFactory = new BinaryOperationFactory(operation, nodeEngineImpl);
 
@@ -1848,13 +1848,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         for (Object response : partitionResponses.values()) {
             assertEquals(0, ((MapEntries) response).size());
-        }
-    }
-
-    public static class NOOPEntryProcessor extends AbstractEntryProcessor {
-        @Override
-        public Object process(Map.Entry entry) {
-            return null;
         }
     }
 
