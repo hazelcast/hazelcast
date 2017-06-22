@@ -144,14 +144,19 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
         if (version.isLessOrEqual(V3_8)) {
             return null;
         }
-        IdentifiedDataSerializable[] allConfigurations = getAllConfigurations();
-        if (allConfigurations.length == 0) {
+        IdentifiedDataSerializable[] allConfigurations = collectAllDynamicConfigs();
+        if (noConfigurationExist(allConfigurations)) {
+            // there is no dynamic configuration -> no need to send an empty operation
             return null;
         }
         return new DynamicConfigReplicationOperation(allConfigurations, true);
     }
 
-    private IdentifiedDataSerializable[] getAllConfigurations() {
+    private boolean noConfigurationExist(IdentifiedDataSerializable[] configurations) {
+        return configurations.length == 0;
+    }
+
+    private IdentifiedDataSerializable[] collectAllDynamicConfigs() {
         List<IdentifiedDataSerializable> all = new ArrayList<IdentifiedDataSerializable>();
         for (Map<?, ? extends IdentifiedDataSerializable> entry : allConfigurations) {
             Collection<? extends IdentifiedDataSerializable> values = entry.values();
@@ -499,8 +504,8 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
         if (version.isLessOrEqual(V3_8)) {
             return null;
         }
-        IdentifiedDataSerializable[] allConfigurations = getAllConfigurations();
-        if (allConfigurations.length == 0) {
+        IdentifiedDataSerializable[] allConfigurations = collectAllDynamicConfigs();
+        if (noConfigurationExist(allConfigurations)) {
             return null;
         }
         return new Merger(nodeEngine, new DynamicConfigReplicationOperation(allConfigurations, false));
