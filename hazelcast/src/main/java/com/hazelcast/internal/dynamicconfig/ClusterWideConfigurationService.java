@@ -234,6 +234,7 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
      * @param newConfig Configuration to register.
      * @param configCheckMode behaviour when a config is detected
      * @throws UnsupportedOperationException when given configuration type is not supported
+     * @throws ConfigurationException when conflict is detected and configCheckMode is on THROW_EXCEPTION
      */
     @SuppressWarnings("checkstyle:methodlength")
     public void registerConfigLocally(IdentifiedDataSerializable newConfig,
