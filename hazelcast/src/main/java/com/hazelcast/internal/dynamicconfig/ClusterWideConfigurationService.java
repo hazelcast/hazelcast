@@ -63,7 +63,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.cluster.Versions.V3_8;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
-import static com.hazelcast.util.InvocationUtil.invokeOnStableClusterSerial;
+import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static java.lang.Boolean.getBoolean;
 
 @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount"})

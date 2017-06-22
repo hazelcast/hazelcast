@@ -24,7 +24,7 @@ import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ConfigPermission;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.util.InvocationUtil;
+import com.hazelcast.internal.util.InvocationUtil;
 
 import java.security.Permission;
 import java.util.ArrayList;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util;
+package com.hazelcast.internal.util;
 
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastException;
