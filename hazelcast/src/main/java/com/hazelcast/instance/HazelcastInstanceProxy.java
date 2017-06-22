@@ -49,6 +49,7 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
+import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.transaction.HazelcastXAResource;
@@ -250,6 +251,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     public LifecycleService getLifecycleService() {
         final HazelcastInstanceImpl hz = original;
         return hz != null ? hz.getLifecycleService() : new TerminatedLifecycleService();
+    }
+
+    @Override
+    public SecurityService getSecurityService() {
+        return getOriginal().getSecurityService();
     }
 
     @Override

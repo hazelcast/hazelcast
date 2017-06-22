@@ -50,6 +50,7 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
+import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.HazelcastXAResource;
@@ -259,6 +260,11 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     public LifecycleService getLifecycleService() {
         final HazelcastClientInstanceImpl hz = client;
         return hz != null ? hz.getLifecycleService() : new TerminatedLifecycleService();
+    }
+
+    @Override
+    public SecurityService getSecurityService() {
+        throw new UnsupportedOperationException();
     }
 
     @Override

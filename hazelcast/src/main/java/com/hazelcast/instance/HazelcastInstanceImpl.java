@@ -70,6 +70,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
+import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
@@ -363,6 +364,11 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @Override
     public LifecycleServiceImpl getLifecycleService() {
         return lifecycleService;
+    }
+
+    @Override
+    public SecurityService getSecurityService() {
+        return node.getSecurityService();
     }
 
     @Override

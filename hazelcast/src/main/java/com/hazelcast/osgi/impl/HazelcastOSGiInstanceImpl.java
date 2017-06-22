@@ -50,6 +50,7 @@ import com.hazelcast.osgi.HazelcastOSGiService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
+import com.hazelcast.security.SecurityService;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -249,6 +250,11 @@ class HazelcastOSGiInstanceImpl
     @Override
     public LifecycleService getLifecycleService() {
         return delegatedInstance.getLifecycleService();
+    }
+
+    @Override
+    public SecurityService getSecurityService() {
+        return delegatedInstance.getSecurityService();
     }
 
     @Override

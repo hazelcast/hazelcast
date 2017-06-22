@@ -62,6 +62,7 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
@@ -139,6 +140,7 @@ public class Node {
     private final PhoneHome phoneHome = new PhoneHome();
 
     private final InternalSerializationService serializationService;
+
     private final ClassLoader configClassLoader;
 
     private final NodeExtension nodeExtension;
@@ -353,6 +355,10 @@ public class Node {
 
     public boolean isMaster() {
         return clusterService.isMaster();
+    }
+
+    public SecurityService getSecurityService() {
+        return nodeExtension.getSecurityService();
     }
 
     void start() {
