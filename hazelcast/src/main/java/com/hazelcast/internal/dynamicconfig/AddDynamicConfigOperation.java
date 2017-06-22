@@ -38,7 +38,7 @@ public class AddDynamicConfigOperation extends AbstractDynamicConfigOperation {
     @Override
     public void run() throws Exception {
         ClusterWideConfigurationService service = getService();
-        service.registerConfigLocally(config, true);
+        service.registerConfigLocally(config, ConfigCheckMode.THROW_EXCEPTION);
     }
 
     @Override

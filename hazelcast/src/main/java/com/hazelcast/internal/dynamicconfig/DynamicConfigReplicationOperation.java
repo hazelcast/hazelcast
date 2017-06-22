@@ -26,11 +26,11 @@ import java.io.IOException;
 public class DynamicConfigReplicationOperation extends AbstractDynamicConfigOperation {
 
     private IdentifiedDataSerializable[] configs;
-    private boolean failWhenNotEquals;
+    private ConfigCheckMode configCheckMode;
 
-    public DynamicConfigReplicationOperation(IdentifiedDataSerializable[] configs, boolean failWhenNotEquals) {
+    public DynamicConfigReplicationOperation(IdentifiedDataSerializable[] configs, ConfigCheckMode configCheckMode) {
         this.configs = configs;
-        this.failWhenNotEquals = failWhenNotEquals;
+        this.configCheckMode = configCheckMode;
     }
 
     public DynamicConfigReplicationOperation() {
@@ -41,7 +41,7 @@ public class DynamicConfigReplicationOperation extends AbstractDynamicConfigOper
     public void run() throws Exception {
         ClusterWideConfigurationService service = getService();
         for (IdentifiedDataSerializable config : configs) {
-            service.registerConfigLocally(config, failWhenNotEquals);
+            service.registerConfigLocally(config, configCheckMode);
         }
     }
 
@@ -51,6 +51,7 @@ public class DynamicConfigReplicationOperation extends AbstractDynamicConfigOper
         for (IdentifiedDataSerializable config: configs) {
             out.writeObject(config);
         }
+        out.writeUTF(configCheckMode.name());
     }
 
     @Override
@@ -60,6 +61,7 @@ public class DynamicConfigReplicationOperation extends AbstractDynamicConfigOper
         for (int i = 0; i < size; i++) {
             configs[i] = in.readObject();
         }
+        configCheckMode = ConfigCheckMode.valueOf(in.readUTF());
     }
 
     @Override

@@ -52,10 +52,10 @@ public interface ConfigurationService {
      * exists then this call has no effect.
      *
      * @param config Configuration to register.
-     * @param failWhenNotEquals fails when a conflicting configuration is found.
+     * @param configCheckMode behaviour when a config is detected
      * @throws UnsupportedOperationException when given configuration type is not supported
      */
-    void registerConfigLocally(IdentifiedDataSerializable config, boolean failWhenNotEquals);
+    void registerConfigLocally(IdentifiedDataSerializable config, ConfigCheckMode configCheckMode);
 
     /**
      * Register a dynamic configurations to all cluster members.

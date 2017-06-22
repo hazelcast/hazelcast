@@ -38,6 +38,7 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.CoreService;
@@ -108,6 +109,7 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
             new ConcurrentHashMap<String, EventJournalConfig>();
 
     private final ConfigPatternMatcher configPatternMatcher;
+    private final ILogger logger;
 
     @SuppressWarnings("unchecked")
     private final Map<?, ? extends IdentifiedDataSerializable>[] allConfigurations = new Map[]{
@@ -137,6 +139,7 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
         this.nodeEngine = nodeEngine;
         this.listener = dynamicConfigListener;
         this.configPatternMatcher = nodeEngine.getConfig().getConfigPatternMatcher();
+        this.logger = nodeEngine.getLogger(ClusterWideConfigurationService.class);
     }
 
     @Override
@@ -149,7 +152,7 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
             // there is no dynamic configuration -> no need to send an empty operation
             return null;
         }
-        return new DynamicConfigReplicationOperation(allConfigurations, true);
+        return new DynamicConfigReplicationOperation(allConfigurations, ConfigCheckMode.WARNING);
     }
 
     private boolean noConfigurationExist(IdentifiedDataSerializable[] configurations) {
@@ -225,7 +228,8 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
 
     @Override
     @SuppressWarnings("checkstyle:methodlength")
-    public void registerConfigLocally(IdentifiedDataSerializable newConfig, boolean failWhenNotEquals) {
+    public void registerConfigLocally(IdentifiedDataSerializable newConfig,
+                                      ConfigCheckMode configCheckMode) {
         IdentifiedDataSerializable currentConfig = null;
         if (newConfig instanceof MultiMapConfig) {
             MultiMapConfig multiMapConfig = (MultiMapConfig) newConfig;
@@ -281,27 +285,27 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
             }
         } else if (newConfig instanceof EventJournalConfig) {
             EventJournalConfig eventJournalConfig = (EventJournalConfig) newConfig;
-            registerEventJournalConfig(eventJournalConfig, failWhenNotEquals);
+            registerEventJournalConfig(eventJournalConfig, configCheckMode);
         } else {
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
-        checkCurrentConfigNullOrEqual(failWhenNotEquals, currentConfig, newConfig);
+        checkCurrentConfigNullOrEqual(configCheckMode, currentConfig, newConfig);
     }
 
-    private void registerEventJournalConfig(EventJournalConfig eventJournalConfig, boolean failWhenNotEquals) {
+    private void registerEventJournalConfig(EventJournalConfig eventJournalConfig, ConfigCheckMode configCheckMode) {
         String mapName = eventJournalConfig.getMapName();
         String cacheName = eventJournalConfig.getMapName();
         synchronized (journalMutex) {
             EventJournalConfig currentMapJournalConfig = null;
             if (mapName != null) {
                 currentMapJournalConfig = mapEventJournalConfigs.putIfAbsent(mapName, eventJournalConfig);
-                checkCurrentConfigNullOrEqual(failWhenNotEquals, currentMapJournalConfig, eventJournalConfig);
+                checkCurrentConfigNullOrEqual(configCheckMode, currentMapJournalConfig, eventJournalConfig);
             }
             if (cacheName != null) {
                 EventJournalConfig currentCacheJournalConfig = cacheEventJournalConfigs.putIfAbsent(cacheName,
                         eventJournalConfig);
                 try {
-                    checkCurrentConfigNullOrEqual(failWhenNotEquals, currentCacheJournalConfig, eventJournalConfig);
+                    checkCurrentConfigNullOrEqual(configCheckMode, currentCacheJournalConfig, eventJournalConfig);
                 } catch (ConfigurationException e) {
                     // exception when registering cache journal config.
                     // let's remove map journal if we configured any
@@ -314,13 +318,29 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
         }
     }
 
-    private void checkCurrentConfigNullOrEqual(boolean failWhenNotEquals, Object currentConfig, Object newConfig) {
-        if (IGNORE_CONFLICTING_CONFIGS_WORKAROUND || !failWhenNotEquals || currentConfig == null) {
+    private void checkCurrentConfigNullOrEqual(ConfigCheckMode checkMode, Object currentConfig,
+                                               Object newConfig) {
+        if (IGNORE_CONFLICTING_CONFIGS_WORKAROUND) {
+            return;
+        }
+        if (currentConfig == null) {
             return;
         }
         if (!currentConfig.equals(newConfig)) {
-            throw new ConfigurationException("Cannot add a dynamic configuration '" + newConfig + "' as there"
-                     + " is already a conflicting configuration '" + currentConfig + "'");
+            String message = "Cannot add a dynamic configuration '" + newConfig + "' as there"
+                    + " is already a conflicting configuration '" + currentConfig + "'";
+            switch (checkMode) {
+                case THROW_EXCEPTION:
+                    throw new ConfigurationException(message);
+                case WARNING:
+                    logger.warning(message);
+                    break;
+                case SILENT:
+                    logger.finest(message);
+                    break;
+                default:
+                    throw new UnsupportedOperationException("Unknown consistency check mode: " + checkMode);
+            }
         }
     }
 
@@ -513,7 +533,7 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
         if (noConfigurationExist(allConfigurations)) {
             return null;
         }
-        return new Merger(nodeEngine, new DynamicConfigReplicationOperation(allConfigurations, false));
+        return new Merger(nodeEngine, new DynamicConfigReplicationOperation(allConfigurations, ConfigCheckMode.SILENT));
     }
 
     public static class Merger implements Runnable {
