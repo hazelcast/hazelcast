@@ -83,6 +83,16 @@ public abstract class AbstractBaseReplicatedRecordStore<K, V> implements Replica
         return name;
     }
 
+    @Override
+    public Object unmarshallKey(Object key) {
+        return key == null ? null : nodeEngine.toObject(key);
+    }
+
+    @Override
+    public Object marshallKey(Object key) {
+        return nodeEngine.toData(key);
+    }
+
     public LocalReplicatedMapStatsImpl getStats() {
         return replicatedMapService.getLocalMapStatsImpl(name);
     }

@@ -77,7 +77,7 @@ class ValuesIteratorFactory<K, V> implements IteratorFactory<K, V, V> {
                 throw new NoSuchElementException();
             }
 
-            value = recordStore.unmarshall(value);
+            value = recordStore.unmarshallValue(value);
             return (V) value;
         }
 

@@ -70,9 +70,13 @@ public interface ReplicatedRecordStore {
 
     boolean isEmpty();
 
-    Object unmarshall(Object key);
+    Object unmarshallKey(Object key);
 
-    Object marshall(Object key);
+    Object marshallKey(Object key);
+
+    Object unmarshallValue(Object value);
+
+    Object marshallValue(Object value);
 
     void destroy();
 

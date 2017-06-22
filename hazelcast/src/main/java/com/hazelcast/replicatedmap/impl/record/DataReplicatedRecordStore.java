@@ -34,12 +34,12 @@ public class DataReplicatedRecordStore extends AbstractReplicatedRecordStore<Dat
     }
 
     @Override
-    public Object unmarshall(Object object) {
-        return object == null ? null : nodeEngine.toObject(object);
+    public Object unmarshallValue(Object value) {
+        return value == null ? null : nodeEngine.toObject(value);
     }
 
     @Override
-    public Object marshall(Object object) {
-        return nodeEngine.toData(object);
+    public Object marshallValue(Object value) {
+        return nodeEngine.toData(value);
     }
 }

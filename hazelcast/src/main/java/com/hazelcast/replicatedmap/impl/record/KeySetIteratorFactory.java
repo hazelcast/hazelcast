@@ -77,7 +77,7 @@ class KeySetIteratorFactory<K, V> implements IteratorFactory<K, V, K> {
                 throw new NoSuchElementException();
             }
 
-            key = recordStore.unmarshall(key);
+            key = recordStore.unmarshallValue(key);
             return (K) key;
         }
 

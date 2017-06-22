@@ -624,13 +624,23 @@ public class LazyIteratorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Object unmarshall(Object key) {
+        public Object unmarshallKey(Object key) {
             return key;
         }
 
         @Override
-        public Object marshall(Object key) {
+        public Object marshallKey(Object key) {
             return key;
+        }
+
+        @Override
+        public Object unmarshallValue(Object value) {
+            return value;
+        }
+
+        @Override
+        public Object marshallValue(Object value) {
+            return value;
         }
 
         @Override

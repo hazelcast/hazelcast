@@ -72,8 +72,8 @@ public class ReplicateUpdateToCallerOperation extends AbstractSerializableOperat
 
             return;
         }
-        Object key = store.marshall(dataKey);
-        Object value = store.marshall(dataValue);
+        Object key = store.marshallKey(dataKey);
+        Object value = store.marshallValue(dataValue);
         if (isRemove) {
             store.removeWithVersion(key, updateVersion);
         } else {

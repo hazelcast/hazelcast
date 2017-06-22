@@ -32,12 +32,12 @@ public class ObjectReplicatedRecordStorage<K, V> extends AbstractReplicatedRecor
     }
 
     @Override
-    public Object unmarshall(Object key) {
-        return nodeEngine.toObject(key);
+    public Object unmarshallValue(Object value) {
+        return nodeEngine.toObject(value);
     }
 
     @Override
-    public Object marshall(Object key) {
-        return nodeEngine.toObject(key);
+    public Object marshallValue(Object value) {
+        return nodeEngine.toObject(value);
     }
 }
