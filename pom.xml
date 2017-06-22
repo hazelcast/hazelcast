@@ -464,5 +464,27 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>test-enterprise</id>
+            <repositories>
+                <repository>
+                    <id>private-repository</id>
+                    <name>Hazelcast Private Repository</name>
+                    <url>https://repository-hazelcast-l337.forge.cloudbees.com/release/</url>
+                </repository>
+                <repository>
+                    <id>private-snapshot-repository</id>
+                    <name>Hazelcast Private Repository</name>
+                    <url>https://repository-hazelcast-l337.forge.cloudbees.com/snapshot/</url>
+                </repository>
+            </repositories>
+            <dependencies>
+                <dependency>
+                    <groupId>com.hazelcast</groupId>
+                    <artifactId>hazelcast-enterprise-all</artifactId>
+                    <version>${hazelcast.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
     </profiles>
 </project>
