@@ -75,11 +75,8 @@ public class SimpleReplicatedMapTest {
 
     /**
      * Expects the Management Center to be running.
-     *
-     * @param input
-     * @throws InterruptedException
      */
-    public static void main(String[] input) throws InterruptedException {
+    public static void main(String[] input) throws Exception {
         int threadCount = 40;
         int entryCount = 300;
         int valueSize = 100;
@@ -114,7 +111,7 @@ public class SimpleReplicatedMapTest {
         test.start();
     }
 
-    private void start() throws InterruptedException {
+    private void start() throws Exception {
         printVariables();
         ExecutorService es = Executors.newFixedThreadPool(threadCount);
         startPrintStats();
@@ -126,6 +123,7 @@ public class SimpleReplicatedMapTest {
         final ReplicatedMap<String, Object> map = instance.getReplicatedMap(NAMESPACE);
         for (int i = 0; i < threadCount; i++) {
             es.execute(new Runnable() {
+                @Override
                 public void run() {
                     try {
                         while (true) {
@@ -156,7 +154,7 @@ public class SimpleReplicatedMapTest {
         return new byte[valueSize];
     }
 
-    private void load(ExecutorService es) throws InterruptedException {
+    private void load(ExecutorService es) throws Exception {
         if (!load) {
             return;
         }
@@ -205,7 +203,7 @@ public class SimpleReplicatedMapTest {
     }
 
     /**
-     * A basic statistics class
+     * A basic statistics class.
      */
     private class Stats {
 
@@ -213,7 +211,7 @@ public class SimpleReplicatedMapTest {
         private AtomicLong puts = new AtomicLong();
         private AtomicLong removes = new AtomicLong();
 
-        public void printAndReset() {
+        void printAndReset() {
             long getsNow = gets.getAndSet(0);
             long putsNow = puts.getAndSet(0);
             long removesNow = removes.getAndSet(0);

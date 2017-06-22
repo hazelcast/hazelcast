@@ -35,13 +35,13 @@ import static org.junit.Assert.assertEquals;
 public class EntryViewTest extends HazelcastTestSupport {
 
     @Test
-    public void testEntryView() throws Exception {
+    public void testEntryView() {
         ReplicatedMapEntryView entryView = createEntryView();
         verifyFields(entryView);
     }
 
     @Test
-    public void testEntryViewSerialization() throws Exception {
+    public void testEntryViewSerialization() {
         ReplicatedMapEntryView entryView = createEntryView();
         SerializationServiceBuilder serializationServiceBuilder = new DefaultSerializationServiceBuilder();
         SerializationService serializationService = serializationServiceBuilder.build();
@@ -49,11 +49,10 @@ public class EntryViewTest extends HazelcastTestSupport {
         Data data = serializationService.toData(entryView);
         ReplicatedMapEntryView deserialized = serializationService.toObject(data);
         verifyFields(deserialized);
-
     }
 
     private ReplicatedMapEntryView createEntryView() {
-        ReplicatedMapEntryView entryView = new ReplicatedMapEntryView("foo", "bar");
+        ReplicatedMapEntryView entryView = new ReplicatedMapEntryView<String, String>("foo", "bar");
         entryView.setCreationTime(1);
         entryView.setLastAccessTime(2);
         entryView.setLastUpdateTime(3);
@@ -75,6 +74,4 @@ public class EntryViewTest extends HazelcastTestSupport {
         assertEquals(-1, entryView.getCost());
         assertEquals(-1, entryView.getVersion());
     }
-
-
 }

@@ -32,19 +32,17 @@ import java.util.HashMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(value = {QuickTest.class, ParallelTest.class})
 public class ReplicatedMapReadYourWritesTest extends ReplicatedMapAbstractTest {
 
     @Test
-    public void testReadYourWritesBySize() throws Exception {
+    public void testReadYourWritesBySize() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory();
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
         final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
-
 
         HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
         final int count = 100;
@@ -63,7 +61,7 @@ public class ReplicatedMapReadYourWritesTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testReadYourWritesByGet() throws Exception {
+    public void testReadYourWritesByGet() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory();
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
@@ -76,7 +74,7 @@ public class ReplicatedMapReadYourWritesTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testReadYourWritesByContainsKey() throws Exception {
+    public void testReadYourWritesByContainsKey() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory();
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
@@ -89,7 +87,7 @@ public class ReplicatedMapReadYourWritesTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testReadYourWritesByContainsValue() throws Exception {
+    public void testReadYourWritesByContainsValue() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory();
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
@@ -122,6 +120,4 @@ public class ReplicatedMapReadYourWritesTest extends ReplicatedMapAbstractTest {
         map.put(key, value);
         return key;
     }
-
-
 }

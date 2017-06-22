@@ -30,55 +30,56 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
+@SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
 public class LazyCollectionTest {
 
-    LazyCollection collection;
+    private LazyCollection<Object, Object> collection;
 
     @Before
-    public void setUp() throws Exception {
-        ValuesIteratorFactory iteratorFactory = mock(ValuesIteratorFactory.class);
-        InternalReplicatedMapStorage storage = mock(InternalReplicatedMapStorage.class);
-        collection = new LazyCollection(iteratorFactory, storage);
+    @SuppressWarnings("unchecked")
+    public void setUp() {
+        ValuesIteratorFactory<Object, Object> iteratorFactory = mock(ValuesIteratorFactory.class);
+        InternalReplicatedMapStorage<Object, Object> storage = mock(InternalReplicatedMapStorage.class);
+        collection = new LazyCollection<Object, Object>(iteratorFactory, storage);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void test_add_throws_exception() throws Exception {
+    public void test_add_throws_exception() {
         collection.add(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void test_add_all_throws_exception() throws Exception {
+    public void test_add_all_throws_exception() {
         collection.addAll(Collections.EMPTY_LIST);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void test_remove_throws_exception() throws Exception {
+    public void test_remove_throws_exception() {
         collection.remove(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void test_removeAll_throws_exception() throws Exception {
+    public void test_removeAll_throws_exception() {
         collection.removeAll(Collections.EMPTY_LIST);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void test_contains_throws_exception() throws Exception {
+    public void test_contains_throws_exception() {
         collection.contains(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void test_contains_all_throws_exception() throws Exception {
+    public void test_contains_all_throws_exception() {
         collection.containsAll(Collections.EMPTY_LIST);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void test_retain_all_throws_exception() throws Exception {
+    public void test_retain_all_throws_exception() {
         collection.retainAll(Collections.EMPTY_LIST);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void test_clear_throws_exception() throws Exception {
+    public void test_clear_throws_exception() {
         collection.clear();
     }
-
 }
