@@ -204,6 +204,11 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
 
     @Override
     public void broadcastConfig(IdentifiedDataSerializable config) {
+        if (version.isLessOrEqual(V3_8)) {
+            throw new UnsupportedOperationException("Adding dynamic configuration is only supported when running "
+                    + " in cluster version 3.9+. The current cluster version:" + version);
+        }
+
         // we create an defensive copy as local operation execution might use a fast-path
         // and avoid config serialization altogether.
         // we certainly do not want the dynamic config service to reference object a user can mutate
