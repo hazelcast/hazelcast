@@ -31,8 +31,8 @@ public final class BitSetUtils {
      *
      * @param bitSet  the {@link BitSet} to modify
      * @param indexes the index positions to check
-     * @return {@code true} is {@link BitSet} contains at least one bit at any position from index which is set,
-     * otherwise return {@code false}
+     * @return {@code true} if {@link BitSet} contains at least one bit at any position from index which is set,
+     * otherwise returns {@code false}
      */
     public static boolean hasAtLeastOneBitSet(BitSet bitSet, Iterable<Integer> indexes) {
         for (Integer index : indexes) {
@@ -44,12 +44,12 @@ public final class BitSetUtils {
     }
 
     /**
-     * Returns true if at least one bit on a given position is set.
+     * Returns true if all bits at given {@code indexes} are set.
      *
      * @param bitSet  the {@link BitSet} to modify
      * @param indexes the index positions to check
-     * @return {@code true} is {@link BitSet} contains at least one bit at any position from index which is set,
-     * otherwise return {@code false}
+     * @return {@code true} if {@link BitSet} all bits at given {@code indexes} are set.
+     * otherwise returns {@code false}
      */
     public static boolean hasAllBitsSet(BitSet bitSet, Iterable<Integer> indexes) {
         for (Integer index : indexes) {
