@@ -139,6 +139,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
     private final int outboundPortCount;
 
+    @SuppressWarnings("checkstyle:executablestatementcount")
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
                                        Collection<AddressProvider> addressProviders) {
         this.client = client;
