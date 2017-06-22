@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.internal.metrics.Gauge;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.Logger;
@@ -31,6 +32,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
+import static com.hazelcast.internal.metrics.impl.DelegatingGaugeImpl.NOT_AVAILABLE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
@@ -109,6 +111,17 @@ public class MetricsRegistryImplTest extends HazelcastTestSupport {
         for (String name : expected) {
             assertContains(names, name);
         }
+    }
+
+    @Test
+    public void renders_NA_when_requested_stat_not_available() throws Exception {
+        String unavailableStatName = "unavailable-stat-name";
+        Gauge gauge = metricsRegistry.newGauge(unavailableStatName);
+
+        StringBuilder builder = new StringBuilder();
+        gauge.render(builder);
+
+        assertEquals(NOT_AVAILABLE, builder.toString());
     }
 
     @Test

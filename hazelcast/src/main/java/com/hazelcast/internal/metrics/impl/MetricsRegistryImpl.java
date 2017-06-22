@@ -19,12 +19,12 @@ package com.hazelcast.internal.metrics.impl;
 import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
+import com.hazelcast.internal.metrics.Gauge;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.Gauge;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
@@ -90,7 +90,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     /**
      * Creates a MetricsRegistryImpl instance.
      *
-     * @param name Name of the registry
+     * @param name         Name of the registry
      * @param logger       the ILogger used
      * @param minimumLevel the minimum ProbeLevel. If a probe is registered with a ProbeLevel lower than the minimum ProbeLevel,
      *                     then the registration is skipped.
@@ -235,11 +235,28 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         checkNotNull(name, "name can't be null");
 
         ProbeInstance probeInstance = getProbeInstance(name);
-        if (probeInstance.function instanceof DoubleProbeFunction) {
-            return new DoubleGaugeImpl(this, name);
+        return toGaugeFromProbe(probeInstance, this, name, true);
+    }
+
+    static Gauge toGaugeFromProbe(ProbeInstance probeInstance, MetricsRegistryImpl metricsRegistry,
+                                  String name, boolean createDelegate) {
+
+        if (isUnavailableProbe(probeInstance)) {
+            return createDelegate ? new DelegatingGaugeImpl(metricsRegistry, name) : null;
         }
 
-        return new LongGaugeImpl(this, name);
+        if (probeInstance.function instanceof DoubleProbeFunction) {
+            return new DoubleGaugeImpl(metricsRegistry, name);
+        }
+
+        return new LongGaugeImpl(metricsRegistry, name);
+
+    }
+
+    static boolean isUnavailableProbe(ProbeInstance probeInstance) {
+        return probeInstance == null
+                || probeInstance.function == null
+                || probeInstance.source == null;
     }
 
     @Override
