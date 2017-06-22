@@ -19,6 +19,7 @@ package com.hazelcast.spring;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.config.SocketOptions;
@@ -129,6 +130,9 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("query-caches".equals(nodeName)) {
                     ManagedMap queryCaches = getQueryCaches(node);
                     configBuilder.addPropertyValue("queryCacheConfigs", queryCaches);
+                } else if ("connection-strategy".equals(nodeName)) {
+                    createAndFillBeanBuilder(node, ClientConnectionStrategyConfig.class, "connectionStrategyConfig",
+                            configBuilder);
                 }
             }
             builder.addConstructorArgValue(configBuilder.getBeanDefinition());
@@ -320,6 +324,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
             return listeners;
         }
+
     }
 }
 
