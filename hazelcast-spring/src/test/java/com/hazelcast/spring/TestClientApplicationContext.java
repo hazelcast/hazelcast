@@ -20,6 +20,8 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientConnectionStrategyConfig;
+import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
@@ -94,6 +96,9 @@ public class TestClientApplicationContext {
 
     @Resource(name = "client7-empty-serialization-config")
     private HazelcastClientProxy client7;
+
+    @Resource(name = "client8")
+    private HazelcastClientProxy client8;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -326,6 +331,13 @@ public class TestClientApplicationContext {
         assertEquals(EvictionPolicy.LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
         assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaximumSizePolicy());
         assertEquals(111, queryCacheConfig.getEvictionConfig().getSize());
+    }
+
+    @Test
+    public void testClientConnectionStrategyConfig() {
+        ClientConnectionStrategyConfig connectionStrategyConfig = client8.getClientConfig().getConnectionStrategyConfig();
+        assertTrue(connectionStrategyConfig.isAsyncStart());
+        assertEquals(ReconnectMode.ASYNC, connectionStrategyConfig.getReconnectMode());
     }
 
     private static QueryCacheConfig getQueryCacheConfig(ClientConfig config) {

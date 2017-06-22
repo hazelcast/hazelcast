@@ -245,6 +245,16 @@
         <hz:serialization></hz:serialization>
     </hz:client>
 
+    <hz:client id="client8"
+               credentials-ref="credentials">
+        <hz:network connection-attempt-limit="2">
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+        </hz:network>
+        <hz:connection-strategy async-start="true" reconnect-mode="ASYNC"/>
+    </hz:client>
+
+
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
         <property name="username" value="spring-group"/>
         <property name="password" value="spring-group-pass"/>
