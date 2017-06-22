@@ -19,6 +19,8 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -28,9 +30,12 @@ import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.VersionedPortable;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 public final class SerializationUtil {
@@ -122,5 +127,51 @@ public final class SerializationUtil {
         public Object getPartitionKey(Object key) {
             return null;
         }
+    }
+
+    /**
+     * Write items from a list into a ObjectDataOutput. The list can be null.
+     * It has to be deserialized via {@link #readNullableList(ObjectDataInput)}
+     *
+     * @param list list to write into the output
+     * @param out the output to use
+     * @param <T> type of the list
+     * @throws IOException
+     */
+    public static <T> void writeNullableList(List<T> list, ObjectDataOutput out) throws IOException {
+        if (list == null) {
+            out.writeBoolean(false);
+        } else {
+            out.writeBoolean(true);
+            out.writeInt(list.size());
+            for (T item : list) {
+                out.writeObject(item);
+            }
+        }
+    }
+
+    /**
+     * Read a list written by {@link #writeNullableList(List, ObjectDataOutput)}
+     *
+     * It does not gurantee to use the same implementation of a list as was written
+     * into the stream.
+     *
+     * @param in data input to read from
+     * @param <T> type of items
+     * @return list with all items or null
+     * @throws IOException
+     */
+    public static <T> List<T> readNullableList(ObjectDataInput in) throws IOException {
+        boolean notNull = in.readBoolean();
+        List<T> list = null;
+        if (notNull) {
+            int size = in.readInt();
+            list = new ArrayList<T>(size);
+            for (int i = 0; i < size; i++) {
+                T item = in.readObject();
+                list.add(item);
+            }
+        }
+        return list;
     }
 }

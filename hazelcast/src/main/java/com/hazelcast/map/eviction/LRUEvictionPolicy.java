@@ -16,12 +16,18 @@
 
 package com.hazelcast.map.eviction;
 
+import com.hazelcast.config.ConfigDataSerializerHook;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
 
 /**
  * LRU eviction policy for an {@link com.hazelcast.core.IMap IMap}
  */
-public class LRUEvictionPolicy extends MapEvictionPolicy {
+public class LRUEvictionPolicy extends MapEvictionPolicy implements IdentifiedDataSerializable {
 
     /**
      * LRU eviction policy instance.
@@ -33,5 +39,38 @@ public class LRUEvictionPolicy extends MapEvictionPolicy {
         long lastAccessTime1 = entryView1.getLastAccessTime();
         long lastAccessTime2 = entryView2.getLastAccessTime();
         return (lastAccessTime1 < lastAccessTime2) ? -1 : ((lastAccessTime1 == lastAccessTime2) ? 0 : 1);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.LRU_EVICTION_POLICY;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        //no-op
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        //no-op
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        return this.getClass().equals(obj.getClass());
+    }
+
+    @Override
+    public int hashCode() {
+        return this.getClass().hashCode();
     }
 }

@@ -5962,6 +5962,39 @@ public class ClientCompatibilityNullTest_1_2 {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         inputStream.close();
         input.close();
 

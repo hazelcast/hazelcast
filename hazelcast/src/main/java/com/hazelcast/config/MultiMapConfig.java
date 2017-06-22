@@ -16,6 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,7 +30,7 @@ import static com.hazelcast.util.Preconditions.checkBackupCount;
 /**
  * Configuration for MultiMap.
  */
-public class MultiMapConfig {
+public class MultiMapConfig implements IdentifiedDataSerializable {
 
     /**
      * The default number of synchronous backups for this MultiMap.
@@ -298,5 +303,99 @@ public class MultiMapConfig {
                 + ", backupCount=" + backupCount
                 + ", asyncBackupCount=" + asyncBackupCount
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.MULTIMAP_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeUTF(valueCollectionType);
+        if (listenerConfigs == null) {
+            out.writeBoolean(false);
+        } else {
+            out.writeBoolean(true);
+            out.writeInt(listenerConfigs.size());
+            for (ListenerConfig listenerConfig : listenerConfigs) {
+                out.writeObject(listenerConfig);
+            }
+        }
+        out.writeBoolean(binary);
+        out.writeInt(backupCount);
+        out.writeInt(asyncBackupCount);
+        out.writeBoolean(statisticsEnabled);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        valueCollectionType = in.readUTF();
+        boolean hasListenerConfig = in.readBoolean();
+        if (hasListenerConfig) {
+            int configSize = in.readInt();
+            listenerConfigs = new ArrayList<EntryListenerConfig>(configSize);
+            for (int i = 0; i < configSize; i++) {
+                EntryListenerConfig listenerConfig = in.readObject();
+                listenerConfigs.add(listenerConfig);
+            }
+        }
+        binary = in.readBoolean();
+        backupCount = in.readInt();
+        asyncBackupCount = in.readInt();
+        statisticsEnabled = in.readBoolean();
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        MultiMapConfig that = (MultiMapConfig) o;
+
+        if (binary != that.binary) {
+            return false;
+        }
+        if (backupCount != that.backupCount) {
+            return false;
+        }
+        if (asyncBackupCount != that.asyncBackupCount) {
+            return false;
+        }
+        if (statisticsEnabled != that.statisticsEnabled) {
+            return false;
+        }
+        if (!name.equals(that.name)) {
+            return false;
+        }
+        if (valueCollectionType != null
+                ? !valueCollectionType.equals(that.valueCollectionType) : that.valueCollectionType != null) {
+            return false;
+        }
+        return listenerConfigs != null ? listenerConfigs.equals(that.listenerConfigs) : that.listenerConfigs == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + (valueCollectionType != null ? valueCollectionType.hashCode() : 0);
+        result = 31 * result + (listenerConfigs != null ? listenerConfigs.hashCode() : 0);
+        result = 31 * result + (binary ? 1 : 0);
+        result = 31 * result + backupCount;
+        result = 31 * result + asyncBackupCount;
+        result = 31 * result + (statisticsEnabled ? 1 : 0);
+        return result;
     }
 }

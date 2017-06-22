@@ -40,8 +40,23 @@ public final class LifecycleEvent {
         STARTED,
         SHUTTING_DOWN,
         SHUTDOWN,
+        /**
+         * Fired on each cluster members just before starting a merge process into another cluster.
+         * This is typically used when a split-brain situation is healed.
+         *
+         */
         MERGING,
+
+        /**
+         * Indicates merge process was successful and data have been merged.
+         *
+         */
         MERGED,
+
+        /**
+         * Indicates merge process failed for some reason.
+         *
+         */
         MERGE_FAILED,
         CLIENT_CONNECTED,
         CLIENT_DISCONNECTED

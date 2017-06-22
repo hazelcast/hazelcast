@@ -279,16 +279,21 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
     }
 
     private void healSplitBrain() {
-        unblockCommunication();
-        if (unblacklistHint) {
-            unblacklistMembers();
-        }
-        if (shouldAssertAllNodesRejoined()) {
-            for (HazelcastInstance hz : instances) {
-                assertClusterSizeEventually(instances.length, hz);
+        MergeBarrier mergeBarrier = new MergeBarrier(instances);
+        try {
+            unblockCommunication();
+            if (unblacklistHint) {
+                unblacklistMembers();
             }
+            if (shouldAssertAllNodesRejoined()) {
+                for (HazelcastInstance hz : instances) {
+                    assertClusterSizeEventually(instances.length, hz);
+                }
+            }
+            waitAllForSafeState(instances);
+        } finally {
+            mergeBarrier.awaitNoMergeInProgressAndClose();
         }
-        waitAllForSafeState(instances);
     }
 
     private void unblockCommunication() {

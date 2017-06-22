@@ -164,4 +164,36 @@ public class WanReplicationRef implements DataSerializable, Serializable {
                 + '\''
                 + '}';
     }
+
+    @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        WanReplicationRef that = (WanReplicationRef) o;
+        if (republishingEnabled != that.republishingEnabled) {
+            return false;
+        }
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
+        if (mergePolicy != null ? !mergePolicy.equals(that.mergePolicy) : that.mergePolicy != null) {
+            return false;
+        }
+        return filters != null ? filters.equals(that.filters) : that.filters == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + (mergePolicy != null ? mergePolicy.hashCode() : 0);
+        result = 31 * result + (filters != null ? filters.hashCode() : 0);
+        result = 31 * result + (republishingEnabled ? 1 : 0);
+        return result;
+    }
 }

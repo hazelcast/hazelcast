@@ -16,6 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
+
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -23,7 +29,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * Configuration options for the {@link com.hazelcast.cardinality.CardinalityEstimator}
  */
-public class CardinalityEstimatorConfig {
+public class CardinalityEstimatorConfig implements IdentifiedDataSerializable {
 
     /**
      * The number of sync backups per estimator
@@ -41,7 +47,7 @@ public class CardinalityEstimatorConfig {
 
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
 
-    private CardinalityEstimatorConfigReadOnly readOnly;
+    private transient CardinalityEstimatorConfigReadOnly readOnly;
 
     public CardinalityEstimatorConfig() {
     }
@@ -151,6 +157,57 @@ public class CardinalityEstimatorConfig {
             readOnly = new CardinalityEstimatorConfigReadOnly(this);
         }
         return readOnly;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.CARDINALITY_ESTIMATOR_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeInt(backupCount);
+        out.writeInt(asyncBackupCount);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        backupCount = in.readInt();
+        asyncBackupCount = in.readInt();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        CardinalityEstimatorConfig that = (CardinalityEstimatorConfig) o;
+        if (backupCount != that.backupCount) {
+            return false;
+        }
+        if (asyncBackupCount != that.asyncBackupCount) {
+            return false;
+        }
+        return name.equals(that.name);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + backupCount;
+        result = 31 * result + asyncBackupCount;
+        return result;
     }
 
     private static class CardinalityEstimatorConfigReadOnly extends CardinalityEstimatorConfig {

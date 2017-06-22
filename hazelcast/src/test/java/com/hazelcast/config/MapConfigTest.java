@@ -16,7 +16,10 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.listener.MapPartitionLostListener;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -404,5 +407,14 @@ public class MapConfigTest {
 
         // then
         assertEquals(mapConfig, otherMapConfig);
+    }
+
+    @Test
+    public void givenDefaultConfig_whenSerializedAndDeserialized_noExceptionIsThrown() {
+        MapConfig mapConfig = new MapConfig();
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+
+        Data data = serializationService.toData(mapConfig);
+        MapConfig clone = serializationService.toObject(data);
     }
 }

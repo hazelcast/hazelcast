@@ -16,10 +16,16 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
+
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IExecutorService}.
  */
-public class ExecutorConfig {
+public class ExecutorConfig implements IdentifiedDataSerializable {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -39,7 +45,7 @@ public class ExecutorConfig {
 
     private boolean statisticsEnabled = true;
 
-    private ExecutorConfigReadOnly readOnly;
+    private transient ExecutorConfigReadOnly readOnly;
 
     public ExecutorConfig() {
     }
@@ -163,5 +169,63 @@ public class ExecutorConfig {
                 + ", poolSize=" + poolSize
                 + ", queueCapacity=" + queueCapacity
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.EXECUTOR_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeInt(poolSize);
+        out.writeInt(queueCapacity);
+        out.writeBoolean(statisticsEnabled);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        poolSize = in.readInt();
+        queueCapacity = in.readInt();
+        statisticsEnabled = in.readBoolean();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ExecutorConfig that = (ExecutorConfig) o;
+
+        if (poolSize != that.poolSize) {
+            return false;
+        }
+        if (queueCapacity != that.queueCapacity) {
+            return false;
+        }
+        if (statisticsEnabled != that.statisticsEnabled) {
+            return false;
+        }
+        return name.equals(that.name);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + poolSize;
+        result = 31 * result + queueCapacity;
+        result = 31 * result + (statisticsEnabled ? 1 : 0);
+        return result;
     }
 }

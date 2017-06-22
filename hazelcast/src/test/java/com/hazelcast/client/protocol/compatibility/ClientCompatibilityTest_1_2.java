@@ -6256,6 +6256,38 @@ public class ClientCompatibilityTest_1_2 {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         inputStream.close();
         input.close();
 

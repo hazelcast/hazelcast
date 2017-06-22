@@ -16,13 +16,19 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
+
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
  * Configuration options for the {@link com.hazelcast.scheduledexecutor.IScheduledExecutorService}.
  */
-public class ScheduledExecutorConfig {
+public class ScheduledExecutorConfig implements IdentifiedDataSerializable {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -47,7 +53,7 @@ public class ScheduledExecutorConfig {
 
     private int poolSize = DEFAULT_POOL_SIZE;
 
-    private ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly readOnly;
+    private transient ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly readOnly;
 
     public ScheduledExecutorConfig() {
     }
@@ -167,6 +173,63 @@ public class ScheduledExecutorConfig {
             readOnly = new ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly(this);
         }
         return readOnly;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.SCHEDULED_EXECUTOR_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeInt(durability);
+        out.writeInt(capacity);
+        out.writeInt(poolSize);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        durability = in.readInt();
+        capacity = in.readInt();
+        poolSize = in.readInt();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ScheduledExecutorConfig that = (ScheduledExecutorConfig) o;
+        if (durability != that.durability) {
+            return false;
+        }
+        if (capacity != that.capacity) {
+            return false;
+        }
+        if (poolSize != that.poolSize) {
+            return false;
+        }
+        return name.equals(that.name);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + durability;
+        result = 31 * result + capacity;
+        result = 31 * result + poolSize;
+        return result;
     }
 
     private static class ScheduledExecutorConfigReadOnly extends ScheduledExecutorConfig {

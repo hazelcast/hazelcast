@@ -16,6 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
+
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
 import static com.hazelcast.util.Preconditions.checkHasText;
@@ -24,7 +30,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for an {@link com.hazelcast.core.ISemaphore}.
  */
-public class SemaphoreConfig {
+public class SemaphoreConfig implements IdentifiedDataSerializable {
 
     /**
      * Default synchronous backup count.
@@ -39,7 +45,7 @@ public class SemaphoreConfig {
     private int initialPermits;
     private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
-    private SemaphoreConfigReadOnly readOnly;
+    private transient SemaphoreConfigReadOnly readOnly;
 
     /**
      * Creates a default configured {@link SemaphoreConfig}.
@@ -188,5 +194,31 @@ public class SemaphoreConfig {
                 + ", backupCount=" + backupCount
                 + ", asyncBackupCount=" + asyncBackupCount
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.SEMAPHORE_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeInt(initialPermits);
+        out.writeInt(backupCount);
+        out.writeInt(asyncBackupCount);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        initialPermits = in.readInt();
+        backupCount = in.readInt();
+        asyncBackupCount = in.readInt();
     }
 }

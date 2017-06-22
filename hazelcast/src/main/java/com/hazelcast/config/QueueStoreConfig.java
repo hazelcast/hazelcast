@@ -18,7 +18,11 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.QueueStore;
 import com.hazelcast.core.QueueStoreFactory;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import java.io.IOException;
 import java.util.Properties;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
@@ -26,7 +30,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 /**
  * Configuration for the {@link QueueStore}.
  */
-public class QueueStoreConfig {
+public class QueueStoreConfig implements IdentifiedDataSerializable {
 
     private boolean enabled = true;
     private String className;
@@ -34,7 +38,7 @@ public class QueueStoreConfig {
     private Properties properties = new Properties();
     private QueueStore storeImplementation;
     private QueueStoreFactory factoryImplementation;
-    private QueueStoreConfigReadOnly readOnly;
+    private transient QueueStoreConfigReadOnly readOnly;
 
     public QueueStoreConfig() {
     }
@@ -130,5 +134,79 @@ public class QueueStoreConfig {
                 + ", className='" + className + '\''
                 + ", properties=" + properties
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.QUEUE_STORE_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeBoolean(enabled);
+        out.writeUTF(className);
+        out.writeUTF(factoryClassName);
+        out.writeObject(properties);
+        out.writeObject(storeImplementation);
+        out.writeObject(factoryImplementation);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        enabled = in.readBoolean();
+        className = in.readUTF();
+        factoryClassName = in.readUTF();
+        properties = in.readObject();
+        storeImplementation = in.readObject();
+        factoryImplementation = in.readObject();
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        QueueStoreConfig that = (QueueStoreConfig) o;
+        if (isEnabled() != that.isEnabled()) {
+            return false;
+        }
+        if (getClassName() != null ? !getClassName().equals(that.getClassName()) : that.getClassName() != null) {
+            return false;
+        }
+        if (getFactoryClassName() != null ? !getFactoryClassName().equals(that.getFactoryClassName())
+                : that.getFactoryClassName() != null) {
+            return false;
+        }
+        if (getProperties() != null ? !getProperties().equals(that.getProperties()) : that.getProperties() != null) {
+            return false;
+        }
+        if (getStoreImplementation() != null ? !getStoreImplementation().equals(that.getStoreImplementation())
+                : that.getStoreImplementation() != null) {
+            return false;
+        }
+        return getFactoryImplementation() != null ? getFactoryImplementation().equals(that.getFactoryImplementation())
+                : that.getFactoryImplementation() == null;
+    }
+
+    @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    public int hashCode() {
+        int result = (isEnabled() ? 1 : 0);
+        result = 31 * result + (getClassName() != null ? getClassName().hashCode() : 0);
+        result = 31 * result + (getFactoryClassName() != null ? getFactoryClassName().hashCode() : 0);
+        result = 31 * result + (getProperties() != null ? getProperties().hashCode() : 0);
+        result = 31 * result + (getStoreImplementation() != null ? getStoreImplementation().hashCode() : 0);
+        result = 31 * result + (getFactoryImplementation() != null ? getFactoryImplementation().hashCode() : 0);
+        return result;
     }
 }

@@ -25,7 +25,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class LockConfigReadonlyTest {
+public class LockConfigReadOnlyTest {
 
     private LockConfig getReadOnlyConfig() {
         return new LockConfig().getAsReadOnly();

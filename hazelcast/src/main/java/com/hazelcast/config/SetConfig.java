@@ -21,7 +21,7 @@ package com.hazelcast.config;
  */
 public class SetConfig extends CollectionConfig<SetConfig> {
 
-    private SetConfigReadOnly readOnly;
+    private transient SetConfigReadOnly readOnly;
 
     public SetConfig() {
     }
@@ -46,5 +46,10 @@ public class SetConfig extends CollectionConfig<SetConfig> {
             readOnly = new SetConfigReadOnly(this);
         }
         return readOnly;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.SET_CONFIG;
     }
 }

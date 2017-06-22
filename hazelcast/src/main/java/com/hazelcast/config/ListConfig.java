@@ -21,7 +21,7 @@ package com.hazelcast.config;
  */
 public class ListConfig extends CollectionConfig<ListConfig> {
 
-    private ListConfigReadOnly readOnly;
+    private transient ListConfigReadOnly readOnly;
 
     public ListConfig() {
     }
@@ -47,4 +47,10 @@ public class ListConfig extends CollectionConfig<ListConfig> {
         }
         return readOnly;
     }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.LIST_CONFIG;
+    }
+
 }

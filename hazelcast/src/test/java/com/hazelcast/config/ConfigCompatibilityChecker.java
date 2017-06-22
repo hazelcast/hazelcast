@@ -20,6 +20,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.config.ConfigUtils;
 import com.hazelcast.util.CollectionUtil;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -124,8 +125,8 @@ class ConfigCompatibilityChecker {
         configNames.addAll(configs2.keySet());
 
         for (final String name : configNames) {
-            final T config1 = c1.lookupByPattern(configs1, name);
-            final T config2 = c2.lookupByPattern(configs2, name);
+            final T config1 = ConfigUtils.lookupByPattern(c1.getConfigPatternMatcher(), configs1, name);
+            final T config2 = ConfigUtils.lookupByPattern(c2.getConfigPatternMatcher(), configs2, name);
             if (config1 != null && config2 != null && !checker.check(config1, config2)) {
                 throw new HazelcastException(format("Incompatible " + type + " config :\n{0}\n vs \n{1}",
                         config1, config2));

@@ -107,4 +107,40 @@ public class CacheSimpleEntryListenerConfig {
     public void setSynchronous(boolean synchronous) {
         this.synchronous = synchronous;
     }
+
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        CacheSimpleEntryListenerConfig that = (CacheSimpleEntryListenerConfig) o;
+
+        if (oldValueRequired != that.oldValueRequired) {
+            return false;
+        }
+        if (synchronous != that.synchronous) {
+            return false;
+        }
+        if (cacheEntryListenerFactory != null ? !cacheEntryListenerFactory.equals(that.cacheEntryListenerFactory)
+                : that.cacheEntryListenerFactory != null) {
+            return false;
+        }
+        return cacheEntryEventFilterFactory != null
+                ? cacheEntryEventFilterFactory.equals(that.cacheEntryEventFilterFactory)
+                : that.cacheEntryEventFilterFactory == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = cacheEntryListenerFactory != null ? cacheEntryListenerFactory.hashCode() : 0;
+        result = 31 * result + (cacheEntryEventFilterFactory != null ? cacheEntryEventFilterFactory.hashCode() : 0);
+        result = 31 * result + (oldValueRequired ? 1 : 0);
+        result = 31 * result + (synchronous ? 1 : 0);
+        return result;
+    }
 }

@@ -117,7 +117,11 @@ public class PermissionConfig {
         /**
          * All
          */
-        ALL("all-permissions");
+        ALL("all-permissions"),
+        /**
+         * Configuration permission
+         */
+        CONFIG("config-permission");
 
         private final String nodeName;
 

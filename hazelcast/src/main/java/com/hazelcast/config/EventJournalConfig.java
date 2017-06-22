@@ -16,7 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.annotation.Beta;
+
+import java.io.IOException;
 
 import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
@@ -33,7 +38,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * and does not expose any features in Hazelcast IMDG.
  */
 @Beta
-public class EventJournalConfig {
+public class EventJournalConfig implements IdentifiedDataSerializable {
 
     /**
      * Default value of capacity of the event journal.
@@ -204,6 +209,69 @@ public class EventJournalConfig {
         return this;
     }
 
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.EVENT_JOURNAL_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(mapName);
+        out.writeUTF(cacheName);
+        out.writeBoolean(enabled);
+        out.writeInt(capacity);
+        out.writeInt(timeToLiveSeconds);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        mapName = in.readUTF();
+        cacheName = in.readUTF();
+        enabled = in.readBoolean();
+        capacity = in.readInt();
+        timeToLiveSeconds = in.readInt();
+    }
+
+    @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        EventJournalConfig that = (EventJournalConfig) o;
+        if (enabled != that.enabled) {
+            return false;
+        }
+        if (capacity != that.capacity) {
+            return false;
+        }
+        if (timeToLiveSeconds != that.timeToLiveSeconds) {
+            return false;
+        }
+        if (mapName != null ? !mapName.equals(that.mapName) : that.mapName != null) {
+            return false;
+        }
+        return cacheName != null ? cacheName.equals(that.cacheName) : that.cacheName == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = mapName != null ? mapName.hashCode() : 0;
+        result = 31 * result + (cacheName != null ? cacheName.hashCode() : 0);
+        result = 31 * result + (enabled ? 1 : 0);
+        result = 31 * result + capacity;
+        result = 31 * result + timeToLiveSeconds;
+        return result;
+    }
 
     @Beta
     private static class EventJournalConfigReadOnly extends EventJournalConfig {

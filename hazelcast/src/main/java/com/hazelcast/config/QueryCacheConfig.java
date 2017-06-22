@@ -16,9 +16,16 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
@@ -30,7 +37,9 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  *
  * @since 3.5
  */
-public class QueryCacheConfig {
+
+@SuppressWarnings("checkstyle:methodcount")
+public class QueryCacheConfig implements IdentifiedDataSerializable {
 
     /**
      * By default, after reaching this minimum size, node immediately sends buffered events to {@code QueryCache}.
@@ -120,7 +129,7 @@ public class QueryCacheConfig {
 
     private List<MapIndexConfig> indexConfigs;
 
-    private QueryCacheConfigReadOnly readOnly;
+    private transient QueryCacheConfigReadOnly readOnly;
 
     public QueryCacheConfig() {
     }
@@ -443,5 +452,114 @@ public class QueryCacheConfig {
                 + ", entryListenerConfigs=" + entryListenerConfigs
                 + ", indexConfigs=" + indexConfigs
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.QUERY_CACHE_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(batchSize);
+        out.writeInt(bufferSize);
+        out.writeInt(delaySeconds);
+        out.writeBoolean(includeValue);
+        out.writeBoolean(populate);
+        out.writeBoolean(coalesce);
+        out.writeUTF(inMemoryFormat.name());
+        out.writeUTF(name);
+        out.writeObject(predicateConfig);
+        out.writeObject(evictionConfig);
+        writeNullableList(entryListenerConfigs, out);
+        writeNullableList(indexConfigs, out);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        batchSize = in.readInt();
+        bufferSize = in.readInt();
+        delaySeconds = in.readInt();
+        includeValue = in.readBoolean();
+        populate = in.readBoolean();
+        coalesce = in.readBoolean();
+        inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
+        name = in.readUTF();
+        predicateConfig = in.readObject();
+        evictionConfig = in.readObject();
+        entryListenerConfigs = readNullableList(in);
+        indexConfigs = readNullableList(in);
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        QueryCacheConfig that = (QueryCacheConfig) o;
+
+        if (batchSize != that.batchSize) {
+            return false;
+        }
+        if (bufferSize != that.bufferSize) {
+            return false;
+        }
+        if (delaySeconds != that.delaySeconds) {
+            return false;
+        }
+        if (includeValue != that.includeValue) {
+            return false;
+        }
+        if (populate != that.populate) {
+            return false;
+        }
+        if (coalesce != that.coalesce) {
+            return false;
+        }
+        if (inMemoryFormat != that.inMemoryFormat) {
+            return false;
+        }
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
+        if (predicateConfig != null ? !predicateConfig.equals(that.predicateConfig) : that.predicateConfig != null) {
+            return false;
+        }
+        if (evictionConfig != null ? !evictionConfig.equals(that.evictionConfig) : that.evictionConfig != null) {
+            return false;
+        }
+        if (entryListenerConfigs != null
+                ? !entryListenerConfigs.equals(that.entryListenerConfigs) : that.entryListenerConfigs != null) {
+            return false;
+        }
+        return indexConfigs != null ? indexConfigs.equals(that.indexConfigs) : that.indexConfigs == null;
+    }
+
+    @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    public int hashCode() {
+        int result = batchSize;
+        result = 31 * result + bufferSize;
+        result = 31 * result + delaySeconds;
+        result = 31 * result + (includeValue ? 1 : 0);
+        result = 31 * result + (populate ? 1 : 0);
+        result = 31 * result + (coalesce ? 1 : 0);
+        result = 31 * result + (inMemoryFormat != null ? inMemoryFormat.hashCode() : 0);
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        result = 31 * result + (predicateConfig != null ? predicateConfig.hashCode() : 0);
+        result = 31 * result + (evictionConfig != null ? evictionConfig.hashCode() : 0);
+        result = 31 * result + (entryListenerConfigs != null ? entryListenerConfigs.hashCode() : 0);
+        result = 31 * result + (indexConfigs != null ? indexConfigs.hashCode() : 0);
+        return result;
     }
 }

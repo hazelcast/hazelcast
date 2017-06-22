@@ -94,4 +94,9 @@ public class CachePartitionLostListenerConfig extends ListenerConfig implements 
         result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.CACHE_PARTITION_LOST_LISTENER_CONFIG;
+    }
 }

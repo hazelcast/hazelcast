@@ -17,17 +17,22 @@
 package com.hazelcast.config;
 
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
 
 /**
  * Contains the configuration for partitioning strategy.
  */
-public class PartitioningStrategyConfig {
+public class PartitioningStrategyConfig implements IdentifiedDataSerializable {
 
     private String partitioningStrategyClass;
 
     private PartitioningStrategy partitionStrategy;
 
-    private PartitioningStrategyConfigReadOnly readOnly;
+    private transient PartitioningStrategyConfigReadOnly readOnly;
 
     public PartitioningStrategyConfig() {
     }
@@ -82,5 +87,54 @@ public class PartitioningStrategyConfig {
                 + "partitioningStrategyClass='" + partitioningStrategyClass + '\''
                 + ", partitionStrategy=" + partitionStrategy
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.PARTITION_STRATEGY_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(partitioningStrategyClass);
+        out.writeObject(partitionStrategy);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        partitioningStrategyClass = in.readUTF();
+        partitionStrategy = in.readObject();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        PartitioningStrategyConfig that = (PartitioningStrategyConfig) o;
+
+        if (partitioningStrategyClass != null
+                ? !partitioningStrategyClass.equals(that.partitioningStrategyClass)
+                : that.partitioningStrategyClass != null) {
+            return false;
+        }
+        return partitionStrategy != null ? partitionStrategy.equals(that.partitionStrategy)
+                : that.partitionStrategy == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = partitioningStrategyClass != null ? partitioningStrategyClass.hashCode() : 0;
+        result = 31 * result + (partitionStrategy != null ? partitionStrategy.hashCode() : 0);
+        return result;
     }
 }

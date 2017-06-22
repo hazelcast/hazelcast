@@ -110,7 +110,7 @@ public class TopicAddMessageListenerMessageTask
         ClientMessage eventMessage = TopicAddMessageListenerCodec.encodeTopicEvent(messageData,
                 message.getPublishTime(), publisherUuid);
 
-        boolean isMultithreaded = nodeEngine.getConfig().getTopicConfig(parameters.name).isMultiThreadingEnabled();
+        boolean isMultithreaded = nodeEngine.getConfig().findTopicConfig(parameters.name).isMultiThreadingEnabled();
         if (isMultithreaded) {
             int key = rand.nextInt();
             int partitionId = hashToIndex(key, nodeEngine.getPartitionService().getPartitionCount());

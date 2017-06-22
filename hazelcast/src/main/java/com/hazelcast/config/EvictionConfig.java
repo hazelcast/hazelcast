@@ -335,4 +335,42 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
                 + ", comparator=" + comparator
                 + '}';
     }
+
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        EvictionConfig that = (EvictionConfig) o;
+
+        if (size != that.size) {
+            return false;
+        }
+        if (maxSizePolicy != that.maxSizePolicy) {
+            return false;
+        }
+        if (evictionPolicy != that.evictionPolicy) {
+            return false;
+        }
+        if (comparatorClassName != null
+                ? !comparatorClassName.equals(that.comparatorClassName) : that.comparatorClassName != null) {
+            return false;
+        }
+        return comparator != null ? comparator.equals(that.comparator) : that.comparator == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = size;
+        result = 31 * result + (maxSizePolicy != null ? maxSizePolicy.hashCode() : 0);
+        result = 31 * result + (evictionPolicy != null ? evictionPolicy.hashCode() : 0);
+        result = 31 * result + (comparatorClassName != null ? comparatorClassName.hashCode() : 0);
+        result = 31 * result + (comparator != null ? comparator.hashCode() : 0);
+        return result;
+    }
 }

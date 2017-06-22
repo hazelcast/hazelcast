@@ -16,13 +16,19 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.topic.TopicOverloadPolicy;
 
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Executor;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
 import static com.hazelcast.topic.TopicOverloadPolicy.BLOCK;
 import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -43,7 +49,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * messages.
  */
 @Beta
-public class ReliableTopicConfig {
+public class ReliableTopicConfig implements IdentifiedDataSerializable {
 
     /**
      * The default read batch size.
@@ -282,6 +288,77 @@ public class ReliableTopicConfig {
      */
     public ReliableTopicConfig getAsReadOnly() {
         return new ReliableTopicConfigReadOnly(this);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.RELIABLE_TOPIC_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(executor);
+        out.writeInt(readBatchSize);
+        out.writeUTF(name);
+        out.writeBoolean(statisticsEnabled);
+        writeNullableList(listenerConfigs, out);
+        out.writeUTF(topicOverloadPolicy.name());
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        executor = in.readObject();
+        readBatchSize = in.readInt();
+        name = in.readUTF();
+        statisticsEnabled = in.readBoolean();
+        listenerConfigs = readNullableList(in);
+        topicOverloadPolicy = TopicOverloadPolicy.valueOf(in.readUTF());
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ReliableTopicConfig that = (ReliableTopicConfig) o;
+
+        if (readBatchSize != that.readBatchSize) {
+            return false;
+        }
+        if (statisticsEnabled != that.statisticsEnabled) {
+            return false;
+        }
+        if (executor != null ? !executor.equals(that.executor) : that.executor != null) {
+            return false;
+        }
+        if (!name.equals(that.name)) {
+            return false;
+        }
+        if (listenerConfigs != null ? !listenerConfigs.equals(that.listenerConfigs) : that.listenerConfigs != null) {
+            return false;
+        }
+        return topicOverloadPolicy == that.topicOverloadPolicy;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = executor != null ? executor.hashCode() : 0;
+        result = 31 * result + readBatchSize;
+        result = 31 * result + name.hashCode();
+        result = 31 * result + (statisticsEnabled ? 1 : 0);
+        result = 31 * result + (listenerConfigs != null ? listenerConfigs.hashCode() : 0);
+        result = 31 * result + (topicOverloadPolicy != null ? topicOverloadPolicy.hashCode() : 0);
+        return result;
     }
 
     static class ReliableTopicConfigReadOnly extends ReliableTopicConfig {
