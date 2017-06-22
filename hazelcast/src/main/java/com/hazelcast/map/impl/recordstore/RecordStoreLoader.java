@@ -28,7 +28,7 @@ interface RecordStoreLoader {
 
     RecordStoreLoader EMPTY_LOADER = new RecordStoreLoader() {
         @Override
-        public Future loadValues(List<Data> keys, boolean replaceExistingValues) {
+        public Future loadValues(List<Data> keys, boolean replaceExistingValues, String callerUuid) {
             return null;
         }
     };
@@ -38,7 +38,8 @@ interface RecordStoreLoader {
      *
      * @param keys                  keys to be loaded.
      * @param replaceExistingValues replace existing values
+     * @param callerUuid
      * @return future for checking when loading is complete
      */
-    Future<?> loadValues(List<Data> keys, boolean replaceExistingValues);
+    Future<?> loadValues(List<Data> keys, boolean replaceExistingValues, String callerUuid);
 }

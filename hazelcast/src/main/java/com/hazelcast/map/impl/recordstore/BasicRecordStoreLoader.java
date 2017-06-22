@@ -74,8 +74,8 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
     }
 
     @Override
-    public Future<?> loadValues(List<Data> keys, boolean replaceExistingValues) {
-        final Callable task = new GivenKeysLoaderTask(keys, replaceExistingValues);
+    public Future<?> loadValues(List<Data> keys, boolean replaceExistingValues, String callerUuid) {
+        final Callable task = new GivenKeysLoaderTask(keys, replaceExistingValues, callerUuid);
         return executeTask(MAP_LOADER_EXECUTOR, task);
     }
 
@@ -94,12 +94,14 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
      */
     private final class GivenKeysLoaderTask implements Callable<Object> {
 
+        private final String callerUuid;
         private final List<Data> keys;
         private final boolean replaceExistingValues;
 
-        private GivenKeysLoaderTask(List<Data> keys, boolean replaceExistingValues) {
+        private GivenKeysLoaderTask(List<Data> keys, boolean replaceExistingValues, String callerUuid) {
             this.keys = keys;
             this.replaceExistingValues = replaceExistingValues;
+            this.callerUuid = callerUuid;
         }
 
         @Override
@@ -107,74 +109,101 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
             loadValuesInternal(keys, replaceExistingValues);
             return null;
         }
-    }
 
-    private void loadValuesInternal(List<Data> keys, boolean replaceExistingValues) throws Exception {
-        if (!replaceExistingValues) {
-            Future removeKeysFuture = removeExistingKeys(keys);
-            removeKeysFuture.get();
-        }
-
-        removeUnloadableKeys(keys);
-
-        if (keys.isEmpty()) {
-            loaded.set(true);
-            return;
-        }
-
-        List<Future> futures = doBatchLoad(keys);
-        for (Future future : futures) {
-            future.get();
-        }
-    }
-
-    private Future removeExistingKeys(List<Data> keys) {
-        OperationService operationService = mapServiceContext.getNodeEngine().getOperationService();
-        final Operation operation = new RemoveFromLoadAllOperation(name, keys);
-        return operationService.invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
-    }
-
-    private List<Future> doBatchLoad(List<Data> keys) {
-        final Queue<List<Data>> batchChunks = createBatchChunks(keys);
-        final int size = batchChunks.size();
-        final AtomicInteger finishedBatchCounter = new AtomicInteger(size);
-        List<Future> futures = new ArrayList<Future>();
-
-        while (!batchChunks.isEmpty()) {
-            final List<Data> chunk = batchChunks.poll();
-            final List<Data> keyValueSequence = loadAndGet(chunk);
-            if (keyValueSequence.isEmpty()) {
-                if (finishedBatchCounter.decrementAndGet() == 0) {
-                    loaded.set(true);
-                }
-                continue;
+        private void loadValuesInternal(List<Data> keys, boolean replaceExistingValues) throws Exception {
+            if (!replaceExistingValues) {
+                Future removeKeysFuture = removeExistingKeys(keys);
+                removeKeysFuture.get();
             }
-            futures.add(sendOperation(keyValueSequence, finishedBatchCounter));
+
+            removeUnloadableKeys(keys);
+
+            if (keys.isEmpty()) {
+                loaded.set(true);
+                return;
+            }
+
+            List<Future> futures = doBatchLoad(keys);
+            for (Future future : futures) {
+                future.get();
+            }
         }
 
-        return futures;
-    }
-
-    private Queue<List<Data>> createBatchChunks(List<Data> keys) {
-        final Queue<List<Data>> chunks = new LinkedList<List<Data>>();
-        final int loadBatchSize = getLoadBatchSize();
-        int page = 0;
-        List<Data> tmpKeys;
-        while ((tmpKeys = getBatchChunk(keys, loadBatchSize, page++)) != null) {
-            chunks.add(tmpKeys);
+        private Future removeExistingKeys(List<Data> keys) {
+            OperationService operationService = mapServiceContext.getNodeEngine().getOperationService();
+            final Operation operation = new RemoveFromLoadAllOperation(name, keys);
+            return operationService.invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
         }
-        return chunks;
-    }
 
-    private List<Data> loadAndGet(List<Data> keys) {
-        Map<Object, Object> entries = Collections.emptyMap();
-        try {
-            entries = mapDataStore.loadAll(keys);
-        } catch (Throwable t) {
-            logger.warning("Could not load keys from map store", t);
-            ExceptionUtil.rethrow(t);
+        private List<Future> doBatchLoad(List<Data> keys) {
+            final Queue<List<Data>> batchChunks = createBatchChunks(keys);
+            final int size = batchChunks.size();
+            final AtomicInteger finishedBatchCounter = new AtomicInteger(size);
+            List<Future> futures = new ArrayList<Future>();
+
+            while (!batchChunks.isEmpty()) {
+                final List<Data> chunk = batchChunks.poll();
+                final List<Data> keyValueSequence = loadAndGet(chunk);
+                if (keyValueSequence.isEmpty()) {
+                    if (finishedBatchCounter.decrementAndGet() == 0) {
+                        loaded.set(true);
+                    }
+                    continue;
+                }
+                futures.add(sendOperation(keyValueSequence, finishedBatchCounter));
+            }
+
+            return futures;
         }
-        return getKeyValueSequence(entries);
+
+        private Future<?> sendOperation(List<Data> keyValueSequence, AtomicInteger finishedBatchCounter) {
+            OperationService operationService = mapServiceContext.getNodeEngine().getOperationService();
+            final Operation operation = createOperation(keyValueSequence, finishedBatchCounter);
+            //operationService.executeOperation(operation);
+            return operationService.invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
+        }
+
+        private Operation createOperation(List<Data> keyValueSequence, final AtomicInteger finishedBatchCounter) {
+            final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+            MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(name);
+            MapOperation operation = operationProvider.createPutFromLoadAllOperation(name, keyValueSequence);
+            operation.setNodeEngine(nodeEngine);
+            operation.setOperationResponseHandler(new OperationResponseHandler() {
+                @Override
+                public void sendResponse(Operation op, Object obj) {
+                    if (finishedBatchCounter.decrementAndGet() == 0) {
+                        loaded.set(true);
+                    }
+                }
+            });
+            operation.setPartitionId(partitionId);
+            OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
+            operation.setCallerUuid(callerUuid);
+            operation.setServiceName(MapService.SERVICE_NAME);
+            return operation;
+        }
+
+        private Queue<List<Data>> createBatchChunks(List<Data> keys) {
+            final Queue<List<Data>> chunks = new LinkedList<List<Data>>();
+            final int loadBatchSize = getLoadBatchSize();
+            int page = 0;
+            List<Data> tmpKeys;
+            while ((tmpKeys = getBatchChunk(keys, loadBatchSize, page++)) != null) {
+                chunks.add(tmpKeys);
+            }
+            return chunks;
+        }
+
+        private List<Data> loadAndGet(List<Data> keys) {
+            Map<Object, Object> entries = Collections.emptyMap();
+            try {
+                entries = mapDataStore.loadAll(keys);
+            } catch (Throwable t) {
+                logger.warning("Could not load keys from map store", t);
+                ExceptionUtil.rethrow(t);
+            }
+            return getKeyValueSequence(entries);
+        }
     }
 
     private List<Data> getKeyValueSequence(Map<Object, Object> entries) {
@@ -201,7 +230,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
      * @param chunkNumber batch chunk number.
      * @return sub-list of list if any or null.
      */
-    private List<Data> getBatchChunk(List<Data> list, int batchSize, int chunkNumber) {
+    private static List<Data> getBatchChunk(List<Data> list, int batchSize, int chunkNumber) {
         if (list == null || list.isEmpty()) {
             return null;
         }
@@ -211,33 +240,6 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
             return null;
         }
         return list.subList(start, end);
-    }
-
-    private Future<?> sendOperation(List<Data> keyValueSequence, AtomicInteger finishedBatchCounter) {
-        OperationService operationService = mapServiceContext.getNodeEngine().getOperationService();
-        final Operation operation = createOperation(keyValueSequence, finishedBatchCounter);
-        //operationService.executeOperation(operation);
-        return operationService.invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
-    }
-
-    private Operation createOperation(List<Data> keyValueSequence, final AtomicInteger finishedBatchCounter) {
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(name);
-        MapOperation operation = operationProvider.createPutFromLoadAllOperation(name, keyValueSequence);
-        operation.setNodeEngine(nodeEngine);
-        operation.setOperationResponseHandler(new OperationResponseHandler() {
-            @Override
-            public void sendResponse(Operation op, Object obj) {
-                if (finishedBatchCounter.decrementAndGet() == 0) {
-                    loaded.set(true);
-                }
-            }
-        });
-        operation.setPartitionId(partitionId);
-        OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
-        operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
-        operation.setServiceName(MapService.SERVICE_NAME);
-        return operation;
     }
 
     private void removeUnloadableKeys(Collection<Data> keys) {
