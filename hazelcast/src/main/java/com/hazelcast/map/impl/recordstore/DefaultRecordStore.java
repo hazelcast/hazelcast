@@ -862,6 +862,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         update = mapDataStore.add(key, update, now);
         onStore(record);
         updateRecord(key, record, update, now);
+        updateExpiryTime(record, record.getTtl(), mapContainer.getMapConfig());
         saveIndex(record, oldValue);
         return oldValue;
     }
@@ -885,6 +886,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         update = mapDataStore.add(key, update, now);
         onStore(record);
         updateRecord(key, record, update, now);
+        updateExpiryTime(record, record.getTtl(), mapContainer.getMapConfig());
         saveIndex(record, current);
         return true;
     }
