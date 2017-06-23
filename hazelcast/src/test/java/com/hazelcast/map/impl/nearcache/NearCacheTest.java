@@ -925,4 +925,26 @@ public class NearCacheTest extends NearCacheTestSupport {
 
         instance.getMap(mapName);
     }
+
+    @Test
+    public void multiple_get_on_non_existing_key_generates_one_miss() throws Exception {
+        String mapName = "test";
+
+        Config config = getConfig();
+        NearCacheConfig nearCacheConfig = newNearCacheConfig();
+        nearCacheConfig.setCacheLocalEntries(true);
+
+        config.getMapConfig(mapName)
+                .setNearCacheConfig(nearCacheConfig);
+
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap map = node.getMap(mapName);
+
+        map.get(1);
+        map.get(1);
+        map.get(1);
+
+        NearCacheStats nearCacheStats = map.getLocalMapStats().getNearCacheStats();
+        assertEquals(1, nearCacheStats.getMisses());
+    }
 }
