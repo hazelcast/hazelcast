@@ -23,7 +23,9 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -35,6 +37,17 @@ public class HazelcastCacheManager implements CacheManager {
 
     private final ConcurrentMap<String, Cache> caches = new ConcurrentHashMap<String, Cache>();
     private HazelcastInstance hazelcastInstance;
+    /**
+     * Default cache value retrieval timeout. Apply to all caches.
+     * Can be overridden setting a cache specific value to readTimeoutMap.
+     * <p/>
+     * Default value is 0, no timeout.
+     */
+    private long defaultReadTimeout = 0;
+    /**
+     * Holds cache specific value retrieval timeouts. Override defaultReadTimeout for specified caches.
+     */
+    private Map<String, Long> readTimeoutMap;
 
     public HazelcastCacheManager() {
     }
@@ -49,6 +62,8 @@ public class HazelcastCacheManager implements CacheManager {
         if (cache == null) {
             final IMap<Object, Object> map = hazelcastInstance.getMap(name);
             cache = new HazelcastCache(map);
+            long cacheTimeout = calculateCacheReadTimeout(name);
+            ((HazelcastCache) cache).setReadTimeout(cacheTimeout);
             final Cache currentCache = caches.putIfAbsent(name, cache);
             if (currentCache != null) {
                 cache = currentCache;
@@ -70,11 +85,52 @@ public class HazelcastCacheManager implements CacheManager {
         return cacheNames;
     }
 
+    private long calculateCacheReadTimeout(String name) {
+        Long v;
+        long timeout = (v = getReadTimeoutMap().get(name)) == null ? 0 : v.longValue();
+        return getReadTimeoutMap().containsKey(name) ? timeout : defaultReadTimeout;
+    }
+
     public void setHazelcastInstance(final HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
     }
 
     public HazelcastInstance getHazelcastInstance() {
         return hazelcastInstance;
+    }
+
+    /**
+     * Return default cache value retrieval timeout in milliseconds.
+     */
+    public long getDefaultReadTimeout() {
+        return defaultReadTimeout;
+    }
+
+    /**
+     * Set default cache value retrieval timeout. Applies to all caches, if not defined a cache specific timeout.
+     * @param defaultReadTimeout default cache retrieval timeout in milliseconds. 0 or negative values disable timeout.
+     */
+    public void setDefaultReadTimeout(long defaultReadTimeout) {
+        this.defaultReadTimeout = defaultReadTimeout;
+    }
+
+    /**
+     * Return cache-specific value retrieval timeouts. Map keys are cache names, values are cache retrieval timeouts in
+     * milliseconds.
+     */
+    public Map<String, Long> getReadTimeoutMap() {
+        if(readTimeoutMap == null){
+            readTimeoutMap = Collections.emptyMap();
+        }
+        return readTimeoutMap;
+    }
+
+    /**
+     * Set cache specific value retrieval timeouts
+     * @param readTimeoutMap cache specific value retrieval timeouts. Map keys are cache names, values are cache
+     *                       retrieval timeouts in milliseconds.
+     */
+    public void setReadTimeoutMap(Map<String, Long> readTimeoutMap) {
+        this.readTimeoutMap = readTimeoutMap;
     }
 }

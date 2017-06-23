@@ -17,6 +17,7 @@
 package com.hazelcast.spring.cache;
 
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -25,6 +26,7 @@ import org.springframework.cache.support.SimpleValueWrapper;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author mdogan 4/3/12
@@ -34,6 +36,13 @@ public class HazelcastCache implements Cache {
     private static final DataSerializable NULL = new NullDataSerializable();
 
     private final IMap<Object, Object> map;
+
+    /**
+     * read timeout for cache value retrieval operations.
+     * if 0 or negative, get operations block, otherwise uses getAsync with defined
+     * timeout
+     */
+    private long readTimeout;
 
     public HazelcastCache(final IMap<Object, Object> map) {
         this.map = map;
@@ -136,6 +145,13 @@ public class HazelcastCache implements Cache {
     }
 
     private Object lookup(Object key) {
+        if(readTimeout > 0) {
+            try {
+                return this.map.getAsync(key).get(readTimeout, TimeUnit.MILLISECONDS);
+            } catch (Exception ex) {
+                throw new OperationTimeoutException(String.format("Couldn't retrieve value from cache in %s ms. Operation timed out.", readTimeout));
+            }
+        }
         return this.map.get(key);
     }
 
@@ -167,4 +183,18 @@ public class HazelcastCache implements Cache {
         }
     }
 
+    /**
+     * Set cache value retrieval timeout
+     * @param readTimeout cache value retrieval timeout in milliseconds. 0 or negative values disable timeout
+     */
+    public void setReadTimeout(long readTimeout) {
+        this.readTimeout = readTimeout;
+    }
+
+    /**
+     * Return cache retrieval timeout in milliseconds
+     */
+    public long getReadTimeout() {
+        return readTimeout;
+    }
 }
