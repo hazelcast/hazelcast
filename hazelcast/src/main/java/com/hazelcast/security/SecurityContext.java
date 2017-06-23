@@ -107,6 +107,6 @@ public interface SecurityContext {
      */
     void destroy();
 
-    void refreshClientPermissions(Set<PermissionConfig> permissionConfigs);
+    void refreshPermissions(Set<PermissionConfig> permissionConfigs);
 
 }

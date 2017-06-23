@@ -217,11 +217,11 @@ public class RestTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void updateClientPermissions() throws Exception {
+    public void updatePermissions() throws Exception {
         Set<PermissionConfig> permissionConfigs = new HashSet<PermissionConfig>();
         permissionConfigs.add(new PermissionConfig(PermissionConfig.PermissionType.MAP, "test", "*"));
         UpdatePermissionConfigRequest request = new UpdatePermissionConfigRequest(permissionConfigs);
-        String result = communicator.updateClientPermissions(config.getGroupConfig().getName(),
+        String result = communicator.updatePermissions(config.getGroupConfig().getName(),
                 config.getGroupConfig().getPassword(), request.toJson().toString());
         assertEquals("{\"status\":\"fail\",\"message\":\"Security features are only available on Hazelcast Enterprise!\"}", result);
     }

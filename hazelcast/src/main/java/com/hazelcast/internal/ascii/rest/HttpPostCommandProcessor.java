@@ -98,8 +98,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 handleWanClearQueues(command);
             } else if (uri.startsWith(URI_ADD_WAN_CONFIG)) {
                 handleAddWanConfig(command);
-            } else if (uri.startsWith(URI_UPDATE_CLIENT_PERMISSIONS)) {
-                handleUpdateClientPermissions(command);
+            } else if (uri.startsWith(URI_UPDATE_PERMISSIONS)) {
+                handleUpdatePermissions(command);
             } else {
                 command.setResponse(HttpCommand.RES_400);
             }
@@ -447,7 +447,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
     }
 
-    private void handleUpdateClientPermissions(HttpPostCommand command) throws UnsupportedEncodingException {
+    private void handleUpdatePermissions(HttpPostCommand command) throws UnsupportedEncodingException {
 
         if (!checkCredentials(command)) {
             String res = response(ResponseType.FORBIDDEN);
@@ -472,7 +472,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             UpdatePermissionConfigRequest request = new UpdatePermissionConfigRequest();
             request.fromJson(Json.parse(permConfigsJSON).asObject());
             securityService.refreshClientPermissions(request.getPermissionConfigs());
-            res = response(ResponseType.SUCCESS, "message", "Client permissions updated.");
+            res = response(ResponseType.SUCCESS, "message", "Permissions updated.");
         } catch (Exception ex) {
             logger.warning("Error occurred while updating permission config", ex);
             res = exceptionResponse(ex);

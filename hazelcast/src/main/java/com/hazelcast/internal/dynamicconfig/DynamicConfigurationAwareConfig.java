@@ -1074,8 +1074,8 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public SecurityConfig getSecurityConfig() {
-        DynamicSecurityConfig securityConfig = new DynamicSecurityConfig(staticConfig.getSecurityConfig());
-        securityConfig.setSecurityService(securityService);
+        DynamicSecurityConfig securityConfig
+                = new DynamicSecurityConfig(staticConfig.getSecurityConfig(), securityService);
         return securityConfig;
     }
 

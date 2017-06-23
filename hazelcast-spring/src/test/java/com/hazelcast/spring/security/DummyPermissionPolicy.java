@@ -38,7 +38,7 @@ public class DummyPermissionPolicy implements IPermissionPolicy {
     }
 
     @Override
-    public boolean refreshClientPermissions(Set<PermissionConfig> permissionConfigs) {
+    public boolean refreshPermissions(Set<PermissionConfig> permissionConfigs) {
         return true;
     }
 
