@@ -426,14 +426,15 @@ public final class ServiceLoader {
                     // this can happen in application containers - different Hazelcast JARs are loaded
                     // by different classloaders.
                     LOGGER.fine("There appears to be a classloading conflict. "
-                            + "Class " + className + " loaded by " + candidate.getClassLoader() + " does not "
-                            + "implement " + expectedType.getClass().getName() + " loaded by "
-                            + expectedType.getClass().getClassLoader());
+                            + "Class " + className + " loaded by " + candidate.getClassLoader() + " implements "
+                            + expectedType.getName() + " from its own class loader, but it does not implement "
+                            + expectedType.getName() + " loaded by " + expectedType.getClassLoader());
                 } else {
-                    // ok, the class does not implement interface with the expected name. it's probably
-                    // an error in hook implementation -> let's fail fast
-                    throw new ClassCastException("Class " + className + " does not implement "
-                            + expectedType.getName());
+                    //the class does not implement interface with the expected name.
+                    LOGGER.fine("There appears to be a classloading conflict. "
+                            + "Class " + className + " loaded by " + candidate.getClassLoader() + " does not "
+                            + "implement an interface with name " + expectedType.getName() + " in both class loaders."
+                            + "the interface currently loaded by " + expectedType.getClassLoader());
                 }
             }
         }
