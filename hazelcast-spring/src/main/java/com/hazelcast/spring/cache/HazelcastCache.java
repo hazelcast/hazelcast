@@ -21,12 +21,14 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.util.ExceptionUtil;
 import org.springframework.cache.Cache;
 import org.springframework.cache.support.SimpleValueWrapper;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @author mdogan 4/3/12
@@ -148,9 +150,13 @@ public class HazelcastCache implements Cache {
         if (readTimeout > 0) {
             try {
                 return this.map.getAsync(key).get(readTimeout, TimeUnit.MILLISECONDS);
-            } catch (Exception ex) {
-                throw new OperationTimeoutException(String.format("Couldn't retrieve value from cache in %s ms. "
-                        + "Operation timed out.", readTimeout));
+            } catch (TimeoutException te) {
+                throw new OperationTimeoutException(te.getMessage());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw ExceptionUtil.rethrow(e);
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
             }
         }
         return this.map.get(key);

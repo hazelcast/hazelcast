@@ -16,12 +16,15 @@
 
 package com.hazelcast.spring.cache;
 
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -53,6 +56,12 @@ public class HazelcastCacheNoReadTimeoutTest extends HazelcastTestSupport {
     private IDummyTimeoutBean dummyTimeoutBean;
 
     private Cache delayNo;
+
+    @BeforeClass
+    @AfterClass
+    public static void start() {
+        Hazelcast.shutdownAll();
+    }
 
     @Before
     public void setup() {
