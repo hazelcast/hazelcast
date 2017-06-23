@@ -59,7 +59,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
 
     protected HazelcastInstance[] instances;
     protected IAtomicLong atomicLong;
-    private Ringbuffer<String> ringbuffer;
+    protected Ringbuffer<String> ringbuffer;
     private Config config;
     private HazelcastInstance local;
     private String name;
@@ -103,6 +103,8 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
                 .setTimeToLiveSeconds(10));
         config.addRingBufferConfig(new RingbufferConfig("readOne_staleSequence*").setCapacity(5));
         config.addRingBufferConfig(new RingbufferConfig("readOne_futureSequence*").setCapacity(5));
+        config.addRingBufferConfig(new RingbufferConfig("sizeShouldNotExceedCapacity_whenPromotedFromBackup*")
+                .setCapacity(10));
 
         instances = newInstances(config);
         local = instances[0];
