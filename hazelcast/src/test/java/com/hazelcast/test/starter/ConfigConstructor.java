@@ -16,6 +16,9 @@
 
 package com.hazelcast.test.starter;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -27,12 +30,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.test.starter.HazelcastProxyFactory.isJDKClass;
+import static java.lang.String.format;
 
 /**
  * Clone the configuration from {@code mainConfig} to a new configuration object loaded in the
  * target {@code classloader}. The returned configuration has its classloader set to the target classloader.
  */
 public class ConfigConstructor extends AbstractStarterObjectConstructor {
+
+    private static final ILogger LOGGER = Logger.getLogger(ConfigConstructor.class);
 
     public ConfigConstructor(Class<?> targetClass) {
         super(targetClass);
@@ -77,10 +83,21 @@ public class ConfigConstructor extends AbstractStarterObjectConstructor {
         Object otherConfigObject = otherConfigClass.newInstance();
 
         for (Method method : thisConfigClass.getMethods()) {
+            if (!isGetter(method)) {
+                continue;
+            }
             Class returnType = method.getReturnType();
             Method setter;
-            if (isGetter(method)
-                    && (setter = getSetter(otherConfigClass, getOtherReturnType(classloader, returnType), createSetterName(method))) != null) {
+            Class<?> otherReturnType;
+            try {
+                otherReturnType = getOtherReturnType(classloader, returnType);
+            } catch (ClassNotFoundException e) {
+                // new configuration option, return type was not found in target classloader
+                LOGGER.info(format("Configuration option %s is not available in target classloader: ", method.getName(),
+                        e.getMessage()));
+                continue;
+            }
+            if ((setter = getSetter(otherConfigClass, otherReturnType, createSetterName(method))) != null) {
 
                 if (Properties.class.isAssignableFrom(returnType)) {
                     //ignore
