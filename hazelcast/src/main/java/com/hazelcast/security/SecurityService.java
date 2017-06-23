@@ -31,4 +31,8 @@ public interface SecurityService {
      */
     void refreshClientPermissions(Set<PermissionConfig> permissionConfigs);
 
+    /**
+     * Returns latest client permission configuration.
+     */
+    Set<PermissionConfig> getClientPermissionConfigs();
 }

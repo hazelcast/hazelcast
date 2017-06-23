@@ -19,14 +19,27 @@ package com.hazelcast.security.impl;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.security.SecurityService;
 
+import java.util.Collections;
 import java.util.Set;
 
 /**
  * Empty implementation of {@link SecurityService}, used when security is not enabled.
  */
 public class NoOpSecurityService implements SecurityService {
+
+    private final Set<PermissionConfig> permissionConfigs;
+
+    public NoOpSecurityService(Set<PermissionConfig> permissionConfigs) {
+        this.permissionConfigs = permissionConfigs;
+    }
+
     @Override
     public void refreshClientPermissions(Set<PermissionConfig> permissionConfigs) {
 
+    }
+
+    @Override
+    public Set<PermissionConfig> getClientPermissionConfigs() {
+        return Collections.unmodifiableSet(permissionConfigs);
     }
 }

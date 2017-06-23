@@ -121,7 +121,7 @@ public class DynamicSecurityConfig extends SecurityConfig {
      */
     @Override
     public Set<PermissionConfig> getClientPermissionConfigs() {
-        return Collections.unmodifiableSet(securityConfig.getClientPermissionConfigs());
+        return Collections.unmodifiableSet(securityService.getClientPermissionConfigs());
     }
 
     /**
