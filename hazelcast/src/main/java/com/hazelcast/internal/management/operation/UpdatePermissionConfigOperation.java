@@ -50,7 +50,7 @@ public class UpdatePermissionConfigOperation extends AbstractManagementOperation
     @Override
     public void run() throws Exception {
         HazelcastInstanceImpl instance = (HazelcastInstanceImpl) getNodeEngine().getHazelcastInstance();
-        instance.node.securityContext.refreshClientPermissions(permissionConfigs);
+        instance.node.securityContext.refreshPermissions(permissionConfigs);
     }
 
     @Override

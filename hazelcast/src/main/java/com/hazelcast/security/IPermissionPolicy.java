@@ -48,7 +48,7 @@ public interface IPermissionPolicy {
      */
     PermissionCollection getPermissions(Subject subject, Class<? extends Permission> type);
 
-    boolean refreshClientPermissions(Set<PermissionConfig> permissionConfigs);
+    boolean refreshPermissions(Set<PermissionConfig> permissionConfigs);
 
     /**
      * Destroys {@link IPermissionPolicy}.

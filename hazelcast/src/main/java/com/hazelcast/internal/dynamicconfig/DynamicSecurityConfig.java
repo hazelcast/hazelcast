@@ -23,7 +23,6 @@ import com.hazelcast.config.PermissionPolicyConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SecurityInterceptorConfig;
 import com.hazelcast.security.SecurityService;
-import com.hazelcast.security.impl.NoOpSecurityService;
 
 import java.util.Collections;
 import java.util.List;
@@ -37,15 +36,12 @@ import java.util.Set;
  */
 public class DynamicSecurityConfig extends SecurityConfig {
 
-    private final  SecurityConfig securityConfig;
+    private final SecurityConfig securityConfig;
 
-    private SecurityService securityService = new NoOpSecurityService();
+    private final SecurityService securityService;
 
-    public DynamicSecurityConfig(SecurityConfig securityConfig) {
+    public DynamicSecurityConfig(SecurityConfig securityConfig, SecurityService securityService) {
         this.securityConfig = securityConfig;
-    }
-
-    public void setSecurityService(SecurityService securityService) {
         this.securityService = securityService;
     }
 
