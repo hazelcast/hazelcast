@@ -35,6 +35,7 @@ import com.hazelcast.util.MemoryInfoAccessor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.memory.MemorySize.toPrettyString;
@@ -56,6 +57,7 @@ public class EvictionChecker {
     protected final ILogger logger;
     protected final MapServiceContext mapServiceContext;
     protected final MemoryInfoAccessor memoryInfoAccessor;
+    protected final AtomicBoolean misconfiguredPerNodeMaxSizeWarningLogged;
 
     public EvictionChecker(MemoryInfoAccessor givenMemoryInfoAccessor, MapServiceContext mapServiceContext) {
         checkNotNull(givenMemoryInfoAccessor, "givenMemoryInfoAccessor cannot be null");
@@ -68,6 +70,8 @@ public class EvictionChecker {
         if (logger.isFinestEnabled()) {
             logger.finest("Used memoryInfoAccessor=" + this.memoryInfoAccessor.getClass().getCanonicalName());
         }
+
+        this.misconfiguredPerNodeMaxSizeWarningLogged = new AtomicBoolean();
     }
 
 
@@ -119,8 +123,14 @@ public class EvictionChecker {
         int memberCount = nodeEngine.getClusterService().getSize(DATA_MEMBER_SELECTOR);
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
 
-        return (1D * configuredMaxSize * memberCount / partitionCount);
-
+        final double perNodeMaxRecordStoreSize = (1D * configuredMaxSize * memberCount / partitionCount);
+        if (perNodeMaxRecordStoreSize < 1 && misconfiguredPerNodeMaxSizeWarningLogged.compareAndSet(false, true)) {
+            int minMaxSize = (int) Math.ceil((1D * partitionCount / memberCount));
+            logger.warning(format("The max size configuration for map \"%s\" does not allow any data in the map. "
+                    + "Given the current cluster size of %d members with %d partitions, max size should be at "
+                            + "least %d.", mapConfig.getName(), memberCount, partitionCount, minMaxSize));
+        }
+        return perNodeMaxRecordStoreSize;
     }
 
     protected boolean checkPerPartitionEviction(String mapName, MaxSizeConfig maxSizeConfig, int partitionId) {
