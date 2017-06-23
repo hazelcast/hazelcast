@@ -173,7 +173,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public SecurityService getSecurityService() {
-        return new NoOpSecurityService();
+        return new NoOpSecurityService(node.getConfig().getSecurityConfig().getClientPermissionConfigs());
     }
 
     protected PartitioningStrategy getPartitioningStrategy(ClassLoader configClassLoader) throws Exception {

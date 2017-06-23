@@ -76,11 +76,12 @@ public class DynamicConfigurationAwareConfig extends Config {
     private final ConfigPatternMatcher configPatternMatcher;
 
     private volatile ConfigurationService configurationService = new EmptyConfigurationService();
-    private volatile SecurityService securityService = new NoOpSecurityService();
+    private volatile SecurityService securityService;
 
     public DynamicConfigurationAwareConfig(Config staticConfig) {
         this.staticConfig = staticConfig;
         this.configPatternMatcher = staticConfig.getConfigPatternMatcher();
+        securityService  = new NoOpSecurityService(staticConfig.getSecurityConfig().getClientPermissionConfigs());
     }
 
     @Override
