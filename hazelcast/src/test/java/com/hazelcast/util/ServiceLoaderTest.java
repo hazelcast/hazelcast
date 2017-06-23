@@ -67,7 +67,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         assertFalse(iterator.hasNext());
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test
     public void testFailFastWhenHookDoesNotImplementExpectedInteface() {
         Class<?> otherInterface = newInterface("com.hazelcast.internal.serialization.DifferentInterface");
         ClassLoader otherClassloader = otherInterface.getClassLoader();
@@ -79,7 +79,7 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
         Set<ServiceLoader.ServiceDefinition> definitions = singleton(definition);
         ServiceLoader.ClassIterator<PortableHook> iterator = new ServiceLoader.ClassIterator<PortableHook>(definitions, PortableHook.class);
 
-        iterator.hasNext();
+        assertFalse(iterator.hasNext());
     }
 
     @Test
