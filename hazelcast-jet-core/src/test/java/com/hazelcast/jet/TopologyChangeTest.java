@@ -85,7 +85,7 @@ public class TopologyChangeTest extends JetTestSupport {
     @Test
     public void when_addNodeDuringExecution_then_completeSuccessfully() throws Throwable {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, NODE_COUNT)));
 
         // When
         Future<Void> future = instances[0].newJob(dag).execute();
@@ -106,7 +106,7 @@ public class TopologyChangeTest extends JetTestSupport {
     @Test
     public void when_addAndRemoveNodeDuringExecution_then_completeSuccessfully() throws Throwable {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, NODE_COUNT)));
 
         // When
         Future<Void> future = instances[0].newJob(dag).execute();
@@ -128,7 +128,7 @@ public class TopologyChangeTest extends JetTestSupport {
     @Test
     public void when_removeExistingNodeDuringExecution_then_completeCalledWithError() throws Throwable {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, NODE_COUNT)));
 
         // When
         try {
@@ -158,7 +158,7 @@ public class TopologyChangeTest extends JetTestSupport {
     @Test
     public void when_removeCallingNodeDuringExecution_then_completeCalledWithError() throws Throwable {
         // Given
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new, NODE_COUNT)));
 
         // When
         try {
@@ -191,16 +191,18 @@ public class TopologyChangeTest extends JetTestSupport {
 
         private final RuntimeException initError;
         private final DistributedSupplier<Processor> supplier;
+        private final int nodeCount;
 
         private boolean initCalled;
 
-        MockSupplier(DistributedSupplier<Processor> supplier) {
-            this(null, supplier);
+        MockSupplier(DistributedSupplier<Processor> supplier, int nodeCount) {
+            this(null, supplier, nodeCount);
         }
 
-        MockSupplier(RuntimeException initError, DistributedSupplier<Processor> supplier) {
+        MockSupplier(RuntimeException initError, DistributedSupplier<Processor> supplier, int nodeCount) {
             this.initError = initError;
             this.supplier = supplier;
+            this.nodeCount = nodeCount;
         }
 
         @Override
@@ -227,15 +229,16 @@ public class TopologyChangeTest extends JetTestSupport {
             if (!initCalled) {
                 throw new IllegalStateException("Complete called without calling init()");
             }
-            if (initCount.get() != NODE_COUNT) {
-                throw new IllegalStateException("Complete called without init being called on all the nodes");
+            if (initCount.get() != nodeCount) {
+                throw new IllegalStateException("Complete called without init being called on all the nodes! init count: "
+                        + initCount.get() + " node count: " + nodeCount);
             }
         }
     }
 
     static final class StuckProcessor implements Processor {
-        static CountDownLatch executionStarted;
-        static CountDownLatch proceedLatch;
+        static volatile CountDownLatch executionStarted;
+        static volatile CountDownLatch proceedLatch;
 
         @Override
         public boolean complete() {

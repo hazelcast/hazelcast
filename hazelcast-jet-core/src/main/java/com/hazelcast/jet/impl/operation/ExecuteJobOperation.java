@@ -27,6 +27,8 @@ import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.exception.CallerNotMemberException;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -101,7 +103,9 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
     }
 
     private static Throwable topologyChangeOrIdentity(Throwable e) {
-        if (e instanceof MemberLeftException) {
+        if (e instanceof MemberLeftException
+                || e instanceof TargetNotMemberException
+                || e instanceof CallerNotMemberException) {
             return new TopologyChangedException("Topology has been changed", e);
         }
         return e;
