@@ -145,11 +145,12 @@ public class HazelcastCache implements Cache {
     }
 
     private Object lookup(Object key) {
-        if(readTimeout > 0) {
+        if (readTimeout > 0) {
             try {
                 return this.map.getAsync(key).get(readTimeout, TimeUnit.MILLISECONDS);
             } catch (Exception ex) {
-                throw new OperationTimeoutException(String.format("Couldn't retrieve value from cache in %s ms. Operation timed out.", readTimeout));
+                throw new OperationTimeoutException(String.format("Couldn't retrieve value from cache in %s ms. "
+                        + "Operation timed out.", readTimeout));
             }
         }
         return this.map.get(key);
