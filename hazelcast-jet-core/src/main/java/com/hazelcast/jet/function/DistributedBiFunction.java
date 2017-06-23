@@ -35,10 +35,6 @@ import java.util.function.BiFunction;
 @FunctionalInterface
 public interface DistributedBiFunction<T, U, R> extends BiFunction<T, U, R>, Serializable {
 
-    // TODO remove the override when IntelliJ fix released
-    @Override
-    R apply(T t, U u);
-
     /**
      * Returns a composed function that first applies this function to
      * its input, and then applies the {@code after} function to the result.

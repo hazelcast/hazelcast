@@ -36,10 +36,6 @@ import java.util.function.BiConsumer;
 @FunctionalInterface
 public interface DistributedBiConsumer<T, U> extends BiConsumer<T, U>, Serializable {
 
-    // TODO remove the override when IntelliJ fix released
-    @Override
-    void accept(T t, U u);
-
     /**
      * Returns a composed {@code BiConsumer} that performs, in sequence, this
      * operation followed by the {@code after} operation. If performing either

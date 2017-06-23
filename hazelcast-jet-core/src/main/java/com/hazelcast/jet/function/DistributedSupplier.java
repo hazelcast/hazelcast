@@ -32,7 +32,4 @@ import java.util.function.Supplier;
  */
 @FunctionalInterface
 public interface DistributedSupplier<T> extends Supplier<T>, Serializable {
-    // TODO remove the override when IntelliJ fix released
-    @Override
-    T get();
 }

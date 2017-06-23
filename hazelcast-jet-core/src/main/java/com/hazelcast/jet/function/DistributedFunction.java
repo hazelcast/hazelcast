@@ -42,10 +42,6 @@ public interface DistributedFunction<T, R> extends Function<T, R>, Serializable 
         return t -> t;
     }
 
-    // TODO remove the override when IntelliJ fix released
-    @Override
-    R apply(T t);
-
     /**
      * Returns a composed function that first applies the {@code before}
      * function to its input, and then applies this function to the result.

@@ -33,10 +33,6 @@ import java.util.function.Consumer;
 @FunctionalInterface
 public interface DistributedConsumer<T> extends Consumer<T>, Serializable {
 
-    // TODO remove the override when IntelliJ fix released
-    @Override
-    void accept(T t);
-
     /**
      * Returns a composed {@code Consumer} that performs, in sequence, this
      * operation followed by the {@code after} operation. If performing either

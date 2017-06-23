@@ -31,10 +31,6 @@ import java.util.function.Predicate;
 @FunctionalInterface
 public interface DistributedPredicate<T> extends Predicate<T>, Serializable {
 
-    // TODO remove the override when IntelliJ fix released
-    @Override
-    boolean test(T t);
-
     /**
      * Returns a predicate that tests if two arguments are equal according
      * to {@link Objects#equals(Object, Object)}.

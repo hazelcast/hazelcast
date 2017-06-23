@@ -31,7 +31,4 @@ import java.util.function.ToLongFunction;
  */
 @FunctionalInterface
 public interface DistributedToLongFunction<T> extends ToLongFunction<T>, Serializable {
-    // TODO remove the override when IntelliJ fix released
-    @Override
-    long applyAsLong(T value);
 }
