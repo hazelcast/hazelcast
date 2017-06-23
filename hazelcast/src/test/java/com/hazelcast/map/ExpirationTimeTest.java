@@ -32,7 +32,9 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -169,6 +171,42 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         long expectedExpirationTime = entryView.getLastUpdateTime() + MINUTES.toMillis(1);
 
         assertEquals(expectedExpirationTime, entryView.getExpirationTime());
+    }
+
+    @Test
+    public void replace_shifts_expiration_time_when_succeeded() throws Exception {
+        IMap<Integer, Integer> map = createMap();
+
+        map.put(1, 1, 100, SECONDS);
+        long expirationTimeAfterPut = getExpirationTime(1, map);
+
+        sleepAtLeastMillis(3);
+
+        map.replace(1, 1, 2);
+        long expirationTimeAfterReplace = getExpirationTime(1, map);
+
+        assertTrue(expirationTimeAfterReplace > expirationTimeAfterPut);
+    }
+
+    @Test
+    public void replace_does_not_shift_expiration_time_when_failed() throws Exception {
+        int wrongOldValue = -1;
+        IMap<Integer, Integer> map = createMap();
+
+        map.put(1, 1, 100, SECONDS);
+        long expirationTimeAfterPut = getExpirationTime(1, map);
+
+        sleepAtLeastMillis(3);
+
+        map.replace(1, wrongOldValue, 2);
+        long expirationTimeAfterReplace = getExpirationTime(1, map);
+
+        assertEquals(expirationTimeAfterReplace, expirationTimeAfterPut);
+    }
+
+    private long getExpirationTime(int key, IMap<Integer, Integer> map) {
+        EntryView<Integer, Integer> entryView = map.getEntryView(key);
+        return entryView.getExpirationTime();
     }
 
     private IMap<Integer, Integer> createMap() {
