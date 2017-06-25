@@ -309,7 +309,8 @@ public final class TcpIpConnection implements Connection {
     public String toString() {
         String s = "Connection[id=" + connectionId;
         for (Channel channel : channels) {
-            s += ", " + channel.getLocalSocketAddress() + "->" + channel.getRemoteSocketAddress();
+            if (channel != null)
+                s += ", " + channel.getLocalSocketAddress() + "->" + channel.getRemoteSocketAddress();
         }
         s += ", endpoint=" + endPoint
                 + ", alive=" + alive
