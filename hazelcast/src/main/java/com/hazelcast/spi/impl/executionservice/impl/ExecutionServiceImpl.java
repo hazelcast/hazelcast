@@ -46,7 +46,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
@@ -71,7 +70,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
 
     private final NodeEngineImpl nodeEngine;
     private final ExecutorService cachedExecutorService;
-    private final ScheduledExecutorService scheduledExecutorService;
+    private final LoggingScheduledExecutor scheduledExecutorService;
     private final TaskScheduler globalTaskScheduler;
     private final ILogger logger;
     private final CompletableFutureTask completableFutureTask;
@@ -312,6 +311,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
 
     public void shutdown() {
         logger.finest("Stopping executors...");
+        scheduledExecutorService.notifyShutdownInitiated();
         for (ExecutorService executorService : executors.values()) {
             executorService.shutdown();
         }
