@@ -125,8 +125,6 @@ public class QueryRunner {
     // MIGRATION UNSAFE QUERYING - MIGRATION STAMPTS ARE NOT VALIDATED, so assumes a run on partition-thread
     // for a single partition. If the index is global it won't be asked
     public Result runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(Query query, int partitionId) {
-        assert nodeEngine.getPartitionService().isPartitionOwner(partitionId);
-
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
         List<Integer> partitions = Collections.singletonList(partitionId);
 
@@ -159,8 +157,6 @@ public class QueryRunner {
     }
 
     Result runPartitionScanQueryOnGivenOwnedPartition(Query query, int partitionId) {
-        assert nodeEngine.getPartitionService().isPartitionOwner(partitionId);
-
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
         Collection<QueryableEntry> entries = partitionScanExecutor.execute(query.getMapName(), predicate,
