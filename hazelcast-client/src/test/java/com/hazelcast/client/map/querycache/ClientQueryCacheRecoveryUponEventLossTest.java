@@ -57,7 +57,7 @@ public class ClientQueryCacheRecoveryUponEventLossTest extends HazelcastTestSupp
     public void testForceConsistency() {
         String mapName = randomMapName("map");
         String queryCacheName = randomMapName("cache");
-        Config config = new Config();
+        Config config = getConfig();
 
         config.setProperty(PARTITION_COUNT.getName(), "1");
         factory.newHazelcastInstance(config);

@@ -28,6 +28,7 @@ import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -36,9 +37,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
-import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -46,7 +44,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class MapNearCacheInvalidationFromClientTest {
+public class MapNearCacheInvalidationFromClientTest extends HazelcastTestSupport {
 
     private String mapName;
 
@@ -243,7 +241,7 @@ public class MapNearCacheInvalidationFromClientTest {
         NearCacheConfig nearCacheConfig = new NearCacheConfig()
                 .setInvalidateOnChange(true);
 
-        Config config = new Config()
+        Config config = getConfig()
                 .setLiteMember(liteMember)
                 .setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), "true")
                 .setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "5")

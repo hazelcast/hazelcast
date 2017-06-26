@@ -17,7 +17,6 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,9 +30,8 @@ public class ClientMapQueryPartitionIteratorTest extends AbstractMapQueryPartiti
 
     @Before
     public void setup() {
-        Config config = getConfig();
         factory = new TestHazelcastFactory();
-        server = factory.newHazelcastInstance(config);
-        client = factory.newHazelcastClient();
+        server = factory.newHazelcastInstance(getConfig());
+        client = factory.newHazelcastClient(getClientConfig());
     }
 }

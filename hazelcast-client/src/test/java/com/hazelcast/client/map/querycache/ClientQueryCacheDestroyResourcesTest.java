@@ -65,7 +65,7 @@ public class ClientQueryCacheDestroyResourcesTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        Config config = new Config();
+        Config config = getConfig();
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.addQueryCacheConfig(MAP_NAME_1, newQueryCacheConfig(QUERY_CACHE_NAME_1));

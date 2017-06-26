@@ -56,7 +56,7 @@ public class ClientQueryCacheIndexTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        Config config = new Config();
+        Config config = getConfig();
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
 
         factory = new TestHazelcastFactory();
