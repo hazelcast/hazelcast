@@ -191,7 +191,7 @@ public class HTTPCommunicator {
     }
 
     public String updatePermissions(String groupName, String groupPassword, String permConfJson) throws IOException {
-        String url = address + "mancenter/security/updatePermissions";
+        String url = address + "mancenter/security/permissions";
         return doPost(url, groupName, groupPassword, permConfJson).response;
     }
 
