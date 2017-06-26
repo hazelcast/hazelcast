@@ -48,6 +48,13 @@ public interface IPermissionPolicy {
      */
     PermissionCollection getPermissions(Subject subject, Class<? extends Permission> type);
 
+    /**
+     * Replaces existing permissions with given set of permissions. Implementation must take into account that
+     * {@code refreshPermissions} may be executed concurrently with {@code getPermissions}.
+     *
+     * @param permissionConfigs the new set of permissions to apply
+     * @return {@code true} if permissions were successfully refreshed, otherwise {@code false}.
+     */
     boolean refreshPermissions(Set<PermissionConfig> permissionConfigs);
 
     /**
