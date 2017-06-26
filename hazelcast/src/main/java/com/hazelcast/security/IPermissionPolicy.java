@@ -53,9 +53,8 @@ public interface IPermissionPolicy {
      * {@code refreshPermissions} may be executed concurrently with {@code getPermissions}.
      *
      * @param permissionConfigs the new set of permissions to apply
-     * @return {@code true} if permissions were successfully refreshed, otherwise {@code false}.
      */
-    boolean refreshPermissions(Set<PermissionConfig> permissionConfigs);
+    void refreshPermissions(Set<PermissionConfig> permissionConfigs);
 
     /**
      * Destroys {@link IPermissionPolicy}.
