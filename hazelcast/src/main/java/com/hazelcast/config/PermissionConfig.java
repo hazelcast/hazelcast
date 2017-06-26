@@ -38,6 +38,18 @@ public class PermissionConfig {
         this.principal = principal;
     }
 
+    public PermissionConfig(PermissionConfig permissionConfig) {
+        this.type = permissionConfig.type;
+        this.name = permissionConfig.getName();
+        this.principal = permissionConfig.getPrincipal();
+        for (String endpoint : permissionConfig.getEndpoints()) {
+            this.getEndpoints().add(endpoint);
+        }
+        for (String action : permissionConfig.getActions()) {
+            this.getActions().add(action);
+        }
+    }
+
     /**
      * Type of permission
      */

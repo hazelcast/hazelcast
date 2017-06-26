@@ -14,35 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spring.security;
+package com.hazelcast.security.impl;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.config.PermissionConfig;
-import com.hazelcast.security.IPermissionPolicy;
+import com.hazelcast.security.SecurityService;
 
-import javax.security.auth.Subject;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.util.Properties;
+import java.util.Collections;
 import java.util.Set;
 
-public class DummyPermissionPolicy implements IPermissionPolicy {
+/**
+ * Empty implementation of {@link SecurityService}, used when security is not enabled.
+ */
+public class NoOpSecurityService implements SecurityService {
 
-    @Override
-    public void configure(Config config, Properties properties) {
+    private final Set<PermissionConfig> permissionConfigs;
+
+    public NoOpSecurityService(Set<PermissionConfig> permissionConfigs) {
+        this.permissionConfigs = permissionConfigs;
     }
 
     @Override
-    public PermissionCollection getPermissions(Subject subject, Class<? extends Permission> type) {
-        return null;
-    }
-
-    @Override
-    public void refreshPermissions(Set<PermissionConfig> permissionConfigs) {
+    public void refreshClientPermissions(Set<PermissionConfig> permissionConfigs) {
 
     }
 
     @Override
-    public void destroy() {
+    public Set<PermissionConfig> getClientPermissionConfigs() {
+        return Collections.unmodifiableSet(permissionConfigs);
     }
 }
