@@ -403,6 +403,7 @@ public abstract class AbstractHazelcastCacheManager
         cacheConfig.setName(cacheName);
         cacheConfig.setManagerPrefix(this.cacheNamePrefix);
         cacheConfig.setUriString(getURI().toString());
+        cacheConfig.setTenantControl(hazelcastInstance.getConfig().getTenantControl().saveCurrentTenant());
         return cacheConfig;
     }
 

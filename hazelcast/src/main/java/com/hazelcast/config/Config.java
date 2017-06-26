@@ -143,6 +143,8 @@ public class Config {
 
     private SerializationConfig serializationConfig = new SerializationConfig();
 
+    private TenantControl tenantControl = new TenantControl.NoTenantControl();
+
     private ManagedContext managedContext;
 
     private ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
@@ -3386,6 +3388,15 @@ public class Config {
      */
     public Config setSerializationConfig(SerializationConfig serializationConfig) {
         this.serializationConfig = serializationConfig;
+        return this;
+    }
+
+    public TenantControl getTenantControl() {
+        return tenantControl;
+    }
+
+    public Config setTenantControl(TenantControl tenantControl) {
+        this.tenantControl = tenantControl;
         return this;
     }
 

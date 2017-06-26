@@ -80,6 +80,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
      */
     private boolean disablePerEntryInvalidationEvents;
 
+    private TenantControl tenantControl = new TenantControl.NoTenantControl();
+
     public CacheConfig() {
     }
 
@@ -515,6 +517,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(tenantControl);
         out.writeUTF(name);
         out.writeUTF(managerPrefix);
         out.writeUTF(uriString);
@@ -525,11 +528,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         out.writeObject(evictionConfig);
 
         out.writeObject(wanReplicationRef);
-        // SUPER
-        writeKeyValueTypes(out);
-        out.writeObject(cacheLoaderFactory);
-        out.writeObject(cacheWriterFactory);
-        out.writeObject(expiryPolicyFactory);
 
         out.writeBoolean(isReadThrough);
         out.writeBoolean(isWriteThrough);
@@ -543,6 +541,13 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
         final boolean listNotEmpty = listenerConfigurations != null && !listenerConfigurations.isEmpty();
         out.writeBoolean(listNotEmpty);
+
+        //SUPER
+        writeKeyValueTypes(out);
+        out.writeObject(cacheLoaderFactory);
+        out.writeObject(cacheWriterFactory);
+        out.writeObject(expiryPolicyFactory);
+
         if (listNotEmpty) {
             out.writeInt(listenerConfigurations.size());
             for (CacheEntryListenerConfiguration<K, V> cc : listenerConfigurations) {
@@ -556,6 +561,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        tenantControl = in.readObject();
         name = in.readUTF();
         managerPrefix = in.readUTF();
         uriString = in.readUTF();
@@ -568,12 +574,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
         wanReplicationRef = in.readObject();
 
-        // SUPER
-        readKeyValueTypes(in);
-        cacheLoaderFactory = in.readObject();
-        cacheWriterFactory = in.readObject();
-        expiryPolicyFactory = in.readObject();
-
         isReadThrough = in.readBoolean();
         isWriteThrough = in.readBoolean();
         isStoreByValue = in.readBoolean();
@@ -585,18 +585,33 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         quorumName = in.readUTF();
 
         final boolean listNotEmpty = in.readBoolean();
-        if (listNotEmpty) {
-            final int size = in.readInt();
-            listenerConfigurations = createConcurrentSet();
-            for (int i = 0; i < size; i++) {
-                listenerConfigurations.add((CacheEntryListenerConfiguration<K, V>) in.readObject());
+        TenantControl.Closeable tenant = tenantControl.setTenant(false);
+        try {
+            //SUPER
+            readKeyValueTypes(in);
+            cacheLoaderFactory = in.readObject();
+            cacheWriterFactory = in.readObject();
+            expiryPolicyFactory = in.readObject();
+            if (listNotEmpty) {
+                final int size = in.readInt();
+                listenerConfigurations = createConcurrentSet();
+                for (int i = 0; i < size; i++) {
+                    listenerConfigurations.add((CacheEntryListenerConfiguration<K, V>) in.readObject());
+                }
             }
+        }
+        finally {
+            tenant.close();
         }
 
         mergePolicy = in.readUTF();
         disablePerEntryInvalidationEvents = in.readBoolean();
 
         setClassLoader(in.getClassLoader());
+    }
+
+    public void setTenantControl(TenantControl tenantControl) {
+        this.tenantControl = tenantControl;
     }
 
     @Override
