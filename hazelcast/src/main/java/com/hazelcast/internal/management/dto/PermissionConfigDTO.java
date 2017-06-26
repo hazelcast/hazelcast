@@ -117,23 +117,15 @@ public class PermissionConfigDTO implements JsonSerializable, IdentifiedDataSeri
         }
 
         Set<String> endpoints = permissionConfig.getEndpoints();
-        if (endpoints != null) {
-            out.writeInt(endpoints.size());
-            for (String endpoint : endpoints) {
-                out.writeUTF(endpoint);
-            }
-        } else {
-            out.writeInt(0);
+        out.writeInt(endpoints.size());
+        for (String endpoint : endpoints) {
+            out.writeUTF(endpoint);
         }
 
         Set<String> actions = permissionConfig.getActions();
-        if (actions != null) {
-            out.writeInt(actions.size());
-            for (String action : actions) {
-                out.writeUTF(action);
-            }
-        } else {
-            out.writeInt(0);
+        out.writeInt(actions.size());
+        for (String action : actions) {
+            out.writeUTF(action);
         }
     }
 
