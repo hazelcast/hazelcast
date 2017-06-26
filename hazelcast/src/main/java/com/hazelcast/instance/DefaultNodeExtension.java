@@ -57,6 +57,8 @@ import com.hazelcast.nio.tcp.MemberChannelOutboundHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.security.SecurityService;
+import com.hazelcast.security.impl.NoOpSecurityService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -167,6 +169,11 @@ public class DefaultNodeExtension implements NodeExtension {
             throw ExceptionUtil.rethrow(e);
         }
         return ss;
+    }
+
+    @Override
+    public SecurityService getSecurityService() {
+        return new NoOpSecurityService(node.getConfig().getSecurityConfig().getClientPermissionConfigs());
     }
 
     protected PartitioningStrategy getPartitioningStrategy(ClassLoader configClassLoader) throws Exception {
