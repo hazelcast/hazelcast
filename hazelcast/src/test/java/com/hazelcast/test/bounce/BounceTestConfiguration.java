@@ -29,6 +29,7 @@ public class BounceTestConfiguration {
     private final int driverCount;
     private final DriverFactory driverFactory;
     private final boolean useTerminate;
+    private final int bouncingIntervalSeconds;
 
     /**
      * Indicates whether the test will be driven by member or client HazelcastInstances
@@ -49,13 +50,15 @@ public class BounceTestConfiguration {
     }
 
     BounceTestConfiguration(int clusterSize, DriverType driverType,
-                            Config memberConfig, int driverCount, DriverFactory driverFactory, boolean useTerminate) {
+                            Config memberConfig, int driverCount, DriverFactory driverFactory, boolean useTerminate,
+                            int bouncingIntervalSeconds) {
         this.clusterSize = clusterSize;
         this.driverType = driverType;
         this.memberConfig = memberConfig;
         this.driverCount = driverCount;
         this.driverFactory = driverFactory;
         this.useTerminate = useTerminate;
+        this.bouncingIntervalSeconds = bouncingIntervalSeconds;
     }
 
     public int getClusterSize() {
@@ -80,5 +83,9 @@ public class BounceTestConfiguration {
 
     public boolean isUseTerminate() {
         return useTerminate;
+    }
+
+    public int getBouncingIntervalSeconds() {
+        return bouncingIntervalSeconds;
     }
 }
