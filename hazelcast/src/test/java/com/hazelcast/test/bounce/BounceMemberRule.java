@@ -127,12 +127,14 @@ public class BounceMemberRule implements TestRule {
     private static final int DEFAULT_DRIVERS_COUNT = 5;
     // amount of time wait for test task futures to complete after test duration has passed
     private static final int TEST_TASK_TIMEOUT_SECONDS = 30;
+    private static final int DEFAULT_BOUNCING_INTERVAL_SECONDS = 2;
 
     private final BounceTestConfiguration bounceTestConfig;
     private final AtomicBoolean testRunning = new AtomicBoolean();
     private final AtomicBoolean testFailed = new AtomicBoolean();
     private final AtomicReferenceArray<HazelcastInstance> members;
     private final AtomicReferenceArray<HazelcastInstance> testDrivers;
+    private final int bouncingIntervalSeconds;
 
     private volatile TestHazelcastInstanceFactory factory;
 
@@ -144,6 +146,7 @@ public class BounceMemberRule implements TestRule {
         this.bounceTestConfig = bounceTestConfig;
         this.members = new AtomicReferenceArray<HazelcastInstance>(bounceTestConfig.getClusterSize());
         this.testDrivers = new AtomicReferenceArray<HazelcastInstance>(bounceTestConfig.getDriverCount());
+        this.bouncingIntervalSeconds = bounceTestConfig.getBouncingIntervalSeconds();
     }
 
     /**
@@ -437,6 +440,7 @@ public class BounceMemberRule implements TestRule {
         private DriverFactory driverFactory;
         private DriverType testDriverType;
         private boolean useTerminate;
+        private int bouncingIntervalSeconds = DEFAULT_BOUNCING_INTERVAL_SECONDS;
 
         private Builder(Config memberConfig) {
             this.memberConfig = memberConfig;
@@ -467,7 +471,7 @@ public class BounceMemberRule implements TestRule {
                 }
             }
             return new BounceMemberRule(new BounceTestConfiguration(clusterSize, testDriverType, memberConfig,
-                    driversCount, driverFactory, useTerminate));
+                    driversCount, driverFactory, useTerminate, bouncingIntervalSeconds));
         }
 
         public Builder clusterSize(int clusterSize) {
@@ -482,6 +486,11 @@ public class BounceMemberRule implements TestRule {
 
         public Builder driverCount(int count) {
             this.driversCount = count;
+            return this;
+        }
+
+        public Builder bouncingIntervalSeconds(int bouncingIntervalSeconds) {
+            this.bouncingIntervalSeconds = bouncingIntervalSeconds;
             return this;
         }
 
@@ -525,10 +534,10 @@ public class BounceMemberRule implements TestRule {
                         members.get(i).shutdown();
                     }
                     nextInstance = i % divisor + 1;
-                    sleepSeconds(2);
+                    sleepSeconds(bouncingIntervalSeconds);
 
                     members.set(i, factory.newHazelcastInstance(bounceTestConfig.getMemberConfig()));
-                    sleepSeconds(2);
+                    sleepSeconds(bouncingIntervalSeconds);
                     // move to next member
                     i = nextInstance;
                 }
