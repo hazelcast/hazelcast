@@ -157,10 +157,11 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
                     indexes.addOrGetIndex(indexInfo.attributeName, indexInfo.ordered);
                 } else {
                     // partitioned-index
-                    for (PartitionContainer partitionContainer : mapServiceContext.getPartitionContainers()) {
-                        final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
-                        indexes.addOrGetIndex(indexInfo.attributeName, indexInfo.ordered);
-                    }
+//                    https://github.com/hazelcast/hazelcast/issues/10841
+//                    for (PartitionContainer partitionContainer : mapServiceContext.getPartitionContainers()) {
+//                        final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
+//                        indexes.addOrGetIndex(indexInfo.attributeName, indexInfo.ordered);
+//                    }
                 }
             }
         }
