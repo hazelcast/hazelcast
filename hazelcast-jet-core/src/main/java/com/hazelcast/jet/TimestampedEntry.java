@@ -17,6 +17,8 @@
 package com.hazelcast.jet;
 
 import javax.annotation.Nonnull;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Map;
 
 /**
@@ -82,6 +84,8 @@ public final class TimestampedEntry<K, V> implements Map.Entry<K, V> {
 
     @Override
     public String toString() {
-        return "TimestampedEntry{timestamp=" + timestamp + ", key=" + key + ", value=" + value + '}';
+        return "TimestampedEntry{timestamp="
+                + Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalTime()
+                + ", key=" + key + ", value=" + value + '}';
     }
 }

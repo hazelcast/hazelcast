@@ -160,7 +160,9 @@ public class JetService
         }
         classLoaders.remove(executionId);
         ResourceStore store = resourceStores.remove(executionId);
-        store.destroy();
+        if (store != null) {
+            store.destroy();
+        }
     }
 
     public JetInstance getJetInstance() {

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.Processor.Context;
+import com.hazelcast.jet.Watermark;
 import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -130,7 +131,7 @@ public class InsertWatermarksPTest {
             clock.advance();
         }
 
-        assertEquals(toString(Arrays.asList(expected)), toString(resultToCheck));
+        assertEquals(listToString(Arrays.asList(expected)), listToString(resultToCheck));
     }
 
     private void tryProcessAndDrain(Item item) throws Exception {
@@ -141,11 +142,17 @@ public class InsertWatermarksPTest {
 
     private void drainOutbox() {
         for (Object o; (o = outbox.queueWithOrdinal(0).poll()) != null; ) {
-            resultToCheck.add(o.toString());
+            resultToCheck.add(myToString(o));
         }
     }
 
-    private static String toString(List<String> actual) {
+    private String myToString(Object o) {
+        return o instanceof Watermark
+                ? "Watermark{timestamp=" + ((Watermark) o).timestamp() + "}"
+                : o.toString();
+    }
+
+    private static String listToString(List<String> actual) {
         return actual.stream().collect(Collectors.joining("\n"));
     }
 

@@ -17,6 +17,8 @@
 package com.hazelcast.jet;
 
 import java.io.Serializable;
+import java.time.Instant;
+import java.time.ZoneId;
 
 /**
  * Watermark is an item occasionally inserted into a disordered
@@ -58,6 +60,6 @@ public final class Watermark implements Serializable {
 
     @Override
     public String toString() {
-        return "Watermark{timestamp=" + timestamp + '}';
+        return "Watermark{timestamp=" + Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalTime() + '}';
     }
 }
