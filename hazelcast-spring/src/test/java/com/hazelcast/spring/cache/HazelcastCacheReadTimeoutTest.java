@@ -65,6 +65,7 @@ public class HazelcastCacheReadTimeoutTest extends HazelcastTestSupport{
     @BeforeClass
     @AfterClass
     public static void start() {
+        System.setProperty(HazelcastCacheManager.CACHE_PROP, "defaultReadTimeout=100,delay150=150,delay50=50,delayNo=0");
         Hazelcast.shutdownAll();
     }
 

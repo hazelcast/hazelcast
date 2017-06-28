@@ -56,14 +56,6 @@
 
     <bean id="cacheManager" class="com.hazelcast.spring.cache.HazelcastCacheManager">
         <constructor-arg ref="instance"/>
-        <property name="defaultReadTimeout" value="100"/>
-        <property name="readTimeoutMap">
-            <map>
-                <entry key="delay150" value="150"/>
-                <entry key="delay50" value="50"/>
-                <entry key="delayNo"><null/></entry>
-            </map>
-        </property>
     </bean>
 
     <bean id="dummy" class="com.hazelcast.spring.cache.HazelcastCacheReadTimeoutTest.DummyTimeoutBean"/>
