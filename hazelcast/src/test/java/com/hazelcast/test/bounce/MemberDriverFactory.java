@@ -39,8 +39,9 @@ public class MemberDriverFactory implements DriverFactory {
                 Arrays.fill(drivers, rule.getSteadyMember());
                 return drivers;
             case MEMBER:
+                Config driverConfig = getDriverConfig(testConfiguration);
                 for (int i = 0; i < drivers.length; i++) {
-                    drivers[i] = rule.getFactory().newHazelcastInstance(getConfig());
+                    drivers[i] = rule.getFactory().newHazelcastInstance(driverConfig);
                 }
                 waitAllForSafeState(drivers);
                 return drivers;
@@ -50,12 +51,23 @@ public class MemberDriverFactory implements DriverFactory {
         }
     }
 
+    private Config getDriverConfig(BounceTestConfiguration testConfiguration) {
+        Config driverConfig = getConfig();
+        if (driverConfig == null) {
+            driverConfig = testConfiguration.getMemberConfig();
+        }
+        return driverConfig;
+    }
+
     /**
      * Override this method to provide custom configuration for test drivers
+     *
+     * When you return <code>null</code> then drivers will use the same
+     * configuration as other (non-driver) members.
      *
      * @return
      */
     protected Config getConfig() {
-        return new Config();
+        return null;
     }
 }
