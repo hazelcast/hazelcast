@@ -37,6 +37,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.BinaryOperationFactory;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -46,6 +47,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 public class PostJoinMapOperation extends Operation implements IdentifiedDataSerializable {
 
@@ -157,10 +160,10 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
                     indexes.addOrGetIndex(indexInfo.attributeName, indexInfo.ordered);
                 } else {
                     // partitioned-index
-                    for (PartitionContainer partitionContainer : mapServiceContext.getPartitionContainers()) {
-                        final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
-                        indexes.addOrGetIndex(indexInfo.attributeName, indexInfo.ordered);
-                    }
+                    AddIndexOperation addIndexOperation = new AddIndexOperation(
+                            mapIndex.mapName, indexInfo.attributeName, indexInfo.ordered);
+                    getNodeEngine().getOperationService().invokeOnAllPartitions(
+                            SERVICE_NAME, new BinaryOperationFactory(addIndexOperation, getNodeEngine()));
                 }
             }
         }

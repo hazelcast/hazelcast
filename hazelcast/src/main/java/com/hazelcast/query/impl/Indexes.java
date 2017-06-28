@@ -55,6 +55,10 @@ public class Indexes {
         return mapIndexes.remove(attribute);
     }
 
+    public synchronized boolean doesIndexExist(String attribute) {
+        return mapIndexes.get(attribute) != null;
+    }
+
     public synchronized Index addOrGetIndex(String attribute, boolean ordered) {
         Index index = mapIndexes.get(attribute);
         if (index != null) {
