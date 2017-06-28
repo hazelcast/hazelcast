@@ -39,8 +39,8 @@ public class MemberDriverFactory implements DriverFactory {
                 Arrays.fill(drivers, rule.getSteadyMember());
                 return drivers;
             case MEMBER:
-                Config driverConfig = getDriverConfig(testConfiguration);
                 for (int i = 0; i < drivers.length; i++) {
+                    Config driverConfig = getDriverConfig(testConfiguration);
                     drivers[i] = rule.getFactory().newHazelcastInstance(driverConfig);
                 }
                 waitAllForSafeState(drivers);
