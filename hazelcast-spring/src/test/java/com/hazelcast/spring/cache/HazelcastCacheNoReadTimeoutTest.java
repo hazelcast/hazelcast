@@ -60,7 +60,6 @@ public class HazelcastCacheNoReadTimeoutTest extends HazelcastTestSupport {
     @BeforeClass
     @AfterClass
     public static void start() {
-        System.setProperty(HazelcastCacheManager.CACHE_PROP, "   ");
         Hazelcast.shutdownAll();
     }
 

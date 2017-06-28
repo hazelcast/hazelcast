@@ -24,7 +24,6 @@ import org.springframework.cache.CacheManager;
 import org.springframework.util.Assert;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -37,13 +36,14 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class HazelcastCacheManager implements CacheManager {
 
-    private final ConcurrentMap<String, Cache> caches = new ConcurrentHashMap<String, Cache>();
-    private HazelcastInstance hazelcastInstance;
-
     /**
      * Property name for hazelcast spring-cache related properties
      */
     public static final String CACHE_PROP = "hazelcast.spring.cache.prop";
+
+    private final ConcurrentMap<String, Cache> caches = new ConcurrentHashMap<String, Cache>();
+    private HazelcastInstance hazelcastInstance;
+
     /**
      * Default cache value retrieval timeout. Apply to all caches.
      * Can be overridden setting a cache specific value to readTimeoutMap.
@@ -106,11 +106,11 @@ public class HazelcastCacheManager implements CacheManager {
     }
 
     private void parseOptions() {
-        String options = System.getProperty(CACHE_PROP, "");
-        if(options.isEmpty()) {
+        String options = System.getProperty(CACHE_PROP, "").trim();
+        if (options.isEmpty()) {
             return;
         }
-        for(String option : options.split(",")) {
+        for (String option : options.split(",")) {
             parseOption(option);
         }
     }
@@ -141,6 +141,7 @@ public class HazelcastCacheManager implements CacheManager {
 
     /**
      * Set default cache value retrieval timeout. Applies to all caches, if not defined a cache specific timeout.
+     *
      * @param defaultReadTimeout default cache retrieval timeout in milliseconds. 0 or negative values disable timeout.
      */
     public void setDefaultReadTimeout(long defaultReadTimeout) {
