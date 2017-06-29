@@ -154,7 +154,7 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
                     + nodeEngine.getLocalMember());
         }
         final String cacheSimpleName = cacheConfig.getName();
-        final EventJournalConfig config = nodeEngine.getConfig().getCacheEventJournalConfig(cacheSimpleName);
+        final EventJournalConfig config = nodeEngine.getConfig().findCacheEventJournalConfig(cacheSimpleName);
         if (config == null || !config.isEnabled()) {
             return null;
         }

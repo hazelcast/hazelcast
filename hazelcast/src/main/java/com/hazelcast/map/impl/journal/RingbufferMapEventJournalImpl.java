@@ -130,7 +130,7 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
 
     @Override
     public EventJournalConfig getEventJournalConfig(ObjectNamespace namespace) {
-        return nodeEngine.getConfig().getMapEventJournalConfig(namespace.getObjectName());
+        return nodeEngine.getConfig().findMapEventJournalConfig(namespace.getObjectName());
     }
 
     @Override
