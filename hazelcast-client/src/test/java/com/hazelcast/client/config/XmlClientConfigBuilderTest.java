@@ -177,6 +177,11 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         assertContains(networkConfig.getAddresses(), "127.0.0.1");
         assertContains(networkConfig.getAddresses(), "127.0.0.2");
 
+        Collection<String> allowedPorts = networkConfig.getOutboundPortDefinitions();
+        assertEquals(2, allowedPorts.size());
+        assertTrue(allowedPorts.contains("34600"));
+        assertTrue(allowedPorts.contains("34700-34710"));
+
         assertTrue(networkConfig.isSmartRouting());
         assertTrue(networkConfig.isRedoOperation());
 

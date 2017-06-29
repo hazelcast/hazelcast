@@ -1,0 +1,49 @@
+package com.hazelcast.client;
+
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.ClientTestSupport;
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.core.Client;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.TestEnvironment;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import java.util.Arrays;
+
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class})
+public class ClientOutBoundPortTest extends ClientTestSupport {
+
+    private TestHazelcastFactory hazelcastFactory;
+
+    @Before
+    public void setUp() {
+        System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "true");
+        System.setProperty("java.net.preferIPv4Stack", "true");
+        hazelcastFactory = new TestHazelcastFactory();
+    }
+
+    @After
+    public void tearDown() {
+        hazelcastFactory.shutdownAll();
+    }
+
+    @Test
+    public void clientOutboundPortRangeTest() {
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        ClientConfig config = new ClientConfig();
+        config.getNetworkConfig().setOutboundPortDefinitions(Arrays.asList("34700", "34703-34705"));
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
+
+        final int port = ((Client)client.getLocalEndpoint()).getSocketAddress().getPort();
+        client.shutdown();
+        instance.shutdown();
+        assertContains(Arrays.asList(34700, 34703, 34704, 34705), port);
+    }
+}

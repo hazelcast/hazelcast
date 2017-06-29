@@ -417,6 +417,8 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
                 handleAWS(child, clientNetworkConfig);
             } else if ("discovery-strategies".equals(nodeName)) {
                 handleDiscoveryStrategies(child, clientNetworkConfig);
+            } else if ("outbound-ports".equals(nodeName)) {
+                handleOutboundPorts(child, clientNetworkConfig);
             }
         }
         clientConfig.setNetworkConfig(clientNetworkConfig);
@@ -624,5 +626,14 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         clientConfig.setSecurityConfig(clientSecurityConfig);
     }
 
+    private void handleOutboundPorts(Node child, ClientNetworkConfig clientNetworkConfig) {
+        for (Node n : childElements(child)) {
+            String nodeName = cleanNodeName(n);
+            if ("ports".equals(nodeName)) {
+                String value = getTextContent(n);
+                clientNetworkConfig.addOutboundPortDefinition(value);
+            }
+        }
+    }
 
 }

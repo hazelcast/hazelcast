@@ -204,6 +204,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleAws(child, clientNetworkConfig);
                 } else if ("discovery-strategies".equals(nodeName)) {
                     handleDiscoveryStrategies(child, clientNetworkConfig);
+                } else if ("outbound-ports".equals(nodeName)) {
+                    handleOutboundPorts(child, clientNetworkConfig);
                 }
             }
             clientNetworkConfig.addPropertyValue("addresses", members);
@@ -369,6 +371,18 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 listeners.add(listenerConfBuilder.getBeanDefinition());
             }
             return listeners;
+        }
+
+        private void handleOutboundPorts(final Node node, final BeanDefinitionBuilder networkConfigBuilder) {
+            ManagedList outboundPorts = new ManagedList();
+            for (Node child : childElements(node)) {
+                final String name = cleanNodeName(child);
+                if ("ports".equals(name)) {
+                    String value = getTextContent(child);
+                    outboundPorts.add(value);
+                }
+            }
+            networkConfigBuilder.addPropertyValue("outboundPortDefinitions", outboundPorts);
         }
     }
 }

@@ -21,7 +21,9 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
@@ -44,6 +46,8 @@ public class ClientNetworkConfig {
     private SSLConfig sslConfig;
     private ClientAwsConfig clientAwsConfig;
     private DiscoveryConfig discoveryConfig;
+    private Collection<String> outboundPortDefinitions;
+    private Collection<Integer> outboundPorts;
 
     /**
      * Returns the configuration of the Hazelcast Discovery SPI and configured discovery providers
@@ -298,5 +302,68 @@ public class ClientNetworkConfig {
      */
     public ClientAwsConfig getAwsConfig() {
         return clientAwsConfig;
+    }
+
+
+    /**
+     * Returns the outbound port definitions. It is possible that null is returned if not defined.
+     * @return list of outbound port definitions
+     */
+    public Collection<String> getOutboundPortDefinitions() {
+        return outboundPortDefinitions;
+    }
+
+    /**
+     * Returns the outbound ports. It is possible that null is returned if not defined.
+     * @return list of outbound ports
+     */
+    public Collection<Integer> getOutboundPorts() {
+        return outboundPorts;
+    }
+
+    /**
+     * Set outbound port definitions
+     * @param outboundPortDefinitions outbound port definitions
+     * @return ClientNetworkConfig
+     */
+    public ClientNetworkConfig setOutboundPortDefinitions(final Collection<String> outboundPortDefinitions) {
+        this.outboundPortDefinitions = outboundPortDefinitions;
+        return this;
+    }
+
+    /**
+     * Set outbond ports
+     * @param outboundPorts outbound ports
+     * @return ClientNetworkConfig
+     */
+    public ClientNetworkConfig setOutboundPorts(final Collection<Integer> outboundPorts) {
+        this.outboundPorts = outboundPorts;
+        return this;
+    }
+
+    /**
+     * Add outbound port to the outbound port list
+     * @param port outbound port
+     * @return ClientNetworkConfig
+     */
+    public ClientNetworkConfig addOutboundPort(int port) {
+        if (outboundPorts == null) {
+            outboundPorts = new HashSet<Integer>();
+        }
+        outboundPorts.add(port);
+        return this;
+    }
+
+    /**
+     * Add outbound port definition to the outbound port definition list
+     * @param portDef outbound port definition
+     * @return ClientNetworkConfig
+     */
+    public ClientNetworkConfig addOutboundPortDefinition(String portDef) {
+        if (outboundPortDefinitions == null) {
+            outboundPortDefinitions = new HashSet<String>();
+        }
+        outboundPortDefinitions.add(portDef);
+        return this;
     }
 }
