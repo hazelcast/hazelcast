@@ -93,17 +93,20 @@ public abstract class AbstractPartitionPrimaryReplicaAntiEntropyTask
             }
         }
 
-        // ASSERTION
-        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
-            assert versionMap.size() == 1 : "Only single namespace is allowed before V3.9: " + versionMap;
+        boolean hasCallback = (callback != null);
+
+        if (versionMap.isEmpty() && nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
+            if (hasCallback) {
+                callback.onResponse(true);
+            }
+            return;
         }
 
-        boolean shouldInvoke = (callback != null);
-        PartitionBackupReplicaAntiEntropyOperation op = new PartitionBackupReplicaAntiEntropyOperation(versionMap, shouldInvoke);
+        PartitionBackupReplicaAntiEntropyOperation op = new PartitionBackupReplicaAntiEntropyOperation(versionMap, hasCallback);
         op.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(SERVICE_NAME);
         OperationService operationService = nodeEngine.getOperationService();
 
-        if (shouldInvoke) {
+        if (hasCallback) {
             operationService.createInvocationBuilder(SERVICE_NAME, op, target)
                             .setExecutionCallback(callback)
                             .setTryCount(OPERATION_TRY_COUNT)
