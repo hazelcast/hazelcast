@@ -16,7 +16,6 @@
 
 package com.hazelcast.aws.utility;
 
-import com.hazelcast.config.AwsConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.w3c.dom.Document;
@@ -53,10 +52,9 @@ public final class CloudyUtility {
      * If there is an exception while unmarshalling the response, returns an empty map.
      *
      * @param stream    the response XML stream
-     * @param awsConfig the AWS configuration for filtering the returned addresses
      * @return map from private to public IP or empty map in case of exceptions
      */
-    public static Map<String, String> unmarshalTheResponse(InputStream stream, AwsConfig awsConfig) {
+    public static Map<String, String> unmarshalTheResponse(InputStream stream) {
         DocumentBuilder builder;
         try {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();

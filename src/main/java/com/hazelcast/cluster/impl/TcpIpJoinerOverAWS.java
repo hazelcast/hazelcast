@@ -32,6 +32,7 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
     public TcpIpJoinerOverAWS(Node node) {
         super(node);
         logger = node.getLogger(getClass());
+
         AwsConfig awsConfig = node.getConfig().getNetworkConfig().getJoin().getAwsConfig();
         aws = new AWSClient(awsConfig);
     }

@@ -26,6 +26,7 @@ import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
+import com.hazelcast.util.StringUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -66,17 +67,23 @@ public class AwsDiscoveryStrategy extends AbstractDiscoveryStrategy {
     private AwsConfig getAwsConfig() throws IllegalArgumentException {
         final AwsConfig config = new AwsConfig()
                 .setEnabled(true)
-                .setAccessKey(getOrNull(ACCESS_KEY))
-                .setSecretKey(getOrNull(SECRET_KEY))
                 .setSecurityGroupName(getOrNull(SECURITY_GROUP_NAME))
                 .setTagKey(getOrNull(TAG_KEY))
                 .setTagValue(getOrNull(TAG_VALUE))
                 .setIamRole(getOrNull(IAM_ROLE));
 
-        final Integer timeout = getOrNull(CONNECTION_TIMEOUT_SECONDS.getDefinition());
-        if (timeout != null) {
-            config.setConnectionTimeoutSeconds(timeout);
+        String property = getOrNull(ACCESS_KEY);
+        if (property != null) {
+            config.setAccessKey(property);
         }
+
+        property = getOrNull(SECRET_KEY);
+        if (property != null) {
+            config.setSecretKey(property);
+        }
+
+        final Integer timeout = getOrDefault(CONNECTION_TIMEOUT_SECONDS.getDefinition(), 10);
+        config.setConnectionTimeoutSeconds(timeout);
 
         final String region = getOrNull(REGION);
         if (region != null) {
@@ -87,7 +94,27 @@ public class AwsDiscoveryStrategy extends AbstractDiscoveryStrategy {
         if (hostHeader != null) {
             config.setHostHeader(hostHeader);
         }
+
+        reviewConfiguration(config);
         return config;
+    }
+
+    private void reviewConfiguration(AwsConfig config) {
+        if (StringUtil.isNullOrEmptyAfterTrim(config.getSecretKey())
+                || StringUtil.isNullOrEmptyAfterTrim(config.getAccessKey())) {
+
+            if (!StringUtil.isNullOrEmptyAfterTrim(config.getIamRole())) {
+                getLogger().info("Describe instances will be queried with iam-role, "
+                        + "please make sure given iam-role have ec2:DescribeInstances policy attached.");
+            } else {
+                getLogger().warning("Describe instances will be queried with iam-role assigned to EC2 instance, "
+                        + "please make sure given iam-role have ec2:DescribeInstances policy attached.");
+            }
+        } else {
+            if (!StringUtil.isNullOrEmptyAfterTrim(config.getIamRole())) {
+                getLogger().info("No need to define iam-role, when access and secret keys are configured!");
+            }
+        }
     }
 
     @Override

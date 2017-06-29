@@ -62,7 +62,7 @@ public class CloudyUtilityTest extends HazelcastTestSupport {
         awsConfig1.setAccessKey("some-access-key");
         awsConfig1.setSecretKey("some-secret-key");
 
-        Map<String, String> result = CloudyUtility.unmarshalTheResponse(is, awsConfig);
+        Map<String, String> result = CloudyUtility.unmarshalTheResponse(is);
         assertEquals(2, result.size());
     }
 

@@ -36,11 +36,11 @@ public enum AwsProperties {
     /**
      * Access key of your account on EC2
      */
-    ACCESS_KEY("access-key", STRING, false),
+    ACCESS_KEY("access-key", STRING, true),
     /**
      * Secret key of your account on EC2
      */
-    SECRET_KEY("secret-key", STRING, false),
+    SECRET_KEY("secret-key", STRING, true),
     /**
      * The region where your members are running. Default value is us-east-1. You need to specify this if the region is other
      * than the default one.

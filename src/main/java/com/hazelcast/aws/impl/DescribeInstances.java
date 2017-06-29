@@ -271,7 +271,7 @@ public class DescribeInstances {
         attributes.put("X-Amz-Signature", signature);
         try {
             stream = callService(endpoint);
-            response = CloudyUtility.unmarshalTheResponse(stream, awsConfig);
+            response = CloudyUtility.unmarshalTheResponse(stream);
             return response;
         } finally {
             closeResource(stream);
@@ -283,6 +283,7 @@ public class DescribeInstances {
         URL url = new URL("https", endpoint, -1, "/?" + query);
         HttpURLConnection httpConnection = (HttpURLConnection) (url.openConnection());
         httpConnection.setRequestMethod(Constants.GET);
+        httpConnection.setConnectTimeout(awsConfig.getConnectionTimeoutSeconds());
         httpConnection.setDoOutput(false);
         httpConnection.connect();
         return httpConnection.getInputStream();
