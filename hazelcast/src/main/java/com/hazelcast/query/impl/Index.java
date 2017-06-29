@@ -27,7 +27,15 @@ import java.util.Set;
  */
 public interface Index {
 
+    /**
+     * Clear out entries from the index
+     */
     void clear();
+
+    /**
+     * Release all resources hold by the index. (ie. Native memory for HD)
+     */
+    void destroy();
 
     /**
      * Add entry to this index.
