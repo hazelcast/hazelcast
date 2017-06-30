@@ -62,7 +62,11 @@ class LongGaugeImpl extends AbstractGauge implements LongGauge {
     }
 
     @Override
-    public void render(StringBuilder stringBuilder) {
-        stringBuilder.append(read());
+    public void render(StringBuilder stringBuilder, String unboundValue) {
+        if (isBound()) {
+            stringBuilder.append(read());
+        } else {
+            stringBuilder.append(unboundValue);
+        }
     }
 }

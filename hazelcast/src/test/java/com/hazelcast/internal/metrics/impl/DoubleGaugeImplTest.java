@@ -18,8 +18,10 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
+import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,6 +33,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -47,6 +50,24 @@ public class DoubleGaugeImplTest {
         long longField = 10;
         @Probe
         double doubleField = 10.8;
+    }
+
+    @Test
+    public void isBound_whenBound(){
+        DoubleGauge gauge = metricsRegistry.newDoubleGauge("foo");
+        metricsRegistry.register(this, "foo", ProbeLevel.MANDATORY, new DoubleProbeFunction<DoubleGaugeImplTest>() {
+            @Override
+            public double get(DoubleGaugeImplTest source) throws Exception {
+                return 0;
+            }
+        });
+        assertFalse(gauge.isBound());
+    }
+
+    @Test
+    public void isBound_whenNotBound(){
+        DoubleGauge gauge = metricsRegistry.newDoubleGauge("foo");
+        assertFalse(gauge.isBound());
     }
 
     // ============ readDouble ===========================

@@ -24,8 +24,8 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Gauge;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -372,7 +372,7 @@ public class Statistics {
 
             for (Map.Entry<String, Gauge> entry : allMetrics.entrySet()) {
                 stats.append(STAT_SEPARATOR).append(entry.getKey()).append(KEY_VALUE_SEPARATOR);
-                entry.getValue().render(stats);
+                entry.getValue().render(stats, "NA");
             }
         }
     }

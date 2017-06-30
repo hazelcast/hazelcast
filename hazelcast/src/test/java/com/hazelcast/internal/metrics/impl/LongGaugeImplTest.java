@@ -20,6 +20,7 @@ import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,6 +33,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.lang.Math.round;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -49,6 +51,24 @@ public class LongGaugeImplTest {
         long longField = 10;
         @Probe
         double doubleField = 10.8;
+    }
+
+    @Test
+    public void isBound_whenBound(){
+        LongGauge gauge = metricsRegistry.newLongGauge("foo");
+        metricsRegistry.register(this, "foo", ProbeLevel.MANDATORY, new LongProbeFunction<LongGaugeImplTest>() {
+            @Override
+            public long get(LongGaugeImplTest source) throws Exception {
+                return 1;
+            }
+        });
+        assertFalse(gauge.isBound());
+    }
+
+    @Test
+    public void isBound_whenNotBound(){
+        LongGauge gauge = metricsRegistry.newLongGauge("foo");
+        assertFalse(gauge.isBound());
     }
 
     @Test
