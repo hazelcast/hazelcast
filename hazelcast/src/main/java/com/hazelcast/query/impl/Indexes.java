@@ -77,6 +77,10 @@ public class Indexes {
     }
 
     public void clearIndexes() {
+        for (Index index : getIndexes()) {
+            index.destroy();
+        }
+
         indexes.set(EMPTY_INDEX);
         mapIndexes.clear();
         hasIndex = false;

@@ -100,6 +100,10 @@ public abstract class BaseIndexStore implements IndexStore {
         }
     }
 
+    @Override
+    public void destroy() {
+        // NOOP
+    }
 
     void takeWriteLock() {
         writeLock.lock();

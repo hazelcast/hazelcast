@@ -38,10 +38,10 @@ public class IndexImpl implements Index {
     public static final NullObject NULL = new NullObject();
 
     protected final InternalSerializationService ss;
+    protected final IndexStore indexStore;
 
     private volatile TypeConverter converter;
 
-    private final IndexStore indexStore;
     private final String attributeName;
     private final boolean ordered;
     private final Extractors extractors;
@@ -153,6 +153,11 @@ public class IndexImpl implements Index {
     public void clear() {
         indexStore.clear();
         converter = null;
+    }
+
+    @Override
+    public void destroy() {
+        // NOOP
     }
 
     @Override
