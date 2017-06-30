@@ -235,10 +235,14 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         checkNotNull(name, "name can't be null");
 
         ProbeInstance probeInstance = getProbeInstance(name);
+
         if (probeInstance.function instanceof DoubleProbeFunction) {
             return new DoubleGaugeImpl(this, name);
         }
 
+        // TODO:
+        // This logic is broken when the gauge isn't bound and later a DoubleProbeFunction is registered. Now you end up with
+        // the wrong type of Gauge.
         return new LongGaugeImpl(this, name);
     }
 
