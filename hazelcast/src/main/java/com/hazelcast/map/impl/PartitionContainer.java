@@ -134,6 +134,10 @@ public class PartitionContainer {
         return maps;
     }
 
+    public ConcurrentMap<String, Indexes> getIndexes() {
+        return indexes;
+    }
+
     public Collection<RecordStore> getAllRecordStores() {
         return maps.values();
     }
@@ -183,6 +187,7 @@ public class PartitionContainer {
         String name = mapContainer.getName();
         RecordStore recordStore = maps.remove(name);
         if (recordStore != null) {
+            // this call also clears and disposes Indexes for that partition
             recordStore.destroy();
         } else {
             // It can be that, map is used only for locking,
@@ -191,6 +196,8 @@ public class PartitionContainer {
             // this IMap partition.
             clearLockStore(name);
         }
+        // getting rid of Indexes object in case it has been initialized
+        indexes.remove(name);
 
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         if (mapServiceContext.removeMapContainer(mapContainer)) {
