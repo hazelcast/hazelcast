@@ -25,17 +25,16 @@ import java.util.Map;
 
 /**
  * Utility class to access configuration.
- *
  */
 public final class ConfigUtils {
+
     private static final ILogger LOGGER = Logger.getLogger(Config.class);
 
     private ConfigUtils() {
-
     }
 
     public static <T> T lookupByPattern(ConfigPatternMatcher configPatternMatcher, Map<String, T> configPatterns,
-                                 String itemName) {
+                                        String itemName) {
         T candidate = configPatterns.get(itemName);
         if (candidate != null) {
             return candidate;
