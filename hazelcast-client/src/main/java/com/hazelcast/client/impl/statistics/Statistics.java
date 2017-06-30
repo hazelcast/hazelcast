@@ -337,7 +337,7 @@ public class Statistics {
     }
 
     class PeriodicStatistics {
-        private final Gauge[] allMetrics = {
+        private final Gauge[] allGauges = {
                     metricsRegistry.newLongGauge("os.committedVirtualMemorySize"),
                     metricsRegistry.newLongGauge("os.freePhysicalMemorySize"),
                     metricsRegistry.newLongGauge("os.freeSwapSpaceSize"),
@@ -372,9 +372,9 @@ public class Statistics {
                 addStat(stats, "credentials.principal", credentials.getPrincipal());
             }
 
-            for (Gauge metric : allMetrics) {
-                stats.append(STAT_SEPARATOR).append(metric.getName()).append(KEY_VALUE_SEPARATOR);
-                metric.render(stats);
+            for (Gauge gauge : allGauges) {
+                stats.append(STAT_SEPARATOR).append(gauge.getName()).append(KEY_VALUE_SEPARATOR);
+                gauge.render(stats);
             }
         }
     }
