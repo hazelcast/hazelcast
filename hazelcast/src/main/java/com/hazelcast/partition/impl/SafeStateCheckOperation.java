@@ -17,6 +17,9 @@
 package com.hazelcast.partition.impl;
 
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 
 /**
  * Checks whether a node is safe or not.
@@ -38,5 +41,11 @@ public class SafeStateCheckOperation extends AbstractOperation {
     @Override
     public Object getResponse() {
         return safe;
+    }
+
+    @Override
+    public ExceptionAction onInvocationException(Throwable throwable) {
+        return (throwable instanceof RetryableException && !(throwable instanceof TargetNotMemberException))
+                ? ExceptionAction.RETRY_INVOCATION : ExceptionAction.THROW_EXCEPTION;
     }
 }

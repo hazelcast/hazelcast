@@ -50,4 +50,21 @@ public final class EntryTaskSchedulerFactory {
         return new SecondsBasedEntryTaskScheduler<K, V>(scheduledExecutorService, entryProcessor, scheduleType);
     }
 
+    /**
+     * Creates a new EntryTaskScheduler with customizable granularity.
+     *
+     * @param scheduledExecutorService  ScheduledExecutorService instance to execute each slot's tasks
+     * @param entryProcessor            bulk processor
+     * @param scheduleType              type of schedule
+     * @param slotsPerSecond            number of slots allocated per second. Tasks are scheduled and executed in
+     *                                  bulk at each slot
+     * @return EntryTaskScheduler that will schedule operations in each slot
+     */
+    public static <K, V> EntryTaskScheduler<K, V> newScheduler(ScheduledExecutorService scheduledExecutorService,
+                                                               ScheduledEntryProcessor<K, V> entryProcessor,
+                                                               ScheduleType scheduleType,
+                                                               int slotsPerSecond) {
+        return new SlotBasedEntryTaskScheduler<K, V>(scheduledExecutorService, entryProcessor, scheduleType, slotsPerSecond);
+    }
+
 }
