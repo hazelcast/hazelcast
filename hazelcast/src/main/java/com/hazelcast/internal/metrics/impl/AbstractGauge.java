@@ -38,6 +38,10 @@ abstract class AbstractGauge implements Metric {
         probeInstance = null;
     }
 
+    public boolean isBound() {
+        return probeInstance != null;
+    }
+
     ProbeInstance getProbeInstance() {
         ProbeInstance probeInstance = this.probeInstance;
         if (probeInstance == null) {

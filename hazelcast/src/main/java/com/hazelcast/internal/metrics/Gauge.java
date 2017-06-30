@@ -29,9 +29,19 @@ package com.hazelcast.internal.metrics;
 public interface Gauge extends Metric {
 
     /**
+     * Checks if this Gauge is bound to a probe.
+     *
+     * A probe can start later than the Gauge and it could be destroyed while the Gauge is still is in use.
+     *
+     * @return true if this Gauge is bound to a probe.
+     */
+    boolean isBound();
+
+    /**
      * Renders the value from the gauge.
      *
      * @param stringBuilder the {@link StringBuilder} to write to.
+     * @param unboundValue the value to render when the gauge isn't bound.
      */
-    void render(StringBuilder stringBuilder);
+    void render(StringBuilder stringBuilder, String unboundValue);
 }
