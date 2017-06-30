@@ -29,10 +29,4 @@ public interface JetCodecTemplate {
 
     @Request(id = 2, retryable = false, response = ResponseMessageConst.VOID)
     void cancelJob(long executionId);
-
-    @Request(id = 3, retryable = false, response = ResponseMessageConst.VOID)
-    void updateResource(long executionId, Data resourcePart);
-
-    @Request(id = 4, retryable = false, response = ResponseMessageConst.VOID)
-    void completeResource(long executionId, Data resourceDescriptor);
 }

@@ -16,71 +16,52 @@
 
 package com.hazelcast.jet.impl.deployment;
 
-import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.core.IMap;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.nio.IOUtil;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.zip.InflaterInputStream;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
 public class JetClassLoader extends ClassLoader {
 
-    private final Map<String, Class> classes = new HashMap<>();
-    private ResourceStore store;
+    public static final String METADATA_RESOURCES_PREFIX = "res:";
 
-    public JetClassLoader(ResourceStore store) {
-        this.store = store;
+    private final IMap<String, Object> jobMetadataMap;
+
+    public JetClassLoader(IMap jobMetadataMap) {
+        super(JetClassLoader.class.getClassLoader());
+        this.jobMetadataMap = jobMetadataMap;
     }
 
     @Override
-    public Class loadClass(String className) throws ClassNotFoundException {
-        return loadClass(className, true);
-    }
-
-    @Override
-    public Class loadClass(String className, boolean resolveIt) throws ClassNotFoundException {
-        if (isEmpty(className)) {
+    protected Class<?> findClass(String name) throws ClassNotFoundException {
+        if (isEmpty(name)) {
             return null;
         }
-        synchronized (getClassLoadingLock(className)) {
-            final Class cached = classes.get(className);
-            if (cached != null) {
-                return cached;
-            }
-            try {
-                return getClass().getClassLoader().loadClass(className);
-            } catch (ClassNotFoundException ignored) {
-                EmptyStatement.ignore(ignored);
-            }
-            byte[] classBytes = classBytes(className);
-            if (classBytes == null) {
-                throw new ClassNotFoundException(className);
-            }
-            final Class defined = defineClass(className, classBytes, 0, classBytes.length);
-            if (defined == null) {
-                throw new ClassNotFoundException(className);
-            }
-            if (defined.getPackage() == null) {
-                int lastDotIndex = className.lastIndexOf('.');
-                if (lastDotIndex >= 0) {
-                    String name = className.substring(0, lastDotIndex);
-                    definePackage(name, null, null, null, null, null, null, null);
-                }
-            }
-            if (resolveIt) {
-                resolveClass(defined);
-            }
-            classes.put(className, defined);
-            return defined;
+        InputStream classBytesStream = resourceStream(name.replace('.', '/') + ".class");
+        if (classBytesStream == null) {
+            throw new ClassNotFoundException(name + ". Add it using " + JobConfig.class.getSimpleName()
+                    + " or start all members with it on classpath");
         }
+        byte[] classBytes = uncheckCall(() -> IOUtil.toByteArray(classBytesStream));
+        return defineClass(name, classBytes, 0, classBytes.length);
     }
 
     @Override
-    public URL getResource(String name) {
-        return isEmpty(name) ? null : getResourceURL(name);
+    protected URL findResource(String name) {
+        if (isEmpty(name)) {
+            return null;
+        }
+        // we distinguish between the case "resource found, but not accessible by URL" and "resource not found"
+        if (jobMetadataMap.containsKey(METADATA_RESOURCES_PREFIX + name)) {
+            throw new IllegalArgumentException("Resource not accessible by URL: " + name);
+        }
+        return null;
     }
 
     @Override
@@ -88,48 +69,21 @@ public class JetClassLoader extends ClassLoader {
         if (isEmpty(name)) {
             return null;
         }
-        byte[] arr = classBytes(name);
-        if (arr == null) {
-            ClassLoaderEntry classLoaderEntry = store.getDataEntries().get(name);
-            if (classLoaderEntry != null) {
-                arr = classLoaderEntry.getResourceBytes();
-            }
-        }
-        return arr != null ? new ByteArrayInputStream(arr) : null;
+        return resourceStream(name);
     }
 
     @SuppressWarnings("unchecked")
-    private byte[] classBytes(String name) {
-        ClassLoaderEntry entry = coalesce(name, store.getClassEntries(), store.getJarEntries());
-        return entry != null ? entry.getResourceBytes() : null;
-    }
-
-    private URL getResourceURL(String name) {
-        ClassLoaderEntry entry = coalesce(name, store.getClassEntries(), store.getDataEntries(), store.getJarEntries());
-        if (entry == null) {
+    private InputStream resourceStream(String name) {
+        byte[] classData = (byte[]) jobMetadataMap.get(METADATA_RESOURCES_PREFIX + name);
+        if (classData == null) {
             return null;
         }
-        if (entry.getBaseUrl() == null) {
-            throw new IllegalArgumentException("Resource not accessible by URL: " + entry);
-        }
-        try {
-            return new URL(entry.getBaseUrl());
-        } catch (MalformedURLException e) {
-            throw rethrow(e);
-        }
+        return new InflaterInputStream(new ByteArrayInputStream(classData));
     }
 
-    @SafeVarargs
-    private static ClassLoaderEntry coalesce(String name, Map<String, ClassLoaderEntry>... resources) {
-        for (Map<String, ClassLoaderEntry> map : resources) {
-            ClassLoaderEntry entry = map.get(name);
-            if (entry != null) {
-                return entry;
-            }
-        }
-        return null;
+    public IMap<String, Object> getJobMetadataMap() {
+        return jobMetadataMap;
     }
-
 
     private static boolean isEmpty(String className) {
         return className == null || className.isEmpty();

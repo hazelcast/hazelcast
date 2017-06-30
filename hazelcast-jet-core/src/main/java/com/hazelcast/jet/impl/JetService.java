@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.HazelcastInstanceImpl;
@@ -26,7 +27,6 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.TopologyChangedException;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
-import com.hazelcast.jet.impl.deployment.ResourceStore;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.ExecutionService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
@@ -48,7 +48,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
 
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
@@ -56,13 +55,12 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
-
 public class JetService
         implements ManagedService, ConfigurableService<JetConfig>, PacketHandler, LiveOperationsTracker,
         CanCancelOperations, MembershipAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
+    public static final String METADATA_MAP_PREFIX = "__jet_job_metadata_";
 
     private final ILogger logger;
     private final ClientInvocationRegistry clientInvocationRegistry;
@@ -72,8 +70,7 @@ public class JetService
     // rely on specific semantics of computeIfAbsent. ConcurrentMap.computeIfAbsent
     // does not guarantee at most one computation per key.
     private final ConcurrentHashMap<Long, ExecutionContext> executionContexts = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Long, ResourceStore> resourceStores = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Long, ClassLoader> classLoaders = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, JetClassLoader> classLoaders = new ConcurrentHashMap<>();
 
     private JetConfig config = new JetConfig();
     private NodeEngineImpl nodeEngine;
@@ -158,10 +155,10 @@ public class JetService
         if (context != null) {
             context.complete(error);
         }
-        classLoaders.remove(executionId);
-        ResourceStore store = resourceStores.remove(executionId);
-        if (store != null) {
-            store.destroy();
+        JetClassLoader removedCL = classLoaders.remove(executionId);
+        // class loader is lazily initialized, job might complete before it happens
+        if (removedCL != null) {
+            removedCL.getJobMetadataMap().destroy();
         }
     }
 
@@ -177,14 +174,10 @@ public class JetService
         return clientInvocationRegistry;
     }
 
-    public ResourceStore getResourceStore(long executionId) {
-        return resourceStores.computeIfAbsent(executionId,
-                k -> uncheckCall(() -> new ResourceStore(Paths.get(config.getInstanceConfig().getTempDir()), nodeEngine)));
-}
-
     public ClassLoader getClassLoader(long executionId) {
+        IMap<String, Object> jobMetadataMap = getJetInstance().getMap(METADATA_MAP_PREFIX + executionId);
         return classLoaders.computeIfAbsent(executionId, k -> AccessController.doPrivileged(
-                (PrivilegedAction<ClassLoader>) () -> new JetClassLoader(getResourceStore(k))
+                (PrivilegedAction<JetClassLoader>) () -> new JetClassLoader(jobMetadataMap)
         ));
     }
 

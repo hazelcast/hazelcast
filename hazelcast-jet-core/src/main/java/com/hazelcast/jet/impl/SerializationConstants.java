@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Vertex;
 
@@ -38,8 +37,6 @@ public final class SerializationConstants {
     public static final int VERTEX = 1;
     /** Serialization ID of the {@link Edge} class. */
     public static final int EDGE = 2;
-    /** Serialization ID of the {@link com.hazelcast.jet.impl.deployment.ResourcePart} class. */
-    public static final int RESOURCE_PART = 3;
 
     private SerializationConstants() {
 

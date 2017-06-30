@@ -16,14 +16,12 @@
 
 package com.hazelcast.jet.config;
 
-import com.hazelcast.jet.impl.deployment.ResourceKind;
-
 import java.io.File;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -33,7 +31,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class JobConfig implements Serializable {
 
-    private final Set<ResourceConfig> resourceConfigs = new HashSet<>();
+    private final List<ResourceConfig> resourceConfigs = new ArrayList<>();
 
     /**
      * Adds the supplied classes to the list of resources that will be
@@ -52,19 +50,10 @@ public class JobConfig implements Serializable {
     /**
      * Adds the JAR identified by the supplied URL to the list of JARs that
      * will be a part of the job's classpath while it's executing in the Jet
-     * cluster. The JAR filename will be used as the ID of the resource.
+     * cluster.
      */
     public JobConfig addJar(URL url) {
-        return addJar(url, toFilename(url));
-    }
-
-    /**
-     * Adds the JAR identified by the supplied URL to the list of JARs that
-     * will be a part of the job's classpath while it's executing in the Jet
-     * cluster. The JAR will be registered under the supplied resource ID.
-     */
-    public JobConfig addJar(URL url, String resourceId) {
-        return add(url, resourceId, ResourceKind.JAR);
+        return add(url, null, true);
     }
 
     /**
@@ -74,20 +63,7 @@ public class JobConfig implements Serializable {
      */
     public JobConfig addJar(File file) {
         try {
-            return addJar(file.toURI().toURL(), file.getName());
-        } catch (MalformedURLException e) {
-            throw rethrow(e);
-        }
-    }
-
-    /**
-     * Adds the supplied JAR file to the list of JARs that will be a part of
-     * the job's classpath while it's executing in the Jet cluster. The JAR
-     * will be registered under the supplied resource ID.
-     */
-    public JobConfig addJar(File file, String id) {
-        try {
-            return addJar(file.toURI().toURL(), id);
+            return addJar(file.toURI().toURL());
         } catch (MalformedURLException e) {
             throw rethrow(e);
         }
@@ -101,20 +77,7 @@ public class JobConfig implements Serializable {
     public JobConfig addJar(String path) {
         try {
             File file = new File(path);
-            return addJar(file.toURI().toURL(), file.getName());
-        } catch (MalformedURLException e) {
-            throw rethrow(e);
-        }
-    }
-
-    /**
-     * Adds the JAR identified by the supplied pathname to the list of JARs
-     * that will be a part of the job's classpath while it's executing in the
-     * Jet cluster. The JAR will be registered under the supplied resource ID.
-     */
-    public JobConfig addJar(String path, String id) {
-        try {
-            return addJar(new File(path).toURI().toURL(), id);
+            return addJar(file.toURI().toURL());
         } catch (MalformedURLException e) {
             throw rethrow(e);
         }
@@ -135,7 +98,7 @@ public class JobConfig implements Serializable {
      * the Jet cluster. The resource will be registered under the supplied ID.
      */
     public JobConfig addResource(URL url, String id) {
-        return add(url, id, ResourceKind.DATA);
+        return add(url, id, false);
     }
 
     /**
@@ -158,7 +121,7 @@ public class JobConfig implements Serializable {
      */
     public JobConfig addResource(File file, String id) {
         try {
-            return add(file.toURI().toURL(), id, ResourceKind.DATA);
+            return add(file.toURI().toURL(), id, false);
         } catch (MalformedURLException e) {
             throw rethrow(e);
         }
@@ -170,12 +133,7 @@ public class JobConfig implements Serializable {
      * the Jet cluster. The resource's filename will be used as its ID.
      */
     public JobConfig addResource(String path) {
-        File file = new File(path);
-        try {
-            return addResource(file.toURI().toURL(), file.getName());
-        } catch (MalformedURLException e) {
-            throw rethrow(e);
-        }
+        return addResource(new File(path));
     }
 
     /**
@@ -184,27 +142,23 @@ public class JobConfig implements Serializable {
      * the Jet cluster. The resource will be registered under the supplied ID.
      */
     public JobConfig addResource(String path, String id) {
-        try {
-            return addResource(new File(path).toURI().toURL(), id);
-        } catch (MalformedURLException e) {
-            throw rethrow(e);
-        }
+        return addResource(new File(path), id);
     }
 
     /**
      * Returns all the registered resource configurations.
      */
-    public Set<ResourceConfig> getResourceConfigs() {
+    public List<ResourceConfig> getResourceConfigs() {
         return resourceConfigs;
     }
 
-    private JobConfig add(URL url, String id, ResourceKind type) {
-        resourceConfigs.add(new ResourceConfig(url, id, type));
+    private JobConfig add(URL url, String id, boolean isJar) {
+        resourceConfigs.add(new ResourceConfig(url, id, isJar));
         return this;
     }
 
     private static String toFilename(URL url) {
-        String urlFile = url.getFile();
+        String urlFile = url.getPath();
         return urlFile.substring(urlFile.lastIndexOf('/') + 1, urlFile.length());
     }
 }

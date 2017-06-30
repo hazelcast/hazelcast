@@ -20,9 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
 import com.hazelcast.client.impl.protocol.MessageTaskFactoryProvider;
 import com.hazelcast.client.impl.protocol.codec.JetCancelJobCodec;
-import com.hazelcast.client.impl.protocol.codec.JetCompleteResourceCodec;
 import com.hazelcast.client.impl.protocol.codec.JetExecuteJobCodec;
-import com.hazelcast.client.impl.protocol.codec.JetUpdateResourceCodec;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -41,8 +39,6 @@ public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider
     public void initFactories() {
         factories[JetExecuteJobCodec.RequestParameters.TYPE.id()] = toFactory(JetExecuteJobMessageTask::new);
         factories[JetCancelJobCodec.RequestParameters.TYPE.id()] = toFactory(JetCancelJobMessageTask::new);
-        factories[JetUpdateResourceCodec.RequestParameters.TYPE.id()] = toFactory(JetUpdateResourceMessageTask::new);
-        factories[JetCompleteResourceCodec.RequestParameters.TYPE.id()] = toFactory(JetCompleteResourceMessageTask::new);
     }
 
     @Override

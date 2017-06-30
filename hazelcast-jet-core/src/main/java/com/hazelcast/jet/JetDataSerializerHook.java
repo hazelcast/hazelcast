@@ -18,13 +18,11 @@ package com.hazelcast.jet;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.jet.impl.SerializationConstants;
-import com.hazelcast.jet.impl.deployment.ResourcePart;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import static com.hazelcast.jet.impl.SerializationConstants.DAG;
 import static com.hazelcast.jet.impl.SerializationConstants.EDGE;
-import static com.hazelcast.jet.impl.SerializationConstants.RESOURCE_PART;
 import static com.hazelcast.jet.impl.SerializationConstants.VERTEX;
 
 /**
@@ -53,8 +51,6 @@ public final class JetDataSerializerHook implements DataSerializerHook {
                     return new Edge();
                 case VERTEX:
                     return new Vertex();
-                case RESOURCE_PART:
-                    return new ResourcePart();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

@@ -19,9 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetCancelJobCodec;
-import com.hazelcast.client.impl.protocol.codec.JetCompleteResourceCodec;
 import com.hazelcast.client.impl.protocol.codec.JetExecuteJobCodec;
-import com.hazelcast.client.impl.protocol.codec.JetUpdateResourceCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.ExecutionCallback;
@@ -30,24 +28,16 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.config.ResourceConfig;
-import com.hazelcast.jet.impl.deployment.ResourceIterator;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.function.Supplier;
 
 import javax.annotation.Nonnull;
-import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
-import static java.util.stream.Collectors.toList;
 
 public class JetClientInstanceImpl extends AbstractJetInstance {
 
@@ -94,42 +84,15 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         @Override
         public Future<Void> execute() {
             long executionId = getIdGenerator().newId();
-            deployResources(executionId);
+            new ResourceUploader(JetClientInstanceImpl.this.getMap(JetService.METADATA_MAP_PREFIX + executionId))
+                    .uploadMetadata(config);
+
             Data dagData = client.getSerializationService().toData(dag);
             Address executionAddress = client.getPartitionService().getPartition(executionId).getOwner().getAddress();
             ClientInvocation invocation = new ClientInvocation(client,
                     JetExecuteJobCodec.encodeRequest(executionId, dagData), executionAddress);
             return new ExecutionFuture(invocation.invoke(), executionId, executionAddress);
         }
-
-        private void deployResources(long executionId) {
-            final Set<ResourceConfig> resources = config.getResourceConfigs();
-            if (logger.isFineEnabled() && resources.size() > 0) {
-                logger.fine("Deploying the following resources for " + executionId + ':' + resources);
-            }
-            try (ResourceIterator it = new ResourceIterator(resources)) {
-                it.forEachRemaining(part -> {
-                    Data partData = client.getSerializationService().toData(part);
-                    invokeOnCluster(() -> JetUpdateResourceCodec.encodeRequest(executionId, partData));
-                });
-            }
-            resources.forEach(r -> {
-                Data descriptorData = client.getSerializationService().toData(r.getDescriptor());
-                invokeOnCluster(() -> JetCompleteResourceCodec.encodeRequest(executionId, descriptorData));
-            });
-            logger.fine("Resource deployment for job " + executionId + " completed.");
-        }
-
-        private List<ClientMessage> invokeOnCluster(Supplier<ClientMessage> messageSupplier) {
-            return client.getCluster().getMembers().stream()
-                         .map(m -> new ClientInvocation(client, messageSupplier.get(), m.getAddress()).invoke())
-                         .collect(toList())
-                         .stream()
-                         .map(f -> uncheckCall(f::get))
-                         .collect(toList());
-        }
-
-
     }
 
     private final class ExecutionFuture implements Future<Void> {

@@ -16,31 +16,33 @@
 
 package com.hazelcast.jet.config;
 
-import com.hazelcast.jet.impl.deployment.ResourceDescriptor;
-import com.hazelcast.jet.impl.deployment.ResourceKind;
-
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.net.URL;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * Describes a single resource to deploy to the Jet cluster.
  */
 public class ResourceConfig implements Serializable {
-    private ResourceDescriptor descriptor;
-    private URL url;
+    private final URL url;
+    private final String id;
+    private final boolean isArchive;
 
     /**
      * Creates a resource config with the given properties.
      *
      * @param url  url of the resource
      * @param id   id of the resource
-     * @param kind the kind of resource
+     * @param isArchive true, if this is an JAR archive with many entries
      */
-    public ResourceConfig(URL url, String id, ResourceKind kind) {
-        this.descriptor = new ResourceDescriptor(id, kind);
+    ResourceConfig(@Nonnull URL url, String id, boolean isArchive) {
+        checkTrue(isArchive ^ id != null, "Either isArchive == true, or id != null, exclusively");
         this.url = url;
+        this.id = id;
+        this.isArchive = isArchive;
     }
 
     /**
@@ -49,11 +51,11 @@ public class ResourceConfig implements Serializable {
      *
      * @param clazz the class to deploy
      */
-    public ResourceConfig(Class clazz) {
-        String classAsPath = clazz.getName().replace('.', '/') + ".class";
-        this.url = clazz.getClassLoader().getResource(classAsPath);
+    ResourceConfig(Class clazz) {
+        id = clazz.getName().replace('.', '/') + ".class";
+        url = clazz.getClassLoader().getResource(id);
         checkNotNull(this.url, "Couldn't derive URL from class " + clazz);
-        this.descriptor = new ResourceDescriptor(clazz.getName(), ResourceKind.CLASS);
+        isArchive = false;
     }
 
     /**
@@ -64,14 +66,21 @@ public class ResourceConfig implements Serializable {
     }
 
     /**
-     * Returns the {@link ResourceDescriptor} for the resource.
+     * The ID of the resource, null for {@link #isArchive() archives}.
      */
-    public ResourceDescriptor getDescriptor() {
-        return descriptor;
+    public String getId() {
+        return id;
+    }
+
+    /**
+     * Whether this entry is an Jar archive or a single resource element.
+     */
+    public boolean isArchive() {
+        return isArchive;
     }
 
     @Override
     public String toString() {
-        return "{resource=" + descriptor + ", url=" + url + '}';
+        return "ResourceConfig{url=" + url + ", id='" + id + '\'' + ", isArchive=" + isArchive + '}';
     }
 }
