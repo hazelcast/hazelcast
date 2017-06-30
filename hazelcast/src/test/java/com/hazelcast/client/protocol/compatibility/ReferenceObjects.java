@@ -716,8 +716,9 @@ public class ReferenceObjects {
                 .setVersion(InternalSerializationService.VERSION_1).build();
         listenerConfigs = new ArrayList<ListenerConfigHolder>();
         ListenerConfigHolder holder1 = new ListenerConfigHolder(TYPE_LISTENER_CONFIG, "listener.By.ClassName");
+        //noinspection RedundantCast
         ListenerConfigHolder holder2 = new ListenerConfigHolder(TYPE_CACHE_PARTITION_LOST_LISTENER_CONFIG,
-                serializationService.toData(new TestCachePartitionLostEventListener()), true, false);
+                (Data) serializationService.toData(new TestCachePartitionLostEventListener()), true, false);
         ListenerConfigHolder holder3 = new ListenerConfigHolder(TYPE_ENTRY_LISTENER_CONFIG, "listener.By.ClassName", true, true);
         ListenerConfigHolder holder4 = new ListenerConfigHolder(TYPE_ITEM_LISTENER_CONFIG, "listener.By.ClassName");
         ListenerConfigHolder holder5 = new ListenerConfigHolder(TYPE_MAP_PARTITION_LOST_LISTENER_CONFIG, "listener.By.ClassName");
