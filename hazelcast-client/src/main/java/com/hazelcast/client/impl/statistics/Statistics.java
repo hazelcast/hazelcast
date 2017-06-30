@@ -37,9 +37,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -110,7 +108,7 @@ public class Statistics {
 
         // Note that the OperatingSystemMetricSet and RuntimeMetricSet are already registered during client start,
         // hence we do not re-register
-        periodicStats = new PeriodicStatistics(metricsRegistry);
+        periodicStats = new PeriodicStatistics();
 
         schedulePeriodicStatisticsSendTask(periodSeconds);
 
@@ -339,20 +337,24 @@ public class Statistics {
     }
 
     class PeriodicStatistics {
-        private final String[] statisticNames = {
-                "os.committedVirtualMemorySize", "os.freePhysicalMemorySize", "os.freeSwapSpaceSize", "os.maxFileDescriptorCount",
-                "os.openFileDescriptorCount", "os.processCpuTime", "os.systemLoadAverage", "os.totalPhysicalMemorySize",
-                "os.totalSwapSpaceSize", "runtime.availableProcessors", "runtime.freeMemory", "runtime.maxMemory",
-                "runtime.totalMemory", "runtime.uptime", "runtime.usedMemory", "executionService.userExecutorQueueSize",
-        };
-
-        private final Map<String, Gauge> allMetrics = new HashMap<String, Gauge>(statisticNames.length);
-
-        PeriodicStatistics(final MetricsRegistry metricsRegistry) {
-            for (String name : statisticNames) {
-                allMetrics.put(name, metricsRegistry.newGauge(name));
-            }
-        }
+        private final Gauge[] allGauges = {
+                    metricsRegistry.newLongGauge("os.committedVirtualMemorySize"),
+                    metricsRegistry.newLongGauge("os.freePhysicalMemorySize"),
+                    metricsRegistry.newLongGauge("os.freeSwapSpaceSize"),
+                    metricsRegistry.newLongGauge("os.maxFileDescriptorCount"),
+                    metricsRegistry.newLongGauge("os.openFileDescriptorCount"),
+                    metricsRegistry.newLongGauge("os.processCpuTime"),
+                    metricsRegistry.newDoubleGauge("os.systemLoadAverage"),
+                    metricsRegistry.newLongGauge("os.totalPhysicalMemorySize"),
+                    metricsRegistry.newLongGauge("os.totalSwapSpaceSize"),
+                    metricsRegistry.newLongGauge("runtime.availableProcessors"),
+                    metricsRegistry.newLongGauge("runtime.freeMemory"),
+                    metricsRegistry.newLongGauge("runtime.maxMemory"),
+                    metricsRegistry.newLongGauge("runtime.totalMemory"),
+                    metricsRegistry.newLongGauge("runtime.uptime"),
+                    metricsRegistry.newLongGauge("runtime.usedMemory"),
+                    metricsRegistry.newLongGauge("executionService.userExecutorQueueSize"),
+                };
 
         void fillMetrics(final StringBuilder stats, final ClientConnection ownerConnection) {
             stats.append("lastStatisticsCollectionTime").append(KEY_VALUE_SEPARATOR).append(System.currentTimeMillis());
@@ -370,9 +372,9 @@ public class Statistics {
                 addStat(stats, "credentials.principal", credentials.getPrincipal());
             }
 
-            for (Map.Entry<String, Gauge> entry : allMetrics.entrySet()) {
-                stats.append(STAT_SEPARATOR).append(entry.getKey()).append(KEY_VALUE_SEPARATOR);
-                entry.getValue().render(stats);
+            for (Gauge gauge : allGauges) {
+                stats.append(STAT_SEPARATOR).append(gauge.getName()).append(KEY_VALUE_SEPARATOR);
+                gauge.render(stats);
             }
         }
     }

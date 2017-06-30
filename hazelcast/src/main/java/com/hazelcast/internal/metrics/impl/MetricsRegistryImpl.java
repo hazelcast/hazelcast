@@ -24,7 +24,6 @@ import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.Gauge;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
@@ -228,22 +227,6 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         checkNotNull(name, "name can't be null");
 
         return new DoubleGaugeImpl(this, name);
-    }
-
-    @Override
-    public Gauge newGauge(final String name) {
-        checkNotNull(name, "name can't be null");
-
-        ProbeInstance probeInstance = getProbeInstance(name);
-
-        if (probeInstance.function instanceof DoubleProbeFunction) {
-            return new DoubleGaugeImpl(this, name);
-        }
-
-        // TODO:
-        // This logic is broken when the gauge isn't bound and later a DoubleProbeFunction is registered. Now you end up with
-        // the wrong type of Gauge.
-        return new LongGaugeImpl(this, name);
     }
 
     @Override
