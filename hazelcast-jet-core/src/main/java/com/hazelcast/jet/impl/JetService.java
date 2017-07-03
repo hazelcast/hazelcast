@@ -175,7 +175,7 @@ public class JetService
     }
 
     public ClassLoader getClassLoader(long executionId) {
-        IMap<String, Object> jobMetadataMap = getJetInstance().getMap(METADATA_MAP_PREFIX + executionId);
+        IMap<String, byte[]> jobMetadataMap = getJetInstance().getMap(METADATA_MAP_PREFIX + executionId);
         return classLoaders.computeIfAbsent(executionId, k -> AccessController.doPrivileged(
                 (PrivilegedAction<JetClassLoader>) () -> new JetClassLoader(jobMetadataMap)
         ));

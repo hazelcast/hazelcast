@@ -37,10 +37,10 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 class ResourceUploader {
 
-    private final IMap<String, Object> targetMap;
+    private final IMap<String, byte[]> targetMap;
     private final Map<String, byte[]> tmpMap = new HashMap<>();
 
-    ResourceUploader(IMap<String, Object> targetMap) {
+    ResourceUploader(IMap<String, byte[]> targetMap) {
         this.targetMap = targetMap;
     }
 
@@ -95,9 +95,9 @@ class ResourceUploader {
         }
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DeflaterOutputStream compressor = new DeflaterOutputStream(baos);
-        IOUtil.drainTo(in, compressor);
-        compressor.close();
+        try (DeflaterOutputStream compressor = new DeflaterOutputStream(baos)) {
+            IOUtil.drainTo(in, compressor);
+        }
         tmpMap.put(key, baos.toByteArray());
     }
 }

@@ -84,7 +84,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         @Override
         public Future<Void> execute() {
             long executionId = getIdGenerator().newId();
-            new ResourceUploader(JetClientInstanceImpl.this.getMap(JetService.METADATA_MAP_PREFIX + executionId))
+            new ResourceUploader(client.getMap(JetService.METADATA_MAP_PREFIX + executionId))
                     .uploadMetadata(config);
 
             Data dagData = client.getSerializationService().toData(dag);

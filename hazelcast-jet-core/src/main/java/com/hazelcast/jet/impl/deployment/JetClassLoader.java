@@ -31,9 +31,9 @@ public class JetClassLoader extends ClassLoader {
 
     public static final String METADATA_RESOURCES_PREFIX = "res:";
 
-    private final IMap<String, Object> jobMetadataMap;
+    private final IMap<String, byte[]> jobMetadataMap;
 
-    public JetClassLoader(IMap jobMetadataMap) {
+    public JetClassLoader(IMap<String, byte[]> jobMetadataMap) {
         super(JetClassLoader.class.getClassLoader());
         this.jobMetadataMap = jobMetadataMap;
     }
@@ -74,14 +74,14 @@ public class JetClassLoader extends ClassLoader {
 
     @SuppressWarnings("unchecked")
     private InputStream resourceStream(String name) {
-        byte[] classData = (byte[]) jobMetadataMap.get(METADATA_RESOURCES_PREFIX + name);
+        byte[] classData = jobMetadataMap.get(METADATA_RESOURCES_PREFIX + name);
         if (classData == null) {
             return null;
         }
         return new InflaterInputStream(new ByteArrayInputStream(classData));
     }
 
-    public IMap<String, Object> getJobMetadataMap() {
+    public IMap<String, byte[]> getJobMetadataMap() {
         return jobMetadataMap;
     }
 
