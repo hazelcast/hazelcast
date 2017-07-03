@@ -308,7 +308,7 @@
                                     <forkCount>1C</forkCount>
                                     <reuseForks>true</reuseForks>
                                     <argLine>
-                                        -Xms128m -Xmx1G -XX:MaxPermSize=128M
+                                        -Xms128m -Xmx1G -XX:MaxPermSize=128M -ea
                                         -Dhazelcast.phone.home.enabled=false
                                         -Dhazelcast.mancenter.enabled=false
                                         -Dhazelcast.logging.type=none
