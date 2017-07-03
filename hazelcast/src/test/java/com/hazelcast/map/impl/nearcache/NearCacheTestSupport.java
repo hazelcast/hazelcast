@@ -91,7 +91,7 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
 
     protected void testNearCacheExpiration(final IMap<Integer, Integer> map, final int size, int expireSeconds) {
         populateMap(map, size);
-        populateNearCache(map, size);
+        populateNearCacheEventually(map, size);
 
         final NearCacheStats statsBeforeExpiration = getNearCacheStats(map);
         assertTrue(format("we expected to have all map entries in the Near Cache or already expired (%s)", statsBeforeExpiration),
@@ -114,6 +114,17 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
                         0, stats.getEvictions());
                 assertTrue(format("we expect at least %d entries to be expired from the Near Cache", size),
                         stats.getExpirations() >= size);
+            }
+        });
+    }
+
+    private void populateNearCacheEventually(final IMap<Integer, Integer> map, final int size) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                populateNearCache(map, size);
+                long ownedEntryCount = getNearCacheStats(map).getOwnedEntryCount();
+                assertEquals("Near Cache has not reached expected size", size, ownedEntryCount);
             }
         });
     }
@@ -241,9 +252,9 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
     protected Config createNearCachedMapConfig(String mapName) {
         Config config = getConfig();
 
-        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(),"5");
-        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(),"10000");
-        config.setProperty(PARTITION_COUNT.getName(),"1");
+        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "5");
+        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), "10000");
+        config.setProperty(PARTITION_COUNT.getName(), "1");
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         nearCacheConfig.setCacheLocalEntries(true);
 
