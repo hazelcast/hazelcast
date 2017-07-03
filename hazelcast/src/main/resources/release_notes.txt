@@ -70,9 +70,14 @@ This section lists the fixed issues for Hazelcast 3.8 and 3.8.x releases.
 
 *3.8.3 Fixes*
 
+- Hazelcast 3.8.1: calling replace(K, old, new) keeps the expiry time as creation time + duration. But Hazelcast doesn't seem to honor this expiration even after calling get(). [#10817]
+- When using a client side Near Cache, the cache statistics seem incorrect when asking for a key that doesn't exist. [#10806]
+- Ringbuffer is not adjusting headSeq while setting tailSeq due to capacity. [#10774]
+- Older versions of Mulesoft clash with Hazelcast Client classpath. [#10706]
 - In the case when the master node is terminated in the middle of a 2-phase transaction, the rollback for that transaction is not performed. This causes loss of data. [#10637]
 - Adding/removing listeners fails if a member is removed in the progress. [#10595]
-- When two callbacks are registered as callback to ClientDelegatingFuture, if one of them wants to deserialize the response while the other is does not, Hazelcast falsely gives null response to the one waiting a deserialized value.
+- When two callbacks are registered as callback to ClientDelegatingFuture, if one of them wants to deserialize the response while the other is does not, Hazelcast falsely gives null response to the one waiting a deserialized value. [#10581]
+- Eviction and max-size for less then 271 cause map to never populate. [#10179]
 - IOException at the client side must be produced only if hazelcast.client.invocation.timeout.seconds is passed. [#9696]
 
 *3.8.2 Fixes*
