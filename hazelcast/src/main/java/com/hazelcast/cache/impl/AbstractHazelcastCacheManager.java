@@ -389,7 +389,7 @@ public abstract class AbstractHazelcastCacheManager
         return cacheNamePrefix + name;
     }
 
-    protected <K, V, C extends Configuration<K, V>> CacheConfig<K, V> createCacheConfig(final String cacheName,
+    protected <K, V, C extends Configuration<K, V>> CacheConfig<K, V> createCacheConfig(String cacheName,
                                                                                         C configuration) {
         CacheConfig<K, V> cacheConfig;
         if (configuration instanceof CompleteConfiguration) {
@@ -404,6 +404,8 @@ public abstract class AbstractHazelcastCacheManager
         cacheConfig.setName(cacheName);
         cacheConfig.setManagerPrefix(this.cacheNamePrefix);
         cacheConfig.setUriString(getURI().toString());
+        // associate cache config with the current thread's tenant
+        // and add hook so when the tenant is destroyed, so is the cache config
         cacheConfig.setTenantControl(hazelcastInstance.getConfig().getTenantControl()
                 .saveCurrentTenant(new DestroyEventImpl(cacheName)));
         return cacheConfig;
@@ -444,6 +446,13 @@ public abstract class AbstractHazelcastCacheManager
 
     protected abstract void onShuttingDown();
 
+    /**
+     * When the tenant application is destroyed,
+     * Remove the cache configuration from the local node only
+     * If there are other replicas of the cache, leave them alone
+     * If the tenant is ever re-deployed, it will get the new configuration
+     * from the remote node, or the cache will be re-created if it's not replicated
+     */
     private static class DestroyEventImpl implements TenantControl.DestroyEvent {
         private final String cacheName;
 

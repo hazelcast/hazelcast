@@ -104,6 +104,9 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
     public void run() throws Exception {
         ICacheService service = getService();
         for (Map.Entry<String, Map<Data, CacheRecord>> entry : data.entrySet()) {
+            
+            // establish thread-local context for this cache's tenant application before possibly creating records
+            // This is so CDI / JPA / EJB methods can be called from other than JavaEE threads
             TenantControl.Closeable tenantContext = service.getCacheConfig(entry.getKey()).getTenantControl().setTenant(true);
             ICacheRecordStore cache;
             try {

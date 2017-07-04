@@ -71,7 +71,9 @@ public abstract class AbstractCacheOperation
     @Override
     public void beforeRun() throws Exception {
         cacheService = getService();
+        
         CacheConfig cacheConfig = cacheService.getCacheConfig(name);
+        // establish tenant application's thread-local context for this cache operation
         tenantContext = (cacheConfig == null? new TenantControl.NoTenantControl() : cacheConfig.getTenantControl()).setTenant(true);
         cache = cacheService.getOrCreateRecordStore(name, getPartitionId());
         if (cache.isWanReplicationEnabled()) {

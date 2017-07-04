@@ -585,6 +585,10 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         quorumName = in.readUTF();
 
         final boolean listNotEmpty = in.readBoolean();
+        
+        // set the thread-context and class loading context for this cache's tenant application
+        // This way keyType/valueType/ loader factories and listeners can be CDI / EJB / JPA objects
+        // and class loading is guaranteed to work
         TenantControl.Closeable tenant = tenantControl.setTenant(false);
         try {
             //SUPER

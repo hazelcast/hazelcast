@@ -343,6 +343,9 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     public CacheConfig deleteCacheConfig(String cacheNameWithPrefix) {
         CacheConfig config = configs.remove(cacheNameWithPrefix);
         if (config != null) {
+            // decouple this cache from the tenant
+            // the tenant will unregister it's event listeners so the tenant itself
+            // can be garbage collected
             config.getTenantControl().unregister();
             logger.info("Removed cache config: " + config);
         }
