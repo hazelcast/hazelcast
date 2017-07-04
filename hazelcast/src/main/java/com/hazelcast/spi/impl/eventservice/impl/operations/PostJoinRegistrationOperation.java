@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PostJoinAwareOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
@@ -29,7 +30,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class PostJoinRegistrationOperation extends Operation implements IdentifiedDataSerializable {
+import static com.hazelcast.spi.PostJoinAwareOperation.Sequence.POST_JOIN_OPS_SEQUENCE;
+
+public class PostJoinRegistrationOperation extends Operation implements IdentifiedDataSerializable,
+                                                                        PostJoinAwareOperation {
+
+    private static final int SEQUENCE = POST_JOIN_OPS_SEQUENCE.get(PostJoinRegistrationOperation.class);
 
     private Collection<Registration> registrations;
 
@@ -92,5 +98,10 @@ public class PostJoinRegistrationOperation extends Operation implements Identifi
     @Override
     public int getId() {
         return SpiDataSerializerHook.POST_JOIN_REGISTRATION;
+    }
+
+    @Override
+    public int getSequence() {
+        return SEQUENCE;
     }
 }

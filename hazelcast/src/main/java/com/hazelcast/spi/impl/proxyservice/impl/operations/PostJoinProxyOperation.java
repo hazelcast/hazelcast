@@ -24,6 +24,7 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PostJoinAwareOperation;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyInfo;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyRegistry;
@@ -33,7 +34,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class PostJoinProxyOperation extends Operation implements IdentifiedDataSerializable {
+import static com.hazelcast.spi.PostJoinAwareOperation.Sequence.POST_JOIN_OPS_SEQUENCE;
+
+public class PostJoinProxyOperation extends Operation implements IdentifiedDataSerializable,
+                                                                 PostJoinAwareOperation {
+
+    private static final int SEQUENCE = POST_JOIN_OPS_SEQUENCE.get(PostJoinProxyOperation.class);
 
     private Collection<ProxyInfo> proxies;
 
@@ -42,6 +48,11 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
 
     public PostJoinProxyOperation(Collection<ProxyInfo> proxies) {
         this.proxies = proxies;
+    }
+
+    @Override
+    public int getSequence() {
+        return SEQUENCE;
     }
 
     @Override

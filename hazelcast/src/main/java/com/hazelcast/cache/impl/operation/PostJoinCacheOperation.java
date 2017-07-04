@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PostJoinAwareOperation;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
 
 import java.io.IOException;
@@ -32,8 +33,12 @@ import java.util.List;
 
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 import static com.hazelcast.cache.impl.JCacheDetector.isJCacheAvailable;
+import static com.hazelcast.spi.PostJoinAwareOperation.Sequence.POST_JOIN_OPS_SEQUENCE;
 
-public class PostJoinCacheOperation extends Operation implements IdentifiedDataSerializable {
+public class PostJoinCacheOperation extends Operation implements IdentifiedDataSerializable,
+                                                                 PostJoinAwareOperation {
+
+    private static final int SEQUENCE = POST_JOIN_OPS_SEQUENCE.get(PostJoinCacheOperation.class);
 
     private List<CacheConfig> configs = new ArrayList<CacheConfig>();
 
@@ -98,5 +103,10 @@ public class PostJoinCacheOperation extends Operation implements IdentifiedDataS
     @Override
     public int getId() {
         return CacheDataSerializerHook.CACHE_POST_JOIN;
+    }
+
+    @Override
+    public int getSequence() {
+        return SEQUENCE;
     }
 }

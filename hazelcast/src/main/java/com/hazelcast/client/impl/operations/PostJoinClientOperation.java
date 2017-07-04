@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.PostJoinAwareOperation;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -28,7 +29,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class PostJoinClientOperation extends AbstractClientOperation {
+import static com.hazelcast.spi.PostJoinAwareOperation.Sequence.POST_JOIN_OPS_SEQUENCE;
+
+public class PostJoinClientOperation extends AbstractClientOperation implements PostJoinAwareOperation {
+
+    private static final int SEQUENCE = POST_JOIN_OPS_SEQUENCE.get(PostJoinClientOperation.class);
 
     private Map<String, String> mappings;
 
@@ -100,5 +105,10 @@ public class PostJoinClientOperation extends AbstractClientOperation {
     @Override
     public int getId() {
         return ClientDataSerializerHook.POST_JOIN;
+    }
+
+    @Override
+    public int getSequence() {
+        return SEQUENCE;
     }
 }
