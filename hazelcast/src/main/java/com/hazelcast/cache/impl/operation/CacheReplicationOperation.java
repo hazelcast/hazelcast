@@ -22,6 +22,7 @@ import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.TenantControl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -103,8 +104,14 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
     public void run() throws Exception {
         ICacheService service = getService();
         for (Map.Entry<String, Map<Data, CacheRecord>> entry : data.entrySet()) {
-            ICacheRecordStore cache = service.getOrCreateRecordStore(entry.getKey(), getPartitionId());
-            cache.reset();
+            TenantControl.Closeable tenantContext = service.getCacheConfig(entry.getKey()).getTenantControl().setTenant(true);
+            ICacheRecordStore cache;
+            try {
+                cache = service.getOrCreateRecordStore(entry.getKey(), getPartitionId());
+                cache.reset();
+            } finally {
+                tenantContext.close();
+            }
             Map<Data, CacheRecord> map = entry.getValue();
 
             Iterator<Map.Entry<Data, CacheRecord>> iterator = map.entrySet().iterator();

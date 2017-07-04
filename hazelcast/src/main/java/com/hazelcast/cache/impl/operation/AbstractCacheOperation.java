@@ -22,6 +22,8 @@ import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.TenantControl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -51,6 +53,8 @@ public abstract class AbstractCacheOperation
     protected transient CacheWanEventPublisher wanEventPublisher;
     protected transient CacheRecord backupRecord;
 
+    protected transient TenantControl.Closeable tenantContext;
+
     protected AbstractCacheOperation() {
     }
 
@@ -67,10 +71,17 @@ public abstract class AbstractCacheOperation
     @Override
     public void beforeRun() throws Exception {
         cacheService = getService();
+        CacheConfig cacheConfig = cacheService.getCacheConfig(name);
+        tenantContext = (cacheConfig == null? new TenantControl.NoTenantControl() : cacheConfig.getTenantControl()).setTenant(true);
         cache = cacheService.getOrCreateRecordStore(name, getPartitionId());
         if (cache.isWanReplicationEnabled()) {
             wanEventPublisher = cacheService.getCacheWanEventPublisher();
         }
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        tenantContext.close();
     }
 
     @Override

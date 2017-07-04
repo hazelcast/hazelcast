@@ -20,6 +20,7 @@ import com.hazelcast.cache.CacheUtil;
 import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.TenantControl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleEvent;
@@ -388,7 +389,7 @@ public abstract class AbstractHazelcastCacheManager
         return cacheNamePrefix + name;
     }
 
-    protected <K, V, C extends Configuration<K, V>> CacheConfig<K, V> createCacheConfig(String cacheName,
+    protected <K, V, C extends Configuration<K, V>> CacheConfig<K, V> createCacheConfig(final String cacheName,
                                                                                         C configuration) {
         CacheConfig<K, V> cacheConfig;
         if (configuration instanceof CompleteConfiguration) {
@@ -403,7 +404,19 @@ public abstract class AbstractHazelcastCacheManager
         cacheConfig.setName(cacheName);
         cacheConfig.setManagerPrefix(this.cacheNamePrefix);
         cacheConfig.setUriString(getURI().toString());
-        cacheConfig.setTenantControl(hazelcastInstance.getConfig().getTenantControl().saveCurrentTenant());
+        cacheConfig.setTenantControl(hazelcastInstance.getConfig().getTenantControl()
+                .saveCurrentTenant(new TenantControl.DestroyEvent() {
+            @Override
+            public void destroy() {
+                // TODO should be remove, not destroy cache,
+                // but errors remain if a new class tries to load old objects,
+                // should be some way to serialize objects here and deserialize them
+                // when starting another version of the client
+                removeCache(cacheName, true);
+            }
+
+            private static final long serialVersionUID = 1L;
+        }));
         return cacheConfig;
     }
 

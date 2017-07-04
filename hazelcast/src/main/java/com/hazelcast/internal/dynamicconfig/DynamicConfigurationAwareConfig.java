@@ -73,6 +73,7 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
+import com.hazelcast.config.TenantControl;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.dynamicconfig.AggregatingMap.aggregate;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
@@ -142,6 +143,16 @@ public class DynamicConfigurationAwareConfig extends Config {
     @Override
     public Config setProperties(Properties properties) {
         return staticConfig.setProperties(properties);
+    }
+
+    @Override
+    public TenantControl getTenantControl() {
+        return staticConfig.getTenantControl();
+    }
+
+    @Override
+    public Config setTenantControl(TenantControl tenantControl) {
+        return staticConfig.setTenantControl(tenantControl);
     }
 
     @Override

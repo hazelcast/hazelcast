@@ -610,6 +610,10 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         setClassLoader(in.getClassLoader());
     }
 
+    public TenantControl getTenantControl() {
+        return tenantControl;
+    }
+
     public void setTenantControl(TenantControl tenantControl) {
         this.tenantControl = tenantControl;
     }

@@ -22,8 +22,13 @@ import java.io.Serializable;
  * @author lprimak
  */
 public interface TenantControl extends Serializable {
-    TenantControl saveCurrentTenant();
+    TenantControl saveCurrentTenant(DestroyEvent event);
     Closeable setTenant(boolean createRequestScope);
+    public void unregister();
+
+    interface DestroyEvent extends Serializable {
+        void destroy();
+    }
 
     interface Closeable extends AutoCloseable {
         @Override
@@ -32,8 +37,12 @@ public interface TenantControl extends Serializable {
 
     class NoTenantControl implements TenantControl {
         @Override
-        public TenantControl saveCurrentTenant() {
+        public TenantControl saveCurrentTenant(DestroyEvent event) {
             return this;
+        }
+
+        @Override
+        public void unregister() {
         }
 
         @Override
