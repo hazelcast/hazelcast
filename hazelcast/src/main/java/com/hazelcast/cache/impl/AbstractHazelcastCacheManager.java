@@ -405,18 +405,7 @@ public abstract class AbstractHazelcastCacheManager
         cacheConfig.setManagerPrefix(this.cacheNamePrefix);
         cacheConfig.setUriString(getURI().toString());
         cacheConfig.setTenantControl(hazelcastInstance.getConfig().getTenantControl()
-                .saveCurrentTenant(new TenantControl.DestroyEvent() {
-            @Override
-            public void destroy() {
-                // TODO should be remove, not destroy cache,
-                // but errors remain if a new class tries to load old objects,
-                // should be some way to serialize objects here and deserialize them
-                // when starting another version of the client
-                removeCache(cacheName, true);
-            }
-
-            private static final long serialVersionUID = 1L;
-        }));
+                .saveCurrentTenant(new DestroyEventImpl(cacheName)));
         return cacheConfig;
     }
 
@@ -454,5 +443,25 @@ public abstract class AbstractHazelcastCacheManager
     protected abstract void postClose();
 
     protected abstract void onShuttingDown();
+
+    private static class DestroyEventImpl implements TenantControl.DestroyEvent {
+        private final String cacheName;
+
+        public DestroyEventImpl(String cacheName) {
+            this.cacheName = cacheName;
+        }
+
+        @Override
+        public void destroy(CacheManager manager) {
+            AbstractHazelcastCacheManager mgr = (AbstractHazelcastCacheManager)manager;
+            // TODO should be remove, not destroy cache,
+            // but errors remain if a new class tries to load old objects,
+            // should be some way to serialize objects here and deserialize them
+            // when starting another version of the client
+            mgr.removeCache(cacheName, true);
+        }
+
+        private static final long serialVersionUID = 1L;
+    }
 
 }

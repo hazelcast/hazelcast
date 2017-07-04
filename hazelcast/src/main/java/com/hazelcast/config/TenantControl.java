@@ -16,6 +16,7 @@
 package com.hazelcast.config;
 
 import java.io.Serializable;
+import javax.cache.CacheManager;
 
 /**
  *
@@ -27,7 +28,7 @@ public interface TenantControl extends Serializable {
     public void unregister();
 
     interface DestroyEvent extends Serializable {
-        void destroy();
+        void destroy(CacheManager mgr);
     }
 
     interface Closeable extends AutoCloseable {
