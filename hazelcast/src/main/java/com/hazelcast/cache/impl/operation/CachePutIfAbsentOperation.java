@@ -65,6 +65,7 @@ public class CachePutIfAbsentOperation
                 wanEventPublisher.publishWanReplicationUpdate(name, entryView);
             }
         }
+        super.afterRun();
     }
 
     @Override

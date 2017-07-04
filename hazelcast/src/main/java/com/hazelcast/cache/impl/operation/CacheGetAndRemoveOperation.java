@@ -49,6 +49,7 @@ public class CacheGetAndRemoveOperation
                 wanEventPublisher.publishWanReplicationRemove(name, key);
             }
         }
+        super.afterRun();
     }
 
     @Override

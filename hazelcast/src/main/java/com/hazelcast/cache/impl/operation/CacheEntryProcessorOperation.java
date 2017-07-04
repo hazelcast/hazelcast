@@ -108,6 +108,7 @@ public class CacheEntryProcessorOperation
                 wanEventPublisher.publishWanReplicationRemove(name, key);
             }
         }
+        super.afterRun();
     }
 
     @Override

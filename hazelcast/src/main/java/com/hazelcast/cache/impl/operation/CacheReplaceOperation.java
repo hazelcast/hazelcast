@@ -72,6 +72,7 @@ public class CacheReplaceOperation
                 wanEventPublisher.publishWanReplicationUpdate(name, entryView);
             }
         }
+        super.afterRun();
     }
 
     @Override

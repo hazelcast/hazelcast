@@ -61,6 +61,7 @@ public class CacheGetAndReplaceOperation
                     getNodeEngine().getSerializationService().toData(backupRecord.getValue()), backupRecord);
             wanEventPublisher.publishWanReplicationUpdate(name, entryView);
         }
+        super.afterRun();
     }
 
     @Override
