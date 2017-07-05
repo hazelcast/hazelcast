@@ -16,7 +16,6 @@
 package com.hazelcast.config;
 
 import java.io.Serializable;
-import javax.cache.CacheManager;
 
 /**
  * Hooks for multi-tenancy for application servers
@@ -71,9 +70,16 @@ public interface TenantControl extends Serializable {
         /**
          * called to decouple JCache from the tenant
          *
-         * @param mgr CacheManager to use to delete the cache
+         * @param <TT> context type
+         * @param context to use to delete the cache
          */
-        void destroy(CacheManager mgr);
+        <TT> void destroy(TT context);
+
+        /**
+         * @return context type so the tenant control implementor knows
+         * what context to send to the destroy() method
+         */
+        Class<?> getContextType();
     }
 
     /**

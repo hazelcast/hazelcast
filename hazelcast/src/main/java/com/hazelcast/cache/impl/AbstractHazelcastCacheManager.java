@@ -461,16 +461,19 @@ public abstract class AbstractHazelcastCacheManager
         }
 
         @Override
-        public void destroy(CacheManager manager) {
-            AbstractHazelcastCacheManager mgr = (AbstractHazelcastCacheManager)manager;
+        public<TT> void destroy(TT manager) {
             // TODO should be remove, not destroy cache,
             // but errors remain if a new class tries to load old objects,
             // should be some way to serialize objects here and deserialize them
             // when starting another version of the client
-            mgr.removeCache(cacheName, true);
+            ((AbstractHazelcastCacheManager)manager).removeCache(cacheName, true);
+        }
+
+        @Override
+        public Class<?> getContextType() {
+            return AbstractHazelcastCacheManager.class;
         }
 
         private static final long serialVersionUID = 1L;
     }
-
 }
