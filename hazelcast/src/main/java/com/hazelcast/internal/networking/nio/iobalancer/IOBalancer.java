@@ -139,7 +139,12 @@ public class IOBalancer {
             if (logger.isFinestEnabled()) {
                 long min = loadImbalance.minimumEvents;
                 long max = loadImbalance.maximumEvents;
-                logger.finest("No imbalance has been detected. Max. events: " + max + " Min events: " + min + ".");
+                if (max == Long.MIN_VALUE) {
+                    logger.finest("There is at most 1 handler associated with each thread. "
+                            + "There is nothing to balance");
+                } else {
+                    logger.finest("No imbalance has been detected. Max. events: " + max + " Min events: " + min + ".");
+                }
             }
         }
     }
