@@ -54,5 +54,5 @@
         <constructor-arg ref="instance"/>
     </bean>
 
-    <bean id="dummy" class="com.hazelcast.spring.cache.HazelcastCacheReadTimeoutTest.DummyTimeoutBean"/>
+    <bean id="dummy" class="com.hazelcast.spring.cache.AbstractHazelcastCacheReadTimeoutTest.DummyTimeoutBean"/>
 </beans>

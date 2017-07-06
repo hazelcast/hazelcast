@@ -19,6 +19,8 @@ package com.hazelcast.spring.cache;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.util.Assert;
@@ -55,12 +57,10 @@ public class HazelcastCacheManager implements CacheManager {
     private Map<String, Long> readTimeoutMap = new HashMap<String, Long>();
 
     public HazelcastCacheManager() {
-        parseOptions();
     }
 
     public HazelcastCacheManager(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
-        parseOptions();
     }
 
     @Override
@@ -105,9 +105,8 @@ public class HazelcastCacheManager implements CacheManager {
         this.hazelcastInstance = hazelcastInstance;
     }
 
-    private void parseOptions() {
-        String options = System.getProperty(CACHE_PROP, "").trim();
-        if (options.isEmpty()) {
+    private void parseOptions(String options) {
+        if (null == options || options.trim().isEmpty()) {
             return;
         }
         for (String option : options.split(",")) {
@@ -156,4 +155,13 @@ public class HazelcastCacheManager implements CacheManager {
         return readTimeoutMap;
     }
 
+    /**
+     * Set the cache ead-timeout params
+     * @param options cache read-timeout params, autowired by Spring automatically by getting value of
+     *               hazelcast.spring.cache.prop parameter
+     */
+    @Autowired
+    public void setCacheOptions(@Value("${" + CACHE_PROP + ":}") String options) {
+        parseOptions(options);
+    }
 }
