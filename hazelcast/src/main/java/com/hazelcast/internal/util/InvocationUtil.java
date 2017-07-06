@@ -16,12 +16,12 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
+import com.hazelcast.internal.util.futures.SerialInvokeOnAllMemberFuture;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
@@ -33,7 +33,7 @@ import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-import static java.lang.String.format;
+import static com.hazelcast.internal.util.futures.SerialInvokeOnAllMemberFuture.IGNORE_CLUSTER_TOPOLOGY_CHANGES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -63,23 +63,17 @@ public final class InvocationUtil {
      */
     public static void invokeOnStableClusterSerial(NodeEngine nodeEngine, OperationFactory operationFactory,
                                                    int retriesCount) {
-        OperationService operationService = nodeEngine.getOperationService();
-        Cluster cluster = nodeEngine.getClusterService();
         warmUpPartitions(nodeEngine);
-        Collection<Member> originalMembers;
-        int iterationCounter = 0;
-        for (;;) {
-            originalMembers = cluster.getMembers();
-            boolean success = invokeOnMembers(operationService, operationFactory, originalMembers);
-            if (success && cluster.getMembers().equals(originalMembers)) {
-                //we are done.
-                break;
-            }
-            if (iterationCounter++ == retriesCount) {
-                throw new HazelcastException(format("Cluster topology was not stable for %d retries,"
-                        + " invoke on stable cluster failed", retriesCount));
-            }
+        SerialInvokeOnAllMemberFuture<Object> future = new SerialInvokeOnAllMemberFuture<Object>(operationFactory, nodeEngine,
+                IGNORE_CLUSTER_TOPOLOGY_CHANGES, retriesCount);
+        try {
+            future.get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
         }
+
     }
 
     private static boolean invokeOnMembers(OperationService operationService, OperationFactory operationFactory,
