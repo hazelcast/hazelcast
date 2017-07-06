@@ -29,7 +29,7 @@ import java.io.Serializable;
  */
 public interface TenantControl extends Serializable {
     /**
-     * Called from the application's thread to connect a Hazelcast object
+     * To be called from the application's thread to connect a Hazelcast object
      * with a particular tenant, e.g. JCache-based cache with a particular application
      * Implementor will save the current thread context and return it
      * Further operations from other threads will use the returned context
@@ -53,7 +53,7 @@ public interface TenantControl extends Serializable {
     Closeable setTenant(boolean createRequestScope);
 
     /**
-     * Called when the Hazelcast object attached to this tenant is destroyed.
+     * To be called when the Hazelcast object attached to this tenant is destroyed.
      * The implementor may unregister it's own event listeners here.
      * This is used with conjunction with DestroyEvent, because
      * the listeners are probably used to call the DestroyEvent,
@@ -68,7 +68,7 @@ public interface TenantControl extends Serializable {
      */
     interface DestroyEvent extends Serializable {
         /**
-         * called to decouple JCache from the tenant
+         * called to decouple Hazelcast object from the tenant
          *
          * @param <TT> context type
          * @param context to use to delete the cache

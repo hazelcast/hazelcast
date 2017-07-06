@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.config.TenantControl;
+import com.hazelcast.config.TenantControl.Closeable;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
@@ -49,6 +51,8 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
 
     private final Object impl;
 
+    private TenantControl tenantControl = new TenantControl.NoTenantControl();
+
     public MapStoreWrapper(String mapName, Object impl) {
         this.mapName = mapName;
         this.impl = impl;
@@ -70,6 +74,7 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
 
     @Override
     public void destroy() {
+        tenantControl.unregister();
         if (impl instanceof MapLoaderLifecycleSupport) {
             ((MapLoaderLifecycleSupport) impl).destroy();
         }
@@ -77,6 +82,7 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
 
     @Override
     public void init(HazelcastInstance hazelcastInstance, Properties properties, String mapName) {
+        tenantControl = hazelcastInstance.getConfig().getTenantControl().saveCurrentTenant(new DestroyEventImpl(mapName));
         if (impl instanceof MapLoaderLifecycleSupport) {
             ((MapLoaderLifecycleSupport) impl).init(hazelcastInstance, properties, mapName);
         }
@@ -148,11 +154,15 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
     public Iterable<Object> loadAllKeys() {
         if (isMapLoader()) {
             Iterable<Object> allKeys;
+            Closeable tenantContext = tenantControl.setTenant(true);
             try {
                 allKeys = mapLoader.loadAllKeys();
             } catch (AbstractMethodError e) {
                 // Invoke reflectively to preserve backwards binary compatibility. Removable in v4.x
                 allKeys = ReflectionHelper.invokeMethod(mapLoader, "loadAllKeys");
+            }
+            finally {
+                tenantContext.close();
             }
             return allKeys;
         }
@@ -190,5 +200,30 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
     public String toString() {
         return "MapStoreWrapper{" + "mapName='" + mapName + '\''
                 + ", mapStore=" + mapStore + ", mapLoader=" + mapLoader + '}';
+    }
+
+    private static class DestroyEventImpl implements TenantControl.DestroyEvent {
+        public DestroyEventImpl(String mapName) {
+            this.mapName = mapName;
+        }
+
+        @Override
+        public <TT> void destroy(TT context) {
+            HazelcastInstance instance = (HazelcastInstance)context;
+            MapService mapService = instance.getDistributedObject(MapService.SERVICE_NAME, mapName);
+            // TODO should be remove, not destroy map,
+            // but errors remain if a new class tries to load old objects,
+            // should be some way to serialize objects here and deserialize them
+            // when starting another version of the client
+            mapService.getMapServiceContext().removeMapContainer(mapService.getMapServiceContext().getMapContainer(mapName));
+        }
+
+        @Override
+        public Class<?> getContextType() {
+            return HazelcastInstance.class;
+        }
+
+        private final String mapName;
+        private static final long serialVersionUID = 1L;
     }
 }
