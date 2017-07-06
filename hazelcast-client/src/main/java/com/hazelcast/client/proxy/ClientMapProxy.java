@@ -1679,8 +1679,9 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             com.hazelcast.util.function.Predicate<? super EventJournalMapEvent<K, V>> predicate,
             Projection<? super EventJournalMapEvent<K, V>, T> projection) {
         final SerializationService ss = getSerializationService();
+        // minSize is ignored on member side
         final ClientMessage request = MapEventJournalReadCodec.encodeRequest(
-                name, startSequence, 1, maxSize, ss.toData(predicate), ss.toData(projection));
+                name, startSequence, 0, maxSize, ss.toData(predicate), ss.toData(projection));
         final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, partitionId).invoke();
         return new ClientDelegatingFuture<ReadResultSet<T>>(fut, ss, eventJournalReadResponseDecoder);
     }

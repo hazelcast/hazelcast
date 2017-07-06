@@ -30,11 +30,9 @@ import java.io.IOException;
 
 /**
  * Reads from the cache event journal in batches. You may specify the start sequence,
- * the minumum required number of items in the response, the maximum number of items
- * in the response, a predicate that the events should pass and a projection to
- * apply to the events in the journal.
- * If the event journal currently contains less events than the required minimum, the
- * call will wait until it has sufficient items.
+ * the maximum number of items in the response, a predicate that the events should
+ * pass and a projection to apply to the events in the journal.
+ * If the event journal currently contains no events, the response will be empty.
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  *
@@ -49,10 +47,10 @@ public class CacheEventJournalReadOperation<K, V, T> extends EventJournalReadOpe
     public CacheEventJournalReadOperation() {
     }
 
-    public CacheEventJournalReadOperation(String cacheName, long startSequence, int minSize, int maxSize,
+    public CacheEventJournalReadOperation(String cacheName, long startSequence, int maxSize,
                                           Predicate<? super EventJournalCacheEvent<K, V>> predicate,
                                           Projection<? super EventJournalCacheEvent<K, V>, T> projection) {
-        super(cacheName, startSequence, minSize, maxSize);
+        super(cacheName, startSequence, maxSize);
         this.predicate = predicate;
         this.projection = projection;
     }
@@ -96,6 +94,6 @@ public class CacheEventJournalReadOperation<K, V, T> extends EventJournalReadOpe
     @Override
     protected ReadResultSetImpl<InternalEventJournalCacheEvent, T> createResultSet() {
         return new CacheEventJournalReadResultSetImpl<K, V, T>(
-                minSize, maxSize, getNodeEngine().getSerializationService(), predicate, projection);
+                0, maxSize, getNodeEngine().getSerializationService(), predicate, projection);
     }
 }

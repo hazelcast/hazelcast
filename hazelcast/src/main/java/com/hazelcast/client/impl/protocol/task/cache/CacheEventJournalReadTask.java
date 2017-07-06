@@ -38,11 +38,9 @@ import java.util.List;
 
 /**
  * Reads from the cache event journal in batches. You may specify the start sequence,
- * the minumum required number of items in the response, the maximum number of items
- * in the response, a predicate that the events should pass and a projection to
- * apply to the events in the journal.
- * If the event journal currently contains less events than the required minimum, the
- * call will wait until it has sufficient items.
+ * the maximum number of items in the response, a predicate that the events should
+ * pass and a projection to apply to the events in the journal.
+ * If the event journal currently contains no events, the response will be empty.
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  *
@@ -70,7 +68,7 @@ public class CacheEventJournalReadTask<K, V, T>
                 = serializationService.toObject(parameters.projection);
         final Predicate<? super EventJournalCacheEvent<K, V>> predicate = serializationService.toObject(parameters.predicate);
         return new CacheEventJournalReadOperation<K, V, T>(parameters.name,
-                parameters.startSequence, parameters.minSize, parameters.maxSize, predicate, projection);
+                parameters.startSequence, parameters.maxSize, predicate, projection);
     }
 
     @Override

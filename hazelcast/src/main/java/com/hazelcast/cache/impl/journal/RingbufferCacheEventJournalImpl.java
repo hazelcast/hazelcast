@@ -30,12 +30,9 @@ import com.hazelcast.nio.serialization.DataType;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.ringbuffer.impl.RingbufferWaitNotifyKey;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationparker.OperationParker;
 
 import static com.hazelcast.cache.impl.CacheEventType.CREATED;
 import static com.hazelcast.cache.impl.CacheEventType.EVICTED;
@@ -117,11 +114,6 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
     }
 
     @Override
-    public WaitNotifyKey getWaitNotifyKey(ObjectNamespace namespace, int partitionId) {
-        return new RingbufferWaitNotifyKey(namespace);
-    }
-
-    @Override
     public <T> long readMany(ObjectNamespace namespace, int partitionId, long beginSequence,
                              ReadResultSetImpl<InternalEventJournalCacheEvent, T> resultSet) {
         return getRingbufferOrFail(namespace, partitionId).readMany(beginSequence, resultSet);
@@ -180,7 +172,6 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
         final InternalEventJournalCacheEvent event
                 = new InternalEventJournalCacheEvent(toData(key), toData(newValue), toData(oldValue), eventType.getType());
         eventContainer.add(event);
-        getOperationParker().unpark(eventContainer);
     }
 
     protected Data toData(Object val) {
@@ -250,10 +241,6 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
 
     private RingbufferService getRingbufferService() {
         return nodeEngine.getService(RingbufferService.SERVICE_NAME);
-    }
-
-    private OperationParker getOperationParker() {
-        return nodeEngine.getOperationParker();
     }
 
     private InternalSerializationService getSerializationService() {

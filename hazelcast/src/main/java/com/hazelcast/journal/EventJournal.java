@@ -21,7 +21,6 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.WaitNotifyKey;
 
 /**
  * The event journal is a container for events related to a data structure.
@@ -95,16 +94,6 @@ public interface EventJournal<E> {
      * @throws IllegalStateException if there is no event journal configured for this object
      */
     boolean isNextAvailableSequence(ObjectNamespace namespace, int partitionId, long sequence);
-
-    /**
-     * Return the {@link WaitNotifyKey} for objects waiting and notifying on the event journal.
-     *
-     * @param namespace   the object namespace
-     * @param partitionId the partition ID of the entries in the journal
-     * @return the key for a wait notify object
-     * @throws IllegalStateException if there is no event journal configured for this object
-     */
-    WaitNotifyKey getWaitNotifyKey(ObjectNamespace namespace, int partitionId);
 
     /**
      * Reads events from the journal in batches. It will read up to

@@ -969,7 +969,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
             com.hazelcast.util.function.Predicate<? super EventJournalMapEvent<K, V>> predicate,
             Projection<? super EventJournalMapEvent<K, V>, T> projection) {
         final MapEventJournalReadOperation<K, V, T> op = new MapEventJournalReadOperation<K, V, T>(
-                name, startSequence, 1, maxSize, predicate, projection);
+                name, startSequence, maxSize, predicate, projection);
         op.setPartitionId(partitionId);
         return operationService.invokeOnPartition(op);
     }
