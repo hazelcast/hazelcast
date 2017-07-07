@@ -60,6 +60,7 @@ public class RestartableMemberIterator implements Iterator<Member> {
         Set<Member> currentMembers = clusterService.getMembers();
         if (topologyChanged(currentMembers)) {
             retry(currentMembers);
+            // at any given moment there should always be at least 1 cluster member (our own member)
             assert nextMember != null;
             return true;
         }

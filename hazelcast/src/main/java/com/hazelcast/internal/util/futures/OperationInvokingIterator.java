@@ -20,10 +20,6 @@ public class OperationInvokingIterator<T> implements Iterator<ICompletableFuture
     private final OperationService operationService;
     private final Iterator<Member> memberIterator;
 
-
-    //the retryCounter is accessed from multiple threads but never concurrently
-    private volatile int retryCounter;
-
     public OperationInvokingIterator(Iterator<Member> memberIterator, OperationFactory operationFactory,
                                      OperationService operationService) {
         this.operationFactory = operationFactory;
