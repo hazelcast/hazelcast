@@ -96,7 +96,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
 
-    public QueueContainer(String name, QueueConfig config, NodeEngine nodeEngine, QueueService service) throws Exception {
+    public QueueContainer(String name, QueueConfig config, NodeEngine nodeEngine, QueueService service) {
         this(name);
         setConfig(config, nodeEngine, service);
     }
@@ -156,9 +156,12 @@ public class QueueContainer implements IdentifiedDataSerializable {
     //TX Poll
 
     /**
-     * Retrieves and removes the head of the queue and loads the data from the queue store if the data is not stored in-memory
-     * and the queue store is configured and enabled. If the queue is empty returns an item which was previously reserved with
-     * the {@code reservedOfferId} by invoking {@code {@link #txnOfferReserve(String)}}.
+     * Tries to obtain an item by removing the head of the
+     * queue or removing an item previously reserved by invoking
+     * {@link #txnOfferReserve(String)} with {@code reservedOfferId}.
+     * <p>
+     * If the queue item does not have data in-memory it will load the
+     * data from the queue store if the queue store is configured and enabled.
      *
      * @param reservedOfferId the ID of the reserved item to be returned if the queue is empty
      * @param transactionId   the transaction ID for which this poll is invoked
@@ -186,13 +189,27 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return item;
     }
 
+    /**
+     * Makes a reservation for a poll operation. Should be executed as
+     * a part of the prepare phase for a transactional queue poll
+     * on the partition backup replica.
+     * The ID of the item being polled is determined by the partition
+     * owner.
+     *
+     * @param itemId        the ID of the reserved item to be polled
+     * @param transactionId the transaction ID
+     * @see #txnPollReserve(long, String)
+     * @see com.hazelcast.collection.impl.txnqueue.operations.TxnReservePollOperation
+     */
     public void txnPollBackupReserve(long itemId, String transactionId) {
         QueueItem item = getBackupMap().remove(itemId);
-        if (item == null) {
-            logger.warning("Backup reserve failed, itemId: " + itemId + " is not found");
+        if (item != null) {
+            txMap.put(itemId, new TxQueueItem(item).setPollOperation(true).setTransactionId(transactionId));
             return;
         }
-        txMap.put(itemId, new TxQueueItem(item).setPollOperation(true).setTransactionId(transactionId));
+        if (txMap.remove(itemId) == null) {
+            logger.warning("Poll backup reserve failed, itemId: " + itemId + " is not found");
+        }
     }
 
     public Data txnCommitPoll(long itemId) {
@@ -226,13 +243,15 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     /**
-     * Rolls back the effects of the {@link #txnPollReserve(long, String)}. The {@code backup} parameter defines whether
-     * this item was stored on a backup queue or a primary queue. Also adds a queue item with the {@code itemId} to the backup
-     * map if the {@code backup} parameter is true or the queue.
+     * Rolls back the effects of the {@link #txnPollReserve(long, String)}.
+     * The {@code backup} parameter defines whether this item was stored
+     * on a backup queue or a primary queue.
+     * It will return the item to the queue or backup map if it wasn't
+     * offered as a part of the transaction.
      * Cancels the queue eviction if one is scheduled.
      *
      * @param itemId the ID of the item which was polled in a transaction
-     * @param backup if this item was
+     * @param backup if this is the primary or the backup replica for this queue
      * @return if there was any polled item with the {@code itemId} inside a transaction
      */
     public boolean txnRollbackPoll(long itemId, boolean backup) {
@@ -273,9 +292,9 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @return the ID of the reserved item
      */
     public long txnOfferReserve(String transactionId) {
-        TxQueueItem item = new TxQueueItem(this, nextId(), null).setTransactionId(transactionId).setPollOperation(false);
-        txMap.put(item.getItemId(), item);
-        return item.getItemId();
+        final long itemId = nextId();
+        txnOfferReserveInternal(itemId, transactionId);
+        return itemId;
     }
 
     /**
@@ -286,23 +305,32 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @param itemId        the ID of the item being reserved
      */
     public void txnOfferBackupReserve(long itemId, String transactionId) {
-        QueueItem item = new QueueItem(this, itemId, null);
-        Object o = txMap.put(itemId, new TxQueueItem(item).setPollOperation(false).setTransactionId(transactionId));
+        final TxQueueItem o = txnOfferReserveInternal(itemId, transactionId);
         if (o != null) {
             logger.severe("txnOfferBackupReserve operation-> Item exists already at txMap for itemId: " + itemId);
         }
     }
 
+    /** Add a reservation for an item with {@code itemId} offered in transaction with {@code transactionId} */
+    private TxQueueItem txnOfferReserveInternal(long itemId, String transactionId) {
+        final TxQueueItem item = new TxQueueItem(this, itemId, null)
+                .setTransactionId(transactionId)
+                .setPollOperation(false);
+        return txMap.put(itemId, item);
+    }
+
     /**
-     * Sets the data of a reserved item and commits the change so it can be visible outside a transaction. The commit means
-     * that the item is offered to the queue if {@code backup} is false or saved into a backup map if {@code backup} is true.
+     * Sets the data of a reserved item and commits the change so it can be
+     * visible outside a transaction.
+     * The commit means that the item is offered to the queue if
+     * {@code backup} is false or saved into a backup map if {@code backup} is {@code true}.
      * This is because a node can hold backups for queues on other nodes.
      * Cancels the queue eviction if one is scheduled.
      *
      * @param itemId the ID of the reserved item
      * @param data   the data to be associated with the reserved item
      * @param backup if the item is to be offered to the underlying queue or stored as a backup
-     * @return true if the commit succeeded
+     * @return {@code true} if the commit succeeded
      * @throws TransactionException if there is no reserved item with the {@code itemId}
      */
     public boolean txnCommitOffer(long itemId, Data data, boolean backup) {
@@ -411,6 +439,14 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return item.getItemId();
     }
 
+    /**
+     * Offers the item to the backup map. If the memory limit
+     * has been achieved the item data will not be kept in-memory.
+     * Executed on the backup replica
+     *
+     * @param data   the item data
+     * @param itemId the item ID as determined by the primary replica
+     */
     public void offerBackup(Data data, long itemId) {
         QueueItem item = new QueueItem(this, itemId, null);
         if (!store.isEnabled() || store.getMemoryLimit() > getItemQueue().size()) {
@@ -452,6 +488,14 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return map;
     }
 
+    /**
+     * Offers the items to the backup map in bulk. If the memory limit
+     * has been achieved the item data will not be kept in-memory.
+     * Executed on the backup replica
+     *
+     * @param dataMap the map from item ID to queue item
+     * @see #offerBackup(Data, long)
+     */
     public void addAllBackup(Map<Long, Data> dataMap) {
         for (Map.Entry<Long, Data> entry : dataMap.entrySet()) {
             QueueItem item = new QueueItem(this, entry.getKey(), null);
@@ -507,6 +551,13 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return item;
     }
 
+    /**
+     * Polls an item on the backup replica. The item ID is predetermined
+     * when executing the poll operation on the partition owner.
+     * Executed on the backup replica
+     *
+     * @param itemId the item ID as determined by the primary replica
+     */
     public void pollBackup(long itemId) {
         QueueItem item = getBackupMap().remove(itemId);
         if (item != null) {
@@ -579,6 +630,15 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return txMap.size();
     }
 
+    /**
+     * Returns the number of queue items contained on this
+     * backup replica. A transaction might temporarily reserve
+     * a poll operation by removing an item from this map.
+     * If the transaction is committed, the map will remain the same.
+     * If the transaction is aborted, the item is returned to the map.
+     *
+     * @return the number of items on this backup replica
+     */
     public int backupSize() {
         return getBackupMap().size();
     }
@@ -634,6 +694,12 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return -1;
     }
 
+    /**
+     * Removes a queue item from the backup map. This should
+     * be executed on the backup replica.
+     *
+     * @param itemId the queue item ID
+     */
     public void removeBackup(long itemId) {
         getBackupMap().remove(itemId);
     }
@@ -686,7 +752,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * the retain parameter is true, it will remove items which are not in the dataList (retaining the items which are in the
      * list). If the retain parameter is false, it will remove items which are in the dataList (retaining all other items which
      * are not in the list).
-     *
+     * <p>
      * Note : this method will trigger store load.
      *
      * @param dataList the list of items which are to be retained in the queue or which are to be removed from the queue
@@ -805,6 +871,14 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return (getItemQueue().size() + delta) <= config.getMaxSize();
     }
 
+    /**
+     * Returns the item queue on the partition owner. This method
+     * will also move the items from the backup map if this
+     * member has been promoted from a backup replica to the
+     * partition owner and clear the backup map.
+     *
+     * @return the item queue
+     */
     public Deque<QueueItem> getItemQueue() {
         if (itemQueue == null) {
             itemQueue = new LinkedList<QueueItem>();
@@ -823,7 +897,16 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return itemQueue;
     }
 
-    Map<Long, QueueItem> getBackupMap() {
+    /**
+     * Return the map containing queue items when this instance is
+     * a backup replica.
+     * The map contains both items that are parts of different
+     * transactions and items which have already been committed
+     * to the queue.
+     *
+     * @return backup replica map from item ID to queue item
+     */
+    private Map<Long, QueueItem> getBackupMap() {
         if (backupMap == null) {
             backupMap = new HashMap<Long, QueueItem>();
             if (itemQueue != null) {
@@ -854,6 +937,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         this.store = QueueStoreWrapper.create(name, storeConfig, serializationService, classLoader);
     }
 
+    /** Returns the next ID that can be used for uniquely identifying queue items */
     long nextId() {
         return ++idGenerator;
     }

@@ -31,9 +31,11 @@ import com.hazelcast.spi.impl.MutatingOperation;
 import java.io.IOException;
 
 /**
- * Offer operation for the Transactional Queue.
+ * Transaction commit operation for a queue offer, executed on the primary replica.
+ *
+ * @see com.hazelcast.core.TransactionalQueue#offer(Object)
+ * @see TxnReserveOfferOperation
  */
-
 public class TxnOfferOperation extends BaseTxnQueueOperation implements Notifier, MutatingOperation {
 
 
