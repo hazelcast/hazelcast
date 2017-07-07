@@ -29,10 +29,21 @@ import com.hazelcast.spi.impl.MutatingOperation;
 import java.io.IOException;
 
 /**
- * Reserve offer operation for the transactional queue.
+ * Transaction prepare operation for a queue offer, executed on the primary replica.
+ * <p>
+ * Checks if the queue can accomodate one more item in addition to the number provided
+ * to the constructor and returns the next item ID. This check is done on a scope of
+ * one transaction and does not include other transactions. It can also happen that
+ * after this check succeeds, the user will add more items to the queue which means that
+ * the queue can no longer accomodate for the items for which it has returned an item ID.
+ * <p>
+ * The operation can also wait until there is enough room or the wait timeout has elapsed.
+ *
+ * @see com.hazelcast.core.TransactionalQueue#offer(Object)
+ * @see TxnOfferOperation
  */
 public class TxnReserveOfferOperation extends QueueBackupAwareOperation implements BlockingOperation, MutatingOperation {
-
+    /** The number of items already offered in this transactional queue */
     private int txSize;
     private String transactionId;
 
@@ -45,6 +56,13 @@ public class TxnReserveOfferOperation extends QueueBackupAwareOperation implemen
         this.transactionId = transactionId;
     }
 
+    /**
+     * {@inheritDoc}
+     * Sets the response to the next item ID if the queue can
+     * accomodate {@code txSize + 1} items.
+     *
+     * @throws Exception
+     */
     @Override
     public void run() throws Exception {
         QueueContainer queueContainer = getContainer();

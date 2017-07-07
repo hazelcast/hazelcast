@@ -54,7 +54,9 @@ public abstract class TransactionalQueueProxySupport<E>
     protected final int partitionId;
     protected final QueueConfig config;
 
+    /** The list of items offered to the transactional queue */
     private final LinkedList<QueueItem> offeredQueue = new LinkedList<QueueItem>();
+    /** The IDs of the items modified by the transaction, either added or removed from the queue */
     private final Set<Long> itemIdSet = new HashSet<Long>();
 
     TransactionalQueueProxySupport(NodeEngine nodeEngine, QueueService service, String name, Transaction tx) {
@@ -93,6 +95,19 @@ public abstract class TransactionalQueueProxySupport<E>
         }
     }
 
+    /**
+     * Tries to accomodate one more item in the queue in addition to the
+     * already offered items. If it succeeds by getting an item ID, it will
+     * add the item to the
+     * Makes a reservation for a {@link TransactionalQueue#offer} operation
+     * and adds the commit operation to the transaction log.
+     *
+     * @param data    the serialised item being offered
+     * @param timeout the wait timeout in milliseconds for the offer reservation
+     * @return {@code true} if the item reservation was made
+     * @see TxnReserveOfferOperation
+     * @see TxnOfferOperation
+     */
     boolean offerInternal(Data data, long timeout) {
         TxnReserveOfferOperation operation
                 = new TxnReserveOfferOperation(name, timeout, offeredQueue.size(), tx.getTxnId());
