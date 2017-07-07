@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.txnqueue;
 
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -83,6 +84,28 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         int size = f.get();
         assertEquals(itemCount - 1, size);
     }
+
+    @Test
+    public void testOfferTake() throws ExecutionException, InterruptedException {
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance owner = factory.newHazelcastInstance();
+        final HazelcastInstance backup = factory.newHazelcastInstance();
+        final String name = generateKeyOwnedBy(owner);
+
+        for (int i = 0; i < 1000; i++) {
+            TransactionContext ctx = owner.newTransactionContext();
+            ctx.beginTransaction();
+            TransactionalQueue<Integer> queue = ctx.getQueue(name);
+            queue.offer(1);
+            queue.take();
+            ctx.commitTransaction();
+        }
+        assertEquals(0, owner.getQueue(name).size());
+
+        assertTransactionMapSize(owner, name, 0);
+        assertTransactionMapSize(backup, name, 0);
+    }
+
 
     @Test
     public void testPeekWithTimeout() {
@@ -548,6 +571,11 @@ public class TransactionQueueTest extends HazelcastTestSupport {
                 assertEquals(1, queue2.size());
             }
         }, 3);
+    }
+
+    private void assertTransactionMapSize(HazelcastInstance instance, String name, int size) {
+        final QueueService queueService = getNode(instance).nodeEngine.getService(QueueService.SERVICE_NAME);
+        assertEquals(size, queueService.getOrCreateContainer(name, true).txMapSize());
     }
 
     private <E> IQueue<E> getQueue(HazelcastInstance[] instances, String name) {
