@@ -19,6 +19,7 @@ package com.hazelcast.internal.util.iterator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -84,6 +85,8 @@ public class RestartingMemberIterator implements Iterator<Member> {
         return nextMember != null;
     }
 
+    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
+            justification = "retryCounter is accessed by multiple threads, but never concurrently")
     private void retry(Set<Member> currentMembers) {
         retryCounter++;
         if (retryCounter > maxRetries) {
