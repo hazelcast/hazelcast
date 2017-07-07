@@ -48,17 +48,17 @@ public class ChainingFuture<T> extends AbstractCompletableFuture<T> {
 
     private final ExceptionHandler exceptionHandler;
 
-    public ChainingFuture(Iterator<ICompletableFuture<T>> invocationIterator, Executor executor,
+    public ChainingFuture(Iterator<ICompletableFuture<T>> futuresToChain, Executor executor,
                           ExceptionHandler exceptionHandler, ILogger logger) {
         super(executor, logger);
         this.exceptionHandler = exceptionHandler;
 
 
-        if (!invocationIterator.hasNext()) {
+        if (!futuresToChain.hasNext()) {
             setResult(null);
         } else {
-            ICompletableFuture<T> future = invocationIterator.next();
-            registerCallback(future, invocationIterator);
+            ICompletableFuture<T> future = futuresToChain.next();
+            registerCallback(future, futuresToChain);
         }
     }
 
