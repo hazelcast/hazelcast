@@ -2,6 +2,7 @@ package com.hazelcast.internal.util.futures;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -81,7 +82,7 @@ public class ChainingFutureTest extends HazelcastTestSupport {
         assertEquals(1, iterator.getNextCounter());
         assertFalse(future.isDone());
 
-        future1.complete(new WrongTargetException("this should be ignored"));
+        future1.complete(new MemberLeftException("this should be ignored"));
         assertEquals(2, iterator.getHasNextCounter());
         assertEquals(2, iterator.getNextCounter());
         assertFalse(future.isDone());
