@@ -36,12 +36,14 @@ import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.CoreService;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
@@ -52,6 +54,8 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.FutureUtil;
 import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
@@ -61,10 +65,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.internal.cluster.Versions.V3_8;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.Boolean.getBoolean;
 
 @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount"})
@@ -207,6 +213,18 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
 
     @Override
     public void broadcastConfig(IdentifiedDataSerializable config) {
+        ICompletableFuture<Object> future = broadcastConfigAsync(config);
+        try {
+            future.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            rethrow(e);
+        } catch (ExecutionException e) {
+            rethrow(e);
+        }
+    }
+
+    public ICompletableFuture<Object> broadcastConfigAsync(IdentifiedDataSerializable config) {
         if (version.isLessOrEqual(V3_8)) {
             throw new UnsupportedOperationException("Adding dynamic configuration is only supported when running "
                     + " in cluster version 3.9+. The current cluster version:" + version);
@@ -216,7 +234,7 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
         // and avoid config serialization altogether.
         // we certainly do not want the dynamic config service to reference object a user can mutate
         IdentifiedDataSerializable clonedConfig = cloneConfig(config);
-        invokeOnStableClusterSerial(nodeEngine, new AddDynamicConfigOperationFactory(clonedConfig),
+        return invokeOnStableClusterSerial(nodeEngine, new AddDynamicConfigOperationFactory(clonedConfig),
                 CONFIG_PUBLISH_MAX_ATTEMPT_COUNT);
     }
 

@@ -17,14 +17,15 @@
 package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.permission.ConfigPermission;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.internal.util.InvocationUtil;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -35,7 +36,8 @@ import static com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationServi
 /**
  * Base implementation for dynamic add***Config methods.
  */
-public abstract class AbstractAddConfigMessageTask<P> extends AbstractCallableMessageTask<P> {
+public abstract class AbstractAddConfigMessageTask<P> extends AbstractMessageTask<P>
+        implements ExecutionCallback<Object> {
 
     private static final ConfigPermission CONFIG_PERMISSION = new ConfigPermission();
 
@@ -43,11 +45,6 @@ public abstract class AbstractAddConfigMessageTask<P> extends AbstractCallableMe
         super(clientMessage, node, connection);
     }
 
-    @Override
-    protected Object call() throws Exception {
-        InvocationUtil.invokeOnStableClusterSerial(nodeEngine, getOperationFactory(), CONFIG_PUBLISH_MAX_ATTEMPT_COUNT);
-        return true;
-    }
 
     @Override
     public String getServiceName() {
@@ -70,7 +67,23 @@ public abstract class AbstractAddConfigMessageTask<P> extends AbstractCallableMe
         return new Object[0];
     }
 
-    protected abstract OperationFactory getOperationFactory();
+    @Override
+    public final void processMessage() {
+        IdentifiedDataSerializable config = getConfig();
+        ClusterWideConfigurationService service = getService(ClusterWideConfigurationService.SERVICE_NAME);
+        ICompletableFuture<Object> future = service.broadcastConfigAsync(config);
+        future.andThen(this);
+    }
+
+    @Override
+    public void onResponse(Object response) {
+        sendResponse(response);
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        handleProcessingFailure(t);
+    }
 
     protected List<? extends ListenerConfig> adaptListenerConfigs(List<ListenerConfigHolder> listenerConfigHolders) {
         if (listenerConfigHolders == null || listenerConfigHolders.isEmpty()) {
@@ -84,4 +97,5 @@ public abstract class AbstractAddConfigMessageTask<P> extends AbstractCallableMe
         return itemListenerConfigs;
     }
 
+    protected abstract IdentifiedDataSerializable getConfig();
 }

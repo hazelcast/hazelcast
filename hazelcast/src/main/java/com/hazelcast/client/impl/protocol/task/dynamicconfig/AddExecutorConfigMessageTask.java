@@ -20,9 +20,8 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExecutorConfigCodec;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.dynamicconfig.AddDynamicConfigOperationFactory;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public class AddExecutorConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddExecutorConfigCodec.RequestParameters> {
@@ -42,11 +41,11 @@ public class AddExecutorConfigMessageTask
     }
 
     @Override
-    protected OperationFactory getOperationFactory() {
+    protected IdentifiedDataSerializable getConfig() {
         ExecutorConfig config = new ExecutorConfig(parameters.name, parameters.poolSize);
         config.setQueueCapacity(parameters.queueCapacity);
         config.setStatisticsEnabled(parameters.statisticsEnabled);
-        return new AddDynamicConfigOperationFactory(config);
+        return config;
     }
 
     @Override

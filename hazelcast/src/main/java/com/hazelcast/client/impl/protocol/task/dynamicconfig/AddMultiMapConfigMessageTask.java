@@ -37,9 +37,8 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMultiMapConfigCo
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.dynamicconfig.AddDynamicConfigOperationFactory;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public class AddMultiMapConfigMessageTask extends
         AbstractAddConfigMessageTask<DynamicConfigAddMultiMapConfigCodec.RequestParameters> {
@@ -59,7 +58,7 @@ public class AddMultiMapConfigMessageTask extends
     }
 
     @Override
-    protected OperationFactory getOperationFactory() {
+    protected IdentifiedDataSerializable getConfig() {
         MultiMapConfig multiMapConfig = new MultiMapConfig();
         multiMapConfig.setName(parameters.name);
         multiMapConfig.setValueCollectionType(parameters.collectionType);
@@ -73,7 +72,7 @@ public class AddMultiMapConfigMessageTask extends
                 multiMapConfig.addEntryListenerConfig(entryListenerConfig);
             }
         }
-        return new AddDynamicConfigOperationFactory(multiMapConfig);
+        return multiMapConfig;
     }
 
     @Override

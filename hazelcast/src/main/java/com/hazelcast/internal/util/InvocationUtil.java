@@ -60,15 +60,17 @@ public final class InvocationUtil {
      * If there is a cluster membership change while invoking then it will restart invocations on all members. This
      * implies the operation should be idempotent.
      *
-     * If there is an exception - other than {@link MemberLeftException} while invoking then the iteration
+     * If there is an exception - other than {@link MemberLeftException} or
+     * {@link com.hazelcast.spi.exception.TargetNotMemberException} while invoking then the iteration
      * is interrupted and the exception is propagates to the caller.
      *
      * @param nodeEngine
      * @param operationFactory
      * @param maxRetries
      */
-    public static void invokeOnStableClusterSerial(NodeEngine nodeEngine, final OperationFactory operationFactory,
-                                                   int maxRetries) {
+    public static ICompletableFuture<Object> invokeOnStableClusterSerial(NodeEngine nodeEngine,
+                                                                                final OperationFactory operationFactory,
+                                                                                int maxRetries) {
         warmUpPartitions(nodeEngine);
 
         final OperationService operationService = nodeEngine.getOperationService();
@@ -88,39 +90,7 @@ public final class InvocationUtil {
         Iterator<ICompletableFuture<Object>> invocationIterator = new MappingIterator<Member, ICompletableFuture<Object>>
                 (memberIterator, mapping);
 
-        //todo: return the future instead of blocking
-        ChainingFuture<Object> future = new ChainingFuture<Object>(nodeEngine, IGNORE_CLUSTER_TOPOLOGY_CHANGES, invocationIterator);
-        try {
-            future.get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
-
-    }
-
-    private static boolean invokeOnMembers(OperationService operationService, OperationFactory operationFactory,
-                                        Collection<Member> members) {
-        for (Member member : members) {
-            Address target = member.getAddress();
-            Operation operation = operationFactory.createOperation();
-            String serviceName = operation.getServiceName();
-            InternalCompletableFuture<?> future = operationService.invokeOnTarget(serviceName, operation, target);
-            try {
-                future.get(INVOCATION_TIMEOUT_SECONDS, SECONDS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new HazelcastException("Interrupted while invoking " + operation + " on " + member, e);
-            } catch (MemberLeftException e) {
-                return false;
-            } catch (ExecutionException e) {
-                throw new HazelcastException("Error while invoking " + operation + " on " + member, e);
-            } catch (TimeoutException e) {
-                throw new HazelcastException("Timeout while invoking " + operation + " on " + member, e);
-            }
-        }
-        return true;
+        return new ChainingFuture<Object>(nodeEngine, IGNORE_CLUSTER_TOPOLOGY_CHANGES, invocationIterator);
     }
 
     private static void warmUpPartitions(NodeEngine nodeEngine) {

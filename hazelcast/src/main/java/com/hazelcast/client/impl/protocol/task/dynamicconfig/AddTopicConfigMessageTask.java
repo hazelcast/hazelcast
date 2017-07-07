@@ -21,9 +21,8 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddTopicConfigCodec
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.dynamicconfig.AddDynamicConfigOperationFactory;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.List;
 
@@ -45,7 +44,7 @@ public class AddTopicConfigMessageTask
     }
 
     @Override
-    protected OperationFactory getOperationFactory() {
+    protected IdentifiedDataSerializable getConfig() {
         TopicConfig config = new TopicConfig(parameters.name);
         config.setGlobalOrderingEnabled(parameters.globalOrderingEnabled);
         config.setMultiThreadingEnabled(parameters.multiThreadingEnabled);
@@ -54,7 +53,7 @@ public class AddTopicConfigMessageTask
             config.setMessageListenerConfigs(
                     (List<ListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs));
         }
-        return new AddDynamicConfigOperationFactory(config);
+        return config;
     }
 
     @Override
