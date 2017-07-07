@@ -99,6 +99,16 @@ public class RestTest extends HazelcastTestSupport {
 
     @Test
     public void testMapPutGet() throws Exception {
+        testMapPutGet0();
+    }
+
+    @Test
+    public void testMapPutGet_chunked() throws Exception {
+        communicator.setChunkedStreamingLength(32);
+        testMapPutGet0();
+    }
+
+    private void testMapPutGet0() throws Exception {
         String name = randomMapName();
 
         String key = "key";
@@ -228,6 +238,16 @@ public class RestTest extends HazelcastTestSupport {
 
     @Test
     public void testMap_PutGet_withLargeValue() throws IOException {
+        testMap_PutGet_withLargeValue0();
+    }
+
+    @Test
+    public void testMap_PutGet_withLargeValue_chunked() throws IOException {
+        communicator.setChunkedStreamingLength(1024);
+        testMap_PutGet_withLargeValue0();
+    }
+
+    private void testMap_PutGet_withLargeValue0() throws IOException {
         String mapName = randomMapName();
         String key = "key";
         int capacity = 10000;
@@ -236,14 +256,26 @@ public class RestTest extends HazelcastTestSupport {
             value.append(randomString());
         }
 
-        int response = communicator.mapPut(mapName, key, value.toString());
+        String valueStr = value.toString();
+        int response = communicator.mapPut(mapName, key, valueStr);
         assertEquals(HTTP_OK, response);
 
-        assertEquals(value.toString(), communicator.mapGet(mapName, key));
+        String actual = communicator.mapGet(mapName, key);
+        assertEquals(valueStr, actual);
     }
 
     @Test
     public void testMap_PutGet_withLargeKey() throws IOException {
+        testMap_PutGet_withLargeKey0();
+    }
+
+    @Test
+    public void testMap_PutGet_withLargeKey_chunked() throws IOException {
+        communicator.setChunkedStreamingLength(1024);
+        testMap_PutGet_withLargeKey0();
+    }
+
+    private void testMap_PutGet_withLargeKey0() throws IOException {
         String mapName = randomMapName();
         int capacity = 5000;
         StringBuilder key = new StringBuilder(capacity);
