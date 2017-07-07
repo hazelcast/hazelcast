@@ -74,12 +74,13 @@ public final class InvocationUtil {
         final OperationService operationService = nodeEngine.getOperationService();
         ClusterService clusterService = nodeEngine.getClusterService();
 
-        Iterator<Member> memberIterator = new RestartingMemberIterator(clusterService, maxRetries);
-        IFunction<Member, ICompletableFuture<Object>> mapping = new InvokeOnMemberFunction(operationFactory, operationService);
-        Iterator<ICompletableFuture<Object>> invocationIterator = map(memberIterator, mapping);
+        Iterator<ICompletableFuture<Object>> invocationIterator = map(
+                new RestartingMemberIterator(clusterService, maxRetries),
+                new InvokeOnMemberFunction(operationFactory, operationService));
+
+        ILogger logger = nodeEngine.getLogger(ChainingFuture.class);
         ExecutionService executionService = nodeEngine.getExecutionService();
         ManagedExecutorService executor = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR);
-        ILogger logger = nodeEngine.getLogger(ChainingFuture.class);
         return new ChainingFuture<Object>(invocationIterator, executor, IGNORE_CLUSTER_TOPOLOGY_CHANGES, logger);
     }
 
@@ -97,7 +98,8 @@ public final class InvocationUtil {
         }
     }
 
-    @SerializableByConvention //IFunction extends Serializable, but this function is only executed locally
+    //IFunction extends Serializable, but this function is only executed locally
+    @SerializableByConvention
     private static class InvokeOnMemberFunction implements IFunction<Member, ICompletableFuture<Object>> {
         private final OperationFactory operationFactory;
         private final OperationService operationService;
