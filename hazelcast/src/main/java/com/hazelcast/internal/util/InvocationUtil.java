@@ -17,11 +17,15 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
-import com.hazelcast.internal.util.futures.SerialInvokeOnAllMemberFuture;
+import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.util.futures.OperationInvokingIterator;
+import com.hazelcast.internal.util.futures.ChainingFuture;
+import com.hazelcast.internal.util.futures.RestartableMemberIterator;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
@@ -30,10 +34,11 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-import static com.hazelcast.internal.util.futures.SerialInvokeOnAllMemberFuture.IGNORE_CLUSTER_TOPOLOGY_CHANGES;
+import static com.hazelcast.internal.util.futures.ChainingFuture.IGNORE_CLUSTER_TOPOLOGY_CHANGES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -64,8 +69,17 @@ public final class InvocationUtil {
     public static void invokeOnStableClusterSerial(NodeEngine nodeEngine, OperationFactory operationFactory,
                                                    int retriesCount) {
         warmUpPartitions(nodeEngine);
-        SerialInvokeOnAllMemberFuture<Object> future = new SerialInvokeOnAllMemberFuture<Object>(operationFactory, nodeEngine,
-                IGNORE_CLUSTER_TOPOLOGY_CHANGES, retriesCount);
+
+        OperationService operationService = nodeEngine.getOperationService();
+        ClusterService clusterService = nodeEngine.getClusterService();
+
+        Iterator<Member> memberIterator = new RestartableMemberIterator(clusterService, retriesCount);
+
+        Iterator<ICompletableFuture<Object>> invocationIterator = new OperationInvokingIterator<Object>(memberIterator, operationFactory,
+                operationService);
+
+        ChainingFuture<Object> future = new ChainingFuture<Object>(nodeEngine,
+                IGNORE_CLUSTER_TOPOLOGY_CHANGES, invocationIterator);
         try {
             future.get();
         } catch (InterruptedException e) {
