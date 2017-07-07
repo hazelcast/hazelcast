@@ -48,7 +48,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
-public class TopicService implements ManagedService, RemoteService, EventPublishingService, StatisticsAwareService {
+public class TopicService implements ManagedService, RemoteService, EventPublishingService,
+        StatisticsAwareService<LocalTopicStats> {
 
     public static final String SERVICE_NAME = "hz:impl:topicService";
 

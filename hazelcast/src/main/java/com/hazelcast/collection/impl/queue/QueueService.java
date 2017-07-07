@@ -71,8 +71,8 @@ import java.util.concurrent.ConcurrentMap;
  * Provides important services via methods for the the Queue
  * such as {@link com.hazelcast.collection.impl.queue.QueueEvictionProcessor }
  */
-public class QueueService implements ManagedService, MigrationAwareService, TransactionalService,
-        RemoteService, EventPublishingService<QueueEvent, ItemListener>, StatisticsAwareService, QuorumAwareService {
+public class QueueService implements ManagedService, MigrationAwareService, TransactionalService, RemoteService,
+        EventPublishingService<QueueEvent, ItemListener>, StatisticsAwareService<LocalQueueStats>, QuorumAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:queueService";
 
