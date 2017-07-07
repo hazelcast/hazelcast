@@ -37,6 +37,7 @@ public class HTTPCommunicator {
 
     private final HazelcastInstance instance;
     private final String address;
+    private int chunkedStreamingLength;
 
     public HTTPCommunicator(HazelcastInstance instance) {
         this.instance = instance;
@@ -188,7 +189,7 @@ public class HTTPCommunicator {
         return doPost(url, wanRepConfigJson).response;
     }
 
-    private static HttpURLConnection setupConnection(String url, String method) throws IOException {
+    private HttpURLConnection setupConnection(String url, String method) throws IOException {
         HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
         urlConnection.setRequestMethod(method);
         urlConnection.setDoOutput(true);
@@ -196,6 +197,9 @@ public class HTTPCommunicator {
         urlConnection.setUseCaches(false);
         urlConnection.setAllowUserInteraction(false);
         urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
+        if (chunkedStreamingLength > 0) {
+            urlConnection.setChunkedStreamingMode(chunkedStreamingLength);
+        }
         return urlConnection;
     }
 
@@ -245,16 +249,16 @@ public class HTTPCommunicator {
         }
     }
 
-    private static ConnectionResponse doPost(String url, String... params) throws IOException {
+    private ConnectionResponse doPost(String url, String... params) throws IOException {
         HttpURLConnection urlConnection = setupConnection(url, "POST");
         // post the data
         OutputStream out = urlConnection.getOutputStream();
         Writer writer = new OutputStreamWriter(out, "UTF-8");
-        String data = "";
+        StringBuilder data = new StringBuilder();
         for (String param : params) {
-            data += URLEncoder.encode(param, "UTF-8") + "&";
+            data.append(URLEncoder.encode(param, "UTF-8")).append("&");
         }
-        writer.write(data);
+        writer.write(data.toString());
         writer.close();
         out.close();
         try {
@@ -304,5 +308,9 @@ public class HTTPCommunicator {
         String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
         String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_URL + "garbage";
         return doHead(url);
+    }
+
+    public void setChunkedStreamingLength(int chunkedStreamingLength) {
+        this.chunkedStreamingLength = chunkedStreamingLength;
     }
 }
