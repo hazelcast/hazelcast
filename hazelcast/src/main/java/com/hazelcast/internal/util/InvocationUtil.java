@@ -24,7 +24,6 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.util.iterator.MappingIterator;
 import com.hazelcast.internal.util.futures.ChainingFuture;
 import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
 import com.hazelcast.nio.Address;
@@ -36,13 +35,13 @@ import com.hazelcast.spi.OperationService;
 import java.util.Iterator;
 
 import static com.hazelcast.internal.util.futures.ChainingFuture.IGNORE_CLUSTER_TOPOLOGY_CHANGES;
+import static com.hazelcast.util.IterableUtil.map;
 
 /**
  * Utility methods for invocations
  */
 public final class InvocationUtil {
     private static final int WARMUP_SLEEPING_TIME_MILLIS = 10;
-    private static final int INVOCATION_TIMEOUT_SECONDS = 60;
 
     private InvocationUtil() {
 
@@ -82,9 +81,7 @@ public final class InvocationUtil {
                 return operationService.invokeOnTarget(serviceName, operation, address);
             }
         };
-        Iterator<ICompletableFuture<Object>> invocationIterator = new MappingIterator<Member,
-                ICompletableFuture<Object>>(memberIterator, mapping);
-
+        Iterator<ICompletableFuture<Object>> invocationIterator = map(memberIterator, mapping);
         return new ChainingFuture<Object>(nodeEngine, IGNORE_CLUSTER_TOPOLOGY_CHANGES, invocationIterator);
     }
 
