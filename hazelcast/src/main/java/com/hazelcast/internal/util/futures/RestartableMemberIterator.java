@@ -35,17 +35,16 @@ public class RestartableMemberIterator implements Iterator<Member> {
         this.clusterService = clusterService;
         this.maxRetries = maxRetries;
 
-        Set<Member> members = clusterService.getMembers();
-        startNewRound(members);
+        Set<Member> currentMembers = clusterService.getMembers();
+        startNewRound(currentMembers);
     }
 
-    private void startNewRound(Set<Member> members) {
-        memberQueue.clear();
-        for (Member member : members) {
+    private void startNewRound(Set<Member> currentMembers) {
+        for (Member member : currentMembers) {
             memberQueue.add(member);
         }
         nextMember = memberQueue.poll();
-        this.initialMembers = members;
+        this.initialMembers = currentMembers;
     }
 
     @Override
@@ -75,6 +74,7 @@ public class RestartableMemberIterator implements Iterator<Member> {
             throw new HazelcastException(format("Cluster topology was not stable for %d retries,"
                     + " invoke on stable cluster failed", maxRetries));
         }
+        memberQueue.clear();
         startNewRound(currentMembers);
     }
 
@@ -89,8 +89,7 @@ public class RestartableMemberIterator implements Iterator<Member> {
         if (memberToReturn != null) {
             return memberToReturn;
         }
-        advance();
-        if (nextMember == null) {
+        if (!advance()) {
             throw new NoSuchElementException("no more elements");
         }
         return nextMember;
