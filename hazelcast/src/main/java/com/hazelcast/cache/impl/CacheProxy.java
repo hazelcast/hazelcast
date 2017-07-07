@@ -413,7 +413,7 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V> {
             Predicate<? super EventJournalCacheEvent<K, V>> predicate,
             Projection<? super EventJournalCacheEvent<K, V>, T> projection) {
         final CacheEventJournalReadOperation<K, V, T> op = new CacheEventJournalReadOperation<K, V, T>(
-                nameWithPrefix, startSequence, 1, maxSize, predicate, projection);
+                nameWithPrefix, startSequence, maxSize, predicate, projection);
         op.setPartitionId(partitionId);
         return getNodeEngine().getOperationService().invokeOnPartition(op);
     }

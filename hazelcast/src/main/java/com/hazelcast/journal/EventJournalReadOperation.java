@@ -23,22 +23,18 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
-import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;
 
 /**
  * Reads from the map event journal in batches. You may specify the start sequence,
- * the minumum required number of items in the response, the maximum number of items
- * in the response, a predicate that the events should pass and a projection to
- * apply to the events in the journal.
- * If the event journal currently contains less events than the required minimum, the
- * call will wait until it has sufficient items.
+ * the maximum number of items in the response, a predicate that the events should
+ * pass and a projection to apply to the events in the journal.
+ * If the event journal currently contains no events, the response will be empty.
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  *
@@ -48,23 +44,19 @@ import java.io.IOException;
  * @since 3.9
  */
 public abstract class EventJournalReadOperation<T, J> extends Operation
-        implements IdentifiedDataSerializable, PartitionAwareOperation, BlockingOperation {
+        implements IdentifiedDataSerializable, PartitionAwareOperation {
     protected String name;
-    protected int minSize;
     protected int maxSize;
     protected long startSequence;
 
     protected transient ReadResultSetImpl<J, T> resultSet;
-    protected transient long sequence;
     protected transient DistributedObjectNamespace namespace;
-    private WaitNotifyKey waitNotifyKey;
 
     public EventJournalReadOperation() {
     }
 
-    public EventJournalReadOperation(String name, long startSequence, int minSize, int maxSize) {
+    public EventJournalReadOperation(String name, long startSequence, int maxSize) {
         this.name = name;
-        this.minSize = minSize;
         this.maxSize = maxSize;
         this.startSequence = startSequence;
     }
@@ -94,56 +86,18 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
         final int partitionId = getPartitionId();
         journal.cleanup(namespace, partitionId);
         journal.isAvailableOrNextSequence(namespace, partitionId, startSequence);
-        // we'll store the wait notify key because ICache destroys the record store
-        // and the cache config is unavailable at the time operations are being
-        // cancelled. Hence, we cannot create the journal and fetch it's wait notify
-        // key
-        waitNotifyKey = journal.getWaitNotifyKey(namespace, partitionId);
-    }
-
-    /**
-     * {@inheritDoc}
-     * On every invocation this method reads from the event journal until
-     * it has collected the minimum required number of response items.
-     * Returns {@code true} if there are currently not enough
-     * elements in the response and the operation should be parked.
-     *
-     * @return if the operation should wait on the wait/notify key
-     */
-    @Override
-    public boolean shouldWait() {
-        if (resultSet == null) {
-            resultSet = createResultSet();
-            sequence = startSequence;
-        }
-
-        final EventJournal<J> journal = getJournal();
-        final int partitionId = getPartitionId();
-        journal.cleanup(namespace, partitionId);
-        if (minSize == 0) {
-            if (!journal.isNextAvailableSequence(namespace, partitionId, sequence)) {
-                sequence = journal.readMany(namespace, partitionId, sequence, resultSet);
-            }
-            return false;
-        }
-
-        if (resultSet.isMinSizeReached()) {
-            // enough items have been read, we are done.
-            return false;
-        }
-
-        if (journal.isNextAvailableSequence(namespace, partitionId, sequence)) {
-            // the sequence is not readable
-            return true;
-        }
-
-        sequence = journal.readMany(namespace, partitionId, sequence, resultSet);
-        return !resultSet.isMinSizeReached();
     }
 
     @Override
     public void run() throws Exception {
-        // no-op; we already did the work in the shouldWait method.
+        final EventJournal<J> journal = getJournal();
+        final int partitionId = getPartitionId();
+        journal.cleanup(namespace, partitionId);
+
+        resultSet = createResultSet();
+        if (!journal.isNextAvailableSequence(namespace, partitionId, startSequence)) {
+            journal.readMany(namespace, partitionId, startSequence, resultSet);
+        }
     }
 
     @Override
@@ -152,19 +106,9 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
     }
 
     @Override
-    public WaitNotifyKey getWaitKey() {
-        return waitNotifyKey;
-    }
-
-    @Override
-    public void onWaitExpire() {
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(name);
-        out.writeInt(minSize);
         out.writeInt(maxSize);
         out.writeLong(startSequence);
     }
@@ -173,7 +117,6 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         name = in.readUTF();
-        minSize = in.readInt();
         maxSize = in.readInt();
         startSequence = in.readLong();
     }

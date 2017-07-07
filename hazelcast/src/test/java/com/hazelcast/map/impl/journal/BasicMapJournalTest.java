@@ -116,39 +116,6 @@ public class BasicMapJournalTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void unparkReadOperation() throws Exception {
-        final IMap<String, Integer> m = getMap();
-        assertJournalSize(m, 0);
-
-        final String key = randomPartitionKey();
-        final Integer value = RANDOM.nextInt();
-        final CountDownLatch latch = new CountDownLatch(1);
-
-        readFromEventJournal(m, 0, 100, partitionId, TRUE_PREDICATE, IDENTITY_PROJECTION)
-                .andThen(new ExecutionCallback<ReadResultSet<EventJournalMapEvent<String, Integer>>>() {
-                    @Override
-                    public void onResponse(ReadResultSet<EventJournalMapEvent<String, Integer>> response) {
-                        assertEquals(1, response.size());
-                        final EventJournalMapEvent<String, Integer> e = response.get(0);
-
-                        assertEquals(EntryEventType.ADDED, e.getType());
-                        assertEquals(e.getKey(), key);
-                        assertEquals(e.getNewValue(), value);
-                        latch.countDown();
-                    }
-
-                    @Override
-                    public void onFailure(Throwable t) {
-                        t.printStackTrace();
-                    }
-                });
-
-        m.put(key, value);
-        latch.await();
-        assertJournalSize(m, 1);
-    }
-
-    @Test
     public void receiveAddedEventsWhenPut() throws Exception {
         final IMap<String, Integer> m = getMap();
 

@@ -557,8 +557,9 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
             Predicate<? super EventJournalCacheEvent<K, V>> predicate,
             Projection<? super EventJournalCacheEvent<K, V>, T> projection) {
         final SerializationService ss = getSerializationService();
+        // minSize is ignored on member side
         final ClientMessage request = CacheEventJournalReadCodec.encodeRequest(
-                nameWithPrefix, startSequence, 1, maxSize, ss.toData(predicate), ss.toData(projection));
+                nameWithPrefix, startSequence, 0, maxSize, ss.toData(predicate), ss.toData(projection));
         final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, partitionId).invoke();
         return new ClientDelegatingFuture<ReadResultSet<T>>(fut, ss, eventJournalReadResponseDecoder);
     }

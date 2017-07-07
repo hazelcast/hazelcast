@@ -38,11 +38,9 @@ import java.util.List;
 
 /**
  * Reads from the map event journal in batches. You may specify the start sequence,
- * the minumum required number of items in the response, the maximum number of items
- * in the response, a predicate that the events should pass and a projection to
- * apply to the events in the journal.
- * If the event journal currently contains less events than the required minimum, the
- * call will wait until it has sufficient items.
+ * the maximum number of items in the response, a predicate that the events should
+ * pass and a projection to apply to the events in the journal.
+ * If the event journal currently contains no events, the response will be empty.
  * The predicate, filter and projection may be {@code null} in which case all elements are returned
  * and no projection is applied.
  *
@@ -67,7 +65,7 @@ public class MapEventJournalReadTask<K, V, T>
         final Projection<? super EventJournalMapEvent<K, V>, T> projection = serializationService.toObject(parameters.projection);
         final Predicate<? super EventJournalMapEvent<K, V>> predicate = serializationService.toObject(parameters.predicate);
         return new MapEventJournalReadOperation<K, V, T>(parameters.name,
-                parameters.startSequence, parameters.minSize, parameters.maxSize, predicate, projection);
+                parameters.startSequence, parameters.maxSize, predicate, projection);
     }
 
     @Override
@@ -77,7 +75,6 @@ public class MapEventJournalReadTask<K, V, T>
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        // we are not deserializing the whole content, only the enclosing portable. The actual items remain un
         final ReadResultSetImpl resultSet = nodeEngine.getSerializationService().toObject(response);
         final List<Data> items = new ArrayList<Data>(resultSet.size());
         final long[] seqs = new long[resultSet.size()];

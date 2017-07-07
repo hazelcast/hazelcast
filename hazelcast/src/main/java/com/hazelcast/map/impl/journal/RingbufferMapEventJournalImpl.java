@@ -27,12 +27,9 @@ import com.hazelcast.nio.serialization.DataType;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.ringbuffer.impl.RingbufferWaitNotifyKey;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationparker.OperationParker;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.EVICTED;
@@ -107,11 +104,6 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
     }
 
     @Override
-    public WaitNotifyKey getWaitNotifyKey(ObjectNamespace namespace, int partitionId) {
-        return new RingbufferWaitNotifyKey(namespace);
-    }
-
-    @Override
     public <T> long readMany(ObjectNamespace namespace, int partitionId, long beginSequence,
                              ReadResultSetImpl<InternalEventJournalMapEvent, T> resultSet) {
         return getRingbufferOrFail(namespace, partitionId).readMany(beginSequence, resultSet);
@@ -152,7 +144,6 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
         final InternalEventJournalMapEvent event
                 = new InternalEventJournalMapEvent(toData(key), toData(newValue), toData(oldValue), eventType.getType());
         eventContainer.add(event);
-        getOperationParker().unpark(eventContainer);
     }
 
     private Data toData(Object val) {
@@ -185,10 +176,6 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
 
     private RingbufferService getRingbufferService() {
         return nodeEngine.getService(RingbufferService.SERVICE_NAME);
-    }
-
-    private OperationParker getOperationParker() {
-        return nodeEngine.getOperationParker();
     }
 
     private InternalSerializationService getSerializationService() {

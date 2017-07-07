@@ -23,7 +23,6 @@ import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.journal.EventJournalInitialSubscriberState;
@@ -58,7 +57,6 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -105,40 +103,6 @@ public class BasicCacheJournalTest extends HazelcastTestSupport {
 
         return config.addCacheConfig(nonEvictingCache)
                      .addCacheConfig(new CacheSimpleConfig().setName("evicting"));
-    }
-
-
-    @Test
-    public void unparkReadOperation() throws Exception {
-        final ICache<String, Integer> c = getCache();
-        assertJournalSize(c, 0);
-
-        final String key = randomPartitionKey();
-        final Integer value = RANDOM.nextInt();
-        final CountDownLatch latch = new CountDownLatch(1);
-
-        readFromEventJournal(c, 0, 100, partitionId, TRUE_PREDICATE, IDENTITY_PROJECTION)
-                .andThen(new ExecutionCallback<ReadResultSet<EventJournalCacheEvent<String, Integer>>>() {
-                    @Override
-                    public void onResponse(ReadResultSet<EventJournalCacheEvent<String, Integer>> response) {
-                        assertEquals(1, response.size());
-                        final EventJournalCacheEvent<String, Integer> e = response.get(0);
-
-                        assertEquals(CacheEventType.CREATED, e.getType());
-                        assertEquals(e.getKey(), key);
-                        assertEquals(e.getNewValue(), value);
-                        latch.countDown();
-                    }
-
-                    @Override
-                    public void onFailure(Throwable t) {
-                        t.printStackTrace();
-                    }
-                });
-
-        c.put(key, value);
-        latch.await();
-        assertJournalSize(c, 1);
     }
 
     @Test
