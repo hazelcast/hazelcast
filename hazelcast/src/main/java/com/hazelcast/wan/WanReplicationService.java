@@ -18,6 +18,7 @@ package com.hazelcast.wan;
 
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.StatisticsAwareService;
@@ -28,7 +29,7 @@ import com.hazelcast.spi.StatisticsAwareService;
  * to replicate values to other clusters over the wide area network, so it has to deal with long
  * delays, slow uploads and higher latencies.
  */
-public interface WanReplicationService extends CoreService, StatisticsAwareService {
+public interface WanReplicationService extends CoreService, StatisticsAwareService<LocalWanStats> {
 
     /**
      * Service name.

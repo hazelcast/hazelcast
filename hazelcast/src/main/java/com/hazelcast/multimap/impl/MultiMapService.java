@@ -65,7 +65,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class MultiMapService implements ManagedService, RemoteService, FragmentedMigrationAwareService,
-        EventPublishingService<EventData, EntryListener>, TransactionalService, StatisticsAwareService {
+        EventPublishingService<EventData, EntryListener>, TransactionalService, StatisticsAwareService<LocalMultiMapStats> {
 
     public static final String SERVICE_NAME = "hz:impl:multiMapService";
 

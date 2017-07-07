@@ -73,7 +73,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
  * manages the backing {@link PartitionContainer}s that actually hold the data
  */
 public class ReplicatedMapService implements ManagedService, RemoteService, EventPublishingService<Object, Object>,
-        MigrationAwareService, SplitBrainHandlerService, StatisticsAwareService {
+        MigrationAwareService, SplitBrainHandlerService, StatisticsAwareService<LocalReplicatedMapStats> {
 
     public static final String SERVICE_NAME = "hz:impl:replicatedMapService";
     public static final int INVOCATION_TRY_COUNT = 3;
