@@ -31,8 +31,6 @@ import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationService.CONFIG_PUBLISH_MAX_ATTEMPT_COUNT;
-
 /**
  * Base implementation for dynamic add***Config methods.
  */

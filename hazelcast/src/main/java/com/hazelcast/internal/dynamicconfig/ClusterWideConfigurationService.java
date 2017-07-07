@@ -43,7 +43,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.CoreService;
-import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
@@ -54,8 +53,6 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.FutureUtil;
 import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
@@ -73,7 +70,7 @@ import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSe
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.Boolean.getBoolean;
 
-@SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount"})
+@SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class ClusterWideConfigurationService implements MigrationAwareService,
         CoreService, ClusterVersionListener, ManagedService, ConfigurationService, SplitBrainHandlerService {
     public static final String SERVICE_NAME = "configuration-service";
