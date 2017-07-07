@@ -1,4 +1,4 @@
-package com.hazelcast.internal.util.futures;
+package com.hazelcast.internal.util.iterator;
 
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
@@ -11,7 +11,7 @@ import com.hazelcast.spi.OperationService;
 import java.util.Iterator;
 
 /**
- * Invoke operation on each member provided by the member iterator
+ * Invoke operation on each member provided by the member iterator.
  *
  * @param <T>
  */
@@ -39,11 +39,10 @@ public class OperationInvokingIterator<T> implements Iterator<ICompletableFuture
     }
 
     private ICompletableFuture<T> invokeOnMember(Member member) {
-        Address address = member.getAddress();
         Operation operation = operationFactory.createOperation();
+        Address address = member.getAddress();
         String serviceName = operation.getServiceName();
-        InternalCompletableFuture<T> future = operationService.invokeOnTarget(serviceName, operation, address);
-        return future;
+        return operationService.invokeOnTarget(serviceName, operation, address);
     }
 
     @Override

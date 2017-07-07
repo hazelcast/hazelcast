@@ -23,9 +23,9 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.util.futures.OperationInvokingIterator;
+import com.hazelcast.internal.util.iterator.OperationInvokingIterator;
 import com.hazelcast.internal.util.futures.ChainingFuture;
-import com.hazelcast.internal.util.futures.RestartableMemberIterator;
+import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
@@ -73,7 +73,7 @@ public final class InvocationUtil {
         OperationService operationService = nodeEngine.getOperationService();
         ClusterService clusterService = nodeEngine.getClusterService();
 
-        Iterator<Member> memberIterator = new RestartableMemberIterator(clusterService, retriesCount);
+        Iterator<Member> memberIterator = new RestartingMemberIterator(clusterService, retriesCount);
 
         Iterator<ICompletableFuture<Object>> invocationIterator = new OperationInvokingIterator<Object>(memberIterator, operationFactory,
                 operationService);

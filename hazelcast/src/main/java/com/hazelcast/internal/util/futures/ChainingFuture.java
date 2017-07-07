@@ -10,12 +10,10 @@ import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import java.util.Iterator;
 
 /**
- * Iterates over supplied ICompletebleFutures serially. It advances to the next future only
- * when the previous future is completed.
+ * Iterates over supplied {@link ICompletableFuture} serially.
+ * It advances to the next future only when the previous future is completed.
  *
  * It completes when there is no other future available.
- *
- * TODO: Error states
  *
  * @param <T>
  */

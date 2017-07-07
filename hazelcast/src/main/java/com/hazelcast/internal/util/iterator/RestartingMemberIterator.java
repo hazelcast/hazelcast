@@ -1,4 +1,4 @@
-package com.hazelcast.internal.util.futures;
+package com.hazelcast.internal.util.iterator;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
@@ -20,7 +20,7 @@ import static java.lang.String.format;
  * It can be used from multiple threads, but not concurrently.
  *
  */
-public class RestartableMemberIterator implements Iterator<Member> {
+public class RestartingMemberIterator implements Iterator<Member> {
 
     private final ClusterService clusterService;
     private final Queue<Member> memberQueue = new ConcurrentLinkedQueue<Member>();
@@ -31,7 +31,7 @@ public class RestartableMemberIterator implements Iterator<Member> {
     private volatile int retryCounter;
 
 
-    public RestartableMemberIterator(ClusterService clusterService, int maxRetries) {
+    public RestartingMemberIterator(ClusterService clusterService, int maxRetries) {
         this.clusterService = clusterService;
         this.maxRetries = maxRetries;
 
@@ -92,7 +92,9 @@ public class RestartableMemberIterator implements Iterator<Member> {
         if (!advance()) {
             throw new NoSuchElementException("no more elements");
         }
-        return nextMember;
+        memberToReturn = nextMember;
+        nextMember = null;
+        return memberToReturn;
     }
 
     @Override
