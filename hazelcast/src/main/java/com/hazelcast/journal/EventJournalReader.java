@@ -34,7 +34,7 @@ public interface EventJournalReader<E> {
      * @param partitionId the partition ID of the entries to which we are subscribing
      * @return future with the initial subscriber state containing the newest and oldest event journal sequence
      * @throws UnsupportedOperationException if the cluster version is lower than 3.9 or there is no event journal
-     *                                       configured for this map
+     *                                       configured for this reader
      * @since 3.9
      */
     ICompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId);
