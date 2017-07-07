@@ -139,10 +139,22 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         return getOrPutSynchronized(statsMap, name, statsMap, localTopicStatsConstructorFunction);
     }
 
+    /**
+     * Increments the number of published messages on the ITopic
+     * with the name {@code topicName}.
+     *
+     * @param topicName the name of the {@link ITopic}
+     */
     public void incrementPublishes(String topicName) {
         getLocalTopicStats(topicName).incrementPublishes();
     }
 
+    /**
+     * Increments the number of received messages on the ITopic
+     * with the name {@code topicName}.
+     *
+     * @param topicName the name of the {@link ITopic}
+     */
     public void incrementReceivedMessages(String topicName) {
         getLocalTopicStats(topicName).incrementReceives();
     }
