@@ -74,7 +74,7 @@ public class ClientBasicCacheJournalTest extends BasicCacheJournalTest {
                                                                                   int partitionId,
                                                                                   Predicate<? super EventJournalCacheEvent<K, V>> predicate,
                                                                                   Projection<? super EventJournalCacheEvent<K, V>, T> projection) {
-        return ((ClientCacheProxy<K, V>) cache).readFromEventJournal(startSequence, maxSize, partitionId, predicate, projection);
+        return ((ClientCacheProxy<K, V>) cache).readFromEventJournal(startSequence, 1, maxSize, partitionId, predicate, projection);
     }
 
     @After

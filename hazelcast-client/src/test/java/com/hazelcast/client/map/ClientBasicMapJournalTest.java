@@ -64,7 +64,7 @@ public class ClientBasicMapJournalTest extends BasicMapJournalTest {
                                                                                   int partitionId,
                                                                                   Predicate<? super EventJournalMapEvent<K, V>> predicate,
                                                                                   Projection<? super EventJournalMapEvent<K, V>, T> projection) {
-        return ((ClientMapProxy<K, V>) map).readFromEventJournal(startSequence, maxSize, partitionId, predicate, projection);
+        return ((ClientMapProxy<K, V>) map).readFromEventJournal(startSequence, 1, maxSize, partitionId, predicate, projection);
     }
 
     @After

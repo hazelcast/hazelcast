@@ -44,6 +44,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.journal.EventJournalInitialSubscriberState;
+import com.hazelcast.journal.EventJournalReader;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
@@ -91,7 +92,9 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @param <V> value type
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
-public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
+public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
+        implements EventJournalReader<EventJournalCacheEvent<K, V>> {
+
     private ClientMessageDecoder eventJournalReadResponseDecoder;
     private ClientMessageDecoder eventJournalSubscribeResponseDecoder;
 
@@ -512,16 +515,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
     }
 
 
-    /**
-     * Subscribe to the event journal for this cache and a specific partition ID.
-     * The method will return the newest and oldest event journal sequence.
-     *
-     * @param partitionId the partition ID of the entries to which we are subscribing
-     * @return future with the initial subscriber state containing the newest and oldest event journal sequence
-     * @throws UnsupportedOperationException if the cluster version is lower than 3.9 or there is no event journal
-     *                                       configured for this cache
-     * @since 3.9
-     */
+    @Override
     public ICompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
         final ClientMessage request = CacheEventJournalSubscribeCodec.encodeRequest(nameWithPrefix);
         final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, partitionId).invoke();
@@ -529,36 +523,17 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
                 eventJournalSubscribeResponseDecoder);
     }
 
-    /**
-     * Reads from the event journal. The returned future may throw {@link UnsupportedOperationException}
-     * if the cluster version is lower than 3.9 or there is no event journal configured for this cache.
-     * <p>
-     * <b>NOTE:</b>
-     * Configuring evictions may cause unexpected results when reading from the event journal and
-     * there are cluster changes (a backup replica is promoted into a partition owner). See
-     * {@link com.hazelcast.cache.impl.journal.CacheEventJournal} for more details.
-     *
-     * @param startSequence the sequence of the first item to read
-     * @param maxSize       the maximum number of items to read
-     * @param partitionId   the partition ID of the entries in the journal
-     * @param predicate     the predicate which the events must pass to be included in the response.
-     *                      May be {@code null} in which case all events pass the predicate
-     * @param projection    the projection which is applied to the events before returning.
-     *                      May be {@code null} in which case the event is returned without being projected
-     * @param <T>           the return type of the projection. It is equal to the journal event type
-     *                      if the projection is {@code null} or it is the identity projection
-     * @return the future with the filtered and projected journal items
-     * @since 3.9
-     */
+    @Override
     public <T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(
             long startSequence,
+            int minSize,
             int maxSize,
             int partitionId,
             Predicate<? super EventJournalCacheEvent<K, V>> predicate,
             Projection<? super EventJournalCacheEvent<K, V>, T> projection) {
         final SerializationService ss = getSerializationService();
         final ClientMessage request = CacheEventJournalReadCodec.encodeRequest(
-                nameWithPrefix, startSequence, 1, maxSize, ss.toData(predicate), ss.toData(projection));
+                nameWithPrefix, startSequence, minSize, maxSize, ss.toData(predicate), ss.toData(projection));
         final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, partitionId).invoke();
         return new ClientDelegatingFuture<ReadResultSet<T>>(fut, ss, eventJournalReadResponseDecoder);
     }
