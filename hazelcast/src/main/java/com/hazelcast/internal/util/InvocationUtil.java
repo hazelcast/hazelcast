@@ -28,6 +28,7 @@ import com.hazelcast.internal.util.futures.ChainingFuture;
 import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -74,16 +75,7 @@ public final class InvocationUtil {
         ClusterService clusterService = nodeEngine.getClusterService();
 
         Iterator<Member> memberIterator = new RestartingMemberIterator(clusterService, maxRetries);
-        IFunction<Member, ICompletableFuture<Object>> mapping = new IFunction<Member, ICompletableFuture<Object>>() {
-            @Override
-            public ICompletableFuture<Object> apply(Member input) {
-                Address address = input.getAddress();
-                Operation operation = operationFactory.createOperation();
-                String serviceName = operation.getServiceName();
-
-                return operationService.invokeOnTarget(serviceName, operation, address);
-            }
-        };
+        IFunction<Member, ICompletableFuture<Object>> mapping = new InvokeOnMemberFunction(operationFactory, operationService);
         Iterator<ICompletableFuture<Object>> invocationIterator = map(memberIterator, mapping);
         ExecutionService executionService = nodeEngine.getExecutionService();
         ManagedExecutorService executor = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR);
@@ -102,6 +94,26 @@ public final class InvocationUtil {
                     throw new HazelcastException("Thread interrupted while initializing a partition table", e);
                 }
             }
+        }
+    }
+
+    @SerializableByConvention //IFunction extends Serializable, but this function is only executed locally
+    private static class InvokeOnMemberFunction implements IFunction<Member, ICompletableFuture<Object>> {
+        private final OperationFactory operationFactory;
+        private final OperationService operationService;
+
+        public InvokeOnMemberFunction(OperationFactory operationFactory, OperationService operationService) {
+            this.operationFactory = operationFactory;
+            this.operationService = operationService;
+        }
+
+        @Override
+        public ICompletableFuture<Object> apply(Member member) {
+            Address address = member.getAddress();
+            Operation operation = operationFactory.createOperation();
+            String serviceName = operation.getServiceName();
+
+            return operationService.invokeOnTarget(serviceName, operation, address);
         }
     }
 }
