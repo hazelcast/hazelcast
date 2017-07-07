@@ -108,6 +108,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.journal.EventJournalInitialSubscriberState;
+import com.hazelcast.journal.EventJournalReader;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
@@ -182,7 +183,7 @@ import static java.util.Collections.emptyMap;
  * @param <V> value
  */
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
-public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
+public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, EventJournalReader<EventJournalMapEvent<K, V>> {
 
     protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
@@ -1634,16 +1635,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
                 predicate, projection);
     }
 
-    /**
-     * Subscribe to the event journal for this map and a specific partition ID.
-     * The method will return the newest and oldest event journal sequence.
-     *
-     * @param partitionId the partition ID of the entries to which we are subscribing
-     * @return future with the initial subscriber state containing the newest and oldest event journal sequence
-     * @throws UnsupportedOperationException if the cluster version is lower than 3.9 or there is no event journal
-     *                                       configured for this map
-     * @since 3.9
-     */
+    @Override
     public ICompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
         final ClientMessage request = MapEventJournalSubscribeCodec.encodeRequest(name);
         final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, partitionId).invoke();
@@ -1651,36 +1643,17 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
                 eventJournalSubscribeResponseDecoder);
     }
 
-    /**
-     * Reads from the event journal. The returned future may throw {@link UnsupportedOperationException}
-     * if the cluster version is lower than 3.9 or there is no event journal configured for this map.
-     * <p>
-     * <b>NOTE:</b>
-     * Configuring evictions may cause unexpected results when reading from the event journal and
-     * there are cluster changes (a backup replica is promoted into a partition owner). See
-     * {@link com.hazelcast.map.impl.journal.MapEventJournal} for more details.
-     *
-     * @param startSequence the sequence of the first item to read
-     * @param maxSize       the maximum number of items to read
-     * @param partitionId   the partition ID of the entries in the journal
-     * @param predicate     the predicate which the events must pass to be included in the response.
-     *                      May be {@code null} in which case all events pass the predicate
-     * @param projection    the projection which is applied to the events before returning.
-     *                      May be {@code null} in which case the event is returned without being projected
-     * @param <T>           the return type of the projection. It is equal to the journal event type
-     *                      if the projection is {@code null} or it is the identity projection
-     * @return the future with the filtered and projected journal items
-     * @since 3.9
-     */
+    @Override
     public <T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(
             long startSequence,
+            int minSize,
             int maxSize,
             int partitionId,
             com.hazelcast.util.function.Predicate<? super EventJournalMapEvent<K, V>> predicate,
             Projection<? super EventJournalMapEvent<K, V>, T> projection) {
         final SerializationService ss = getSerializationService();
         final ClientMessage request = MapEventJournalReadCodec.encodeRequest(
-                name, startSequence, 1, maxSize, ss.toData(predicate), ss.toData(projection));
+                name, startSequence, minSize, maxSize, ss.toData(predicate), ss.toData(projection));
         final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, partitionId).invoke();
         return new ClientDelegatingFuture<ReadResultSet<T>>(fut, ss, eventJournalReadResponseDecoder);
     }

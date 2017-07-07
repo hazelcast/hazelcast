@@ -27,6 +27,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.journal.EventJournalInitialSubscriberState;
+import com.hazelcast.journal.EventJournalReader;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
@@ -107,7 +108,7 @@ import static java.util.Collections.emptyMap;
  * @param <V> the value type of map.
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
-public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
+public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJournalReader<EventJournalMapEvent<K, V>> {
 
     public MapProxyImpl(String name, MapService mapService, NodeEngine nodeEngine, MapConfig mapConfig) {
         super(name, mapService, nodeEngine, mapConfig);
@@ -925,51 +926,23 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> {
         return new MapQueryPartitionIterator<K, V, R>(this, fetchSize, partitionId, predicate, projection);
     }
 
-    /**
-     * Subscribe to the event journal for this map and a specific partition ID.
-     * The method will return the newest and oldest event journal sequence.
-     *
-     * @param partitionId the partition ID of the entries to which we are subscribing
-     * @return future with the initial subscriber state containing the newest and oldest event journal sequence
-     * @throws UnsupportedOperationException if the cluster version is lower than 3.9 or there is no event journal
-     *                                       configured for this map
-     * @since 3.9
-     */
+    @Override
     public ICompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
         final MapEventJournalSubscribeOperation op = new MapEventJournalSubscribeOperation(name);
         op.setPartitionId(partitionId);
         return operationService.invokeOnPartition(op);
     }
 
-    /**
-     * Reads from the event journal. The returned future may throw {@link UnsupportedOperationException}
-     * if the cluster version is lower than 3.9 or there is no event journal configured for this map.
-     * <p>
-     * <b>NOTE:</b>
-     * Configuring evictions may cause unexpected results when reading from the event journal and
-     * there are cluster changes (a backup replica is promoted into a partition owner). See
-     * {@link com.hazelcast.map.impl.journal.MapEventJournal} for more details.
-     *
-     * @param startSequence the sequence of the first item to read
-     * @param maxSize       the maximum number of items to read
-     * @param partitionId   the partition ID of the entries in the journal
-     * @param predicate     the predicate which the events must pass to be included in the response.
-     *                      May be {@code null} in which case all events pass the predicate
-     * @param projection    the projection which is applied to the events before returning.
-     *                      May be {@code null} in which case the event is returned without being projected
-     * @param <T>           the return type of the projection. It is equal to the journal event type
-     *                      if the projection is {@code null} or it is the identity projection
-     * @return the future with the filtered and projected journal items
-     * @since 3.9
-     */
+    @Override
     public <T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(
             long startSequence,
+            int minSize,
             int maxSize,
             int partitionId,
             com.hazelcast.util.function.Predicate<? super EventJournalMapEvent<K, V>> predicate,
             Projection<? super EventJournalMapEvent<K, V>, T> projection) {
         final MapEventJournalReadOperation<K, V, T> op = new MapEventJournalReadOperation<K, V, T>(
-                name, startSequence, 1, maxSize, predicate, projection);
+                name, startSequence, minSize, maxSize, predicate, projection);
         op.setPartitionId(partitionId);
         return operationService.invokeOnPartition(op);
     }
