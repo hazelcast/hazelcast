@@ -104,6 +104,7 @@ import static com.hazelcast.map.impl.LocalMapStatsProvider.EMPTY_LOCAL_MAP_STATS
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.IterableUtil.nullToEmpty;
+import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.ThreadUtil.getThreadId;
 import static java.lang.Math.ceil;
@@ -1083,8 +1084,8 @@ abstract class MapProxySupport<K, V>
         if (dataKeys.isEmpty()) {
             toDataCollection(keys, dataKeys);
         }
-        Map<K, Object> result = new HashMap<K, Object>();
         Collection<Integer> partitionsForKeys = getPartitionsForKeys(dataKeys);
+        Map<K, Object> result = createHashMap(partitionsForKeys.size());
         try {
             OperationFactory operationFactory = operationProvider.createMultipleEntryOperationFactory(name, dataKeys,
                     entryProcessor);
