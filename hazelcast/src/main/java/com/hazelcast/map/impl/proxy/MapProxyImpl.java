@@ -711,14 +711,14 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
-        if (keys == null || keys.contains(null)) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        checkNotNull(keys, "Parameter keys should not be null!");
+
         if (keys.isEmpty()) {
             return emptyMap();
         }
         Set<Data> dataKeys = new HashSet<Data>(keys.size());
         for (K key : keys) {
+            checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
             dataKeys.add(toData(key, partitionStrategy));
         }
         return executeOnKeysInternal(dataKeys, entryProcessor);

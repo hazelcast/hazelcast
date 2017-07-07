@@ -249,6 +249,7 @@ abstract class AbstractInternalCacheProxy<K, V>
         if (keys != null) {
             keysData = new HashSet<Data>();
             for (K key : keys) {
+                validateNotNull(key);
                 keysData.add(serializationService.toData(key));
             }
         } else {
