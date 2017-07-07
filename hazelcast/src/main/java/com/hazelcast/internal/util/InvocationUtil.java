@@ -18,12 +18,13 @@ package com.hazelcast.internal.util;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.util.iterator.OperationInvokingIterator;
+import com.hazelcast.internal.util.iterator.MappingIterator;
 import com.hazelcast.internal.util.futures.ChainingFuture;
 import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
 import com.hazelcast.nio.Address;
@@ -64,22 +65,31 @@ public final class InvocationUtil {
      *
      * @param nodeEngine
      * @param operationFactory
-     * @param retriesCount
+     * @param maxRetries
      */
-    public static void invokeOnStableClusterSerial(NodeEngine nodeEngine, OperationFactory operationFactory,
-                                                   int retriesCount) {
+    public static void invokeOnStableClusterSerial(NodeEngine nodeEngine, final OperationFactory operationFactory,
+                                                   int maxRetries) {
         warmUpPartitions(nodeEngine);
 
-        OperationService operationService = nodeEngine.getOperationService();
+        final OperationService operationService = nodeEngine.getOperationService();
         ClusterService clusterService = nodeEngine.getClusterService();
 
-        Iterator<Member> memberIterator = new RestartingMemberIterator(clusterService, retriesCount);
+        Iterator<Member> memberIterator = new RestartingMemberIterator(clusterService, maxRetries);
+        IFunction<Member, ICompletableFuture<Object>> mapping = new IFunction<Member, ICompletableFuture<Object>>() {
+            @Override
+            public ICompletableFuture<Object> apply(Member input) {
+                Address address = input.getAddress();
+                Operation operation = operationFactory.createOperation();
+                String serviceName = operation.getServiceName();
 
-        Iterator<ICompletableFuture<Object>> invocationIterator = new OperationInvokingIterator<Object>(memberIterator, operationFactory,
-                operationService);
+                return operationService.invokeOnTarget(serviceName, operation, address);
+            }
+        };
+        Iterator<ICompletableFuture<Object>> invocationIterator = new MappingIterator<Member, ICompletableFuture<Object>>
+                (memberIterator, mapping);
 
-        ChainingFuture<Object> future = new ChainingFuture<Object>(nodeEngine,
-                IGNORE_CLUSTER_TOPOLOGY_CHANGES, invocationIterator);
+        //todo: return the future instead of blocking
+        ChainingFuture<Object> future = new ChainingFuture<Object>(nodeEngine, IGNORE_CLUSTER_TOPOLOGY_CHANGES, invocationIterator);
         try {
             future.get();
         } catch (InterruptedException e) {
