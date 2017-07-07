@@ -19,12 +19,13 @@ package com.hazelcast.internal.util.futures;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 
 import java.util.Iterator;
+import java.util.concurrent.Executor;
 
 /**
  * Iterates over supplied {@link ICompletableFuture} serially.
@@ -47,9 +48,9 @@ public class ChainingFuture<T> extends AbstractCompletableFuture<T> {
 
     private final ExceptionHandler exceptionHandler;
 
-    public ChainingFuture(NodeEngine nodeEngine, ExceptionHandler exceptionHandler,
-                          Iterator<ICompletableFuture<T>> invocationIterator) {
-        super(nodeEngine, nodeEngine.getLogger(ChainingFuture.class));
+    public ChainingFuture(Iterator<ICompletableFuture<T>> invocationIterator, Executor executor,
+                          ExceptionHandler exceptionHandler, ILogger logger) {
+        super(executor, logger);
         this.exceptionHandler = exceptionHandler;
 
 
@@ -81,16 +82,16 @@ public class ChainingFuture<T> extends AbstractCompletableFuture<T> {
     }
 
     private void advanceOrComplete(T response, Iterator<ICompletableFuture<T>> invocationIterator) {
-        boolean hasNext = invocationIterator.hasNext();
-        if (!hasNext) {
-            setResult(response);
-        } else {
-            try {
+        try {
+            boolean hasNext = invocationIterator.hasNext();
+            if (!hasNext) {
+                setResult(response);
+            } else {
                 ICompletableFuture<T> future = invocationIterator.next();
                 registerCallback(future, invocationIterator);
-            } catch (Throwable t) {
-                setResult(t);
             }
+        } catch (Throwable t) {
+            setResult(t);
         }
     }
 

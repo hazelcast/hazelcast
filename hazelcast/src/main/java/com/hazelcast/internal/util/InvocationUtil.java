@@ -26,11 +26,14 @@ import com.hazelcast.core.PartitionService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.util.futures.ChainingFuture;
 import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.Iterator;
 
@@ -82,7 +85,10 @@ public final class InvocationUtil {
             }
         };
         Iterator<ICompletableFuture<Object>> invocationIterator = map(memberIterator, mapping);
-        return new ChainingFuture<Object>(nodeEngine, IGNORE_CLUSTER_TOPOLOGY_CHANGES, invocationIterator);
+        ExecutionService executionService = nodeEngine.getExecutionService();
+        ManagedExecutorService executor = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR);
+        ILogger logger = nodeEngine.getLogger(ChainingFuture.class);
+        return new ChainingFuture<Object>(invocationIterator, executor, IGNORE_CLUSTER_TOPOLOGY_CHANGES, logger);
     }
 
     private static void warmUpPartitions(NodeEngine nodeEngine) {
