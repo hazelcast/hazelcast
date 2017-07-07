@@ -51,6 +51,14 @@ public class LocalTopicStatsImpl implements LocalTopicStats {
         return totalPublishes;
     }
 
+    /**
+     * Increment the number of locally published messages. The count can be local
+     * to the member or local to a single proxy (whereas there are many proxies
+     * on one member).
+     *
+     * @see com.hazelcast.topic.impl.TopicService
+     * @see com.hazelcast.topic.impl.reliable.ReliableTopicService
+     */
     public void incrementPublishes() {
         TOTAL_PUBLISHES.incrementAndGet(this);
     }
@@ -60,6 +68,14 @@ public class LocalTopicStatsImpl implements LocalTopicStats {
         return totalReceivedMessages;
     }
 
+    /**
+     * Increment the number of locally received messages. The count can be local
+     * to the member or local to a single listener (whereas there are many listeners
+     * on one member).
+     *
+     * @see com.hazelcast.topic.impl.TopicService
+     * @see com.hazelcast.topic.impl.reliable.ReliableMessageListenerRunner
+     */
     public void incrementReceives() {
         TOTAL_RECEIVED_MESSAGES.incrementAndGet(this);
     }
