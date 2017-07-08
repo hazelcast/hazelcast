@@ -43,13 +43,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Test whether PostJoinCacheOperation logs warning, fails or succeeds under different JCache API availability
+ * Test whether OnJoinCacheOperation logs warning, fails or succeeds under different JCache API availability
  * in classpath.
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(JCacheDetector.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class PostJoinCacheOperationTest {
+public class OnJoinCacheOperationTest {
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -72,10 +72,10 @@ public class PostJoinCacheOperationTest {
         // node engine returns mock CacheService
         when(nodeEngine.getService(CacheService.SERVICE_NAME)).thenReturn(mock(ICacheService.class));
 
-        PostJoinCacheOperation postJoinCacheOperation = new PostJoinCacheOperation();
-        postJoinCacheOperation.setNodeEngine(nodeEngine);
+        OnJoinCacheOperation onJoinCacheOperation = new OnJoinCacheOperation();
+        onJoinCacheOperation.setNodeEngine(nodeEngine);
 
-        postJoinCacheOperation.run();
+        onJoinCacheOperation.run();
 
         verify(nodeEngine).getConfigClassLoader();
         verify(nodeEngine).getService(CacheService.SERVICE_NAME);
@@ -87,15 +87,15 @@ public class PostJoinCacheOperationTest {
     public void test_cachePostJoinOperationSucceeds_whenJCacheNotAvailable_noCacheConfigs() throws Exception {
         when(JCacheDetector.isJCacheAvailable(classLoader)).thenReturn(false);
 
-        PostJoinCacheOperation postJoinCacheOperation = new PostJoinCacheOperation();
-        postJoinCacheOperation.setNodeEngine(nodeEngine);
+        OnJoinCacheOperation onJoinCacheOperation = new OnJoinCacheOperation();
+        onJoinCacheOperation.setNodeEngine(nodeEngine);
 
-        postJoinCacheOperation.run();
+        onJoinCacheOperation.run();
 
         verify(nodeEngine).getConfigClassLoader();
         // verify a warning was logged
         verify(logger).warning(anyString());
-        // verify CacheService instance was not requested in PostJoinCacheOperation.run
+        // verify CacheService instance was not requested in OnJoinCacheOperation.run
         verify(nodeEngine, never()).getService(CacheService.SERVICE_NAME);
     }
 
@@ -106,13 +106,13 @@ public class PostJoinCacheOperationTest {
         // node engine throws HazelcastException due to missing CacheService
         when(nodeEngine.getService(CacheService.SERVICE_NAME)).thenThrow(new HazelcastException("CacheService not found"));
 
-        // some CacheConfigs are added in the PostJoinCacheOperation (so JCache is actually in use in the rest of the cluster)
-        PostJoinCacheOperation postJoinCacheOperation = new PostJoinCacheOperation();
-        postJoinCacheOperation.addCacheConfig(new CacheConfig("test"));
-        postJoinCacheOperation.setNodeEngine(nodeEngine);
+        // some CacheConfigs are added in the OnJoinCacheOperation (so JCache is actually in use in the rest of the cluster)
+        OnJoinCacheOperation onJoinCacheOperation = new OnJoinCacheOperation();
+        onJoinCacheOperation.addCacheConfig(new CacheConfig("test"));
+        onJoinCacheOperation.setNodeEngine(nodeEngine);
 
         expectedException.expect(HazelcastException.class);
-        postJoinCacheOperation.run();
+        onJoinCacheOperation.run();
 
         verify(nodeEngine).getConfigClassLoader();
         verify(nodeEngine).getService(CacheService.SERVICE_NAME);

@@ -32,6 +32,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PostJoinAwareService;
+import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
@@ -156,6 +157,40 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         }
 
         // just a random latency
+        sleepSeconds(3);
+        latch.countDown();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (int i = 0; i < instances.length(); i++) {
+                    HazelcastInstance instance = instances.get(i);
+                    assertNotNull(instance);
+                    assertClusterSize(instances.length(), instance);
+                }
+            }
+        });
+    }
+
+    @Test
+    public void parallel_member_join_whenPreJoinOperationPresent() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+
+        final Config config = new Config();
+        config.getServicesConfig().addServiceConfig(new ServiceConfig().setEnabled(true).setName("pre-join-service")
+                        .setImplementation(new PreJoinAwareServiceImpl(latch)));
+
+        final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(6);
+        for (int i = 0; i < instances.length(); i++) {
+            final int ix = i;
+            spawn(new Runnable() {
+                @Override
+                public void run() {
+                    instances.set(ix, factory.newHazelcastInstance(config));
+                }
+            });
+        }
+
         sleepSeconds(3);
         latch.countDown();
 
@@ -660,6 +695,34 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         @Override
         public String getServiceName() {
             return PostJoinAwareServiceImpl.SERVICE_NAME;
+        }
+    }
+
+    private static class PreJoinAwareServiceImpl implements PreJoinAwareService {
+        static final String SERVICE_NAME = "pre-join-service";
+
+        final CountDownLatch latch;
+
+        private PreJoinAwareServiceImpl(CountDownLatch latch) {
+            this.latch = latch;
+        }
+
+        @Override
+        public Operation getPreJoinOperation() {
+            return new TimeConsumingPreJoinOperation();
+        }
+    }
+
+    private static class TimeConsumingPreJoinOperation extends Operation {
+        @Override
+        public void run() throws Exception {
+            PreJoinAwareServiceImpl service = getService();
+            service.latch.await();
+        }
+
+        @Override
+        public String getServiceName() {
+            return PreJoinAwareServiceImpl.SERVICE_NAME;
         }
     }
 }

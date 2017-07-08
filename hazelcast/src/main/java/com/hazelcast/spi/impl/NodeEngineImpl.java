@@ -62,6 +62,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PostJoinAwareService;
+import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.SharedService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
@@ -475,7 +476,7 @@ public class NodeEngineImpl implements NodeEngine {
             if (postJoinOperation != null) {
                 if (postJoinOperation.getPartitionId() >= 0) {
                     logger.severe(
-                            "Post-join operations cannot implement PartitionAwareOperation! Service: "
+                            "Post-join operations should not have partition ID set! Service: "
                                     + service + ", Operation: "
                                     + postJoinOperation);
                     continue;
@@ -484,6 +485,25 @@ public class NodeEngineImpl implements NodeEngine {
             }
         }
         return postJoinOps.isEmpty() ? null : postJoinOps.toArray(new Operation[postJoinOps.size()]);
+    }
+
+    public Operation[] getPreJoinOperations() {
+        final Collection<Operation> preJoinOps = new LinkedList<Operation>();
+        Collection<PreJoinAwareService> services = getServices(PreJoinAwareService.class);
+        for (PreJoinAwareService service : services) {
+            final Operation preJoinOperation = service.getPreJoinOperation();
+            if (preJoinOperation != null) {
+                if (preJoinOperation.getPartitionId() >= 0) {
+                    logger.severe(
+                            "Pre-join operations operations should not have partition ID set! Service: "
+                                    + service + ", Operation: "
+                                    + preJoinOperation);
+                    continue;
+                }
+                preJoinOps.add(preJoinOperation);
+            }
+        }
+        return preJoinOps.isEmpty() ? null : preJoinOps.toArray(new Operation[preJoinOps.size()]);
     }
 
     public void reset() {

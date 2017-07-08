@@ -31,7 +31,7 @@ import com.hazelcast.internal.cluster.impl.operations.GroupMismatchOp;
 import com.hazelcast.internal.cluster.impl.operations.JoinRequestOp;
 import com.hazelcast.internal.cluster.impl.operations.MasterResponseOp;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
-import com.hazelcast.internal.cluster.impl.operations.PostJoinOp;
+import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.cluster.impl.operations.WhoisMasterOp;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
@@ -58,6 +58,7 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
 
+import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
 
@@ -640,13 +641,12 @@ public class ClusterJoinManager {
                 }
 
                 // send members update back to node trying to join again...
-                Operation[] postJoinOps = nodeEngine.getPostJoinOperations();
-                boolean isPostJoinOperation = postJoinOps != null && postJoinOps.length > 0;
-                PostJoinOp postJoinOp = isPostJoinOperation ? new PostJoinOp(postJoinOps) : null;
+                OnJoinOp preJoinOp = preparePreJoinOps();
+                OnJoinOp postJoinOp = preparePostJoinOp();
                 PartitionRuntimeState partitionRuntimeState = node.getPartitionService().createPartitionState();
 
                 Operation op = new FinalizeJoinOp(member.getUuid(),
-                        clusterService.getMembershipManager().createMembersView(), postJoinOp,
+                        clusterService.getMembershipManager().createMembersView(), preJoinOp, postJoinOp,
                         clusterClock.getClusterTime(), clusterService.getClusterId(),
                         clusterClock.getClusterStartTime(), clusterStateManager.getState(),
                         clusterService.getClusterVersion(), partitionRuntimeState, false);
@@ -722,9 +722,8 @@ public class ClusterJoinManager {
 
                 // post join operations must be lock free, that means no locks at all:
                 // no partition locks, no key-based locks, no service level locks!
-                Operation[] postJoinOps = nodeEngine.getPostJoinOperations();
-                boolean createPostJoinOperation = (postJoinOps != null && postJoinOps.length > 0);
-                PostJoinOp postJoinOp = (createPostJoinOperation ? new PostJoinOp(postJoinOps) : null);
+                OnJoinOp preJoinOp = preparePreJoinOps();
+                OnJoinOp postJoinOp = preparePostJoinOp();
 
                 if (!clusterService.updateMembers(newMembersView, node.getThisAddress(), clusterService.getThisUuid())) {
                     return;
@@ -735,7 +734,7 @@ public class ClusterJoinManager {
                 PartitionRuntimeState partitionRuntimeState = partitionService.createPartitionState();
                 for (MemberInfo member : joiningMembers.values()) {
                     long startTime = clusterClock.getClusterStartTime();
-                    Operation op = new FinalizeJoinOp(member.getUuid(), newMembersView, postJoinOp, time,
+                    Operation op = new FinalizeJoinOp(member.getUuid(), newMembersView, preJoinOp, postJoinOp, time,
                             clusterService.getClusterId(), startTime, clusterStateManager.getState(),
                             clusterService.getClusterVersion(), partitionRuntimeState, true);
                     op.setCallerUuid(clusterService.getThisUuid());
@@ -758,6 +757,20 @@ public class ClusterJoinManager {
         } finally {
             clusterServiceLock.unlock();
         }
+    }
+
+    private OnJoinOp preparePostJoinOp() {
+        Operation[] postJoinOps = nodeEngine.getPostJoinOperations();
+        boolean createPostJoinOperation = (postJoinOps != null && postJoinOps.length > 0);
+        return (createPostJoinOperation ? new OnJoinOp(postJoinOps) : null);
+    }
+
+    private OnJoinOp preparePreJoinOps() {
+        Operation[] preJoinOps = null;
+        if (clusterService.getClusterVersion().isGreaterOrEqual(V3_9)) {
+            preJoinOps = nodeEngine.getPreJoinOperations();
+        }
+        return (preJoinOps != null && preJoinOps.length > 0) ? new OnJoinOp(preJoinOps) : null;
     }
 
     private void persistJoinedMemberUuids(Collection<MemberInfo> joinedMembers) {
