@@ -42,6 +42,7 @@ import static org.junit.Assert.fail;
 
 abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport {
 
+    static final int TEN_MINUTES_IN_MILLIS = 10 * 60 * 1000;
     protected static final int CLUSTER_SIZE = 20;
     protected static final int PARTITION_COUNT = 271;
 
