@@ -59,7 +59,7 @@ public class MockIOService implements IOService {
     public volatile PacketHandler packetHandler;
 
     public MockIOService(int port, ChannelFactory channelFactory) throws Exception {
-        loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.BUILD_INFO);
+        loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo());
         serverSocketChannel = ServerSocketChannel.open();
         ServerSocket serverSocket = serverSocketChannel.socket();
         serverSocket.setReuseAddress(true);

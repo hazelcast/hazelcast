@@ -49,7 +49,7 @@ public class ClientExecutionServiceImplTest {
         String name = "ClientExecutionServiceImplTest";
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         HazelcastProperties properties = new HazelcastProperties(new Config());
-        ClientLoggingService loggingService = new ClientLoggingService(name, "jdk", BuildInfoProvider.BUILD_INFO, name);
+        ClientLoggingService loggingService = new ClientLoggingService(name, "jdk", BuildInfoProvider.getBuildInfo(), name);
 
         executionService = new ClientExecutionServiceImpl(name, classLoader, properties, 1, loggingService);
     }

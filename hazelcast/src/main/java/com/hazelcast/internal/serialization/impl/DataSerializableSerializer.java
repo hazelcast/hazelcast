@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -37,7 +38,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.hazelcast.instance.BuildInfoProvider.BUILD_INFO;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_DATA_SERIALIZABLE;
 
 /**
@@ -54,8 +54,8 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
     public static final byte EE_FLAG = 1 << 1;
 
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
-    private static final Version VERSION = Version.of(BUILD_INFO.getVersion());
 
+    private final Version version = Version.of(BuildInfoProvider.getBuildInfo().getVersion());
     private final Int2ObjectHashMap<DataSerializableFactory> factories = new Int2ObjectHashMap<DataSerializableFactory>();
 
     DataSerializableSerializer(Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
@@ -113,7 +113,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
 
     private DataSerializable readInternal(ObjectDataInput in, Class aClass)
             throws IOException {
-        setInputVersion(in, VERSION);
+        setInputVersion(in, version);
         DataSerializable ds = null;
         if (null != aClass) {
             try {
@@ -184,7 +184,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
     public void write(ObjectDataOutput out, DataSerializable obj) throws IOException {
         // If you ever change the way this is serialized think about to change
         // BasicOperationService::extractOperationCallId
-        setOutputVersion(out, VERSION);
+        setOutputVersion(out, version);
         final boolean identified = obj instanceof IdentifiedDataSerializable;
         out.writeBoolean(identified);
         if (identified) {

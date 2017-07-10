@@ -1212,7 +1212,7 @@ public abstract class HazelcastTestSupport {
 
     @SuppressWarnings("unchecked")
     private static TestHazelcastInstanceFactory createHazelcastInstanceFactory0(Integer nodeCount) {
-        if (isRunningCompatibilityTest() && BuildInfoProvider.BUILD_INFO.isEnterprise()) {
+        if (isRunningCompatibilityTest() && BuildInfoProvider.getBuildInfo().isEnterprise()) {
             try {
                 String className = "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
                 Class<? extends TestHazelcastInstanceFactory> compatibilityTestFactoryClass

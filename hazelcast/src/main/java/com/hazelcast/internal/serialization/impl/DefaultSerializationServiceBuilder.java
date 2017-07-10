@@ -85,7 +85,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
 
     @Override
     public SerializationServiceBuilder setVersion(byte version) {
-        byte maxVersion = BuildInfoProvider.BUILD_INFO.getSerializationVersion();
+        byte maxVersion = BuildInfoProvider.getBuildInfo().getSerializationVersion();
         if (version > maxVersion) {
             throw new IllegalArgumentException(
                     "Configured serialization version is higher than the max supported version: " + maxVersion);

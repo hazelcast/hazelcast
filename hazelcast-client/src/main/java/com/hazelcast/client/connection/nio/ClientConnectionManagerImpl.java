@@ -595,11 +595,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
             clientMessage = ClientAuthenticationCodec
                     .encodeRequest(cr.getUsername(), cr.getPassword(), uuid, ownerUuid, asOwner, ClientTypes.JAVA,
-                            serializationVersion, BuildInfoProvider.BUILD_INFO.getVersion());
+                            serializationVersion, BuildInfoProvider.getBuildInfo().getVersion());
         } else {
             Data data = ss.toData(credentials);
             clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid,
-                    asOwner, ClientTypes.JAVA, serializationVersion, BuildInfoProvider.BUILD_INFO.getVersion());
+                    asOwner, ClientTypes.JAVA, serializationVersion, BuildInfoProvider.getBuildInfo().getVersion());
         }
         return clientMessage;
     }

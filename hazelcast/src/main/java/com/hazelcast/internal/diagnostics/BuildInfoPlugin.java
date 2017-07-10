@@ -26,7 +26,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
  */
 public class BuildInfoPlugin extends DiagnosticsPlugin {
 
-    private final BuildInfo buildInfo = BuildInfoProvider.BUILD_INFO;
+    private final BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
 
     public BuildInfoPlugin(NodeEngineImpl nodeEngine) {
         super(nodeEngine.getLogger(BuildInfoPlugin.class));

@@ -40,7 +40,7 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class MemberGroupFactoryTest {
 
-    private static final MemberVersion VERSION = MemberVersion.of(BuildInfoProvider.BUILD_INFO.getVersion());
+    private static final MemberVersion VERSION = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
 
     @Test
     public void testHostAwareMemberGroupFactoryCreateMemberGroups() throws Exception {
