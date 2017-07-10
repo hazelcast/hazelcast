@@ -132,16 +132,22 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
     /**
      * Return the ringbuffer containter for the specified {@code namespace}.
      * If there is no ringbuffer container, create it using the {@code config}.
-     * If the cluster version is less than {@link Versions#V3_9} then
+     * When the cluster version is less than {@link Versions#V3_9} then the only
+     * supported namespace is for the ringbuffer service, other namespaces will
+     * throw an {@link UnsupportedOperationException}.
      *
      * @param namespace the ringbuffer container namespace
      * @param config    the ringbuffer config. Used to create the container when the container doesn't exist
      * @return the ringbuffer container
      * @throws UnsupportedOperationException if the cluster version is less than {@link Versions#V3_9} and the service name
      *                                       in the object namespace is not {@link RingbufferService#SERVICE_NAME}
+     * @throws NullPointerException          if the {@code config} is {@code null}
      */
     @SuppressWarnings("unchecked")
-    public <T> RingbufferContainer<T> getContainer(int partitionId, ObjectNamespace namespace, RingbufferConfig config) {
+    public <T> RingbufferContainer<T> getOrCreateContainer(int partitionId, ObjectNamespace namespace, RingbufferConfig config) {
+        if (config == null) {
+            throw new NullPointerException("Ringbuffer config should not be null when ringbuffer is being created");
+        }
         final Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
         if (clusterVersion.isLessThan(Versions.V3_9)
                 && !SERVICE_NAME.equals(namespace.getServiceName())) {
@@ -166,9 +172,20 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
         return ringbuffer;
     }
 
-    public boolean hasContainer(int partitionId, ObjectNamespace namespace) {
+    /**
+     * Returns the ringbuffer container if it already exists for the
+     * given {@code partitionId} and {@code namespace}. Returns {@code null}
+     * if it doesn't exist.
+     *
+     * @param partitionId the partition ID of the ringbuffer container
+     * @param namespace   the namespace of the ringbuffer container
+     * @param <T>         the type of items in the ringbuffer container
+     * @return the ringbuffer container or {@code null} if it has not been created
+     */
+    @SuppressWarnings("unchecked")
+    public <T> RingbufferContainer<T> getContainerOrNull(int partitionId, ObjectNamespace namespace) {
         final Map<ObjectNamespace, RingbufferContainer> partitionContainers = containers.get(partitionId);
-        return partitionContainers != null && partitionContainers.get(namespace) != null;
+        return partitionContainers != null ? partitionContainers.get(namespace) : null;
     }
 
     private Map<ObjectNamespace, RingbufferContainer> getOrCreateRingbufferContainers(int partitionId) {
