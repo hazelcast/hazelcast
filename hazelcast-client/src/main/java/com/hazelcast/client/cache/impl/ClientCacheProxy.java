@@ -118,6 +118,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
         ensureOpen();
         validateNotNull(keys);
         for (K key : keys) {
+            validateNotNull(key);
             CacheProxyUtil.validateConfiguredTypes(cacheConfig, key);
         }
         HashSet<Data> keysData = new HashSet<Data>();
@@ -296,6 +297,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
         }
         Map<K, EntryProcessorResult<T>> allResult = new HashMap<K, EntryProcessorResult<T>>();
         for (K key : keys) {
+            validateNotNull(key);
             CacheEntryProcessorResult<T> ceResult;
             try {
                 final T result = invoke(key, entryProcessor, arguments);

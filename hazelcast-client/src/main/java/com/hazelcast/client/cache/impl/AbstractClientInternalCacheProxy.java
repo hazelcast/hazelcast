@@ -707,6 +707,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         Set<Data> keysData;
         keysData = new HashSet<Data>();
         for (K key : keys) {
+            validateNotNull(key);
             keysData.add(toData(key));
         }
         int partitionCount = clientContext.getPartitionService().getPartitionCount();

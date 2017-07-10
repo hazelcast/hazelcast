@@ -283,6 +283,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
 
         final Set<Data> keySet = new HashSet<Data>(keys.size());
         for (K key : keys) {
+            validateNotNull(key);
             final Data k = toData(key);
             keySet.add(k);
         }

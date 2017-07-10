@@ -33,7 +33,6 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -44,6 +43,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static java.util.Collections.emptyMap;
 
 /**
  * <p>Hazelcast provides extension functionality to default spec interface {@link javax.cache.Cache}.
@@ -167,10 +167,11 @@ abstract class AbstractCacheProxy<K, V>
         ensureOpen();
         validateNotNull(keys);
         if (keys.isEmpty()) {
-            return Collections.EMPTY_MAP;
+            return emptyMap();
         }
         final Set<Data> ks = new HashSet(keys.size());
         for (K key : keys) {
+            validateNotNull(key);
             final Data k = serializationService.toData(key);
             ks.add(k);
         }
