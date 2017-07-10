@@ -74,6 +74,7 @@ public final class InvocationUtil {
         final OperationService operationService = nodeEngine.getOperationService();
         ClusterService clusterService = nodeEngine.getClusterService();
 
+        // we are going to iterate over all members and invoke an operation on each of them
         Iterator<ICompletableFuture<Object>> invocationIterator = map(
                 new RestartingMemberIterator(clusterService, maxRetries),
                 new InvokeOnMemberFunction(operationFactory, operationService));
@@ -81,6 +82,10 @@ public final class InvocationUtil {
         ILogger logger = nodeEngine.getLogger(ChainingFuture.class);
         ExecutionService executionService = nodeEngine.getExecutionService();
         ManagedExecutorService executor = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR);
+
+        // ChainingFuture uses the iterator to start invocations.
+        // It invokes on another member only when the previous invocation is completed = invocations are serial.
+        // the future itself completes only when the last invocation completes (or if there is an error)
         return new ChainingFuture<Object>(invocationIterator, executor, IGNORE_CLUSTER_TOPOLOGY_CHANGES, logger);
     }
 
