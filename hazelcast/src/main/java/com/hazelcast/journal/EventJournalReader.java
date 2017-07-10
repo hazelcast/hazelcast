@@ -34,14 +34,14 @@ public interface EventJournalReader<E> {
      * @param partitionId the partition ID of the entries to which we are subscribing
      * @return future with the initial subscriber state containing the newest and oldest event journal sequence
      * @throws UnsupportedOperationException if the cluster version is lower than 3.9 or there is no event journal
-     *                                       configured for this reader
+     *                                       configured for this data structure
      * @since 3.9
      */
     ICompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId);
 
     /**
      * Reads from the event journal. The returned future may throw {@link UnsupportedOperationException}
-     * if the cluster version is lower than 3.9 or there is no event journal configured for this map.
+     * if the cluster version is lower than 3.9 or there is no event journal configured for this data structure.
      * <p>
      * <b>NOTE:</b>
      * Configuring evictions may cause unexpected results when reading from the event journal and
