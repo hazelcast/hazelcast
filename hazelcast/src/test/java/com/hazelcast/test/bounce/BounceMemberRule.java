@@ -47,6 +47,7 @@ import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.ALWAY
 import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.CLIENT;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.StringUtil.timeToString;
+import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -120,7 +121,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </ol>
  */
 public class BounceMemberRule implements TestRule {
-    public static final long STALENESS_DETECTOR_DISABLED = -1;
+    public static final long STALENESS_DETECTOR_DISABLED = Long.MAX_VALUE;
 
     private static final ILogger LOGGER = Logger.getLogger(BounceMemberRule.class);
 
@@ -137,7 +138,7 @@ public class BounceMemberRule implements TestRule {
     private final AtomicReferenceArray<HazelcastInstance> members;
     private final AtomicReferenceArray<HazelcastInstance> testDrivers;
     private final int bouncingIntervalSeconds;
-    private final StalenessDetector stalenessDetector;
+    private final ProgressMonitor progressMonitor;
 
     private volatile TestHazelcastInstanceFactory factory;
 
@@ -150,7 +151,7 @@ public class BounceMemberRule implements TestRule {
         this.members = new AtomicReferenceArray<HazelcastInstance>(bounceTestConfig.getClusterSize());
         this.testDrivers = new AtomicReferenceArray<HazelcastInstance>(bounceTestConfig.getDriverCount());
         this.bouncingIntervalSeconds = bounceTestConfig.getBouncingIntervalSeconds();
-        stalenessDetector = new StalenessDetector(bounceTestConfig.getMaximumStaleSeconds());
+        this.progressMonitor = new ProgressMonitor(bounceTestConfig.getMaximumStaleSeconds());
     }
 
     /**
@@ -251,7 +252,7 @@ public class BounceMemberRule implements TestRule {
         taskExecutor = Executors.newFixedThreadPool(tasks.length);
         for (int i = 0; i < tasks.length; i++) {
             Runnable task = tasks[i];
-            stalenessDetector.registerTask(task);
+            progressMonitor.registerTask(task);
             futures[i] = taskExecutor.submit(task);
         }
 
@@ -265,7 +266,7 @@ public class BounceMemberRule implements TestRule {
                 }
                 sleepSeconds(1);
                 try {
-                    stalenessDetector.assertProgress();
+                    progressMonitor.checkProgress();
                 } catch (AssertionError e) {
                     testRunning.set(false);
                     throw e;
@@ -588,6 +589,8 @@ public class BounceMemberRule implements TestRule {
         private final Runnable task;
         private volatile long lastIterationStartedTimestamp;
         private volatile Thread currentThread;
+        private volatile long iterationCounter;
+        private volatile long maxLatencyNanos;
 
         public TestTaskRunable(Runnable task) {
             this.task = task;
@@ -597,9 +600,13 @@ public class BounceMemberRule implements TestRule {
         public void run() {
             while (testRunning.get()) {
                 try {
-                    lastIterationStartedTimestamp = System.nanoTime();
+                    long startedNanos = System.nanoTime();
+                    lastIterationStartedTimestamp = startedNanos;
                     currentThread = Thread.currentThread();
                     task.run();
+                    iterationCounter++;
+                    long latencyNanos = System.nanoTime() - startedNanos;
+                    maxLatencyNanos = max(maxLatencyNanos, latencyNanos);
                 } catch (Throwable t) {
                     testFailed.set(true);
                     rethrow(t);
@@ -609,6 +616,14 @@ public class BounceMemberRule implements TestRule {
 
         public long getLastIterationStartedTimestamp() {
             return lastIterationStartedTimestamp;
+        }
+
+        public long getIterationCounter() {
+            return iterationCounter;
+        }
+
+        public long getMaxLatencyNanos() {
+            return maxLatencyNanos;
         }
 
         public Thread getCurrentThreadOrNull() {

@@ -1,45 +1,84 @@
 package com.hazelcast.test.bounce;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.bounce.BounceMemberRule.STALENESS_DETECTOR_DISABLED;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class StalenessDetector {
+public class ProgressMonitor {
+    private static final long PROGRESS_LOGGING_INTERVAL_NANOS = SECONDS.toNanos(5);
+    private static final ILogger LOGGER = Logger.getLogger(ProgressMonitor.class);
+
     private final long maximumStaleNanos;
     private final List<BounceMemberRule.TestTaskRunable> tasks = new ArrayList<BounceMemberRule.TestTaskRunable>();
 
-    public StalenessDetector(long maximumStaleSeconds) {
+    private long lastProgressLoggedNanos;
+    private long progressDelta;
+
+    public ProgressMonitor(long maximumStaleSeconds) {
         this.maximumStaleNanos = maximumStaleSeconds == STALENESS_DETECTOR_DISABLED
                 ? maximumStaleSeconds
                 : SECONDS.toNanos(maximumStaleSeconds);
     }
 
     public void registerTask(Runnable task) {
-        if (maximumStaleNanos == STALENESS_DETECTOR_DISABLED) {
-            return;
-        }
         if (task instanceof BounceMemberRule.TestTaskRunable) {
             tasks.add((BounceMemberRule.TestTaskRunable)task);
-        } else {
-            throw new UnsupportedOperationException("Staleness checking is enabled only for automatically repeated tests");
+        } else if (maximumStaleNanos != STALENESS_DETECTOR_DISABLED) {
+            throw new UnsupportedOperationException("Progress checking is enabled only for automatically repeated tasks");
         }
     }
 
-    public void assertProgress() {
+    public void checkProgress() {
         long now = System.nanoTime();
+        long aggregatedProgress = 0;
+        long maxLatencyNanos = 0;
         for (BounceMemberRule.TestTaskRunable task : tasks) {
             long lastIterationStartedTimestamp = task.getLastIterationStartedTimestamp();
             if (lastIterationStartedTimestamp == 0) {
                 //the tasks haven't started yet
                 continue;
             }
+            aggregatedProgress += task.getIterationCounter();
+            maxLatencyNanos = Math.max(maxLatencyNanos, task.getMaxLatencyNanos());
             long currentStaleNanos = now - lastIterationStartedTimestamp;
             if (currentStaleNanos > maximumStaleNanos) {
                 onStalenessDetected(task, currentStaleNanos);
             }
+        }
+        logProgress(now, aggregatedProgress, maxLatencyNanos);
+    }
+
+    private void logProgress(long now, long aggregatedProgress, long maxLatencyNanos) {
+        if (now > lastProgressLoggedNanos + PROGRESS_LOGGING_INTERVAL_NANOS) {
+            StringBuilder sb = new StringBuilder("Aggregated progress: ")
+                    .append(aggregatedProgress)
+                    .append(" operations. ");
+            progressDelta = aggregatedProgress - progressDelta;
+            if (lastProgressLoggedNanos > 0) {
+                sb.append("Maximum latency: ")
+                        .append(TimeUnit.NANOSECONDS.toMillis(maxLatencyNanos))
+                        .append(" ms.");
+
+                long timeInNanos = now - lastProgressLoggedNanos;
+                double timeInSeconds = (double)timeInNanos / 1000000000;
+                double progressPerSecond = progressDelta / timeInSeconds;
+                sb.append("Throughput in last ")
+                        .append((long)(timeInSeconds * 1000))
+                        .append(" ms: ")
+                        .append((long)progressPerSecond)
+                        .append(" ops / second. ");
+
+            }
+
+            lastProgressLoggedNanos = now;
+            LOGGER.info(sb.toString());
         }
     }
 
