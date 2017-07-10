@@ -685,9 +685,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
-        if (keys == null || keys.contains(null)) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        checkNotNull(keys, "Parameter keys should not be null!");
+
         if (keys.isEmpty()) {
             return emptyMap();
         }
@@ -910,7 +909,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * @param <R>         the return type
      * @return the iterator for the projected entries
      * @throws UnsupportedOperationException when cluster version is less than {@link Versions#V3_9}
-     * @throws IllegalArgumentException if the predicate is of type {@link PagingPredicate}
+     * @throws IllegalArgumentException      if the predicate is of type {@link PagingPredicate}
      * @since 3.9
      */
     public <R> Iterator<R> iterator(int fetchSize, int partitionId, Projection<Map.Entry<K, V>, R> projection,

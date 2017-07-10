@@ -118,6 +118,7 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V> implements EventJ
         }
         HashSet<Data> keysData = new HashSet<Data>(keys.size());
         for (K key : keys) {
+            validateNotNull(key);
             keysData.add(serializationService.toData(key));
         }
         LoadAllTask loadAllTask = new LoadAllTask(operationProvider, keysData, replaceExistingValues, completionListener);
@@ -200,6 +201,9 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V> implements EventJ
     public void removeAll(Set<? extends K> keys) {
         ensureOpen();
         validateNotNull(keys);
+        if (keys.isEmpty()) {
+            return;
+        }
         removeAllInternal(keys);
     }
 
@@ -256,6 +260,7 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V> implements EventJ
         checkNotNull(entryProcessor, "Entry Processor is null");
         Map<K, EntryProcessorResult<T>> allResult = new HashMap<K, EntryProcessorResult<T>>();
         for (K key : keys) {
+            validateNotNull(key);
             CacheEntryProcessorResult<T> ceResult;
             try {
                 T result = invoke(key, entryProcessor, arguments);

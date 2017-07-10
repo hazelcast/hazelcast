@@ -39,7 +39,10 @@ import org.junit.runner.RunWith;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -609,6 +612,23 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
                 return null;
             }
         });
+    }
+
+    @Test
+    public void executeOnKeys_does_execution_when_keys_are_passed_with_concurrentSkipListSet() {
+        map.put(1, 1);
+
+        Set<Object> set = new ConcurrentSkipListSet<Object>();
+        set.add(1);
+
+        map.executeOnKeys(set, new AbstractEntryProcessor() {
+            @Override
+            public Object process(Map.Entry entry) {
+                return entry.setValue(null);
+            }
+        });
+
+        assertEquals(0, map.size());
     }
 
     private class TestEntryListener implements EntryListener {
