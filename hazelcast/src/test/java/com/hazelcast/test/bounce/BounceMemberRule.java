@@ -47,6 +47,7 @@ import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.ALWAY
 import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.CLIENT;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.StringUtil.timeToString;
+import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -120,6 +121,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </ol>
  */
 public class BounceMemberRule implements TestRule {
+    public static final long STALENESS_DETECTOR_DISABLED = Long.MAX_VALUE;
 
     private static final ILogger LOGGER = Logger.getLogger(BounceMemberRule.class);
 
@@ -128,6 +130,7 @@ public class BounceMemberRule implements TestRule {
     // amount of time wait for test task futures to complete after test duration has passed
     private static final int TEST_TASK_TIMEOUT_SECONDS = 30;
     private static final int DEFAULT_BOUNCING_INTERVAL_SECONDS = 2;
+    private static final long DEFAULT_MAXIMUM_STALE_SECONDS = STALENESS_DETECTOR_DISABLED;
 
     private final BounceTestConfiguration bounceTestConfig;
     private final AtomicBoolean testRunning = new AtomicBoolean();
@@ -135,6 +138,7 @@ public class BounceMemberRule implements TestRule {
     private final AtomicReferenceArray<HazelcastInstance> members;
     private final AtomicReferenceArray<HazelcastInstance> testDrivers;
     private final int bouncingIntervalSeconds;
+    private final ProgressMonitor progressMonitor;
 
     private volatile TestHazelcastInstanceFactory factory;
 
@@ -147,6 +151,7 @@ public class BounceMemberRule implements TestRule {
         this.members = new AtomicReferenceArray<HazelcastInstance>(bounceTestConfig.getClusterSize());
         this.testDrivers = new AtomicReferenceArray<HazelcastInstance>(bounceTestConfig.getDriverCount());
         this.bouncingIntervalSeconds = bounceTestConfig.getBouncingIntervalSeconds();
+        this.progressMonitor = new ProgressMonitor(bounceTestConfig.getMaximumStaleSeconds());
     }
 
     /**
@@ -246,7 +251,9 @@ public class BounceMemberRule implements TestRule {
         Future[] futures = new Future[tasks.length];
         taskExecutor = Executors.newFixedThreadPool(tasks.length);
         for (int i = 0; i < tasks.length; i++) {
-            futures[i] = taskExecutor.submit(tasks[i]);
+            Runnable task = tasks[i];
+            progressMonitor.registerTask(task);
+            futures[i] = taskExecutor.submit(task);
         }
 
         // let the test run for test duration or until failed or finished, whichever comes first
@@ -258,6 +265,12 @@ public class BounceMemberRule implements TestRule {
                     break;
                 }
                 sleepSeconds(1);
+                try {
+                    progressMonitor.checkProgress();
+                } catch (AssertionError e) {
+                    testRunning.set(false);
+                    throw e;
+                }
             }
             if (currentTimeMillis() >= deadline) {
                 LOGGER.info("Test deadline reached, tearing down");
@@ -441,6 +454,7 @@ public class BounceMemberRule implements TestRule {
         private DriverType testDriverType;
         private boolean useTerminate;
         private int bouncingIntervalSeconds = DEFAULT_BOUNCING_INTERVAL_SECONDS;
+        private long maximumStaleSeconds = DEFAULT_MAXIMUM_STALE_SECONDS;
 
         private Builder(Config memberConfig) {
             this.memberConfig = memberConfig;
@@ -471,7 +485,7 @@ public class BounceMemberRule implements TestRule {
                 }
             }
             return new BounceMemberRule(new BounceTestConfiguration(clusterSize, testDriverType, memberConfig,
-                    driversCount, driverFactory, useTerminate, bouncingIntervalSeconds));
+                    driversCount, driverFactory, useTerminate, bouncingIntervalSeconds, maximumStaleSeconds));
         }
 
         public Builder clusterSize(int clusterSize) {
@@ -491,6 +505,11 @@ public class BounceMemberRule implements TestRule {
 
         public Builder bouncingIntervalSeconds(int bouncingIntervalSeconds) {
             this.bouncingIntervalSeconds = bouncingIntervalSeconds;
+            return this;
+        }
+
+        public Builder maximumStalenessSeconds(int maximumStalenessSeconds) {
+            this.maximumStaleSeconds = maximumStalenessSeconds;
             return this;
         }
 
@@ -534,10 +553,12 @@ public class BounceMemberRule implements TestRule {
                         members.get(i).shutdown();
                     }
                     nextInstance = i % divisor + 1;
-                    sleepSeconds(bouncingIntervalSeconds);
-
+                    sleepSecondsWhenRunning(bouncingIntervalSeconds);
+                    if (!testRunning.get()) {
+                        break;
+                    }
                     members.set(i, factory.newHazelcastInstance(bounceTestConfig.getMemberConfig()));
-                    sleepSeconds(bouncingIntervalSeconds);
+                    sleepSecondsWhenRunning(bouncingIntervalSeconds);
                     // move to next member
                     i = nextInstance;
                 }
@@ -548,12 +569,28 @@ public class BounceMemberRule implements TestRule {
         }
     }
 
+    private void sleepSecondsWhenRunning(int seconds) {
+        long deadLine = System.nanoTime() + SECONDS.toNanos(seconds);
+        while (System.nanoTime() < deadLine && testRunning.get()) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+    }
+
     /**
      * Wraps a {@code Runnable} to be executed repeatedly until testRunning becomes false or an exception is thrown
      * which sets the test as failed.
      */
-    private final class TestTaskRunable implements Runnable {
+    final class TestTaskRunable implements Runnable {
         private final Runnable task;
+        private volatile long lastIterationStartedTimestamp;
+        private volatile Thread currentThread;
+        private volatile long iterationCounter;
+        private volatile long maxLatencyNanos;
 
         public TestTaskRunable(Runnable task) {
             this.task = task;
@@ -563,12 +600,42 @@ public class BounceMemberRule implements TestRule {
         public void run() {
             while (testRunning.get()) {
                 try {
+                    long startedNanos = System.nanoTime();
+                    lastIterationStartedTimestamp = startedNanos;
+                    currentThread = Thread.currentThread();
                     task.run();
+                    iterationCounter++;
+                    long latencyNanos = System.nanoTime() - startedNanos;
+                    maxLatencyNanos = max(maxLatencyNanos, latencyNanos);
                 } catch (Throwable t) {
                     testFailed.set(true);
                     rethrow(t);
                 }
             }
+        }
+
+        public long getLastIterationStartedTimestamp() {
+            return lastIterationStartedTimestamp;
+        }
+
+        public long getIterationCounter() {
+            return iterationCounter;
+        }
+
+        public long getMaxLatencyNanos() {
+            return maxLatencyNanos;
+        }
+
+        public Thread getCurrentThreadOrNull() {
+            return currentThread;
+        }
+
+
+        @Override
+        public String toString() {
+            return "TestTaskRunable{" +
+                    "task=" + task +
+                    '}';
         }
     }
 }
