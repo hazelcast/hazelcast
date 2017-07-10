@@ -47,6 +47,7 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
         hz.getMultiMap("trial").put(2, 2);
         hz.getQueue("trial").offer(3);
         hz.getTopic("trial").publish("Hello");
+        hz.getReliableTopic("trial").publish("Hello");
         hz.getReplicatedMap("trial").put(3, 3);
         hz.getExecutorService("trial");
 
@@ -58,6 +59,7 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
         assertContains(instanceNames, "m:trial");
         assertContains(instanceNames, "q:trial");
         assertContains(instanceNames, "t:trial");
+        assertContains(instanceNames, "rt:trial");
         assertContains(instanceNames, "r:trial");
         assertContains(instanceNames, "e:trial");
     }

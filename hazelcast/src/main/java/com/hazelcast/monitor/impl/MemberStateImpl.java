@@ -58,6 +58,7 @@ public class MemberStateImpl implements MemberState {
     private Map<String, LocalMultiMapStats> multiMapStats = new HashMap<String, LocalMultiMapStats>();
     private Map<String, LocalQueueStats> queueStats = new HashMap<String, LocalQueueStats>();
     private Map<String, LocalTopicStats> topicStats = new HashMap<String, LocalTopicStats>();
+    private Map<String, LocalTopicStats> reliableTopicStats = new HashMap<String, LocalTopicStats>();
     private Map<String, LocalExecutorStats> executorStats = new HashMap<String, LocalExecutorStats>();
     private Map<String, LocalReplicatedMapStats> replicatedMapStats = new HashMap<String, LocalReplicatedMapStats>();
     private Map<String, LocalCacheStats> cacheStats = new HashMap<String, LocalCacheStats>();
@@ -102,6 +103,11 @@ public class MemberStateImpl implements MemberState {
     @Override
     public LocalTopicStats getLocalTopicStats(String topicName) {
         return topicStats.get(topicName);
+    }
+
+    @Override
+    public LocalTopicStats getReliableLocalTopicStats(String reliableTopicName) {
+        return reliableTopicStats.get(reliableTopicName);
     }
 
     @Override
@@ -151,6 +157,10 @@ public class MemberStateImpl implements MemberState {
 
     public void putLocalTopicStats(String name, LocalTopicStats localTopicStats) {
         topicStats.put(name, localTopicStats);
+    }
+
+    public void putLocalReliableTopicStats(String name, LocalTopicStats localTopicStats) {
+        reliableTopicStats.put(name, localTopicStats);
     }
 
     public void putLocalExecutorStats(String name, LocalExecutorStats localExecutorStats) {
@@ -250,6 +260,7 @@ public class MemberStateImpl implements MemberState {
         serializeMap(root, "replicatedMapStats", replicatedMapStats);
         serializeMap(root, "queueStats", queueStats);
         serializeMap(root, "topicStats", topicStats);
+        serializeMap(root, "reliableTopicStats", reliableTopicStats);
         serializeMap(root, "executorStats", executorStats);
         serializeMap(root, "cacheStats", cacheStats);
         serializeMap(root, "wanStats", wanStats);
@@ -312,6 +323,11 @@ public class MemberStateImpl implements MemberState {
             LocalTopicStatsImpl stats = new LocalTopicStatsImpl();
             stats.fromJson(next.getValue().asObject());
             topicStats.put(next.getName(), stats);
+        }
+        for (JsonObject.Member next : getObject(json, "reliableTopicStats")) {
+            LocalTopicStatsImpl stats = new LocalTopicStatsImpl();
+            stats.fromJson(next.getValue().asObject());
+            reliableTopicStats.put(next.getName(), stats);
         }
         for (JsonObject.Member next : getObject(json, "executorStats")) {
             LocalExecutorStatsImpl stats = new LocalExecutorStatsImpl();
@@ -385,6 +401,7 @@ public class MemberStateImpl implements MemberState {
                 + ", replicatedMapStats=" + replicatedMapStats
                 + ", queueStats=" + queueStats
                 + ", topicStats=" + topicStats
+                + ", reliableTopicStats=" + reliableTopicStats
                 + ", executorStats=" + executorStats
                 + ", cacheStats=" + cacheStats
                 + ", memoryStats=" + memoryStats

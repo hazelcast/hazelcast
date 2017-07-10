@@ -86,6 +86,12 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
         return topicService.getLocalTopicStats(name);
     }
 
+    /**
+     * Publishes the message and increases the local statistics
+     * for the number of published messages.
+     *
+     * @param message the message to be published
+     */
     public void publishInternal(Object message) {
         topicStats.incrementPublishes();
         topicService.publishMessage(name, message, multithreaded);
