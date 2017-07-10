@@ -149,8 +149,8 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
                         lock.unlock();
                     }
                 }
-            } catch (InterruptedException ignored) {
-                EmptyStatement.ignore(ignored);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
     }

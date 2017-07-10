@@ -116,7 +116,10 @@ public abstract class AbstractHandler
     public void onFailure(Throwable e) {
         if (e instanceof OutOfMemoryError) {
             ioThread.getOomeHandler().handle((OutOfMemoryError) e);
+        } else if (e instanceof InterruptedException) {
+            Thread.currentThread().interrupt();
         }
+
         if (selectionKey != null) {
             selectionKey.cancel();
         }
