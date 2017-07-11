@@ -44,7 +44,6 @@ import java.net.UnknownHostException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.instance.BuildInfoProvider.BUILD_INFO;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -93,7 +92,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
     @Test
     public void test_joinRequestAllowed_whenSameVersion()
             throws UnknownHostException {
-        JoinRequest joinRequest = new JoinRequest(Packet.VERSION, BUILD_INFO.getBuildNumber(), node.getVersion(),
+        JoinRequest joinRequest = new JoinRequest(Packet.VERSION, BuildInfoProvider.getBuildInfo().getBuildNumber(), node.getVersion(),
                 new Address("127.0.0.1", 9999), UuidUtil.newUnsecureUuidString(), false, null, null, null, null);
         nodeExtension.validateJoinRequest(joinRequest);
     }
@@ -103,7 +102,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
             throws UnknownHostException {
         MemberVersion otherPatchVersion = MemberVersion
                 .of(node.getVersion().getMajor(), node.getVersion().getMinor(), node.getVersion().getPatch() + 1);
-        JoinRequest joinRequest = new JoinRequest(Packet.VERSION, BUILD_INFO.getBuildNumber(), otherPatchVersion,
+        JoinRequest joinRequest = new JoinRequest(Packet.VERSION, BuildInfoProvider.getBuildInfo().getBuildNumber(), otherPatchVersion,
                 new Address("127.0.0.1", 9999), UuidUtil.newUnsecureUuidString(), false, null, null, null, null);
         nodeExtension.validateJoinRequest(joinRequest);
     }
@@ -113,7 +112,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
             throws UnknownHostException {
         MemberVersion otherPatchVersion = MemberVersion
                 .of(node.getVersion().getMajor(), node.getVersion().getMinor() + 1, node.getVersion().getPatch());
-        JoinRequest joinRequest = new JoinRequest(Packet.VERSION, BUILD_INFO.getBuildNumber(), otherPatchVersion,
+        JoinRequest joinRequest = new JoinRequest(Packet.VERSION, BuildInfoProvider.getBuildInfo().getBuildNumber(), otherPatchVersion,
                 new Address("127.0.0.1", 9999), UuidUtil.newUnsecureUuidString(), false, null, null, null, null);
         expected.expect(VersionMismatchException.class);
         nodeExtension.validateJoinRequest(joinRequest);
@@ -124,7 +123,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
             throws UnknownHostException {
         MemberVersion otherPatchVersion = MemberVersion
                 .of(node.getVersion().getMajor() + 1, node.getVersion().getMinor(), node.getVersion().getPatch());
-        JoinRequest joinRequest = new JoinRequest(Packet.VERSION, BUILD_INFO.getBuildNumber(), otherPatchVersion,
+        JoinRequest joinRequest = new JoinRequest(Packet.VERSION, BuildInfoProvider.getBuildInfo().getBuildNumber(), otherPatchVersion,
                 new Address("127.0.0.1", 9999), UuidUtil.newUnsecureUuidString(), false, null, null, null, null);
         expected.expect(VersionMismatchException.class);
         nodeExtension.validateJoinRequest(joinRequest);

@@ -32,62 +32,71 @@ import static com.hazelcast.util.EmptyStatement.ignore;
  */
 public final class BuildInfoProvider {
 
-    /**
-     * Use this in production code to obtain the BuildInfo already parsed when this class was first loaded.
-     * Its properties will not change at runtime.
-     */
-    public static final BuildInfo BUILD_INFO;
-
     public static final String HAZELCAST_INTERNAL_OVERRIDE_VERSION = "hazelcast.internal.override.version";
+    private static final String HAZELCAST_INTERNAL_OVERRIDE_BUILD = "hazelcast.build";
 
     private static final ILogger LOGGER;
+    private static final BuildInfo BUILD_INFO_CACHE;
 
     static {
         LOGGER = Logger.getLogger(BuildInfoProvider.class);
-        BUILD_INFO = getBuildInfo();
+        BUILD_INFO_CACHE = populateBuildInfoCache();
     }
 
     private BuildInfoProvider() {
     }
 
+    private static BuildInfo populateBuildInfoCache() {
+        return getBuildInfoInternalVersion(Overrides.DISABLED);
+    }
+
     /**
      * Parses {@code hazelcast-runtime.properties} for {@code BuildInfo}; also checks for overrides in System.properties.
-     * Use this method to obtain and cache a {@code BuildInfo} object or from test code that needs to re-parse properties
-     * on each invocation.
+     * Never cache result of this method in a static context - as it can change due versions overriding - this method
+     * already does caching whenever it's possible - i.e. when overrides is disabled.
      *
      * @return the parsed BuildInfo
      */
     public static BuildInfo getBuildInfo() {
+        if (Overrides.isEnabled()) {
+            // never use cache when override is enabled -> we need to re-parse everything
+            Overrides overrides = Overrides.fromProperties();
+            return getBuildInfoInternalVersion(overrides);
+        }
+
+        return BUILD_INFO_CACHE;
+    }
+
+    private static BuildInfo getBuildInfoInternalVersion(Overrides overrides) {
         // If you have a compilation error at GeneratedBuildProperties then run 'mvn clean install'
         // the GeneratedBuildProperties class is generated at a compile-time
-        BuildInfo buildInfo = readBuildPropertiesClass(GeneratedBuildProperties.class, null);
+        BuildInfo buildInfo = readBuildPropertiesClass(GeneratedBuildProperties.class, null, overrides);
         try {
             Class<?> enterpriseClass = BuildInfoProvider.class.getClassLoader()
                     .loadClass("com.hazelcast.instance.GeneratedEnterpriseBuildProperties");
             if (enterpriseClass.getClassLoader() == BuildInfoProvider.class.getClassLoader()) {
                 //only read the enterprise properties if there were loaded by the same classloader
                 //as BuildInfoProvider and not e.g. a parent classloader.
-                buildInfo = readBuildPropertiesClass(enterpriseClass, buildInfo);
+                buildInfo = readBuildPropertiesClass(enterpriseClass, buildInfo, overrides);
             }
         } catch (ClassNotFoundException e) {
             ignore(e);
         }
 
         Properties jetProperties = loadPropertiesFromResource("jet-runtime.properties");
-        setJetProperties(jetProperties, buildInfo);
-        return buildInfo;
+        return withJetProperties(jetProperties, buildInfo);
     }
 
-    static void setJetProperties(Properties properties, BuildInfo buildInfo) {
+    private static BuildInfo withJetProperties(Properties properties, BuildInfo buildInfo) {
         if (properties.isEmpty()) {
-            return;
+            return buildInfo;
         }
         String version = properties.getProperty("jet.version");
         String build = properties.getProperty("jet.build");
         String revision = properties.getProperty("jet.git.revision");
 
         JetBuildInfo jetBuildInfo = new JetBuildInfo(version, build, revision);
-        buildInfo.setJetBuildInfo(jetBuildInfo);
+        return buildInfo.withJetBuildInfo(jetBuildInfo);
     }
 
     private static Properties loadPropertiesFromResource(String resourceName) {
@@ -105,7 +114,7 @@ public final class BuildInfoProvider {
         return runtimeProperties;
     }
 
-    private static BuildInfo readBuildPropertiesClass(Class<?> clazz, BuildInfo upstreamBuildInfo) {
+    private static BuildInfo readBuildPropertiesClass(Class<?> clazz, BuildInfo upstreamBuildInfo, Overrides overrides) {
         String version = readStaticStringField(clazz, "VERSION");
         String build = readStaticStringField(clazz, "BUILD");
         String revision = readStaticStringField(clazz, "REVISION");
@@ -119,22 +128,7 @@ public final class BuildInfoProvider {
 
         String serialVersionString = readStaticStringField(clazz, "SERIALIZATION_VERSION");
         byte serialVersion = Byte.parseByte(serialVersionString);
-        return overrideBuildInfo(version, build, revision, buildNumber, enterprise, serialVersion, upstreamBuildInfo);
-    }
-
-    private static BuildInfo overrideBuildInfo(String version, String build, String revision, int buildNumber,
-                                               boolean enterprise, byte serialVersion, BuildInfo upstreamBuildInfo) {
-        Integer hazelcastBuild = Integer.getInteger("hazelcast.build", -1);
-        if (hazelcastBuild != -1) {
-            build = String.valueOf(hazelcastBuild);
-            buildNumber = hazelcastBuild;
-        }
-        String overridingVersion = System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
-        if (overridingVersion != null) {
-            LOGGER.info("Overriding hazelcast version with system property value " + overridingVersion);
-            version = overridingVersion;
-        }
-        return new BuildInfo(version, build, revision, buildNumber, enterprise, serialVersion, upstreamBuildInfo);
+        return overrides.apply(version, build, revision, buildNumber, enterprise, serialVersion, upstreamBuildInfo);
     }
 
     //todo: move elsewhere
@@ -146,6 +140,44 @@ public final class BuildInfoProvider {
             throw new HazelcastException(e);
         } catch (IllegalAccessException e) {
             throw new HazelcastException(e);
+        }
+    }
+
+    private static final class Overrides {
+        private static final Overrides DISABLED = new Overrides(null, -1);
+
+        private String version;
+        private int buildNo;
+
+        private Overrides(String version, int build) {
+            this.version = version;
+            this.buildNo = build;
+        }
+
+        private BuildInfo apply(String version, String build, String revision, int buildNumber,
+                                boolean enterprise, byte serialVersion, BuildInfo upstreamBuildInfo) {
+            if (buildNo != -1) {
+                build = String.valueOf(buildNo);
+                buildNumber = buildNo;
+            }
+            if (this.version != null) {
+                LOGGER.info("Overriding hazelcast version with system property value " + this.version);
+                version = this.version;
+            }
+            return new BuildInfo(version, build, revision, buildNumber, enterprise, serialVersion, upstreamBuildInfo);
+
+        }
+
+        private static boolean isEnabled() {
+            return System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_BUILD) != null
+                    || System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION) != null;
+        }
+
+        private static Overrides fromProperties() {
+            String version = System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
+            int build = Integer.getInteger(HAZELCAST_INTERNAL_OVERRIDE_BUILD, -1);
+
+            return new Overrides(version, build);
         }
     }
 

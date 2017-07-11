@@ -93,7 +93,7 @@ import static org.mockito.Mockito.when;
 @Category(QuickTest.class)
 public class DiscoverySpiTest extends HazelcastTestSupport {
 
-    private static final MemberVersion VERSION = MemberVersion.of(BuildInfoProvider.BUILD_INFO.getVersion());
+    private static final MemberVersion VERSION = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
     private static final ILogger LOGGER = Logger.getLogger(DiscoverySpiTest.class);
 
     @Test

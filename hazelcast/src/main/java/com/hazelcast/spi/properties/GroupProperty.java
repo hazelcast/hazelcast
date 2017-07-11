@@ -736,7 +736,7 @@ public final class GroupProperty {
      */
     public static final HazelcastProperty SERIALIZATION_VERSION
             = new HazelcastProperty("hazelcast.serialization.version",
-            BuildInfoProvider.BUILD_INFO.getSerializationVersion());
+            BuildInfoProvider.getBuildInfo().getSerializationVersion());
 
     /**
      * Override cluster version to use while node is not yet member of a cluster. The cluster version assumed before joining

@@ -22,6 +22,7 @@ import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.SimpleMemberImpl;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -66,7 +67,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.instance.BuildInfoProvider.BUILD_INFO;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -570,7 +570,7 @@ public class SerializationTest extends HazelcastTestSupport {
         VersionedDataSerializable object = new VersionedDataSerializable();
         ss.toData(object);
         assertEquals("ObjectDataOutput.getVersion should be equal to member version",
-                Version.of(BUILD_INFO.getVersion()), object.getVersion());
+                Version.of(BuildInfoProvider.getBuildInfo().getVersion()), object.getVersion());
     }
 
     @Test
@@ -579,7 +579,7 @@ public class SerializationTest extends HazelcastTestSupport {
         VersionedDataSerializable object = new VersionedDataSerializable();
         VersionedDataSerializable otherObject = ss.toObject(ss.toData(object));
         assertEquals("ObjectDataInput.getVersion should be equal to member version",
-                Version.of(BUILD_INFO.getVersion()), otherObject.getVersion());
+                Version.of(BuildInfoProvider.getBuildInfo().getVersion()), otherObject.getVersion());
     }
 
     private static final class DynamicProxyTestClassLoader extends ClassLoader {

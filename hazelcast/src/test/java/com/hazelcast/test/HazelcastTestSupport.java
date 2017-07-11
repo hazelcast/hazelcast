@@ -74,7 +74,6 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
@@ -97,6 +96,9 @@ public abstract class HazelcastTestSupport {
 
     @Rule
     public JitterRule jitterRule = new JitterRule();
+
+    @Rule
+    public DumpBuildInfoOnFailureRule dumpInfoRule = new DumpBuildInfoOnFailureRule();
 
     static {
         ASSERT_TRUE_EVENTUALLY_TIMEOUT = getInteger("hazelcast.assertTrueEventually.timeout", 120);
@@ -1212,7 +1214,7 @@ public abstract class HazelcastTestSupport {
 
     @SuppressWarnings("unchecked")
     private static TestHazelcastInstanceFactory createHazelcastInstanceFactory0(Integer nodeCount) {
-        if (isRunningCompatibilityTest() && BuildInfoProvider.BUILD_INFO.isEnterprise()) {
+        if (isRunningCompatibilityTest() && BuildInfoProvider.getBuildInfo().isEnterprise()) {
             try {
                 String className = "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
                 Class<? extends TestHazelcastInstanceFactory> compatibilityTestFactoryClass
