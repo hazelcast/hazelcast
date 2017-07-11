@@ -39,6 +39,7 @@ import com.hazelcast.util.Clock;
 import java.util.Collection;
 import java.util.Iterator;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.flushAccumulator;
 import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.removeAccumulator;
 import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
@@ -177,10 +178,14 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
                 Data key = record.getKey();
                 if (event.getMigrationEndpoint() == SOURCE) {
                     assert event.getNewReplicaIndex() != 0 : "Invalid migration event: " + event;
-                    Object value = Records.getValueOrCachedValue(record, serializationService);
+                    Object value = mapContainer.getMapConfig().getInMemoryFormat().equals(NATIVE)
+                                        ? record.getValue()
+                                        : Records.getValueOrCachedValue(record, serializationService);
                     indexes.removeEntryIndex(key, value);
                 } else if (event.getNewReplicaIndex() == 0) {
-                    Object value = Records.getValueOrCachedValue(record, serializationService);
+                    Object value = mapContainer.getMapConfig().getInMemoryFormat().equals(NATIVE)
+                                        ? record.getValue()
+                                        : Records.getValueOrCachedValue(record, serializationService);
                     if (value != null) {
                         QueryableEntry queryEntry = mapContainer.newQueryEntry(record.getKey(), value);
                         indexes.saveEntryIndex(queryEntry, null);
