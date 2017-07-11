@@ -48,4 +48,9 @@ public class StaleReadDetectorImpl implements StaleReadDetector {
     public MetaDataContainer getMetaDataContainer(int partitionId) {
         return repairingHandler.getMetaDataContainer(partitionId);
     }
+
+    @Override
+    public String toString() {
+        return "Default StaleReadDetectorImpl";
+    }
 }

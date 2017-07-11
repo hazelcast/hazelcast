@@ -48,6 +48,11 @@ public interface StaleReadDetector {
         public MetaDataContainer getMetaDataContainer(int partitionId) {
             return null;
         }
+
+        @Override
+        public String toString() {
+            return "ALWAYS_FRESH";
+        }
     };
 
     /**
