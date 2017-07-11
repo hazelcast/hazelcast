@@ -84,20 +84,19 @@ public final class BuildInfoProvider {
         }
 
         Properties jetProperties = loadPropertiesFromResource("jet-runtime.properties");
-        setJetProperties(jetProperties, buildInfo);
-        return buildInfo;
+        return withJetProperties(jetProperties, buildInfo);
     }
 
-    static void setJetProperties(Properties properties, BuildInfo buildInfo) {
+    private static BuildInfo withJetProperties(Properties properties, BuildInfo buildInfo) {
         if (properties.isEmpty()) {
-            return;
+            return buildInfo;
         }
         String version = properties.getProperty("jet.version");
         String build = properties.getProperty("jet.build");
         String revision = properties.getProperty("jet.git.revision");
 
         JetBuildInfo jetBuildInfo = new JetBuildInfo(version, build, revision);
-        buildInfo.setJetBuildInfo(jetBuildInfo);
+        return buildInfo.withJetBuildInfo(jetBuildInfo);
     }
 
     private static Properties loadPropertiesFromResource(String resourceName) {

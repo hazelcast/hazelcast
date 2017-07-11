@@ -126,25 +126,4 @@ public class BuildInfoProviderTest extends HazelcastTestSupport {
         assertEquals("99.99.99", buildInfo.getVersion());
         System.clearProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
     }
-
-    @Test
-    public void testJetBuildInfo() {
-        Properties properties = new Properties();
-        properties.setProperty("jet.version", "1.0");
-        properties.setProperty("jet.build", "1486562404303");
-        properties.setProperty("jet.git.revision", "a252185d2d39c8ed5ef2596e889307d396a239cc");
-
-        BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
-        BuildInfoProvider.setJetProperties(properties, buildInfo);
-
-        JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
-
-        assertEquals("1.0", jetBuildInfo.getVersion());
-        assertEquals("1486562404303", jetBuildInfo.getBuild());
-        assertEquals("a252185d2d39c8ed5ef2596e889307d396a239cc", jetBuildInfo.getRevision());
-
-        assertContains(jetBuildInfo.toString(), "1.0");
-        assertContains(jetBuildInfo.toString(), "1486562404303");
-        assertContains(jetBuildInfo.toString(), "a252185d2d39c8ed5ef2596e889307d396a239cc");
-    }
 }

@@ -37,8 +37,7 @@ public class BuildInfo {
     private final boolean enterprise;
     private final byte serializationVersion;
     private final BuildInfo upstreamBuildInfo;
-
-    private JetBuildInfo jetBuildInfo;
+    private final JetBuildInfo jetBuildInfo;
 
     public BuildInfo(String version, String build, String revision, int buildNumber, boolean enterprise,
                      byte serializationVersion) {
@@ -47,6 +46,12 @@ public class BuildInfo {
 
     public BuildInfo(String version, String build, String revision, int buildNumber, boolean enterprise,
                      byte serializationVersion, BuildInfo upstreamBuildInfo) {
+        this(version, build, revision, buildNumber, enterprise, serializationVersion, upstreamBuildInfo,
+                null);
+    }
+
+    private BuildInfo(String version, String build, String revision, int buildNumber, boolean enterprise,
+                     byte serializationVersion, BuildInfo upstreamBuildInfo, JetBuildInfo jetBuildInfo) {
         this.version = version;
         this.build = build;
         this.revision = revision;
@@ -54,6 +59,13 @@ public class BuildInfo {
         this.enterprise = enterprise;
         this.serializationVersion = serializationVersion;
         this.upstreamBuildInfo = upstreamBuildInfo;
+        this.jetBuildInfo = jetBuildInfo;
+    }
+
+    private BuildInfo(BuildInfo buildInfo, JetBuildInfo jetBuildInfo) {
+        this(buildInfo.getVersion(), buildInfo.getBuild(), buildInfo.getRevision(), buildInfo.getBuildNumber(),
+                buildInfo.isEnterprise(), buildInfo.getSerializationVersion(), buildInfo.getUpstreamBuildInfo(),
+                jetBuildInfo);
     }
 
     public String getRevision() {
@@ -91,8 +103,8 @@ public class BuildInfo {
         return jetBuildInfo;
     }
 
-    void setJetBuildInfo(JetBuildInfo jetBuildInfo) {
-        this.jetBuildInfo = jetBuildInfo;
+    BuildInfo withJetBuildInfo(JetBuildInfo jetBuildInfo) {
+        return new BuildInfo(this, jetBuildInfo);
     }
 
     @Override
