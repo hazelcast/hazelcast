@@ -71,7 +71,7 @@
         <maven.findbugs.plugin.version>3.0.1</maven.findbugs.plugin.version>
         <maven.sonar.plugin.version>2.6</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.7.4.201502262128</maven.jacoco.plugin.version>
-        <maven.failsafe.plugin.version>2.17</maven.failsafe.plugin.version>
+        <maven.failsafe.plugin.version>2.19</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.6</maven.cobertura.plugin.version>
 
         <log4j.version>1.2.17</log4j.version>
@@ -281,6 +281,35 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
                 <version>${maven.sonar.plugin.version}</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${maven.failsafe.plugin.version}</version>
+                <configuration combine.self="override">
+                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                    <argLine>
+                        -Xms129m -Xmx1G -XX:MaxPermSize=129M
+                        -Dhazelcast.phone.home.enabled=false
+                        -Dhazelcast.mancenter.enabled=false
+                        -Dhazelcast.logging.type=none
+                        -Dhazelcast.test.use.network=true
+                    </argLine>
+                    <useManifestOnlyJar>false</useManifestOnlyJar>
+                    <useSystemClassLoader>true</useSystemClassLoader>
+                    <groups>
+                        com.hazelcast.test.annotation.IntegrationTest
+                    </groups>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
