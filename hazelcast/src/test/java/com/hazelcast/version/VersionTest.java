@@ -16,7 +16,10 @@
 
 package com.hazelcast.version;
 
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -26,8 +29,11 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.version.Version.UNKNOWN;
 import static com.hazelcast.version.Version.UNKNOWN_VERSION;
 import static com.hazelcast.version.Version.of;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -86,7 +92,7 @@ public class VersionTest {
         assertFalse(V3_0.isLessThan(of(3, 0)));
         assertTrue(V3_0.isLessThan(of(3, 1)));
         assertTrue(V3_0.isLessThan(of(4, 0)));
-        assertTrue(V3_0.isLessThan(of(200, 0)));
+        assertTrue(V3_0.isLessThan(of(100, 0)));
     }
 
     @Test
@@ -95,8 +101,8 @@ public class VersionTest {
         assertFalse(V3_0.isUnknownOrLessThan(of(3, 0)));
         assertTrue(V3_0.isUnknownOrLessThan(of(3, 1)));
         assertTrue(V3_0.isUnknownOrLessThan(of(4, 0)));
-        assertTrue(V3_0.isUnknownOrLessThan(of(200, 0)));
-        assertTrue(UNKNOWN.isUnknownOrLessThan(of(200, 0)));
+        assertTrue(V3_0.isUnknownOrLessThan(of(100, 0)));
+        assertTrue(UNKNOWN.isUnknownOrLessThan(of(100, 0)));
     }
 
     @Test
@@ -129,7 +135,6 @@ public class VersionTest {
     public void isUnknown() throws Exception {
         assertTrue(Version.UNKNOWN.isUnknown());
         assertTrue(Version.of(UNKNOWN_VERSION, UNKNOWN_VERSION).isUnknown());
-        assertFalse(Version.of(0, -1).isUnknown());
         assertTrue(Version.of(0, 0).isUnknown());
     }
 
@@ -145,6 +150,15 @@ public class VersionTest {
     }
 
     @Test
+    public void compareTo() throws Exception {
+        assertEquals(0, Version.of(3, 9).compareTo(Version.of(3, 9)));
+        assertThat(Version.of(3, 10).compareTo(Version.of(3, 9)), greaterThan(0));
+        assertThat(Version.of(4, 0).compareTo(Version.of(3, 9)), greaterThan(0));
+        assertThat(Version.of(3, 9).compareTo(Version.of(3, 10)), lessThan(0));
+        assertThat(Version.of(3, 9).compareTo(Version.of(4, 10)), lessThan(0));
+    }
+
+    @Test
     public void hashCodeTest() throws Exception {
         assertEquals(Version.UNKNOWN.hashCode(), Version.UNKNOWN.hashCode());
 
@@ -155,5 +169,48 @@ public class VersionTest {
     public void test_ofString() {
         Version v = of("3.0");
         assertEquals(v, V3_0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void ofMalformed() throws Exception {
+        Version.of("3,9");
+    }
+
+    @Test
+    public void testSerialization() {
+        Version given = Version.of(3, 9);
+        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        Version deserialized = ss.toObject(ss.toData(given));
+
+        assertEquals(deserialized, given);
+    }
+
+    @Test
+    public void toStringTest() throws Exception {
+        assertEquals("3.8", Version.of(3, 8).toString());
+    }
+
+    @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
+    public void construct_withNegativeMajor() {
+        Version.of(-1, 1);
+    }
+
+    @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
+    public void construct_withOverflowingMajor() {
+        Version.of(Byte.MAX_VALUE + 1, 1);
+    }
+
+    @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
+    public void construct_withNegativeMinor() {
+        Version.of(1, -1);
+    }
+
+    @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
+    public void construct_withOverflowingMinor() {
+        Version.of(1, Byte.MAX_VALUE + 1);
     }
 }
