@@ -74,7 +74,6 @@ public interface LocalMapStats extends LocalInstanceStats {
      */
     long getLastAccessTime();
 
-
     /**
      * Returns the last update time of the locally owned entries.
      *
@@ -118,14 +117,12 @@ public interface LocalMapStats extends LocalInstanceStats {
      */
     long getGetOperationCount();
 
-
     /**
      * Returns the number of Remove operations
      *
      * @return number of remove operations
      */
     long getRemoveOperationCount();
-
 
     /**
      * Returns the total latency of put operations. To get the average latency, divide by the number of puts
@@ -192,7 +189,8 @@ public interface LocalMapStats extends LocalInstanceStats {
 
     /**
      * Cost of map & Near Cache & backup in bytes
-     * todo in object mode object size is zero.
+     *
+     * When {@link com.hazelcast.config.InMemoryFormat#OBJECT} is used, the heapcost is zero.
      *
      * @return heap cost
      */
@@ -204,6 +202,5 @@ public interface LocalMapStats extends LocalInstanceStats {
      * @return statistics object for the Near Cache
      */
     NearCacheStats getNearCacheStats();
-
 
 }
