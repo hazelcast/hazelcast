@@ -889,7 +889,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 logger.finest("Sending sync replica request to -> " + target + "; for partitionId=" + partitionId
                         + ", replicaIndex=" + replicaIndex);
             }
-            replicaSyncScheduler.schedule(partitionMigrationTimeout, partitionId, syncInfo);
+            replicaSyncScheduler.schedule(backupSyncCheckInterval, partitionId, syncInfo);
             ReplicaSyncRequest syncRequest = new ReplicaSyncRequest(partitionId, replicaIndex);
             nodeEngine.getOperationService().send(syncRequest, target);
             return true;
