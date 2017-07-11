@@ -26,7 +26,7 @@ public class SemaphoreMBean extends HazelcastMBean<ISemaphore> {
 
     protected SemaphoreMBean(ISemaphore managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = service.createObjectName("ISemaphore", managedObject.getName());
+        this.objectName = service.createObjectName("ISemaphore", managedObject.getName());
     }
 
     @ManagedAnnotation("name")

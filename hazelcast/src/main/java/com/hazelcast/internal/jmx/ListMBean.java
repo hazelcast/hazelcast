@@ -23,9 +23,10 @@ import com.hazelcast.core.IList;
  */
 @ManagedDescription("IList")
 public class ListMBean extends HazelcastMBean<IList<?>> {
+
     protected ListMBean(IList<?> managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = service.createObjectName("IList", managedObject.getName());
+        this.objectName = service.createObjectName("IList", managedObject.getName());
     }
 
     @ManagedAnnotation(value = "clear", operation = true)

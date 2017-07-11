@@ -76,7 +76,6 @@ final class MBeans {
         return mBeanFactory == null ? null : mBeanFactory.getObjectType();
     }
 
-
     private static MBeanFactory getMBeanFactory(String serviceName) {
         return MBEAN_FACTORY_TYPES_REGISTRY.get(serviceName);
     }

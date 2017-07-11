@@ -26,7 +26,7 @@ public class SetMBean extends HazelcastMBean<ISet> {
 
     protected SetMBean(ISet managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = service.createObjectName("ISet", managedObject.getName());
+        this.objectName = service.createObjectName("ISet", managedObject.getName());
     }
 
     @ManagedAnnotation(value = "clear", operation = true)

@@ -26,7 +26,7 @@ public class ExecutorServiceMBean extends HazelcastMBean<IExecutorService> {
 
     protected ExecutorServiceMBean(IExecutorService managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = service.createObjectName("IExecutorService", managedObject.getName());
+        this.objectName = service.createObjectName("IExecutorService", managedObject.getName());
     }
 
     @ManagedAnnotation("localPendingTaskCount")

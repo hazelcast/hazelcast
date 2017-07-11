@@ -28,7 +28,7 @@ public class TopicMBean extends HazelcastMBean<ITopic> {
 
     protected TopicMBean(ITopic managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = service.createObjectName("ITopic", managedObject.getName());
+        this.objectName = service.createObjectName("ITopic", managedObject.getName());
     }
 
     @ManagedAnnotation("localCreationTime")

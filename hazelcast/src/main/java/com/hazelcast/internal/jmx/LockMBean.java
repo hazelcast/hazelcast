@@ -26,7 +26,7 @@ public class LockMBean extends HazelcastMBean<ILock> {
 
     protected LockMBean(ILock managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = service.createObjectName("ILock", managedObject.getName());
+        this.objectName = service.createObjectName("ILock", managedObject.getName());
     }
 
     @ManagedAnnotation("name")
