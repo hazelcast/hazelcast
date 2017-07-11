@@ -22,8 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -36,7 +35,7 @@ import static com.hazelcast.map.BackupExpirationTest.getTotalEntryCount;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category(SlowTest.class)
 public class BackupExpirationBouncingMemberTest extends HazelcastTestSupport {
 
     String mapName = "test";
