@@ -36,6 +36,7 @@ import java.io.File;
 
 import static com.hazelcast.internal.nearcache.AbstractNearCachePreloaderTest.KeyType.INTEGER;
 import static com.hazelcast.internal.nearcache.AbstractNearCachePreloaderTest.KeyType.STRING;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheInvalidations;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheRecord;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
@@ -269,6 +270,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
             Object key = createKey(keyType, i);
             context.dataAdapter.put(key, "value-" + i);
         }
+        assertNearCacheInvalidations(context, keyCount);
 
         // start the client which will kick off the Near Cache pre-loader
         NearCacheTestContext<Object, String, NK, NV> clientContext = createClientContext();
@@ -302,7 +304,11 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     private void populateNearCache(NearCacheTestContext<Object, String, NK, NV> context, int keyCount, KeyType keyType) {
         for (int i = 0; i < keyCount; i++) {
             Object key = createKey(keyType, i);
-            context.nearCacheAdapter.put(key, "value-" + i);
+            context.dataAdapter.put(key, "value-" + i);
+        }
+        assertNearCacheInvalidations(context, keyCount);
+        for (int i = 0; i < keyCount; i++) {
+            Object key = createKey(keyType, i);
             context.nearCacheAdapter.get(key);
         }
     }
