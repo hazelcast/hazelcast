@@ -186,7 +186,7 @@
         <dependency>
             <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.utils</artifactId>
-            <version>1.10.0</version>
+            <version>${felix.utils.version}</version>
             <scope>test</scope>
         </dependency>
 
