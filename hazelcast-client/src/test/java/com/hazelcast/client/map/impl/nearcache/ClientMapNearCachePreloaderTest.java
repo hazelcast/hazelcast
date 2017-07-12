@@ -47,6 +47,7 @@ import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import static com.hazelcast.client.map.impl.nearcache.ClientMapInvalidationListener.createInvalidationEventHandler;
 import static java.lang.Thread.currentThread;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.Executors.newFixedThreadPool;
@@ -182,6 +183,7 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
                 .setNearCacheInstance(client)
                 .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(clientMap))
                 .setNearCache(nearCache)
-                .setNearCacheManager(nearCacheManager);
+                .setNearCacheManager(nearCacheManager)
+                .setInvalidationListener(createInvalidationEventHandler(clientMap));
     }
 }
