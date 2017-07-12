@@ -157,7 +157,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         for (int threadId = 0; threadId < threads.length; threadId++) {
             String threadName = createThreadPoolName(hzName, "partition-operation") + threadId;
             // the normalQueue will be a blocking queue. We don't want to idle, because there are many operation threads.
-            MPSCQueue<Object> normalQueue = new MPSCQueue<Object>(idleStrategy);
+            MPSCQueue<Object> normalQueue = new MPSCQueue<>(idleStrategy);
 
             OperationQueue operationQueue = new DefaultOperationQueue(normalQueue, new ConcurrentLinkedQueue<Object>());
 

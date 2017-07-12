@@ -52,7 +52,7 @@ class MapPostJoinAwareService implements PostJoinAwareService {
     }
 
     private List<AccumulatorInfo> getAccumulatorInfoList() {
-        List<AccumulatorInfo> infoList = new ArrayList<AccumulatorInfo>();
+        List<AccumulatorInfo> infoList = new ArrayList<>();
 
         PublisherContext publisherContext = mapServiceContext.getQueryCacheContext().getPublisherContext();
         MapPublisherRegistry mapPublisherRegistry = publisherContext.getMapPublisherRegistry();

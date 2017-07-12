@@ -74,7 +74,7 @@ public class MigrationTest extends HazelcastTestSupport {
             assertEquals(i, map.get(i).intValue());
         }
 
-        List<HazelcastInstance> list = new ArrayList<HazelcastInstance>(3);
+        List<HazelcastInstance> list = new ArrayList<>(3);
         list.add(instance1);
         list.add(instance2);
         list.add(instance3);

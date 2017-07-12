@@ -252,7 +252,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
             public ReadResultSet<?> decodeClientMessage(ClientMessage message) {
                 final MapEventJournalReadCodec.ResponseParameters params = MapEventJournalReadCodec.decodeResponse(message);
                 final PortableReadResultSet<?> resultSet
-                        = new PortableReadResultSet<Object>(params.readCount, params.items, params.itemSeqs);
+                        = new PortableReadResultSet<>(params.readCount, params.items, params.itemSeqs);
                 resultSet.setSerializationService(getSerializationService());
                 return resultSet;
             }
@@ -970,7 +970,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         ClientMessage response = invoke(request, keyData);
 
         MapGetEntryViewCodec.ResponseParameters parameters = MapGetEntryViewCodec.decodeResponse(response);
-        SimpleEntryView<K, V> entryView = new SimpleEntryView<K, V>();
+        SimpleEntryView<K, V> entryView = new SimpleEntryView<>();
         SimpleEntryView<Data, Data> dataEntryView = parameters.response;
 
         if (dataEntryView == null) {
@@ -1056,8 +1056,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         }
 
         int keysSize = keys.size();
-        Map<Integer, List<Data>> partitionToKeyData = new HashMap<Integer, List<Data>>();
-        List<Object> resultingKeyValuePairs = new ArrayList<Object>(keysSize * 2);
+        Map<Integer, List<Data>> partitionToKeyData = new HashMap<>();
+        List<Object> resultingKeyValuePairs = new ArrayList<>(keysSize * 2);
         getAllInternal(keys, partitionToKeyData, resultingKeyValuePairs);
 
         Map<K, V> result = createHashMap(keysSize);
@@ -1073,7 +1073,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         if (partitionToKeyData.isEmpty()) {
             fillPartitionToKeyData(keys, partitionToKeyData, null, null);
         }
-        List<Future<ClientMessage>> futures = new ArrayList<Future<ClientMessage>>(partitionToKeyData.size());
+        List<Future<ClientMessage>> futures = new ArrayList<>(partitionToKeyData.size());
         for (Map.Entry<Integer, List<Data>> entry : partitionToKeyData.entrySet()) {
             int partitionId = entry.getKey();
             List<Data> keyList = entry.getValue();
@@ -1136,7 +1136,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         InternalSerializationService serializationService = ((InternalSerializationService) getContext()
                 .getSerializationService());
         for (Entry<Data, Data> row : resultParameters.response) {
-            LazyMapEntry<K, V> entry = new LazyMapEntry<K, V>(row.getKey(), row.getValue(), serializationService);
+            LazyMapEntry<K, V> entry = new LazyMapEntry<>(row.getKey(), row.getValue(), serializationService);
             setBuilder.add(entry);
         }
         return setBuilder.build();
@@ -1170,7 +1170,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         MapKeySetWithPagingPredicateCodec.ResponseParameters resultParameters = MapKeySetWithPagingPredicateCodec
                 .decodeResponse(response);
 
-        ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>();
+        ArrayList<Map.Entry> resultList = new ArrayList<>();
         for (Data keyData : resultParameters.response) {
             K key = toObject(keyData);
             resultList.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, null));
@@ -1192,7 +1192,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         InternalSerializationService serializationService = ((InternalSerializationService) getContext()
                 .getSerializationService());
         for (Entry<Data, Data> row : resultParameters.response) {
-            LazyMapEntry<K, V> entry = new LazyMapEntry<K, V>(row.getKey(), row.getValue(), serializationService);
+            LazyMapEntry<K, V> entry = new LazyMapEntry<>(row.getKey(), row.getValue(), serializationService);
             setBuilder.add(entry);
         }
         return setBuilder.build();
@@ -1208,7 +1208,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         MapEntriesWithPagingPredicateCodec.ResponseParameters resultParameters = MapEntriesWithPagingPredicateCodec
                 .decodeResponse(response);
 
-        ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>();
+        ArrayList<Map.Entry> resultList = new ArrayList<>();
         for (Entry<Data, Data> entry : resultParameters.response) {
             K key = toObject(entry.getKey());
             V value = toObject(entry.getValue());
@@ -1240,7 +1240,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         MapValuesWithPagingPredicateCodec.ResponseParameters resultParameters = MapValuesWithPagingPredicateCodec
                 .decodeResponse(response);
 
-        List<Entry> resultList = new ArrayList<Entry>(resultParameters.response.size());
+        List<Entry> resultList = new ArrayList<>(resultParameters.response.size());
         for (Entry<Data, Data> entry : resultParameters.response) {
             K key = toObject(entry.getKey());
             V value = toObject(entry.getValue());
@@ -1522,7 +1522,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
     public void putAll(Map<? extends K, ? extends V> map) {
         ClientPartitionService partitionService = getContext().getPartitionService();
         int partitionCount = partitionService.getPartitionCount();
-        Map<Integer, List<Map.Entry<Data, Data>>> entryMap = new HashMap<Integer, List<Map.Entry<Data, Data>>>(partitionCount);
+        Map<Integer, List<Map.Entry<Data, Data>>> entryMap = new HashMap<>(partitionCount);
 
         for (Entry<? extends K, ? extends V> entry : map.entrySet()) {
             checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
@@ -1541,7 +1541,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
     }
 
     protected void putAllInternal(Map<? extends K, ? extends V> map, Map<Integer, List<Map.Entry<Data, Data>>> entryMap) {
-        List<Future<?>> futures = new ArrayList<Future<?>>(entryMap.size());
+        List<Future<?>> futures = new ArrayList<>(entryMap.size());
         for (Entry<Integer, List<Map.Entry<Data, Data>>> entry : entryMap.entrySet()) {
             Integer partitionId = entry.getKey();
             // if there is only one entry, consider how we can use MapPutRequest

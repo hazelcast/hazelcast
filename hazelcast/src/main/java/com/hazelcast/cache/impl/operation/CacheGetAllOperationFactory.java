@@ -37,7 +37,7 @@ public class CacheGetAllOperationFactory
         implements OperationFactory, IdentifiedDataSerializable {
 
     private String name;
-    private Set<Data> keys = new HashSet<Data>();
+    private Set<Data> keys = new HashSet<>();
     private ExpiryPolicy expiryPolicy;
 
     public CacheGetAllOperationFactory() {

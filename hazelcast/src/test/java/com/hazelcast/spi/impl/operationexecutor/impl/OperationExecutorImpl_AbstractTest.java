@@ -180,8 +180,8 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
 
     class DummyOperationRunnerFactory implements OperationRunnerFactory {
 
-        List<DummyOperationRunner> partitionOperationHandlers = new LinkedList<DummyOperationRunner>();
-        List<DummyOperationRunner> genericOperationHandlers = new LinkedList<DummyOperationRunner>();
+        List<DummyOperationRunner> partitionOperationHandlers = new LinkedList<>();
+        List<DummyOperationRunner> genericOperationHandlers = new LinkedList<>();
         DummyOperationRunner adhocHandler;
 
         @Override

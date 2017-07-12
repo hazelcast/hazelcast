@@ -124,7 +124,7 @@ public class MemberChannelInboundHandlerTest extends TcpIpConnection_AbstractTes
     }
 
     class MockPacketDispatcher implements PacketHandler {
-        private List<Packet> packets = new LinkedList<Packet>();
+        private List<Packet> packets = new LinkedList<>();
 
         @Override
         public void handle(Packet packet) throws Exception {

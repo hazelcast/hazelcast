@@ -233,7 +233,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
             Collection<ServiceNamespace> requestedNamespaces, int replicaIndex, Address target) {
 
         // namespaces arg may not support removal
-        Collection<ServiceNamespace> namespaces = new ArrayList<ServiceNamespace>(requestedNamespaces);
+        Collection<ServiceNamespace> namespaces = new ArrayList<>(requestedNamespaces);
         Iterator<ServiceNamespace> iter = namespaces.iterator();
         while (iter.hasNext()) {
             ServiceNamespace namespace = iter.next();
@@ -384,8 +384,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
      * @return copy of scheduled replica-sync requests
      */
     List<ScheduledEntry<ReplicaFragmentSyncInfo, Void>> getScheduledReplicaSyncRequests() {
-        final List<ScheduledEntry<ReplicaFragmentSyncInfo, Void>>
-                entries = new ArrayList<ScheduledEntry<ReplicaFragmentSyncInfo, Void>>();
+        final List<ScheduledEntry<ReplicaFragmentSyncInfo, Void>> entries = new ArrayList<>();
         for (ReplicaFragmentSyncInfo syncInfo : replicaSyncRequests) {
             ScheduledEntry<ReplicaFragmentSyncInfo, Void> entry = replicaSyncTimeoutScheduler.get(syncInfo);
             if (entry != null) {

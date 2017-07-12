@@ -179,7 +179,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
 
         @Override
         public Map<Integer, Book> loadAll(Collection<Integer> keys) {
-            Map<Integer, Book> map = new TreeMap<Integer, Book>();
+            Map<Integer, Book> map = new TreeMap<>();
             for (int key : keys) {
                 map.put(key, new Book(key, String.valueOf(key), String.valueOf(key % 7), 1800 + key % 200));
             }
@@ -188,7 +188,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
 
         @Override
         public Iterable<Integer> loadAllKeys() {
-            List<Integer> keys = new ArrayList<Integer>(BOOK_COUNT);
+            List<Integer> keys = new ArrayList<>(BOOK_COUNT);
             for (int i = 0; i < BOOK_COUNT; i++) {
                 keys.add(i);
             }

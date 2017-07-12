@@ -35,7 +35,7 @@ public final class ClientMessageSplitter {
      */
     public static List<ClientMessage> getSubFrames(int maxFrameSize, ClientMessage clientMessage) {
         int numberOFSubFrames = ClientMessageSplitter.getNumberOfSubFrames(maxFrameSize, clientMessage);
-        ArrayList<ClientMessage> messages = new ArrayList<ClientMessage>(numberOFSubFrames);
+        ArrayList<ClientMessage> messages = new ArrayList<>(numberOFSubFrames);
         for (int i = 0; i < numberOFSubFrames; i++) {
             messages.add(ClientMessageSplitter.getSubFrame(maxFrameSize, i, numberOFSubFrames, clientMessage));
         }

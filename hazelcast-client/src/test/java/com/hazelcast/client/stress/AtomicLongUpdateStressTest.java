@@ -102,7 +102,7 @@ public class AtomicLongUpdateStressTest extends StressTestSupport {
             t.addIncrements(increments);
         }
 
-        Set<Integer> failedKeys = new HashSet<Integer>();
+        Set<Integer> failedKeys = new HashSet<>();
         for (int k = 0; k < REFERENCE_COUNT; k++) {
             long expectedValue = increments[k];
             long foundValue = references[k].get();

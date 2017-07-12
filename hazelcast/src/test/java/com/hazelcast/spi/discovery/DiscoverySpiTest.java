@@ -222,7 +222,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         PropertyDefinition third = new SimplePropertyDefinition("third", PropertyTypeConverter.INTEGER);
         PropertyDefinition fourth = new SimplePropertyDefinition("fourth", true, PropertyTypeConverter.STRING);
 
-        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        Map<String, Comparable> properties = new HashMap<>();
         properties.put("first", "value-first");
         properties.put("second", Boolean.FALSE);
         properties.put("third", 100);
@@ -406,7 +406,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         @Override
         public Collection<DiscoveryNode> discoverNodes() {
             try {
-                List<DiscoveryNode> discoveryNodes = new ArrayList<DiscoveryNode>(4);
+                List<DiscoveryNode> discoveryNodes = new ArrayList<>(4);
                 Address address = new Address("127.0.0.1", 50001);
                 discoveryNodes.add(new SimpleDiscoveryNode(address));
                 address = new Address("127.0.0.1", 50002);
@@ -442,7 +442,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         private final Collection<PropertyDefinition> propertyDefinitions;
 
         public TestDiscoveryStrategyFactory() {
-            List<PropertyDefinition> propertyDefinitions = new ArrayList<PropertyDefinition>();
+            List<PropertyDefinition> propertyDefinitions = new ArrayList<>();
             propertyDefinitions.add(new SimplePropertyDefinition("key-string", PropertyTypeConverter.STRING));
             propertyDefinitions.add(new SimplePropertyDefinition("key-int", PropertyTypeConverter.INTEGER));
             propertyDefinitions.add(new SimplePropertyDefinition("key-boolean", PropertyTypeConverter.BOOLEAN));
@@ -585,7 +585,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
 
         @Override
         public Map<String, Object> discoverLocalMetadata() {
-            Map<String, Object> metadata = new HashMap<String, Object>();
+            Map<String, Object> metadata = new HashMap<>();
             metadata.put("test-byte", Byte.MAX_VALUE);
             metadata.put("test-short", Short.MAX_VALUE);
             metadata.put("test-int", Integer.MAX_VALUE);
@@ -602,7 +602,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
 
         @Override
         public Iterable<MemberGroup> getMemberGroups() {
-            List<MemberGroup> groups = new ArrayList<MemberGroup>();
+            List<MemberGroup> groups = new ArrayList<>();
             try {
                 groups.add(new DefaultMemberGroup(createMembers()));
                 groups.add(new DefaultMemberGroup(createMembers()));
@@ -614,7 +614,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     }
 
     private static Collection<Member> createMembers() throws UnknownHostException {
-        Collection<Member> members = new HashSet<Member>();
+        Collection<Member> members = new HashSet<>();
         InetAddress fakeAddress = InetAddress.getLocalHost();
         members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), VERSION, true));
         members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5702), VERSION, false));
@@ -632,7 +632,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         interfaces.setEnabled(true);
         interfaces.addInterface("127.0.0.1");
 
-        List<DiscoveryNode> discoveryNodes = new CopyOnWriteArrayList<DiscoveryNode>();
+        List<DiscoveryNode> discoveryNodes = new CopyOnWriteArrayList<>();
         DiscoveryStrategyFactory factory = new CollectingDiscoveryStrategyFactory(discoveryNodes);
 
         DiscoveryConfig discoveryConfig = config.getNetworkConfig().getJoin().getDiscoveryConfig();

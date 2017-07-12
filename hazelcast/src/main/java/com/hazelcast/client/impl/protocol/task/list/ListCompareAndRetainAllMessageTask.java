@@ -44,7 +44,7 @@ public class ListCompareAndRetainAllMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        HashSet<Data> values = new HashSet<Data>(parameters.values);
+        HashSet<Data> values = new HashSet<>(parameters.values);
         return new CollectionCompareAndRemoveOperation(parameters.name, true, values);
     }
 

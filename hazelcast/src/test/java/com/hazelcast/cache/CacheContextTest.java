@@ -91,10 +91,8 @@ public class CacheContextTest extends HazelcastTestSupport {
 
         CachingProvider provider = initAndGetCachingProvider();
         CacheManager cacheManager = provider.getCacheManager();
-        CacheEntryListenerConfiguration<String, String> cacheEntryListenerConfig =
-                new MutableCacheEntryListenerConfiguration<String, String>(
-                        FactoryBuilder.factoryOf(new TestListener()), null, true, true);
-        CompleteConfiguration<String, String> cacheConfig = new MutableConfiguration<String, String>();
+        CacheEntryListenerConfiguration<String, String> cacheEntryListenerConfig = new MutableCacheEntryListenerConfiguration<>(FactoryBuilder.factoryOf(new TestListener()), null, true, true);
+        CompleteConfiguration<String, String> cacheConfig = new MutableConfiguration<>();
         Cache<String, String> cache = cacheManager.createCache(CACHE_NAME, cacheConfig);
 
         cache.registerCacheEntryListener(cacheEntryListenerConfig);

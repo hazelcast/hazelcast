@@ -140,14 +140,14 @@ public class MapWriteQuorumTest {
 
     @Test
     public void testPutAllOperationSuccessfulWhenQuorumSizeMet() {
-        HashMap<Object, Object> map = new HashMap<Object, Object>();
+        HashMap<Object, Object> map = new HashMap<>();
         map.put("foo", "bar");
         map1.putAll(map);
     }
 
     @Test(expected = QuorumException.class)
     public void testPutAllOperationThrowsExceptionWhenQuorumSizeNotMet() {
-        HashMap<Object, Object> map = new HashMap<Object, Object>();
+        HashMap<Object, Object> map = new HashMap<>();
         map.put("foo", "bar");
         map4.putAll(map);
     }
@@ -316,14 +316,14 @@ public class MapWriteQuorumTest {
 
     @Test
     public void testExecuteOnKeysOperationSuccessfulWhenQuorumSizeMet() {
-        HashSet<Object> keys = new HashSet<Object>();
+        HashSet<Object> keys = new HashSet<>();
         keys.add("foo");
         map1.executeOnKey(keys, new TestLoggingEntryProcessor());
     }
 
     @Test(expected = QuorumException.class)
     public void testExecuteOnKeysOperationThrowsExceptionWhenQuorumSizeNotMet() {
-        HashSet<Object> keys = new HashSet<Object>();
+        HashSet<Object> keys = new HashSet<>();
         keys.add("foo");
         map4.executeOnKey(keys, new TestLoggingEntryProcessor());
     }

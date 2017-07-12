@@ -56,14 +56,14 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
         MapMergePolicy mergePolicy = mapServiceContext.getMergePolicyProvider()
                 .getMergePolicy(LatestUpdateMapMergePolicy.class.getName());
         long now = Clock.currentTimeMillis();
-        SimpleEntryView<String, String> initialEntry = new SimpleEntryView<String, String>("key", "value1");
+        SimpleEntryView<String, String> initialEntry = new SimpleEntryView<>("key", "value1");
         initialEntry.setCreationTime(now);
         initialEntry.setLastUpdateTime(now);
         // need some latency to be sure that target members time is greater than now
         sleepMillis(100);
         recordStore.merge(dataKey, initialEntry, mergePolicy);
 
-        SimpleEntryView<String, String> mergingEntry = new SimpleEntryView<String, String>("key", "value2");
+        SimpleEntryView<String, String> mergingEntry = new SimpleEntryView<>("key", "value2");
         now = Clock.currentTimeMillis();
         mergingEntry.setCreationTime(now);
         mergingEntry.setLastUpdateTime(now);
@@ -85,10 +85,10 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
         MapMergePolicy mergePolicy = mapServiceContext.getMergePolicyProvider()
                 .getMergePolicy(PutIfAbsentMapMergePolicy.class.getName());
 
-        SimpleEntryView<String, String> initialEntry = new SimpleEntryView<String, String>("key", "value1");
+        SimpleEntryView<String, String> initialEntry = new SimpleEntryView<>("key", "value1");
         recordStore.merge(dataKey, initialEntry, mergePolicy);
 
-        SimpleEntryView<String, String> mergingEntry = new SimpleEntryView<String, String>("key", "value2");
+        SimpleEntryView<String, String> mergingEntry = new SimpleEntryView<>("key", "value2");
         recordStore.merge(dataKey, mergingEntry, mergePolicy);
 
         assertEquals("value1", map.get("key"));
@@ -106,10 +106,10 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
         RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(instance, "key"), name);
         MapMergePolicy mergePolicy = mapServiceContext.getMergePolicyProvider()
                 .getMergePolicy(PassThroughMergePolicy.class.getName());
-        SimpleEntryView<String, String> initialEntry = new SimpleEntryView<String, String>("key", "value1");
+        SimpleEntryView<String, String> initialEntry = new SimpleEntryView<>("key", "value1");
         recordStore.merge(dataKey, initialEntry, mergePolicy);
 
-        SimpleEntryView<String, String> mergingEntry = new SimpleEntryView<String, String>("key", "value2");
+        SimpleEntryView<String, String> mergingEntry = new SimpleEntryView<>("key", "value2");
         recordStore.merge(dataKey, mergingEntry, mergePolicy);
 
         assertEquals("value2", map.get("key"));

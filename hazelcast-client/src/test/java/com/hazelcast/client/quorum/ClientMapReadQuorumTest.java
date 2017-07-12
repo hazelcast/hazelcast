@@ -131,14 +131,14 @@ public class ClientMapReadQuorumTest extends HazelcastTestSupport {
 
     @Test
     public void testGetAllOperationSuccessfulWhenQuorumSizeMet() {
-        HashSet<Object> keys = new HashSet<Object>();
+        HashSet<Object> keys = new HashSet<>();
         keys.add("foo");
         map1.getAll(keys);
     }
 
     @Test(expected = QuorumException.class)
     public void testGetAllOperationThrowsExceptionWhenQuorumSizeNotMet() {
-        HashSet<Object> keys = new HashSet<Object>();
+        HashSet<Object> keys = new HashSet<>();
         keys.add("foo");
         map4.getAll(keys);
     }

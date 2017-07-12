@@ -80,7 +80,7 @@ public abstract class DefaultMapProjectMessageTask<P>
         Set result = QueryResultUtils.transformToSet(nodeEngine.getSerializationService(), combinedResult,
                 getPredicate(), IterationType.VALUE, false);
 
-        List<Data> serialized = new ArrayList<Data>(result.size());
+        List<Data> serialized = new ArrayList<>(result.size());
 
         SerializationService serializationService = nodeEngine.getSerializationService();
         for (Object row : result) {

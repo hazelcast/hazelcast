@@ -167,7 +167,7 @@ public class PartitionDistributionTest extends HazelcastTestSupport {
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
         int nodeCount = dataNodeCount + liteNodeCount;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
-        final BlockingQueue<Integer> counts = new ArrayBlockingQueue<Integer>(nodeCount);
+        final BlockingQueue<Integer> counts = new ArrayBlockingQueue<>(nodeCount);
         final HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
 
         for (int i = 0; i < dataNodeCount; i++) {

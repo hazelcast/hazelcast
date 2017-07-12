@@ -285,7 +285,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private Collection<AddressProvider> createAddressProviders(AddressProvider externalAddressProvider) {
         ClientNetworkConfig networkConfig = getClientConfig().getNetworkConfig();
         final ClientAwsConfig awsConfig = networkConfig.getAwsConfig();
-        Collection<AddressProvider> addressProviders = new LinkedList<AddressProvider>();
+        Collection<AddressProvider> addressProviders = new LinkedList<>();
 
         addressProviders.add(new DefaultAddressProvider(networkConfig));
         if (externalAddressProvider != null) {
@@ -618,7 +618,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                     ClientGetDistributedObjectsCodec.decodeResponse(response);
 
             Collection<? extends DistributedObject> distributedObjects = proxyManager.getDistributedObjects();
-            Set<DistributedObjectInfo> localDistributedObjects = new HashSet<DistributedObjectInfo>();
+            Set<DistributedObjectInfo> localDistributedObjects = new HashSet<>();
             for (DistributedObject localInfo : distributedObjects) {
                 localDistributedObjects.add(new DistributedObjectInfo(localInfo.getServiceName(), localInfo.getName()));
             }

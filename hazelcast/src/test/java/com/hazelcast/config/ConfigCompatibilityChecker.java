@@ -104,7 +104,7 @@ class ConfigCompatibilityChecker {
 
     private static Map<String, SemaphoreConfig> getSemaphoreConfigsByName(Config c) {
         final Collection<SemaphoreConfig> semaphoreConfigs = c.getSemaphoreConfigs();
-        final HashMap<String, SemaphoreConfig> configsByName = new HashMap<String, SemaphoreConfig>(semaphoreConfigs.size());
+        final HashMap<String, SemaphoreConfig> configsByName = new HashMap<>(semaphoreConfigs.size());
         for (SemaphoreConfig config : semaphoreConfigs) {
             configsByName.put(config.getName(), config);
         }
@@ -121,7 +121,7 @@ class ConfigCompatibilityChecker {
             String type, Config c1, Config c2,
             Map<String, T> configs1, Map<String, T> configs2, ConfigChecker<T> checker) {
 
-        final Set<String> configNames = new HashSet<String>(configs1.keySet());
+        final Set<String> configNames = new HashSet<>(configs1.keySet());
         configNames.addAll(configs2.keySet());
 
         for (final String name : configNames) {
@@ -897,8 +897,8 @@ class ConfigCompatibilityChecker {
                 return false;
             }
 
-            final HashMap<String, ServiceConfig> config1 = new HashMap<String, ServiceConfig>();
-            final HashMap<String, ServiceConfig> config2 = new HashMap<String, ServiceConfig>();
+            final HashMap<String, ServiceConfig> config1 = new HashMap<>();
+            final HashMap<String, ServiceConfig> config2 = new HashMap<>();
 
             for (ServiceConfig serviceConfig : c1) {
                 config1.put(serviceConfig.getName(), serviceConfig);

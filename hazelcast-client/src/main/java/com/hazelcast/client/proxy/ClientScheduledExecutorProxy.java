@@ -99,7 +99,7 @@ public class ClientScheduledExecutorProxy
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getTaskOrKeyPartitionId(command, name);
-        TaskDefinition<V> definition = new TaskDefinition<V>(TaskDefinition.Type.SINGLE_RUN, name, command, delay, unit);
+        TaskDefinition<V> definition = new TaskDefinition<>(TaskDefinition.Type.SINGLE_RUN, name, command, delay, unit);
         return scheduleOnPartition(name, definition, partitionId);
     }
 
@@ -204,7 +204,7 @@ public class ClientScheduledExecutorProxy
         checkNotNull(unit, "Unit is null");
 
         String name = extractNameOrGenerateOne(command);
-        Map<Member, IScheduledFuture<V>> futures = new HashMap<Member, IScheduledFuture<V>>();
+        Map<Member, IScheduledFuture<V>> futures = new HashMap<>();
         for (Member member : members) {
             TaskDefinition definition = new TaskDefinition(
                     TaskDefinition.Type.SINGLE_RUN, name, command, delay, unit);
@@ -225,7 +225,7 @@ public class ClientScheduledExecutorProxy
 
         String name = extractNameOrGenerateOne(command);
         Callable adapter = createScheduledRunnableAdapter(command);
-        Map<Member, IScheduledFuture<?>> futures = new HashMap<Member, IScheduledFuture<?>>();
+        Map<Member, IScheduledFuture<?>> futures = new HashMap<>();
         for (Member member : members) {
             TaskDefinition definition = new TaskDefinition(
                     TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit);
@@ -238,7 +238,7 @@ public class ClientScheduledExecutorProxy
 
     @Override
     public <V> IScheduledFuture<V> getScheduledFuture(ScheduledTaskHandler handler) {
-        ClientScheduledFutureProxy<V> futureProxy = new ClientScheduledFutureProxy<V>(handler, getContext());
+        ClientScheduledFutureProxy<V> futureProxy = new ClientScheduledFutureProxy<>(handler, getContext());
         return futureProxy;
     }
 
@@ -256,10 +256,10 @@ public class ClientScheduledExecutorProxy
         Collection<Map.Entry<Member, List<ScheduledTaskHandler>>> urnsPerMember =
                 ScheduledExecutorGetAllScheduledFuturesCodec.decodeResponse(response).handlers;
 
-        Map<Member, List<IScheduledFuture<V>>> tasksMap = new HashMap<Member, List<IScheduledFuture<V>>>();
+        Map<Member, List<IScheduledFuture<V>>> tasksMap = new HashMap<>();
 
         for (Map.Entry<Member, List<ScheduledTaskHandler>> entry : urnsPerMember) {
-            List<IScheduledFuture<V>> memberTasks = new ArrayList<IScheduledFuture<V>>();
+            List<IScheduledFuture<V>> memberTasks = new ArrayList<>();
             for (ScheduledTaskHandler scheduledTaskHandler : entry.getValue()) {
                 memberTasks.add(new ClientScheduledFutureProxy(scheduledTaskHandler, getContext()));
             }
@@ -273,7 +273,7 @@ public class ClientScheduledExecutorProxy
     @Override
     public void shutdown() {
         Collection<Member> members = getContext().getClusterService().getMemberList();
-        Collection<Future> calls = new LinkedList<Future>();
+        Collection<Future> calls = new LinkedList<>();
 
         for (Member member : members) {
             ClientMessage request = ScheduledExecutorShutdownCodec.encodeRequest(getName(), member.getAddress());

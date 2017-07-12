@@ -342,7 +342,7 @@ public class ClientMultiMapReduceTest
             m1.put(i, i);
         }
 
-        final Map<String, List<Integer>> listenerResults = new HashMap<String, List<Integer>>();
+        final Map<String, List<Integer>> listenerResults = new HashMap<>();
         final Semaphore semaphore = new Semaphore(1);
         semaphore.acquire();
 
@@ -388,7 +388,7 @@ public class ClientMultiMapReduceTest
             m1.put(i, i);
         }
 
-        final Map<String, List<Integer>> listenerResults = new HashMap<String, List<Integer>>();
+        final Map<String, List<Integer>> listenerResults = new HashMap<>();
         final Semaphore semaphore = new Semaphore(1);
         semaphore.acquire();
 
@@ -434,7 +434,7 @@ public class ClientMultiMapReduceTest
             m1.put(i, i);
         }
 
-        final Map<String, Integer> listenerResults = new HashMap<String, Integer>();
+        final Map<String, Integer> listenerResults = new HashMap<>();
         final Semaphore semaphore = new Semaphore(1);
         semaphore.acquire();
 

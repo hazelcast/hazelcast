@@ -85,8 +85,8 @@ public class ClientMessageSplitAndBuildTest {
         int FRAME_SIZE = 50;
         int NUMBER_OF_MESSAGES = 5;
 
-        List<List<ClientMessage>> framedClientMessages = new ArrayList<List<ClientMessage>>(NUMBER_OF_MESSAGES);
-        final List<ClientMessage> expectedClientMessages = new ArrayList<ClientMessage>();
+        List<List<ClientMessage>> framedClientMessages = new ArrayList<>(NUMBER_OF_MESSAGES);
+        final List<ClientMessage> expectedClientMessages = new ArrayList<>();
 
         for (int id = 0; id < NUMBER_OF_MESSAGES; id++) {
             String s = UUID.randomUUID().toString();

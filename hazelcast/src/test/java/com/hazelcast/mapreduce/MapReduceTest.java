@@ -109,7 +109,7 @@ public class MapReduceTest extends HazelcastTestSupport {
 
             JobTracker tracker = h1.getJobTracker("default");
             KeyValueSource<Integer, Integer> kvs = integerKvSource(m1);
-            KeyValueSource<Integer, Integer> wrapper = new MapKeyValueSourceAdapter<Integer, Integer>(kvs);
+            KeyValueSource<Integer, Integer> wrapper = new MapKeyValueSourceAdapter<>(kvs);
             Job<Integer, Integer> job = tracker.newJob(wrapper);
 
             ICompletableFuture<Map<String, List<Integer>>> future =
@@ -148,7 +148,7 @@ public class MapReduceTest extends HazelcastTestSupport {
 
             JobTracker tracker = h1.getJobTracker("default");
             KeyValueSource<Integer, Integer> kvs = integerKvSource(m1);
-            KeyValueSource<Integer, Integer> wrapper = new MapKeyValueSourceAdapter<Integer, Integer>(kvs);
+            KeyValueSource<Integer, Integer> wrapper = new MapKeyValueSourceAdapter<>(kvs);
             Job<Integer, Integer> job = tracker.newJob(wrapper);
             ICompletableFuture<Map<String, List<Integer>>> future = job.mapper(new TestMapper()).submit();
 
@@ -182,7 +182,7 @@ public class MapReduceTest extends HazelcastTestSupport {
 
             JobTracker tracker = h1.getJobTracker("default");
             KeyValueSource<Integer, Integer> kvs = integerKvSource(m1);
-            KeyValueSource<Integer, Integer> wrapper = new MapKeyValueSourceAdapter<Integer, Integer>(kvs);
+            KeyValueSource<Integer, Integer> wrapper = new MapKeyValueSourceAdapter<>(kvs);
             Job<Integer, Integer> job = tracker.newJob(wrapper);
             ICompletableFuture<Map<String, List<Integer>>> future =
                     job.mapper(new TestMapper())
@@ -624,7 +624,7 @@ public class MapReduceTest extends HazelcastTestSupport {
                 m1.put(i, i);
             }
 
-            final Map<String, List<Integer>> listenerResults = new HashMap<String, List<Integer>>();
+            final Map<String, List<Integer>> listenerResults = new HashMap<>();
             final Semaphore semaphore = new Semaphore(1);
             semaphore.acquire();
 
@@ -676,7 +676,7 @@ public class MapReduceTest extends HazelcastTestSupport {
                 m1.put(i, i);
             }
 
-            final Map<String, List<Integer>> listenerResults = new HashMap<String, List<Integer>>();
+            final Map<String, List<Integer>> listenerResults = new HashMap<>();
             final Semaphore semaphore = new Semaphore(1);
             semaphore.acquire();
 
@@ -729,7 +729,7 @@ public class MapReduceTest extends HazelcastTestSupport {
                 m1.put(i, i);
             }
 
-            final Map<String, Integer> listenerResults = new HashMap<String, Integer>();
+            final Map<String, Integer> listenerResults = new HashMap<>();
             final Semaphore semaphore = new Semaphore(1);
             semaphore.acquire();
 
@@ -1052,7 +1052,7 @@ public class MapReduceTest extends HazelcastTestSupport {
         }
 
         private class EmployeeCombiner extends Combiner<Employee, Set<Employee>> {
-            private Set<Employee> passed = new HashSet<Employee>();
+            private Set<Employee> passed = new HashSet<>();
 
             public void combine(Employee e) {
                 if (e.getId() >= min && e.getId() <= max) {
@@ -1116,7 +1116,7 @@ public class MapReduceTest extends HazelcastTestSupport {
     public static class EmployeeCollator implements Collator<Map.Entry<Integer, Set<Employee>>, Map<Integer, Set<Employee>>> {
 
         public Map<Integer, Set<Employee>> collate(Iterable<Map.Entry<Integer, Set<Employee>>> values) {
-            Map<Integer, Set<Employee>> result = new HashMap<Integer, Set<Employee>>();
+            Map<Integer, Set<Employee>> result = new HashMap<>();
             for (Map.Entry<Integer, Set<Employee>> entry : values) {
                 for (Employee e : entry.getValue()) {
                     result.put(e.getId(), entry.getValue());
@@ -1534,7 +1534,7 @@ public class MapReduceTest extends HazelcastTestSupport {
 
         private class FinalizingCombiner extends Combiner<Integer, List<Integer>> {
 
-            private List<Integer> result = new ArrayList<Integer>();
+            private List<Integer> result = new ArrayList<>();
 
             @Override
             public void combine(Integer value) {

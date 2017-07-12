@@ -120,14 +120,14 @@ public class CacheReadQuorumTest {
 
     @Test
     public void testGetAllOperationSuccessfulWhenQuorumSizeMet() {
-        HashSet<Integer> hashSet = new HashSet<Integer>();
+        HashSet<Integer> hashSet = new HashSet<>();
         hashSet.add(123);
         cache1.getAll(hashSet);
     }
 
     @Test(expected = QuorumException.class)
     public void testGetAllOperationThrowsExceptionWhenQuorumSizeNotMet() {
-        HashSet<Integer> hashSet = new HashSet<Integer>();
+        HashSet<Integer> hashSet = new HashSet<>();
         hashSet.add(123);
         cache4.getAll(hashSet);
     }

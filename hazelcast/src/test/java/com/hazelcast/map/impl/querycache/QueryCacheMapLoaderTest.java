@@ -127,7 +127,7 @@ public class QueryCacheMapLoaderTest extends HazelcastTestSupport {
 
         @Override
         public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
-            Map<Integer, Integer> results = new HashMap<Integer, Integer>();
+            Map<Integer, Integer> results = new HashMap<>();
             for (Integer key : keys) {
                 results.put(key, map.get(key));
             }

@@ -34,7 +34,7 @@ public class EventServiceMBean extends HazelcastMBean<EventService> {
     public EventServiceMBean(HazelcastInstance hazelcastInstance, EventService eventService, ManagementService service) {
         super(eventService, service);
 
-        Hashtable<String, String> properties = new Hashtable<String, String>(INITIAL_CAPACITY);
+        Hashtable<String, String> properties = new Hashtable<>(INITIAL_CAPACITY);
         properties.put("type", quote("HazelcastInstance.EventService"));
         properties.put("name", quote(hazelcastInstance.getName()));
         properties.put("instance", quote(hazelcastInstance.getName()));

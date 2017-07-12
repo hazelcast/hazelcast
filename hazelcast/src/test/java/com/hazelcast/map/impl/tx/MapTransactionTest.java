@@ -1134,7 +1134,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         node.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Integer, Employee> txMap = context.getMap(mapName);
-                PagingPredicate<Integer, Employee> predicate = new PagingPredicate<Integer, Employee>(5);
+                PagingPredicate<Integer, Employee> predicate = new PagingPredicate<>(5);
                 txMap.values(predicate);
                 return true;
             }

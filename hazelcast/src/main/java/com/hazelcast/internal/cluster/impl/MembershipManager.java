@@ -239,8 +239,8 @@ public class MembershipManager {
     void updateMembers(MembersView membersView) {
         MemberMap currentMemberMap = memberMapRef.get();
 
-        Collection<MemberImpl> addedMembers = new LinkedList<MemberImpl>();
-        Collection<MemberImpl> removedMembers = new LinkedList<MemberImpl>();
+        Collection<MemberImpl> addedMembers = new LinkedList<>();
+        Collection<MemberImpl> removedMembers = new LinkedList<>();
         ClusterHeartbeatManager clusterHeartbeatManager = clusterService.getClusterHeartbeatManager();
 
         MemberImpl[] members = new MemberImpl[membersView.size()];
@@ -588,7 +588,7 @@ public class MembershipManager {
     }
 
     void sendMembershipEvents(Collection<MemberImpl> currentMembers, Collection<MemberImpl> newMembers) {
-        Set<Member> eventMembers = new LinkedHashSet<Member>(currentMembers);
+        Set<Member> eventMembers = new LinkedHashSet<>(currentMembers);
         if (!newMembers.isEmpty()) {
             if (newMembers.size() == 1) {
                 MemberImpl newMember = newMembers.iterator().next();
@@ -651,14 +651,14 @@ public class MembershipManager {
     }
 
     private MembersView decideNewMembersView(MembersView localMembersView, Set<Member> members) {
-        Map<Address, Future<MembersView>> futures = new HashMap<Address, Future<MembersView>>();
+        Map<Address, Future<MembersView>> futures = new HashMap<>();
         MembersView latestMembersView = fetchLatestMembersView(localMembersView, members, futures);
 
         logger.fine("Latest " + latestMembersView + " before final decision...");
 
         // within the most recent members view, select the members that have reported their members view successfully
         int finalVersion = latestMembersView.getVersion() + 1;
-        List<MemberInfo> finalMembers = new ArrayList<MemberInfo>();
+        List<MemberInfo> finalMembers = new ArrayList<>();
         for (MemberInfo memberInfo : latestMembersView.getMembers()) {
             Address address = memberInfo.getAddress();
             if (node.getThisAddress().equals(address)) {
@@ -799,7 +799,7 @@ public class MembershipManager {
             Collection<MemberImpl> removedMembers = membersRemovedInNotJoinableState.getMembers();
             Collection<MemberImpl> members = memberMapRef.get().getMembers();
 
-            Collection<Member> allMembers = new ArrayList<Member>(members.size() + removedMembers.size());
+            Collection<Member> allMembers = new ArrayList<>(members.size() + removedMembers.size());
             allMembers.addAll(members);
             allMembers.addAll(removedMembers);
 
@@ -825,7 +825,7 @@ public class MembershipManager {
         clusterServiceLock.lock();
         try {
             Set<MemberImpl> membersRemoved
-                    = new LinkedHashSet<MemberImpl>(membersRemovedInNotJoinableStateRef.get().getMembers());
+                    = new LinkedHashSet<>(membersRemovedInNotJoinableStateRef.get().getMembers());
 
             Iterator<MemberImpl> it = membersRemoved.iterator();
             while (it.hasNext()) {

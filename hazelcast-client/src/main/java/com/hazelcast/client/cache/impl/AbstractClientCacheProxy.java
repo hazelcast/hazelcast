@@ -222,8 +222,8 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         }
 
         int keysSize = keys.size();
-        List<Data> dataKeys = new LinkedList<Data>();
-        List<Object> resultingKeyValuePairs = new ArrayList<Object>(keysSize * 2);
+        List<Data> dataKeys = new LinkedList<>();
+        List<Object> resultingKeyValuePairs = new ArrayList<>(keysSize * 2);
         getAllInternal(keys, dataKeys, expiryPolicy, resultingKeyValuePairs, startNanos);
 
         Map<K, V> result = createHashMap(keysSize);
@@ -329,7 +329,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
                                                         ExpiryPolicy expiryPolicy, long startNanos)
             throws ExecutionException, InterruptedException {
         Data expiryPolicyData = toData(expiryPolicy);
-        List<FutureEntriesTuple> futureEntriesTuples = new ArrayList<FutureEntriesTuple>(entriesPerPartition.length);
+        List<FutureEntriesTuple> futureEntriesTuples = new ArrayList<>(entriesPerPartition.length);
 
         for (int partitionId = 0; partitionId < entriesPerPartition.length; partitionId++) {
             List<Map.Entry<Data, Data>> entries = entriesPerPartition[partitionId];

@@ -125,7 +125,7 @@ public class DefaultPublisherContext implements PublisherContext {
     }
 
     private Collection<PartitionAccumulatorRegistry> getRemovalCandidates(String uuid) {
-        List<PartitionAccumulatorRegistry> candidates = new ArrayList<PartitionAccumulatorRegistry>();
+        List<PartitionAccumulatorRegistry> candidates = new ArrayList<>();
         MapPublisherRegistry mapPublisherRegistry = getMapPublisherRegistry();
         Map<String, PublisherRegistry> all = mapPublisherRegistry.getAll();
         for (PublisherRegistry publisherRegistry : all.values()) {

@@ -49,7 +49,7 @@ public class MapEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetImpl
         // the event journal ringbuffer supports only OBJECT format for now
         final InternalEventJournalMapEvent e = (InternalEventJournalMapEvent) item;
         final DeserializingEventJournalMapEvent<K, V> deserialisingEvent
-                = new DeserializingEventJournalMapEvent<K, V>(serializationService, e);
+                = new DeserializingEventJournalMapEvent<>(serializationService, e);
         super.addItem(seq, deserialisingEvent);
     }
 

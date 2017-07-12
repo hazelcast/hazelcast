@@ -100,7 +100,7 @@ public class PutFromLoadAllBackupOperation extends MapOperation implements Backu
         if (size < 1) {
             keyValueSequence = Collections.emptyList();
         } else {
-            final List<Data> tmpKeyValueSequence = new ArrayList<Data>(size);
+            final List<Data> tmpKeyValueSequence = new ArrayList<>(size);
             for (int i = 0; i < size; i++) {
                 Data data = in.readData();
                 tmpKeyValueSequence.add(data);

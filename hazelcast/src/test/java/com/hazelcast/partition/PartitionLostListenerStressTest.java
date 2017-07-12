@@ -46,7 +46,7 @@ public class PartitionLostListenerStressTest
     public static class EventCollectingPartitionLostListener
             implements PartitionLostListener {
 
-        private List<PartitionLostEvent> lostPartitions = new ArrayList<PartitionLostEvent>();
+        private List<PartitionLostEvent> lostPartitions = new ArrayList<>();
 
         @Override
         public synchronized void partitionLost(PartitionLostEvent event) {
@@ -104,7 +104,7 @@ public class PartitionLostListenerStressTest
     public void testPartitionLostListener()
             throws InterruptedException {
         List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp();
-        List<HazelcastInstance> survivingInstances = new ArrayList<HazelcastInstance>(instances);
+        List<HazelcastInstance> survivingInstances = new ArrayList<>(instances);
         List<HazelcastInstance> terminatingInstances = survivingInstances.subList(0, numberOfNodesToCrash);
         survivingInstances = survivingInstances.subList(numberOfNodesToCrash, instances.size());
 

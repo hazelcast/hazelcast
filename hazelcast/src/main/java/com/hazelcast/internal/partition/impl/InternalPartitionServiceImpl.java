@@ -629,7 +629,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                                                      PartitionRuntimeState partitionState,
                                                      OperationService operationService) {
         final ClusterServiceImpl clusterService = node.clusterService;
-        List<Future<Boolean>> calls = new ArrayList<Future<Boolean>>(members.size());
+        List<Future<Boolean>> calls = new ArrayList<>(members.size());
         for (MemberImpl member : members) {
             if (!(member.localMember() || clusterService.isMemberRemovedInNotJoinableState(member.getAddress()))) {
                 try {
@@ -769,7 +769,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
      * there are any.
      */
     private void filterAndLogUnknownAddressesInPartitionTable(Address sender, Address[][] partitionTable) {
-        final Set<Address> unknownAddresses = new HashSet<Address>();
+        final Set<Address> unknownAddresses = new HashSet<>();
         for (int partitionId = 0; partitionId < partitionTable.length; partitionId++) {
             Address[] replicas = partitionTable[partitionId];
             searchUnknownAddressesInPartitionTable(sender, unknownAddresses, partitionId, replicas);
@@ -964,7 +964,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         int dataMembersSize = dataMembers.size();
         int partitionsPerMember = (dataMembersSize > 0 ? (int) ceil((float) partitionCount / dataMembersSize) : 0);
 
-        Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(dataMembersSize);
+        Map<Address, List<Integer>> memberPartitions = new HashMap<>(dataMembersSize);
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             Address owner = getPartitionOwnerOrWait(partitionId);
 
@@ -980,7 +980,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Override
     public List<Integer> getMemberPartitions(Address target) {
-        List<Integer> ownedPartitions = new LinkedList<Integer>();
+        List<Integer> ownedPartitions = new LinkedList<>();
         for (int i = 0; i < partitionCount; i++) {
             final Address owner = getPartitionOwner(i);
             if (target.equals(owner)) {
@@ -1205,8 +1205,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
             logger.info("Fetching most recent partition table! my version: " + maxVersion);
 
-            Collection<MigrationInfo> allCompletedMigrations = new HashSet<MigrationInfo>();
-            Collection<MigrationInfo> allActiveMigrations = new HashSet<MigrationInfo>();
+            Collection<MigrationInfo> allCompletedMigrations = new HashSet<>();
+            Collection<MigrationInfo> allActiveMigrations = new HashSet<>();
 
             processResults(futures, allCompletedMigrations, allActiveMigrations);
 
@@ -1219,8 +1219,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         /** Sends {@link FetchPartitionStateOperation} to all cluster members. */
         private Collection<Future<PartitionRuntimeState>> invokeFetchPartitionStateOps() {
             Collection<MemberImpl> members = node.clusterService.getMemberImpls();
-            Collection<Future<PartitionRuntimeState>> futures = new ArrayList<Future<PartitionRuntimeState>>(
-                    members.size());
+            Collection<Future<PartitionRuntimeState>> futures = new ArrayList<>(members.size());
 
             for (MemberImpl m : members) {
                 if (m.localMember()) {

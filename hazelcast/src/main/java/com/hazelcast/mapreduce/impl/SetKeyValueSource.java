@@ -86,7 +86,7 @@ public class SetKeyValueSource<V>
         if (thisAddress.equals(partitionOwner)) {
             SetService setService = nei.getService(SetService.SERVICE_NAME);
             SetContainer setContainer = setService.getOrCreateContainer(setName, false);
-            List<CollectionItem> items = new ArrayList<CollectionItem>(setContainer.getCollection());
+            List<CollectionItem> items = new ArrayList<>(setContainer.getCollection());
             iterator = items.iterator();
         }
         return true;

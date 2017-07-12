@@ -79,7 +79,7 @@ public class ClientConfig {
      * List of listeners that Hazelcast will automatically add as a part of initialization process.
      * Currently only supports {@link com.hazelcast.core.LifecycleListener}.
      */
-    private List<ListenerConfig> listenerConfigs = new LinkedList<ListenerConfig>();
+    private List<ListenerConfig> listenerConfigs = new LinkedList<>();
 
     /**
      * pool-size for internal ExecutorService which handles responses etc.
@@ -90,10 +90,10 @@ public class ClientConfig {
 
     private ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
 
-    private Map<String, NearCacheConfig> nearCacheConfigMap = new ConcurrentHashMap<String, NearCacheConfig>();
+    private Map<String, NearCacheConfig> nearCacheConfigMap = new ConcurrentHashMap<>();
 
     private Map<String, ClientReliableTopicConfig> reliableTopicConfigMap
-            = new ConcurrentHashMap<String, ClientReliableTopicConfig>();
+            = new ConcurrentHashMap<>();
 
     private Map<String, Map<String, QueryCacheConfig>> queryCacheConfigs;
 
@@ -101,7 +101,7 @@ public class ClientConfig {
 
     private NativeMemoryConfig nativeMemoryConfig = new NativeMemoryConfig();
 
-    private List<ProxyFactoryConfig> proxyFactoryConfigs = new LinkedList<ProxyFactoryConfig>();
+    private List<ProxyFactoryConfig> proxyFactoryConfigs = new LinkedList<>();
 
     private ManagedContext managedContext;
 

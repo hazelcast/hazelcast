@@ -139,7 +139,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        Map<String, SemaphoreContainer> migrationData = new HashMap<String, SemaphoreContainer>();
+        Map<String, SemaphoreContainer> migrationData = new HashMap<>();
         for (Map.Entry<String, SemaphoreContainer> entry : containers.entrySet()) {
             String name = entry.getKey();
             SemaphoreContainer semaphoreContainer = entry.getValue();

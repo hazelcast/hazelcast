@@ -191,7 +191,7 @@ public class PublisherCreateOperation extends MapOperation {
             return Collections.emptyList();
         }
 
-        List<Future<Object>> lsFutures = new ArrayList<Future<Object>>(partitionIds.size());
+        List<Future<Object>> lsFutures = new ArrayList<>(partitionIds.size());
         NodeEngine nodeEngine = getNodeEngine();
         ExecutorService executor = nodeEngine.getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
         for (Integer partitionId : partitionIds) {

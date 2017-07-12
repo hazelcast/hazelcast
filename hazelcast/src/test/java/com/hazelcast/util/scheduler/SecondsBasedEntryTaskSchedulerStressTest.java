@@ -105,13 +105,13 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
     public void test_postpone() {
         final EntryStoringProcessor processor = new EntryStoringProcessor();
         final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler
-                = new SecondsBasedEntryTaskScheduler<Integer, Integer>(executorService, processor, ScheduleType.POSTPONE);
+                = new SecondsBasedEntryTaskScheduler<>(executorService, processor, ScheduleType.POSTPONE);
 
         final int numberOfKeys = NUMBER_OF_THREADS;
         final Object[] locks = new Object[numberOfKeys];
         Arrays.fill(locks, new Object());
 
-        final Map<Integer, Integer> latestValues = new ConcurrentHashMap<Integer, Integer>();
+        final Map<Integer, Integer> latestValues = new ConcurrentHashMap<>();
 
         for (int i = 0; i < NUMBER_OF_THREADS; i++) {
             final Thread thread = new Thread() {
@@ -170,7 +170,7 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
     }
 
     private static class EntryStoringProcessor implements ScheduledEntryProcessor<Integer, Integer> {
-        final Map<Integer, Integer> values = new ConcurrentHashMap<Integer, Integer>();
+        final Map<Integer, Integer> values = new ConcurrentHashMap<>();
 
         @Override
         public void process(EntryTaskScheduler<Integer, Integer> scheduler,

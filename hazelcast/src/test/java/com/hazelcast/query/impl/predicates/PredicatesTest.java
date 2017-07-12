@@ -93,7 +93,7 @@ public class PredicatesTest extends HazelcastTestSupport {
         String name = randomString();
         map.put("key", new Value(name));
 
-        final ShouldExecuteOncePredicate<?, ?> indexAwareNotIndexedPredicate = new ShouldExecuteOncePredicate<Object, Object>();
+        final ShouldExecuteOncePredicate<?, ?> indexAwareNotIndexedPredicate = new ShouldExecuteOncePredicate<>();
         final EqualPredicate equalPredicate = new EqualPredicate("name", name);
         final AndPredicate andPredicate = new AndPredicate(indexAwareNotIndexedPredicate, equalPredicate);
         map.values(andPredicate);

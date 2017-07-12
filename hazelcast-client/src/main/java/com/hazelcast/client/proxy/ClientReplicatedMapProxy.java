@@ -222,7 +222,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Override
     public void putAll(Map<? extends K, ? extends V> map) {
         try {
-            List<Entry<Data, Data>> dataEntries = new ArrayList<Entry<Data, Data>>(map.size());
+            List<Entry<Data, Data>> dataEntries = new ArrayList<>(map.size());
             for (Entry<? extends K, ? extends V> entry : map.entrySet()) {
                 Data keyData = toData(entry.getKey());
                 Data valueData = toData(entry.getValue());
@@ -391,7 +391,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         ClientMessage request = ReplicatedMapKeySetCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
         ReplicatedMapKeySetCodec.ResponseParameters result = ReplicatedMapKeySetCodec.decodeResponse(response);
-        List<Entry<K, V>> keys = new ArrayList<Entry<K, V>>(result.response.size());
+        List<Entry<K, V>> keys = new ArrayList<>(result.response.size());
         for (Data dataKey : result.response) {
             keys.add(new AbstractMap.SimpleImmutableEntry<K, V>((K) toObject(dataKey), null));
         }
@@ -423,7 +423,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         ClientMessage request = ReplicatedMapEntrySetCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
         ReplicatedMapEntrySetCodec.ResponseParameters result = ReplicatedMapEntrySetCodec.decodeResponse(response);
-        List<Entry<K, V>> entries = new ArrayList<Entry<K, V>>(result.response.size());
+        List<Entry<K, V>> entries = new ArrayList<>(result.response.size());
         for (Entry<Data, Data> dataEntry : result.response) {
             K key = toObject(dataEntry.getKey());
             V value = toObject(dataEntry.getValue());
@@ -544,7 +544,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
                            int numberOfAffectedEntries) {
             Member member = getContext().getClusterService().getMember(uuid);
             EntryEventType eventType = EntryEventType.getByType(eventTypeId);
-            EntryEvent<K, V> entryEvent = new DataAwareEntryEvent<K, V>(member, eventTypeId, name, keyData, valueData,
+            EntryEvent<K, V> entryEvent = new DataAwareEntryEvent<>(member, eventTypeId, name, keyData, valueData,
                     oldValueData, null, getSerializationService());
             switch (eventType) {
                 case ADDED:

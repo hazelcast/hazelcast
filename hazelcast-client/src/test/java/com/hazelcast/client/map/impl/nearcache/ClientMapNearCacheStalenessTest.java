@@ -92,7 +92,7 @@ public class ClientMapNearCacheStalenessTest extends HazelcastTestSupport {
 
     @Test
     public void testNearCache_notContainsStaleValue_whenUpdatedByMultipleThreads() throws Exception {
-        List<Thread> threads = new ArrayList<Thread>();
+        List<Thread> threads = new ArrayList<>();
 
         for (int i = 0; i < NEAR_CACHE_INVALIDATOR_THREAD_COUNT; i++) {
             Thread putter = new NearCacheInvalidator();
@@ -141,7 +141,7 @@ public class ClientMapNearCacheStalenessTest extends HazelcastTestSupport {
     }
 
     private HashMap<Integer, Integer> getAllEntries(IMap<Integer, Integer> iMap) {
-        HashMap<Integer, Integer> localMap = new HashMap<Integer, Integer>(ENTRY_COUNT);
+        HashMap<Integer, Integer> localMap = new HashMap<>(ENTRY_COUNT);
         for (int i = 0; i < ENTRY_COUNT; i++) {
             localMap.put(i, iMap.get(i));
         }

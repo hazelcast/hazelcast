@@ -242,7 +242,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
     @Test
     public void testClientConnectionEvents() {
-        final LinkedList<LifecycleState> list = new LinkedList<LifecycleState>();
+        final LinkedList<LifecycleState> list = new LinkedList<>();
         list.offer(LifecycleState.STARTING);
         list.offer(LifecycleState.STARTED);
         list.offer(LifecycleState.CLIENT_CONNECTED);

@@ -215,7 +215,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     }
 
     private static Set<Integer> createSetWithPopulatedPartitionIds(int partitionCount) {
-        Set<Integer> partitionIds = new HashSet<Integer>(partitionCount);
+        Set<Integer> partitionIds = new HashSet<>(partitionCount);
         for (int i = 0; i < partitionCount; i++) {
             partitionIds.add(i);
         }

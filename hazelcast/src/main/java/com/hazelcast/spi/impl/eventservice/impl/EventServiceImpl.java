@@ -330,7 +330,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     private void invokeRegistrationOnOtherNodes(String serviceName, Registration reg) {
         OperationService operationService = nodeEngine.getOperationService();
         Collection<Member> members = nodeEngine.getClusterService().getMembers();
-        Collection<Future> calls = new ArrayList<Future>(members.size());
+        Collection<Future> calls = new ArrayList<>(members.size());
         for (Member member : members) {
             if (!member.localMember()) {
                 RegistrationOperation operation = new RegistrationOperation(reg);
@@ -345,7 +345,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     private void invokeDeregistrationOnOtherNodes(String serviceName, String topic, String id) {
         OperationService operationService = nodeEngine.getOperationService();
         Collection<Member> members = nodeEngine.getClusterService().getMembers();
-        Collection<Future> calls = new ArrayList<Future>(members.size());
+        Collection<Future> calls = new ArrayList<>(members.size());
         for (Member member : members) {
             if (!member.localMember()) {
                 DeregistrationOperation operation = new DeregistrationOperation(topic, id);
@@ -621,7 +621,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      * @return the post join operation containing all non-local registrations
      */
     public PostJoinRegistrationOperation getPostJoinOperation() {
-        final Collection<Registration> registrations = new LinkedList<Registration>();
+        final Collection<Registration> registrations = new LinkedList<>();
         for (EventServiceSegment segment : segments.values()) {
             //todo: this should be moved into the Segment.
             for (Registration reg : (Iterable<Registration>) segment.getRegistrationIdMap().values()) {

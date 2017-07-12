@@ -111,7 +111,7 @@ public class QueryIndexingTest extends HazelcastTestSupport {
     }
 
     private static Map<Integer, Employee> newEmployees(int employeeCount) {
-        Map<Integer, Employee> employees = new HashMap<Integer, Employee>();
+        Map<Integer, Employee> employees = new HashMap<>();
         for (int i = 0; i < employeeCount; i++) {
             Employee val;
             if (i % 2 == 0) {

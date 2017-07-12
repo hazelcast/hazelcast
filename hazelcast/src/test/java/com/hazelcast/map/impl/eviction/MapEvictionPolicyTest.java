@@ -64,7 +64,7 @@ public class MapEvictionPolicyTest extends HazelcastTestSupport {
         IMap<Integer, Integer> map = instance.getMap(mapName);
 
         final CountDownLatch eventLatch = new CountDownLatch(1);
-        final Queue<Integer> evictedKeys = new ConcurrentLinkedQueue<Integer>();
+        final Queue<Integer> evictedKeys = new ConcurrentLinkedQueue<>();
         map.addEntryListener(new EntryEvictedListener<Integer, Integer>() {
             @Override
             public void entryEvicted(EntryEvent<Integer, Integer> event) {

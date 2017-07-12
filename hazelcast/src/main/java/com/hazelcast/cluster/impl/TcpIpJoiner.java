@@ -158,7 +158,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                     boolean consensus = claimMastership(possibleAddresses);
                     if (consensus) {
                         if (logger.isFineEnabled()) {
-                            Set<Address> votingEndpoints = new HashSet<Address>(possibleAddresses);
+                            Set<Address> votingEndpoints = new HashSet<>(possibleAddresses);
                             votingEndpoints.removeAll(blacklistedAddresses.keySet());
                             logger.fine("Setting myself as master after consensus!"
                                     + " Voting endpoints: " + votingEndpoints);
@@ -184,12 +184,12 @@ public class TcpIpJoiner extends AbstractJoiner {
     @SuppressWarnings("checkstyle:npathcomplexity")
     private boolean claimMastership(Collection<Address> possibleAddresses) {
         if (logger.isFineEnabled()) {
-            Set<Address> votingEndpoints = new HashSet<Address>(possibleAddresses);
+            Set<Address> votingEndpoints = new HashSet<>(possibleAddresses);
             votingEndpoints.removeAll(blacklistedAddresses.keySet());
             logger.fine("Claiming myself as master node! Asking to endpoints: " + votingEndpoints);
         }
         claimingMaster = true;
-        Collection<Future<Boolean>> responses = new LinkedList<Future<Boolean>>();
+        Collection<Future<Boolean>> responses = new LinkedList<>();
         for (Address address : possibleAddresses) {
             if (isBlacklisted(address)) {
                 continue;
@@ -396,7 +396,7 @@ public class TcpIpJoiner extends AbstractJoiner {
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     protected Collection<Address> getPossibleAddresses() {
         final Collection<String> possibleMembers = getMembers();
-        final Set<Address> possibleAddresses = new HashSet<Address>();
+        final Set<Address> possibleAddresses = new HashSet<>();
         final NetworkConfig networkConfig = config.getNetworkConfig();
         for (String possibleMember : possibleMembers) {
             AddressHolder addressHolder = AddressUtil.getAddressHolder(possibleMember);
@@ -485,7 +485,7 @@ public class TcpIpJoiner extends AbstractJoiner {
     public static Collection<String> getConfigurationMembers(Config config) {
         final TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
         final Collection<String> configMembers = tcpIpConfig.getMembers();
-        final Set<String> possibleMembers = new HashSet<String>();
+        final Set<String> possibleMembers = new HashSet<>();
         for (String member : configMembers) {
             // split members defined in tcp-ip configuration by comma(,) semi-colon(;) space( ).
             String[] members = member.split("[,; ]");

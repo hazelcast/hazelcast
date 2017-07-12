@@ -186,7 +186,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
         topic.addMessageListener(listener);
 
-        final List<String> items = new ArrayList<String>();
+        final List<String> items = new ArrayList<>();
         for (int k = 0; k < 5; k++) {
             items.add("" + k);
         }

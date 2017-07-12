@@ -271,7 +271,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         int initialSize = getPutAllInitialSize(mapSize, partitionCount);
 
         try {
-            List<Future> futures = new ArrayList<Future>(partitionCount);
+            List<Future> futures = new ArrayList<>(partitionCount);
             ReplicatedMapEntries[] entrySetPerPartition = new ReplicatedMapEntries[partitionCount];
 
             // first we fill entrySetPerPartition
@@ -375,7 +375,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Override
     public Set<K> keySet() {
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
-        Set<K> keySet = new HashSet<K>();
+        Set<K> keySet = new HashSet<>();
         for (ReplicatedRecordStore store : stores) {
             keySet.addAll(store.keySet(true));
         }
@@ -385,7 +385,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Override
     public Collection<V> values() {
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
-        Collection<V> values = new ArrayList<V>();
+        Collection<V> values = new ArrayList<>();
         for (ReplicatedRecordStore store : stores) {
             values.addAll(store.values(true));
         }
@@ -395,7 +395,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Override
     public Collection<V> values(Comparator<V> comparator) {
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
-        List<V> values = new ArrayList<V>();
+        List<V> values = new ArrayList<>();
         for (ReplicatedRecordStore store : stores) {
             values.addAll(store.values(comparator));
         }
@@ -406,7 +406,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Override
     public Set<Entry<K, V>> entrySet() {
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
-        List<Entry<K, V>> entries = new ArrayList<Entry<K, V>>();
+        List<Entry<K, V>> entries = new ArrayList<>();
         for (ReplicatedRecordStore store : stores) {
             entries.addAll(store.entrySet(true));
         }

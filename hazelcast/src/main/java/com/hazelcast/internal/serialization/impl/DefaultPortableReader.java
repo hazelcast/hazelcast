@@ -45,7 +45,7 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
     private static final MultiResult NULL_EMPTY_TARGET_MULTIRESULT;
 
     static {
-        MultiResult<Object> result = new MultiResult<Object>();
+        MultiResult<Object> result = new MultiResult<>();
         result.addNullOrEmptyTarget();
         NULL_EMPTY_TARGET_MULTIRESULT = new ImmutableMultiResult<Object>(result);
     }
@@ -628,7 +628,7 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
     }
 
     private <T> MultiResult<T> readMultiPosition(List<PortablePosition> positions) throws IOException {
-        MultiResult<T> result = new MultiResult<T>();
+        MultiResult<T> result = new MultiResult<>();
         for (PortablePosition position : positions) {
             if (!position.isNullOrEmpty()) {
                 T read = readSinglePosition(position);

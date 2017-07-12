@@ -109,7 +109,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         Collection<Value> values = map.values(predicate);
         String[] expectedValues = new String[]{"name0", "name2"};
         assertEquals(expectedValues.length, values.size());
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (Value configObject : values) {
             names.add(configObject.getName());
         }
@@ -131,7 +131,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         Collection<Value> values = map.values(predicate);
         String[] expectedValues = new String[]{"name0", "name2"};
         assertEquals(expectedValues.length, values.size());
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (Value configObject : values) {
             names.add(configObject.getName());
         }
@@ -250,7 +250,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         Collection<Value> values = map.values(predicate);
         String[] expectedValues = new String[]{"name0"};
         assertEquals(expectedValues.length, values.size());
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (Value configObject : values) {
             names.add(configObject.getName());
         }
@@ -272,7 +272,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
         Collection<Value> values = map.values(predicate);
         String[] expectedValues = new String[]{"name0", "name2"};
         assertEquals(expectedValues.length, values.size());
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (Value configObject : values) {
             names.add(configObject.getName());
         }
