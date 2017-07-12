@@ -25,11 +25,22 @@ import static org.junit.Assert.fail;
 public class CheckDependenciesIT extends HazelcastTestSupport {
     private static final String MANIFEST_PATH = "META-INF/MANIFEST.MF";
     private static final String[] WHITELIST_PREFIXES = new String[]{
-            "javax.",
+
+            // everything from the Java package is OK - it's part of the Java SE platform
             "java.",
-            "sun.misc",
+
+            // with the "javax" package we have to be more specific - do not use just "javax."
+            // as it contains e.g. javax.servlet which is not part of the SE platform!
+            "javax.management",
+            "javax.net.ssl",
+            "javax.script",
+            "javax.security.auth",
+            "javax.transaction.xa",
+            "javax.xml",
+
+            // these 2 XML-related packages are part of the platform since Java SE 6
             "org.xml.sax",
-            "org.w3c.dom"
+            "org.w3c.dom",
     };
 
     @Test
