@@ -173,6 +173,10 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
                 .setNearCacheAdapter(new ICacheDataStructureAdapter<K, V>(clientCache))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
-                .setCacheManager(cacheManager);
+                .setCacheManager(cacheManager)
+                // FIXME: the JCache doesn't send invalidation on CREATED entries, so this will crash some tests
+                // see AbstractCacheRecordStore.doPutRecord()
+                //.setInvalidationListener(createInvalidationEventHandler(clientCache))
+                ;
     }
 }
