@@ -32,6 +32,9 @@ public final class ScheduledEntry<K, V> implements Map.Entry<K, V> {
 
     private final V value;
 
+    // When used with SecondsBasedEntryTaskScheduler, this field holds schedule delay in millis as requested by user.
+    // However since this field is not really used for anything, SlotBasedEntryTaskScheduler uses it to store
+    // the actual (calculated) delay in milliseconds until the slot to which the task is scheduled to execute.
     private final long scheduledDelayMillis;
 
     private final int actualDelaySeconds;

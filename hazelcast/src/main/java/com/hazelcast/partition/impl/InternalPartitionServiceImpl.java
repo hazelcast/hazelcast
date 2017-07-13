@@ -194,9 +194,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         // This is because this node is shifted up to a higher level when the third node failure occurs and its respective sync
         // request will inherently include the backup data that is requested by the previously scheduled sync request.
         replicaSyncScheduler = EntryTaskSchedulerFactory.newScheduler(scheduledExecutor,
-                new ReplicaSyncEntryProcessor(this), ScheduleType.POSTPONE);
-
+                new ReplicaSyncEntryProcessor(this), ScheduleType.POSTPONE, REPLICA_SYNC_SLOTS_PER_SECOND);
         replicaSyncRequests = new AtomicReferenceArray<ReplicaSyncInfo>(partitionCount);
+        logger.finest("Replica sync request delay is configured to " + REPLICA_SYNC_RETRY_DELAY + ", retry slots per second "
+                + REPLICA_SYNC_SLOTS_PER_SECOND);
 
         long maxMigrationDelayMs = calculateMaxMigrationDelayOnMemberRemoved();
         long minMigrationDelayMs = calculateMigrationDelayOnMemberRemoved(maxMigrationDelayMs);
@@ -207,10 +208,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 resumeMigration();
             }
         });
-
         long definedBackupSyncCheckInterval = node.groupProperties.PARTITION_BACKUP_SYNC_INTERVAL.getInteger();
         backupSyncCheckInterval = definedBackupSyncCheckInterval > 0 ? definedBackupSyncCheckInterval : 1;
-
         maxParallelReplications = node.groupProperties.PARTITION_MAX_PARALLEL_REPLICATIONS.getInteger();
         replicaSyncProcessLock = new Semaphore(maxParallelReplications);
     }
@@ -890,7 +889,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 logger.finest("Sending sync replica request to -> " + target + "; for partitionId=" + partitionId
                         + ", replicaIndex=" + replicaIndex);
             }
-            replicaSyncScheduler.schedule(partitionMigrationTimeout, partitionId, syncInfo);
+            replicaSyncScheduler.schedule(backupSyncCheckInterval, partitionId, syncInfo);
             ReplicaSyncRequest syncRequest = new ReplicaSyncRequest(partitionId, replicaIndex);
             nodeEngine.getOperationService().send(syncRequest, target);
             return true;

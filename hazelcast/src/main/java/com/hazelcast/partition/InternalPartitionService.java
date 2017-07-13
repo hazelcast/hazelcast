@@ -33,7 +33,8 @@ public interface InternalPartitionService extends CoreService {
     String SERVICE_NAME = "hz:core:partitionService";
 
     long DEFAULT_REPLICA_SYNC_DELAY = 5000L;
-    long REPLICA_SYNC_RETRY_DELAY = 500L;
+    long REPLICA_SYNC_RETRY_DELAY = Integer.getInteger("hazelcast.replica.retry.delay.millis", 500);
+    int REPLICA_SYNC_SLOTS_PER_SECOND = Integer.getInteger("hazelcast.replica.retry.slots.granularity", 10);
 
     /**
      * Static constant for dispatching and listening migration events
