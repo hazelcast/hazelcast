@@ -24,9 +24,13 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.impl.operationutil.PostJoinAwareOperationComparator;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
 import static com.hazelcast.util.Preconditions.checkNegative;
@@ -34,6 +38,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class PostJoinOp
         extends AbstractJoinOperation implements UrgentSystemOperation {
+
+    private static final Comparator POST_JOIN_OP_COMPARATOR = new PostJoinAwareOperationComparator();
 
     private Operation[] operations;
 
@@ -69,8 +75,13 @@ public class PostJoinOp
 
     @Override
     public void run() throws Exception {
-        if (operations != null && operations.length > 0) {
-            for (Operation op : operations) {
+        // sort operations according to post join sequence
+        SortedSet<Operation> sortedOperations = new TreeSet<Operation>(POST_JOIN_OP_COMPARATOR);
+        for (int i = 0; i < operations.length; i++) {
+            sortedOperations.add(operations[i]);
+        }
+        if (sortedOperations.size() > 0) {
+            for (Operation op : sortedOperations) {
                 try {
                     // not running via OperationService since we don't want any restrictions like cluster state check etc.
                     op.beforeRun();

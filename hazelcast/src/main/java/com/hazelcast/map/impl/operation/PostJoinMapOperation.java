@@ -37,6 +37,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PostJoinAwareOperation;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -47,7 +48,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class PostJoinMapOperation extends Operation implements IdentifiedDataSerializable {
+import static com.hazelcast.spi.PostJoinAwareOperation.Sequence.POST_JOIN_OPS_SEQUENCE;
+
+public class PostJoinMapOperation extends Operation implements IdentifiedDataSerializable,
+                                                               PostJoinAwareOperation {
+
+    private static final int SEQUENCE = POST_JOIN_OPS_SEQUENCE.get(PostJoinMapOperation.class);
 
     private List<MapIndexInfo> indexInfoList = new LinkedList<MapIndexInfo>();
     private List<InterceptorInfo> interceptorInfoList = new LinkedList<InterceptorInfo>();
@@ -56,6 +62,11 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
     @Override
     public String getServiceName() {
         return MapService.SERVICE_NAME;
+    }
+
+    @Override
+    public int getSequence() {
+        return SEQUENCE;
     }
 
     public void addMapIndex(MapServiceContext mapServiceContext, MapContainer mapContainer) {
