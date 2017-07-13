@@ -41,6 +41,7 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
@@ -110,13 +111,14 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
         ExecutionService executionService = nodeEngine.getExecutionService();
         ClusterService clusterService = nodeEngine.getClusterService();
         OperationService operationService = nodeEngine.getOperationService();
+        SerializationService serializationService = nodeEngine.getSerializationService();
         HazelcastProperties properties = nodeEngine.getProperties();
         ILogger logger = nodeEngine.getLogger(RepairingTask.class);
 
         MetaDataFetcher metaDataFetcher = new MemberMapMetaDataFetcher(clusterService, operationService, logger);
         String localUuid = nodeEngine.getLocalMember().getUuid();
-        return new RepairingTask(metaDataFetcher, executionService.getGlobalTaskScheduler(),
-                partitionService, properties, localUuid, logger);
+        return new RepairingTask(properties, metaDataFetcher,
+                executionService.getGlobalTaskScheduler(), serializationService, partitionService, localUuid, logger);
     }
 
     /**

@@ -23,19 +23,18 @@ import com.hazelcast.nio.serialization.Data;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static java.lang.String.format;
 
 /**
- * Handler used on near-cache side. Observes local and remote invalidations and registers relevant
- * data to {@link MetaDataContainer}s
- *
- * Used to repair near-cache in the event of invalidation-event-miss
- * or partition uuid changes. Here repairing is done by making relevant near-cache data unreachable. To make
- * stale data unreachable {@link StaleReadDetectorImpl} is used.
- *
- * An instance of this class is created per near-cache and can concurrently be used by many threads.
+ * Handler used on Near Cache side. Observes local and remote invalidations and registers relevant
+ * data to {@link MetaDataContainer}s.
+ * <p>
+ * Used to repair Near Cache in the event of missed invalidation events or partition uuid changes.
+ * Here repairing is done by making relevant Near Cache data unreachable.
+ * To make stale data unreachable {@link StaleReadDetectorImpl} is used.
+ * <p>
+ * An instance of this class is created per Near Cache and can concurrently be used by many threads.
  *
  * @see StaleReadDetectorImpl
  */
@@ -67,12 +66,6 @@ public final class RepairingHandler {
             metaData[partition] = new MetaDataContainer();
         }
         return metaData;
-    }
-
-    public void initUnknownUuids(AtomicReferenceArray<UUID> partitionUuids) {
-        for (int partition = 0; partition < partitionCount; partition++) {
-            metaDataContainers[partition].casUuid(null, partitionUuids.get(partition));
-        }
     }
 
     public MetaDataContainer getMetaDataContainer(int partition) {
@@ -227,5 +220,15 @@ public final class RepairingHandler {
                 + "name='" + name + '\''
                 + ", localUuid='" + localUuid + '\''
                 + '}';
+    }
+
+    public void initUuid(int partitionID, UUID partitionUuid) {
+        MetaDataContainer metaData = getMetaDataContainer(partitionID);
+        metaData.setUuid(partitionUuid);
+    }
+
+    public void initSequence(int partitionID, long partitionSequence) {
+        MetaDataContainer metaData = getMetaDataContainer(partitionID);
+        metaData.setSequence(partitionSequence);
     }
 }

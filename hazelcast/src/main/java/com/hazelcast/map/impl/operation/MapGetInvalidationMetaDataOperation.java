@@ -40,6 +40,7 @@ import static com.hazelcast.map.impl.MapDataSerializerHook.F_ID;
 import static com.hazelcast.map.impl.MapDataSerializerHook.MAP_INVALIDATION_METADATA;
 import static com.hazelcast.map.impl.MapDataSerializerHook.MAP_INVALIDATION_METADATA_RESPONSE;
 import static com.hazelcast.util.CollectionUtil.isNotEmpty;
+import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
 public class MapGetInvalidationMetaDataOperation extends Operation implements IdentifiedDataSerializable, ReadonlyOperation {
@@ -166,25 +167,17 @@ public class MapGetInvalidationMetaDataOperation extends Operation implements Id
     private Map<Integer, UUID> getPartitionUuidList(List<Integer> ownedPartitionIds) {
         MetaDataGenerator metaDataGenerator = getPartitionMetaDataGenerator();
 
-        Map<Integer, UUID> partitionUuids = new HashMap<Integer, UUID>(ownedPartitionIds.size());
+        Map<Integer, UUID> partitionUuids = createHashMap(ownedPartitionIds.size());
         for (Integer partitionId : ownedPartitionIds) {
-            UUID uuid = metaDataGenerator.getUuidOrNull(partitionId);
-            if (uuid != null) {
-                partitionUuids.put(partitionId, uuid);
-            }
+            UUID uuid = metaDataGenerator.getOrCreateUuid(partitionId);
+            partitionUuids.put(partitionId, uuid);
         }
         return partitionUuids;
     }
 
     private List<Integer> getOwnedPartitions() {
-        List<Integer> ownedPartitions = new ArrayList<Integer>();
         IPartitionService partitionService = getNodeEngine().getPartitionService();
-        for (int i = 0; i < partitionService.getPartitionCount(); i++) {
-            if (partitionService.isPartitionOwner(i)) {
-                ownedPartitions.add(i);
-            }
-        }
-        return ownedPartitions;
+        return partitionService.getMemberPartitions(getNodeEngine().getThisAddress());
     }
 
     private MetaDataGenerator getPartitionMetaDataGenerator() {

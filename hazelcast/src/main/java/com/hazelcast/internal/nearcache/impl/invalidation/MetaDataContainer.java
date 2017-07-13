@@ -78,6 +78,10 @@ public final class MetaDataContainer {
         return sequence;
     }
 
+    public void setSequence(long sequence) {
+        SEQUENCE.set(this, sequence);
+    }
+
     public boolean casSequence(long currentSequence, long nextSequence) {
         return SEQUENCE.compareAndSet(this, currentSequence, nextSequence);
     }
