@@ -16,27 +16,20 @@
 
 package com.hazelcast.map.impl.nearcache.invalidation;
 
-import com.hazelcast.client.impl.protocol.task.map.MapAssignAndGetUuidsOperationFactory;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataFetcher;
-import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.operation.MapGetInvalidationMetaDataOperation;
+import com.hazelcast.map.impl.operation.MapGetInvalidationMetaDataOperation.MetaDataResponse;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
@@ -57,6 +50,12 @@ public class MemberMapMetaDataFetcher extends MetaDataFetcher {
     }
 
     @Override
+    protected void extractAndPopulateResult(InternalCompletableFuture future, ResultHolder resultHolder) throws Exception {
+        MetaDataResponse response = (MetaDataResponse) future.get(ASYNC_RESULT_WAIT_TIMEOUT_MINUTES, MINUTES);
+        resultHolder.populate(response.getPartitionUuidList().entrySet(), response.getNamePartitionSequenceList().entrySet());
+    }
+
+    @Override
     protected List<InternalCompletableFuture> scanMembers(List<String> names) {
         Collection<Member> members = clusterService.getMembers(DATA_MEMBER_SELECTOR);
         List<InternalCompletableFuture> futures = new ArrayList<InternalCompletableFuture>(members.size());
@@ -72,30 +71,5 @@ public class MemberMapMetaDataFetcher extends MetaDataFetcher {
             }
         }
         return futures;
-    }
-
-    @Override
-    protected void process(InternalCompletableFuture future, ConcurrentMap<String, RepairingHandler> handlers) {
-        try {
-            MapGetInvalidationMetaDataOperation.MetaDataResponse response = extractResponse(future);
-            repairUuids(response.getPartitionUuidList().entrySet(), handlers);
-            repairSequences(response.getNamePartitionSequenceList().entrySet(), handlers);
-        } catch (Exception e) {
-            if (logger.isWarningEnabled()) {
-                logger.warning("Cant fetch invalidation meta-data [" + e.getMessage() + "]");
-            }
-        }
-    }
-
-    private MapGetInvalidationMetaDataOperation.MetaDataResponse extractResponse(InternalCompletableFuture future)
-            throws InterruptedException, ExecutionException, TimeoutException {
-
-        return (MapGetInvalidationMetaDataOperation.MetaDataResponse) future.get(1, MINUTES);
-    }
-
-    @Override
-    public Collection<Map.Entry<Integer, UUID>> assignAndGetUuids() throws Exception {
-        OperationFactory factory = new MapAssignAndGetUuidsOperationFactory();
-        return (Collection) operationService.invokeOnAllPartitions(SERVICE_NAME, factory).entrySet();
     }
 }

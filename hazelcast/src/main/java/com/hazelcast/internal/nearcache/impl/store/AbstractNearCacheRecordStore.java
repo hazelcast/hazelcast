@@ -275,6 +275,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
                 }
                 if (staleReadDetector.isStaleRead(key, record)) {
                     remove(key);
+                    nearCacheStats.incrementMisses();
                     return null;
                 }
                 if (isRecordExpired(record)) {
