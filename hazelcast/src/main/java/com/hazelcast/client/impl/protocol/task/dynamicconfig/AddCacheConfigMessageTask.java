@@ -23,9 +23,8 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.dynamicconfig.AddDynamicConfigOperationFactory;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.List;
 
@@ -47,7 +46,7 @@ public class AddCacheConfigMessageTask
     }
 
     @Override
-    protected OperationFactory getOperationFactory() {
+    protected IdentifiedDataSerializable getConfig() {
         CacheSimpleConfig config = new CacheSimpleConfig();
         config.setAsyncBackupCount(parameters.asyncBackupCount);
         config.setBackupCount(parameters.backupCount);
@@ -82,7 +81,7 @@ public class AddCacheConfigMessageTask
         config.setValueType(parameters.valueType);
         config.setWanReplicationRef(parameters.wanReplicationRef);
         config.setWriteThrough(parameters.writeThrough);
-        return new AddDynamicConfigOperationFactory(config);
+        return config;
     }
 
     @Override

@@ -22,9 +22,8 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.dynamicconfig.AddDynamicConfigOperationFactory;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public class AddReplicatedMapConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddReplicatedMapConfigCodec.RequestParameters> {
@@ -44,7 +43,7 @@ public class AddReplicatedMapConfigMessageTask
     }
 
     @Override
-    protected OperationFactory getOperationFactory() {
+    protected IdentifiedDataSerializable getConfig() {
         ReplicatedMapConfig config = new ReplicatedMapConfig(parameters.name);
         config.setAsyncFillup(parameters.asyncFillup);
         config.setInMemoryFormat(InMemoryFormat.valueOf(parameters.inMemoryFormat));
@@ -55,7 +54,7 @@ public class AddReplicatedMapConfigMessageTask
                 config.addEntryListenerConfig((EntryListenerConfig) holder.asListenerConfig(serializationService));
             }
         }
-        return new AddDynamicConfigOperationFactory(config);
+        return config;
     }
 
     @Override

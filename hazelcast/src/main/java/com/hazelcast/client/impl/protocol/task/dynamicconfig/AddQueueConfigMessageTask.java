@@ -38,9 +38,8 @@ import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.dynamicconfig.AddDynamicConfigOperationFactory;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.List;
 
@@ -62,7 +61,7 @@ public class AddQueueConfigMessageTask
     }
 
     @Override
-    protected OperationFactory getOperationFactory() {
+    protected IdentifiedDataSerializable getConfig() {
         QueueConfig config = new QueueConfig(parameters.name);
         config.setAsyncBackupCount(parameters.asyncBackupCount);
         config.setBackupCount(parameters.backupCount);
@@ -79,7 +78,7 @@ public class AddQueueConfigMessageTask
                     (List<ItemListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs);
             config.setItemListenerConfigs(itemListenerConfigs);
         }
-        return new AddDynamicConfigOperationFactory(config);
+        return config;
     }
 
     @Override

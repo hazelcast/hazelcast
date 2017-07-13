@@ -113,7 +113,7 @@ public class Node {
 
     public final HazelcastInstanceImpl hazelcastInstance;
 
-    public final DynamicConfigurationAwareConfig config;
+    public final Config config;
 
     public final NodeEngineImpl nodeEngine;
     public final ClientEngineImpl clientEngine;
