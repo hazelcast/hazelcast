@@ -236,7 +236,7 @@ public class ClientStateListenerTest extends ClientTestSupport{
         hazelcastFactory.newHazelcastInstance();
 
         hazelcastFactory.newHazelcastClient(clientConfig);
-        assertTrue(listener.awaitConnected(1, MILLISECONDS));
+        assertTrue(listener.awaitConnected(30, SECONDS));
 
         assertFalse(listener.awaitDisconnected(1, MILLISECONDS));
 
