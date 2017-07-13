@@ -299,9 +299,11 @@
                     </argLine>
                     <useManifestOnlyJar>false</useManifestOnlyJar>
                     <useSystemClassLoader>true</useSystemClassLoader>
-                    <groups>
-                        com.hazelcast.test.annotation.IntegrationTest
-                    </groups>
+                    <groups>com.hazelcast.test.annotation.QuickTest</groups>
+                    <excludedGroups>
+                        com.hazelcast.test.annotation.SlowTest,
+                        com.hazelcast.test.annotation.NightlyTest
+                    </excludedGroups>
                 </configuration>
                 <executions>
                     <execution>
@@ -950,6 +952,35 @@
                             </dependency>
                         </dependencies>
                     </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${maven.failsafe.plugin.version}</version>
+                        <configuration combine.self="override">
+                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                            <argLine>
+                                -Xms129m -Xmx1G -XX:MaxPermSize=129M
+                                -Dhazelcast.phone.home.enabled=false
+                                -Dhazelcast.mancenter.enabled=false
+                                -Dhazelcast.logging.type=none
+                                -Dhazelcast.test.use.network=true
+                            </argLine>
+                            <useManifestOnlyJar>false</useManifestOnlyJar>
+                            <useSystemClassLoader>true</useSystemClassLoader>
+                            <groups>
+                                com.hazelcast.test.annotation.NightlyTest,
+                                com.hazelcast.test.annotation.SlowTest
+                            </groups>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
@@ -999,6 +1030,36 @@
                                 <version>${maven.surefire.plugin.version}-buffered</version>
                             </dependency>
                         </dependencies>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${maven.failsafe.plugin.version}</version>
+                        <configuration combine.self="override">
+                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                            <argLine>
+                                -Xms129m -Xmx1G -XX:MaxPermSize=129M
+                                -Dhazelcast.phone.home.enabled=false
+                                -Dhazelcast.mancenter.enabled=false
+                                -Dhazelcast.logging.type=none
+                                -Dhazelcast.test.use.network=true
+                            </argLine>
+                            <useManifestOnlyJar>false</useManifestOnlyJar>
+                            <useSystemClassLoader>true</useSystemClassLoader>
+                            <groups>
+                                com.hazelcast.test.annotation.QuickTest,
+                                com.hazelcast.test.annotation.SlowTest,
+                                com.hazelcast.test.annotation.NightlyTest
+                            </groups>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>

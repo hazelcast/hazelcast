@@ -5,7 +5,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.IntegrationTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.apache.felix.utils.manifest.Clause;
 import org.apache.felix.utils.manifest.Parser;
 import org.junit.Test;
@@ -21,7 +21,7 @@ import java.util.jar.Manifest;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(IntegrationTest.class)
+@Category(QuickTest.class)
 public class CheckDependenciesIT extends HazelcastTestSupport {
     private static final String MANIFEST_PATH = "META-INF/MANIFEST.MF";
     private static final String[] WHITELIST_PREFIXES = new String[]{
