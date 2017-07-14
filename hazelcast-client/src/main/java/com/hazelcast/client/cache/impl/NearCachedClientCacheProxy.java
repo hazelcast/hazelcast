@@ -368,7 +368,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         key = serializeKeys ? toData(key) : key;
         Object cached = getCachedValue(key, false);
         if (cached != NOT_CACHED) {
-            return true;
+            return cached != null;
         }
         return super.containsKeyInternal(key);
     }

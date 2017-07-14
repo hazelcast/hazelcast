@@ -1149,4 +1149,16 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
         assertNearCacheStats(context, size, expectedHits, expectedMisses);
     }
+
+    @Test
+    public void test_containsKey_returns_false_when_called_for_null_cached_key() {
+        NearCacheTestContext<Integer, Integer, NK, NV> context = createContext();
+
+        int absentKey = 1;
+        Integer value = context.nearCacheAdapter.get(absentKey);
+        boolean containsKey = context.nearCacheAdapter.containsKey(absentKey);
+
+        assertNull("returned value should be null", value);
+        assertFalse("containsKey should return false", containsKey);
+    }
 }
