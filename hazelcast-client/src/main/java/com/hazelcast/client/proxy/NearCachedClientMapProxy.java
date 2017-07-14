@@ -112,7 +112,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     protected boolean containsKeyInternal(Object key) {
         Object cached = getCachedValue(key, false);
         if (cached != NOT_CACHED) {
-            return true;
+            return cached != null;
         }
         return super.containsKeyInternal(key);
     }

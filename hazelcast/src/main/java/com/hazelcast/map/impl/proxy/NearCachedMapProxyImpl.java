@@ -365,7 +365,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         key = toNearCacheKeyWithStrategy(key);
         Object cachedValue = getCachedValue(key, false);
         if (cachedValue != NOT_CACHED) {
-            return true;
+            return cachedValue != null;
         }
         return super.containsKeyInternal(key);
     }
