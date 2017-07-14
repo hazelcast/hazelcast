@@ -105,7 +105,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
         final Data keyData = toData(key);
         Object cached = getCachedValue(keyData, false);
         if (cached != NOT_CACHED) {
-            return true;
+            return cached != null;
         }
 
         ClientMessage request = CacheContainsKeyCodec.encodeRequest(nameWithPrefix, keyData);
