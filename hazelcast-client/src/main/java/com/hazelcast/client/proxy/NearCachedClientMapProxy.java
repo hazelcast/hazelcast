@@ -709,12 +709,12 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         public void beforeListenerRegister() {
             nearCache.clear();
             getRepairingTask().deregisterHandler(name);
+            repairingHandler = getRepairingTask().registerAndGetHandler(name, nearCache);
         }
 
         @Override
         public void onListenerRegister() {
             nearCache.clear();
-            repairingHandler = getRepairingTask().registerAndGetHandler(name, nearCache);
         }
 
         @Override

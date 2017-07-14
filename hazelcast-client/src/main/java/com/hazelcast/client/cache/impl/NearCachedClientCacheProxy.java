@@ -806,12 +806,12 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         public void beforeListenerRegister() {
             nearCache.clear();
             getRepairingTask().deregisterHandler(nameWithPrefix);
+            repairingHandler = getRepairingTask().registerAndGetHandler(nameWithPrefix, nearCache);
         }
 
         @Override
         public void onListenerRegister() {
             nearCache.clear();
-            repairingHandler = getRepairingTask().registerAndGetHandler(nameWithPrefix, nearCache);
         }
 
         @Override
