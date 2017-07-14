@@ -166,10 +166,8 @@ public class CacheGetInvalidationMetaDataOperation extends Operation implements 
 
         Map<Integer, UUID> partitionUuids = new HashMap<Integer, UUID>(ownedPartitionIds.size());
         for (Integer partitionId : ownedPartitionIds) {
-            UUID uuid = metaDataGenerator.getUuidOrNull(partitionId);
-            if (uuid != null) {
-                partitionUuids.put(partitionId, uuid);
-            }
+            UUID uuid = metaDataGenerator.getOrCreateUuid(partitionId);
+            partitionUuids.put(partitionId, uuid);
         }
         return partitionUuids;
     }
