@@ -101,14 +101,12 @@ public final class RepairingTask implements Runnable {
         int reconciliationIntervalSeconds = properties.getInteger(RECONCILIATION_INTERVAL_SECONDS);
         int minReconciliationIntervalSeconds = properties.getInteger(MIN_RECONCILIATION_INTERVAL_SECONDS);
         if (reconciliationIntervalSeconds < 0
-                || reconciliationIntervalSeconds > 0L && reconciliationIntervalSeconds < minReconciliationIntervalSeconds) {
-            String msg = format("Reconciliation interval can be at least %d seconds if it is not zero but found %d. "
-                            + "Note that giving zero disables reconciliation task.",
-                    MIN_RECONCILIATION_INTERVAL_SECONDS, reconciliationIntervalSeconds);
-
+                || reconciliationIntervalSeconds > 0 && reconciliationIntervalSeconds < minReconciliationIntervalSeconds) {
+            String msg = format("Reconciliation interval can be at least %s seconds if it is not zero, but %d was configured."
+                            + " Note: Configuring a value of zero seconds disables the reconciliation task.",
+                    MIN_RECONCILIATION_INTERVAL_SECONDS.getDefaultValue(), reconciliationIntervalSeconds);
             throw new IllegalArgumentException(msg);
         }
-
         return reconciliationIntervalSeconds;
     }
 
