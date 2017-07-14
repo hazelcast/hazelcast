@@ -33,6 +33,7 @@ import java.util.Set;
 import static com.hazelcast.internal.cluster.impl.MemberMapTest.newMember;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 
@@ -113,6 +114,16 @@ public class MembersViewTest {
         for (MemberImpl member : members) {
             assertTrue(addresses.contains(member.getAddress()));
         }
+    }
+
+    @Test
+    public void getMember() throws Exception {
+        MemberImpl[] members = MemberMapTest.newMembers(3);
+        MembersView view = MembersView.createNew(1, Arrays.asList(members));
+
+        MemberInfo member = view.getMember(members[0].getAddress());
+        assertNotNull(member);
+        assertEquals(members[0].getUuid(), member.getUuid());
     }
 
     @Test
