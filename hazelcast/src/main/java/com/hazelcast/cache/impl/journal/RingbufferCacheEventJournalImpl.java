@@ -204,8 +204,10 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
      */
     private RingbufferContainer<InternalEventJournalCacheEvent> getRingbufferOrFail(ObjectNamespace namespace, int partitionId) {
         final RingbufferService ringbufferService = getRingbufferService();
-        if (ringbufferService.hasContainer(partitionId, namespace)) {
-            return ringbufferService.getContainer(partitionId, namespace, null);
+        final RingbufferContainer<InternalEventJournalCacheEvent> container =
+                ringbufferService.getContainerOrNull(partitionId, namespace);
+        if (container != null) {
+            return container;
         }
 
         final EventJournalConfig config = getEventJournalConfig(namespace);
@@ -233,8 +235,10 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
      */
     private RingbufferContainer<InternalEventJournalCacheEvent> getRingbufferOrNull(ObjectNamespace namespace, int partitionId) {
         final RingbufferService ringbufferService = getRingbufferService();
-        if (ringbufferService.hasContainer(partitionId, namespace)) {
-            return ringbufferService.getContainer(partitionId, namespace, null);
+        final RingbufferContainer<InternalEventJournalCacheEvent> container =
+                ringbufferService.getContainerOrNull(partitionId, namespace);
+        if (container != null) {
+            return container;
         }
 
         final EventJournalConfig config = getEventJournalConfig(namespace);
@@ -245,7 +249,7 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
                                                                                                int partitionId,
                                                                                                EventJournalConfig config) {
         final RingbufferConfig ringbufferConfig = toRingbufferConfig(config);
-        return getRingbufferService().getContainer(partitionId, namespace, ringbufferConfig);
+        return getRingbufferService().getOrCreateContainer(partitionId, namespace, ringbufferConfig);
     }
 
     private RingbufferService getRingbufferService() {

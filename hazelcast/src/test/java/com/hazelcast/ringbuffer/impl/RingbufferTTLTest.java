@@ -49,7 +49,7 @@ public class RingbufferTTLTest extends HazelcastTestSupport {
         ringbuffer = hz.getRingbuffer(name);
 
         RingbufferService ringbufferService = getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
-        ringbufferContainer = ringbufferService.getContainer(
+        ringbufferContainer = ringbufferService.getOrCreateContainer(
                 ringbufferService.getRingbufferPartitionId(name),
                 RingbufferService.getRingbufferNamespace(name),
                 ringbufferConfig);

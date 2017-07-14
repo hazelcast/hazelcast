@@ -171,16 +171,17 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
     private RingbufferContainer<InternalEventJournalMapEvent> getRingbufferOrNull(ObjectNamespace namespace, int partitionId) {
         final RingbufferService service = getRingbufferService();
         final RingbufferConfig ringbufferConfig;
-        if (service.hasContainer(partitionId, namespace)) {
-            ringbufferConfig = null;
-        } else {
-            final EventJournalConfig config = getEventJournalConfig(namespace);
-            if (config == null || !config.isEnabled()) {
-                return null;
-            }
-            ringbufferConfig = toRingbufferConfig(config);
+        final RingbufferContainer<InternalEventJournalMapEvent> container = service.getContainerOrNull(partitionId, namespace);
+        if (container != null) {
+            return container;
         }
-        return service.getContainer(partitionId, namespace, ringbufferConfig);
+
+        final EventJournalConfig config = getEventJournalConfig(namespace);
+        if (config == null || !config.isEnabled()) {
+            return null;
+        }
+        ringbufferConfig = toRingbufferConfig(config);
+        return service.getOrCreateContainer(partitionId, namespace, ringbufferConfig);
     }
 
     private RingbufferService getRingbufferService() {

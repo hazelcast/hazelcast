@@ -62,11 +62,11 @@ public abstract class AbstractRingBufferOperation extends Operation
 
     /**
      * Returns an {@link RingbufferContainer} or creates a new one if necessary by calling
-     * {@link RingbufferService#getContainer(int, ObjectNamespace, RingbufferConfig)}.
+     * {@link RingbufferService#getOrCreateContainer(int, ObjectNamespace, RingbufferConfig)}.
      * Also calls the {@link RingbufferContainer#cleanup()} before returning
      * the container. This will currently remove any expired items.
      *
-     * @return the ring buffer container
+     * @return the ringbuffer container
      */
     RingbufferContainer getRingBufferContainer() {
         if (ringbuffer != null) {
@@ -74,9 +74,11 @@ public abstract class AbstractRingBufferOperation extends Operation
         }
         final RingbufferService service = getService();
         final ObjectNamespace ns = RingbufferService.getRingbufferNamespace(name);
-        final boolean isContainerCreated = service.hasContainer(getPartitionId(), ns);
-        final RingbufferContainer ringbuffer = service.getContainer(getPartitionId(), ns,
-                isContainerCreated ? null : service.getRingbufferConfig(name));
+
+        RingbufferContainer ringbuffer = service.getContainerOrNull(getPartitionId(), ns);
+        if (ringbuffer == null) {
+            ringbuffer = service.getOrCreateContainer(getPartitionId(), ns, service.getRingbufferConfig(name));
+        }
 
         ringbuffer.cleanup();
         this.ringbuffer = ringbuffer;
