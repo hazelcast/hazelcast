@@ -39,39 +39,39 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.util.MapUtil.createHashMap;
+import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class MapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
 
+    private static final String MAP_NAME = "MapInvalidationMetaDataMigrationTest";
+
     private TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         factory.shutdownAll();
     }
 
     @Test
-    public void sequences_migrated_whenNewlyJoinedNodesShutdown() throws Exception {
-        String mapName = "test";
-        Config config = newConfig(mapName);
+    public void sequences_migrated_whenNewlyJoinedNodesShutdown() {
+        Config config = newConfig();
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-
-        IMap<Object, Object> map = instance1.getMap(mapName);
+        IMap<Object, Object> map = instance1.getMap(MAP_NAME);
         for (int i = 0; i < 10000; i++) {
             map.put(i, i);
         }
-
-        Map<Integer, Long> source = getPartitionToSequenceMap(mapName, instance1);
+        Map<Integer, Long> source = getPartitionToSequenceMap(MAP_NAME, instance1);
 
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
         waitAllForSafeState(instance2);
@@ -82,30 +82,21 @@ public class MapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
         instance2.shutdown();
         waitAllForSafeState(instance3);
 
-        Map<Integer, Long> destination = getPartitionToSequenceMap(mapName, instance3);
+        Map<Integer, Long> destination = getPartitionToSequenceMap(MAP_NAME, instance3);
 
-        for (Map.Entry<Integer, Long> entry : source.entrySet()) {
-            Integer key = entry.getKey();
-            Long first = entry.getValue();
-            Long last = destination.get(key);
-
-            assertEquals(first, last);
-        }
+        assertEqualsSequenceNumbers(source, destination);
     }
 
     @Test
-    public void sequences_migrated_whenSourceNodeShutdown() throws Exception {
-        String mapName = "test";
-        Config config = newConfig(mapName);
+    public void sequences_migrated_whenSourceNodeShutdown() {
+        Config config = newConfig();
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-
-        IMap<Object, Object> map = instance1.getMap(mapName);
+        IMap<Object, Object> map = instance1.getMap(MAP_NAME);
         for (int i = 0; i < 10000; i++) {
             map.put(i, i);
         }
-
-        Map<Integer, Long> source1 = getPartitionToSequenceMap(mapName, instance1);
+        Map<Integer, Long> source = getPartitionToSequenceMap(MAP_NAME, instance1);
 
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
         HazelcastInstance instance3 = factory.newHazelcastInstance(config);
@@ -113,8 +104,8 @@ public class MapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
 
         instance1.shutdown();
 
-        Map<Integer, Long> destination2 = getPartitionToSequenceMap(mapName, instance2);
-        Map<Integer, Long> destination3 = getPartitionToSequenceMap(mapName, instance3);
+        Map<Integer, Long> destination2 = getPartitionToSequenceMap(MAP_NAME, instance2);
+        Map<Integer, Long> destination3 = getPartitionToSequenceMap(MAP_NAME, instance3);
         for (Map.Entry<Integer, Long> entry : destination2.entrySet()) {
             Integer key = entry.getKey();
             Long value = entry.getValue();
@@ -123,25 +114,25 @@ public class MapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
             }
         }
 
-        assertEquals(source1, destination3);
+        assertEqualsSequenceNumbers(source, destination3);
     }
 
     @Test
-    public void sequences_migrated_whenOneNodeContinuouslyStartsAndStops() throws Exception {
-        final String mapName = "test";
-        final Config config = newConfig(mapName);
+    public void sequences_migrated_whenOneNodeContinuouslyStartsAndStops() {
+        final Config config = newConfig();
 
-        final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        IMap<Object, Object> map = instance1.getMap(mapName);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        IMap<Object, Object> map = instance1.getMap(MAP_NAME);
         for (int i = 0; i < 10000; i++) {
             map.put(i, i);
         }
-        Map<Integer, Long> source = getPartitionToSequenceMap(mapName, instance1);
+        Map<Integer, Long> source = getPartitionToSequenceMap(MAP_NAME, instance1);
 
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
-        final AtomicBoolean stop = new AtomicBoolean();
 
+        final AtomicBoolean stop = new AtomicBoolean();
         Thread shadow = new Thread(new Runnable() {
+            @Override
             public void run() {
                 while (!stop.get()) {
                     HazelcastInstance instance = factory.newHazelcastInstance(config);
@@ -155,27 +146,24 @@ public class MapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
         shadow.start();
         sleepSeconds(20);
         stop.set(true);
-        shadow.join();
+        assertJoinable(shadow);
 
         instance2.shutdown();
 
-        Map<Integer, Long> destination = getPartitionToSequenceMap(mapName, instance1);
+        Map<Integer, Long> destination = getPartitionToSequenceMap(MAP_NAME, instance1);
 
-        assertEquals(source, destination);
+        assertEqualsSequenceNumbers(source, destination);
     }
 
     @Test
-    public void uuids_migrated_whenNewlyJoinedNodesShutdown() throws Exception {
-        String mapName = "test";
-        Config config = newConfig(mapName);
+    public void uuids_migrated_whenNewlyJoinedNodesShutdown() {
+        Config config = newConfig();
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-
-        IMap<Object, Object> map = instance1.getMap(mapName);
+        IMap<Object, Object> map = instance1.getMap(MAP_NAME);
         for (int i = 0; i < 10000; i++) {
             map.put(i, i);
         }
-
         Map<Integer, UUID> source = getPartitionToUuidMap(instance1);
 
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
@@ -187,24 +175,19 @@ public class MapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
         instance2.shutdown();
 
         Map<Integer, UUID> destination = getPartitionToUuidMap(instance3);
-
-
-        assertEquals(source, destination);
+        assertEqualsPartitionUUIDs(source, destination);
     }
 
     @Test
-    public void uuids_migrated_whenSourceNodeShutdown() throws Exception {
-        String mapName = "test";
-        Config config = newConfig(mapName);
+    public void uuids_migrated_whenSourceNodeShutdown() {
+        Config config = newConfig();
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-
-        IMap<Object, Object> map = instance1.getMap(mapName);
+        IMap<Object, Object> map = instance1.getMap(MAP_NAME);
         for (int i = 0; i < 10000; i++) {
             map.put(i, i);
         }
-
-        Map<Integer, UUID> source1 = getPartitionToUuidMap(instance1);
+        Map<Integer, UUID> source = getPartitionToUuidMap(instance1);
 
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
         HazelcastInstance instance3 = factory.newHazelcastInstance(config);
@@ -214,77 +197,100 @@ public class MapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
         Map<Integer, UUID> destination2 = getPartitionToUuidMap(instance2);
         Map<Integer, UUID> destination3 = getPartitionToUuidMap(instance3);
 
-        Map<Integer, UUID> merged = mergeOwnedPartitionUuids(destination2, destination3,
-                getNodeEngineImpl(instance2).getPartitionService());
-
-        assertEquals(source1, merged);
+        InternalPartitionService partitionService2 = getNodeEngineImpl(instance2).getPartitionService();
+        Map<Integer, UUID> merged = mergeOwnedPartitionUuids(partitionService2, destination2, destination3);
+        assertEqualsPartitionUUIDs(source, merged);
     }
 
-    protected Map<Integer, UUID> mergeOwnedPartitionUuids(Map<Integer, UUID> destination2, Map<Integer, UUID> destination3,
-                                                          InternalPartitionService partitionService) {
-        Map<Integer, UUID> merged = new HashMap<Integer, UUID>();
+    protected InMemoryFormat getNearCacheInMemoryFormat() {
+        return BINARY;
+    }
 
-        int partitionCount = partitionService.getPartitionCount();
+    private Config newConfig() {
+        NearCacheConfig nearCacheConfig = new NearCacheConfig()
+                .setName(MAP_NAME)
+                .setInMemoryFormat(getNearCacheInMemoryFormat())
+                .setInvalidateOnChange(true)
+                .setCacheLocalEntries(true);
+
+        MapConfig mapConfig = new MapConfig(MAP_NAME)
+                .setNearCacheConfig(nearCacheConfig)
+                .setBackupCount(0)
+                .setAsyncBackupCount(0);
+
+        return getConfig()
+                .addMapConfig(mapConfig);
+    }
+
+    private static Map<Integer, Long> getPartitionToSequenceMap(String mapName, HazelcastInstance instance) {
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
+        int partitionCount = nodeEngineImpl.getPartitionService().getPartitionCount();
+        MetaDataGenerator metaDataGenerator = getMetaDataGenerator(nodeEngineImpl);
+
+        Map<Integer, Long> partitionToSequenceMap = createHashMap(partitionCount);
         for (int i = 0; i < partitionCount; i++) {
-            if (partitionService.getPartition(i).isLocal()) {
-                merged.put(i, destination2.get(i));
+            partitionToSequenceMap.put(i, metaDataGenerator.currentSequence(mapName, i));
+        }
+        return partitionToSequenceMap;
+    }
+
+    private static Map<Integer, UUID> getPartitionToUuidMap(HazelcastInstance instance) {
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
+        int partitionCount = nodeEngineImpl.getPartitionService().getPartitionCount();
+        MetaDataGenerator metaDataGenerator = getMetaDataGenerator(nodeEngineImpl);
+
+        Map<Integer, UUID> partitionToUuidMap = createHashMap(partitionCount);
+        for (int i = 0; i < partitionCount; i++) {
+            partitionToUuidMap.put(i, metaDataGenerator.getUuidOrNull(i));
+        }
+        return partitionToUuidMap;
+    }
+
+    private static MetaDataGenerator getMetaDataGenerator(NodeEngineImpl nodeEngineImpl) {
+        MapService mapService = nodeEngineImpl.getService(SERVICE_NAME);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
+        Invalidator invalidator = mapNearCacheManager.getInvalidator();
+        return invalidator.getMetaDataGenerator();
+    }
+
+    private static Map<Integer, UUID> mergeOwnedPartitionUuids(InternalPartitionService localPartitionService,
+                                                               Map<Integer, UUID> localUUIDs, Map<Integer, UUID> remoteUUIDs) {
+        int partitionCount = localPartitionService.getPartitionCount();
+        Map<Integer, UUID> merged = createHashMap(partitionCount);
+        for (int i = 0; i < partitionCount; i++) {
+            if (localPartitionService.getPartition(i).isLocal()) {
+                merged.put(i, localUUIDs.get(i));
             } else {
-                merged.put(i, destination3.get(i));
+                merged.put(i, remoteUUIDs.get(i));
             }
         }
         return merged;
     }
 
-    private Map<Integer, Long> getPartitionToSequenceMap(String mapName, HazelcastInstance instance) {
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
-        int partitionCount = nodeEngineImpl.getPartitionService().getPartitionCount();
-        HashMap<Integer, Long> partitionToSequenceMap = new HashMap<Integer, Long>(partitionCount);
-        MapService mapService = nodeEngineImpl.getService(SERVICE_NAME);
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
-        Invalidator invalidator = mapNearCacheManager.getInvalidator();
+    private static void assertEqualsSequenceNumbers(Map<Integer, Long> source, Map<Integer, Long> destination) {
+        for (Map.Entry<Integer, Long> entry : source.entrySet()) {
+            Integer key = entry.getKey();
+            Long first = entry.getValue();
+            Long last = destination.get(key);
 
-        MetaDataGenerator metaDataGenerator = invalidator.getMetaDataGenerator();
-        for (int i = 0; i < partitionCount; i++) {
-            partitionToSequenceMap.put(i, metaDataGenerator.currentSequence(mapName, i));
+            assertEquals(format(
+                    "Expected source and destination sequence numbers to be the same (source: %s) (destination %s)",
+                    source, destination),
+                    first, last);
         }
-
-        return partitionToSequenceMap;
     }
 
-    private Map<Integer, UUID> getPartitionToUuidMap(HazelcastInstance instance) {
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
-        int partitionCount = nodeEngineImpl.getPartitionService().getPartitionCount();
-        HashMap<Integer, UUID> partitionToSequenceMap = new HashMap<Integer, UUID>(partitionCount);
-        MapService mapService = nodeEngineImpl.getService(SERVICE_NAME);
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
-        Invalidator invalidator = mapNearCacheManager.getInvalidator();
+    private static void assertEqualsPartitionUUIDs(Map<Integer, UUID> source, Map<Integer, UUID> destination) {
+        for (Map.Entry<Integer, UUID> entry : source.entrySet()) {
+            Integer key = entry.getKey();
+            UUID first = entry.getValue();
+            UUID last = destination.get(key);
 
-        MetaDataGenerator metaDataGenerator = invalidator.getMetaDataGenerator();
-        for (int i = 0; i < partitionCount; i++) {
-            partitionToSequenceMap.put(i, metaDataGenerator.getUuidOrNull(i));
+            assertEquals(format(
+                    "Expected source and destination partition UUIDs to be the same (source: %s) (destination %s)",
+                    source, destination),
+                    first, last);
         }
-
-        return partitionToSequenceMap;
-    }
-
-    protected Config newConfig(String mapName) {
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        nearCacheConfig.setInMemoryFormat(getNearCacheInMemoryFormat());
-        nearCacheConfig.setName(mapName);
-        nearCacheConfig.setInvalidateOnChange(true);
-        nearCacheConfig.setCacheLocalEntries(true);
-
-        MapConfig mapConfig = new MapConfig(mapName);
-        mapConfig.setNearCacheConfig(nearCacheConfig);
-        mapConfig.setBackupCount(0).setAsyncBackupCount(0);
-
-        Config config = getConfig();
-        return config.addMapConfig(mapConfig);
-    }
-
-    protected InMemoryFormat getNearCacheInMemoryFormat() {
-        return BINARY;
     }
 }
