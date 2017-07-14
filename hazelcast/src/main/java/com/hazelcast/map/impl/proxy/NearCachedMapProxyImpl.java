@@ -283,7 +283,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     protected boolean containsKeyInternal(Data keyData) {
         Object cachedValue = getCachedValue(keyData, false);
         if (cachedValue != NOT_CACHED) {
-            return true;
+            return cachedValue != null;
         }
 
         return super.containsKeyInternal(keyData);
