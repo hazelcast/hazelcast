@@ -32,15 +32,15 @@ import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createError
 import static com.hazelcast.util.Preconditions.checkNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public class PostJoinOp
+public class OnJoinOp
         extends AbstractJoinOperation implements UrgentSystemOperation {
 
     private Operation[] operations;
 
-    public PostJoinOp() {
+    public OnJoinOp() {
     }
 
-    public PostJoinOp(final Operation... ops) {
+    public OnJoinOp(final Operation... ops) {
         for (Operation op : ops) {
             checkNotNull(op, "op can't be null");
             checkNegative(op.getPartitionId(), "Post join operation can not have a partition ID!");

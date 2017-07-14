@@ -35,6 +35,7 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.MemberRemoveOperation;
+import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.cluster.impl.operations.PromoteLiteMemberOp;
 import com.hazelcast.internal.cluster.impl.operations.ShutdownNodeOp;
 import com.hazelcast.internal.cluster.impl.operations.TriggerExplicitSuspicionOp;
@@ -407,9 +408,10 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
+    @SuppressWarnings("checkstyle:parameternumber")
     public boolean finalizeJoin(MembersView membersView, Address callerAddress, String callerUuid,
                                 String clusterId, ClusterState clusterState, Version clusterVersion,
-                                long clusterStartTime, long masterTime) {
+                                long clusterStartTime, long masterTime, OnJoinOp preJoinOp) {
         lock.lock();
         try {
             if (!checkValidMaster(callerAddress)) {
@@ -441,6 +443,9 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             membershipManager.updateMembers(membersView);
             clusterHeartbeatManager.heartbeat();
 
+            if (preJoinOp != null) {
+                nodeEngine.getOperationService().run(preJoinOp);
+            }
             setJoined(true);
 
             return true;

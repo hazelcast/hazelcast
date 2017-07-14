@@ -61,7 +61,7 @@ import com.hazelcast.cache.impl.operation.CacheReplaceOperation;
 import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
 import com.hazelcast.cache.impl.operation.CacheSizeOperation;
 import com.hazelcast.cache.impl.operation.CacheSizeOperationFactory;
-import com.hazelcast.cache.impl.operation.PostJoinCacheOperation;
+import com.hazelcast.cache.impl.operation.OnJoinCacheOperation;
 import com.hazelcast.cache.impl.record.CacheDataRecord;
 import com.hazelcast.cache.impl.record.CacheObjectRecord;
 import com.hazelcast.client.impl.protocol.task.cache.CacheAssignAndGetUuidsOperation;
@@ -376,7 +376,7 @@ public final class CacheDataSerializerHook
         };
         constructors[CACHE_POST_JOIN] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PostJoinCacheOperation();
+                return new OnJoinCacheOperation();
             }
         };
         constructors[CACHE_DATA_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

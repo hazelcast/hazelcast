@@ -21,7 +21,7 @@ import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.journal.CacheEventJournal;
 import com.hazelcast.cache.impl.journal.RingbufferCacheEventJournalImpl;
-import com.hazelcast.cache.impl.operation.PostJoinCacheOperation;
+import com.hazelcast.cache.impl.operation.OnJoinCacheOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -38,6 +38,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PostJoinAwareService;
+import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
@@ -47,6 +48,7 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.version.Version;
 
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -63,10 +65,11 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.internal.cluster.Versions.V3_9;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
-public abstract class AbstractCacheService implements ICacheService, PostJoinAwareService, PartitionAwareService,
-        QuorumAwareService, SplitBrainHandlerService {
+public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService, PostJoinAwareService,
+        PartitionAwareService, QuorumAwareService, SplitBrainHandlerService {
 
     private static final String SETUP_REF = "setupRef";
 
@@ -588,10 +591,23 @@ public abstract class AbstractCacheService implements ICacheService, PostJoinAwa
     }
 
     @Override
+    public Operation getPreJoinOperation() {
+        Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
+        OnJoinCacheOperation preJoinCacheOperation = null;
+        assert !clusterVersion.isUnknown() : "Cluster version should not be unknown";
+        if (clusterVersion.isGreaterOrEqual(V3_9)) {
+            preJoinCacheOperation = prepareOnJoinCacheOperation();
+        }
+        return preJoinCacheOperation;
+    }
+
+    @Override
     public Operation getPostJoinOperation() {
-        PostJoinCacheOperation postJoinCacheOperation = new PostJoinCacheOperation();
-        for (Map.Entry<String, CacheConfig> cacheConfigEntry : configs.entrySet()) {
-            postJoinCacheOperation.addCacheConfig(cacheConfigEntry.getValue());
+        Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
+        OnJoinCacheOperation postJoinCacheOperation = null;
+        assert !clusterVersion.isUnknown() : "Cluster version should not be unknown";
+        if (clusterVersion.isLessThan(V3_9)) {
+            postJoinCacheOperation = prepareOnJoinCacheOperation();
         }
         return postJoinCacheOperation;
     }
@@ -711,5 +727,14 @@ public abstract class AbstractCacheService implements ICacheService, PostJoinAwa
     @Override
     public CacheEventJournal getEventJournal() {
         return eventJournal;
+    }
+
+    private OnJoinCacheOperation prepareOnJoinCacheOperation() {
+        OnJoinCacheOperation preJoinCacheOperation;
+        preJoinCacheOperation = new OnJoinCacheOperation();
+        for (Map.Entry<String, CacheConfig> cacheConfigEntry : configs.entrySet()) {
+            preJoinCacheOperation.addCacheConfig(cacheConfigEntry.getValue());
+        }
+        return preJoinCacheOperation;
     }
 }
