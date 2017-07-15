@@ -25,7 +25,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.stream.IStreamCache;
+import com.hazelcast.jet.stream.JetCacheManager;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.IStreamMap;
 
@@ -189,8 +189,8 @@ public final class JetBootstrap {
         }
 
         @Override
-        public <K, V> IStreamCache<K, V> getCache(String name) {
-            return instance.getCache(name);
+        public JetCacheManager getCacheManager() {
+            return instance.getCacheManager();
         }
 
         @Override

@@ -119,7 +119,7 @@ public abstract class AbstractStreamTest extends JetTestSupport {
         String cacheName = randomName();
         IStreamCache<K, V> cache = null;
         for (JetInstance jetInstance : instances) {
-            cache = jetInstance.getCache(cacheName);
+            cache = jetInstance.getCacheManager().getCache(cacheName);
         }
         return cache;
     }

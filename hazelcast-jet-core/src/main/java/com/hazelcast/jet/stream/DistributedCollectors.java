@@ -1388,7 +1388,7 @@ public abstract class DistributedCollectors {
     private static class CacheGetter {
 
         private static <K, V> DistributedFunction<JetInstance, IStreamCache<K, V>> getCacheF(String name) {
-            return instance -> instance.getCache(name);
+            return instance -> instance.getCacheManager().getCache(name);
         }
     }
 }

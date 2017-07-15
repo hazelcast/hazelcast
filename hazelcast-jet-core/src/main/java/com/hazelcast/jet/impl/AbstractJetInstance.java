@@ -20,10 +20,9 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.stream.IStreamCache;
+import com.hazelcast.jet.stream.JetCacheManager;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.IStreamMap;
-import com.hazelcast.jet.stream.impl.CacheDecorator;
 import com.hazelcast.jet.stream.impl.ListDecorator;
 import com.hazelcast.jet.stream.impl.MapDecorator;
 
@@ -32,8 +31,11 @@ abstract class AbstractJetInstance implements JetInstance {
 
     private final HazelcastInstance hazelcastInstance;
 
+    private final JetCacheManagerImpl cacheManager;
+
     AbstractJetInstance(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
+        this.cacheManager = new JetCacheManagerImpl(this);
     }
 
     @Override
@@ -57,13 +59,13 @@ abstract class AbstractJetInstance implements JetInstance {
     }
 
     @Override
-    public <K, V> IStreamCache<K, V> getCache(String name) {
-        return CacheGetter.getCache(this, name);
+    public <E> IStreamList<E> getList(String name) {
+        return new ListDecorator<>(hazelcastInstance.getList(name), this);
     }
 
     @Override
-    public <E> IStreamList<E> getList(String name) {
-        return new ListDecorator<>(hazelcastInstance.getList(name), this);
+    public JetCacheManager getCacheManager() {
+        return cacheManager;
     }
 
     @Override
@@ -73,15 +75,5 @@ abstract class AbstractJetInstance implements JetInstance {
 
     protected IdGenerator getIdGenerator() {
         return hazelcastInstance.getIdGenerator(JET_ID_GENERATOR_NAME);
-    }
-
-    /**
-     * This class is necessary to conceal the cache-api
-     */
-    private static class CacheGetter {
-
-        private static <K, V> IStreamCache<K, V> getCache(JetInstance instance, String name) {
-            return new CacheDecorator<>(instance.getHazelcastInstance().getCacheManager().getCache(name), instance);
-        }
     }
 }

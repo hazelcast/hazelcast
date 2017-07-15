@@ -20,7 +20,7 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.stream.IStreamCache;
+import com.hazelcast.jet.stream.JetCacheManager;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.IStreamMap;
 
@@ -78,14 +78,6 @@ public interface JetInstance {
     <K, V> IStreamMap<K, V> getMap(String name);
 
     /**
-     * Returns the distributed cache instance with the specified name.
-     *
-     * @param name name of the distributed cache
-     * @return distributed cache instance with the specified name
-     */
-    <K, V> IStreamCache<K, V> getCache(String name);
-
-    /**
      * Returns the distributed list instance with the specified name.
      * Index-based operations on the list are not supported.
      *
@@ -93,6 +85,17 @@ public interface JetInstance {
      * @return distributed list instance with the specified name
      */
     <E> IStreamList<E> getList(String name);
+
+    /**
+     * Obtain the {@link JetCacheManager} that provides access to JSR-107 (JCache) caches
+     * configured on a Hazelcast Jet cluster.
+     * <p>
+     * Note that this method does not return a JCache {@code CacheManager}
+     *
+     * @return the Hazelcast Jet {@link JetCacheManager}
+     * @see JetCacheManager
+     */
+    JetCacheManager getCacheManager();
 
     /**
      * Shutdowns the current instance.

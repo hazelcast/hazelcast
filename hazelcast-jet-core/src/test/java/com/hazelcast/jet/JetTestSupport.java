@@ -69,7 +69,7 @@ public class JetTestSupport extends HazelcastTestSupport {
     }
 
     protected static <K, V> IStreamCache<K, V> getCache(JetInstance instance) {
-        return instance.getCache(randomName());
+        return instance.getCacheManager().getCache(randomName());
     }
 
 
