@@ -20,7 +20,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -63,7 +62,6 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
     }
 
     @Test
-    @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/10031")
     public void putToCacheAndGetInvalidationEventWhenNodeShutdown() {
         putToCacheAndGetInvalidationEventWhenNodeShutdown(inMemoryFormat);
     }
