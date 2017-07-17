@@ -22,6 +22,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
 import com.hazelcast.internal.nearcache.AbstractNearCachePreloaderTest;
 import com.hazelcast.internal.nearcache.NearCache;
@@ -34,7 +35,6 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -44,13 +44,9 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import static com.hazelcast.client.map.impl.nearcache.ClientMapInvalidationListener.createInvalidationEventHandler;
-import static java.lang.Thread.currentThread;
 import static java.util.Arrays.asList;
-import static java.util.concurrent.Executors.newFixedThreadPool;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
@@ -83,6 +79,7 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
 
     @Parameter(value = 2)
     public boolean serializeKeys;
+
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @Before
@@ -96,41 +93,6 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
         hazelcastFactory.shutdownAll();
     }
 
-    @Test(timeout = TEST_TIMEOUT)
-    public void testPreloadNearCacheLock_withSharedMapConfig_concurrently() throws Exception {
-        nearCacheConfig.getPreloaderConfig().setDirectory("");
-
-        int nThreads = 10;
-        ThreadPoolExecutor pool = (ThreadPoolExecutor) newFixedThreadPool(nThreads);
-
-        final NearCacheTestContext context = createContext(true);
-        final CountDownLatch startLatch = new CountDownLatch(nThreads);
-        final CountDownLatch finishLatch = new CountDownLatch(nThreads);
-        for (int i = 0; i < nThreads; i++) {
-            pool.execute(new Runnable() {
-                @Override
-                public void run() {
-                    startLatch.countDown();
-                    try {
-                        startLatch.await();
-                    } catch (InterruptedException e) {
-                        currentThread().interrupt();
-                    }
-
-                    IMap<String, String> map = context.nearCacheInstance.getMap(nearCacheConfig.getName() + currentThread());
-                    for (int i = 0; i < 100; i++) {
-                        map.put("key-" + currentThread() + "-" + i, "value-" + currentThread() + "-" + i);
-                    }
-
-                    finishLatch.countDown();
-                }
-            });
-        }
-
-        finishLatch.await();
-        pool.shutdownNow();
-    }
-
     @Override
     protected File getStoreFile() {
         return storeFile;
@@ -139,6 +101,12 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
     @Override
     protected File getStoreLockFile() {
         return storeLockFile;
+    }
+
+    @Override
+    protected <K, V> DataStructureAdapter<K, V> getDataStructure(NearCacheTestContext<K, V, Data, String> context, String name) {
+        IMap<K, V> map = context.nearCacheInstance.getMap(name);
+        return new IMapDataStructureAdapter<K, V>(map);
     }
 
     @Override
