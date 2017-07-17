@@ -156,8 +156,12 @@ public class MembershipManager {
         return (Set) memberMapRef.get().getMembers();
     }
 
-    public MemberMap getMemberMap() {
+    MemberMap getMemberMap() {
         return memberMapRef.get();
+    }
+
+    public MembersView getMembersView() {
+        return getMemberMap().toMembersView();
     }
 
     MembersView createMembersView() {
