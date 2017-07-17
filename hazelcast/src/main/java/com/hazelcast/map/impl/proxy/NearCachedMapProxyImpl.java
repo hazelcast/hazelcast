@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.proxy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalidation;
@@ -92,7 +93,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         super.initialize();
 
         mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
-        nearCache = mapNearCacheManager.getOrCreateNearCache(name, mapConfig.getNearCacheConfig());
+        IMapDataStructureAdapter<K, V> adapter = new IMapDataStructureAdapter<K, V>(this);
+        nearCache = mapNearCacheManager.getOrCreateNearCache(name, mapConfig.getNearCacheConfig(), adapter);
         if (invalidateOnChange) {
             registerInvalidationListener();
         }

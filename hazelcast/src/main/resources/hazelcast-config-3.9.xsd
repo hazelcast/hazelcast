@@ -2512,6 +2512,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="preloader" type="preloader" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" use="optional" type="xs:string" default="default"/>
     </xs:complexType>
@@ -2858,6 +2859,13 @@
         <xs:attribute name="max-size-policy" type="max-size-policy" default="ENTRY_COUNT" use="optional"/>
         <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU" use="optional"/>
         <xs:attribute name="comparator-class-name" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="preloader">
+        <xs:attribute name="enabled" type="xs:boolean" default="false" use="optional"/>
+        <xs:attribute name="directory" type="xs:string" use="optional"/>
+        <xs:attribute name="store-initial-delay-seconds" type="xs:positiveInteger" default="600" use="optional"/>
+        <xs:attribute name="store-interval-seconds" type="xs:positiveInteger" default="600" use="optional"/>
     </xs:complexType>
 
     <xs:complexType name="wan-replication-ref">

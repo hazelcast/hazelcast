@@ -48,6 +48,7 @@ import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -263,7 +264,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(26, config.getMapConfigs().size());
+        assertEquals(27, config.getMapConfigs().size());
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -1018,6 +1019,19 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(EvictionPolicy.LRU, getNearCacheEvictionPolicy("lruNearCacheEvictionMap", config));
         assertEquals(EvictionPolicy.NONE, getNearCacheEvictionPolicy("noneNearCacheEvictionMap", config));
         assertEquals(EvictionPolicy.RANDOM, getNearCacheEvictionPolicy("randomNearCacheEvictionMap", config));
+    }
+
+    @Test
+    public void testNearCachePreloader() {
+        NearCachePreloaderConfig preloaderConfig = config
+                .getMapConfig("nearCachePreloaderMap")
+                .getNearCacheConfig()
+                .getPreloaderConfig();
+
+        assertTrue(preloaderConfig.isEnabled());
+        assertEquals("/tmp/preloader", preloaderConfig.getDirectory());
+        assertEquals(23, preloaderConfig.getStoreInitialDelaySeconds());
+        assertEquals(42, preloaderConfig.getStoreIntervalSeconds());
     }
 
     private EvictionPolicy getNearCacheEvictionPolicy(String mapName, Config config) {

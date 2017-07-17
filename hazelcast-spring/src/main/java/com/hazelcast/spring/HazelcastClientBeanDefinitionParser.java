@@ -35,6 +35,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SSLConfig;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.ManagedList;
@@ -86,14 +87,14 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         private BeanDefinitionBuilder builder;
 
         //= new HashMap<String, NearCacheConfig>();
-        private ManagedMap nearCacheConfigMap;
+        private ManagedMap<String, BeanDefinition> nearCacheConfigMap;
 
         public SpringXmlBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
             this.builder = BeanDefinitionBuilder.rootBeanDefinition(HazelcastClient.class);
             this.builder.setFactoryMethod("newHazelcastClient");
             this.builder.setDestroyMethodName("shutdown");
-            this.nearCacheConfigMap = new ManagedMap();
+            this.nearCacheConfigMap = new ManagedMap<String, BeanDefinition>();
 
             this.configBuilder = BeanDefinitionBuilder.rootBeanDefinition(ClientConfig.class);
             configBuilder.addPropertyValue("nearCacheConfigMap", nearCacheConfigMap);
@@ -243,7 +244,26 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private void handleNearCache(Node node) {
-            createAndFillListedBean(node, NearCacheConfig.class, "name", nearCacheConfigMap, "name");
+            BeanDefinitionBuilder nearCacheConfigBuilder = createBeanBuilder(NearCacheConfig.class);
+            fillAttributeValues(node, nearCacheConfigBuilder);
+            for (Node childNode : childElements(node)) {
+                final String nodeName = cleanNodeName(childNode);
+                if ("eviction".equals(nodeName)) {
+                    handleEvictionConfig(childNode, nearCacheConfigBuilder);
+                } else if ("preloader".equals(nodeName)) {
+                    handlePreloaderConfig(childNode, nearCacheConfigBuilder);
+                }
+            }
+            String name = getAttribute(node, "name");
+            nearCacheConfigMap.put(name, nearCacheConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleEvictionConfig(Node node, BeanDefinitionBuilder configBuilder) {
+            configBuilder.addPropertyValue("evictionConfig", getEvictionConfig(node));
+        }
+
+        private void handlePreloaderConfig(Node node, BeanDefinitionBuilder configBuilder) {
+            configBuilder.addPropertyValue("preloaderConfig", getPreloaderConfig(node));
         }
 
         private ManagedMap getQueryCaches(Node childNode) {

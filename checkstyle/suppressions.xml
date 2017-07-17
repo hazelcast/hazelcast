@@ -298,8 +298,7 @@
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]internal[\\/]jmx[\\/]ReplicatedMapMBean"/>
 
     <!-- Spring -->
-    <suppress checks="MethodCount|MethodLength" files="com[\\/]hazelcast[\\/]spring[\\/]HazelcastConfigBeanDefinitionParser"/>
-    <suppress checks="CyclomaticComplexity|NPathComplexity"
+    <suppress checks="FileLengthCheck|MethodCount|MethodLength|CyclomaticComplexity|NPathComplexity"
               files="com[\\/]hazelcast[\\/]spring[\\/]HazelcastConfigBeanDefinitionParser"/>
     <suppress checks="CyclomaticComplexity"
               files="com[\\/]hazelcast[\\/]spring[\\/]HazelcastClientBeanDefinitionParser"/>

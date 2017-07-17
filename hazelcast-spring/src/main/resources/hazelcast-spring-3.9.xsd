@@ -2591,6 +2591,7 @@
     <xs:complexType name="near-cache">
         <xs:sequence>
             <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="preloader" type="preloader" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="in-memory-format" type="in-memory-format" use="optional" default="BINARY"/>
         <xs:attribute name="serialize-keys" use="optional" type="parameterized-boolean" default="false"/>
@@ -2867,6 +2868,13 @@
         <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU" use="optional"/>
         <xs:attribute name="comparator-class-name" type="xs:string" use="optional"/>
         <xs:attribute name="comparator-bean" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="preloader">
+        <xs:attribute name="enabled" type="parameterized-boolean" default="false"/>
+        <xs:attribute name="directory" type="xs:string" default="" use="optional"/>
+        <xs:attribute name="store-initial-delay-seconds" type="xs:positiveInteger" default="600" use="optional"/>
+        <xs:attribute name="store-interval-seconds" type="xs:positiveInteger" default="600" use="optional"/>
     </xs:complexType>
 
     <xs:complexType name="wan-replication-ref">

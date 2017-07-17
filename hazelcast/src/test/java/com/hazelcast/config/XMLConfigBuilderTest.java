@@ -863,6 +863,25 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testNearCachePreloader() {
+        String xml = HAZELCAST_START_TAG
+                + "  <map name=\"nearCache\">"
+                + "    <near-cache>"
+                + "              <preloader enabled=\"true\" directory=\"/tmp/myNearCache\""
+                + "                         store-initial-delay-seconds=\"2342\" store-interval-seconds=\"4223\"/>"
+                + "    </near-cache>"
+                + "  </map>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        NearCachePreloaderConfig preloaderConfig = config.getMapConfig("nearCache").getNearCacheConfig().getPreloaderConfig();
+        assertTrue(preloaderConfig.isEnabled());
+        assertEquals("/tmp/myNearCache", preloaderConfig.getDirectory());
+        assertEquals(2342, preloaderConfig.getStoreInitialDelaySeconds());
+        assertEquals(4223, preloaderConfig.getStoreIntervalSeconds());
+    }
+
+    @Test
     public void testPartitionGroupZoneAware() {
         String xml = HAZELCAST_START_TAG +
                 "<partition-group enabled=\"true\" group-type=\"ZONE_AWARE\" />"

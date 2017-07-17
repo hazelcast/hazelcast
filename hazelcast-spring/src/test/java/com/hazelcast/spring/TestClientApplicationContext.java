@@ -32,6 +32,7 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
@@ -305,6 +306,18 @@ public class TestClientApplicationContext {
         assertEquals(EvictionPolicy.LRU, getNearCacheEvictionPolicy("lruNearCacheEviction", config));
         assertEquals(EvictionPolicy.NONE, getNearCacheEvictionPolicy("noneNearCacheEviction", config));
         assertEquals(EvictionPolicy.RANDOM, getNearCacheEvictionPolicy("randomNearCacheEviction", config));
+    }
+
+    @Test
+    public void testNearCachePreloader() {
+        NearCachePreloaderConfig preloaderConfig = client3.getClientConfig()
+                .getNearCacheConfig("preloader")
+                .getPreloaderConfig();
+
+        assertTrue(preloaderConfig.isEnabled());
+        assertEquals("/tmp/preloader", preloaderConfig.getDirectory());
+        assertEquals(23, preloaderConfig.getStoreInitialDelaySeconds());
+        assertEquals(42, preloaderConfig.getStoreIntervalSeconds());
     }
 
     @Test

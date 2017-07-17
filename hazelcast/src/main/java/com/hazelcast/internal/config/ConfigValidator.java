@@ -21,7 +21,6 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.logging.ILogger;
@@ -73,7 +72,6 @@ public final class ConfigValidator {
             throw new IllegalArgumentException("The Near Cache option `cache-local-entries` is not supported in "
                     + "client configurations.");
         }
-        checkPreloaderConfig(nearCacheConfig, isClient);
     }
 
     /**
@@ -153,19 +151,6 @@ public final class ConfigValidator {
         if (inMemoryFormat == NATIVE && !BuildInfoProvider.getBuildInfo().isEnterprise()) {
             throw new IllegalArgumentException("NATIVE storage format is supported in Hazelcast Enterprise only."
                     + " Make sure you have Hazelcast Enterprise JARs on your classpath!");
-        }
-    }
-
-    /**
-     * Throws {@link IllegalArgumentException} if the supplied {@link NearCacheConfig}
-     * has an invalid {@link NearCachePreloaderConfig}.
-     *
-     * @param nearCacheConfig supplied NearCacheConfig
-     * @param isClient        {@code true} if the config is for a Hazelcast client, {@code false} otherwise
-     */
-    private static void checkPreloaderConfig(NearCacheConfig nearCacheConfig, boolean isClient) {
-        if (!isClient && nearCacheConfig.getPreloaderConfig().isEnabled()) {
-            throw new IllegalArgumentException("The Near Cache pre-loader is just available on Hazelcast clients!");
         }
     }
 

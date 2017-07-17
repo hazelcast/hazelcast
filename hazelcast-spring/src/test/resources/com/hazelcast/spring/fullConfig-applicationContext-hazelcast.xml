@@ -323,6 +323,13 @@
                 <hz:near-cache eviction-policy="RANDOM" />
             </hz:map>
 
+            <hz:map name="nearCachePreloaderMap">
+                <hz:near-cache>
+                    <hz:preloader enabled="true" directory="/tmp/preloader"
+                                  store-initial-delay-seconds="23" store-interval-seconds="42"/>
+                </hz:near-cache>
+            </hz:map>
+
             <hz:map name="testMap3"
                     backup-count="2"
                     max-size="0"
