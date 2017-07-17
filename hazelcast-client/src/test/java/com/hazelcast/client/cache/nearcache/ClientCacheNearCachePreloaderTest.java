@@ -28,6 +28,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.ICacheDataStructureAdapter;
 import com.hazelcast.internal.nearcache.AbstractNearCachePreloaderTest;
 import com.hazelcast.internal.nearcache.NearCache;
@@ -47,6 +48,7 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
+import javax.cache.Cache;
 import javax.cache.spi.CachingProvider;
 import java.io.File;
 import java.util.Collection;
@@ -112,6 +114,15 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
     @Override
     protected File getStoreLockFile() {
         return storeLockFile;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    protected <K, V> DataStructureAdapter<K, V> getDataStructure(NearCacheTestContext<K, V, Data, String> context, String name) {
+        CacheConfig<K, V> cacheConfig = createCacheConfig(nearCacheConfig);
+
+        Cache<K, V> memberCache = context.cacheManager.createCache(name, cacheConfig.setName(name));
+        return new ICacheDataStructureAdapter<K, V>((ICache<K, V>) memberCache.unwrap(ICache.class));
     }
 
     @Override

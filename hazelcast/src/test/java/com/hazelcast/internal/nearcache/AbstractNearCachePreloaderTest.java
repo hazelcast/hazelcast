@@ -22,6 +22,7 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -33,6 +34,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
 import java.io.File;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import static com.hazelcast.internal.nearcache.AbstractNearCachePreloaderTest.KeyType.INTEGER;
 import static com.hazelcast.internal.nearcache.AbstractNearCachePreloaderTest.KeyType.STRING;
@@ -46,6 +49,8 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getValueFromNe
 import static com.hazelcast.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.nio.IOUtil.getFileFromResources;
 import static java.lang.String.format;
+import static java.lang.Thread.currentThread;
+import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -56,6 +61,7 @@ import static org.junit.Assert.assertTrue;
  * @param <NK> key type of the tested Near Cache
  * @param <NV> value type of the tested Near Cache
  */
+@SuppressWarnings("WeakerAccess")
 public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTestSupport {
 
     /**
@@ -71,6 +77,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
     protected static final int TEST_TIMEOUT = 10 * 60 * 1000;
     protected static final int KEY_COUNT = 10023;
+    protected static final int THREAD_COUNT = 10;
 
     protected final String defaultNearCache = randomName();
 
@@ -126,6 +133,16 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
      */
     protected abstract File getStoreLockFile();
 
+    /**
+     * Returns a new {@link DataStructureAdapter} from the Near Cache side of the given {@link NearCacheTestContext}.
+     *
+     * @param context the {@link NearCacheTestContext} to retrieve the data structure from
+     * @param name    the name for the new data structure
+     * @return a new {@link DataStructureAdapter} with the given name
+     */
+    protected abstract <K, V> DataStructureAdapter<K, V> getDataStructure(NearCacheTestContext<K, V, NK, NV> context,
+                                                                          String name);
+
     @Test(timeout = TEST_TIMEOUT)
     @Category(SlowTest.class)
     public void testStoreAndLoad_withIntegerKeys() {
@@ -138,8 +155,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         storeAndLoad(4223, STRING);
     }
 
-    @SuppressWarnings("WeakerAccess")
-    protected void storeAndLoad(int keyCount, KeyType keyType) {
+    private void storeAndLoad(int keyCount, KeyType keyType) {
         nearCacheConfig.getPreloaderConfig()
                 .setStoreInitialDelaySeconds(3)
                 .setStoreIntervalSeconds(1);
@@ -279,6 +295,41 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         assertNearCachePreloadDoneEventually(clientContext);
         assertNearCacheSizeEventually(clientContext, keyCount);
         assertNearCacheContent(clientContext, keyCount, keyType);
+    }
+
+    @Test(timeout = TEST_TIMEOUT)
+    public void testPreloadNearCacheLock_withSharedConfig_concurrently() {
+        nearCacheConfig.getPreloaderConfig().setDirectory("");
+
+        ThreadPoolExecutor pool = (ThreadPoolExecutor) newFixedThreadPool(THREAD_COUNT);
+        final NearCacheTestContext<String, String, NK, NV> context = createContext(true);
+        final CountDownLatch startLatch = new CountDownLatch(THREAD_COUNT);
+        final CountDownLatch finishLatch = new CountDownLatch(THREAD_COUNT);
+        for (int i = 0; i < THREAD_COUNT; i++) {
+            pool.execute(new Runnable() {
+                @Override
+                public void run() {
+                    startLatch.countDown();
+                    try {
+                        startLatch.await();
+                    } catch (InterruptedException e) {
+                        currentThread().interrupt();
+                    }
+
+                    String threadName = currentThread().toString();
+                    DataStructureAdapter<String, String> adapter = getDataStructure(context,
+                            nearCacheConfig.getName() + "-" + threadName);
+                    for (int i = 0; i < 100; i++) {
+                        adapter.put("key-" + threadName + "-" + i, "value-" + threadName + "-" + i);
+                    }
+
+                    finishLatch.countDown();
+                }
+            });
+        }
+
+        assertOpenEventually(finishLatch);
+        pool.shutdownNow();
     }
 
     protected NearCacheConfig getNearCacheConfig(InMemoryFormat inMemoryFormat, boolean serializeKeys,
