@@ -31,6 +31,8 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 /**
  * Configuration for eviction.
  * You can set a limit for number of entries or total memory cost of entries.
+ *
+ * @since 3.8
  */
 @Beta
 public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Serializable {
@@ -64,6 +66,8 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
          */
 
         this(nearCachePreloaderConfig.enabled, nearCachePreloaderConfig.directory);
+        this.storeInitialDelaySeconds = nearCachePreloaderConfig.storeInitialDelaySeconds;
+        this.storeIntervalSeconds = nearCachePreloaderConfig.storeIntervalSeconds;
     }
 
     public NearCachePreloaderConfig(String directory) {
@@ -177,6 +181,7 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
     @PrivateApi
     private static class NearCachePreloaderConfigReadOnly extends NearCachePreloaderConfig {
 
+        @SuppressWarnings("unused")
         public NearCachePreloaderConfigReadOnly() {
         }
 
