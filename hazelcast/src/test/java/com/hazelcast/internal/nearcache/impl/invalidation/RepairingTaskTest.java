@@ -21,7 +21,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -94,12 +93,11 @@ public class RepairingTaskTest extends HazelcastTestSupport {
         HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
         MetaDataFetcher metaDataFetcher = mock(MetaDataFetcher.class);
         ExecutionService executionService = mock(ExecutionService.class);
-        SerializationService serializationService = mock(SerializationService.class);
         MinimalPartitionService minimalPartitionService = mock(MinimalPartitionService.class);
         String uuid = UuidUtil.newUnsecureUUID().toString();
         ILogger logger = Logger.getLogger(RepairingTask.class);
 
         return new RepairingTask(hazelcastProperties, metaDataFetcher, executionService.getGlobalTaskScheduler(),
-                serializationService, minimalPartitionService, uuid, logger);
+                minimalPartitionService, uuid, logger);
     }
 }
