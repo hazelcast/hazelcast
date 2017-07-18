@@ -23,6 +23,7 @@ import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.Watermark;
 import com.hazelcast.jet.WatermarkEmissionPolicy;
 import com.hazelcast.jet.WatermarkPolicy;
+import com.hazelcast.jet.function.DistributedToLongFunction;
 
 import javax.annotation.Nonnull;
 import java.util.function.ToLongFunction;
@@ -30,9 +31,9 @@ import java.util.function.ToLongFunction;
 /**
  * A processor that inserts watermark into a data stream. See
  * {@link com.hazelcast.jet.processor.Processors#insertWatermarks(
- *      com.hazelcast.jet.function.DistributedToLongFunction,
- *      com.hazelcast.jet.function.DistributedSupplier)
- * Processors.insertWatermark()}.
+ *     DistributedToLongFunction,
+ *     com.hazelcast.jet.function.DistributedSupplier,
+ *     WatermarkEmissionPolicy) Processors.insertWatermarks()}.
  *
  * @param <T> type of the stream item
  */
@@ -52,7 +53,7 @@ public class InsertWatermarksP<T> extends AbstractProcessor {
      * @param wmPolicy the watermark policy
      */
     public InsertWatermarksP(
-            @Nonnull ToLongFunction<T> getTimestampF,
+            @Nonnull DistributedToLongFunction<T> getTimestampF,
             @Nonnull WatermarkPolicy wmPolicy,
             @Nonnull WatermarkEmissionPolicy wmEmitPolicy
     ) {
