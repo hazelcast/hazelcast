@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -50,12 +51,12 @@ public class LocalMapStatsImplTest {
         localMapStats.setLockedEntryCount(1231);
         localMapStats.setDirtyEntryCount(4252);
 
-        localMapStats.incrementPuts(5631);
-        localMapStats.incrementPuts(1);
-        localMapStats.incrementGets(1233);
-        localMapStats.incrementGets(5);
-        localMapStats.incrementGets(9);
-        localMapStats.incrementRemoves(1238);
+        localMapStats.incrementPutLatencyNanos(MILLISECONDS.toNanos(5631));
+        localMapStats.incrementPutLatencyNanos(MILLISECONDS.toNanos(1));
+        localMapStats.incrementGetLatencyNanos(MILLISECONDS.toNanos(1233));
+        localMapStats.incrementGetLatencyNanos(MILLISECONDS.toNanos(5));
+        localMapStats.incrementGetLatencyNanos(MILLISECONDS.toNanos(9));
+        localMapStats.incrementRemoveLatencyNanos(MILLISECONDS.toNanos(1238));
         localMapStats.incrementOtherOperations();
         localMapStats.incrementOtherOperations();
         localMapStats.incrementOtherOperations();

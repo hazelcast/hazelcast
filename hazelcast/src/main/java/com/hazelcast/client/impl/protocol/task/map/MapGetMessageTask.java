@@ -69,7 +69,7 @@ public class MapGetMessageTask
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(parameters.name);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(parameters.name)
-                    .incrementGets(latency);
+                    .incrementGetLatencyNanos(latency);
         }
     }
 

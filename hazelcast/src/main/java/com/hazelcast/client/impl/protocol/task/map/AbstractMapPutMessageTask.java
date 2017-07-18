@@ -28,7 +28,7 @@ import java.security.Permission;
 
 public abstract class AbstractMapPutMessageTask<P> extends AbstractMapPartitionMessageTask<P> {
 
-    protected transient long startTime;
+    protected transient long startTimeNanos;
 
     protected AbstractMapPutMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -36,17 +36,17 @@ public abstract class AbstractMapPutMessageTask<P> extends AbstractMapPartitionM
 
     @Override
     protected void beforeProcess() {
-        startTime = System.currentTimeMillis();
+        startTimeNanos = System.nanoTime();
     }
 
     @Override
     protected void beforeResponse() {
-        final long latency = System.currentTimeMillis() - startTime;
+        final long latency = System.nanoTime() - startTimeNanos;
         final MapService mapService = getService(MapService.SERVICE_NAME);
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(getDistributedObjectName());
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(getDistributedObjectName())
-                    .incrementPuts(latency);
+                    .incrementPutLatencyNanos(latency);
         }
     }
 

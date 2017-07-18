@@ -70,7 +70,7 @@ public final class EntryOperator {
     private final boolean wanReplicationEnabled;
     private final boolean hasEventRegistration;
     private final int partitionId;
-    private final long now = Clock.currentTimeMillis();
+    private final long startTimeNanos = System.nanoTime();
     private final String mapName;
     private final RecordStore recordStore;
     private final InternalSerializationService ss;
@@ -301,7 +301,7 @@ public final class EntryOperator {
                 newValue = record == null ? null : record.getValue();
             }
             mapServiceContext.interceptAfterPut(mapName, newValue);
-            stats.incrementPuts(getLatencyFrom(now));
+            stats.incrementPutLatencyNanos(getLatencyFrom(startTimeNanos));
         }
     }
 
@@ -311,12 +311,12 @@ public final class EntryOperator {
         } else {
             recordStore.delete(dataKey);
             mapServiceContext.interceptAfterRemove(mapName, oldValue);
-            stats.incrementRemoves(getLatencyFrom(now));
+            stats.incrementRemoveLatencyNanos(getLatencyFrom(startTimeNanos));
         }
     }
 
-    private static long getLatencyFrom(long begin) {
-        return Clock.currentTimeMillis() - begin;
+    private static long getLatencyFrom(long beginTimeNanos) {
+        return System.nanoTime() - beginTimeNanos;
     }
 
     private void process(Map.Entry entry) {

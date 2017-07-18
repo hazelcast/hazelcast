@@ -33,7 +33,7 @@ import java.security.Permission;
 public class MapRemoveMessageTask
         extends AbstractMapPartitionMessageTask<MapRemoveCodec.RequestParameters> {
 
-    protected transient long startTime;
+    protected transient long startTimeNanos;
 
     public MapRemoveMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -41,17 +41,17 @@ public class MapRemoveMessageTask
 
     @Override
     protected void beforeProcess() {
-        startTime = System.currentTimeMillis();
+        startTimeNanos = System.nanoTime();
     }
 
     @Override
     protected void beforeResponse() {
-        final long latency = System.currentTimeMillis() - startTime;
+        final long latency = System.nanoTime() - startTimeNanos;
         final MapService mapService = getService(MapService.SERVICE_NAME);
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(parameters.name);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(parameters.name)
-                    .incrementRemoves(latency);
+                    .incrementRemoveLatencyNanos(latency);
         }
     }
 

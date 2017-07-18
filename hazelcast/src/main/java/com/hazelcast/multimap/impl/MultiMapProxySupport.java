@@ -246,17 +246,17 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
             Future f;
             Object o;
             if (config.isStatisticsEnabled()) {
-                long time = System.currentTimeMillis();
+                long startTimeNanos = System.nanoTime();
                 f = nodeEngine.getOperationService()
                         .invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
                 o = f.get();
                 if (operation instanceof PutOperation) {
                     //TODO @ali should we remove statics from operations ?
-                    getService().getLocalMultiMapStatsImpl(name).incrementPuts(System.currentTimeMillis() - time);
+                    getService().getLocalMultiMapStatsImpl(name).incrementPutLatencyNanos(System.nanoTime() - startTimeNanos);
                 } else if (operation instanceof RemoveOperation || operation instanceof RemoveAllOperation) {
-                    getService().getLocalMultiMapStatsImpl(name).incrementRemoves(System.currentTimeMillis() - time);
+                    getService().getLocalMultiMapStatsImpl(name).incrementRemoveLatencyNanos(System.nanoTime() - startTimeNanos);
                 } else if (operation instanceof GetAllOperation) {
-                    getService().getLocalMultiMapStatsImpl(name).incrementGets(System.currentTimeMillis() - time);
+                    getService().getLocalMultiMapStatsImpl(name).incrementGetLatencyNanos(System.nanoTime() - startTimeNanos);
                 }
             } else {
                 f = nodeEngine.getOperationService()

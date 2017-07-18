@@ -356,14 +356,14 @@ abstract class MapProxySupport<K, V>
 
         MapOperation operation = operationProvider.createGetOperation(name, keyData);
         try {
-            long startTime = System.currentTimeMillis();
+            long startTimeNanos = System.nanoTime();
             InternalCompletableFuture<Data> future = operationService
                     .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .setResultDeserialized(false)
                     .invoke();
 
             if (statisticsEnabled) {
-                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTime));
+                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTimeNanos));
             }
 
             return future;
@@ -406,13 +406,13 @@ abstract class MapProxySupport<K, V>
         try {
             Object result;
             if (statisticsEnabled) {
-                long time = System.currentTimeMillis();
+                long startTimeNanos = System.nanoTime();
                 Future future = operationService
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                         .setResultDeserialized(false)
                         .invoke();
                 result = future.get();
-                mapServiceContext.incrementOperationStats(time, localMapStats, name, operation);
+                mapServiceContext.incrementOperationStats(startTimeNanos, localMapStats, name, operation);
             } else {
                 Future future = operationService
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
@@ -432,11 +432,11 @@ abstract class MapProxySupport<K, V>
         MapOperation operation = operationProvider.createPutOperation(name, keyData, value, getTimeInMillis(ttl, timeunit));
         operation.setThreadId(getThreadId());
         try {
-            long startTime = System.currentTimeMillis();
+            long startTimeNanos = System.nanoTime();
             InternalCompletableFuture<Data> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
 
             if (statisticsEnabled) {
-                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTime));
+                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTimeNanos));
             }
             return future;
         } catch (Throwable t) {
@@ -587,11 +587,11 @@ abstract class MapProxySupport<K, V>
         MapOperation operation = operationProvider.createRemoveOperation(name, keyData, false);
         operation.setThreadId(getThreadId());
         try {
-            long startTime = System.currentTimeMillis();
+            long startTimeNanos = System.nanoTime();
             InternalCompletableFuture<Data> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
 
             if (statisticsEnabled) {
-                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTime));
+                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTimeNanos));
             }
 
             return future;
@@ -735,7 +735,8 @@ abstract class MapProxySupport<K, V>
         Map<Integer, Object> responses;
         try {
             OperationFactory operationFactory = operationProvider.createGetAllOperationFactory(name, dataKeys);
-            long time = System.currentTimeMillis();
+            long startTimeNanos = System.nanoTime();
+
             responses = operationService.invokeOnPartitions(SERVICE_NAME, operationFactory, partitions);
             for (Object response : responses.values()) {
                 MapEntries entries = toObject(response);
@@ -744,7 +745,7 @@ abstract class MapProxySupport<K, V>
                     resultingKeyValuePairs.add(entries.getValue(i));
                 }
             }
-            localMapStats.incrementGets(dataKeys.size(), System.currentTimeMillis() - time);
+            localMapStats.incrementGetLatencyNanos(dataKeys.size(), System.nanoTime() - startTimeNanos);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -916,9 +917,9 @@ abstract class MapProxySupport<K, V>
 
     protected void invokePutAllOperationFactory(long size, int[] partitions, MapEntries[] entries) throws Exception {
         OperationFactory factory = operationProvider.createPutAllOperationFactory(name, partitions, entries);
-        long time = System.currentTimeMillis();
+        long startTimeNanos = System.nanoTime();
         operationService.invokeOnPartitions(SERVICE_NAME, factory, partitions);
-        localMapStats.incrementPuts(size, System.currentTimeMillis() - time);
+        localMapStats.incrementPutLatencyNanos(size, System.nanoTime() - startTimeNanos);
     }
 
     protected void finalizePutAll(Map<?, ?> map) {
