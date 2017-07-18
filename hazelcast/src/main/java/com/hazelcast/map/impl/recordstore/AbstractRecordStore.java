@@ -41,6 +41,7 @@ import com.hazelcast.util.Clock;
 
 import java.util.Collection;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateTTLMillis;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTL;
@@ -147,7 +148,9 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         Data dataKey = record.getKey();
         final Indexes indexes = mapContainer.getIndexes(partitionId);
         if (indexes.hasIndex()) {
-            Object value = Records.getValueOrCachedValue(record, serializationService);
+            Object value = inMemoryFormat.equals(NATIVE)
+                    ? record.getValue()
+                    : Records.getValueOrCachedValue(record, serializationService);
             QueryableEntry queryableEntry = mapContainer.newQueryEntry(dataKey, value);
             indexes.saveEntryIndex(queryableEntry, oldValue);
         }
@@ -158,7 +161,9 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         Indexes indexes = mapContainer.getIndexes(partitionId);
         if (indexes.hasIndex()) {
             Data key = record.getKey();
-            Object value = Records.getValueOrCachedValue(record, serializationService);
+            Object value = inMemoryFormat.equals(NATIVE)
+                    ? record.getValue()
+                    : Records.getValueOrCachedValue(record, serializationService);
             indexes.removeEntryIndex(key, value);
         }
     }
