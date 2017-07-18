@@ -41,12 +41,12 @@ public abstract class AbstractMapPutMessageTask<P> extends AbstractMapPartitionM
 
     @Override
     protected void beforeResponse() {
-        final long latency = System.nanoTime() - startTimeNanos;
+        final long latencyNanos = System.nanoTime() - startTimeNanos;
         final MapService mapService = getService(MapService.SERVICE_NAME);
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(getDistributedObjectName());
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(getDistributedObjectName())
-                    .incrementPutLatencyNanos(latency);
+                    .incrementPutLatencyNanos(latencyNanos);
         }
     }
 

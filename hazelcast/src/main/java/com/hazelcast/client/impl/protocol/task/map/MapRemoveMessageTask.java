@@ -46,12 +46,12 @@ public class MapRemoveMessageTask
 
     @Override
     protected void beforeResponse() {
-        final long latency = System.nanoTime() - startTimeNanos;
+        final long latencyNanos = System.nanoTime() - startTimeNanos;
         final MapService mapService = getService(MapService.SERVICE_NAME);
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(parameters.name);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(parameters.name)
-                    .incrementRemoveLatencyNanos(latency);
+                    .incrementRemoveLatencyNanos(latencyNanos);
         }
     }
 

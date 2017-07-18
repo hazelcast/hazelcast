@@ -301,7 +301,7 @@ public final class EntryOperator {
                 newValue = record == null ? null : record.getValue();
             }
             mapServiceContext.interceptAfterPut(mapName, newValue);
-            stats.incrementPutLatencyNanos(getLatencyFrom(startTimeNanos));
+            stats.incrementPutLatencyNanos(getLatencyNanos(startTimeNanos));
         }
     }
 
@@ -311,11 +311,11 @@ public final class EntryOperator {
         } else {
             recordStore.delete(dataKey);
             mapServiceContext.interceptAfterRemove(mapName, oldValue);
-            stats.incrementRemoveLatencyNanos(getLatencyFrom(startTimeNanos));
+            stats.incrementRemoveLatencyNanos(getLatencyNanos(startTimeNanos));
         }
     }
 
-    private static long getLatencyFrom(long beginTimeNanos) {
+    private static long getLatencyNanos(long beginTimeNanos) {
         return System.nanoTime() - beginTimeNanos;
     }
 

@@ -53,11 +53,11 @@ public class LocalMapStatsImpl implements LocalMapStats {
 
     // The resolution is in nano seconds for the following latencies
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> TOTAL_GET_LATENCIES =
-            newUpdater(LocalMapStatsImpl.class, "totalGetLatencies");
+            newUpdater(LocalMapStatsImpl.class, "totalGetLatenciesNanos");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> TOTAL_PUT_LATENCIES =
-            newUpdater(LocalMapStatsImpl.class, "totalPutLatencies");
+            newUpdater(LocalMapStatsImpl.class, "totalPutLatenciesNanos");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> TOTAL_REMOVE_LATENCIES =
-            newUpdater(LocalMapStatsImpl.class, "totalRemoveLatencies");
+            newUpdater(LocalMapStatsImpl.class, "totalRemoveLatenciesNanos");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> MAX_GET_LATENCY =
             newUpdater(LocalMapStatsImpl.class, "maxGetLatency");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> MAX_PUT_LATENCY =
@@ -74,9 +74,9 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private volatile long getCount;
     private volatile long putCount;
     private volatile long removeCount;
-    private volatile long totalGetLatencies;
-    private volatile long totalPutLatencies;
-    private volatile long totalRemoveLatencies;
+    private volatile long totalGetLatenciesNanos;
+    private volatile long totalPutLatenciesNanos;
+    private volatile long totalRemoveLatenciesNanos;
     private volatile long maxGetLatency;
     private volatile long maxPutLatency;
     private volatile long maxRemoveLatency;
@@ -243,17 +243,17 @@ public class LocalMapStatsImpl implements LocalMapStats {
 
     @Override
     public long getTotalPutLatency() {
-        return NANOSECONDS.toMillis(totalPutLatencies);
+        return NANOSECONDS.toMillis(totalPutLatenciesNanos);
     }
 
     @Override
     public long getTotalGetLatency() {
-        return NANOSECONDS.toMillis(totalGetLatencies);
+        return NANOSECONDS.toMillis(totalGetLatenciesNanos);
     }
 
     @Override
     public long getTotalRemoveLatency() {
-        return NANOSECONDS.toMillis(totalRemoveLatencies);
+        return NANOSECONDS.toMillis(totalRemoveLatenciesNanos);
     }
 
     @Override
@@ -328,9 +328,9 @@ public class LocalMapStatsImpl implements LocalMapStats {
         root.add("dirtyEntryCount", dirtyEntryCount);
 
         // keep the contract as milliseconds for latencies sent using Json
-        root.add("totalGetLatencies", NANOSECONDS.toMillis(totalGetLatencies));
-        root.add("totalPutLatencies", NANOSECONDS.toMillis(totalPutLatencies));
-        root.add("totalRemoveLatencies", NANOSECONDS.toMillis(totalRemoveLatencies));
+        root.add("totalGetLatencies", NANOSECONDS.toMillis(totalGetLatenciesNanos));
+        root.add("totalPutLatencies", NANOSECONDS.toMillis(totalPutLatenciesNanos));
+        root.add("totalRemoveLatencies", NANOSECONDS.toMillis(totalRemoveLatenciesNanos));
         root.add("maxGetLatency", NANOSECONDS.toMillis(maxGetLatency));
         root.add("maxPutLatency", NANOSECONDS.toMillis(maxPutLatency));
         root.add("maxRemoveLatency", NANOSECONDS.toMillis(maxRemoveLatency));
@@ -353,9 +353,9 @@ public class LocalMapStatsImpl implements LocalMapStats {
         lastUpdateTime = getLong(json, "lastUpdateTime", -1L);
 
         // Json uses milliseconds but we keep latencies in nanoseconds internally
-        totalGetLatencies = MILLISECONDS.toNanos(getLong(json, "totalGetLatencies", -1L));
-        totalPutLatencies = MILLISECONDS.toNanos(getLong(json, "totalPutLatencies", -1L));
-        totalRemoveLatencies = MILLISECONDS.toNanos(getLong(json, "totalRemoveLatencies", -1L));
+        totalGetLatenciesNanos = MILLISECONDS.toNanos(getLong(json, "totalGetLatencies", -1L));
+        totalPutLatenciesNanos = MILLISECONDS.toNanos(getLong(json, "totalPutLatencies", -1L));
+        totalRemoveLatenciesNanos = MILLISECONDS.toNanos(getLong(json, "totalRemoveLatencies", -1L));
         maxGetLatency = MILLISECONDS.toNanos(getLong(json, "maxGetLatency", -1L));
         maxPutLatency = MILLISECONDS.toNanos(getLong(json, "maxPutLatency", -1L));
         maxRemoveLatency = MILLISECONDS.toNanos(getLong(json, "maxRemoveLatency", -1L));
@@ -388,9 +388,9 @@ public class LocalMapStatsImpl implements LocalMapStats {
                 + ", getCount=" + getCount
                 + ", putCount=" + putCount
                 + ", removeCount=" + removeCount
-                + ", totalGetLatencies=" + NANOSECONDS.toMillis(totalGetLatencies)
-                + ", totalPutLatencies=" + NANOSECONDS.toMillis(totalPutLatencies)
-                + ", totalRemoveLatencies=" + NANOSECONDS.toMillis(totalRemoveLatencies)
+                + ", totalGetLatencies=" + NANOSECONDS.toMillis(totalGetLatenciesNanos)
+                + ", totalPutLatencies=" + NANOSECONDS.toMillis(totalPutLatenciesNanos)
+                + ", totalRemoveLatencies=" + NANOSECONDS.toMillis(totalRemoveLatenciesNanos)
                 + ", maxGetLatency=" + NANOSECONDS.toMillis(maxGetLatency)
                 + ", maxPutLatency=" + NANOSECONDS.toMillis(maxPutLatency)
                 + ", maxRemoveLatency=" + NANOSECONDS.toMillis(maxRemoveLatency)
