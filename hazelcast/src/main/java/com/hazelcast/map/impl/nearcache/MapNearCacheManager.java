@@ -55,10 +55,10 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
      */
     private static final InvalidationAcceptorFilter INVALIDATION_ACCEPTOR = new InvalidationAcceptorFilter();
 
+    protected final int partitionCount;
     protected final NodeEngine nodeEngine;
     protected final MapServiceContext mapServiceContext;
     protected final MinimalPartitionService partitionService;
-    protected final int partitionCount;
     protected final Invalidator invalidator;
     protected final RepairingTask repairingTask;
 
@@ -135,12 +135,9 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
     public boolean destroyNearCache(String mapName) {
         String uuid = nodeEngine.getLocalMember().getUuid();
         invalidator.invalidateAllKeys(mapName, uuid);
+        invalidator.destroy(mapName, uuid);
 
-        if (super.destroyNearCache(mapName)) {
-            invalidator.destroy(mapName, uuid);
-            return true;
-        }
-        return false;
+        return super.destroyNearCache(mapName);
     }
 
     public Object getFromNearCache(String mapName, Object key) {
