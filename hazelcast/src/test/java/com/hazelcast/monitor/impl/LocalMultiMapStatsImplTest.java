@@ -25,6 +25,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -50,12 +52,13 @@ public class LocalMultiMapStatsImplTest {
         localMapStats.setLockedEntryCount(1231);
         localMapStats.setDirtyEntryCount(4252);
 
-        localMapStats.incrementPuts(5631);
-        localMapStats.incrementPuts(1);
-        localMapStats.incrementGets(1233);
-        localMapStats.incrementGets(5);
-        localMapStats.incrementGets(9);
-        localMapStats.incrementRemoves(1238);
+        localMapStats.incrementPutLatencyNanos(MILLISECONDS.toNanos(5631));
+        localMapStats.incrementPutLatencyNanos(MILLISECONDS.toNanos(1));
+        localMapStats.incrementGetLatencyNanos(MILLISECONDS.toNanos(1233));
+        localMapStats.incrementGetLatencyNanos(MILLISECONDS.toNanos(5));
+        localMapStats.incrementGetLatencyNanos(MILLISECONDS.toNanos(9));
+        localMapStats.incrementRemoveLatencyNanos(MILLISECONDS.toNanos(1238));
+
         localMapStats.incrementOtherOperations();
         localMapStats.incrementOtherOperations();
         localMapStats.incrementOtherOperations();
@@ -86,12 +89,14 @@ public class LocalMultiMapStatsImplTest {
         assertEquals(2, localMapStats.getPutOperationCount());
         assertEquals(3, localMapStats.getGetOperationCount());
         assertEquals(1, localMapStats.getRemoveOperationCount());
+
         assertEquals(5632, localMapStats.getTotalPutLatency());
         assertEquals(1247, localMapStats.getTotalGetLatency());
         assertEquals(1238, localMapStats.getTotalRemoveLatency());
         assertEquals(5631, localMapStats.getMaxPutLatency());
         assertEquals(1233, localMapStats.getMaxGetLatency());
         assertEquals(1238, localMapStats.getMaxRemoveLatency());
+
         assertEquals(5, localMapStats.getOtherOperationCount());
         assertEquals(2, localMapStats.getEventOperationCount());
 
@@ -122,12 +127,14 @@ public class LocalMultiMapStatsImplTest {
         assertEquals(2, deserialized.getPutOperationCount());
         assertEquals(3, deserialized.getGetOperationCount());
         assertEquals(1, deserialized.getRemoveOperationCount());
+
         assertEquals(5632, deserialized.getTotalPutLatency());
         assertEquals(1247, deserialized.getTotalGetLatency());
         assertEquals(1238, deserialized.getTotalRemoveLatency());
         assertEquals(5631, deserialized.getMaxPutLatency());
         assertEquals(1233, deserialized.getMaxGetLatency());
         assertEquals(1238, deserialized.getMaxRemoveLatency());
+
         assertEquals(5, deserialized.getOtherOperationCount());
         assertEquals(2, deserialized.getEventOperationCount());
 

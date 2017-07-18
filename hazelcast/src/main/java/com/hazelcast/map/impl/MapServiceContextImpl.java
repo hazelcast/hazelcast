@@ -679,13 +679,13 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void incrementOperationStats(long startTime, LocalMapStatsImpl localMapStats, String mapName, Operation operation) {
-        final long duration = System.currentTimeMillis() - startTime;
+        final long durationNanos = System.nanoTime() - startTime;
         if (operation instanceof BasePutOperation) {
-            localMapStats.incrementPuts(duration);
+            localMapStats.incrementPutLatencyNanos(durationNanos);
         } else if (operation instanceof BaseRemoveOperation) {
-            localMapStats.incrementRemoves(duration);
+            localMapStats.incrementRemoveLatencyNanos(durationNanos);
         } else if (operation instanceof GetOperation) {
-            localMapStats.incrementGets(duration);
+            localMapStats.incrementGetLatencyNanos(durationNanos);
         }
     }
 
