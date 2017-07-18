@@ -275,7 +275,7 @@ public class Edge implements IdentifiedDataSerializable {
      * <p>
      * These restrictions imply that the downstream's local parallelism
      * cannot be less than upstream's. Since all traffic will be local, this
-     * policy doesn't make sense on a distributed edge.
+     * policy is not allowed on a distributed edge.
      */
     public Edge isolated() {
         routingPolicy = RoutingPolicy.ISOLATED;

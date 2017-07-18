@@ -299,7 +299,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         edge, RoutingPolicy.ISOLATED.name(), downstreamParallelism, upstreamParallelism));
             }
             if (edge.isDistributed()) {
-                throw new IllegalArgumentException("One to many edges must be local: " + edge);
+                throw new IllegalArgumentException("Isolated edges must be local: " + edge);
             }
 
             // there is only one producer per consumer for a one to many edge, so queueCount is always 1
