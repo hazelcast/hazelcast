@@ -24,6 +24,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
@@ -38,6 +39,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -63,6 +65,42 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
 
     private HazelcastInstance member1;
     private HazelcastInstance member2;
+
+    private static class DelayGetRemoveMapInterceptor
+            implements MapInterceptor, Serializable {
+        @Override
+        public Object interceptGet(Object value) {
+            sleepMillis(1);
+            return value;
+        }
+
+        @Override
+        public void afterGet(Object value) {
+
+        }
+
+        @Override
+        public Object interceptPut(Object oldValue, Object newValue) {
+            sleepMillis(1);
+            return newValue;
+        }
+
+        @Override
+        public void afterPut(Object value) {
+
+        }
+
+        @Override
+        public Object interceptRemove(Object removedValue) {
+            sleepMillis(1);
+            return removedValue;
+        }
+
+        @Override
+        public void afterRemove(Object value) {
+
+        }
+    }
 
     @Before
     public void setup() {
@@ -1174,7 +1212,9 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
     @Test
     public void testMapStatistics_withClientOperations() {
         String mapName = randomString();
-        LocalMapStats stats1 = member1.getMap(mapName).getLocalMapStats();
+        IMap<Integer, Integer> member1Map = member1.getMap(mapName);
+        member1Map.addInterceptor(new DelayGetRemoveMapInterceptor());
+        LocalMapStats stats1 = member1Map.getLocalMapStats();
         LocalMapStats stats2 = member2.getMap(mapName).getLocalMapStats();
 
         IMap<Integer, Integer> map = client.getMap(mapName);
