@@ -45,6 +45,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.IOException;
@@ -109,11 +110,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 ProcCtx context =
                         new ProcCtx(instance, logger, srcVertex.name(), processorIdx + srcVertex.getProcIdxOffset());
 
-                // Disabled due to causing memory leak: it keeps referencing the p.getClass()
-                // and prevents the classloader from being unloaded.
-                // TODO re-enable after 3.8.3 with PR #10725 is released
-                // String probePrefix = String.format("jet.job.%d.%s#%d", executionId, srcVertex.name(), processorIdx);
-                // ((NodeEngineImpl) nodeEngine).getMetricsRegistry().scanAndRegister(p, probePrefix);
+                 String probePrefix = String.format("jet.job.%d.%s#%d", executionId, srcVertex.name(), processorIdx);
+                 ((NodeEngineImpl) nodeEngine).getMetricsRegistry().scanAndRegister(p, probePrefix);
 
                 // createOutboundEdgeStreams() populates localConveyorMap and edgeSenderConveyorMap.
                 // Also populates instance fields: senderMap, receiverMap, tasklets.

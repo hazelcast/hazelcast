@@ -31,6 +31,7 @@ import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.ExecutionService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
+import com.hazelcast.jet.impl.operation.AsyncExecutionOperation;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -51,9 +52,10 @@ import java.io.IOException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static java.util.Collections.emptyMap;
 
 public class JetService
         implements ManagedService, ConfigurableService<JetConfig>, PacketHandler, LiveOperationsTracker,
@@ -143,6 +145,9 @@ public class JetService
                 return (created[0] = new ExecutionContext(executionId, nodeEngine, executionService)).initialize(plan);
             });
         } catch (Throwable t) {
+            // We want the context be put to the map even in case the initialization fails.
+            // We cannot simply move the initialize() call out of compute(), because other thread could
+            // see it before initialization is done.
             if (created[0] != null) {
                 executionContexts.put(executionId, created[0]);
             }
@@ -216,16 +221,15 @@ public class JetService
         Address address = event.getMember().getAddress();
 
         // complete the processors, whose caller is dead, with TopologyChangedException
-        liveOperationRegistry.liveOperations
-                .entrySet().stream()
-                .filter(e -> address.equals(e.getKey()))
-                .flatMap(e -> e.getValue().values().stream())
-                .forEach(op ->
-                        Optional.ofNullable(executionContexts.get(op.getExecutionId()))
-                                .map(ExecutionContext::getJobFuture)
-                                .ifPresent(stage -> stage.whenComplete((aVoid, throwable) ->
-                                        completeExecution(op.getExecutionId(),
-                                                new TopologyChangedException("Topology has been changed")))));
+        for (AsyncExecutionOperation op :
+                liveOperationRegistry.liveOperations.getOrDefault(address, emptyMap()).values()) {
+            ExecutionContext ec = executionContexts.get(op.getExecutionId());
+            if (ec == null || ec.getJobFuture() == null) {
+                continue;
+            }
+            ec.getJobFuture().whenComplete((aVoid, throwable) ->
+                    completeExecution(op.getExecutionId(), new TopologyChangedException("Topology has been changed")));
+        }
     }
 
     @Override
