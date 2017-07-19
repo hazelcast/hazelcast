@@ -74,8 +74,7 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapAbstrac
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() throws Exception {
                 for (Map.Entry<String, String> entry : map1.entrySet()) {
                     assertRecord(getReplicatedRecord(map1, entry.getKey()), startTime);
                 }
@@ -84,8 +83,7 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapAbstrac
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() throws Exception {
                 for (Map.Entry<String, String> entry : map2.entrySet()) {
                     assertRecord(getReplicatedRecord(map2, entry.getKey()), startTime);
                 }
@@ -226,7 +224,6 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapAbstrac
         testHitsAreIncrementedOnPutsWithSingleNode(buildConfig(InMemoryFormat.BINARY));
     }
 
-
     private void testHitsAreIncrementedOnPutsWithSingleNode(final Config config) throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -251,16 +248,16 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapAbstrac
     }
 
     @Test
-    public void test_hitsAreIncrementedOnPuts_with2Nodes_object() throws Exception {
+    public void test_hitsAreIncrementedOnPuts_with2Nodes_object() {
         testHitsAreIncrementedOnPutsFor1Of2Nodes(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void test_hitsAreIncrementedOnPuts_with2Nodes_Binary() throws Exception {
+    public void test_hitsAreIncrementedOnPuts_with2Nodes_Binary() {
         testHitsAreIncrementedOnPutsFor1Of2Nodes(buildConfig(InMemoryFormat.BINARY));
     }
 
-    private void testHitsAreIncrementedOnPutsFor1Of2Nodes(final Config config) throws Exception {
+    private void testHitsAreIncrementedOnPutsFor1Of2Nodes(final Config config) {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
@@ -283,8 +280,7 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapAbstrac
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() throws Exception {
                 for (String key : keys) {
                     final ReplicatedRecord<String, String> record1 = getReplicatedRecord(map1, key);
                     assertNotNull(record1);

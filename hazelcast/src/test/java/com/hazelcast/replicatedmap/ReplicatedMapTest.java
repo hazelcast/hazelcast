@@ -45,7 +45,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -59,7 +58,7 @@ import static org.junit.Assert.fail;
 public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
     @Test
-    public void testEmptyMapIsEmpty() throws Exception {
+    public void testEmptyMapIsEmpty() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         ReplicatedMap<Integer, Integer> map = instance.getReplicatedMap(randomName());
@@ -67,7 +66,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testNonEmptyMapIsNotEmpty() throws Exception {
+    public void testNonEmptyMapIsNotEmpty() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         ReplicatedMap<Integer, Integer> map = instance.getReplicatedMap(randomName());
@@ -76,7 +75,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testNegativeTtlThrowsException() throws Exception {
+    public void testNegativeTtlThrowsException() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         ReplicatedMap<Integer, Integer> map = instance.getReplicatedMap(randomName());
@@ -84,44 +83,44 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testAddObject() throws Exception {
+    public void testAddObject() {
         testAdd(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testAddObjectSyncFillup() throws Exception {
+    public void testAddObjectSyncFillUp() {
         Config config = buildConfig(InMemoryFormat.OBJECT);
         config.getReplicatedMapConfig("default").setAsyncFillup(false);
         testFillUp(config);
     }
 
     @Test
-    public void testAddObjectAsyncFillup() throws Exception {
+    public void testAddObjectAsyncFillUp() {
         Config config = buildConfig(InMemoryFormat.OBJECT);
         config.getReplicatedMapConfig("default").setAsyncFillup(true);
         testFillUp(config);
     }
 
     @Test
-    public void testAddBinary() throws Exception {
+    public void testAddBinary() {
         testAdd(buildConfig(InMemoryFormat.BINARY));
     }
 
     @Test
-    public void testAddBinarySyncFillup() throws Exception {
+    public void testAddBinarySyncFillUp() {
         Config config = buildConfig(InMemoryFormat.BINARY);
         config.getReplicatedMapConfig("default").setAsyncFillup(false);
         testFillUp(config);
     }
 
     @Test
-    public void testAddBinaryAsyncFillup() throws Exception {
+    public void testAddBinaryAsyncFillUp() {
         Config config = buildConfig(InMemoryFormat.BINARY);
         config.getReplicatedMapConfig("default").setAsyncFillup(true);
         testFillUp(config);
     }
 
-    private void testAdd(Config config) throws Exception {
+    private void testAdd(Config config) {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -139,8 +138,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 for (String key : keys) {
                     assertEquals("bar", map1.get(key));
                     assertEquals("bar", map2.get(key));
@@ -166,8 +164,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 for (String key : keys) {
                     assertEquals("bar", map2.get(key));
                 }
@@ -176,16 +173,16 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testPutAllObject() throws Exception {
+    public void testPutAllObject() {
         testPutAll(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testPutAllBinary() throws Exception {
+    public void testPutAllBinary() {
         testPutAll(buildConfig(InMemoryFormat.BINARY));
     }
 
-    private void testPutAll(Config config) throws TimeoutException {
+    private void testPutAll(Config config) {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
@@ -204,8 +201,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 for (String key : keys) {
                     assertEquals("bar", map1.get(key));
                     assertEquals("bar", map2.get(key));
@@ -215,16 +211,16 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testClearObject() throws Exception {
+    public void testClearObject() {
         testClear(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testClearBinary() throws Exception {
+    public void testClearBinary() {
         testClear(buildConfig(InMemoryFormat.BINARY));
     }
 
-    private void testClear(Config config) throws Exception {
+    private void testClear(Config config) {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -242,8 +238,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 for (String key : keys) {
                     assertEquals("bar", map1.get(key));
                     assertEquals("bar", map2.get(key));
@@ -255,8 +250,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(0, map1.size());
                 assertEquals(0, map2.size());
             }
@@ -264,16 +258,16 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testAddTtlObject() throws Exception {
+    public void testAddTtlObject() {
         testAddTtl(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testAddTtlBinary() throws Exception {
+    public void testAddTtlBinary() {
         testAddTtl(buildConfig(InMemoryFormat.BINARY));
     }
 
-    private void testAddTtl(Config config) throws Exception {
+    private void testAddTtl(Config config) {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -291,8 +285,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() throws Exception {
                 for (String key : keys) {
                     assertEquals("bar", map1.get(key));
                     ReplicatedRecord<String, String> record = getReplicatedRecord(map1, key);
@@ -304,8 +297,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() throws Exception {
                 for (String key : keys) {
                     assertEquals("bar", map2.get(key));
                     ReplicatedRecord<String, String> record = getReplicatedRecord(map2, key);
@@ -317,16 +309,16 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testUpdateObject() throws Exception {
+    public void testUpdateObject() {
         testUpdate(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testUpdateBinary() throws Exception {
+    public void testUpdateBinary() {
         testUpdate(buildConfig(InMemoryFormat.BINARY));
     }
 
-    private void testUpdate(Config config) throws Exception {
+    private void testUpdate(Config config) {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -344,8 +336,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 for (String key : keys) {
                     assertEquals("bar", map1.get(key));
                     assertEquals("bar", map2.get(key));
@@ -359,8 +350,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 for (String key : keys) {
                     assertEquals("bar2", map1.get(key));
                     assertEquals("bar2", map2.get(key));
@@ -370,16 +360,16 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testUpdateTtlObject() throws Exception {
+    public void testUpdateTtlObject() {
         testUpdateTtl(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testUpdateTtlBinary() throws Exception {
+    public void testUpdateTtlBinary() {
         testUpdateTtl(buildConfig(InMemoryFormat.BINARY));
     }
 
-    private void testUpdateTtl(Config config) throws Exception {
+    private void testUpdateTtl(Config config) {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -397,8 +387,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 for (String key : keys) {
                     assertEquals("bar", map1.get(key));
                     assertEquals("bar", map2.get(key));
@@ -412,8 +401,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() throws Exception {
                 for (String key : keys) {
                     assertEquals("bar2", map1.get(key));
                     ReplicatedRecord<String, String> record = getReplicatedRecord(map1, key);
@@ -425,8 +413,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() throws Exception {
                 for (String key : keys) {
                     assertEquals("bar2", map2.get(key));
                     ReplicatedRecord<String, String> record = getReplicatedRecord(map2, key);
@@ -438,16 +425,16 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testRemoveObject() throws Exception {
+    public void testRemoveObject() {
         testRemove(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testRemoveBinary() throws Exception {
+    public void testRemoveBinary() {
         testRemove(buildConfig(InMemoryFormat.BINARY));
     }
 
-    private void testRemove(Config config) throws Exception {
+    private void testRemove(Config config) {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -465,7 +452,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (String key : keys) {
                     assertEquals("map1 should return value for key " + key, "bar", map1.get(key));
                     assertEquals("map2 should return value for key " + key, "bar", map2.get(key));
@@ -479,7 +466,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (String key : keys) {
                     assertFalse("map1 should not contain key " + key, map1.containsKey(key));
                     assertFalse("map2 should not contain key " + key, map2.containsKey(key));
@@ -489,7 +476,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testContainsKey_returnsFalse_onRemovedKeys() throws Exception {
+    public void testContainsKey_returnsFalse_onRemovedKeys() {
         HazelcastInstance node = createHazelcastInstance();
         ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
         map.put(1, Integer.MAX_VALUE);
@@ -499,7 +486,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testContainsKey_returnsFalse_onNonexistentKeys() throws Exception {
+    public void testContainsKey_returnsFalse_onNonexistentKeys() {
         HazelcastInstance node = createHazelcastInstance();
         ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
 
@@ -507,7 +494,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testContainsKey_returnsTrue_onExistingKeys() throws Exception {
+    public void testContainsKey_returnsTrue_onExistingKeys() {
         HazelcastInstance node = createHazelcastInstance();
         ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
         map.put(1, Integer.MAX_VALUE);
@@ -516,7 +503,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testKeySet_notIncludes_removedKeys() throws Exception {
+    public void testKeySet_notIncludes_removedKeys() {
         HazelcastInstance node = createHazelcastInstance();
         final ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
         map.put(1, Integer.MAX_VALUE);
@@ -526,8 +513,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 Set<Integer> keys = new HashSet<Integer>(map.keySet());
                 assertFalse(keys.contains(1));
             }
@@ -535,7 +521,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testEntrySet_notIncludes_removedKeys() throws Exception {
+    public void testEntrySet_notIncludes_removedKeys() {
         HazelcastInstance node = createHazelcastInstance();
         final ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
         map.put(1, Integer.MAX_VALUE);
@@ -545,8 +531,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 Set<Entry<Integer, Integer>> entries = map.entrySet();
                 for (Entry<Integer, Integer> entry : entries) {
                     if (entry.getKey().equals(1)) {
@@ -558,17 +543,17 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testSizeObject() throws Exception {
+    public void testSizeObject() {
         testSize(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testSizeBinary() throws Exception {
+    public void testSizeBinary() {
         testSize(buildConfig(InMemoryFormat.BINARY));
     }
 
 
-    private void testSize(Config config) throws Exception {
+    private void testSize(Config config) {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -590,8 +575,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(keys.size(), map1.size());
                 assertEquals(keys.size(), map2.size());
             }
@@ -599,16 +583,16 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testContainsKeyObject() throws Exception {
+    public void testContainsKeyObject() {
         testContainsKey(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testContainsKeyBinary() throws Exception {
+    public void testContainsKeyBinary() {
         testContainsKey(buildConfig(InMemoryFormat.BINARY));
     }
 
-    private void testContainsKey(Config config) throws Exception {
+    private void testContainsKey(Config config) {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -626,8 +610,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 for (String key : keys) {
                     assertTrue(map1.containsKey(key));
                     assertTrue(map2.containsKey(key));
@@ -637,23 +620,23 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testContainsValue_returnsFalse_onNonexistentValue() throws Exception {
+    public void testContainsValue_returnsFalse_onNonexistentValue() {
         HazelcastInstance node = createHazelcastInstance();
         ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
         assertFalse(map.containsValue(1));
     }
 
     @Test
-    public void testContainsValueObject() throws Exception {
+    public void testContainsValueObject() {
         testContainsValue(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testContainsValueBinary() throws Exception {
+    public void testContainsValueBinary() {
         testContainsValue(buildConfig(InMemoryFormat.BINARY));
     }
 
-    private void testContainsValue(Config config) throws Exception {
+    private void testContainsValue(Config config) {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -673,8 +656,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 for (String key : keys) {
                     assertTrue(map1.containsValue(key));
                     assertTrue(map2.containsValue(key));
@@ -684,7 +666,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testValuesWithComparator() throws Exception {
+    public void testValuesWithComparator() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         ReplicatedMap<Integer, Integer> map = instance.getReplicatedMap(randomName());
@@ -699,16 +681,16 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testValuesObject() throws Exception {
+    public void testValuesObject() {
         testValues(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testValuesBinary() throws Exception {
+    public void testValuesBinary() {
         testValues(buildConfig(InMemoryFormat.BINARY));
     }
 
-    private void testValues(Config config) throws Exception {
+    private void testValues(Config config) {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -728,8 +710,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(keys, new HashSet<String>(map1.values()));
                 assertEquals(keys, new HashSet<String>(map2.values()));
             }
@@ -737,16 +718,16 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testKeySetObject() throws Exception {
+    public void testKeySetObject() {
         testKeySet(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testKeySetBinary() throws Exception {
+    public void testKeySetBinary() {
         testKeySet(buildConfig(InMemoryFormat.BINARY));
     }
 
-    private void testKeySet(Config config) throws Exception {
+    private void testKeySet(Config config) {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -766,8 +747,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 assertEquals(keys, new HashSet<String>(map1.keySet()));
                 assertEquals(keys, new HashSet<String>(map2.keySet()));
             }
@@ -775,16 +755,16 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testEntrySetObject() throws Exception {
+    public void testEntrySetObject() {
         testEntrySet(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testEntrySetBinary() throws Exception {
+    public void testEntrySetBinary() {
         testEntrySet(buildConfig(InMemoryFormat.BINARY));
     }
 
-    private void testEntrySet(Config config) throws Exception {
+    private void testEntrySet(Config config) {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -804,8 +784,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 List<Entry<String, String>> entrySet1 = new ArrayList<Entry<String, String>>(map1.entrySet());
                 List<Entry<String, String>> entrySet2 = new ArrayList<Entry<String, String>>(map2.entrySet());
                 assertEquals(keys.size(), entrySet1.size());
@@ -823,16 +802,16 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testAddListenerObject() throws Exception {
+    public void testAddListenerObject() {
         testAddEntryListener(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testAddListenerBinary() throws Exception {
+    public void testAddListenerBinary() {
         testAddEntryListener(buildConfig(InMemoryFormat.BINARY));
     }
 
-    private void testAddEntryListener(Config config) throws TimeoutException {
+    private void testAddEntryListener(Config config) {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -855,16 +834,16 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testEvictionObject() throws Exception {
+    public void testEvictionObject() {
         testEviction(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testEvictionBinary() throws Exception {
+    public void testEvictionBinary() {
         testEviction(buildConfig(InMemoryFormat.BINARY));
     }
 
-    private void testEviction(Config config) throws TimeoutException {
+    private void testEviction(Config config) {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -911,7 +890,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void putNullKey() throws Exception {
+    public void putNullKey() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
         ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
@@ -919,7 +898,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void removeNullKey() throws Exception {
+    public void removeNullKey() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
         ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
@@ -927,7 +906,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void removeEmptyListener() throws Exception {
+    public void removeEmptyListener() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
         ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
@@ -935,7 +914,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void removeNullListener() throws Exception {
+    public void removeNullListener() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
         ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
@@ -943,7 +922,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testSizeAfterRemove() throws Exception {
+    public void testSizeAfterRemove() {
         HazelcastInstance node = createHazelcastInstance();
         ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
         map.put(1, Integer.MAX_VALUE);
@@ -952,7 +931,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testDestroy() throws Exception {
+    public void testDestroy() {
         HazelcastInstance instance = createHazelcastInstance();
         ReplicatedMap<Object, Object> replicatedMap = instance.getReplicatedMap(randomName());
         replicatedMap.put(1, 1);
@@ -965,7 +944,7 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
 
         @Override
         public int compare(Integer o1, Integer o2) {
-            return o1 == o2 ? 0 : o1 > o2 ? -1 : 1;
+            return o1.equals(o2) ? 0 : o1 > o2 ? -1 : 1;
         }
     }
 }

@@ -54,9 +54,8 @@ public class PassThroughMapMergePolicyTest {
     @Test
     public void merge_mergingNull() {
         ReplicatedMapEntryView existing = entryWithGivenValue(EXISTING);
-        ReplicatedMapEntryView merging = null;
 
-        assertEquals(EXISTING, policy.merge("map", merging, existing));
+        assertEquals(EXISTING, policy.merge("map", null, existing));
     }
 
     private ReplicatedMapEntryView entryWithGivenValue(String value) {
@@ -69,5 +68,4 @@ public class PassThroughMapMergePolicyTest {
         }
 
     }
-
 }

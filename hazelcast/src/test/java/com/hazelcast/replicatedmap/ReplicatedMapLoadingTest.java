@@ -37,7 +37,7 @@ import static org.junit.Assert.assertEquals;
 public class ReplicatedMapLoadingTest extends ReplicatedMapAbstractTest {
 
     @Test
-    public void testAsyncFillUp() throws Exception {
+    public void testAsyncFillUp() {
         Config config = new Config();
         String mapName = randomMapName();
         ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig(mapName);
@@ -48,7 +48,7 @@ public class ReplicatedMapLoadingTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
-    public void testSyncFillUp() throws Exception {
+    public void testSyncFillUp() {
         Config config = new Config();
         String mapName = randomMapName();
         ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig(mapName);

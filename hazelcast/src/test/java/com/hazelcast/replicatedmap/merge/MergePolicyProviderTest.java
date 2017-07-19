@@ -85,5 +85,4 @@ public class MergePolicyProviderTest extends HazelcastTestSupport {
         assertNotNull(mergePolicy);
         assertEquals(mergePolicyName, mergePolicy.getClass().getName());
     }
-
 }
