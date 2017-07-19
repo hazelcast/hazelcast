@@ -69,25 +69,6 @@ public class ClientLockTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTryLockShouldFailIfLockTTLisNotFinished() throws Exception {
-        factory.newHazelcastInstance();
-        HazelcastInstance hz = factory.newHazelcastClient();
-        final ILock lock = hz.getLock(randomName());
-        final int longLockTimeout = 60;
-
-        lock.lock(longLockTimeout, TimeUnit.SECONDS);
-        final CountDownLatch latch = new CountDownLatch(1);
-        new Thread() {
-            public void run() {
-                if (!lock.tryLock()) {
-                    latch.countDown();
-                }
-            }
-        }.start();
-        assertOpenEventually(latch);
-    }
-
-    @Test
     public void testTryLockShouldSucceedWhenLockTTLisFinished() throws Exception {
         factory.newHazelcastInstance();
         HazelcastInstance hz = factory.newHazelcastClient();
