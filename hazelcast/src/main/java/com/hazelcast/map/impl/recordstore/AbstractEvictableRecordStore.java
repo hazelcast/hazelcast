@@ -33,6 +33,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.NoSuchElementException;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
@@ -131,21 +132,26 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     private int evictExpiredEntriesInternal(int maxIterationCount, long now, boolean backup) {
-        int evictedCount = 0;
+        int evictedEntryCount = 0;
         int checkedEntryCount = 0;
         initExpirationIterator();
+
+        LinkedList<Record> records = new LinkedList<Record>();
         while (expirationIterator.hasNext()) {
             if (checkedEntryCount >= maxIterationCount) {
                 break;
             }
             checkedEntryCount++;
-            Record record = expirationIterator.next();
-            record = getOrNullIfExpired(record, now, backup);
-            if (record == null) {
-                evictedCount++;
+            records.add(expirationIterator.next());
+        }
+
+        while (!records.isEmpty()) {
+            if (getOrNullIfExpired(records.poll(), now, backup) == null) {
+                evictedEntryCount++;
             }
         }
-        return evictedCount;
+
+        return evictedEntryCount;
     }
 
     private void initExpirationIterator() {
