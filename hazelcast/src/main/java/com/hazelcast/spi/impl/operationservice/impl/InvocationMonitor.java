@@ -57,6 +57,7 @@ import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINE;
@@ -75,6 +76,12 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
     private static final long ON_MEMBER_LEFT_DELAY_MILLIS = 1111;
     private static final int HEARTBEAT_CALL_TIMEOUT_RATIO = 4;
     private static final long MAX_DELAY_MILLIS = SECONDS.toMillis(10);
+    // the maximum deviation between operation-heartbeat packets compared to the heartbeat frequency.
+    // if e.g. the heartbeat is expected every 15 seconds, and after 25 seconds a heartbeat is received,
+    // then the deviation is 100*((25-15)/15)=67%
+    // If set to 0, there will not be any detection of qos violations.
+    private static final int MAX_DEVIATION_PERCENTAGE = Integer.getInteger("hazelcast.diagnostics.tcp.qos.deviation", 33);
+    private static final int HUNDRED = 100;
 
     private final NodeEngineImpl nodeEngine;
     private final InternalSerializationService serializationService;
@@ -399,7 +406,30 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
                 lastHeartbeatPerMember.put(sender, lastMemberHeartbeat);
             }
 
+            logQosDeviation(timeMillis, lastMemberHeartbeat);
             lastMemberHeartbeat.set(timeMillis);
+        }
+
+        private void logQosDeviation(long timeMillis, AtomicLong lastMemberHeartbeat) {
+            if (MAX_DEVIATION_PERCENTAGE > 0) {
+                long previousMillis = lastMemberHeartbeat.get();
+                if (previousMillis == 0) {
+                    if (logger.isFineEnabled()) {
+                        logger.fine(format("Received first operation heartbeat from member [%s]", sender));
+                    }
+                } else {
+                    long intervalMillis = timeMillis - previousMillis;
+                    // positive deviation indicates that it took more time than expected.
+                    float deviation = (float) (intervalMillis - heartbeatBroadcastPeriodMillis) / heartbeatBroadcastPeriodMillis;
+
+                    Level level = Math.abs(deviation) < MAX_DEVIATION_PERCENTAGE ? Level.FINE : Level.WARNING;
+
+                    if (logger.isLoggable(level)) {
+                        logger.log(level, "Received operation heartbeat from member [%s], interval:" + intervalMillis + " ms"
+                                + ", deviation: " + (HUNDRED * deviation) + " %");
+                    }
+                }
+            }
         }
 
         private void updateHeartbeat(long callId, long timeMillis) {
