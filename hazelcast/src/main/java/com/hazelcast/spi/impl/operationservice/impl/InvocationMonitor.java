@@ -72,7 +72,6 @@ import static java.util.logging.Level.INFO;
  */
 class InvocationMonitor implements PacketHandler, MetricsProvider {
 
-    private static final long ON_MEMBER_LEFT_DELAY_MILLIS = 1111;
     private static final int HEARTBEAT_CALL_TIMEOUT_RATIO = 4;
     private static final long MAX_DELAY_MILLIS = SECONDS.toMillis(10);
 
@@ -176,8 +175,7 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
     }
 
     void onMemberLeft(MemberImpl member) {
-        // postpone notifying invocations since real response may arrive in the mean time.
-        scheduler.schedule(new OnMemberLeftTask(member), ON_MEMBER_LEFT_DELAY_MILLIS, MILLISECONDS);
+        scheduler.execute(new OnMemberLeftTask(member));
     }
 
     void execute(Runnable runnable) {
