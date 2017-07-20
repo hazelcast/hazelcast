@@ -619,7 +619,9 @@ public abstract class Invocation implements OperationResponseHandler {
                     // fast retry for the first few invocations
                     context.invocationMonitor.execute(retryTask);
                 } else {
-                    context.invocationMonitor.schedule(retryTask, tryPauseMillis);
+                    // progressive retry delay
+                    long delayMillis = Math.min(1 << (invokeCount - MAX_FAST_INVOCATION_COUNT), tryPauseMillis);
+                    context.invocationMonitor.schedule(retryTask, delayMillis);
                 }
             } catch (RejectedExecutionException e) {
                 completeWhenRetryRejected(e);
