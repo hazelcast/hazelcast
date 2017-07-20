@@ -32,6 +32,7 @@
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]util[\\/]QuickMath"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]util[\\/]collection[\\/]"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]concurrent[\\/]"/>
+    <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]cluster[\\/]fd[\\/]PhiAccrualFailureDetector"/>
 
     <!-- Exclude implementation packages from JavaDoc checks -->
     <suppress checks="JavadocPackage" files="[\\/]impl[\\/]"/>
