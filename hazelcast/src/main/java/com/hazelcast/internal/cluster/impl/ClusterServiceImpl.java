@@ -153,6 +153,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         registerMetrics();
     }
 
+
+
     private void registerMetrics() {
         MetricsRegistry metricsRegistry = node.nodeEngine.getMetricsRegistry();
         metricsRegistry.scanAndRegister(clusterClock, "cluster.clock");

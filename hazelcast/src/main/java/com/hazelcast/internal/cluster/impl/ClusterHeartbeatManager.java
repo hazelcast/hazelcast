@@ -114,6 +114,15 @@ public class ClusterHeartbeatManager {
         icmpTimeoutMillis = (int) hazelcastProperties.getMillis(GroupProperty.ICMP_TIMEOUT);
     }
 
+    public long getHeartbeatIntervalMillis() {
+        return heartbeatIntervalMillis;
+    }
+
+    // only used for reading by Diagnostics
+    public ConcurrentMap<MemberImpl, Long> getHeartbeatTimes() {
+        return heartbeatTimes;
+    }
+
     private static long getHeartbeatInterval(HazelcastProperties hazelcastProperties) {
         long heartbeatInterval = hazelcastProperties.getMillis(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
         return heartbeatInterval > 0 ? heartbeatInterval : TimeUnit.SECONDS.toMillis(1);

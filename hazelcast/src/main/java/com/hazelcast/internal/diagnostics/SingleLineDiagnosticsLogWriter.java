@@ -89,6 +89,13 @@ class SingleLineDiagnosticsLogWriter extends DiagnosticsLogWriter {
     }
 
     @Override
+    public void writeKeyValueEntryAsDateTime(String key, long epochMillis) {
+        appendComma();
+        write(key).write('=');
+        appendDateTime(epochMillis);
+    }
+
+    @Override
     protected void init(PrintWriter writer) {
         firstEntry = true;
         super.init(writer);
