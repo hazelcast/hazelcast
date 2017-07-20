@@ -546,7 +546,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return;
         }
 
-        if (!isReplicaSyncAllowed()) {
+        if (!isMigrationAllowed()) {
             // migration is disabled because of a member leave, wait till enabled!
             return;
         }
@@ -1021,7 +1021,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         migrationManager.resumeMigration();
     }
 
-    public boolean isReplicaSyncAllowed() {
+    public boolean isMigrationAllowed() {
         return migrationManager.isMigrationAllowed();
     }
 
