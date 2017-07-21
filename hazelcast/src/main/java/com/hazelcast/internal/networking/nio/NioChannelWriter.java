@@ -35,7 +35,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.util.EmptyStatement.ignore;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.nio.channels.SelectionKey.OP_WRITE;
@@ -462,7 +461,7 @@ public final class NioChannelWriter extends AbstractHandler implements Runnable 
             try {
                 latch.await(TIMEOUT, SECONDS);
             } catch (InterruptedException e) {
-                ignore(e);
+                Thread.currentThread().interrupt();
             }
         }
     }

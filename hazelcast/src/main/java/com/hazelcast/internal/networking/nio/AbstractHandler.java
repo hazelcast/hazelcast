@@ -135,6 +135,10 @@ public abstract class AbstractHandler
 
     @Override
     public void onFailure(Throwable e) {
+        if (e instanceof InterruptedException) {
+            Thread.currentThread().interrupt();
+        }
+
         if (selectionKey != null) {
             selectionKey.cancel();
         }
