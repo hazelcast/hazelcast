@@ -423,15 +423,16 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     }
 
     private void fireConnectionRemovedEvent(ClientConnection connection) {
-        if (connection.isAuthenticatedAsOwner() && client.getLifecycleService().isRunning()) {
+        Address endpoint = connection.getEndPoint();
+        boolean ownerDisconnected = endpoint != null && endpoint.equals(ownerConnectionAddress);
+        if (ownerDisconnected && client.getLifecycleService().isRunning()) {
             fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
         }
 
         for (ConnectionListener listener : connectionListeners) {
             listener.connectionRemoved(connection);
         }
-        Address endpoint = connection.getEndPoint();
-        if (endpoint != null && endpoint.equals(ownerConnectionAddress)) {
+        if (ownerDisconnected) {
             setOwnerConnectionAddress(null);
             connectionStrategy.onDisconnectFromCluster();
         }
