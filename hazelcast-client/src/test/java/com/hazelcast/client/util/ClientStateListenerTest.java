@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -208,7 +209,7 @@ public class ClientStateListenerTest extends ClientTestSupport{
     @Test
     public void testClientReconnecModeOffDisconnected() throws InterruptedException {
         ClientConfig clientConfig = new ClientConfig();
-        ClientStateListener listener = new ClientStateListener(clientConfig);
+        final ClientStateListener listener = new ClientStateListener(clientConfig);
         clientConfig.getConnectionStrategyConfig().setReconnectMode(OFF);
 
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
@@ -225,7 +226,13 @@ public class ClientStateListenerTest extends ClientTestSupport{
 
         assertFalse(listener.isStarted());
 
-        assertEquals(SHUTDOWN, listener.getCurrentState());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals(SHUTDOWN, listener.getCurrentState());
+            }
+        });
     }
 
     @Test
