@@ -16,13 +16,18 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.exception.CallerNotMemberException;
 
 import java.io.IOException;
+
+import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
 /**
  * An operation sent by the member that starts mastership claim process to fetch/gather member views of other members.
@@ -61,6 +66,15 @@ public class FetchMembersViewOp extends AbstractClusterOperation implements Join
     @Override
     public Object getResponse() {
         return membersView;
+    }
+
+    @Override
+    public ExceptionAction onInvocationException(Throwable throwable) {
+        if (throwable instanceof MemberLeftException || throwable instanceof CallerNotMemberException) {
+            return THROW_EXCEPTION;
+        }
+
+        return super.onInvocationException(throwable);
     }
 
     @Override

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.cluster.impl;
+package com.hazelcast.test;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
@@ -31,67 +31,65 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.F_ID;
-import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.LEN;
 import static com.hazelcast.test.HazelcastTestSupport.getAddress;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static java.util.Collections.singletonList;
 
-final class PacketFiltersUtil {
+public final class PacketFiltersUtil {
 
     private PacketFiltersUtil() {
     }
 
-    static void resetPacketFiltersFrom(HazelcastInstance instance) {
+    public static void resetPacketFiltersFrom(HazelcastInstance instance) {
         Node node = getNode(instance);
         FirewallingConnectionManager cm = (FirewallingConnectionManager) node.getConnectionManager();
         cm.removeDroppingPacketFilter();
         cm.removeDelayingPacketFilter();
     }
 
-    static void delayOperationsFrom(HazelcastInstance instance, int... opTypes) {
+    public static void delayOperationsFrom(HazelcastInstance instance, int factory, List<Integer> opTypes) {
         Node node = getNode(instance);
         FirewallingConnectionManager cm = (FirewallingConnectionManager) node.getConnectionManager();
-        PacketFilter packetFilter = new EndpointAgnosticClusterOperationPacketFilter(node.getSerializationService(), opTypes);
+        PacketFilter packetFilter = new EndpointAgnosticPacketFilter(node.getSerializationService(), factory, opTypes);
         cm.setDelayingPacketFilter(packetFilter, 500, 5000);
     }
 
-    static void delayOperationsBetween(HazelcastInstance from, HazelcastInstance to, int... opTypes) {
+    public static void delayOperationsBetween(HazelcastInstance from, HazelcastInstance to, int factory, List<Integer> opTypes) {
         Node node = getNode(from);
         FirewallingConnectionManager cm = (FirewallingConnectionManager) node.getConnectionManager();
         List<Address> blacklist = singletonList(getAddress(to));
-        PacketFilter packetFilter = new EndpointAwareClusterOperationPacketFilter(node.getSerializationService(), blacklist, opTypes);
+        PacketFilter packetFilter = new EndpointAwarePacketFilter(node.getSerializationService(), blacklist, factory, opTypes);
         cm.setDelayingPacketFilter(packetFilter, 500, 5000);
     }
 
-    static void delayOperationsBetween(HazelcastInstance from, Collection<HazelcastInstance> to, int... opTypes) {
+    public static void delayOperationsBetween(HazelcastInstance from, Collection<HazelcastInstance> to, int factory, List<Integer> opTypes) {
         Node node = getNode(from);
         FirewallingConnectionManager cm = (FirewallingConnectionManager) node.getConnectionManager();
         Collection<Address> blacklist = getAddresses(to);
-        PacketFilter packetFilter = new EndpointAwareClusterOperationPacketFilter(node.getSerializationService(), blacklist, opTypes);
+        PacketFilter packetFilter = new EndpointAwarePacketFilter(node.getSerializationService(), blacklist, factory, opTypes);
         cm.setDelayingPacketFilter(packetFilter, 500, 5000);
     }
 
-    static void dropOperationsFrom(HazelcastInstance instance, int... opTypes) {
+    public static void dropOperationsFrom(HazelcastInstance instance, int factory, List<Integer> opTypes) {
         Node node = getNode(instance);
         FirewallingConnectionManager cm = (FirewallingConnectionManager) node.getConnectionManager();
-        PacketFilter packetFilter = new EndpointAgnosticClusterOperationPacketFilter(node.getSerializationService(), opTypes);
+        PacketFilter packetFilter = new EndpointAgnosticPacketFilter(node.getSerializationService(), factory, opTypes);
         cm.setDroppingPacketFilter(packetFilter);
     }
 
-    static void dropOperationsBetween(HazelcastInstance from, HazelcastInstance to, int... opTypes) {
+    public static void dropOperationsBetween(HazelcastInstance from, HazelcastInstance to, int factory, List<Integer> opTypes) {
         Node node = getNode(from);
         FirewallingConnectionManager cm = (FirewallingConnectionManager) node.getConnectionManager();
         List<Address> blacklist = singletonList(getAddress(to));
-        PacketFilter packetFilter = new EndpointAwareClusterOperationPacketFilter(node.getSerializationService(), blacklist, opTypes);
+        PacketFilter packetFilter = new EndpointAwarePacketFilter(node.getSerializationService(), blacklist, factory, opTypes);
         cm.setDroppingPacketFilter(packetFilter);
     }
 
-    static void dropOperationsBetween(HazelcastInstance from, Collection<HazelcastInstance> to, int... opTypes) {
+    public static void dropOperationsBetween(HazelcastInstance from, Collection<HazelcastInstance> to, int factory, List<Integer> opTypes) {
         Node node = getNode(from);
         FirewallingConnectionManager cm = (FirewallingConnectionManager) node.getConnectionManager();
         Collection<Address> blacklist = getAddresses(to);
-        PacketFilter packetFilter = new EndpointAwareClusterOperationPacketFilter(node.getSerializationService(), blacklist, opTypes);
+        PacketFilter packetFilter = new EndpointAwarePacketFilter(node.getSerializationService(), blacklist, factory, opTypes);
         cm.setDroppingPacketFilter(packetFilter);
     }
 
@@ -104,34 +102,33 @@ final class PacketFiltersUtil {
         return addresses;
     }
 
-    static class EndpointAgnosticClusterOperationPacketFilter extends OperationPacketFilter {
+    private static class EndpointAgnosticPacketFilter extends OperationPacketFilter {
 
-        final IntHashSet types = new IntHashSet(LEN, 0);
+        final int factory;
 
-        EndpointAgnosticClusterOperationPacketFilter(InternalSerializationService serializationService, int...typeIds) {
+        final IntHashSet types = new IntHashSet(1024, 0);
+
+        EndpointAgnosticPacketFilter(InternalSerializationService serializationService, int factory, List<Integer> typeIds) {
             super(serializationService);
-            
-            assert typeIds.length > 0 : "At least one operation type must be defined!";
-            for (int id : typeIds) {
-                types.add(id);
-            }
+            assert typeIds.size() > 0 : "At least one operation type must be defined!";
+            this.factory = factory;
+            types.addAll(typeIds);
         }
 
         @Override
         protected boolean allowOperation(Address endpoint, int factory, int type) {
-            boolean drop = factory == F_ID && types.contains(type);
-            return !drop;
+            return !(this.factory == factory && types.contains(type));
         }
     }
 
-    static class EndpointAwareClusterOperationPacketFilter extends EndpointAgnosticClusterOperationPacketFilter {
+    private static class EndpointAwarePacketFilter extends EndpointAgnosticPacketFilter {
 
         final Set<Address> blacklist = new HashSet<Address>();
 
-        EndpointAwareClusterOperationPacketFilter(InternalSerializationService serializationService,
-                                                  Collection<Address> blacklist,
-                                                  int...typeIds) {
-            super(serializationService, typeIds);
+        EndpointAwarePacketFilter(InternalSerializationService serializationService,
+                                  Collection<Address> blacklist,
+                                  int factory, List<Integer> typeIds) {
+            super(serializationService, factory, typeIds);
             this.blacklist.addAll(blacklist);
         }
 
