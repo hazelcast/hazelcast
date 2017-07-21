@@ -26,6 +26,7 @@ import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
@@ -64,7 +65,9 @@ public final class FetchPartitionStateOperation extends AbstractPartitionOperati
 
     @Override
     public ExceptionAction onInvocationException(Throwable throwable) {
-        if (throwable instanceof MemberLeftException || throwable instanceof TargetNotMemberException) {
+        if (throwable instanceof MemberLeftException
+                || throwable instanceof TargetNotMemberException
+                || throwable instanceof CallerNotMemberException) {
             return ExceptionAction.THROW_EXCEPTION;
         }
         return super.onInvocationException(throwable);
