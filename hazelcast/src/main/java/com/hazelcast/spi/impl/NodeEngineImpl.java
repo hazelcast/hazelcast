@@ -27,6 +27,7 @@ import com.hazelcast.internal.diagnostics.ConfigPropertiesPlugin;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.diagnostics.InvocationPlugin;
 import com.hazelcast.internal.diagnostics.MemberHazelcastInstanceInfoPlugin;
+import com.hazelcast.internal.diagnostics.MemberHeartbeatPlugin;
 import com.hazelcast.internal.diagnostics.MetricsPlugin;
 import com.hazelcast.internal.diagnostics.NetworkingPlugin;
 import com.hazelcast.internal.diagnostics.OverloadedConnectionsPlugin;
@@ -253,6 +254,7 @@ public class NodeEngineImpl implements NodeEngine {
         diagnostics.register(new SystemLogPlugin(this));
         diagnostics.register(new StoreLatencyPlugin(this));
         diagnostics.register(new NetworkingPlugin(this));
+        diagnostics.register(new MemberHeartbeatPlugin(this));
     }
 
     public Diagnostics getDiagnostics() {
