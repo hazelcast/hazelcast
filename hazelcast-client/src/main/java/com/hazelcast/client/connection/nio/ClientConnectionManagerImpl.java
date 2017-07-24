@@ -175,7 +175,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                 ClassLoader configClassLoader = client.getClientConfig().getClassLoader();
                 return ClassLoaderUtil.newInstance(configClassLoader, className);
             } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
+                throw rethrow(e);
             }
         } else {
             strategy = new DefaultClientConnectionStrategy();
@@ -363,7 +363,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                 }
             }
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -458,9 +458,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
                     return null;
                 }
-            }).get();
+            });
         } catch (Exception e) {
-            rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -509,7 +509,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             if (socketChannel != null) {
                 socketChannel.close();
             }
-            throw ExceptionUtil.rethrow(e, IOException.class);
+            throw rethrow(e, IOException.class);
         }
     }
 
@@ -805,7 +805,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                         }
                     }, client.getName() + ".clientShutdown-").start();
 
-                    rethrow(e);
+                    throw rethrow(e);
                 }
                 return null;
             }
