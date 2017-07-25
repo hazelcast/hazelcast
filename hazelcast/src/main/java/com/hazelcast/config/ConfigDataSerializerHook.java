@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.dynamicconfig.AddDynamicConfigOperation;
-import com.hazelcast.internal.dynamicconfig.DynamicConfigReplicationOperation;
+import com.hazelcast.internal.dynamicconfig.DynamicConfigPreJoinOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
@@ -45,7 +45,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int NEAR_CACHE_CONFIG = 3;
     public static final int NEAR_CACHE_PRELOADER_CONFIG = 4;
     public static final int ADD_DYNAMIC_CONFIG_OP = 5;
-    public static final int REPLICATE_CONFIGURATIONS_OP = 6;
+    public static final int DYNAMIC_CONFIG_PRE_JOIN_OP = 6;
     public static final int MULTIMAP_CONFIG = 7;
     public static final int LISTENER_CONFIG = 8;
     public static final int ENTRY_LISTENER_CONFIG = 9;
@@ -129,10 +129,10 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
                 return new AddDynamicConfigOperation();
             }
         };
-        constructors[REPLICATE_CONFIGURATIONS_OP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[DYNAMIC_CONFIG_PRE_JOIN_OP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new DynamicConfigReplicationOperation();
+                return new DynamicConfigPreJoinOperation();
             }
         };
         constructors[MULTIMAP_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
