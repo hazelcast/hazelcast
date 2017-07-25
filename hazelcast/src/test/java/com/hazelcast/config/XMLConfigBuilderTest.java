@@ -50,6 +50,7 @@ import java.util.Properties;
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
+import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1751,6 +1752,22 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         Config config = buildConfig(xml);
         PermissionConfig expected = new PermissionConfig(CACHE, "/hz/cachemanager1/cache1", "dev");
         expected.addAction("create").addAction("destroy").addAction("add").addAction("remove");
+        assertPermissionConfig(expected, config);
+    }
+
+    @Test
+    public void testConfigPermission() {
+        String xml = HAZELCAST_START_TAG + SECURITY_START_TAG
+                + "  <client-permissions>"
+                + "    <config-permission principal=\"dev\">"
+                + "       <endpoints><endpoint>127.0.0.1</endpoint></endpoints>"
+                + "    </config-permission>\n"
+                + "  </client-permissions>"
+                + SECURITY_END_TAG + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        PermissionConfig expected = new PermissionConfig(CONFIG, "*", "dev");
+        expected.getEndpoints().add("127.0.0.1");
         assertPermissionConfig(expected, config);
     }
 

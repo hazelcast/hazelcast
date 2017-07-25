@@ -2280,6 +2280,7 @@
                         <xs:element name="transaction-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="cache-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
+                        <xs:element name="config-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
