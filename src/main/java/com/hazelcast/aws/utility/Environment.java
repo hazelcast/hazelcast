@@ -21,7 +21,9 @@ package com.hazelcast.aws.utility;
  * when checking for the presence of an env var.
  */
 public class Environment {
+
   public String getEnvVar(String name) {
     return System.getenv(name);
   }
+
 }

@@ -45,30 +45,6 @@ public class EC2RequestSignerTest {
     private final static String TEST_DERIVED_EXPECTED = "7038265e40236063ebcd2e201908ad6e9f64e533439bfa7a5faa07ba419329bc";
     private final static String TEST_SIGNATURE_EXPECTED = "79f7a4d346ee69ca22ba5f9bc3dd1efc13ac7509936afc5ec21cac37de071eef";
 
-    @Test(expected = IllegalArgumentException.class)
-    public void whenConfigIsNull() {
-        new EC2RequestSigner(null, "", "");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void whenTimeStampIsNull() {
-        new EC2RequestSigner(new AwsConfig(), null, "");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void whenTimeSignServiceIsNull() {
-        EC2RequestSigner signer = new EC2RequestSigner(new AwsConfig(), "", "");
-
-        signer.sign(null, new HashMap<String, String>());
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void whenTimeSignAttributeIsNull() {
-        EC2RequestSigner signer = new EC2RequestSigner(new AwsConfig(), "", "");
-
-        signer.sign("", null);
-    }
-
     @Test
     public void deriveSigningKeyTest() throws Exception {
         // this is from http://docs.aws.amazon.com/general/latest/gr/signature-v4-examples.html

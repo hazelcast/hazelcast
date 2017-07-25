@@ -52,12 +52,6 @@ public class EC2RequestSigner {
     private String endpoint;
 
     public EC2RequestSigner(AwsConfig config, String timeStamp, String endpoint) {
-        if (config == null) {
-            throw new IllegalArgumentException("config cannot be null");
-        }
-        if (timeStamp == null) {
-            throw new IllegalArgumentException("timeStamp cannot be null");
-        }
         this.config = config;
         this.timestamp = timeStamp;
         this.service = null;
@@ -75,13 +69,6 @@ public class EC2RequestSigner {
     }
 
     public String sign(String service, Map<String, String> attributes) {
-        if (service == null) {
-            throw new IllegalArgumentException("service cannot be null");
-        }
-        if (attributes == null) {
-            throw new IllegalArgumentException("attributes cannot be null");
-        }
-
         this.service = service;
         this.attributes = attributes;
 

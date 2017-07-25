@@ -39,14 +39,16 @@ import java.util.regex.Pattern;
 
 import static com.hazelcast.aws.impl.Constants.DOC_VERSION;
 import static com.hazelcast.aws.impl.Constants.SIGNATURE_METHOD_V4;
+import static com.hazelcast.aws.utility.StringUtil.isEmpty;
+import static com.hazelcast.aws.utility.StringUtil.isNotEmpty;
 import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 
 /**
  * See http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
  * for AWS API details.
  */
 public class DescribeInstances {
+
     public static final String IAM_ROLE_ENDPOINT = "169.254.169.254";
     public static final String IAM_TASK_ROLE_ENDPOINT = "169.254.170.2";
 
@@ -56,13 +58,8 @@ public class DescribeInstances {
     private Map<String, String> attributes = new HashMap<String, String>();
 
     public DescribeInstances(AwsConfig awsConfig, String endpoint) throws IOException {
-        if (awsConfig == null) {
-            throw new IllegalArgumentException("AwsConfig is required!");
-        }
         this.awsConfig = awsConfig;
         this.endpoint = endpoint;
-
-        checkKeysFromIamRoles(new Environment());
 
         String timeStamp = getFormattedTimestamp();
         rs = new EC2RequestSigner(awsConfig, timeStamp, endpoint);
@@ -76,30 +73,48 @@ public class DescribeInstances {
         addFilters();
     }
 
+    //Just for testing purposes
     DescribeInstances(AwsConfig awsConfig) {
-        if (awsConfig == null) {
-            throw new IllegalArgumentException("AwsConfig is required!");
-        }
         this.awsConfig = awsConfig;
     }
 
-    void checkKeysFromIamRoles(Environment env) throws IOException {
-        if (awsConfig.getAccessKey() != null && awsConfig.getIamRole() == null) {
-            return;
+    void fillKeysFromIamRoles() throws IOException {
+        if (isEmpty(awsConfig.getIamRole())
+                || "DEFAULT".equals(awsConfig.getIamRole())) {
+            String defaultIAMRole = getDefaultIamRole();
+            awsConfig.setIamRole(defaultIAMRole);
         }
-        // in case no IAM role has been defined, this will attempt to retrieve name of default role.
-        tryGetDefaultIamRole();
 
-        // if IAM role is still empty, one last attempt
-        if (awsConfig.getIamRole() == null || "".equals(awsConfig.getIamRole())) {
-            getKeysFromIamTaskRole(env);
-
+        if (isNotEmpty(awsConfig.getIamRole())) {
+            fillKeysFromIamRole();
         } else {
-            getKeysFromIamRole();
+            fillKeysFromIamTaskRole(getEnvironment());
         }
     }
 
-    private void getKeysFromIamTaskRole(Environment env) throws IOException {
+    private String getDefaultIamRole() throws IOException {
+        try {
+            String query = "latest/meta-data/iam/security-credentials/";
+            String uri = "http://" + IAM_ROLE_ENDPOINT + "/" + query;
+            return retrieveRoleFromURI(uri);
+        } catch (IOException e) {
+            throw new InvalidConfigurationException("Invalid Aws Configuration", e);
+        }
+    }
+
+    private void fillKeysFromIamRole() {
+        try {
+            String query = "latest/meta-data/iam/security-credentials/" + awsConfig.getIamRole();
+            String uri = "http://" + IAM_ROLE_ENDPOINT + "/" + query;
+            String json = retrieveRoleFromURI(uri);
+            parseAndStoreRoleCreds(json);
+        } catch (Exception io) {
+            throw new InvalidConfigurationException("Unable to retrieve credentials from IAM Role: "
+                    + awsConfig.getIamRole(), io);
+        }
+    }
+
+    private void fillKeysFromIamTaskRole(Environment env) throws IOException {
         // before giving up, attempt to discover whether we're running in an ECS Container,
         // in which case, AWS_CONTAINER_CREDENTIALS_RELATIVE_URI will exist as an env var.
         String uri = env.getEnvVar(Constants.ECS_CREDENTIALS_ENV_VAR_NAME);
@@ -113,12 +128,10 @@ public class DescribeInstances {
         try {
             json = retrieveRoleFromURI(uri);
             parseAndStoreRoleCreds(json);
-
         } catch (Exception io) {
             throw new InvalidConfigurationException("Unable to retrieve credentials from IAM Task Role. "
               + "URI: " + uri + ". \n HTTP Response content: " + json, io);
         }
-
     }
 
     /**
@@ -150,40 +163,6 @@ public class DescribeInstances {
             if (reader != null) {
                 reader.close();
             }
-        }
-
-    }
-
-    private void tryGetDefaultIamRole() throws IOException {
-        // if none of the below are true
-        if (!(
-            awsConfig.getIamRole() == null
-            || "".equals(awsConfig.getIamRole())
-            || "DEFAULT".equals(awsConfig.getIamRole())
-            )
-        ) {
-          // stop here. No point looking up the default role.
-            return;
-        }
-        try {
-            String query = "latest/meta-data/iam/security-credentials/";
-            String uri = "http://" + IAM_ROLE_ENDPOINT + "/" + query;
-            String roleName = retrieveRoleFromURI(uri);
-            awsConfig.setIamRole(roleName);
-        } catch (IOException e) {
-            throw new InvalidConfigurationException("Invalid Aws Configuration", e);
-        }
-    }
-
-    private void getKeysFromIamRole() {
-        try {
-            String query = "latest/meta-data/iam/security-credentials/" + awsConfig.getIamRole();
-            String uri = "http://" + IAM_ROLE_ENDPOINT + "/" + query;
-            String json = retrieveRoleFromURI(uri);
-            parseAndStoreRoleCreds(json);
-        } catch (Exception io) {
-            throw new InvalidConfigurationException("Unable to retrieve credentials from IAM Role: "
-              + awsConfig.getIamRole(), io);
         }
     }
 
@@ -238,17 +217,17 @@ public class DescribeInstances {
      */
     private void addFilters() {
         Filter filter = new Filter();
-        if (!isNullOrEmpty(awsConfig.getTagKey())) {
-            if (!isNullOrEmpty(awsConfig.getTagValue())) {
+        if (isNotEmpty(awsConfig.getTagKey())) {
+            if (isNotEmpty(awsConfig.getTagValue())) {
                 filter.addFilter("tag:" + awsConfig.getTagKey(), awsConfig.getTagValue());
             } else {
                 filter.addFilter("tag-key", awsConfig.getTagKey());
             }
-        } else if (!isNullOrEmpty(awsConfig.getTagValue())) {
+        } else if (isNotEmpty(awsConfig.getTagValue())) {
             filter.addFilter("tag-value", awsConfig.getTagValue());
         }
 
-        if (!isNullOrEmpty(awsConfig.getSecurityGroupName())) {
+        if (isNotEmpty(awsConfig.getSecurityGroupName())) {
             filter.addFilter("instance.group-name", awsConfig.getSecurityGroupName());
         }
 
@@ -265,6 +244,11 @@ public class DescribeInstances {
      * @throws Exception if there is an exception invoking the service
      */
     public Map<String, String> execute() throws Exception {
+        if (isNotEmpty(awsConfig.getIamRole())
+                || isEmpty(awsConfig.getAccessKey())) {
+            fillKeysFromIamRoles();
+        }
+
         String signature = rs.sign("ec2", attributes);
         Map<String, String> response;
         InputStream stream = null;
@@ -287,5 +271,10 @@ public class DescribeInstances {
         httpConnection.setDoOutput(false);
         httpConnection.connect();
         return httpConnection.getInputStream();
+    }
+
+    //Added for testing (mocking) purposes.
+    Environment getEnvironment() {
+        return new Environment();
     }
 }

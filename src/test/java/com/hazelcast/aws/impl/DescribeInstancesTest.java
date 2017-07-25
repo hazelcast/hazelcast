@@ -39,11 +39,6 @@ import static org.mockito.Mockito.when;
 public class DescribeInstancesTest {
 
     @Test(expected = IllegalArgumentException.class)
-    public void test_whenAwsConfigIsNull() throws IOException {
-        new DescribeInstances(null, "endpoint");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
     public void test_whenAccessKey_And_IamRole_And_IamTaskRoleEnvVar_Null_With_No_DefaultRole() throws IOException {
         Environment mockedEnv = mock(Environment.class);
         when(mockedEnv.getEnvVar(Constants.ECS_CREDENTIALS_ENV_VAR_NAME)).thenReturn(null);
@@ -52,7 +47,8 @@ public class DescribeInstancesTest {
 
         DescribeInstances descriptor = spy(new DescribeInstances(new AwsConfig()));
         doReturn("").when(descriptor).retrieveRoleFromURI(uri);
-        descriptor.checkKeysFromIamRoles(mockedEnv);
+        doReturn(mockedEnv).when(descriptor).getEnvironment();
+        descriptor.fillKeysFromIamRoles();
     }
 
     @Test
@@ -88,7 +84,8 @@ public class DescribeInstancesTest {
         DescribeInstances descriptor = spy(new DescribeInstances(awsConfig));
         doReturn(defaultIamRoleName).when(descriptor).retrieveRoleFromURI(uri);
         doReturn(someDummyIamRole).when(descriptor).retrieveRoleFromURI(roleUri);
-        descriptor.checkKeysFromIamRoles(mockedEnv);
+        doReturn(mockedEnv).when(descriptor).getEnvironment();
+        descriptor.fillKeysFromIamRoles();
 
         Assert.assertEquals("Could not parse access key from IAM role", accessKeyId, awsConfig.getAccessKey());
         Assert.assertEquals("Could not parse secret key from IAM role", secretAccessKey, awsConfig.getSecretKey());
@@ -100,7 +97,7 @@ public class DescribeInstancesTest {
         descriptor = spy(new DescribeInstances(awsConfig));
         doReturn(defaultIamRoleName).when(descriptor).retrieveRoleFromURI(uri);
         doReturn(someDummyIamRole).when(descriptor).retrieveRoleFromURI(roleUri);
-        descriptor.checkKeysFromIamRoles(mockedEnv);
+        descriptor.fillKeysFromIamRoles();
 
         Assert.assertEquals("Could not parse access key from IAM role", accessKeyId, awsConfig.getAccessKey());
         Assert.assertEquals("Could not parse secret key from IAM role", secretAccessKey, awsConfig.getSecretKey());
@@ -111,7 +108,7 @@ public class DescribeInstancesTest {
         descriptor = spy(new DescribeInstances(awsConfig));
         doReturn(defaultIamRoleName).when(descriptor).retrieveRoleFromURI(uri);
         doReturn(someDummyIamRole).when(descriptor).retrieveRoleFromURI(roleUri);
-        descriptor.checkKeysFromIamRoles(mockedEnv);
+        descriptor.fillKeysFromIamRoles();
 
         Assert.assertEquals("Could not parse access key from IAM role", accessKeyId, awsConfig.getAccessKey());
         Assert.assertEquals("Could not parse secret key from IAM role", secretAccessKey, awsConfig.getSecretKey());
@@ -154,7 +151,7 @@ public class DescribeInstancesTest {
 
         DescribeInstances descriptor = spy(new DescribeInstances(awsConfig));
         doReturn(someDummyIamRole).when(descriptor).retrieveRoleFromURI(uri);
-        descriptor.checkKeysFromIamRoles(null);
+        descriptor.fillKeysFromIamRoles();
 
         Assert.assertEquals("Could not parse access key from IAM role", accessKeyId, awsConfig.getAccessKey());
         Assert.assertEquals("Could not parse secret key from IAM role", secretAccessKey, awsConfig.getSecretKey());
@@ -192,8 +189,9 @@ public class DescribeInstancesTest {
         DescribeInstances descriptor = spy(new DescribeInstances(awsConfig));
         doReturn(someDummyIamTaskRole).when(descriptor).retrieveRoleFromURI(uri);
         doReturn("").when(descriptor).retrieveRoleFromURI(defaultRoleUri);
+        doReturn(mockedEnv).when(descriptor).getEnvironment();
 
-        descriptor.checkKeysFromIamRoles(mockedEnv);
+        descriptor.fillKeysFromIamRoles();
 
         Assert.assertEquals("Could not parse access key from IAM task role", accessKeyId, awsConfig.getAccessKey());
         Assert.assertEquals("Could not parse secret key from IAM task role", secretAccessKey, awsConfig.getSecretKey());
