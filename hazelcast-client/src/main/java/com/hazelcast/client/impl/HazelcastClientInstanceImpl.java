@@ -435,12 +435,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         proxyManager.init(config, clientContext);
         listenerService.start();
         loadBalancer.init(getCluster(), config);
-        partitionService.start();
         statistics.start();
         clientExtension.afterStart(this);
     }
 
     public void onClusterConnect(Connection ownerConnection) throws Exception {
+        partitionService.listenPartitionTable(ownerConnection);
         clusterService.listenMembershipEvents(ownerConnection);
         userCodeDeploymentService.deploy(this, ownerConnection);
     }
