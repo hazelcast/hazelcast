@@ -62,7 +62,6 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
 import java.io.EOFException;
@@ -436,32 +435,28 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     }
 
     private void disconnectFromCluster(final ClientConnection connection) {
-        try {
-            clusterConnectionExecutor.submit(new Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    Address endpoint = connection.getEndPoint();
-                    /**
-                     * it may be possible that while waiting on executor queue, the client got connected (another connection),
-                     * then we do not need to do anything for cluster disconnect.
-                     */
-                    if (endpoint == null || !endpoint.equals(ownerConnectionAddress)) {
-                        return null;
-                    }
-
-                    setOwnerConnectionAddress(null);
-                    connectionStrategy.onDisconnectFromCluster();
-
-                    if (client.getLifecycleService().isRunning()) {
-                        fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
-                    }
-
+        clusterConnectionExecutor.submit(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                Address endpoint = connection.getEndPoint();
+                /**
+                 * it may be possible that while waiting on executor queue, the client got connected (another connection),
+                 * then we do not need to do anything for cluster disconnect.
+                 */
+                if (endpoint == null || !endpoint.equals(ownerConnectionAddress)) {
                     return null;
                 }
-            });
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
+
+                setOwnerConnectionAddress(null);
+                connectionStrategy.onDisconnectFromCluster();
+
+                if (client.getLifecycleService().isRunning()) {
+                    fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
+                }
+
+                return null;
+            }
+        });
     }
 
     private void fireConnectionEvent(final LifecycleEvent.LifecycleState state) {
