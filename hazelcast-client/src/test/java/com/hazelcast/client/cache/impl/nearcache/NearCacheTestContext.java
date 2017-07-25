@@ -21,6 +21,7 @@ import com.hazelcast.client.cache.impl.HazelcastClientCacheManager;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.nearcache.NearCacheInvalidationListener;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -38,10 +39,11 @@ public class NearCacheTestContext {
     protected final ICache<Object, String> cache;
     protected final ICache<Object, String> memberCache;
     protected final NearCache<Object, String> nearCache;
+    protected final NearCacheInvalidationListener invalidationListener;
 
     NearCacheTestContext(HazelcastClientProxy client, HazelcastClientCacheManager cacheManager,
                          NearCacheManager nearCacheManager, ICache<Object, String> cache,
-                         NearCache<Object, String> nearCache) {
+                         NearCache<Object, String> nearCache, NearCacheInvalidationListener invalidationListener) {
         this.client = client;
         this.member = null;
         this.serializationService = client.getSerializationService();
@@ -51,13 +53,14 @@ public class NearCacheTestContext {
         this.cache = cache;
         this.memberCache = null;
         this.nearCache = nearCache;
+        this.invalidationListener = invalidationListener;
     }
 
     NearCacheTestContext(HazelcastClientProxy client, HazelcastInstance member,
                          HazelcastClientCacheManager cacheManager, HazelcastServerCacheManager memberCacheManager,
                          NearCacheManager nearCacheManager,
                          ICache<Object, String> cache, ICache<Object, String> memberCache,
-                         NearCache<Object, String> nearCache) {
+                         NearCache<Object, String> nearCache, NearCacheInvalidationListener invalidationListener) {
         this.client = client;
         this.member = member;
         this.serializationService = client.getSerializationService();
@@ -67,5 +70,6 @@ public class NearCacheTestContext {
         this.cache = cache;
         this.memberCache = memberCache;
         this.nearCache = nearCache;
+        this.invalidationListener = invalidationListener;
     }
 }

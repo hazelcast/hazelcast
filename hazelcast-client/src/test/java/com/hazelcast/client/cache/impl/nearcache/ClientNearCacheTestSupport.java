@@ -31,7 +31,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.nearcache.NearCacheInvalidationListener;
 import com.hazelcast.internal.nearcache.NearCacheManager;
+import com.hazelcast.internal.nearcache.NearCacheTestUtils;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -53,6 +55,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.client.cache.nearcache.ClientCacheInvalidationListener.createInvalidationEventHandler;
 import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
@@ -119,8 +122,9 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         //noinspection unchecked
         ICache<Object, String> cache = cacheManager.createCache(cacheName, cacheConfig);
         NearCache<Object, String> nearCache = nearCacheManager.getNearCache(cacheManager.getCacheNameWithPrefix(cacheName));
+        NearCacheInvalidationListener invalidationListener = createInvalidationEventHandler(cache);
 
-        return new NearCacheTestContext(client, cacheManager, nearCacheManager, cache, nearCache);
+        return new NearCacheTestContext(client, cacheManager, nearCacheManager, cache, nearCache, invalidationListener);
     }
 
     protected NearCacheTestContext createNearCacheTest(String cacheName, NearCacheConfig nearCacheConfig) {
@@ -142,6 +146,8 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                 nearCacheTestContext.cache.put(i, generateValueFromKey(i));
             }
         }
+        assertNearCacheInvalidations(nearCacheTestContext);
+
         return nearCacheTestContext;
     }
 
@@ -207,6 +213,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             nearCacheTestContext1.cache.put(i, generateValueFromKey(i));
         }
+        assertNearCacheInvalidations(nearCacheTestContext1);
 
         // get records from client-2
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
@@ -322,6 +329,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             nearCacheTestContext1.cache.put(i, generateValueFromKey(i));
         }
+        assertNearCacheInvalidations(nearCacheTestContext1);
 
         // get records from client-2
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
@@ -411,6 +419,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             nearCacheTestContext1.cache.put(i, generateValueFromKey(i));
         }
+        assertNearCacheInvalidations(nearCacheTestContext1);
 
         // get records from client-2
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
@@ -540,11 +549,13 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
     private void testNearCacheExpiration(NearCacheConfig nearCacheConfig, int expireSeconds) {
         final int size = 147;
-
         final NearCacheTestContext context = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
 
         for (int i = 0; i < size; i++) {
             context.cache.put(i, "value-" + i);
+        }
+        assertNearCacheInvalidations(context);
+        for (int i = 0; i < size; i++) {
             context.cache.get(i);
         }
 
@@ -575,6 +586,11 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
     protected NearCacheStats getNearCacheStats(ICache cache) {
         return cache.getLocalCacheStatistics().getNearCacheStatistics();
+    }
+
+    protected void assertNearCacheInvalidations(NearCacheTestContext nearCacheTestContext) {
+        NearCacheStats stats = getNearCacheStats(nearCacheTestContext.cache);
+        NearCacheTestUtils.assertNearCacheInvalidations(nearCacheTestContext.invalidationListener, DEFAULT_RECORD_COUNT, stats);
     }
 
     private String getFromNearCache(NearCacheTestContext nearCacheTestContext, Object key) {

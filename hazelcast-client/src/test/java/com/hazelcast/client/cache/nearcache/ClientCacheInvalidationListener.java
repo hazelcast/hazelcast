@@ -28,7 +28,7 @@ import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
-class ClientCacheInvalidationListener
+public class ClientCacheInvalidationListener
         extends CacheAddNearCacheInvalidationListenerCodec.AbstractEventHandler
         implements NearCacheInvalidationListener, EventHandler<ClientMessage> {
 
@@ -63,7 +63,7 @@ class ClientCacheInvalidationListener
     public void onListenerRegister() {
     }
 
-    static NearCacheInvalidationListener createInvalidationEventHandler(ICache clientCache) {
+    public static NearCacheInvalidationListener createInvalidationEventHandler(ICache clientCache) {
         EventHandler invalidationListener = new ClientCacheInvalidationListener();
         ((NearCachedClientCacheProxy) clientCache).addNearCacheInvalidationListener(invalidationListener);
 

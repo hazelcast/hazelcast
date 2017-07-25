@@ -35,6 +35,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.nearcache.NearCacheInvalidationListener;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.AssertTask;
@@ -56,6 +57,7 @@ import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.client.cache.nearcache.ClientCacheInvalidationListener.createInvalidationEventHandler;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -136,9 +138,10 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
 
         NearCache<Object, String> nearCache = nearCacheManager.getNearCache(
                 cacheManager.getCacheNameWithPrefix(DEFAULT_CACHE_NAME));
+        NearCacheInvalidationListener invalidationListener = createInvalidationEventHandler(cache);
 
         testContext = new NearCacheTestContext(client, member, cacheManager, memberCacheManager, nearCacheManager, cache,
-                memberCache, nearCache);
+                memberCache, nearCache, invalidationListener);
 
         // make sure several partitions are populated with data
         for (int i = 0; i < 1000; i++) {
