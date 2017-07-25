@@ -56,6 +56,7 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
             = new HazelcastProperty("hazelcast.client.responsequeue.idlestrategy", "block");
 
     private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED_THRESHOLD = 5000;
+    private static final int CLEAN_RESOURCES_INTERVAL_MILLIS = 100;
 
     protected final HazelcastClientInstanceImpl client;
     protected final ILogger invocationLogger;
@@ -99,7 +100,8 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
         responseThread = new ResponseThread(client.getName() + ".response-", classLoader);
         responseThread.start();
         ClientExecutionService executionService = client.getClientExecutionService();
-        executionService.scheduleWithRepetition(new CleanResourcesTask(), 1, 1, TimeUnit.SECONDS);
+        executionService.scheduleWithRepetition(new CleanResourcesTask(), CLEAN_RESOURCES_INTERVAL_MILLIS,
+                CLEAN_RESOURCES_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     @Override
