@@ -435,16 +435,16 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     }
 
     private void disconnectFromCluster(final ClientConnection connection) {
-        clusterConnectionExecutor.submit(new Callable<Void>() {
+        clusterConnectionExecutor.execute(new Runnable() {
             @Override
-            public Void call() throws Exception {
+            public void run() {
                 Address endpoint = connection.getEndPoint();
                 /**
                  * it may be possible that while waiting on executor queue, the client got connected (another connection),
                  * then we do not need to do anything for cluster disconnect.
                  */
                 if (endpoint == null || !endpoint.equals(ownerConnectionAddress)) {
-                    return null;
+                    return;
                 }
 
                 setOwnerConnectionAddress(null);
@@ -453,8 +453,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                 if (client.getLifecycleService().isRunning()) {
                     fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
                 }
-
-                return null;
             }
         });
     }
