@@ -20,6 +20,7 @@ import com.hazelcast.transaction.TransactionContext;
 
 /**
  * Holder wrapping a Hazelcast TransactionContext.
+ * <p>
  * HazelcastTransactionManager binds instances of this class to the thread, for a given HazelcastInstance.
  *
  * @author Balint Krivan

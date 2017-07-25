@@ -119,9 +119,8 @@ import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
- * BeanDefinitionParser for Hazelcast Config Configuration
- * <p/>
- * <p/>
+ * BeanDefinitionParser for Hazelcast Config Configuration.
+ * <p>
  * <b>Sample Spring XML for Hazelcast Config:</b>
  * <pre>
  * &lt;hz:config&gt;
@@ -141,7 +140,7 @@ import static com.hazelcast.util.StringUtil.upperCaseInternal;
  * &lt;/hz:config&gt;
  * </pre>
  */
-@SuppressWarnings({"checkstyle:executablestatementcount"})
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:executablestatementcount", "checkstyle:cyclomaticcomplexity"})
 public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
@@ -212,6 +211,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             return configBuilder.getBeanDefinition();
         }
 
+        @SuppressWarnings("checkstyle:methodlength")
         public void handleConfig(final Element element) {
             if (element != null) {
                 handleCommonBeanAttributes(element, configBuilder, parserContext);
@@ -732,6 +732,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             setManagedMap.put(name, setConfigBuilder.getBeanDefinition());
         }
 
+        @SuppressWarnings({"checkstyle:methodlength", "checkstyle:npathcomplexity"})
         public void handleMap(Node node) {
             BeanDefinitionBuilder mapConfigBuilder = createBeanBuilder(MapConfig.class);
             final AbstractBeanDefinition beanDefinition = mapConfigBuilder.getBeanDefinition();
@@ -846,6 +847,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             return queryCaches;
         }
 
+        @SuppressWarnings("checkstyle:methodlength")
         private BeanDefinitionBuilder parseQueryCaches(Node queryCacheNode) {
             final BeanDefinitionBuilder builder = createBeanBuilder(QueryCacheConfig.class);
 

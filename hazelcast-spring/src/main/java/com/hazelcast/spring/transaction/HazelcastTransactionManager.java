@@ -33,8 +33,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  * {@link org.springframework.transaction.PlatformTransactionManager} implementation
  * for a single {@link HazelcastInstance}. Binds a Hazelcast {@link TransactionContext}
  * from the instance to the thread (as it is already bounded by Hazelcast itself) and makes it available for access.
- * <p><i>Note:</i> This transaction manager doesn't supports nested transactions, since
- * Hazelcast doesn't support them either.
+ * <p>
+ * <i>Note:</i> This transaction manager doesn't supports nested transactions, since Hazelcast doesn't support them either.
  *
  * @author Balint Krivan
  * @see #getTransactionContext(HazelcastInstance)
