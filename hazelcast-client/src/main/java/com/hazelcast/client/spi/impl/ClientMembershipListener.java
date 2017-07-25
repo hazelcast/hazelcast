@@ -54,7 +54,6 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     private final Set<Member> members = new LinkedHashSet<Member>();
     private final HazelcastClientInstanceImpl client;
     private final ClientClusterServiceImpl clusterService;
-    private final ClientPartitionServiceImpl partitionService;
     private final ClientConnectionManagerImpl connectionManager;
 
     private volatile CountDownLatch initialListFetchedLatch;
@@ -63,7 +62,6 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         this.client = client;
         logger = client.getLoggingService().getLogger(ClientMembershipListener.class);
         connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
-        partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
         clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
     }
 
@@ -79,7 +77,6 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
             default:
                 logger.warning("Unknown event type: " + eventType);
         }
-        partitionService.refreshPartitions();
     }
 
     @Override

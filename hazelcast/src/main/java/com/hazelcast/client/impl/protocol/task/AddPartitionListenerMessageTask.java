@@ -16,46 +16,51 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import com.hazelcast.client.impl.ClientPartitionListenerService;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionListenerCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.nio.Address;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.nio.Connection;
 
 import java.security.Permission;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.Callable;
 
-public class GetPartitionsMessageTask
-        extends AbstractCallableMessageTask<ClientGetPartitionsCodec.RequestParameters> {
+public class AddPartitionListenerMessageTask
+        extends AbstractCallableMessageTask<ClientAddPartitionListenerCodec.RequestParameters> {
 
-    public GetPartitionsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public AddPartitionListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
+    @Override
     protected Object call() {
-        InternalPartitionService service = getService(InternalPartitionService.SERVICE_NAME);
-        service.firstArrangement();
-
-        Collection<Map.Entry<Address, List<Integer>>> partitions = clientEngine.getPartitionListenerService().getPartitions();
-        return ClientGetPartitionsCodec.encodeResponse(partitions);
+        final ClientPartitionListenerService service = clientEngine.getPartitionListenerService();
+        service.registerPartitionListener(endpoint, clientMessage.getCorrelationId());
+        endpoint.addDestroyAction(UUID.randomUUID().toString(), new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                service.deregisterPartitionListener(endpoint);
+                return Boolean.TRUE;
+            }
+        });
+        return true;
     }
 
     @Override
-    protected ClientGetPartitionsCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ClientGetPartitionsCodec.decodeRequest(clientMessage);
+    protected ClientAddPartitionListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ClientAddPartitionListenerCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return (ClientMessage) response;
+        return ClientAddPartitionListenerCodec.encodeResponse();
     }
 
     @Override
     public String getServiceName() {
-        return InternalPartitionService.SERVICE_NAME;
+        return ClusterServiceImpl.SERVICE_NAME;
     }
 
     @Override
@@ -73,7 +78,6 @@ public class GetPartitionsMessageTask
         return null;
     }
 
-    @Override
     public Permission getRequiredPermission() {
         return null;
     }
