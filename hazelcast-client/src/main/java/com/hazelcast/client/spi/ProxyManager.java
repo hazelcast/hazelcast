@@ -70,6 +70,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.map.impl.MapService;
@@ -300,8 +301,9 @@ public final class ProxyManager {
     }
 
     private void initializeWithRetry(ClientProxy clientProxy) throws Exception {
-        final long retryCountLimit = getRetryCountLimit();
-        for (int retryCount = 0; retryCount < retryCountLimit; retryCount++) {
+        long invocationTimeoutMillis = getInvocationTimeoutMillis();
+        long startMillis = System.currentTimeMillis();
+        while (System.currentTimeMillis() < startMillis + invocationTimeoutMillis) {
             try {
                 initialize(clientProxy);
                 return;
@@ -319,13 +321,17 @@ public final class ProxyManager {
                 }
             }
         }
+        long elapsedTime = System.currentTimeMillis() - startMillis;
+        throw new OperationTimeoutException("Initializing  " + clientProxy.getServiceName() + ":"
+                + clientProxy.getName() + " is timed out after " + elapsedTime
+                + " ms. Configured invocation timeout is " + invocationTimeoutMillis + " ms");
     }
 
-    private long getRetryCountLimit() {
+    private long getInvocationTimeoutMillis() {
         HazelcastProperties hazelcastProperties = client.getProperties();
         int waitTime = hazelcastProperties.getSeconds(INVOCATION_TIMEOUT_SECONDS);
-        long retryTimeoutInSeconds = waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
-        return retryTimeoutInSeconds / ClientInvocation.RETRY_WAIT_TIME_IN_SECONDS;
+        waitTime = waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
+        return TimeUnit.SECONDS.toMillis(waitTime);
     }
 
     private boolean isRetryable(final Throwable t) {
