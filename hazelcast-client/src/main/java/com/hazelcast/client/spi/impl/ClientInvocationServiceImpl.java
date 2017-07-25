@@ -36,9 +36,7 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -55,7 +53,6 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
     private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.client.responsequeue.idlestrategy", "block");
 
-    private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED_THRESHOLD = 5000;
     private static final int CLEAN_RESOURCES_INTERVAL_MILLIS = 100;
 
     protected final HazelcastClientInstanceImpl client;
@@ -191,7 +188,6 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
         @Override
         public void run() {
             Iterator<Map.Entry<Long, ClientInvocation>> iter = callIdMap.entrySet().iterator();
-            Collection<ClientConnection> expiredConnections = null;
             while (iter.hasNext()) {
                 Map.Entry<Long, ClientInvocation> entry = iter.next();
                 ClientInvocation invocation = entry.getValue();
@@ -204,25 +200,9 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
                     continue;
                 }
 
-                if (connection.getPendingPacketCount() != 0) {
-                    long closedTime = connection.getClosedTime();
-                    long elapsed = System.currentTimeMillis() - closedTime;
-                    if (elapsed < WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED_THRESHOLD) {
-                        continue;
-                    } else {
-                        if (expiredConnections == null) {
-                            expiredConnections = new LinkedList<ClientConnection>();
-                        }
-                        expiredConnections.add(connection);
-                    }
-                }
-
                 iter.remove();
 
                 notifyException(invocation, connection);
-            }
-            if (expiredConnections != null) {
-                logExpiredConnections(expiredConnections);
             }
         }
 
@@ -242,16 +222,6 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
             invocation.notifyException(ex);
         }
 
-        private void logExpiredConnections(Collection<ClientConnection> expiredConnections) {
-            for (ClientConnection expiredConnection : expiredConnections) {
-                int pendingPacketCount = expiredConnection.getPendingPacketCount();
-                if (pendingPacketCount != 0) {
-                    invocationLogger.warning("There are " + pendingPacketCount
-                            + " packets which are not processed on "
-                            + expiredConnection.getEndPoint());
-                }
-            }
-        }
     }
 
     @Override
