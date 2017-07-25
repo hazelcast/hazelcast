@@ -18,8 +18,6 @@ package com.hazelcast.internal.cluster.fd;
 
 import com.hazelcast.core.Member;
 
-import java.util.Map;
-
 /**
  * Cluster failure detector tracks heartbeats of the members and decides liveness/availability of them.
  */
@@ -67,11 +65,5 @@ public interface ClusterFailureDetector {
      * Clear all state kept by this failure detector
      */
     void reset();
-
-    /**
-     * Returns map of last heartbeat timestamps for all tracked members.
-     * @return heartbeat timestamps of tracked members
-     */
-    Map<Member, Long> lastHeartbeats();
 
 }

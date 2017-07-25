@@ -21,8 +21,6 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.ConstructorFunction;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -112,14 +110,5 @@ public class PhiAccrualClusterFailureDetector implements ClusterFailureDetector 
     @Override
     public void reset() {
         failureDetectors.clear();
-    }
-
-    @Override
-    public Map<Member, Long> lastHeartbeats() {
-        Map<Member, Long> heartbeats = new HashMap<Member, Long>(failureDetectors.size());
-        for (Map.Entry<Member, FailureDetector> entry : failureDetectors.entrySet()) {
-            heartbeats.put(entry.getKey(), entry.getValue().lastHeartbeat());
-        }
-        return heartbeats;
     }
 }

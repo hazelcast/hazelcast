@@ -43,7 +43,6 @@ import com.hazelcast.util.EmptyStatement;
 import java.net.ConnectException;
 import java.net.NetworkInterface;
 import java.util.Collection;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
@@ -134,9 +133,8 @@ public class ClusterHeartbeatManager {
         return heartbeatIntervalMillis;
     }
 
-    // only used for reading by Diagnostics
-    public Map<Member, Long> getHeartbeatTimes() {
-        return heartbeatFailureDetector.lastHeartbeats();
+    public long getLastHeartbeatTime(Member member) {
+        return heartbeatFailureDetector.lastHeartbeat(member);
     }
 
     private static long getHeartbeatInterval(HazelcastProperties hazelcastProperties) {

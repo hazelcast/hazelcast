@@ -18,8 +18,6 @@ package com.hazelcast.internal.cluster.fd;
 
 import com.hazelcast.core.Member;
 
-import java.util.Collections;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -66,10 +64,5 @@ public class DeadlineClusterFailureDetector implements ClusterFailureDetector {
     @Override
     public void reset() {
         heartbeatTimes.clear();
-    }
-
-    @Override
-    public Map<Member, Long> lastHeartbeats() {
-        return Collections.unmodifiableMap(heartbeatTimes);
     }
 }
