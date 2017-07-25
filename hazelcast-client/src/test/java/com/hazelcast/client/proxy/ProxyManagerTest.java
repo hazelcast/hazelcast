@@ -16,11 +16,14 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ProxyManager;
+import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -122,5 +125,15 @@ public class ProxyManagerTest extends HazelcastTestSupport {
         }
 
         return instances;
+    }
+
+    @Test(expected = OperationTimeoutException.class)
+    public void testProxyCreateTimeout_whenClusterIsNotReachable() {
+        HazelcastInstance instance = factory.newHazelcastInstance();
+        ClientConfig config = new ClientConfig();
+        config.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "1");
+        HazelcastInstance client = factory.newHazelcastClient(config);
+        instance.shutdown();
+        client.getMap("test");
     }
 }
