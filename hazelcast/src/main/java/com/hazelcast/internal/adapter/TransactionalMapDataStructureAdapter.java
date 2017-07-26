@@ -134,6 +134,12 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
 
     @Override
     @MethodNotAvailable
+    public boolean evict(K key) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
     public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments) throws EntryProcessorException {
         throw new MethodNotAvailableException();
     }
@@ -183,6 +189,12 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     @Override
     @MethodNotAvailable
     public void removeAll(Set<K> keys) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public void evictAll() {
         throw new MethodNotAvailableException();
     }
 

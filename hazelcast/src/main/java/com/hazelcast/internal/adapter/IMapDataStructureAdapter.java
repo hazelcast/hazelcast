@@ -30,6 +30,7 @@ import javax.cache.processor.EntryProcessorResult;
 import java.util.Map;
 import java.util.Set;
 
+@SuppressWarnings("checkstyle:methodcount")
 public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V> {
 
     private final IMap<K, V> map;
@@ -100,6 +101,11 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
+    public boolean evict(K key) {
+        return map.evict(key);
+    }
+
+    @Override
     @MethodNotAvailable
     public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments) throws EntryProcessorException {
         throw new MethodNotAvailableException();
@@ -166,6 +172,11 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     @MethodNotAvailable
     public void removeAll(final Set<K> keys) {
         throw new MethodNotAvailableException();
+    }
+
+    @Override
+    public void evictAll() {
+        map.evictAll();
     }
 
     @Override

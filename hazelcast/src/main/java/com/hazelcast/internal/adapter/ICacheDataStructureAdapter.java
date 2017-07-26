@@ -28,6 +28,7 @@ import javax.cache.processor.EntryProcessorResult;
 import java.util.Map;
 import java.util.Set;
 
+@SuppressWarnings("checkstyle:methodcount")
 public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K, V> {
 
     private final ICache<K, V> cache;
@@ -94,6 +95,12 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     @Override
     public ICompletableFuture<V> removeAsync(K key) {
         return cache.getAndRemoveAsync(key);
+    }
+
+    @Override
+    @MethodNotAvailable
+    public boolean evict(K key) {
+        throw new MethodNotAvailableException();
     }
 
     @Override
@@ -165,6 +172,12 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     @Override
     public void removeAll(Set<K> keys) {
         cache.removeAll(keys);
+    }
+
+    @Override
+    @MethodNotAvailable
+    public void evictAll() {
+        throw new MethodNotAvailableException();
     }
 
     @Override
