@@ -720,6 +720,38 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#EVICT} is used.
+     */
+    @Test
+    public void whenEvictIsUsed_thenNearCacheIsInvalidated_onNearCacheAdapter() {
+        whenEntryIsLoaded_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.EVICT);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#EVICT} is used.
+     */
+    @Test
+    public void whenEvictIsUsed_thenNearCacheIsInvalidated_onDataAdapter() {
+        whenEntryIsLoaded_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.EVICT);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#EVICT_ALL} is used.
+     */
+    @Test
+    public void whenEvictAllIsUsed_thenNearCacheIsInvalidated_onNearCacheAdapter() {
+        whenEntryIsLoaded_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.EVICT_ALL);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#EVICT_ALL} is used.
+     */
+    @Test
+    public void whenEvictAllIsUsed_thenNearCacheIsInvalidated_onDataAdapter() {
+        whenEntryIsLoaded_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.EVICT_ALL);
+    }
+
+    /**
      * With the {@link NearCacheTestContext#dataAdapter} we have to set {@link NearCacheConfig#setInvalidateOnChange(boolean)}.
      * With the {@link NearCacheTestContext#nearCacheAdapter} Near Cache invalidations are not needed.
      */
@@ -753,17 +785,33 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 adapter.loadAll(keys, true, listener);
                 listener.await();
                 break;
+            case EVICT:
+                for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+                    adapter.evict(i);
+                }
+                break;
+            case EVICT_ALL:
+                adapter.evictAll();
+                break;
             default:
                 throw new IllegalArgumentException("Unexpected method: " + method);
         }
 
-        // wait until the loader is finished and validate the updated values
+        // wait until the loader is finished and validate the updated or evicted values
         waitUntilLoaded(context);
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            assertEquals("newValue-" + i, context.dataAdapter.get(i));
+            if (method == DataStructureMethods.EVICT || method == DataStructureMethods.EVICT_ALL) {
+                assertNull(context.dataAdapter.get(i));
+            } else {
+                assertEquals("newValue-" + i, context.dataAdapter.get(i));
+            }
         }
 
-        assertNearCacheInvalidationsBetween(context, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT * 2);
+        if (method == DataStructureMethods.EVICT_ALL) {
+            assertNearCacheInvalidations(context, 1);
+        } else {
+            assertNearCacheInvalidationsBetween(context, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT * 2);
+        }
         String message = format("Invalidation is not working on %s()", method.getMethodName());
         assertNearCacheSizeEventually(context, 0, message);
     }
