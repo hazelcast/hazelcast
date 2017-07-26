@@ -79,8 +79,8 @@ public class MulticastDiscoveryStrategy extends AbstractDiscoveryStrategy {
             multicastSocket.joinGroup(InetAddress.getByName(group));
             multicastDiscoverySender = new MulticastDiscoverySender(discoveryNode, multicastSocket, logger, group, port);
             multicastDiscoveryReceiver = new MulticastDiscoveryReceiver(multicastSocket, logger);
-            if (discoveryNode != null) {
-                isClient = false;
+            if (discoveryNode == null) {
+                isClient = true;
             }
         } catch (Exception e) {
             logger.finest(e.getMessage());
@@ -118,7 +118,9 @@ public class MulticastDiscoveryStrategy extends AbstractDiscoveryStrategy {
     @Override
     public void destroy() {
         multicastDiscoverySender.stop();
-        thread.interrupt();
+        if (thread != null) {
+            thread.interrupt();
+        }
     }
 
     @Override
