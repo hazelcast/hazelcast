@@ -318,7 +318,7 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
 
     private void registerEventJournalConfig(EventJournalConfig eventJournalConfig, ConfigCheckMode configCheckMode) {
         String mapName = eventJournalConfig.getMapName();
-        String cacheName = eventJournalConfig.getMapName();
+        String cacheName = eventJournalConfig.getCacheName();
         synchronized (journalMutex) {
             EventJournalConfig currentMapJournalConfig = null;
             if (mapName != null) {
