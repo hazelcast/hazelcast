@@ -132,9 +132,10 @@ public class DefaultClientExtension implements ClientExtension {
         return new ClientProxyFactoryWithContext() {
             @Override
             public ClientProxy create(String id, ClientContext context) {
-                NearCacheConfig nearCacheConfig = client.getClientConfig().getNearCacheConfig(id);
+                ClientConfig clientConfig = client.getClientConfig();
+                NearCacheConfig nearCacheConfig = clientConfig.getNearCacheConfig(id);
                 if (nearCacheConfig != null) {
-                    checkNearCacheConfig(id, nearCacheConfig, true);
+                    checkNearCacheConfig(id, nearCacheConfig, clientConfig.getNativeMemoryConfig(), true);
                     return new NearCachedClientMapProxy(MapService.SERVICE_NAME, id, context);
                 } else {
                     return new ClientMapProxy(MapService.SERVICE_NAME, id, context);
