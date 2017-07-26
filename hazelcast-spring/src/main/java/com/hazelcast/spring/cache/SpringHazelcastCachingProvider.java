@@ -22,28 +22,30 @@ import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheManager;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Properties;
 
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+
 /**
- * Spring utility class for connecting {@link HazelcastCachingProvider} interface and Hazelcast instance
+ * Spring utility class for connecting {@link HazelcastCachingProvider} interface and Hazelcast instance.
  */
 public final class SpringHazelcastCachingProvider {
 
-    private SpringHazelcastCachingProvider() { }
+    private SpringHazelcastCachingProvider() {
+    }
 
     /**
      * Creates a {@link CacheManager} on an existing HazelcastInstance.
      *
      * @param uriString Scope of {@link CacheManager}
-     * @param instance Hazelcast instance that created {@link CacheManager} is connected.
-     * @param props Extra properties to be passed to cache manager. If {@code props} contain hazelcast.instance.name
-     *              it overrides {@code instance} parameter
-     * @return
+     * @param instance  Hazelcast instance that created {@link CacheManager} is connected.
+     * @param props     Extra properties to be passed to cache manager. If {@code props} contain hazelcast.instance.name
+     *                  it overrides {@code instance} parameter
+     * @return the created {@link CacheManager}
      */
     public static CacheManager getCacheManager(HazelcastInstance instance, String uriString, Properties props) {
         URI uri = null;
@@ -51,7 +53,7 @@ public final class SpringHazelcastCachingProvider {
             try {
                 uri = new URI(uriString);
             } catch (URISyntaxException e) {
-                ExceptionUtil.rethrow(e);
+                throw rethrow(e);
             }
         }
         if (instance instanceof HazelcastClientProxy) {

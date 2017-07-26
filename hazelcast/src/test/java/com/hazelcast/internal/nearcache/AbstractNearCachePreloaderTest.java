@@ -41,6 +41,7 @@ import static com.hazelcast.internal.nearcache.AbstractNearCachePreloaderTest.Ke
 import static com.hazelcast.internal.nearcache.AbstractNearCachePreloaderTest.KeyType.STRING;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheInvalidations;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheRecord;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSize;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getNearCacheKey;
@@ -363,6 +364,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
             Object key = createKey(keyType, i);
             context.nearCacheAdapter.get(key);
         }
+        assertNearCacheSize(context, keyCount);
     }
 
     private static Object createKey(KeyType keyType, int i) {

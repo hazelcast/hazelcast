@@ -27,8 +27,8 @@ import org.w3c.dom.Node;
 import java.util.Properties;
 
 /**
- * Bean definition parser for JCache {@link javax.cache.CacheManager}
- * <p/>
+ * Bean definition parser for JCache {@link javax.cache.CacheManager}.
+ * <p>
  * <b>Sample bean</b>
  * <pre>
  * &lt;hz:cache-manager id="cacheManager" instance-ref="instance" name="cacheManager" /&gt;

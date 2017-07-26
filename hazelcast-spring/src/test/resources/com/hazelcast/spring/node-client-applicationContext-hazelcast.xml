@@ -22,7 +22,8 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
 		http://www.hazelcast.com/schema/spring
-		http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
+		hazelcast-spring-3.9.xsd
+		">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -164,7 +165,10 @@
         <hz:near-cache name="randomNearCacheEviction"
                        eviction-policy="RANDOM" />
 
-
+        <hz:near-cache name="preloader">
+            <hz:preloader enabled="true" directory="/tmp/preloader"
+                          store-initial-delay-seconds="23" store-interval-seconds="42"/>
+        </hz:near-cache>
     </hz:client>
 
     <hz:client id="client4"

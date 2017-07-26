@@ -24,9 +24,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 /**
- * BeanDefinitionParser for Hazelcast Instance Configuration
- * <p/>
- *
+ * BeanDefinitionParser for Hazelcast Instance Configuration.
+ * <p>
  * <b>Sample Spring XML for Hazelcast Instance:</b>
  * <pre>
  * &lt;hz:hazelcast id="instance"&gt;
