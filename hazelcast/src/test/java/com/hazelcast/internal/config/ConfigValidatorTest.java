@@ -269,7 +269,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
         checkNearCacheConfig(MAP_NAME, nearCacheConfig, true);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test_checkNearCacheConfig_withPreloader_onMembers() {
         NearCacheConfig nearCacheConfig = getNearCacheConfig(BINARY);
         nearCacheConfig.getPreloaderConfig()

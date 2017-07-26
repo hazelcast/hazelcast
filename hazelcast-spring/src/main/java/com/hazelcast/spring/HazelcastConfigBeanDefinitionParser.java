@@ -141,7 +141,7 @@ import static com.hazelcast.util.StringUtil.upperCaseInternal;
  * &lt;/hz:config&gt;
  * </pre>
  */
-@SuppressWarnings({"checkstyle:executablestatementcount"})
+@SuppressWarnings("checkstyle:executablestatementcount")
 public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
@@ -1085,6 +1085,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 final String nodeName = cleanNodeName(childNode);
                 if ("eviction".equals(nodeName)) {
                     handleEvictionConfig(childNode, nearCacheConfigBuilder);
+                } else if ("preloader".equals(nodeName)) {
+                    handlePreloaderConfig(childNode, nearCacheConfigBuilder);
                 }
             }
             configBuilder.addPropertyValue("nearCacheConfig", nearCacheConfigBuilder.getBeanDefinition());
@@ -1092,6 +1094,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private void handleEvictionConfig(Node node, BeanDefinitionBuilder configBuilder) {
             configBuilder.addPropertyValue("evictionConfig", getEvictionConfig(node));
+        }
+
+        private void handlePreloaderConfig(Node node, BeanDefinitionBuilder configBuilder) {
+            configBuilder.addPropertyValue("preloaderConfig", getPreloaderConfig(node));
         }
 
         private ExpiryPolicyFactoryConfig getExpiryPolicyFactoryConfig(Node node) {

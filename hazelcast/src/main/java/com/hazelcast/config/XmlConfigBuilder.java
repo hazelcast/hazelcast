@@ -1268,6 +1268,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 nearCacheConfig.setLocalUpdatePolicy(policy);
             } else if ("eviction".equals(nodeName)) {
                 nearCacheConfig.setEvictionConfig(getEvictionConfig(child, true));
+            } else if ("preloader".equals(nodeName)) {
+                nearCacheConfig.setPreloaderConfig(getNearCachePreloaderConfig(child));
             }
         }
         if (serializeKeys != null && !serializeKeys && nearCacheConfig.getInMemoryFormat() == InMemoryFormat.NATIVE) {
@@ -1435,6 +1437,28 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             throw new InvalidConfigurationException(e.getMessage());
         }
         return evictionConfig;
+    }
+
+    private NearCachePreloaderConfig getNearCachePreloaderConfig(Node node) {
+        NearCachePreloaderConfig preloaderConfig = new NearCachePreloaderConfig();
+        String enabled = getAttribute(node, "enabled");
+        String directory = getAttribute(node, "directory");
+        String storeInitialDelaySeconds = getAttribute(node, "store-initial-delay-seconds");
+        String storeIntervalSeconds = getAttribute(node, "store-interval-seconds");
+        if (enabled != null) {
+            preloaderConfig.setEnabled(getBooleanValue(enabled));
+        }
+        if (directory != null) {
+            preloaderConfig.setDirectory(directory);
+        }
+        if (storeInitialDelaySeconds != null) {
+            preloaderConfig.setStoreInitialDelaySeconds(getIntegerValue("storage-initial-delay-seconds",
+                    storeInitialDelaySeconds));
+        }
+        if (storeIntervalSeconds != null) {
+            preloaderConfig.setStoreIntervalSeconds(getIntegerValue("storage-interval-seconds", storeIntervalSeconds));
+        }
+        return preloaderConfig;
     }
 
     private void cacheWanReplicationRefHandle(Node n, CacheSimpleConfig cacheConfig) {
