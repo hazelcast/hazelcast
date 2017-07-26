@@ -31,6 +31,7 @@ import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -53,22 +54,26 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static com.hazelcast.instance.HazelcastInstanceFactory.newHazelcastInstance;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.FINALIZE_JOIN;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.F_ID;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
+import static com.hazelcast.spi.properties.GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS;
 import static com.hazelcast.test.PacketFiltersUtil.delayOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
-import static com.hazelcast.spi.properties.GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS;
 import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
+import static java.lang.Thread.currentThread;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
@@ -177,10 +182,8 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     @Test
     public void parallel_member_join_whenPreJoinOperationPresent() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
-
-        final Config config = new Config();
-        config.getServicesConfig().addServiceConfig(new ServiceConfig().setEnabled(true).setName("pre-join-service")
-                        .setImplementation(new PreJoinAwareServiceImpl(latch)));
+        PreJoinAwareServiceImpl service = new PreJoinAwareServiceImpl(latch);
+        final Config config = getConfigWithPreJoinAwareService(service);
 
         final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(6);
         for (int i = 0; i < instances.length(); i++) {
@@ -621,6 +624,58 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         assertClusterSize(1, hz1);
     }
 
+    // On a joining member assert that no operations are executed before pre join operations execution is completed.
+    @Test
+    public void noOperationExecuted_beforePreJoinOpIsDone() {
+        CountDownLatch latch = new CountDownLatch(1);
+        PreJoinAwareServiceImpl service = new PreJoinAwareServiceImpl(latch);
+        final Config config = getConfigWithPreJoinAwareService(service);
+
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        final Address instance2Address = factory.nextAddress();
+        final OperationService operationService = getNode(instance1).getNodeEngine().getOperationService();
+        // send operations from master to joining member. The master has already added the joining member to its member list
+        // while the FinalizeJoinOp is being executed on joining member, so it might send operations to the joining member.
+        Future sendOpsFromMaster = spawn(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        ExecutionTrackerOp op = new ExecutionTrackerOp();
+                        operationService.send(op, instance2Address);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    if (currentThread().isInterrupted()) {
+                        break;
+                    }
+                }
+            }
+        });
+
+        final AtomicReference<HazelcastInstance> instanceReference = new AtomicReference<HazelcastInstance>(null);
+        spawn(new Runnable() {
+            @Override
+            public void run() {
+                instanceReference.set(factory.newHazelcastInstance(instance2Address, config));
+            }
+        });
+
+        sleepSeconds(10);
+        // on latch countdown, the pre-join op completes
+        latch.countDown();
+        sleepSeconds(5);
+        sendOpsFromMaster.cancel(true);
+        assertFalse(service.otherOpExecutedBeforePreJoin.get());
+    }
+
+    private Config getConfigWithPreJoinAwareService(PreJoinAwareService service) {
+        final Config config = new Config();
+        config.getServicesConfig().addServiceConfig(new ServiceConfig().setEnabled(true).setName("pre-join-service")
+                                                                       .setImplementation(service));
+        return config;
+    }
+
     static void assertMemberViewsAreSame(MemberMap expectedMemberMap, MemberMap actualMemberMap) {
         assertEquals(expectedMemberMap.getVersion(), actualMemberMap.getVersion());
         assertEquals(expectedMemberMap.size(), actualMemberMap.size());
@@ -704,6 +759,8 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         static final String SERVICE_NAME = "pre-join-service";
 
         final CountDownLatch latch;
+        final AtomicBoolean preJoinOpExecutionCompleted = new AtomicBoolean();
+        final AtomicBoolean otherOpExecutedBeforePreJoin = new AtomicBoolean();
 
         private PreJoinAwareServiceImpl(CountDownLatch latch) {
             this.latch = latch;
@@ -720,6 +777,29 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         public void run() throws Exception {
             PreJoinAwareServiceImpl service = getService();
             service.latch.await();
+            service.preJoinOpExecutionCompleted.set(true);
+        }
+
+        @Override
+        public String getServiceName() {
+            return PreJoinAwareServiceImpl.SERVICE_NAME;
+        }
+    }
+
+    private static class ExecutionTrackerOp extends Operation {
+
+        @Override
+        public void run()
+                throws Exception {
+            PreJoinAwareServiceImpl preJoinAwareService = getService();
+            if (!preJoinAwareService.preJoinOpExecutionCompleted.get()) {
+                preJoinAwareService.otherOpExecutedBeforePreJoin.set(true);
+            }
+        }
+
+        @Override
+        public boolean returnsResponse() {
+            return false;
         }
 
         @Override

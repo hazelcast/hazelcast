@@ -442,12 +442,15 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             ClusterClockImpl clusterClock = getClusterClock();
             clusterClock.setClusterStartTime(clusterStartTime);
             clusterClock.setMasterTime(masterTime);
-            membershipManager.updateMembers(membersView);
-            clusterHeartbeatManager.heartbeat();
 
+            // run pre-join op before member list update, so operations other than join ops will be refused by operation service
             if (preJoinOp != null) {
                 nodeEngine.getOperationService().run(preJoinOp);
             }
+
+            membershipManager.updateMembers(membersView);
+            clusterHeartbeatManager.heartbeat();
+
             setJoined(true);
 
             return true;
