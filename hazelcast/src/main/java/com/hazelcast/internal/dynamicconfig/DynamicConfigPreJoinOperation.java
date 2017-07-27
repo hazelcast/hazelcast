@@ -24,18 +24,18 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
-public class DynamicConfigReplicationOperation extends AbstractDynamicConfigOperation {
+public class DynamicConfigPreJoinOperation extends AbstractDynamicConfigOperation {
 
     private IdentifiedDataSerializable[] configs;
     private ConfigCheckMode configCheckMode;
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public DynamicConfigReplicationOperation(IdentifiedDataSerializable[] configs, ConfigCheckMode configCheckMode) {
+    public DynamicConfigPreJoinOperation(IdentifiedDataSerializable[] configs, ConfigCheckMode configCheckMode) {
         this.configs = configs;
         this.configCheckMode = configCheckMode;
     }
 
-    public DynamicConfigReplicationOperation() {
+    public DynamicConfigPreJoinOperation() {
 
     }
 
@@ -68,6 +68,6 @@ public class DynamicConfigReplicationOperation extends AbstractDynamicConfigOper
 
     @Override
     public int getId() {
-        return ConfigDataSerializerHook.REPLICATE_CONFIGURATIONS_OP;
+        return ConfigDataSerializerHook.DYNAMIC_CONFIG_PRE_JOIN_OP;
     }
 }
