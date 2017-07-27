@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.lang.Thread.currentThread;
 
 public class DefaultNearCache<K, V> implements NearCache<K, V> {
 
@@ -113,13 +114,23 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
         checkNotNull(key, "key cannot be null on get!");
         checkKeyFormat(key);
 
-        return nearCacheRecordStore.get(key);
+        V v = nearCacheRecordStore.get(key);
+
+        if (key.equals(0)) {
+            System.out.println("Get " + key + " -> " + v);
+        }
+
+        return v;
     }
 
     @Override
     public void put(K key, Data keyData, V value) {
         checkNotNull(key, "key cannot be null on put!");
         checkKeyFormat(key);
+
+        if (key.equals(0)) {
+            System.out.println("Put " + key);
+        }
 
         nearCacheRecordStore.doEvictionIfRequired();
 
@@ -130,6 +141,17 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     public boolean remove(K key) {
         checkNotNull(key, "key cannot be null on remove!");
         checkKeyFormat(key);
+
+        if (key.equals(0)) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Remove ").append(key).append(" on ").append(this.hashCode()).append(", stack trace: ");
+            String delimiter = "";
+            for (StackTraceElement stackTraceElement : currentThread().getStackTrace()) {
+                sb.append(delimiter).append(stackTraceElement).append("\n");
+                delimiter = "    ";
+            }
+            System.out.print(sb.toString());
+        }
 
         return nearCacheRecordStore.remove(key);
     }
@@ -214,7 +236,13 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
 
     @Override
     public V tryPublishReserved(K key, V value, long reservationId, boolean deserialize) {
-        return nearCacheRecordStore.tryPublishReserved(key, value, reservationId, deserialize);
+        V v = nearCacheRecordStore.tryPublishReserved(key, value, reservationId, deserialize);
+
+        if (key.equals(0)) {
+            System.out.println("tryPublishReserved " + key + " -> " + v + " (was: " + serializationService.toObject(value) + ")");
+        }
+
+        return v;
     }
 
     public NearCacheRecordStore<K, V> getNearCacheRecordStore() {

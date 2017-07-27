@@ -105,10 +105,6 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                 .setInMemoryFormat(inMemoryFormat);
     }
 
-    protected String generateValueFromKey(Integer key) {
-        return "Value-" + key;
-    }
-
     protected NearCacheTestContext createNearCacheTest(String cacheName, NearCacheConfig nearCacheConfig,
                                                        CacheConfig cacheConfig) {
         ClientConfig clientConfig = createClientConfig();
@@ -208,14 +204,23 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         NearCacheTestContext nearCacheTestContext1 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
         final NearCacheTestContext nearCacheTestContext2 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
 
+        System.out.println("############### Setup");
+        System.out.println("Client 1: " + nearCacheTestContext1.client.getLocalEndpoint().getUuid());
+        System.out.println("Client 2: " + nearCacheTestContext2.client.getLocalEndpoint().getUuid());
+        System.out.println("Near Cache 1: " + nearCacheTestContext1.nearCache.hashCode());
+        System.out.println("Near Cache 2: " + nearCacheTestContext2.nearCache.hashCode());
+
+        System.out.println("############### Filling Cache");
+
         // put cache record from client-1
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheTestContext1.cache.put(i, generateValueFromKey(i));
-        }
-        assertNearCacheInvalidations(nearCacheTestContext1);
+        populateCache(nearCacheTestContext1, nearCacheTestContext2);
+
+        System.out.println("############### Populating Near Cache");
 
         // get records from client-2
-        populateNearCacheAndAssertNearCacheValues(nearCacheTestContext2);
+        populateNearCacheAndAssertNearCacheValues(nearCacheTestContext2, serverInstance);
+
+        System.out.println("############### Updating Near Cache");
 
         // update cache record from client-1
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
@@ -315,13 +320,10 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         final NearCacheTestContext nearCacheTestContext2 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
 
         // put cache record from client-1
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheTestContext1.cache.put(i, generateValueFromKey(i));
-        }
-        assertNearCacheInvalidations(nearCacheTestContext1);
+        populateCache(nearCacheTestContext1, nearCacheTestContext2);
 
         // get records from client-2
-        populateNearCacheAndAssertNearCacheValues(nearCacheTestContext2);
+        populateNearCacheAndAssertNearCacheValues(nearCacheTestContext2, serverInstance);
 
         // delete cache record from client-1
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
@@ -395,13 +397,10 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         final NearCacheTestContext nearCacheTestContext2 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
 
         // put cache record from client-1
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheTestContext1.cache.put(i, generateValueFromKey(i));
-        }
-        assertNearCacheInvalidations(nearCacheTestContext1);
+        populateCache(nearCacheTestContext1, nearCacheTestContext2);
 
         // get records from client-2
-        populateNearCacheAndAssertNearCacheValues(nearCacheTestContext2);
+        populateNearCacheAndAssertNearCacheValues(nearCacheTestContext2, serverInstance);
 
         nearCacheTestContext1.cache.clear();
 
@@ -553,6 +552,10 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         });
     }
 
+    protected static String generateValueFromKey(Integer key) {
+        return "Value-" + key;
+    }
+
     protected static NearCacheStats getNearCacheStats(ICache cache) {
         return cache.getLocalCacheStatistics().getNearCacheStatistics();
     }
@@ -562,11 +565,28 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         NearCacheTestUtils.assertNearCacheInvalidations(nearCacheTestContext.invalidationListener, DEFAULT_RECORD_COUNT, stats);
     }
 
-    protected static void populateNearCacheAndAssertNearCacheValues(final NearCacheTestContext nearCacheTestContext) {
+    protected static void populateCache(NearCacheTestContext nearCacheTestContext1, NearCacheTestContext nearCacheTestContext2) {
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            nearCacheTestContext1.cache.put(i, generateValueFromKey(i));
+        }
+        assertNearCacheInvalidations(nearCacheTestContext1);
+        assertNearCacheInvalidations(nearCacheTestContext2);
+    }
+
+    protected static void populateNearCacheAndAssertNearCacheValues(final NearCacheTestContext nearCacheTestContext,
+                                                                    HazelcastInstance serverInstance) {
         final NearCacheStats nearCacheStats = getNearCacheStats(nearCacheTestContext.cache);
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             final Integer key = i;
             final String cacheValue = nearCacheTestContext.cache.get(key);
+            if (key == 0) {
+                System.out.println("cache.get() returned: " + cacheValue);
+            }
+            if (cacheValue == null) {
+                ICache<Object, Object> cache = serverInstance.getCacheManager().getCache(DEFAULT_CACHE_NAME);
+                System.out.println("Server: " + cache.get(key));
+                System.out.println("Client: " + nearCacheTestContext.cache.get(key));
+            }
             // records are stored in the cache as async not sync, so these records will be there in cache eventually
             assertTrueEventually(new AssertTask() {
                 @Override
@@ -574,7 +594,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                     assertEqualsFormat("Expected the Near Cache to contain '%s', but was '%s' (%s)",
                             cacheValue, getFromNearCache(nearCacheTestContext, key), nearCacheStats);
                 }
-            });
+            }, 10);
         }
     }
 

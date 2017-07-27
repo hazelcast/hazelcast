@@ -134,11 +134,15 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
             Data keyData = toData(key);
             long reservationId = nearCache.tryReserveForUpdate(key, keyData);
             value = super.getSyncInternal(keyData, expiryPolicy);
+            if (key.equals(0)) {
+                System.out.println("getSyncInternal 0 -> " + toObject(value));
+            }
             if (reservationId != NOT_RESERVED) {
                 value = (V) tryPublishReserved(key, value, reservationId);
             }
             return value;
         } catch (Throwable throwable) {
+            System.out.println("wtf! " + throwable.getMessage());
             invalidateNearCache(key);
             throw rethrow(throwable);
         }

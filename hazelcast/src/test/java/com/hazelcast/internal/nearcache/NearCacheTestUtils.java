@@ -347,6 +347,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     public static void assertNearCacheInvalidations(final NearCacheInvalidationListener listener, final int invalidations,
                                                     final NearCacheStats stats) {
         if (listener != null && invalidations > 0) {
+            System.out.println("Waiting for " + invalidations + " invalidations...");
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() throws Exception {
@@ -355,6 +356,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
                 }
             });
             listener.resetInvalidationCount();
+            System.out.println("Done!");
         }
     }
 
