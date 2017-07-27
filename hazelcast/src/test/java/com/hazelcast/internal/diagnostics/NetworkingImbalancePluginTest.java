@@ -16,20 +16,20 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class NetworkingPluginTest extends AbstractDiagnosticsPluginTest {
+public class NetworkingImbalancePluginTest extends AbstractDiagnosticsPluginTest {
 
-    private NetworkingPlugin plugin;
+    private NetworkingImbalancePlugin plugin;
     private HazelcastInstance hz;
 
     @Before
     public void setup() {
         Config config = new Config()
-                .setProperty(NetworkingPlugin.PERIOD_SECONDS.getName(), "1");
+                .setProperty(NetworkingImbalancePlugin.PERIOD_SECONDS.getName(), "1");
 
         // we need to start a real Hazelcast instance here, since the mocked network doesn't have a TcpIpConnectionManager
         hz = Hazelcast.newHazelcastInstance(config);
 
-        plugin = new NetworkingPlugin(getNodeEngineImpl(hz));
+        plugin = new NetworkingImbalancePlugin(getNodeEngineImpl(hz));
         plugin.onStart();
     }
 

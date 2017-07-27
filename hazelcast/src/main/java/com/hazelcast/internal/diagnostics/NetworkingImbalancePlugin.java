@@ -30,31 +30,32 @@ import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * The {@link NetworkingPlugin} is an experimental plugin meant for detecting imbalance in the io system. This plugin will
- * probably mostly be used for internal purposes to get a better understanding of imbalances. Normally imbalances are taken
- * care of by the IOBalancer; but we need to make sure it makes the right choice.
+ * The {@link NetworkingImbalancePlugin} is an experimental plugin meant for detecting imbalance in the io system. This
+ * plugin will probably mostly be used for internal purposes to get a better understanding of imbalances. Normally imbalances
+ * are taken care of by the IOBalancer; but we need to make sure it makes the right choice.
  *
  * This plugin can be used on server and client side.
  */
-public class NetworkingPlugin extends DiagnosticsPlugin {
+public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
 
     /**
      * The period in seconds this plugin runs.
      *
      * If set to 0, the plugin is disabled.
      */
-    public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty(PREFIX + ".networking.seconds", 0, SECONDS);
+    public static final HazelcastProperty PERIOD_SECONDS
+            = new HazelcastProperty(PREFIX + ".networking-imbalance.seconds", 0, SECONDS);
 
     private static final double HUNDRED = 100d;
 
     private final NioEventLoopGroup eventLoopGroup;
     private final long periodMillis;
 
-    public NetworkingPlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getProperties(), getThreadingModel(nodeEngine), nodeEngine.getLogger(NetworkingPlugin.class));
+    public NetworkingImbalancePlugin(NodeEngineImpl nodeEngine) {
+        this(nodeEngine.getProperties(), getThreadingModel(nodeEngine), nodeEngine.getLogger(NetworkingImbalancePlugin.class));
     }
 
-    public NetworkingPlugin(HazelcastProperties properties, EventLoopGroup eventLoopGroup, ILogger logger) {
+    public NetworkingImbalancePlugin(HazelcastProperties properties, EventLoopGroup eventLoopGroup, ILogger logger) {
         super(logger);
 
         if (eventLoopGroup instanceof NioEventLoopGroup) {
@@ -85,7 +86,7 @@ public class NetworkingPlugin extends DiagnosticsPlugin {
 
     @Override
     public void run(DiagnosticsLogWriter writer) {
-        writer.startSection("Networking");
+        writer.startSection("NetworkingImbalance");
 
         writer.startSection("InputThreads");
         render(writer, eventLoopGroup.getInputThreads());

@@ -58,7 +58,7 @@ class SingleLineDiagnosticsLogWriter extends DiagnosticsLogWriter {
 
     private void appendComma() {
         if (firstEntry) {
-            firstEntry = false;
+            this.firstEntry = false;
         } else {
             write(',');
         }
@@ -97,7 +97,7 @@ class SingleLineDiagnosticsLogWriter extends DiagnosticsLogWriter {
 
     @Override
     protected void init(PrintWriter writer) {
-        firstEntry = true;
+        this.firstEntry = true;
         super.init(writer);
     }
 }
