@@ -207,7 +207,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         final NearCacheTestContext nearCacheTestContext2 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
 
         // put cache record from client-1
-        populateCache(nearCacheTestContext1);
+        populateCache(nearCacheTestContext1, nearCacheTestContext2);
 
         // get records from client-2
         populateNearCacheAndAssertNearCacheValues(nearCacheTestContext2);
@@ -310,7 +310,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         final NearCacheTestContext nearCacheTestContext2 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
 
         // put cache record from client-1
-        populateCache(nearCacheTestContext1);
+        populateCache(nearCacheTestContext1, nearCacheTestContext2);
 
         // get records from client-2
         populateNearCacheAndAssertNearCacheValues(nearCacheTestContext2);
@@ -387,7 +387,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         final NearCacheTestContext nearCacheTestContext2 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
 
         // put cache record from client-1
-        populateCache(nearCacheTestContext1);
+        populateCache(nearCacheTestContext1, nearCacheTestContext2);
 
         // get records from client-2
         populateNearCacheAndAssertNearCacheValues(nearCacheTestContext2);
@@ -555,11 +555,12 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         NearCacheTestUtils.assertNearCacheInvalidations(nearCacheTestContext.invalidationListener, DEFAULT_RECORD_COUNT, stats);
     }
 
-    protected static void populateCache(NearCacheTestContext nearCacheTestContext1) {
+    private static void populateCache(NearCacheTestContext nearCacheTestContext1, NearCacheTestContext nearCacheTestContext2) {
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             nearCacheTestContext1.cache.put(i, generateValueFromKey(i));
         }
         assertNearCacheInvalidations(nearCacheTestContext1);
+        assertNearCacheInvalidations(nearCacheTestContext2);
     }
 
     protected static void populateNearCacheAndAssertNearCacheValues(final NearCacheTestContext nearCacheTestContext) {

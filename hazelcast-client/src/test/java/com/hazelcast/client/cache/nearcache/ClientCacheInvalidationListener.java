@@ -28,6 +28,8 @@ import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
+
 public class ClientCacheInvalidationListener
         extends CacheAddNearCacheInvalidationListenerCodec.AbstractEventHandler
         implements NearCacheInvalidationListener, EventHandler<ClientMessage> {
@@ -46,12 +48,14 @@ public class ClientCacheInvalidationListener
 
     @Override
     public void handle(String name, Data key, String sourceUuid, UUID partitionUuid, long sequence) {
+        sleepMillis(100);
         invalidationCount.incrementAndGet();
     }
 
     @Override
     public void handle(String name, Collection<Data> keys, Collection<String> sourceUuids,
                        Collection<UUID> partitionUuids, Collection<Long> sequences) {
+        sleepMillis(100);
         invalidationCount.addAndGet(keys.size());
     }
 

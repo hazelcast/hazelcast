@@ -25,6 +25,8 @@ import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
+
 public class MapInvalidationListener implements NearCacheInvalidationListener, InvalidationListener {
 
     private final AtomicLong invalidationCount = new AtomicLong();
@@ -41,6 +43,7 @@ public class MapInvalidationListener implements NearCacheInvalidationListener, I
 
     @Override
     public void onInvalidate(Invalidation invalidation) {
+        sleepMillis(100);
         if (invalidation instanceof BatchNearCacheInvalidation) {
             BatchNearCacheInvalidation batch = ((BatchNearCacheInvalidation) invalidation);
             int batchInvalidationCount = batch.getInvalidations().size();
