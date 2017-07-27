@@ -916,6 +916,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         } else {
             cacheService.eventJournal.writeCreatedEvent(objectNamespace, partitionId, key, record.getValue());
         }
+        if (nodeEngine.getSerializationService().toObject(key).equals(0)) {
+            System.out.println("invalidate 0 from " + source);
+        }
         invalidateEntry(key, source);
         return oldRecord;
     }
