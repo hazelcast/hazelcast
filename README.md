@@ -1,3 +1,6 @@
+***NOTE:*** 
+*hazelcast-cloud module has been renamed as hazelcast-aws module (starting with Hazelcast 3.7.3). If you want to use AWS Discovery, you should add the library hazelcast-aws JAR to your environment.*
+
 # Table of Contents
 
   * [Supported Hazelcast Versions](#supported-hazelcast-versions)
