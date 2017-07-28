@@ -24,6 +24,10 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
+/**
+ * Replicates dynamic configs. Note that this operation is used both as pre-join and as replication operation by the
+ * {@link ClusterWideConfigurationService}.
+ */
 public class DynamicConfigReplicationOperation extends AbstractDynamicConfigOperation {
 
     private IdentifiedDataSerializable[] configs;

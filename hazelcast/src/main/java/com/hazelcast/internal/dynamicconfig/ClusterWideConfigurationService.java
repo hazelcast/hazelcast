@@ -50,6 +50,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -71,7 +72,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.Boolean.getBoolean;
 
 @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
-public class ClusterWideConfigurationService implements MigrationAwareService,
+public class ClusterWideConfigurationService implements MigrationAwareService, PreJoinAwareService,
         CoreService, ClusterVersionListener, ManagedService, ConfigurationService, SplitBrainHandlerService {
     public static final String SERVICE_NAME = "configuration-service";
     public static final int CONFIG_PUBLISH_MAX_ATTEMPT_COUNT = 100;
@@ -156,6 +157,11 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
             return null;
         }
         return new DynamicConfigReplicationOperation(allConfigurations, ConfigCheckMode.WARNING);
+    }
+
+    @Override
+    public Operation getPreJoinOperation() {
+        return prepareReplicationOperation(null);
     }
 
     private boolean noConfigurationExist(IdentifiedDataSerializable[] configurations) {
