@@ -17,38 +17,52 @@
 package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.impl.ClusterTopologyChangedException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
+import static java.lang.String.format;
+
 public class AddDynamicConfigOperation extends AbstractDynamicConfigOperation {
 
     private IdentifiedDataSerializable config;
+    private int memberListVersion;
 
     public AddDynamicConfigOperation() {
 
     }
 
-    public AddDynamicConfigOperation(IdentifiedDataSerializable config) {
+    public AddDynamicConfigOperation(IdentifiedDataSerializable config, int memberListVersion) {
         this.config = config;
+        this.memberListVersion = memberListVersion;
     }
 
     @Override
     public void run() throws Exception {
         ClusterWideConfigurationService service = getService();
         service.registerConfigLocally(config, ConfigCheckMode.THROW_EXCEPTION);
+        ClusterService clusterService = getNodeEngine().getClusterService();
+        int currentMemberListVersion = clusterService.getMemberListVersion();
+        if (currentMemberListVersion != memberListVersion) {
+            throw new ClusterTopologyChangedException(format("Current member list version %d does not match expected %d",
+                    currentMemberListVersion, memberListVersion));
+        }
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeObject(config);
+        out.writeInt(memberListVersion);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         config = in.readObject();
+        memberListVersion = in.readInt();
     }
 
     @Override

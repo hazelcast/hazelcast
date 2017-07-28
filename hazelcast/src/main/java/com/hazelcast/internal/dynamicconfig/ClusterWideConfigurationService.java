@@ -37,8 +37,8 @@ import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
-
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -231,7 +231,8 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
         // and avoid config serialization altogether.
         // we certainly do not want the dynamic config service to reference object a user can mutate
         IdentifiedDataSerializable clonedConfig = cloneConfig(config);
-        return invokeOnStableClusterSerial(nodeEngine, new AddDynamicConfigOperationFactory(clonedConfig),
+        ClusterService clusterService = nodeEngine.getClusterService();
+        return invokeOnStableClusterSerial(nodeEngine, new AddDynamicConfigOperationFactory(clusterService, clonedConfig),
                 CONFIG_PUBLISH_MAX_ATTEMPT_COUNT);
     }
 

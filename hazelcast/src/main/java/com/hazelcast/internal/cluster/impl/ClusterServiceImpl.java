@@ -1086,7 +1086,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return clusterHeartbeatManager;
     }
 
-    // used for 3.8 compatibility
+    // RU_COMPAT_WITH_3_8
     public MembershipManagerCompat getMembershipManagerCompat() {
         assert getClusterVersion().isLessThan(Versions.V3_9) : "Cluster version should be less than 3.9";
         return membershipManagerCompat;
@@ -1128,6 +1128,11 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         } finally {
             lock.unlock();
         }
+    }
+
+    @Override
+    public int getMemberListVersion() {
+        return membershipManager.getMemberListVersion();
     }
 
     private MemberImpl getMasterMember() {

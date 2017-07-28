@@ -60,7 +60,7 @@ public final class InvocationUtil {
      *
      * If there is an exception - other than {@link MemberLeftException} or
      * {@link com.hazelcast.spi.exception.TargetNotMemberException} while invoking then the iteration
-     * is interrupted and the exception is propagates to the caller.
+     * is interrupted and the exception is propagated to the caller.
      *
      * @param nodeEngine
      * @param operationFactory

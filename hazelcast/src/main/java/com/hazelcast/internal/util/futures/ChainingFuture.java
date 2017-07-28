@@ -18,8 +18,10 @@
 package com.hazelcast.internal.util.futures;
 
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.cluster.impl.ClusterTopologyChangedException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
@@ -39,7 +41,9 @@ public class ChainingFuture<T> extends AbstractCompletableFuture<T> {
     public static final ExceptionHandler IGNORE_CLUSTER_TOPOLOGY_CHANGES = new ExceptionHandler() {
         @Override
         public <T extends Throwable> void handle(T throwable) throws T {
-            if (throwable instanceof MemberLeftException || throwable instanceof TargetNotMemberException) {
+            if (throwable instanceof MemberLeftException || throwable instanceof TargetNotMemberException
+                    || throwable instanceof HazelcastInstanceNotActiveException
+                    || throwable instanceof ClusterTopologyChangedException) {
                 return;
             }
             throw throwable;
