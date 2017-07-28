@@ -85,6 +85,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
 
     /**
      * HTTP/1.0 200 OK
+     * Content-Length: 0
      * Custom-Header1: val1
      * Custom-Header2: val2
      *
@@ -92,6 +93,10 @@ public abstract class HttpCommand extends AbstractTextCommand {
      */
     public void setResponse(Map<String, Object> headers) {
         int size = RES_200.length;
+        byte[] len = stringToBytes(String.valueOf(0));
+        size += CONTENT_LENGTH.length;
+        size += len.length;
+        size += TextCommandConstants.RETURN.length;
         if (headers != null) {
             for (Map.Entry<String, Object> entry : headers.entrySet()) {
                 size += stringToBytes(HEADER_CUSTOM_PREFIX + entry.getKey() + ": ").length;
@@ -99,8 +104,12 @@ public abstract class HttpCommand extends AbstractTextCommand {
                 size += TextCommandConstants.RETURN.length;
             }
         }
+        size += TextCommandConstants.RETURN.length;
         this.response = ByteBuffer.allocate(size);
         response.put(RES_200);
+        response.put(CONTENT_LENGTH);
+        response.put(len);
+        response.put(TextCommandConstants.RETURN);
         if (headers != null) {
             for (Map.Entry<String, Object> entry : headers.entrySet()) {
                 response.put(stringToBytes(HEADER_CUSTOM_PREFIX + entry.getKey() + ": "));
@@ -108,6 +117,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
                 response.put(TextCommandConstants.RETURN);
             }
         }
+        response.put(TextCommandConstants.RETURN);
         response.flip();
     }
 

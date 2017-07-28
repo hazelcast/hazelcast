@@ -285,7 +285,7 @@ public class HTTPCommunicator {
     }
 
     public ConnectionResponse headRequestToQueueURI() throws IOException {
-        String url = address + "queues";
+        String url = address + "queues/";
         return doHead(url);
     }
 
