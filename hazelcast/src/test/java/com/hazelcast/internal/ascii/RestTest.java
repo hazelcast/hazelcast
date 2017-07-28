@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -241,5 +242,23 @@ public class RestTest extends HazelcastTestSupport {
         int response = communicator.mapPut(mapName, key.toString(), value);
         assertEquals(HTTP_OK, response);
         assertEquals(value, communicator.mapGet(mapName, key.toString()));
+    }
+
+    @Test
+    public void testMap_HeadRequest() throws IOException {
+        int response = communicator.headRequestToMapURI().responseCode;
+        assertEquals(HTTP_OK, response);
+    }
+
+    @Test
+    public void testQueue_HeadRequest() throws IOException {
+        int response = communicator.headRequestToQueueURI().responseCode;
+        assertEquals(HTTP_OK, response);
+    }
+
+    @Test
+    public void testUndefined_HeadRequest() throws IOException {
+        int response = communicator.headRequestToUndefinedURI().responseCode;
+        assertEquals(HTTP_BAD_REQUEST, response);
     }
 }
