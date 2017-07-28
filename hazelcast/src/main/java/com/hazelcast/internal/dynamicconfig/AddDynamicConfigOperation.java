@@ -46,10 +46,13 @@ public class AddDynamicConfigOperation extends AbstractDynamicConfigOperation {
         ClusterWideConfigurationService service = getService();
         service.registerConfigLocally(config, ConfigCheckMode.THROW_EXCEPTION);
         ClusterService clusterService = getNodeEngine().getClusterService();
-        int currentMemberListVersion = clusterService.getMemberListVersion();
-        if (currentMemberListVersion != memberListVersion) {
-            throw new ClusterTopologyChangedException(format("Current member list version %d does not match expected %d",
-                    currentMemberListVersion, memberListVersion));
+        if (clusterService.isMaster()) {
+            int currentMemberListVersion = clusterService.getMemberListVersion();
+            if (currentMemberListVersion != memberListVersion) {
+                throw new ClusterTopologyChangedException(
+                        format("Current member list version %d does not match expected %d", currentMemberListVersion,
+                                memberListVersion));
+            }
         }
     }
 

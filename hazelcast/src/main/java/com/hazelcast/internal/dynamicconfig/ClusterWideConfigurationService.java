@@ -44,12 +44,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
@@ -72,7 +69,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.Boolean.getBoolean;
 
 @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
-public class ClusterWideConfigurationService implements MigrationAwareService, PreJoinAwareService,
+public class ClusterWideConfigurationService implements PreJoinAwareService,
         CoreService, ClusterVersionListener, ManagedService, ConfigurationService, SplitBrainHandlerService {
     public static final String SERVICE_NAME = "configuration-service";
     public static final int CONFIG_PUBLISH_MAX_ATTEMPT_COUNT = 100;
@@ -147,7 +144,7 @@ public class ClusterWideConfigurationService implements MigrationAwareService, P
     }
 
     @Override
-    public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
+    public Operation getPreJoinOperation() {
         if (version.isLessOrEqual(V3_8)) {
             return null;
         }
@@ -156,12 +153,7 @@ public class ClusterWideConfigurationService implements MigrationAwareService, P
             // there is no dynamic configuration -> no need to send an empty operation
             return null;
         }
-        return new DynamicConfigReplicationOperation(allConfigurations, ConfigCheckMode.WARNING);
-    }
-
-    @Override
-    public Operation getPreJoinOperation() {
-        return prepareReplicationOperation(null);
+        return new DynamicConfigPreJoinOperation(allConfigurations, ConfigCheckMode.WARNING);
     }
 
     private boolean noConfigurationExist(IdentifiedDataSerializable[] configurations) {
@@ -175,21 +167,6 @@ public class ClusterWideConfigurationService implements MigrationAwareService, P
             all.addAll(values);
         }
         return all.toArray(new IdentifiedDataSerializable[0]);
-    }
-
-    @Override
-    public void beforeMigration(PartitionMigrationEvent event) {
-        //no-op
-    }
-
-    @Override
-    public void commitMigration(PartitionMigrationEvent event) {
-        //no-op
-    }
-
-    @Override
-    public void rollbackMigration(PartitionMigrationEvent event) {
-        //no-op
     }
 
     @Override
@@ -564,7 +541,7 @@ public class ClusterWideConfigurationService implements MigrationAwareService, P
         if (noConfigurationExist(allConfigurations)) {
             return null;
         }
-        return new Merger(nodeEngine, new DynamicConfigReplicationOperation(allConfigurations, ConfigCheckMode.SILENT));
+        return new Merger(nodeEngine, new DynamicConfigPreJoinOperation(allConfigurations, ConfigCheckMode.SILENT));
     }
 
     public static class Merger implements Runnable {
