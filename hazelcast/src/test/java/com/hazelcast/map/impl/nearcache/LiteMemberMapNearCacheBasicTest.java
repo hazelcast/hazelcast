@@ -100,18 +100,21 @@ public class LiteMemberMapNearCacheBasicTest extends AbstractNearCacheBasicTest<
         Config config = createConfig(mapStore, false);
         Config liteMemberConfig = createConfig(mapStore, true);
 
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance member1 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance member2 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance member3 = hazelcastFactory.newHazelcastInstance(config);
+
         HazelcastInstance liteMember = hazelcastFactory.newHazelcastInstance(liteMemberConfig);
 
-        IMap<K, V> memberMap = member.getMap(DEFAULT_NEAR_CACHE_NAME);
+        IMap<K, V> memberMap = member1.getMap(DEFAULT_NEAR_CACHE_NAME);
         IMap<K, V> liteMemberMap = liteMember.getMap(DEFAULT_NEAR_CACHE_NAME);
 
         NearCacheManager nearCacheManager = getMapNearCacheManager(liteMember);
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
 
-        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(member))
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(member1))
                 .setNearCacheInstance(liteMember)
-                .setDataInstance(member)
+                .setDataInstance(member1)
                 .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(liteMemberMap))
                 .setDataAdapter(new IMapDataStructureAdapter<K, V>(memberMap))
                 .setNearCache(nearCache)
