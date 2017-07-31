@@ -88,6 +88,9 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * event can be retransmitted causing it to be received by the target node at a later time.
  */
 public class EventServiceImpl implements InternalEventService, MetricsProvider {
+
+    public static final String SERVICE_NAME = "hz:core:eventService";
+
     /**
      * Usually remote events are sent asynchronously. This property dictates how often the event is sent
      * synchronously. This means that the event will be sent as a {@link SendEventOperation} and we will
@@ -620,6 +623,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      *
      * @return the post join operation containing all non-local registrations
      */
+    @Override
     public PostJoinRegistrationOperation getPostJoinOperation() {
         final Collection<Registration> registrations = new LinkedList<Registration>();
         for (EventServiceSegment segment : segments.values()) {
