@@ -39,7 +39,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.Protocols.CLUSTER;
-import static com.hazelcast.util.EmptyStatement.ignore;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.nio.channels.SelectionKey.OP_WRITE;
@@ -471,7 +470,7 @@ public final class NonBlockingSocketWriter
             try {
                 latch.await(TIMEOUT, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
-                ignore(e);
+                Thread.currentThread().interrupt();
             }
         }
     }

@@ -80,6 +80,8 @@ public final class PacketDispatcherImpl implements PacketDispatcher {
                     logger.severe("Header flags [" + Integer.toBinaryString(packet.getFlags())
                             + "] specify an undefined packet type " + packet.getPacketType().name());
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         } catch (Throwable t) {
             inspectOutOfMemoryError(t);
             logger.severe("Failed to process:" + packet, t);
