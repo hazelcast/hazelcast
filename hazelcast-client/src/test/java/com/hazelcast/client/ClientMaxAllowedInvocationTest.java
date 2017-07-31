@@ -27,6 +27,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IMap;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -100,11 +102,14 @@ public class ClientMaxAllowedInvocationTest extends ClientTestSupport {
 
         @Override
         public Object call() throws Exception {
+            ILogger logger = Logger.getLogger(getClass());
             try {
-
+                logger.info("SleepyProcessor(" + this + ") sleeping for " + millis + " milliseconds");
                 Thread.sleep(millis);
+                logger.info("SleepyProcessor(" + this + ") woke up.");
             } catch (InterruptedException e) {
                 //ignored
+                logger.info("SleepyProcessor(" + this + ") is interrupted.");
             }
             return null;
         }
@@ -228,7 +233,7 @@ public class ClientMaxAllowedInvocationTest extends ClientTestSupport {
     }
 
     static class SleepyCallback implements ExecutionCallback<ClientMessage> {
-
+        final ILogger logger = Logger.getLogger(getClass());
         final CountDownLatch countDownLatch;
 
         public SleepyCallback(CountDownLatch countDownLatch) {
@@ -238,15 +243,18 @@ public class ClientMaxAllowedInvocationTest extends ClientTestSupport {
         @Override
         public void onResponse(ClientMessage response) {
             try {
+                logger.info("SleepyCallback onResponse entered. Will await for latch.");
                 countDownLatch.await();
+                logger.info("SleepyCallback onResponse latch wait finished.");
             } catch (InterruptedException e) {
                 //ignored
+                logger.info("SleepyCallback onResponse is interrupted.");
             }
         }
 
         @Override
         public void onFailure(Throwable t) {
-
+            logger.info("SleepyCallback onFailure is entered.");
         }
     }
 }
