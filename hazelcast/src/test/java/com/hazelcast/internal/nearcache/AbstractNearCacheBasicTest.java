@@ -939,7 +939,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
             // the ReplicatedMap fires its own map cleared event instead of a Near Cache invalidation
             if (!(adapter instanceof ReplicatedMapDataStructureAdapter)) {
                 // there can be 1 or 2 invalidations, depending on when the invalidation listener is de-registered
-                assertNearCacheInvalidationsBetween(context, 1, 2);
+                assertNearCacheInvalidationsBetween(context, 1, 3);
             }
         } else {
             // there should be invalidations for each key

@@ -106,7 +106,9 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
         Config config = createConfig(false);
 
         HazelcastInstance nearCacheInstance = hazelcastFactory.newHazelcastInstance(configWithNearCache);
-        HazelcastInstance dataInstance = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance dataInstance1 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance dataInstance2 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance dataInstance3 = hazelcastFactory.newHazelcastInstance(config);
 
         // this creates the Near Cache instance
         IMap<K, V> nearCacheMap = nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
@@ -116,9 +118,9 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
 
         return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(nearCacheInstance))
                 .setNearCacheInstance(nearCacheInstance)
-                .setDataInstance(dataInstance)
+                .setDataInstance(dataInstance1)
                 .setNearCacheAdapter(new TransactionalMapDataStructureAdapter<K, V>(nearCacheInstance, DEFAULT_NEAR_CACHE_NAME))
-                .setDataAdapter(new TransactionalMapDataStructureAdapter<K, V>(dataInstance, DEFAULT_NEAR_CACHE_NAME))
+                .setDataAdapter(new TransactionalMapDataStructureAdapter<K, V>(dataInstance1, DEFAULT_NEAR_CACHE_NAME))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
                 .setInvalidationListener(createInvalidationEventHandler(nearCacheMap))

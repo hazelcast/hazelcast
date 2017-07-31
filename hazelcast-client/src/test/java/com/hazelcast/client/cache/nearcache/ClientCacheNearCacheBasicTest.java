@@ -119,10 +119,13 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
         ClientConfig clientConfig = createClientConfig();
         CacheConfig<K, V> cacheConfig = createCacheConfig(nearCacheConfig, loaderEnabled);
 
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance member1 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance member2 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance member3 = hazelcastFactory.newHazelcastInstance(config);
+
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
 
-        CachingProvider memberProvider = HazelcastServerCachingProvider.createCachingProvider(member);
+        CachingProvider memberProvider = HazelcastServerCachingProvider.createCachingProvider(member1);
         HazelcastServerCacheManager memberCacheManager = (HazelcastServerCacheManager) memberProvider.getCacheManager();
 
         NearCacheManager nearCacheManager = client.client.getNearCacheManager();
@@ -137,7 +140,7 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
 
         return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())
                 .setNearCacheInstance(client)
-                .setDataInstance(member)
+                .setDataInstance(member1)
                 .setNearCacheAdapter(new ICacheDataStructureAdapter<K, V>(clientCache))
                 .setDataAdapter(new ICacheDataStructureAdapter<K, V>(memberCache))
                 .setNearCache(nearCache)

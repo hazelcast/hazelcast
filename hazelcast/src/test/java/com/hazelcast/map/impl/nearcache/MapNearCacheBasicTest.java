@@ -104,17 +104,19 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
         Config config = createConfig(mapStore, false);
 
         HazelcastInstance nearCacheInstance = hazelcastFactory.newHazelcastInstance(configWithNearCache);
-        HazelcastInstance dataInstance = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance dataInstance1 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance dataInstance2 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance dataInstance3 = hazelcastFactory.newHazelcastInstance(config);
 
         IMap<K, V> nearCacheMap = nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
-        IMap<K, V> dataMap = dataInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
+        IMap<K, V> dataMap = dataInstance1.getMap(DEFAULT_NEAR_CACHE_NAME);
 
         NearCacheManager nearCacheManager = getMapNearCacheManager(nearCacheInstance);
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
 
         return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(nearCacheInstance))
                 .setNearCacheInstance(nearCacheInstance)
-                .setDataInstance(dataInstance)
+                .setDataInstance(dataInstance1)
                 .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(nearCacheMap))
                 .setDataAdapter(new IMapDataStructureAdapter<K, V>(dataMap))
                 .setNearCache(nearCache)
