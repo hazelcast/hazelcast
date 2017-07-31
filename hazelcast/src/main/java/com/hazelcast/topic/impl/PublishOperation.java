@@ -16,6 +16,7 @@
 
 package com.hazelcast.topic.impl;
 
+import com.hazelcast.config.TopicConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -28,6 +29,13 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.locks.Lock;
 
+/**
+ * ITopic publication operation used when global ordering is enabled
+ * (all nodes listening to the same topic get their messages in the same order).
+ *
+ * @see TotalOrderedTopicProxy
+ * @see TopicConfig#isGlobalOrderingEnabled()
+ */
 public class PublishOperation extends AbstractNamedOperation
         implements IdentifiedDataSerializable {
 
@@ -41,6 +49,13 @@ public class PublishOperation extends AbstractNamedOperation
         this.message = message;
     }
 
+    /**
+     * {@inheritDoc}
+     * Increments the local statistics for the number of published
+     * messages.
+     *
+     * @throws Exception
+     */
     @Override
     public void beforeRun() throws Exception {
         TopicService service = getService();

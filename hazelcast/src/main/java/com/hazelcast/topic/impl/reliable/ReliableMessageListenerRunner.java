@@ -113,6 +113,13 @@ class ReliableMessageListenerRunner<E> implements ExecutionCallback<ReadResultSe
         next();
     }
 
+    /**
+     * Processes the message by increasing the local topic stats and
+     * calling the user supplied listener.
+     *
+     * @param message the reliable topic message
+     * @throws Throwable
+     */
     private void process(ReliableTopicMessage message) throws Throwable {
         proxy.localTopicStats.incrementReceives();
         listener.onMessage(toMessage(message));

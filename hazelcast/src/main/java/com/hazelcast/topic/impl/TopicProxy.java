@@ -21,6 +21,12 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.spi.NodeEngine;
 
+/**
+ * Topic proxy used when global ordering is disabled (nodes get
+ * the messages in the order that the messages are published).
+ *
+ * @param <E> the type of message in this topic
+ */
 public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
 
     public TopicProxy(String name, NodeEngine nodeEngine, TopicService service) {
