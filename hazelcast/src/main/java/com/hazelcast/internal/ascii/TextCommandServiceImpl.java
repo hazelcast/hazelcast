@@ -34,6 +34,7 @@ import com.hazelcast.internal.ascii.memcache.TouchCommandProcessor;
 import com.hazelcast.internal.ascii.memcache.VersionCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpDeleteCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpGetCommandProcessor;
+import com.hazelcast.internal.ascii.rest.HttpHeadCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpPostCommandProcessor;
 import com.hazelcast.internal.ascii.rest.RestValue;
 import com.hazelcast.logging.ILogger;
@@ -62,6 +63,7 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.GET_END;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.HTTP_DELETE;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.HTTP_GET;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.HTTP_HEAD;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.HTTP_POST;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.HTTP_PUT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.INCREMENT;
@@ -128,6 +130,7 @@ public class TextCommandServiceImpl implements TextCommandService {
         textCommandProcessors[HTTP_POST.getValue()] = new HttpPostCommandProcessor(this);
         textCommandProcessors[HTTP_PUT.getValue()] = new HttpPostCommandProcessor(this);
         textCommandProcessors[HTTP_DELETE.getValue()] = new HttpDeleteCommandProcessor(this);
+        textCommandProcessors[HTTP_HEAD.getValue()] = new HttpHeadCommandProcessor(this);
         textCommandProcessors[NO_OP.getValue()] = new NoOpCommandProcessor(this);
     }
 

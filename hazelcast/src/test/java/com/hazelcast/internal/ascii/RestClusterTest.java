@@ -255,4 +255,42 @@ public class RestClusterTest extends HazelcastTestSupport {
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
         communicator.getClusterHealth();
     }
+
+    @Test
+    public void testHeadRequest_ClusterVersion() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.headRequestToClusterVersionURI().responseCode);
+    }
+
+    @Test
+    public void testHeadRequest_ClusterInfo() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.headRequestToClusterInfoURI().responseCode);
+    }
+
+    @Test
+    public void testHeadRequest_ClusterHealth() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        HTTPCommunicator.ConnectionResponse response = communicator.headRequestToClusterHealthURI();
+        assertEquals(HttpURLConnection.HTTP_OK, response.responseCode);
+        assertEquals(response.responseHeaders.get("Hazelcast-NodeState").size(), 1);
+        assertContains(response.responseHeaders.get("Hazelcast-NodeState"), "ACTIVE");
+        assertEquals(response.responseHeaders.get("Hazelcast-ClusterState").size(), 1);
+        assertContains(response.responseHeaders.get("Hazelcast-ClusterState"), "ACTIVE");
+        assertEquals(response.responseHeaders.get("Hazelcast-ClusterSize").size(), 1);
+        assertContains(response.responseHeaders.get("Hazelcast-ClusterSize"), "2");
+        assertEquals(response.responseHeaders.get("Hazelcast-MigrationQueueSize").size(), 1);
+        assertContains(response.responseHeaders.get("Hazelcast-MigrationQueueSize"), "0");
+    }
+
+    @Test
+    public void testHeadRequest_GarbageClusterHealth() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        assertEquals(HttpURLConnection.HTTP_BAD_REQUEST, communicator.headRequestToGarbageClusterHealthURI().responseCode);
+    }
 }
