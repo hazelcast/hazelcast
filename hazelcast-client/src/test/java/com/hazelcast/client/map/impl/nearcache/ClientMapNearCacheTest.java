@@ -90,6 +90,44 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
+    public void smoke_near_cache_population() throws Exception {
+        String mapName = "test";
+        int mapSize = 1000;
+
+        // 1. create cluster
+        Config config = getConfig();
+        HazelcastInstance server1 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance server2 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance server3 = hazelcastFactory.newHazelcastInstance(config);
+        assertClusterSizeEventually(3, server1, server2, server3);
+
+        // 2. populate server side map
+        IMap<Integer, Integer> nodeMap = server1.getMap(mapName);
+        for (int i = 0; i < mapSize; i++) {
+            nodeMap.put(i, i);
+        }
+
+        // 3. add client with near cache
+        NearCacheConfig nearCacheConfig = newNearCacheConfig();
+        nearCacheConfig.setInvalidateOnChange(true);
+        nearCacheConfig.setName(mapName);
+
+        ClientConfig clientConfig = newClientConfig();
+        clientConfig.addNearCacheConfig(nearCacheConfig);
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        // 4. populate client near cache
+        final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        for (int i = 0; i < mapSize; i++) {
+            assertNotNull(clientMap.get(i));
+        }
+
+        // 5. assert number of entries in client near cache
+        assertEquals(mapSize, ((NearCachedClientMapProxy) clientMap).getNearCache().size());
+    }
+
+    @Test
     public void testGetAllChecksNearCacheFirst() {
         IMap<Integer, Integer> map = getNearCachedMapFromClient(newNoInvalidationNearCacheConfig());
 
