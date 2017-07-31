@@ -37,7 +37,6 @@ import static com.hazelcast.util.UuidUtil.newUnsecureUUID;
  */
 public class MetaDataGenerator {
 
-    final ConcurrentMap<String, AtomicLongArray> sequenceGenerators = new ConcurrentHashMap<String, AtomicLongArray>();
 
     private final int partitionCount;
     private final ConstructorFunction<String, AtomicLongArray> sequenceGeneratorConstructor
@@ -48,6 +47,7 @@ public class MetaDataGenerator {
         }
     };
     private final ConcurrentMap<Integer, UUID> uuids = new ConcurrentHashMap<Integer, UUID>();
+    private final ConcurrentMap<String, AtomicLongArray> sequenceGenerators = new ConcurrentHashMap<String, AtomicLongArray>();
     private final ConstructorFunction<Integer, UUID> uuidConstructor
             = new ConstructorFunction<Integer, UUID>() {
         @Override
@@ -110,5 +110,10 @@ public class MetaDataGenerator {
 
     public void regenerateUuid(int partitionId) {
         uuids.put(partitionId, uuidConstructor.createNew(partitionId));
+    }
+
+    // used for testing
+    public ConcurrentMap<String, AtomicLongArray> getSequenceGenerators() {
+        return sequenceGenerators;
     }
 }
