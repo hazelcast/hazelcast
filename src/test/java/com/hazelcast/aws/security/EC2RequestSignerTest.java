@@ -27,7 +27,6 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -86,15 +85,16 @@ public class EC2RequestSignerTest {
                 setSecretKey(TEST_SECRET_KEY);
 
         DescribeInstances di = new DescribeInstances(awsConfig, TEST_HOST);
+        di.getRequestSigner();
 
         Field attributesField = di.getClass().getDeclaredField("attributes");
         attributesField.setAccessible(true);
         Map<String, String> attributes = (Map<String, String>) attributesField.get(di);
         attributes.put("X-Amz-Date", TEST_REQUEST_DATE);
 
-        EC2RequestSigner rs = new EC2RequestSigner(awsConfig, TEST_REQUEST_DATE, TEST_HOST);
-        attributes.put("X-Amz-Credential", rs.createFormattedCredential());
-        String signature = rs.sign(TEST_SERVICE, attributes);
+        EC2RequestSigner actual = new EC2RequestSigner(awsConfig, TEST_REQUEST_DATE, TEST_HOST);
+        attributes.put("X-Amz-Credential", actual.createFormattedCredential());
+        String signature = actual.sign(TEST_SERVICE, attributes);
 
         assertEquals(TEST_SIGNATURE_EXPECTED, signature);
     }
