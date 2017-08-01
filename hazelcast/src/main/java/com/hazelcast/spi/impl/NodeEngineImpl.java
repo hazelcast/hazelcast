@@ -456,8 +456,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     /**
-     * Collects all post-join operations. This will include event registrations which are not
-     * local and operations returned from services implementing {@link PostJoinAwareService}.
+     * Collects all post-join operations from {@link PostJoinAwareService}s.
      * <p>
      * Post join operations should return response, at least a {@code null} response.
      * <p>
@@ -470,13 +469,9 @@ public class NodeEngineImpl implements NodeEngine {
      */
     public Operation[] getPostJoinOperations() {
         final Collection<Operation> postJoinOps = new LinkedList<Operation>();
-        Operation eventPostJoinOp = eventService.getPostJoinOperation();
-        if (eventPostJoinOp != null) {
-            postJoinOps.add(eventPostJoinOp);
-        }
         Collection<PostJoinAwareService> services = getServices(PostJoinAwareService.class);
         for (PostJoinAwareService service : services) {
-            final Operation postJoinOperation = service.getPostJoinOperation();
+            Operation postJoinOperation = service.getPostJoinOperation();
             if (postJoinOperation != null) {
                 if (postJoinOperation.getPartitionId() >= 0) {
                     logger.severe(

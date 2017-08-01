@@ -18,17 +18,18 @@ package com.hazelcast.spi.impl.eventservice;
 
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.impl.PacketHandler;
 
 /**
  * The InternalEventService is an {@link EventService} interface that adds additional capabilities
  * we don't want to expose to the end user. So they are purely meant to be used internally.
  */
-public interface InternalEventService extends EventService, PacketHandler {
+public interface InternalEventService extends EventService, PacketHandler, PostJoinAwareService {
 
     /**
      * Closes an EventRegistration.
-     *
+     * <p>
      * If the EventRegistration has any closeable resource, e.g. a listener, than this listener is closed.
      *
      * @param eventRegistration the EventRegistration to close.

@@ -53,6 +53,7 @@ import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.SharedService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.RemoteServiceDescriptor;
 import com.hazelcast.spi.impl.servicemanager.RemoteServiceDescriptorProvider;
@@ -122,6 +123,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         registerService(ClientEngineImpl.SERVICE_NAME, node.clientEngine);
         registerService(QuorumServiceImpl.SERVICE_NAME, nodeEngine.getQuorumService());
         registerService(WanReplicationService.SERVICE_NAME, nodeEngine.getWanReplicationService());
+        registerService(EventServiceImpl.SERVICE_NAME, nodeEngine.getEventService());
     }
 
     private void registerExtensionServices() {
