@@ -800,18 +800,20 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
             extends CacheAddNearCacheInvalidationListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
-        private volatile RepairingHandler repairingHandler;
+        private final RepairingHandler repairingHandler;
+
+        public RepairableNearCacheEventHandler() {
+            getRepairingTask().deregisterHandler(nameWithPrefix);
+            this.repairingHandler = getRepairingTask().registerAndGetHandler(nameWithPrefix, nearCache);
+        }
 
         @Override
         public void beforeListenerRegister() {
-            nearCache.clear();
-            getRepairingTask().deregisterHandler(nameWithPrefix);
-            repairingHandler = getRepairingTask().registerAndGetHandler(nameWithPrefix, nearCache);
+
         }
 
         @Override
         public void onListenerRegister() {
-            nearCache.clear();
         }
 
         @Override
