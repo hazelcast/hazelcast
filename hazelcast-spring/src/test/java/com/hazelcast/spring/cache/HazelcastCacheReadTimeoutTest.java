@@ -17,13 +17,17 @@ import org.springframework.test.context.ContextConfiguration;
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"readtimeout-config.xml"})
 @Category(QuickTest.class)
-public class HazelcastCacheReadTimeoutTest extends AbstractHazelcastCacheReadTimeoutTest{
+public class HazelcastCacheReadTimeoutTest extends AbstractHazelcastCacheReadTimeoutTest {
 
     @BeforeClass
-    @AfterClass
     public static void start() {
         System.setProperty(HazelcastCacheManager.CACHE_PROP, "defaultReadTimeout=100,delay150=150,delay50=50,delayNo=0");
         Hazelcast.shutdownAll();
     }
 
+    @AfterClass
+    public static void end() {
+        System.clearProperty(HazelcastCacheManager.CACHE_PROP);
+        Hazelcast.shutdownAll();
+    }
 }
