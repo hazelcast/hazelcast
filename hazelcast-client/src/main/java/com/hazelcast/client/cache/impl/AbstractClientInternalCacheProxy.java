@@ -997,18 +997,21 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
     private final class RepairableNearCacheEventHandler extends CacheAddNearCacheInvalidationListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
-        private volatile RepairingHandler repairingHandler;
+        private final RepairingHandler repairingHandler;
 
-        @Override
-        public void beforeListenerRegister() {
-            nearCache.clear();
+        public RepairableNearCacheEventHandler() {
             getRepairingTask().deregisterHandler(nameWithPrefix);
             repairingHandler = getRepairingTask().registerAndGetHandler(nameWithPrefix, nearCache);
         }
 
         @Override
+        public void beforeListenerRegister() {
+            // NOP
+        }
+
+        @Override
         public void onListenerRegister() {
-            nearCache.clear();
+            // NOP
         }
 
         @Override

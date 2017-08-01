@@ -578,18 +578,22 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     private final class RepairableNearCacheEventHandler extends MapAddNearCacheInvalidationListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
-        private volatile RepairingHandler repairingHandler;
+        private final RepairingHandler repairingHandler;
+
+        public RepairableNearCacheEventHandler() {
+            RepairingTask repairingTask = getContext().getRepairingTask(SERVICE_NAME);
+            repairingTask.deregisterHandler(name);
+            repairingHandler = repairingTask.registerAndGetHandler(name, nearCache);
+        }
 
         @Override
         public void beforeListenerRegister() {
-            nearCache.clear();
-            getRepairingTask().deregisterHandler(name);
-            repairingHandler = getRepairingTask().registerAndGetHandler(name, nearCache);
+            // NOP
         }
 
         @Override
         public void onListenerRegister() {
-            nearCache.clear();
+            // NOP
         }
 
         @Override
