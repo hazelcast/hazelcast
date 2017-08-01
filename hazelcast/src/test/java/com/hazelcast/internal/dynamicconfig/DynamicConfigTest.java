@@ -16,10 +16,18 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
+import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
+import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.config.CacheDeserializedValues;
+import com.hazelcast.config.CachePartitionLostListenerConfig;
+import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.HotRestartConfig;
@@ -38,12 +46,15 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
+import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.RingbufferStore;
 import com.hazelcast.core.RingbufferStoreFactory;
+import com.hazelcast.internal.eviction.EvictableEntryView;
+import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -57,8 +68,10 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.MultiMapConfig.ValueCollectionType.LIST;
 import static org.junit.Assert.assertEquals;
@@ -315,6 +328,118 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         assertConfigurationsEqualsOnAllMembers(setConfig);
     }
 
+    @Test
+    public void testDefaultCacheConfig() {
+        CacheSimpleConfig config = new CacheSimpleConfig();
+        config.setName(name);
+        driver.getConfig().addCacheConfig(config);
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
+    public void testCacheConfig() {
+        CacheSimpleConfig config = getCacheConfig();
+        config.setExpiryPolicyFactoryConfig(new ExpiryPolicyFactoryConfig("expiryPolicyFactory"));
+        driver.getConfig().addCacheConfig(config);
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
+    public void testCacheConfig_withEvictionPolicy_cacheLoaderAndWriter() {
+        CacheSimpleConfig config = getCacheConfig();
+        config.setEvictionConfig(getEvictionConfigByPolicy());
+        config.setCacheLoader("com.hazelcast.CacheLoader");
+        config.setCacheWriter("com.hazelcast.CacheWriter");
+        // also exercise alternative method to set expiry policy factory config
+        config.setExpiryPolicyFactory("expiryPolicyFactory");
+        driver.getConfig().addCacheConfig(config);
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
+    public void testCacheConfig_withEvictionPolicyImplementation_cacheLoaderAndWriterFactory() {
+        CacheSimpleConfig config = getCacheConfig();
+        config.setEvictionConfig(getEvictionConfigByImplementation());
+        config.setCacheLoaderFactory("com.hazelcast.CacheLoaderFactory");
+        config.setCacheWriterFactory("com.hazelcast.CacheWriterFactory");
+        driver.getConfig().addCacheConfig(config);
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
+    public void testCacheConfig_withTimedExpiryPolicyFactory() {
+        CacheSimpleConfig config = getCacheConfig();
+        config.setExpiryPolicyFactoryConfig(new ExpiryPolicyFactoryConfig(
+                new TimedExpiryPolicyFactoryConfig(TimedExpiryPolicyFactoryConfig.ExpiryPolicyType.TOUCHED,
+                        new ExpiryPolicyFactoryConfig.DurationConfig(130, TimeUnit.SECONDS))
+        ));
+        driver.getConfig().addCacheConfig(config);
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
+    public void testCacheConfig_withPartitionLostListenerByClassName() {
+        CacheSimpleConfig config = getCacheConfig();
+        config.addCachePartitionLostListenerConfig(new CachePartitionLostListenerConfig("partitionLostListener"));
+        driver.getConfig().addCacheConfig(config);
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
+    public void testCacheConfig_withPartitionLostListenerByImplementation() {
+        CacheSimpleConfig config = getCacheConfig();
+        config.addCachePartitionLostListenerConfig(new CachePartitionLostListenerConfig(new SampleCachePartitionLostListener()));
+        driver.getConfig().addCacheConfig(config);
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    private CacheSimpleConfig getCacheConfig() {
+        CacheSimpleConfig config = new CacheSimpleConfig();
+        config.setName(name);
+        config.setQuorumName("quorum");
+        config.setInMemoryFormat(InMemoryFormat.OBJECT);
+        config.setBackupCount(3);
+        config.setAsyncBackupCount(2);
+        config.setWanReplicationRef(new WanReplicationRef(randomName(), "com.hazelcast.MergePolicy",
+                Collections.singletonList("filter"), true));
+        CacheSimpleEntryListenerConfig entryListenerConfig = new CacheSimpleEntryListenerConfig();
+        entryListenerConfig.setCacheEntryListenerFactory("CacheEntryListenerFactory");
+        entryListenerConfig.setSynchronous(true);
+        entryListenerConfig.setOldValueRequired(true);
+        entryListenerConfig.setCacheEntryEventFilterFactory("CacheEntryEventFilterFactory");
+        config.addEntryListenerConfig(entryListenerConfig);
+        config.setMergePolicy("mergePolicy");
+        config.setStatisticsEnabled(true);
+        config.setManagementEnabled(true);
+        config.setDisablePerEntryInvalidationEvents(true);
+        config.setKeyType("keyType");
+        config.setValueType("valueType");
+        config.setReadThrough(true);
+        config.setWriteThrough(true);
+        config.setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true));
+        return config;
+    }
+
+    private EvictionConfig getEvictionConfigByPolicy() {
+        return new EvictionConfig(39, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, EvictionPolicy.RANDOM);
+    }
+
+    private EvictionConfig getEvictionConfigByClassName() {
+        return new EvictionConfig(39, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, "com.hazelcast.Comparator");
+    }
+
+    private EvictionConfig getEvictionConfigByImplementation() {
+        return new EvictionConfig(39, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, new SampleEvictionPolicyComparator());
+    }
+
+    private void assertConfigurationsEqualsOnAllMembers(CacheSimpleConfig config) {
+        String name = config.getName();
+        for (HazelcastInstance instance : members) {
+            CacheSimpleConfig registeredConfig = instance.getConfig().getCacheConfig(name);
+            assertEquals(config, registeredConfig);
+        }
+    }
+
     private void assertConfigurationsEqualsOnAllMembers(QueueConfig queueConfig) {
         String name = queueConfig.getName();
         for (HazelcastInstance instance : members) {
@@ -569,6 +694,29 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         @Override
         public boolean equals(Object obj) {
             return (obj instanceof SampleRingbufferStoreFactory);
+        }
+    }
+
+    public static class SampleEvictionPolicyComparator extends EvictionPolicyComparator {
+        @Override
+        public int compare(EvictableEntryView e1, EvictableEntryView e2) {
+            return 0;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return (obj instanceof SampleEvictionPolicyComparator);
+        }
+    }
+
+    public static class SampleCachePartitionLostListener implements CachePartitionLostListener, Serializable {
+        @Override
+        public void partitionLost(CachePartitionLostEvent event) {
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return (obj instanceof SampleCachePartitionLostListener);
         }
     }
 }
