@@ -60,17 +60,6 @@ public class DescribeInstances {
     public DescribeInstances(AwsConfig awsConfig, String endpoint) throws IOException {
         this.awsConfig = awsConfig;
         this.endpoint = endpoint;
-
-        String timeStamp = getFormattedTimestamp();
-        rs = new EC2RequestSigner(awsConfig, timeStamp, endpoint);
-        attributes.put("Action", this.getClass().getSimpleName());
-        attributes.put("Version", DOC_VERSION);
-        attributes.put("X-Amz-Algorithm", SIGNATURE_METHOD_V4);
-        attributes.put("X-Amz-Credential", rs.createFormattedCredential());
-        attributes.put("X-Amz-Date", timeStamp);
-        attributes.put("X-Amz-SignedHeaders", "host");
-        attributes.put("X-Amz-Expires", "30");
-        addFilters();
     }
 
     //Just for testing purposes
@@ -90,6 +79,7 @@ public class DescribeInstances {
         } else {
             fillKeysFromIamTaskRole(getEnvironment());
         }
+
     }
 
     private String getDefaultIamRole() throws IOException {
@@ -249,7 +239,7 @@ public class DescribeInstances {
             fillKeysFromIamRoles();
         }
 
-        String signature = rs.sign("ec2", attributes);
+        String signature = getRequestSigner().sign("ec2", attributes);
         Map<String, String> response;
         InputStream stream = null;
         attributes.put("X-Amz-Signature", signature);
@@ -263,7 +253,7 @@ public class DescribeInstances {
     }
 
     private InputStream callService(String endpoint) throws Exception {
-        String query = rs.getCanonicalizedQueryString(attributes);
+        String query = getRequestSigner().getCanonicalizedQueryString(attributes);
         URL url = new URL("https", endpoint, -1, "/?" + query);
         HttpURLConnection httpConnection = (HttpURLConnection) (url.openConnection());
         httpConnection.setRequestMethod(Constants.GET);
@@ -271,6 +261,22 @@ public class DescribeInstances {
         httpConnection.setDoOutput(false);
         httpConnection.connect();
         return httpConnection.getInputStream();
+    }
+
+    public EC2RequestSigner getRequestSigner() {
+        if (null == rs) {
+            String timeStamp = getFormattedTimestamp();
+            rs = new EC2RequestSigner(awsConfig, timeStamp, endpoint);
+            attributes.put("Action", this.getClass().getSimpleName());
+            attributes.put("Version", DOC_VERSION);
+            attributes.put("X-Amz-Algorithm", SIGNATURE_METHOD_V4);
+            attributes.put("X-Amz-Credential", rs.createFormattedCredential());
+            attributes.put("X-Amz-Date", timeStamp);
+            attributes.put("X-Amz-SignedHeaders", "host");
+            attributes.put("X-Amz-Expires", "30");
+            addFilters();
+        }
+        return rs;
     }
 
     //Added for testing (mocking) purposes.
