@@ -221,4 +221,36 @@ public class SemaphoreConfig implements IdentifiedDataSerializable {
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof SemaphoreConfig)) {
+            return false;
+        }
+
+        SemaphoreConfig that = (SemaphoreConfig) o;
+
+        if (initialPermits != that.initialPermits) {
+            return false;
+        }
+        if (backupCount != that.backupCount) {
+            return false;
+        }
+        if (asyncBackupCount != that.asyncBackupCount) {
+            return false;
+        }
+        return name != null ? name.equals(that.name) : that.name == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + initialPermits;
+        result = 31 * result + backupCount;
+        result = 31 * result + asyncBackupCount;
+        return result;
+    }
 }

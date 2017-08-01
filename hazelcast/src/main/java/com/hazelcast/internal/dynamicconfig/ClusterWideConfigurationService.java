@@ -294,6 +294,9 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         } else if (newConfig instanceof EventJournalConfig) {
             EventJournalConfig eventJournalConfig = (EventJournalConfig) newConfig;
             registerEventJournalConfig(eventJournalConfig, configCheckMode);
+        } else if (newConfig instanceof SemaphoreConfig) {
+            SemaphoreConfig semaphoreConfig = (SemaphoreConfig) newConfig;
+            currentConfig = semaphoreConfigs.putIfAbsent(semaphoreConfig.getName(), semaphoreConfig);
         } else {
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
