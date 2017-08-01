@@ -307,14 +307,19 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
 
     @Test
     public void loadServicesWithSpaceInURL() throws Exception {
-        Class<ServiceLoaderSpacesTestInterface> type = ServiceLoaderSpacesTestInterface.class;
-        String factoryId = "com.hazelcast.ServiceLoaderSpacesTestInterface";
+        Class<ServiceLoaderSpecialCharsTestInterface> type = ServiceLoaderSpecialCharsTestInterface.class;
+        String factoryId = "com.hazelcast.ServiceLoaderSpecialCharsTestInterface";
 
-        URL url = new URL(ClassLoader.getSystemResource("test with spaces").toExternalForm().replace("%20", " ") + "/");
+        String externalForm = ClassLoader.getSystemResource("test with special chars^")
+                                         .toExternalForm()
+                                         .replace("%20", " ")
+                                         .replace("%5e", "^");
+
+        URL url = new URL(externalForm + "/");
         ClassLoader given = new URLClassLoader(new URL[]{url});
 
-        Set<ServiceLoaderSpacesTestInterface> implementations = new HashSet<ServiceLoaderSpacesTestInterface>();
-        Iterator<ServiceLoaderSpacesTestInterface> iterator = ServiceLoader.iterator(type, factoryId, given);
+        Set<ServiceLoaderSpecialCharsTestInterface> implementations = new HashSet<ServiceLoaderSpecialCharsTestInterface>();
+        Iterator<ServiceLoaderSpecialCharsTestInterface> iterator = ServiceLoader.iterator(type, factoryId, given);
         while (iterator.hasNext()) {
             implementations.add(iterator.next());
         }
@@ -325,13 +330,13 @@ public class ServiceLoaderTest extends HazelcastTestSupport {
     public interface ServiceLoaderTestInterface {
     }
 
+    public interface ServiceLoaderSpecialCharsTestInterface {
+    }
+
     public static class ServiceLoaderTestInterfaceImpl implements ServiceLoaderTestInterface {
     }
 
-    public interface ServiceLoaderSpacesTestInterface {
-    }
-
-    public static class ServiceLoaderSpacesTestInterfaceImpl implements ServiceLoaderSpacesTestInterface {
+    public static class ServiceLoaderSpecialCharsTestInterfaceImpl implements ServiceLoaderSpecialCharsTestInterface {
     }
 
     private static class DummyPrivatePortableHook implements PortableHook {
