@@ -143,6 +143,7 @@ public abstract class Invalidator {
      * @see com.hazelcast.map.impl.MapRemoteService#destroyDistributedObject(String)
      */
     public void destroy(String dataStructureName, String sourceUuid) {
+        invalidateAllKeys(dataStructureName, sourceUuid);
         metaDataGenerator.destroyMetaDataFor(dataStructureName);
     }
 
