@@ -27,11 +27,9 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
