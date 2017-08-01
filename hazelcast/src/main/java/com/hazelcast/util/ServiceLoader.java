@@ -114,7 +114,10 @@ public final class ServiceLoader {
             Set<URLDefinition> urlDefinitions = new HashSet<URLDefinition>();
             while (configs.hasMoreElements()) {
                 URL url = configs.nextElement();
-                URI uri = new URI(url.toExternalForm().replace(" ", "%20"));
+                String externalForm = url.toExternalForm()
+                                         .replace(" ", "%20")
+                                         .replace("^", "%5e");
+                URI uri = new URI(externalForm);
 
                 ClassLoader highestClassLoader = findHighestReachableClassLoader(url, classLoader, resourceName);
                 if (!highestClassLoader.getClass().getName().equals(IGNORED_GLASSFISH_MAGIC_CLASSLOADER)) {
@@ -355,7 +358,7 @@ public final class ServiceLoader {
     /**
      * Iterates over services. It skips services which implement an interface with the expected name,
      * but loaded by a different classloader.
-     *
+     * <p>
      * When a service does not implement an interface with expected name then it throws an exception
      *
      * @param <T>
