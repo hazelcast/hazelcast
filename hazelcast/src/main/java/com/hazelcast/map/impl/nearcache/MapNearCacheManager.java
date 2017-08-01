@@ -140,13 +140,8 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
      */
     @Override
     public boolean destroyNearCache(String mapName) {
-        if (!super.destroyNearCache(mapName)) {
-            return false;
-        }
-
-        String uuid = nodeEngine.getLocalMember().getUuid();
-        invalidator.destroy(mapName, uuid);
-        return true;
+        invalidator.destroy(mapName, nodeEngine.getLocalMember().getUuid());
+        return super.destroyNearCache(mapName);
     }
 
     public Object getFromNearCache(String mapName, Data key) {
