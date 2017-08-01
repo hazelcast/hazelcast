@@ -28,6 +28,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.query.EntryObject;
@@ -946,5 +947,46 @@ public class NearCacheTest extends NearCacheTestSupport {
 
         NearCacheStats nearCacheStats = map.getLocalMapStats().getNearCacheStats();
         assertEquals(1, nearCacheStats.getMisses());
+    }
+
+    @Test
+    public void smoke_near_cache_population() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        String mapName = "test";
+        int mapSize = 1000;
+
+        // 1. create cluster
+        Config config = getConfig();
+        HazelcastInstance server1 = factory.newHazelcastInstance(config);
+        HazelcastInstance server2 = factory.newHazelcastInstance(config);
+        HazelcastInstance server3 = factory.newHazelcastInstance(config);
+
+        assertClusterSize(3, server1);
+
+        // 2. populate server side map
+        IMap<Integer, Integer> nodeMap = server1.getMap(mapName);
+        for (int i = 0; i < mapSize; i++) {
+            nodeMap.put(i, i);
+        }
+
+        // 3. add client with near cache
+        NearCacheConfig nearCacheConfig = newNearCacheConfig();
+        nearCacheConfig.setInvalidateOnChange(true);
+        nearCacheConfig.setCacheLocalEntries(true);
+        nearCacheConfig.setName(mapName);
+
+        Config nearCachedConfig = getConfig();
+        nearCachedConfig.getMapConfig(mapName).setNearCacheConfig(nearCacheConfig);
+
+        HazelcastInstance client = factory.newHazelcastInstance(nearCachedConfig);
+
+        // 4. populate near cache
+        final IMap<Integer, Integer> nearCachedMap = client.getMap(mapName);
+        for (int i = 0; i < mapSize; i++) {
+            assertNotNull(nearCachedMap.get(i));
+        }
+
+        // 5. assert number of entries in client near cache
+        assertEquals(mapSize, ((NearCachedMapProxyImpl) nearCachedMap).getNearCache().size());
     }
 }
