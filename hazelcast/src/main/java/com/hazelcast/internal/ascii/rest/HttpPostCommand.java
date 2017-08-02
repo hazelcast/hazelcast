@@ -35,15 +35,17 @@ public class HttpPostCommand extends HttpCommand {
     // 65536, no specific reason, similar to UDP packet size limit
     @SuppressWarnings("checkstyle:magicnumber")
     private static final int MAX_CAPACITY = 1 << 16;
+    private static final byte LINE_FEED = 0x0A;
+    private static final byte CARRIAGE_RETURN = 0x0D;
 
+    private final TextChannelInboundHandler readHandler;
+
+    private boolean chunked;
     private boolean nextLine;
     private boolean readyToReadData;
-
     private ByteBuffer data;
-    private ByteBuffer lineBuffer = ByteBuffer.allocate(INITIAL_CAPACITY);
     private String contentType;
-    private final TextChannelInboundHandler readHandler;
-    private boolean chunked;
+    private ByteBuffer lineBuffer = ByteBuffer.allocate(INITIAL_CAPACITY);
 
     public HttpPostCommand(TextChannelInboundHandler readHandler, String uri) {
         super(HTTP_POST, uri);
@@ -77,6 +79,46 @@ public class HttpPostCommand extends HttpCommand {
         return complete;
     }
 
+    private boolean doActualRead(ByteBuffer cb) {
+        if (readyToReadData) {
+            if (chunked && (data == null || !data.hasRemaining())) {
+
+                if (data != null && cb.hasRemaining()) {
+                    readCRLFOrPositionChunkSize(cb);
+                }
+
+                boolean done = readChunkSize(cb);
+                if (done) {
+                    return true;
+                }
+            }
+
+            IOUtil.copyToHeapBuffer(cb, data);
+        }
+
+        setReadyToReadData(cb);
+
+        return !chunked && ((data != null) && !data.hasRemaining());
+    }
+
+    private void setReadyToReadData(ByteBuffer cb) {
+        while (!readyToReadData && cb.hasRemaining()) {
+            byte b = cb.get();
+            if (b == CARRIAGE_RETURN) {
+                readLF(cb);
+                processLine(StringUtil.lowerCaseInternal(toStringAndClear(lineBuffer)));
+                if (nextLine) {
+                    readyToReadData = true;
+                }
+                nextLine = true;
+                break;
+            }
+
+            nextLine = false;
+            appendToBuffer(b);
+        }
+    }
+
     public byte[] getData() {
         if (data == null) {
             return null;
@@ -93,61 +135,21 @@ public class HttpPostCommand extends HttpCommand {
         }
     }
 
-    private void setReadyToReadData(ByteBuffer cb) {
-        while (!readyToReadData && cb.hasRemaining()) {
-            byte b = cb.get();
-            char c = (char) b;
-
-            if (c == '\r') {
-                ensureReadLF(cb);
-
-                processLine(StringUtil.lowerCaseInternal(toStringAndClear(lineBuffer)));
-                if (nextLine) {
-                    readyToReadData = true;
-                }
-                nextLine = true;
-                break;
-            }
-
-            nextLine = false;
-            appendToBuffer(b);
+    private void readCRLFOrPositionChunkSize(ByteBuffer cb) {
+        byte b = cb.get();
+        if (b == CARRIAGE_RETURN) {
+            readLF(cb);
+        } else {
+            cb.position(cb.position() - 1);
         }
     }
 
-    private boolean doActualRead(ByteBuffer cb) {
-        if (readyToReadData) {
-            if (chunked && (data == null || !data.hasRemaining())) {
+    private void readLF(ByteBuffer cb) {
+        assert cb.hasRemaining() : "'\\n' should follow '\\r'";
 
-                if (data != null && cb.hasRemaining()) {
-                    ensureReadCRLF(cb);
-                }
-
-                boolean done = readChunkSize(cb);
-                if (done) {
-                    return true;
-                }
-            }
-            IOUtil.copyToHeapBuffer(cb, data);
-        }
-
-        setReadyToReadData(cb);
-
-        return !chunked && ((data != null) && !data.hasRemaining());
-    }
-
-    private void ensureReadCRLF(ByteBuffer cb) {
-        char c = (char) cb.get();
-        if (c != '\r') {
-            throw new IllegalStateException("'\r' should be read, but got '" + c + "'");
-        }
-        ensureReadLF(cb);
-    }
-
-    private void ensureReadLF(ByteBuffer cb) {
-        assert cb.hasRemaining() : "'\n' should follow '\r'";
-        char c = (char) cb.get();
-        if (c != '\n') {
-            throw new IllegalStateException("'\n' should follow '\r', but got '" + c + "'");
+        byte b = cb.get();
+        if (b != LINE_FEED) {
+            throw new IllegalStateException("'\\n' should follow '\\r', but got '" + (char) b + "'");
         }
     }
 
@@ -169,9 +171,8 @@ public class HttpPostCommand extends HttpCommand {
         boolean hasLine = false;
         while (cb.hasRemaining()) {
             byte b = cb.get();
-            char c = (char) b;
-            if (c == '\r') {
-                ensureReadLF(cb);
+            if (b == CARRIAGE_RETURN) {
+                readLF(cb);
                 hasLine = true;
                 break;
             }
