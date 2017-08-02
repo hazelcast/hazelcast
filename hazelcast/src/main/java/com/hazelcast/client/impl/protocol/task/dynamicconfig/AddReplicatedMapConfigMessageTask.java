@@ -20,10 +20,13 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReplicatedMapConfigCodec;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.util.ArrayList;
 
 public class AddReplicatedMapConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddReplicatedMapConfigCodec.RequestParameters> {
@@ -53,6 +56,8 @@ public class AddReplicatedMapConfigMessageTask
             for (ListenerConfigHolder holder : parameters.listenerConfigs) {
                 config.addEntryListenerConfig((EntryListenerConfig) holder.asListenerConfig(serializationService));
             }
+        } else {
+            config.setListenerConfigs(new ArrayList<ListenerConfig>());
         }
         return config;
     }
