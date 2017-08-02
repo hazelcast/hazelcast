@@ -76,12 +76,14 @@ public class DynamicConfigurationAwareConfig extends Config {
     private final ConfigPatternMatcher configPatternMatcher;
 
     private volatile ConfigurationService configurationService = new EmptyConfigurationService();
-    private volatile SecurityService securityService;
+    private volatile DynamicSecurityConfig dynamicSecurityConfig;
 
     public DynamicConfigurationAwareConfig(Config staticConfig) {
+        assert !(staticConfig instanceof DynamicConfigurationAwareConfig) : "A static Config object is required";
         this.staticConfig = staticConfig;
         this.configPatternMatcher = staticConfig.getConfigPatternMatcher();
-        securityService  = new NoOpSecurityService(staticConfig.getSecurityConfig().getClientPermissionConfigs());
+        this.dynamicSecurityConfig = new DynamicSecurityConfig(this.staticConfig.getSecurityConfig(),
+                new NoOpSecurityService(staticConfig.getSecurityConfig().getClientPermissionConfigs()));
     }
 
     @Override
@@ -1075,9 +1077,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public SecurityConfig getSecurityConfig() {
-        DynamicSecurityConfig securityConfig
-                = new DynamicSecurityConfig(staticConfig.getSecurityConfig(), securityService);
-        return securityConfig;
+        return dynamicSecurityConfig;
     }
 
     @Override
@@ -1220,7 +1220,7 @@ public class DynamicConfigurationAwareConfig extends Config {
         this.configurationService = configurationService;
     }
 
-    public void setSecurityService(SecurityService securityService) {
-        this.securityService = securityService;
+    public void onSecurityServiceUpdated(SecurityService securityService) {
+        this.dynamicSecurityConfig = new DynamicSecurityConfig(staticConfig.getSecurityConfig(), securityService);
     }
 }
