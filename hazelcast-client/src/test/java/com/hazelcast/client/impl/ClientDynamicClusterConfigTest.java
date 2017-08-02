@@ -23,8 +23,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Ignore;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -43,12 +41,6 @@ public class ClientDynamicClusterConfigTest extends DynamicConfigTest {
     @Override
     protected HazelcastInstance getDriver() {
         return factory.newHazelcastClient();
-    }
-
-    @Test
-    @Override
-    @Ignore("addEventJournalConfig not yet implemented on client side, requires new codec in client protocol")
-    public void testEventJournalConfig() {
     }
 
     @After

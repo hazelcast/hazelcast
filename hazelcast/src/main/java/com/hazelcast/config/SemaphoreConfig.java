@@ -222,6 +222,7 @@ public class SemaphoreConfig implements IdentifiedDataSerializable {
         asyncBackupCount = in.readInt();
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     @Override
     public boolean equals(Object o) {
         if (this == o) {

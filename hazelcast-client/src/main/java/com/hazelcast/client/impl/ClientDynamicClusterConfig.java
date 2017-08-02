@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCacheConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDurableExecutorConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddEventJournalConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddListConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddLockConfigCodec;
@@ -47,6 +48,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DurableExecutorConfig;
+import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
@@ -80,6 +82,7 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.StringUtil;
 
 import java.io.File;
 import java.net.URL;
@@ -332,6 +335,20 @@ public class ClientDynamicClusterConfig extends Config {
     @Override
     public Config addListenerConfig(ListenerConfig listenerConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config addEventJournalConfig(EventJournalConfig eventJournalConfig) {
+        String mapName = eventJournalConfig.getMapName();
+        String cacheName = eventJournalConfig.getCacheName();
+        if (StringUtil.isNullOrEmpty(mapName) && StringUtil.isNullOrEmpty(cacheName)) {
+            throw new IllegalArgumentException("Event journal config should have non-empty map name and/or cache name");
+        }
+        ClientMessage request = DynamicConfigAddEventJournalConfigCodec.encodeRequest(eventJournalConfig.getMapName(),
+                eventJournalConfig.getCacheName(), eventJournalConfig.isEnabled(), eventJournalConfig.getCapacity(),
+                eventJournalConfig.getTimeToLiveSeconds());
+        invoke(request);
+        return this;
     }
 
     @Override

@@ -5158,6 +5158,19 @@ public class EncodeDecodeCompatibilityTest {
     ClientMessage clientMessage = DynamicConfigAddCacheConfigCodec.encodeResponse( );
     DynamicConfigAddCacheConfigCodec.ResponseParameters params = DynamicConfigAddCacheConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
+{
+    ClientMessage clientMessage = DynamicConfigAddEventJournalConfigCodec.encodeRequest(    aString ,    aString ,    aBoolean ,    anInt ,    anInt   );
+    DynamicConfigAddEventJournalConfigCodec.RequestParameters params = DynamicConfigAddEventJournalConfigCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.mapName));
+            assertTrue(isEqual(aString, params.cacheName));
+            assertTrue(isEqual(aBoolean, params.enabled));
+            assertTrue(isEqual(anInt, params.capacity));
+            assertTrue(isEqual(anInt, params.timeToLiveSeconds));
+}
+{
+    ClientMessage clientMessage = DynamicConfigAddEventJournalConfigCodec.encodeResponse( );
+    DynamicConfigAddEventJournalConfigCodec.ResponseParameters params = DynamicConfigAddEventJournalConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+}
     }
 }
 
