@@ -68,6 +68,17 @@ The following are the other improvements performed to solve the enhancement issu
 
 This section lists the fixed issues for Hazelcast 3.8 and 3.8.x releases.
 
+*3.8.4. Fixes*
+
+- Added timeout option for the get operation when Hazelcast is used within the Spring context. [#11001]
+- HTTP HEAD support added to the REST interface. [#11000]
+- ClientProxy gets NullPointerException from the method getClient. [#10961]
+- Added support for collecting and tracking statistics for all reliable topic proxies on a local member. The statistics are destroyed when the proxy is destroyed. [#10932]
+- The method containsKey returns "true" even the key does not exist in the map. [#10923]
+- Assuming a scenario in which invalidations are generated previously for some other near caches and then later a new near cached map is created, all entries that are near cached before the first reconciliation period will be removed. [#10913]
+- HTTP upload to Hazelcast fails. The code fails with the exception BufferOverflowException. [#10878]
+- The method MapProxyImpl.executeOnKeys() does not work when ConcurrentSkipListSet is passed and throws NullPointerException. [#10877]
+
 *3.8.3 Fixes*
 
 - Hazelcast 3.8.1: calling replace(K, old, new) keeps the expiry time as creation time + duration. But Hazelcast doesn't seem to honor this expiration even after calling get(). [#10817]
