@@ -73,6 +73,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -300,7 +301,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 return connection;
             }
             assert throwable != null;
-            throw throwable;
+            throw new ExecutionException(throwable);
         }
     }
 
