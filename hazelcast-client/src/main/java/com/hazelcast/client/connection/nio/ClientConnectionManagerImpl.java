@@ -300,7 +300,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 return connection;
             }
             assert throwable != null;
-            throw throwable;
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
