@@ -34,9 +34,11 @@ import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.channels.CancelledKeyException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -57,7 +59,7 @@ public class ClientConnection implements Connection {
     private final ClientConnectionManagerImpl connectionManager;
     private final LifecycleService lifecycleService;
     private final HazelcastClientInstanceImpl client;
-    private final long startTime = System.currentTimeMillis();;
+    private final long startTime = System.currentTimeMillis();
 
     private volatile Address remoteEndpoint;
     private volatile boolean isHeartBeating = true;
@@ -190,12 +192,7 @@ public class ClientConnection implements Connection {
         closeCause = cause;
         closeReason = reason;
 
-        String message = this + " lost. Reason: ";
-        if (cause != null) {
-            message += cause.getClass().getName() + '[' + cause.getMessage() + ']';
-        } else {
-            message += "Socket explicitly closed";
-        }
+        logClose();
 
         try {
             innerClose();
@@ -203,15 +200,34 @@ public class ClientConnection implements Connection {
             logger.warning("Exception while closing connection" + e.getMessage());
         }
 
-        if (lifecycleService.isRunning()) {
-            logger.warning(message);
-        } else {
-            logger.finest(message);
-        }
-
         connectionManager.onClose(this);
 
         client.getMetricsRegistry().discardMetrics(this);
+    }
+
+    private void logClose() {
+        String message = toString() + " closed. Reason: ";
+        if (closeReason != null) {
+            message += closeReason;
+        } else if (closeCause != null) {
+            message += closeCause.getClass().getName() + "[" + closeCause.getMessage() + "]";
+        } else {
+            message += "Socket explicitly closed";
+        }
+
+        if (lifecycleService.isRunning()) {
+            if (closeCause == null || closeCause instanceof EOFException || closeCause instanceof CancelledKeyException) {
+                logger.info(message);
+            } else {
+                logger.warning(message, closeCause);
+            }
+        } else {
+            if (closeCause == null) {
+                logger.finest(message);
+            } else {
+                logger.finest(message, closeCause);
+            }
+        }
     }
 
     protected void innerClose() throws IOException {
