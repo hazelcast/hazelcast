@@ -144,7 +144,7 @@ public class AggregatorsPortableTest extends HazelcastTestSupport {
         }
 
         @Override
-        protected void accumulateExtracted(String value) {
+        protected void accumulateExtracted(Map.Entry<Integer, Car> entry, String value) {
             accumulated.add(value);
         }
 

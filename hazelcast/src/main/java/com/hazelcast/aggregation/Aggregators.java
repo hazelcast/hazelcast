@@ -31,7 +31,9 @@ import com.hazelcast.aggregation.impl.IntegerSumAggregator;
 import com.hazelcast.aggregation.impl.LongAverageAggregator;
 import com.hazelcast.aggregation.impl.LongSumAggregator;
 import com.hazelcast.aggregation.impl.MaxAggregator;
+import com.hazelcast.aggregation.impl.MaxByAggregator;
 import com.hazelcast.aggregation.impl.MinAggregator;
+import com.hazelcast.aggregation.impl.MinByAggregator;
 import com.hazelcast.aggregation.impl.NumberAverageAggregator;
 
 import java.math.BigDecimal;
@@ -384,6 +386,18 @@ public final class Aggregators {
         return new MaxAggregator<I, R>(attributePath);
     }
 
+    /**
+     * @param <I> type of the input object.
+     * @return an aggregator that calculates the max of the input values extracted from the given attributePath
+     * and returns the input item containing the maximum value. If multiple items contain the maximum value,
+     * any of them is returned.
+     * Accepts null input values and null extracted values.
+     * Accepts generic Comparable input values.
+     */
+    public static <I> Aggregator<I, I> maxBy(String attributePath) {
+        return new MaxByAggregator<I>(attributePath);
+    }
+
     // ---------------------------------------------------------------------------------------------------------
     // min aggregators
     // ---------------------------------------------------------------------------------------------------------
@@ -520,6 +534,18 @@ public final class Aggregators {
      */
     public static <I, R extends Comparable> Aggregator<I, R> comparableMin(String attributePath) {
         return new MinAggregator<I, R>(attributePath);
+    }
+
+    /**
+     * @param <I> type of the input object.
+     * @return an aggregator that calculates the min of the input values extracted from the given attributePath
+     * and returns the input item containing the minimum value. If multiple items contain the minimum value,
+     * any of them is returned.
+     * Accepts null input values and null extracted values.
+     * Accepts generic Comparable input values.
+     */
+    public static <I> Aggregator<I, I> minBy(String attributePath) {
+        return new MinByAggregator<I>(attributePath);
     }
 
     // ---------------------------------------------------------------------------------------------------------

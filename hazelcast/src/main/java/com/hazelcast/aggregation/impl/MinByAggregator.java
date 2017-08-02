@@ -23,39 +23,48 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public final class LongAverageAggregator<I> extends AbstractAggregator<I, Long, Double> implements IdentifiedDataSerializable {
+public final class MinByAggregator<I> extends AbstractAggregator<I, Comparable, I>
+        implements IdentifiedDataSerializable {
 
-    private long sum;
+    private Comparable minValue;
+    private I minEntry;
 
-    private long count;
-
-    public LongAverageAggregator() {
+    public MinByAggregator() {
         super();
     }
 
-    public LongAverageAggregator(String attributePath) {
+    public MinByAggregator(String attributePath) {
         super(attributePath);
     }
 
     @Override
-    public void accumulateExtracted(I entry, Long value) {
-        count++;
-        sum += value;
+    public void accumulateExtracted(I entry, Comparable value) {
+        if (isCurrentlyGreaterThan(value)) {
+            minValue = value;
+            minEntry = entry;
+        }
+    }
+
+    private boolean isCurrentlyGreaterThan(Comparable otherValue) {
+        if (otherValue == null) {
+            return false;
+        }
+        return minValue == null || minValue.compareTo(otherValue) > 0;
     }
 
     @Override
     public void combine(Aggregator aggregator) {
-        LongAverageAggregator longAverageAggregator = (LongAverageAggregator) aggregator;
-        this.sum += longAverageAggregator.sum;
-        this.count += longAverageAggregator.count;
+        MinByAggregator<I> minAggregator = (MinByAggregator<I>) aggregator;
+        Comparable valueFromOtherAggregator = minAggregator.minValue;
+        if (isCurrentlyGreaterThan(valueFromOtherAggregator)) {
+            this.minValue = valueFromOtherAggregator;
+            this.minEntry = minAggregator.minEntry;
+        }
     }
 
     @Override
-    public Double aggregate() {
-        if (count == 0) {
-            return null;
-        }
-        return ((double) sum / (double) count);
+    public I aggregate() {
+        return minEntry;
     }
 
     @Override
@@ -65,21 +74,20 @@ public final class LongAverageAggregator<I> extends AbstractAggregator<I, Long, 
 
     @Override
     public int getId() {
-        return AggregatorDataSerializerHook.LONG_AVG;
+        return AggregatorDataSerializerHook.MIN_BY;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(attributePath);
-        out.writeLong(sum);
-        out.writeLong(count);
+        out.writeObject(minValue);
+        out.writeObject(minEntry);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         this.attributePath = in.readUTF();
-        this.sum = in.readLong();
-        this.count = in.readLong();
+        this.minValue = in.readObject();
+        this.minEntry = in.readObject();
     }
-
 }

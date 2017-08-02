@@ -39,7 +39,7 @@ public final class DoubleAverageAggregator<I> extends AbstractAggregator<I, Doub
     }
 
     @Override
-    public void accumulateExtracted(Double value) {
+    public void accumulateExtracted(I entry, Double value) {
         count++;
         sum += value;
     }

@@ -37,7 +37,7 @@ public final class FloatingPointSumAggregator<I> extends AbstractAggregator<I, N
     }
 
     @Override
-    public void accumulateExtracted(Number value) {
+    public void accumulateExtracted(I entry, Number value) {
         sum += value.doubleValue();
     }
 

@@ -37,7 +37,7 @@ public final class MinAggregator<I, R extends Comparable> extends AbstractAggreg
     }
 
     @Override
-    public void accumulateExtracted(R value) {
+    public void accumulateExtracted(I entry, R value) {
         if (isCurrentlyGreaterThan(value)) {
             min = value;
         }

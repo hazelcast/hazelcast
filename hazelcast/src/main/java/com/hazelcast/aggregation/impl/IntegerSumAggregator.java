@@ -37,7 +37,7 @@ public final class IntegerSumAggregator<I> extends AbstractAggregator<I, Integer
     }
 
     @Override
-    public void accumulateExtracted(Integer value) {
+    public void accumulateExtracted(I entry, Integer value) {
         sum += value;
     }
 

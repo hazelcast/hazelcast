@@ -23,39 +23,48 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public final class LongAverageAggregator<I> extends AbstractAggregator<I, Long, Double> implements IdentifiedDataSerializable {
+public final class MaxByAggregator<I> extends AbstractAggregator<I, Comparable, I>
+        implements IdentifiedDataSerializable {
 
-    private long sum;
+    private Comparable maxValue;
+    private I maxEntry;
 
-    private long count;
-
-    public LongAverageAggregator() {
+    public MaxByAggregator() {
         super();
     }
 
-    public LongAverageAggregator(String attributePath) {
+    public MaxByAggregator(String attributePath) {
         super(attributePath);
     }
 
     @Override
-    public void accumulateExtracted(I entry, Long value) {
-        count++;
-        sum += value;
+    public void accumulateExtracted(I entry, Comparable value) {
+        if (isCurrentlyLessThan(value)) {
+            maxValue = value;
+            maxEntry = entry;
+        }
+    }
+
+    private boolean isCurrentlyLessThan(Comparable otherValue) {
+        if (otherValue == null) {
+            return false;
+        }
+        return maxValue == null || maxValue.compareTo(otherValue) < 0;
     }
 
     @Override
     public void combine(Aggregator aggregator) {
-        LongAverageAggregator longAverageAggregator = (LongAverageAggregator) aggregator;
-        this.sum += longAverageAggregator.sum;
-        this.count += longAverageAggregator.count;
+        MaxByAggregator<I> maxAggregator = (MaxByAggregator<I>) aggregator;
+        Comparable valueFromOtherAggregator = maxAggregator.maxValue;
+        if (isCurrentlyLessThan(valueFromOtherAggregator)) {
+            this.maxValue = valueFromOtherAggregator;
+            this.maxEntry = maxAggregator.maxEntry;
+        }
     }
 
     @Override
-    public Double aggregate() {
-        if (count == 0) {
-            return null;
-        }
-        return ((double) sum / (double) count);
+    public I aggregate() {
+        return maxEntry;
     }
 
     @Override
@@ -65,21 +74,20 @@ public final class LongAverageAggregator<I> extends AbstractAggregator<I, Long, 
 
     @Override
     public int getId() {
-        return AggregatorDataSerializerHook.LONG_AVG;
+        return AggregatorDataSerializerHook.MAX_BY;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(attributePath);
-        out.writeLong(sum);
-        out.writeLong(count);
+        out.writeObject(maxValue);
+        out.writeObject(maxEntry);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         this.attributePath = in.readUTF();
-        this.sum = in.readLong();
-        this.count = in.readLong();
+        this.maxValue = in.readObject();
+        this.maxEntry = in.readObject();
     }
-
 }

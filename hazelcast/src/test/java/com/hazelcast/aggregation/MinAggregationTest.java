@@ -308,4 +308,23 @@ public class MinAggregationTest {
 
         assertThat(result, is(equalTo(expectation)));
     }
+
+    @Test(timeout = TimeoutInMillis.MINUTE)
+    public void testMinBy_withAttributePath_withNull() {
+        List<ValueContainer> values = sampleValueContainers(STRING);
+        Collections.sort(values);
+        Map.Entry<ValueContainer, ValueContainer> expectation = createExtractableEntryWithValue(values.get(0));
+        values.add(null);
+
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Map.Entry<ValueContainer, ValueContainer>> aggregation = Aggregators.minBy("stringValue");
+        for (ValueContainer value : values) {
+            aggregation.accumulate(createExtractableEntryWithValue(value));
+        }
+
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Map.Entry<ValueContainer, ValueContainer>> resultAggregation = Aggregators.minBy("stringValue");
+        resultAggregation.combine(aggregation);
+        Map.Entry<ValueContainer, ValueContainer> result = resultAggregation.aggregate();
+
+        assertThat(result, is(equalTo(expectation)));
+    }
 }

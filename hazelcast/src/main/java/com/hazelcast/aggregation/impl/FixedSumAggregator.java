@@ -36,7 +36,7 @@ public final class FixedSumAggregator<I> extends AbstractAggregator<I, Number, L
     }
 
     @Override
-    public void accumulateExtracted(Number value) {
+    public void accumulateExtracted(I entry, Number value) {
         sum += value.longValue();
     }
 

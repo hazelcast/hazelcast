@@ -35,7 +35,7 @@ public final class CountAggregator<I> extends AbstractAggregator<I, Object, Long
     }
 
     @Override
-    public void accumulateExtracted(Object value) {
+    public void accumulateExtracted(I entry, Object value) {
         count++;
     }
 
