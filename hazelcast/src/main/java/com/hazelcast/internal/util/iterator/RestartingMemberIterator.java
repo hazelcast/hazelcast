@@ -17,8 +17,13 @@
 package com.hazelcast.internal.util.iterator;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.impl.ClusterTopologyChangedException;
+import com.hazelcast.internal.util.futures.ChainingFuture;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Iterator;
@@ -37,7 +42,7 @@ import static java.lang.String.format;
  * It can be used from multiple threads, but not concurrently.
  *
  */
-public class RestartingMemberIterator implements Iterator<Member> {
+public class RestartingMemberIterator implements Iterator<Member>, ChainingFuture.ExceptionHandler {
 
     private final ClusterService clusterService;
     private final Queue<Member> memberQueue = new ConcurrentLinkedQueue<Member>();
@@ -46,7 +51,7 @@ public class RestartingMemberIterator implements Iterator<Member> {
     private volatile Set<Member> initialMembers;
     private volatile Member nextMember;
     private volatile int retryCounter;
-
+    private volatile boolean topologyChanged;
 
     public RestartingMemberIterator(ClusterService clusterService, int maxRetries) {
         this.clusterService = clusterService;
@@ -57,6 +62,7 @@ public class RestartingMemberIterator implements Iterator<Member> {
     }
 
     private void startNewRound(Set<Member> currentMembers) {
+        topologyChanged = false;
         for (Member member : currentMembers) {
             memberQueue.add(member);
         }
@@ -98,7 +104,7 @@ public class RestartingMemberIterator implements Iterator<Member> {
     }
 
     private boolean topologyChanged(Set<Member> currentMembers) {
-        return !currentMembers.equals(initialMembers);
+        return topologyChanged || !currentMembers.equals(initialMembers);
     }
 
     @Override
@@ -119,5 +125,20 @@ public class RestartingMemberIterator implements Iterator<Member> {
     @Override
     public void remove() {
         throw new UnsupportedOperationException("not implemented");
+    }
+
+    @Override
+    public <T extends Throwable> void handle(T throwable)
+            throws T {
+        if (throwable instanceof ClusterTopologyChangedException) {
+            topologyChanged = true;
+            return;
+        }
+
+        if (throwable instanceof MemberLeftException || throwable instanceof TargetNotMemberException
+                || throwable instanceof HazelcastInstanceNotActiveException) {
+            return;
+        }
+        throw throwable;
     }
 }

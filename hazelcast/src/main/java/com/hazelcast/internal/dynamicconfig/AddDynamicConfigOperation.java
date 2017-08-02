@@ -22,6 +22,7 @@ import com.hazelcast.internal.cluster.impl.ClusterTopologyChangedException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.ExceptionAction;
 
 import java.io.IOException;
 
@@ -73,4 +74,9 @@ public class AddDynamicConfigOperation extends AbstractDynamicConfigOperation {
         return ConfigDataSerializerHook.ADD_DYNAMIC_CONFIG_OP;
     }
 
+    @Override
+    public ExceptionAction onInvocationException(Throwable throwable) {
+        return (throwable instanceof ClusterTopologyChangedException) ? ExceptionAction.THROW_EXCEPTION
+                : super.onInvocationException(throwable);
+    }
 }
