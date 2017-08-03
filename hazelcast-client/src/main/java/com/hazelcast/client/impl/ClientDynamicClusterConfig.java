@@ -153,8 +153,11 @@ public class ClientDynamicClusterConfig extends Config {
                 cacheConfig.getCacheWriterFactory(), cacheConfig.getCacheLoader(), cacheConfig.getCacheWriter(),
                 cacheConfig.getBackupCount(), cacheConfig.getAsyncBackupCount(), cacheConfig.getInMemoryFormat().name(),
                 cacheConfig.getQuorumName(), cacheConfig.getMergePolicy(), cacheConfig.isDisablePerEntryInvalidationEvents(),
-                partitionLostListenerConfigs, cacheConfig.getExpiryPolicyFactoryConfig().getClassName(),
-                cacheConfig.getExpiryPolicyFactoryConfig().getTimedExpiryPolicyFactoryConfig(),
+                partitionLostListenerConfigs,
+                cacheConfig.getExpiryPolicyFactoryConfig() == null ? null
+                        : cacheConfig.getExpiryPolicyFactoryConfig().getClassName(),
+                cacheConfig.getExpiryPolicyFactoryConfig() == null ? null
+                        : cacheConfig.getExpiryPolicyFactoryConfig().getTimedExpiryPolicyFactoryConfig(),
                 cacheConfig.getCacheEntryListeners(),
                 EvictionConfigHolder.of(cacheConfig.getEvictionConfig(), serializationService),
                 cacheConfig.getWanReplicationRef(), cacheConfig.getHotRestartConfig());

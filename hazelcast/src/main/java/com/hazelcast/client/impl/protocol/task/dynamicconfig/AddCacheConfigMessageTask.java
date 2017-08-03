@@ -26,6 +26,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class AddCacheConfigMessageTask
@@ -74,6 +75,8 @@ public class AddCacheConfigMessageTask
             List<CachePartitionLostListenerConfig> listenerConfigs = (List<CachePartitionLostListenerConfig>)
                     adaptListenerConfigs(parameters.partitionLostListenerConfigs);
             config.setPartitionLostListenerConfigs(listenerConfigs);
+        } else {
+            config.setPartitionLostListenerConfigs(new ArrayList<CachePartitionLostListenerConfig>());
         }
         config.setQuorumName(parameters.quorumName);
         config.setReadThrough(parameters.readThrough);

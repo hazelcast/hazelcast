@@ -702,6 +702,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable {
         out.writeBoolean(managementEnabled);
         out.writeBoolean(readThrough);
         out.writeBoolean(writeThrough);
+        out.writeBoolean(disablePerEntryInvalidationEvents);
         out.writeUTF(cacheLoaderFactory);
         out.writeUTF(cacheWriterFactory);
         out.writeUTF(cacheLoader);
@@ -728,6 +729,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable {
         managementEnabled = in.readBoolean();
         readThrough = in.readBoolean();
         writeThrough = in.readBoolean();
+        disablePerEntryInvalidationEvents = in.readBoolean();
         cacheLoaderFactory = in.readUTF();
         cacheWriterFactory = in.readUTF();
         cacheLoader = in.readUTF();
@@ -863,6 +865,34 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return "CacheSimpleConfig{"
+                + "name='" + name + '\''
+                + ", asyncBackupCount=" + asyncBackupCount
+                + ", backupCount=" + backupCount
+                + ", inMemoryFormat=" + inMemoryFormat
+                + ", keyType=" + keyType
+                + ", valueType=" + valueType
+                + ", statisticsEnabled=" + statisticsEnabled
+                + ", managementEnabled=" + managementEnabled
+                + ", readThrough=" + readThrough
+                + ", writeThrough=" + writeThrough
+                + ", cacheLoaderFactory='" + cacheLoaderFactory + '\''
+                + ", cacheWriterFactory='" + cacheWriterFactory + '\''
+                + ", cacheLoader='" + cacheLoader + '\''
+                + ", cacheWriter='" + cacheWriter + '\''
+                + ", expiryPolicyFactoryConfig=" + expiryPolicyFactoryConfig
+                + ", cacheEntryListeners=" + cacheEntryListeners
+                + ", evictionConfig=" + evictionConfig
+                + ", wanReplicationRef=" + wanReplicationRef
+                + ", quorumName=" + quorumName
+                + ", partitionLostListenerConfigs=" + partitionLostListenerConfigs
+                + ", mergePolicy=" + mergePolicy
+                + ", hotRestartConfig=" + hotRestartConfig
+                + '}';
+    }
+
     /**
      * Represents configuration for "ExpiryPolicyFactory".
      */
@@ -938,6 +968,14 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable {
             int result = className != null ? className.hashCode() : 0;
             result = 31 * result + (timedExpiryPolicyFactoryConfig != null ? timedExpiryPolicyFactoryConfig.hashCode() : 0);
             return result;
+        }
+
+        @Override
+        public String toString() {
+            return "ExpiryPolicyFactoryConfig{"
+                    + "className='" + className + '\''
+                    + ", timedExpiryPolicyFactoryConfig=" + timedExpiryPolicyFactoryConfig
+                    + '}';
         }
 
         /**
@@ -1036,6 +1074,14 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable {
                 result = 31 * result + (durationConfig != null ? durationConfig.hashCode() : 0);
                 return result;
             }
+
+            @Override
+            public String toString() {
+                return "TimedExpiryPolicyFactoryConfig{"
+                        + "expiryPolicyType=" + expiryPolicyType
+                        + ", durationConfig=" + durationConfig
+                        + '}';
+            }
         }
 
         /**
@@ -1108,6 +1154,14 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable {
                 int result = (int) (durationAmount ^ (durationAmount >>> 32));
                 result = 31 * result + (timeUnit != null ? timeUnit.hashCode() : 0);
                 return result;
+            }
+
+            @Override
+            public String toString() {
+                return "DurationConfig{"
+                        + "durationAmount=" + durationAmount
+                        + ", timeUnit" + timeUnit
+                        + '}';
             }
         }
     }

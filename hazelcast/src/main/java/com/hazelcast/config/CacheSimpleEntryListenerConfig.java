@@ -16,10 +16,16 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
+
 /**
  * Simple configuration to hold parsed listener config.
  */
-public class CacheSimpleEntryListenerConfig {
+public class CacheSimpleEntryListenerConfig implements IdentifiedDataSerializable {
 
     private String cacheEntryListenerFactory;
     private String cacheEntryEventFilterFactory;
@@ -142,5 +148,43 @@ public class CacheSimpleEntryListenerConfig {
         result = 31 * result + (oldValueRequired ? 1 : 0);
         result = 31 * result + (synchronous ? 1 : 0);
         return result;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.SIMPLE_CACHE_ENTRY_LISTENER_CONFIG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
+        out.writeUTF(cacheEntryEventFilterFactory);
+        out.writeUTF(cacheEntryListenerFactory);
+        out.writeBoolean(oldValueRequired);
+        out.writeBoolean(synchronous);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in)
+            throws IOException {
+        cacheEntryEventFilterFactory = in.readUTF();
+        cacheEntryListenerFactory = in.readUTF();
+        oldValueRequired = in.readBoolean();
+        synchronous = in.readBoolean();
+    }
+
+    @Override
+    public String toString() {
+        return "CacheSimpleEntryListenerConfig{"
+                + "cacheEntryListenerFactory='" + cacheEntryListenerFactory + '\''
+                + ", cacheEntryEventFilterFactory='" + cacheEntryEventFilterFactory + '\''
+                + ", oldValueRequired=" + oldValueRequired
+                + ", synchronous=" + synchronous
+                + '}';
     }
 }

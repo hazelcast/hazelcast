@@ -86,8 +86,9 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int EVENT_JOURNAL_CONFIG = 44;
     public static final int QUORUM_LISTENER_CONFIG = 45;
     public static final int CACHE_PARTITION_LOST_LISTENER_CONFIG = 46;
+    public static final int SIMPLE_CACHE_ENTRY_LISTENER_CONFIG = 47;
 
-    private static final int LEN = CACHE_PARTITION_LOST_LISTENER_CONFIG + 1;
+    private static final int LEN = SIMPLE_CACHE_ENTRY_LISTENER_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -381,6 +382,13 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
                     @Override
                     public IdentifiedDataSerializable createNew(Integer arg) {
                         return new CachePartitionLostListenerConfig();
+                    }
+                };
+        constructors[SIMPLE_CACHE_ENTRY_LISTENER_CONFIG] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new CacheSimpleEntryListenerConfig();
                     }
                 };
 
