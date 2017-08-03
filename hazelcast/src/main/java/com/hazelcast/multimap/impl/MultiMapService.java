@@ -22,7 +22,7 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
@@ -344,7 +344,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         long backupEntryCount = 0;
         long hits = 0;
         long lockedEntryCount = 0;
-        ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
+        ClusterService clusterService = nodeEngine.getClusterService();
 
         Address thisAddress = clusterService.getThisAddress();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {

@@ -720,14 +720,16 @@ public class ClusterJoinManager {
 
                 long time = clusterClock.getClusterTime();
 
+                // member list must be updated on master before preparation of pre-/post-join ops so other operations which have
+                // to be executed on stable cluster can detect the member list version change and retry in case of topology change
+                if (!clusterService.updateMembers(newMembersView, node.getThisAddress(), clusterService.getThisUuid())) {
+                    return;
+                }
+
                 // post join operations must be lock free, that means no locks at all:
                 // no partition locks, no key-based locks, no service level locks!
                 OnJoinOp preJoinOp = preparePreJoinOps();
                 OnJoinOp postJoinOp = preparePostJoinOp();
-
-                if (!clusterService.updateMembers(newMembersView, node.getThisAddress(), clusterService.getThisUuid())) {
-                    return;
-                }
 
                 persistJoinedMemberUuids(joiningMembers.values());
 

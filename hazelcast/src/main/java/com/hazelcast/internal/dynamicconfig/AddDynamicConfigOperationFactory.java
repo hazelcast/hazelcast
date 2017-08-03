@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -29,19 +30,22 @@ import java.io.IOException;
  */
 public class AddDynamicConfigOperationFactory implements OperationFactory {
 
+    private final ClusterService clusterService;
     private final IdentifiedDataSerializable config;
 
     public AddDynamicConfigOperationFactory() {
+        this.clusterService = null;
         this.config = null;
     }
 
-    public AddDynamicConfigOperationFactory(IdentifiedDataSerializable config) {
+    public AddDynamicConfigOperationFactory(ClusterService clusterService, IdentifiedDataSerializable config) {
+        this.clusterService = clusterService;
         this.config = config;
     }
 
     @Override
     public Operation createOperation() {
-        return new AddDynamicConfigOperation(config);
+        return new AddDynamicConfigOperation(config, clusterService.getMemberListVersion());
     }
 
     @Override

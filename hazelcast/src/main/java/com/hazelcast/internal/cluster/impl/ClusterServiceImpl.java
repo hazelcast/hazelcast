@@ -442,12 +442,15 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             ClusterClockImpl clusterClock = getClusterClock();
             clusterClock.setClusterStartTime(clusterStartTime);
             clusterClock.setMasterTime(masterTime);
-            membershipManager.updateMembers(membersView);
-            clusterHeartbeatManager.heartbeat();
 
+            // run pre-join op before member list update, so operations other than join ops will be refused by operation service
             if (preJoinOp != null) {
                 nodeEngine.getOperationService().run(preJoinOp);
             }
+
+            membershipManager.updateMembers(membersView);
+            clusterHeartbeatManager.heartbeat();
+
             setJoined(true);
 
             return true;
@@ -1083,7 +1086,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return clusterHeartbeatManager;
     }
 
-    // used for 3.8 compatibility
+    // RU_COMPAT_WITH_3_8
     public MembershipManagerCompat getMembershipManagerCompat() {
         assert getClusterVersion().isLessThan(Versions.V3_9) : "Cluster version should be less than 3.9";
         return membershipManagerCompat;
@@ -1125,6 +1128,11 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         } finally {
             lock.unlock();
         }
+    }
+
+    @Override
+    public int getMemberListVersion() {
+        return membershipManager.getMemberListVersion();
     }
 
     private MemberImpl getMasterMember() {

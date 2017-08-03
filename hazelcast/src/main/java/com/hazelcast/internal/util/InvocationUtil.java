@@ -38,7 +38,6 @@ import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.Iterator;
 
-import static com.hazelcast.internal.util.futures.ChainingFuture.IGNORE_CLUSTER_TOPOLOGY_CHANGES;
 import static com.hazelcast.util.IterableUtil.map;
 
 /**
@@ -60,7 +59,7 @@ public final class InvocationUtil {
      *
      * If there is an exception - other than {@link MemberLeftException} or
      * {@link com.hazelcast.spi.exception.TargetNotMemberException} while invoking then the iteration
-     * is interrupted and the exception is propagates to the caller.
+     * is interrupted and the exception is propagated to the caller.
      *
      * @param nodeEngine
      * @param operationFactory
@@ -74,10 +73,11 @@ public final class InvocationUtil {
         final OperationService operationService = nodeEngine.getOperationService();
         ClusterService clusterService = nodeEngine.getClusterService();
 
+        RestartingMemberIterator memberIterator = new RestartingMemberIterator(clusterService, maxRetries);
+
         // we are going to iterate over all members and invoke an operation on each of them
         Iterator<ICompletableFuture<Object>> invocationIterator = map(
-                new RestartingMemberIterator(clusterService, maxRetries),
-                new InvokeOnMemberFunction(operationFactory, operationService));
+                memberIterator, new InvokeOnMemberFunction(operationFactory, operationService));
 
         ILogger logger = nodeEngine.getLogger(ChainingFuture.class);
         ExecutionService executionService = nodeEngine.getExecutionService();
@@ -86,7 +86,7 @@ public final class InvocationUtil {
         // ChainingFuture uses the iterator to start invocations.
         // It invokes on another member only when the previous invocation is completed = invocations are serial.
         // the future itself completes only when the last invocation completes (or if there is an error)
-        return new ChainingFuture<Object>(invocationIterator, executor, IGNORE_CLUSTER_TOPOLOGY_CHANGES, logger);
+        return new ChainingFuture<Object>(invocationIterator, executor, memberIterator, logger);
     }
 
     private static void warmUpPartitions(NodeEngine nodeEngine) {

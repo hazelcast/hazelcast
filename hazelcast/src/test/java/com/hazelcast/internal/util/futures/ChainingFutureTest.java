@@ -2,22 +2,27 @@ package com.hazelcast.internal.util.futures;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,6 +32,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -34,7 +40,16 @@ public class ChainingFutureTest extends HazelcastTestSupport {
 
     private Executor executor = new LocalExecutor();
     private ILogger logger = mock(ILogger.class);
+    private ClusterService clusterService = mock(ClusterService.class);
+    private RestartingMemberIterator repairingIterator;
 
+    @Before
+    public void setup() {
+        Set<Member> members = new HashSet<Member>();
+        members.add(mock(Member.class));
+        when(clusterService.getMembers()).thenReturn(members);
+        repairingIterator = new RestartingMemberIterator(clusterService, 100);
+    }
 
     @Test
     public void testCompletesOnlyWhenTheLastFutureCompletes() {
@@ -44,7 +59,7 @@ public class ChainingFutureTest extends HazelcastTestSupport {
 
         CountingIterator<ICompletableFuture<Object>> iterator = toIterator(future1, future2, future3);
 
-        ChainingFuture.ExceptionHandler handler = ChainingFuture.IGNORE_CLUSTER_TOPOLOGY_CHANGES;
+        ChainingFuture.ExceptionHandler handler = repairingIterator;
         ChainingFuture<Object> future = new ChainingFuture<Object>(iterator, executor, handler, logger);
 
         assertEquals(1, iterator.getHasNextCounter());
@@ -75,7 +90,7 @@ public class ChainingFutureTest extends HazelcastTestSupport {
 
         CountingIterator<ICompletableFuture<Object>> iterator = toIterator(future1, future2, future3);
 
-        ChainingFuture.ExceptionHandler handler = ChainingFuture.IGNORE_CLUSTER_TOPOLOGY_CHANGES;
+        ChainingFuture.ExceptionHandler handler = repairingIterator;
         ChainingFuture<Object> future = new ChainingFuture<Object>(iterator, executor, handler, logger);
 
         assertEquals(1, iterator.getHasNextCounter());
@@ -107,7 +122,7 @@ public class ChainingFutureTest extends HazelcastTestSupport {
 
         CountingIterator<ICompletableFuture<Object>> iterator = toIterator(future1, future2, future3);
 
-        ChainingFuture.ExceptionHandler handler = ChainingFuture.IGNORE_CLUSTER_TOPOLOGY_CHANGES;
+        ChainingFuture.ExceptionHandler handler = repairingIterator;
         ChainingFuture<Object> future = new ChainingFuture<Object>(iterator, executor, handler, logger);
 
         assertEquals(1, iterator.getHasNextCounter());
@@ -128,7 +143,7 @@ public class ChainingFutureTest extends HazelcastTestSupport {
 
         CountingIterator<ICompletableFuture<Object>> iterator = toIterator(future1, future2, future3);
 
-        ChainingFuture.ExceptionHandler handler = ChainingFuture.IGNORE_CLUSTER_TOPOLOGY_CHANGES;
+        ChainingFuture.ExceptionHandler handler = repairingIterator;
         ChainingFuture<Object> future = new ChainingFuture<Object>(iterator, executor, handler, logger);
 
         assertEquals(1, iterator.getHasNextCounter());
@@ -145,7 +160,7 @@ public class ChainingFutureTest extends HazelcastTestSupport {
     @Test
     public void testEmptyIterator() {
         CountingIterator<ICompletableFuture<Object>> iterator = toIterator();
-        ChainingFuture.ExceptionHandler handler = ChainingFuture.IGNORE_CLUSTER_TOPOLOGY_CHANGES;
+        ChainingFuture.ExceptionHandler handler = repairingIterator;
         ChainingFuture<Object> future = new ChainingFuture<Object>(iterator, executor, handler, logger);
 
         assertTrue(future.isDone());
