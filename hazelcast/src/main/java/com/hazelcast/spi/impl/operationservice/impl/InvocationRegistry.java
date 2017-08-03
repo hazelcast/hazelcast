@@ -180,10 +180,10 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
         return invocations.get(callId);
     }
 
-    public void reset() {
+    public void reset(Throwable cause) {
         for (Invocation invocation : this) {
             try {
-                invocation.notifyError(new MemberLeftException());
+                invocation.notifyError(new MemberLeftException(cause));
             } catch (Throwable e) {
                 logger.warning(invocation + " could not be notified with reset message -> " + e.getMessage());
             }
