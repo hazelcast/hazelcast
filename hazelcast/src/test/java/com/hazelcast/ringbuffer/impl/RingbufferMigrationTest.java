@@ -19,6 +19,7 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -36,6 +37,7 @@ import static org.junit.Assert.assertEquals;
 public class RingbufferMigrationTest extends HazelcastTestSupport {
 
     public static final int CAPACITY = 100;
+    public static final String BOUNCING_TEST_PARTITION_COUNT = "10";
     private TestHazelcastInstanceFactory instanceFactory;
 
     @Before
@@ -48,6 +50,7 @@ public class RingbufferMigrationTest extends HazelcastTestSupport {
         final String ringbufferName = "ringbuffer";
         final Config config = new Config()
                 .addRingBufferConfig(new RingbufferConfig(ringbufferName).setTimeToLiveSeconds(0));
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), BOUNCING_TEST_PARTITION_COUNT);
         HazelcastInstance hz1 = instanceFactory.newHazelcastInstance(config);
 
         for (int k = 0; k < 10 * CAPACITY; k++) {
@@ -61,8 +64,10 @@ public class RingbufferMigrationTest extends HazelcastTestSupport {
         HazelcastInstance hz3 = instanceFactory.newHazelcastInstance(config);
 
         assertClusterSizeEventually(3, hz2);
+        waitAllForSafeState(hz1, hz2, hz3);
         hz1.shutdown();
         assertClusterSizeEventually(2, hz2);
+        waitAllForSafeState(hz2, hz3);
 
         assertEquals(oldTailSeq, hz2.getRingbuffer(ringbufferName).tailSequence());
         assertEquals(oldHeadSeq, hz2.getRingbuffer(ringbufferName).headSequence());
