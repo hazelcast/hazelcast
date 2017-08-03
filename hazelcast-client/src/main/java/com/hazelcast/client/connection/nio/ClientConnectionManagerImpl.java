@@ -265,7 +265,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         for (Connection connection : activeConnections.values()) {
             connection.close("Hazelcast client is shutting down", null);
         }
-        clusterConnectionExecutor.shutdown();
+        ClientExecutionServiceImpl.shutdownExecutor("cluster", clusterConnectionExecutor, logger);
         stopEventLoopGroup();
         connectionListeners.clear();
         heartbeat.shutdown();
@@ -744,17 +744,19 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     private void connectToClusterInternal() {
         int attempt = 0;
         Set<InetSocketAddress> triedAddresses = new HashSet<InetSocketAddress>();
+
+        mainLoop:
         while (attempt < connectionAttemptLimit) {
             attempt++;
-            final long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
+            long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
 
-            final Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
+            Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
             for (InetSocketAddress inetSocketAddress : socketAddresses) {
                 if (!client.getLifecycleService().isRunning()) {
                     if (logger.isFinestEnabled()) {
                         logger.finest("Giving up on retrying to connect to cluster since client is shutdown.");
                     }
-                    break;
+                    break mainLoop;
                 }
                 triedAddresses.add(inetSocketAddress);
                 if (connectAsOwner(inetSocketAddress) != null) {
@@ -770,6 +772,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                 try {
                     Thread.sleep(remainingTime);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     break;
                 }
             }

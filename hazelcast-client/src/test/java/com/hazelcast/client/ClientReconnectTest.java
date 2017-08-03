@@ -155,4 +155,14 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         System.gc();
         test.get("key");
     }
+
+    @Test(timeout = 10000)
+    public void testShutdownClient_whenThereIsNoCluster() {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
+        clientConfig.getNetworkConfig()
+                .setConnectionAttemptLimit(Integer.MAX_VALUE);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+        client.shutdown();
+    }
 }
