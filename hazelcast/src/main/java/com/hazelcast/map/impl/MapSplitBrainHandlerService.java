@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.merge.IgnoreMergingEntryMapMergePolicy;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
@@ -68,15 +69,18 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                 RecordStore recordStore = mapServiceContext.getPartitionContainer(i).getRecordStore(mapContainer.getName());
                 // add your owned entries to the map so they will be merged
                 if (thisAddress.equals(partitionService.getPartitionOwner(i))) {
-                    Collection<Record> records = recordMap.get(mapContainer);
-                    if (records == null) {
-                        records = new ArrayList<Record>();
-                        recordMap.put(mapContainer, records);
-                    }
-                    final Iterator<Record> iterator = recordStore.iterator(now, false);
-                    while (iterator.hasNext()) {
-                        final Record record = iterator.next();
-                        records.add(record);
+                    MapMergePolicy finalMergePolicy = getMapMergePolicy(mapContainer);
+                    if (!(finalMergePolicy instanceof IgnoreMergingEntryMapMergePolicy)) {
+                        Collection<Record> records = recordMap.get(mapContainer);
+                        if (records == null) {
+                            records = new ArrayList<Record>();
+                            recordMap.put(mapContainer, records);
+                        }
+                        final Iterator<Record> iterator = recordStore.iterator(now, false);
+                        while (iterator.hasNext()) {
+                            final Record record = iterator.next();
+                            records.add(record);
+                        }
                     }
                 }
                 // clear all records either owned or backup
@@ -85,6 +89,11 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
             }
         }
         return new Merger(recordMap);
+    }
+
+    private MapMergePolicy getMapMergePolicy(MapContainer mapContainer) {
+        String mergePolicyName = mapContainer.getMapConfig().getMergePolicy();
+        return mapServiceContext.getMergePolicyProvider().getMergePolicy(mergePolicyName);
     }
 
     protected Map<String, MapContainer> getMapContainers() {
@@ -128,13 +137,12 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                 MapContainer mapContainer = recordMapEntry.getKey();
                 Collection<Record> recordList = recordMapEntry.getValue();
 
-                String mergePolicyName = mapContainer.getMapConfig().getMergePolicy();
                 String mapName = mapContainer.getName();
 
                 // TODO: number of records may be high
                 // TODO: below can be optimized a many records can be send in single invocation
-                final MapMergePolicy finalMergePolicy
-                        = mapServiceContext.getMergePolicyProvider().getMergePolicy(mergePolicyName);
+                MapMergePolicy finalMergePolicy = getMapMergePolicy(mapContainer);
+
                 MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
                 for (Record record : recordList) {
                     recordCount++;
