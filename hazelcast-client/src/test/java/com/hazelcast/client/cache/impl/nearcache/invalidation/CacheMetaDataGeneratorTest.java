@@ -58,8 +58,8 @@ public class CacheMetaDataGeneratorTest extends HazelcastTestSupport {
     private static final String PREFIXED_CACHE_NAME = "/hz/" + CACHE_NAME;
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
-    private final ClientConfig clientConfig = new ClientConfig();
-    private final CacheConfig cacheConfig = new CacheConfig();
+    private final ClientConfig clientConfig = newClientConfig();
+    private final CacheConfig cacheConfig = newCacheConfig();
 
     private Cache clientCache;
     private Cache serverCache;
@@ -114,10 +114,6 @@ public class CacheMetaDataGeneratorTest extends HazelcastTestSupport {
         assertNull(getMetaDataGenerator(server).getSequenceGenerators().get(PREFIXED_CACHE_NAME));
     }
 
-    protected NearCacheConfig newNearCacheConfig() {
-        return new NearCacheConfig(CACHE_NAME);
-    }
-
     private Cache createCacheFromNewClient() {
         HazelcastClientProxy client = (HazelcastClientProxy) factory.newHazelcastClient(clientConfig);
         CachingProvider clientCachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
@@ -128,6 +124,18 @@ public class CacheMetaDataGeneratorTest extends HazelcastTestSupport {
         assert cache instanceof NearCachedClientCacheProxy;
 
         return cache;
+    }
+
+    protected ClientConfig newClientConfig() {
+        return new ClientConfig();
+    }
+
+    protected CacheConfig newCacheConfig() {
+        return new CacheConfig();
+    }
+
+    protected NearCacheConfig newNearCacheConfig() {
+        return new NearCacheConfig(CACHE_NAME);
     }
 
     private static MetaDataGenerator getMetaDataGenerator(HazelcastInstance member) {
