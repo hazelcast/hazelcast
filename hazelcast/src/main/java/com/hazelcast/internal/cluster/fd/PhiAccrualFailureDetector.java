@@ -44,7 +44,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  */
 public class PhiAccrualFailureDetector implements FailureDetector {
 
-    private static final long NO_HEARTBEAT_TIMESTAMP = -1;
+    static final long NO_HEARTBEAT_TIMESTAMP = -1;
 
     private final double threshold;
     private final double minStdDeviationMillis;

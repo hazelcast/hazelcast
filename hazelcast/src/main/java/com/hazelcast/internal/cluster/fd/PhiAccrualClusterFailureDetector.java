@@ -46,7 +46,7 @@ public class PhiAccrualClusterFailureDetector implements ClusterFailureDetector 
      * </li>
      * </ul>
      */
-    private static final HazelcastProperty HEARTBEAT_PHI_FAILURE_DETECTOR_THRESHOLD
+    static final HazelcastProperty HEARTBEAT_PHI_FAILURE_DETECTOR_THRESHOLD
             = new HazelcastProperty("hazelcast.heartbeat.phiaccrual.failuredetector.threshold", 10);
 
     /**
