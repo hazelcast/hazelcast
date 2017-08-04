@@ -19,6 +19,7 @@ package com.hazelcast.client.listeners;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,6 +31,11 @@ import org.junit.runner.RunWith;
 public class EntryListenerOnReconnectTest extends AbstractListenersOnReconnectTest{
 
     private IMap<String, String> iMap;
+
+    @Override
+    String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
 
     @Override
     protected String addListener() {

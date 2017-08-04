@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.listeners;
 
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
@@ -30,6 +31,11 @@ import org.junit.runner.RunWith;
 public class QueueItemListenerOnReconnectTest extends AbstractListenersOnReconnectTest{
 
     private IQueue<String> iQueue;
+
+    @Override
+    String getServiceName() {
+        return QueueService.SERVICE_NAME;
+    }
 
     @Override
     protected String addListener() {
