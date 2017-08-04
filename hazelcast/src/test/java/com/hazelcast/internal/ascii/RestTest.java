@@ -17,11 +17,8 @@
 package com.hazelcast.internal.ascii;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -32,13 +29,14 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
@@ -55,20 +53,30 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class RestTest extends HazelcastTestSupport {
 
-    private static AtomicInteger port = new AtomicInteger(5701);
-
-    private Config config = new Config();
+    private static final AtomicInteger PORT = new AtomicInteger(5701);
 
     private HazelcastInstance instance;
     private HazelcastInstance remoteInstance;
     private HTTPCommunicator communicator;
+    private Config config = new Config();
+
+    @BeforeClass
+    public static void beforeClass() {
+        Hazelcast.shutdownAll();
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        Hazelcast.shutdownAll();
+    }
 
     @Before
     public void setup() {
+        config.getGroupConfig().setName(randomString());
         config.setProperty(GroupProperty.REST_ENABLED.getName(), "true");
 
-        int firstPort = port.getAndIncrement();
-        int secondPort = port.getAndIncrement();
+        int firstPort = PORT.getAndIncrement();
+        int secondPort = PORT.getAndIncrement();
 
         // we start pairs of HazelcastInstances which form a cluster to have remote invocations for all operations
         JoinConfig join = config.getNetworkConfig().getJoin();
@@ -147,23 +155,15 @@ public class RestTest extends HazelcastTestSupport {
     // issue #1783
     @Test
     public void testMapTtl() throws Exception {
-        final CountDownLatch latch = new CountDownLatch(1);
-        EntryListenerConfig listenerConfig = new EntryListenerConfig().setImplementation(new EntryAdapter() {
-            @Override
-            public void entryEvicted(EntryEvent event) {
-                latch.countDown();
-            }
-        });
-
         String name = randomMapName();
         config.getMapConfig(name)
-                .setTimeToLiveSeconds(3)
-                .addEntryListenerConfig(listenerConfig);
+                .setTimeToLiveSeconds(2);
 
         String key = "key";
         communicator.mapPut(name, key, "value");
 
-        assertOpenEventually(latch);
+        sleepAtLeastSeconds(3);
+
         String value = communicator.mapGet(name, key);
         assertTrue(value.isEmpty());
     }
