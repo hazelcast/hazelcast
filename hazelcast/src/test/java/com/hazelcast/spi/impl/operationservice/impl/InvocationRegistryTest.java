@@ -158,7 +158,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
         invocationRegistry.register(invocation);
         long callId = invocation.op.getCallId();
 
-        invocationRegistry.reset();
+        invocationRegistry.reset(null);
 
         InvocationFuture f = invocation.future;
         try {

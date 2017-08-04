@@ -27,6 +27,7 @@ import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
+import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.durableexecutor.StaleTaskIdException;
@@ -621,6 +622,12 @@ public class ClientExceptionFactory {
             @Override
             public Throwable createException(String message, Throwable cause) {
                 return new StaleTaskException(message);
+            }
+        });
+        register(ClientProtocolErrorCodes.LOCAL_MEMBER_RESET, LocalMemberResetException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new LocalMemberResetException(message);
             }
         });
 

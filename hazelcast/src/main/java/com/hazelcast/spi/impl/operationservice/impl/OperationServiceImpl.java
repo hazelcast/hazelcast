@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterClock;
@@ -404,7 +405,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     }
 
     public void reset() {
-        invocationRegistry.reset();
+        Throwable cause = new LocalMemberResetException(node.getLocalMember() + " has reset.");
+        invocationRegistry.reset(cause);
     }
 
     @Override

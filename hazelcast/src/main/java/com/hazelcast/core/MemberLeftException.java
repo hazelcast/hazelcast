@@ -46,6 +46,10 @@ public class MemberLeftException extends ExecutionException implements Retryable
         this.member = member;
     }
 
+    public MemberLeftException(Throwable cause) {
+        super(cause);
+    }
+
     /**
      * Returns the member that left the cluster
      * @return the member that left the cluster

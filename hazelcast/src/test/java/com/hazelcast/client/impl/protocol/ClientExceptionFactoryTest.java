@@ -26,6 +26,7 @@ import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
+import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.durableexecutor.StaleTaskIdException;
@@ -262,7 +263,8 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 new Object[]{new RuntimeException("blabla", new DummyUncheckedHazelcastTestException())},
                 new Object[]{new RuntimeException("fun", new RuntimeException("codec \n is \n not \n pwned"))},
                 new Object[]{new RuntimeException("fun",
-                        new RuntimeException("!@#$%^&*()'][/.,l;§!|`]:\\ľščťž /sᵻˈrɪlɪk/ Áзбука 中华民族 \n \r \t \r\n"))}
+                        new RuntimeException("!@#$%^&*()'][/.,l;§!|`]:\\ľščťž /sᵻˈrɪlɪk/ Áзбука 中华民族 \n \r \t \r\n"))},
+                new Object[]{new LocalMemberResetException(randomString())}
         );
 
     }
