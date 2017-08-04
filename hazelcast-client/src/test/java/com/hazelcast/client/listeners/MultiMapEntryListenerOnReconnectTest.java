@@ -19,6 +19,7 @@ package com.hazelcast.client.listeners;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,6 +31,11 @@ import org.junit.runner.RunWith;
 public class MultiMapEntryListenerOnReconnectTest extends AbstractListenersOnReconnectTest {
 
     private MultiMap<String, String> multiMap;
+
+    @Override
+    String getServiceName() {
+        return MultiMapService.SERVICE_NAME;
+    }
 
     @Override
     protected String addListener() {

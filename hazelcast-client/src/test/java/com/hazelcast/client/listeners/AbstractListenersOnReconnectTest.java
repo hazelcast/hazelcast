@@ -33,6 +33,9 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
+import com.hazelcast.spi.impl.eventservice.impl.EventServiceSegment;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import org.junit.After;
@@ -49,6 +52,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.HEARTBEAT_TIMEOUT;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport {
@@ -461,11 +465,28 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
 
     private void validateRegistrationsAndListenerFunctionality() {
         assertClusterSizeEventually(clusterSize, client);
+        validateRegistrationsOnMembers(factory);
         validateRegistrations(clusterSize, registrationId, getHazelcastClientInstanceImpl(client));
         validateListenerFunctionality();
         assertTrue(removeListener(registrationId));
     }
 
+    protected void validateRegistrationsOnMembers(final TestHazelcastFactory factory) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (HazelcastInstance instance : factory.getAllHazelcastInstances()) {
+                    NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
+                    EventServiceImpl eventService = (EventServiceImpl) nodeEngineImpl.getEventService();
+                    EventServiceSegment serviceSegment = eventService.getSegment(getServiceName(), false);
+                    assertNotNull(serviceSegment);
+                    assertEquals(1, serviceSegment.getRegistrationIdMap().size());
+                }
+            }
+        });
+    }
+
+    abstract String getServiceName();
 
     private void validateRegistrations(final int clusterSize, final String registrationId,
                                        final HazelcastClientInstanceImpl clientInstanceImpl) {

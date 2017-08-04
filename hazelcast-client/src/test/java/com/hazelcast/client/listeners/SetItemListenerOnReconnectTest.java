@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.listeners;
 
+import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
@@ -30,6 +31,11 @@ import org.junit.runner.RunWith;
 public class SetItemListenerOnReconnectTest extends AbstractListenersOnReconnectTest {
 
     private ISet<String> iSet;
+
+    @Override
+    String getServiceName() {
+        return SetService.SERVICE_NAME;
+    }
 
     @Override
     protected String addListener() {
