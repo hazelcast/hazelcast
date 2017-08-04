@@ -17,11 +17,12 @@
 package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.config.PermissionConfig;
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.internal.management.dto.PermissionConfigDTO;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -49,8 +50,8 @@ public class UpdatePermissionConfigOperation extends AbstractManagementOperation
 
     @Override
     public void run() throws Exception {
-        HazelcastInstanceImpl instance = (HazelcastInstanceImpl) getNodeEngine().getHazelcastInstance();
-        instance.node.securityContext.refreshPermissions(permissionConfigs);
+        Node node = ((NodeEngineImpl) getNodeEngine()).getNode();
+        node.securityContext.refreshPermissions(permissionConfigs);
     }
 
     @Override

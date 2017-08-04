@@ -30,7 +30,6 @@ import com.hazelcast.internal.management.operation.AddWanConfigOperation;
 import com.hazelcast.internal.management.request.UpdatePermissionConfigRequest;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityService;
-import com.hazelcast.security.impl.NoOpSecurityService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -453,6 +452,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         return;
     }
 
+    // This is intentionally not used. Instead handleUpdatePermissions() returns FORBIDDEN always.
     private void doHandleUpdatePermissions(HttpPostCommand command) throws UnsupportedEncodingException {
 
         if (!checkCredentials(command)) {
@@ -462,7 +462,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         }
 
         SecurityService securityService = textCommandService.getNode().getSecurityService();
-        if (securityService instanceof NoOpSecurityService) {
+        if (securityService == null) {
             String res = response(ResponseType.FAIL, "message", "Security features are only available on Hazelcast Enterprise!");
             command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
             return;

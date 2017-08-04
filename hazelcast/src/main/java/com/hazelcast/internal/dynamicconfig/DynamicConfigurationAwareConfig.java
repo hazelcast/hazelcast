@@ -52,9 +52,8 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.util.StringUtil;
 import com.hazelcast.security.SecurityService;
-import com.hazelcast.security.impl.NoOpSecurityService;
+import com.hazelcast.util.StringUtil;
 
 import java.io.File;
 import java.net.URL;
@@ -82,8 +81,7 @@ public class DynamicConfigurationAwareConfig extends Config {
         assert !(staticConfig instanceof DynamicConfigurationAwareConfig) : "A static Config object is required";
         this.staticConfig = staticConfig;
         this.configPatternMatcher = staticConfig.getConfigPatternMatcher();
-        this.dynamicSecurityConfig = new DynamicSecurityConfig(this.staticConfig.getSecurityConfig(),
-                new NoOpSecurityService(staticConfig.getSecurityConfig().getClientPermissionConfigs()));
+        dynamicSecurityConfig = new DynamicSecurityConfig(staticConfig.getSecurityConfig(), null);
     }
 
     @Override
