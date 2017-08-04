@@ -53,6 +53,29 @@ import static org.junit.Assert.assertTrue;
 public class ServiceLoaderTest extends HazelcastTestSupport {
 
     @Test
+    public void testHookDeduplication() {
+        ClassLoader parentClassloader = PortableHook.class.getClassLoader();
+
+        Class<?> hook = newClassImplementingInterface("com.hazelcast.internal.serialization.SomeHook",
+                PortableHook.class, parentClassloader);
+
+        //child classloader delegating everything to its parent
+        URLClassLoader childClassloader = new URLClassLoader(new URL[]{}, parentClassloader);
+
+        ServiceLoader.ServiceDefinition definition1 = new ServiceLoader.ServiceDefinition(hook.getName(), parentClassloader);
+        //the definition loaded by the child classloader -> it only delegates to the parent -> it's a duplicated
+        ServiceLoader.ServiceDefinition definition2 = new ServiceLoader.ServiceDefinition(hook.getName(), childClassloader);
+
+        Set<ServiceLoader.ServiceDefinition> definitions = setOf(definition1, definition2);
+        ServiceLoader.ClassIterator<PortableHook> iterator = new ServiceLoader.ClassIterator<PortableHook>(definitions, PortableHook.class);
+
+        assertTrue(iterator.hasNext());
+        Class<PortableHook> hookFromIterator = iterator.next();
+        assertEquals(hook, hookFromIterator);
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
     public void testSkipHooksWithImplementingTheExpectedInterfaceButLoadedByDifferentClassloader() {
         Class<?> otherInterface = newInterface(PortableHook.class.getName());
         ClassLoader otherClassloader = otherInterface.getClassLoader();
