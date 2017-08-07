@@ -56,7 +56,10 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
                                                                   ManagedNearCacheRecordStore nearCacheRecordStore);
 
     protected NearCache<Integer, String> createNearCache(String name, ManagedNearCacheRecordStore nearCacheRecordStore) {
-        return createNearCache(name, createNearCacheConfig(name, DEFAULT_MEMORY_FORMAT), nearCacheRecordStore);
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(name, DEFAULT_MEMORY_FORMAT);
+        NearCache<Integer, String> nearCache = createNearCache(name, nearCacheConfig, nearCacheRecordStore);
+        nearCache.initialize();
+        return nearCache;
     }
 
     protected Map<Integer, String> generateRandomKeyValueMappings() {
@@ -139,7 +142,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         assertEquals(nearCache.size(), managedNearCacheRecordStore.latestSize);
 
         for (int i = 0; i < 2 * DEFAULT_RECORD_COUNT; i++) {
-            nearCache.remove(i);
+            nearCache.invalidate(i);
             assertEquals((Integer) i, managedNearCacheRecordStore.latestKeyOnRemove);
             assertEquals(i < DEFAULT_RECORD_COUNT, managedNearCacheRecordStore.latestResultOnRemove);
         }
@@ -305,6 +308,16 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
             latestKeyOnRemove = key;
             latestResultOnRemove = result;
             return result;
+        }
+
+        @Override
+        public boolean invalidate(Integer key) {
+            return remove(key);
+        }
+
+        @Override
+        public void invalidateAll() {
+            clear();
         }
 
         @Override

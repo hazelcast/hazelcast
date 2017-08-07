@@ -84,6 +84,21 @@ public interface NearCache<K, V> extends InitializingObject {
     boolean remove(K key);
 
     /**
+     * Removes the value associated with the given {@code key} and increases the invalidation statistics.
+     *
+     * @param key the key of the value will be removed
+     * @see #remove(Object)
+     */
+    boolean invalidate(K key);
+
+    /**
+     * Removes all stored values and increases the invalidation statistics.
+     *
+     * @see #clear()
+     */
+    void invalidateAll();
+
+    /**
      * Removes all stored values.
      */
     void clear();

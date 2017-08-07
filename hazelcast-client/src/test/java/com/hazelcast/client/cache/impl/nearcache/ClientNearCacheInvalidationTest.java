@@ -196,8 +196,7 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
     }
 
     /**
-     * When CacheManager.destroyCache() is invoked from client-side CacheManager, an invalidation event is received.
-     * When invoked from a member-side CacheManager, invalidation event is not received.
+     * When {@link javax.cache.CacheManager#destroyCache(String)} is invoked, an invalidation event is received per member.
      */
     @Test
     public void when_cacheManagerDestroyCacheInvoked_invalidationEventMayBeReceived() {
@@ -232,6 +231,7 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
             }
         };
 
+        assertTrueEventually(assertTask, TIMEOUT);
         assertTrueAllTheTime(assertTask, TIMEOUT);
     }
 
@@ -246,6 +246,7 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
             }
         };
 
+        assertTrueEventually(assertTask, TIMEOUT);
         assertTrueAllTheTime(assertTask, TIMEOUT);
     }
 

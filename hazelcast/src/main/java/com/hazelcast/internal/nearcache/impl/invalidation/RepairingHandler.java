@@ -48,7 +48,6 @@ public final class RepairingHandler {
     private final boolean serializeKeys;
     private final SerializationService serializationService;
     private final MinimalPartitionService partitionService;
-    private final int partitionCount;
     private final MetaDataContainer[] metaDataContainers;
 
     public RepairingHandler(ILogger logger, String localUuid, String name, NearCache nearCache,
@@ -60,8 +59,7 @@ public final class RepairingHandler {
         this.serializeKeys = nearCache.isSerializeKeys();
         this.serializationService = serializationService;
         this.partitionService = partitionService;
-        this.partitionCount = partitionService.getPartitionCount();
-        this.metaDataContainers = createMetadataContainers(partitionCount);
+        this.metaDataContainers = createMetadataContainers(partitionService.getPartitionCount());
     }
 
     private static MetaDataContainer[] createMetadataContainers(int partitionCount) {
@@ -85,9 +83,9 @@ public final class RepairingHandler {
         if (!localUuid.equals(sourceUuid)) {
             // sourceUuid is allowed to be `null`
             if (key == null) {
-                nearCache.clear();
+                nearCache.invalidateAll();
             } else {
-                nearCache.remove(serializeKeys ? key : serializationService.toObject(key));
+                nearCache.invalidate(serializeKeys ? key : serializationService.toObject(key));
             }
         }
 

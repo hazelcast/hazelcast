@@ -526,7 +526,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         if (nearCache == null) {
             return;
         }
-        nearCache.remove(key);
+        nearCache.invalidate(key);
     }
 
     private class ReplicatedMapEventHandler
@@ -605,10 +605,10 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
                 case UPDATED:
                 case EVICTED:
                     K key = toObject(dataKey);
-                    nearCache.remove(key);
+                    nearCache.invalidate(key);
                     break;
                 case CLEAR_ALL:
-                    nearCache.clear();
+                    nearCache.invalidateAll();
                     break;
                 default:
                     throw new IllegalArgumentException("Not a known event type " + entryEventType);

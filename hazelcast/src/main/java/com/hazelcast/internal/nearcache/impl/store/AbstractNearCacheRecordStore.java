@@ -345,17 +345,35 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     @Override
+    public boolean invalidate(K key) {
+        boolean success = remove(key);
+        nearCacheStats.incrementInvalidations();
+        return success;
+    }
+
+    @Override
+    public void invalidateAll() {
+        checkAvailable();
+
+        int size = records.size();
+        records.clear();
+        nearCacheStats.setOwnedEntryCount(0);
+        nearCacheStats.setOwnedEntryMemoryCost(0);
+        nearCacheStats.addInvalidations(size);
+    }
+
+    @Override
     public void clear() {
         checkAvailable();
 
         records.clear();
         nearCacheStats.setOwnedEntryCount(0);
-        nearCacheStats.setOwnedEntryMemoryCost(0L);
+        nearCacheStats.setOwnedEntryMemoryCost(0);
     }
 
     @Override
     public void destroy() {
-        clear();
+        invalidateAll();
     }
 
     @Override

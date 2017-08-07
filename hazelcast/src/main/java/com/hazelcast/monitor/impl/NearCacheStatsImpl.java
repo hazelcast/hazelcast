@@ -43,6 +43,8 @@ public class NearCacheStatsImpl implements NearCacheStats {
             newUpdater(NearCacheStatsImpl.class, "evictions");
     private static final AtomicLongFieldUpdater<NearCacheStatsImpl> EXPIRATIONS =
             newUpdater(NearCacheStatsImpl.class, "expirations");
+    private static final AtomicLongFieldUpdater<NearCacheStatsImpl> INVALIDATIONS =
+            newUpdater(NearCacheStatsImpl.class, "invalidations");
     private static final AtomicLongFieldUpdater<NearCacheStatsImpl> PERSISTENCE_COUNT =
             newUpdater(NearCacheStatsImpl.class, "persistenceCount");
 
@@ -53,6 +55,7 @@ public class NearCacheStatsImpl implements NearCacheStats {
     private volatile long misses;
     private volatile long evictions;
     private volatile long expirations;
+    private volatile long invalidations;
 
     private volatile long persistenceCount;
     private volatile long lastPersistenceTime;
@@ -74,6 +77,7 @@ public class NearCacheStatsImpl implements NearCacheStats {
         misses = stats.misses;
         evictions = stats.evictions;
         expirations = stats.expirations;
+        invalidations = stats.invalidations;
 
         persistenceCount = stats.persistenceCount;
         lastPersistenceTime = stats.lastPersistenceTime;
@@ -182,6 +186,24 @@ public class NearCacheStatsImpl implements NearCacheStats {
     }
 
     @Override
+    public long getInvalidations() {
+        return invalidations;
+    }
+
+    public void incrementInvalidations() {
+        INVALIDATIONS.incrementAndGet(this);
+    }
+
+    public void addInvalidations(long invalidationCount) {
+        INVALIDATIONS.addAndGet(this, invalidationCount);
+    }
+
+    // for testing only
+    public void resetInvalidations() {
+        INVALIDATIONS.set(this, 0);
+    }
+
+    @Override
     public long getPersistenceCount() {
         return persistenceCount;
     }
@@ -243,6 +265,7 @@ public class NearCacheStatsImpl implements NearCacheStats {
         root.add("misses", misses);
         root.add("evictions", evictions);
         root.add("expirations", expirations);
+        root.add("invalidations", invalidations);
         root.add("persistenceCount", persistenceCount);
         root.add("lastPersistenceTime", lastPersistenceTime);
         root.add("lastPersistenceDuration", lastPersistenceDuration);
@@ -261,6 +284,7 @@ public class NearCacheStatsImpl implements NearCacheStats {
         misses = getLong(json, "misses", -1L);
         evictions = getLong(json, "evictions", -1L);
         expirations = getLong(json, "expirations", -1L);
+        invalidations = getLong(json, "invalidations", -1L);
         persistenceCount = getLong(json, "persistenceCount", -1L);
         lastPersistenceTime = getLong(json, "lastPersistenceTime", -1L);
         lastPersistenceDuration = getLong(json, "lastPersistenceDuration", -1L);
@@ -280,6 +304,7 @@ public class NearCacheStatsImpl implements NearCacheStats {
                 + ", ratio=" + format("%.1f%%", getRatio())
                 + ", evictions=" + evictions
                 + ", expirations=" + expirations
+                + ", invalidations=" + invalidations
                 + ", lastPersistenceTime=" + lastPersistenceTime
                 + ", persistenceCount=" + persistenceCount
                 + ", lastPersistenceDuration=" + lastPersistenceDuration
