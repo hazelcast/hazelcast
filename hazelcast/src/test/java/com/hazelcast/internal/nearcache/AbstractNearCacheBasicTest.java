@@ -142,10 +142,14 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     protected abstract <K, V> NearCacheTestContext<K, V, NK, NV> createContext(boolean loaderEnabled);
 
     protected final void populateDataAdapter(NearCacheTestContext<Integer, String, NK, NV> context) {
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+        populateDataAdapter(context, DEFAULT_RECORD_COUNT);
+    }
+
+    protected final void populateDataAdapter(NearCacheTestContext<Integer, String, NK, NV> context, int size) {
+        for (int i = 0; i < size; i++) {
             context.dataAdapter.put(i, "value-" + i);
         }
-        assertNearCacheInvalidations(context, DEFAULT_RECORD_COUNT);
+        assertNearCacheInvalidations(context, size);
     }
 
     protected final void populateNearCache(NearCacheTestContext<Integer, String, NK, NV> context) {
@@ -975,35 +979,30 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         final NearCacheTestContext<Integer, String, NK, NV> context = createContext();
 
         // populate data structure
-        context.dataAdapter.put(1, "value-1");
-        context.dataAdapter.put(2, "value-2");
-        context.dataAdapter.put(3, "value-3");
-        assertNearCacheInvalidations(context, 3);
+        populateDataAdapter(context, 3);
 
         // populate Near Cache
-        context.nearCacheAdapter.get(1);
-        context.nearCacheAdapter.get(2);
-        context.nearCacheAdapter.get(3);
+        populateNearCache(context, DataStructureMethods.GET, 3);
 
+        assertTrue(context.nearCacheAdapter.containsKey(0));
         assertTrue(context.nearCacheAdapter.containsKey(1));
         assertTrue(context.nearCacheAdapter.containsKey(2));
-        assertTrue(context.nearCacheAdapter.containsKey(3));
+        assertFalse(context.nearCacheAdapter.containsKey(3));
         assertFalse(context.nearCacheAdapter.containsKey(4));
-        assertFalse(context.nearCacheAdapter.containsKey(5));
 
         // remove a key which is in the Near Cache
         DataStructureAdapter<Integer, String> adapter = useDataAdapter ? context.dataAdapter : context.nearCacheAdapter;
-        adapter.remove(1);
-        adapter.remove(3);
+        adapter.remove(0);
+        adapter.remove(2);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertFalse(context.nearCacheAdapter.containsKey(1));
-                assertTrue(context.nearCacheAdapter.containsKey(2));
+                assertFalse(context.nearCacheAdapter.containsKey(0));
+                assertTrue(context.nearCacheAdapter.containsKey(1));
+                assertFalse(context.nearCacheAdapter.containsKey(2));
                 assertFalse(context.nearCacheAdapter.containsKey(3));
                 assertFalse(context.nearCacheAdapter.containsKey(4));
-                assertFalse(context.nearCacheAdapter.containsKey(5));
             }
         });
     }
@@ -1020,9 +1019,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         int expectedEvictions = 1;
 
         // populate data structure with an extra entry
-        populateDataAdapter(context);
-        context.dataAdapter.put(DEFAULT_RECORD_COUNT, "value-" + DEFAULT_RECORD_COUNT);
-        assertNearCacheInvalidations(context, DEFAULT_RECORD_COUNT + 1);
+        populateDataAdapter(context, DEFAULT_RECORD_COUNT + 1);
 
         // populate Near Caches
         populateNearCache(context);
