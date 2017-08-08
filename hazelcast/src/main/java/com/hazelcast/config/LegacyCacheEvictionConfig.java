@@ -18,7 +18,6 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.TypedDataSerializable;
 import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
@@ -30,7 +29,7 @@ import java.io.IOException;
  * Comparator support is not provided for compatibility.
  */
 @BinaryInterface
-public class LegacyCacheEvictionConfig implements DataSerializable, TypedDataSerializable {
+public class LegacyCacheEvictionConfig implements TypedDataSerializable {
 
     final CacheEvictionConfig config;
 
