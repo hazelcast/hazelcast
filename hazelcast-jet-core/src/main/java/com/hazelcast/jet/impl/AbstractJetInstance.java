@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IdGenerator;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.stream.JetCacheManager;
 import com.hazelcast.jet.stream.IStreamList;
@@ -27,8 +26,6 @@ import com.hazelcast.jet.stream.impl.ListDecorator;
 import com.hazelcast.jet.stream.impl.MapDecorator;
 
 abstract class AbstractJetInstance implements JetInstance {
-    private static final String JET_ID_GENERATOR_NAME = "__jet_id_generator";
-
     private final HazelcastInstance hazelcastInstance;
 
     private final JetCacheManagerImpl cacheManager;
@@ -73,7 +70,4 @@ abstract class AbstractJetInstance implements JetInstance {
         hazelcastInstance.shutdown();
     }
 
-    protected IdGenerator getIdGenerator() {
-        return hazelcastInstance.getIdGenerator(JET_ID_GENERATOR_NAME);
-    }
 }

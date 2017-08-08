@@ -14,31 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet;
+package com.hazelcast.jet.impl.util;
+
+import com.hazelcast.spi.properties.HazelcastProperty;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * Thrown when a topology change (member addition/removal) happens
- * while executing a job.
+ * Defines the names and default values for internal Hazelcast Jet properties.
  */
-public class TopologyChangedException extends JetException {
+public final class JetGroupProperty {
 
-    /**
-     * Creates the exception
-     */
-    public TopologyChangedException() {
+    public static final HazelcastProperty JOB_SCAN_PERIOD
+            = new HazelcastProperty("jet.job.scan.period", SECONDS.toMillis(5), MILLISECONDS);
+
+    private JetGroupProperty() {
     }
 
-    /**
-     * Creates the exception with a message.
-     */
-    public TopologyChangedException(String message) {
-        super(message);
-    }
-
-    /**
-     * Creates the exception with a message and a cause.
-     */
-    public TopologyChangedException(String message, Throwable cause) {
-        super(message, cause);
-    }
 }

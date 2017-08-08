@@ -32,13 +32,12 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.AggregateOperations.counting;
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.StreamingTestSupport.streamToString;
 import static com.hazelcast.jet.WatermarkEmissionPolicy.emitByFrame;
 import static com.hazelcast.jet.WatermarkPolicies.limitingLagAndLull;
-import static com.hazelcast.jet.StreamingTestSupport.streamToString;
 import static com.hazelcast.jet.WindowDefinition.slidingWindowDef;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.processor.Processors.accumulateByFrame;
@@ -123,10 +122,10 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
                     .edge(between(slidingWin, sink).isolated());
         }
 
-        Future<Void> future = instance.newJob(dag).execute();
+        Job job = instance.newJob(dag);
 
         if (isBatch) {
-            future.get();
+            job.join();
         }
 
         IList<MyEvent> sinkList = instance.getList("sink");

@@ -50,7 +50,7 @@ public final class StreamUtil {
         JobConfig jobConfig = context.getJobConfig() != null ? context.getJobConfig() : new JobConfig();
         Job job = context.getJetInstance().newJob(dag, jobConfig);
         try {
-            job.execute().get();
+            job.getFuture().get();
         } catch (InterruptedException | ExecutionException e) {
             throw rethrow(e);
         }

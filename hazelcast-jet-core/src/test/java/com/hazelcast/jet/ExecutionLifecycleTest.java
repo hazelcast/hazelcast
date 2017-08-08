@@ -16,12 +16,22 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.TestProcessors.ProcessorThatFailsInComplete;
+import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.jet.TestProcessors.Identity;
+import com.hazelcast.jet.TestProcessors.ProcessorThatFailsInComplete;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JobResult;
+import com.hazelcast.jet.impl.execution.ExecutionContext;
+import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -33,20 +43,25 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.TestUtil.assertExceptionInCauses;
+import static com.hazelcast.jet.TestUtil.getJetService;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -84,12 +99,11 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         config.getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
         instance = factory.newMember(config);
         factory.newMember(config);
-
     }
 
     @After
-    public void shutdown() {
-        factory.shutdownAll();
+    public void tearDown() {
+        factory.terminateAll();
     }
 
     @Test
@@ -98,7 +112,8 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(Identity::new)));
 
         // When
-        instance.newJob(dag).execute().get();
+        Job job = instance.newJob(dag);
+        job.join();
 
         // Then
         assertEquals(NODE_COUNT, MockSupplier.initCount.get());
@@ -108,6 +123,13 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         for (int i = 0; i < NODE_COUNT; i++) {
             assertNull(MockSupplier.completeErrors.get(i));
         }
+
+        JetService jetService = getJetService(instance);
+        assertNull(jetService.getJobRepository().getJob(job.getJobId()));
+        JobResult jobResult = jetService.getJobCoordinationService().getJobResult(job.getJobId());
+        assertNotNull(jobResult);
+        assertTrue(jobResult.isSuccessful());
+        assertNull(jobResult.getFailure());
     }
 
     @Test
@@ -117,10 +139,12 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(e, Identity::new)));
 
         // When
+        Job job = null;
         try {
-            instance.newJob(dag).execute().get();
+            job = instance.newJob(dag);
+            job.join();
             fail("Job execution should fail");
-        } catch (ExecutionException expected) {
+        } catch (Exception expected) {
             Throwable cause = peel(expected);
             assertEquals(e.getMessage(), cause.getMessage());
         }
@@ -134,6 +158,14 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         for (int i = 0; i < NODE_COUNT; i++) {
             assertEquals(e.getMessage(), MockSupplier.completeErrors.get(i).getMessage());
         }
+
+        assertNotNull(job);
+        JetService jetService = getJetService(instance);
+        assertNull(jetService.getJobRepository().getJob(job.getJobId()));
+        JobResult jobResult = jetService.getJobCoordinationService().getJobResult(job.getJobId());
+        assertNotNull(jobResult);
+        assertFalse(jobResult.isSuccessful());
+        assertTrue(jobResult.getFailure() instanceof RuntimeException);
     }
 
     @Test
@@ -144,12 +176,14 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         DAG dag = new DAG().vertex(new Vertex(vertexName, new MockSupplier(() -> new ProcessorThatFailsInComplete(e))));
 
         // When
+        Job job = null;
         try {
-            instance.newJob(dag).execute().get();
+            job = instance.newJob(dag);
+            job.join();
             fail("Job execution should fail");
-        } catch (ExecutionException expected) {
+        } catch (Exception expected) {
             assertExceptionInCauses(e, expected);
-            String expectedMessage  = "vertex=" + vertexName + "";
+            String expectedMessage = "vertex=" + vertexName + "";
             assertTrue("Error message does not contain vertex name.\nExpected: " + expectedMessage
                             + "\nActual: " + expected,
                     expected.getMessage() != null && expected.getMessage().contains(expectedMessage));
@@ -163,6 +197,15 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         for (Throwable caught : MockSupplier.completeErrors) {
             assertExceptionInCauses(e, caught);
         }
+
+        assertNotNull(job);
+        JetService jetService = getJetService(instance);
+        assertNull(jetService.getJobRepository().getJob(job.getJobId()));
+        JobResult jobResult = jetService.getJobCoordinationService().getJobResult(job.getJobId());
+        assertNotNull(jobResult);
+        assertFalse(jobResult.isSuccessful());
+        assertTrue(jobResult.getFailure() instanceof RuntimeException);
+        assertEquals(JobStatus.FAILED, job.getJobStatus());
     }
 
     @Test
@@ -172,10 +215,10 @@ public class ExecutionLifecycleTest extends JetTestSupport {
 
         // When
         try {
-            Future<Void> future = instance.newJob(dag).execute();
+            Job job = instance.newJob(dag);
             StuckProcessor.executionStarted.await();
-            future.cancel(true);
-            future.get();
+            job.cancel();
+            job.join();
             fail("Job execution should fail");
         } catch (CancellationException ignored) {
         }
@@ -198,6 +241,78 @@ public class ExecutionLifecycleTest extends JetTestSupport {
                 assertInstanceOf(CancellationException.class, MockSupplier.completeErrors.get(i));
             }
         });
+    }
+
+    @Test
+    public void when_executionCancelledBeforeStart_then_jobFutureIsCancelledOnExecute() {
+        // Given
+        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new)));
+
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance.getHazelcastInstance());
+        Address localAddress = nodeEngineImpl.getThisAddress();
+        ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngineImpl.getClusterService();
+        MembersView membersView = clusterService.getMembershipManager().getMembersView();
+        int memberListVersion = membersView.getVersion();
+
+        JetService jetService = getJetService(instance);
+        final Map<MemberInfo, ExecutionPlan> executionPlans =
+                jetService.getJobCoordinationService().createExecutionPlans(membersView, dag);
+        ExecutionPlan executionPlan = executionPlans.get(membersView.getMember(localAddress));
+        long jobId = 0;
+        long executionId = 1;
+
+        jetService.initExecution(jobId, executionId, localAddress, memberListVersion,
+                new HashSet<>(membersView.getMembers()), executionPlan);
+
+        ExecutionContext executionContext = jetService.getJobExecutionService().getExecutionContext(executionId);
+        executionContext.cancel();
+
+        // When
+        final AtomicReference<Object> result = new AtomicReference<>();
+
+        executionContext.execute(stage ->
+                stage.whenComplete((aVoid, throwable) -> result.compareAndSet(null, throwable)));
+
+        // Then
+        assertTrue(result.get() instanceof CancellationException);
+    }
+
+    @Test
+    public void when_completeStepThrowsException_then_jobStillSucceeds() throws Throwable {
+        // Given
+        DAG dag = new DAG().vertex(new Vertex("test", new FailingOnCompleteSupplier(Identity::new)));
+
+        // When
+        Job job = instance.newJob(dag);
+
+        // Then
+        job.join();
+        assertEquals(JobStatus.COMPLETED, job.getJobStatus());
+    }
+
+    private static class FailingOnCompleteSupplier implements ProcessorSupplier {
+
+        private final DistributedSupplier<Processor> supplier;
+
+        FailingOnCompleteSupplier(DistributedSupplier<Processor> supplier) {
+            this.supplier = supplier;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) {
+
+        }
+
+        @Nonnull
+        @Override
+        public Collection<? extends Processor> get(int count) {
+            return Stream.generate(supplier).limit(count).collect(toList());
+        }
+
+        @Override
+        public void complete(Throwable error) {
+            throw new ExpectedRuntimeException();
+        }
     }
 
     private static class MockSupplier implements ProcessorSupplier {

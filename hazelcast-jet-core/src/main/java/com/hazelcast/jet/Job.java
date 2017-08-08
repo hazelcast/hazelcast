@@ -16,17 +16,78 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.impl.util.Util;
+
+import javax.annotation.Nonnull;
 import java.util.concurrent.Future;
 
 /**
  * A Jet computation job created from a {@link DAG}, ready to be executed.
  */
 public interface Job {
+
     /**
-     * Executes the job.
+     * Returns the ID of this job.
      *
-     * @return a future that can be inspected for job completion status
-     * and cancelled to prematurely end the job.
+     * @throws IllegalStateException If the job was not started yet, and thus
+     *                               has no job id.
      */
-    Future<Void> execute();
+    long getJobId();
+
+    /**
+     * Returns the DAG associated with this job
+     */
+    @Nonnull
+    DAG getDAG();
+
+    /**
+     * Returns the config associated with this job
+     */
+    @Nonnull
+    JobConfig getConfig();
+
+    /**
+     * Gets the future associated with the job, used to control the job.
+     *
+     * @throws IllegalStateException If the job was not started yet.
+     */
+    @Nonnull
+    Future<Void> getFuture();
+    /**
+     * Returns the status of this job.
+     */
+    @Nonnull
+    JobStatus getJobStatus();
+
+    /**
+     * Attempts to cancel execution of this job.
+     *
+     * Shorthand for <code>job.getFuture().cancel()</code>
+     */
+    default boolean cancel() {
+        return getFuture().cancel(true);
+    }
+
+    /**
+     * Waits for the job to complete and throws exception if job is completed with an error.
+     *
+     * Shorthand for <code>job.getFuture().get()</code>
+     */
+    default void join() {
+        Util.uncheckRun(() -> getFuture().get());
+    }
+
+    /**
+     * Gets the future associated with the job.
+     *
+     * @return a future that can be inspected for job completion status and cancelled to prematurely end the job.
+     *
+     * @deprecated Use {@link #getFuture()} instead. This method will be removed in the next release.
+     */
+    @Deprecated
+    default Future<Void> execute() {
+        return getFuture();
+    }
+
 }

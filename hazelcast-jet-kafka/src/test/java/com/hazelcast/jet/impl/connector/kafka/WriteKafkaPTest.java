@@ -70,7 +70,7 @@ public class WriteKafkaPTest extends KafkaTestSupport {
 
         dag.edge(between(source, sink));
 
-        Future<Void> future = instance.newJob(dag).execute();
+        Future<Void> future = instance.newJob(dag).getFuture();
         assertCompletesEventually(future);
 
         KafkaConsumer<String, String> consumer = createConsumer(brokerConnectionString, topic);

@@ -17,9 +17,13 @@
 package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.TopologyChangedException;
+import com.hazelcast.spi.exception.CallerNotMemberException;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -32,6 +36,14 @@ import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.JET_EX
 public final class ExceptionUtil {
 
     private ExceptionUtil() { }
+
+    public static boolean isJobRestartRequired(Object t) {
+        return t instanceof TopologyChangedException
+                || t instanceof MemberLeftException
+                || t instanceof TargetNotMemberException
+                || t instanceof CallerNotMemberException
+                || t instanceof HazelcastInstanceNotActiveException;
+    }
 
     /**
      * Called during startup to make our exceptions known to Hazelcast serialization

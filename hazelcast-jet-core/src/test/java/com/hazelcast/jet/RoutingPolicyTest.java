@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -37,14 +37,14 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 import static com.hazelcast.jet.TestUtil.executeAndPeel;
+import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 public class RoutingPolicyTest extends JetTestSupport {
 
     private static final List<Integer> NUMBERS_LOW = IntStream.range(0, 4096).boxed().collect(toList());
@@ -62,8 +62,9 @@ public class RoutingPolicyTest extends JetTestSupport {
     }
 
     @After
-    public void shutdown() {
-        factory.shutdownAll();
+    public void tearDown() {
+        factory.terminateAll();
+        ListConsumerSup.processors = null;
     }
 
     @Test
@@ -216,7 +217,7 @@ public class RoutingPolicyTest extends JetTestSupport {
 
     private static class ListConsumerSup implements ProcessorSupplier {
 
-        private List<Processor> processors;
+        private static volatile List<Processor> processors;
 
         @Override
         public void init(@Nonnull Context context) {

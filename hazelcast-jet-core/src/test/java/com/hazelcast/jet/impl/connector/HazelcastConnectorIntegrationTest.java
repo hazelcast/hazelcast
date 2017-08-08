@@ -78,7 +78,7 @@ public class HazelcastConnectorIntegrationTest extends JetTestSupport {
 
         dag.edge(between(source, sink));
 
-        jetInstance.newJob(dag).execute().get();
+        jetInstance.newJob(dag).join();
 
         assertEquals(ENTRY_COUNT, jetInstance.getMap(sinkName).size());
     }
@@ -94,7 +94,7 @@ public class HazelcastConnectorIntegrationTest extends JetTestSupport {
 
         dag.edge(between(source, sink));
 
-        jetInstance.newJob(dag).execute().get();
+        jetInstance.newJob(dag).join();
 
         assertEquals(ENTRY_COUNT, getCache(jetInstance, sinkName).size());
     }
@@ -110,7 +110,7 @@ public class HazelcastConnectorIntegrationTest extends JetTestSupport {
 
         dag.edge(between(source, sink));
 
-        jetInstance.newJob(dag).execute().get();
+        jetInstance.newJob(dag).join();
 
         assertEquals(ENTRY_COUNT, jetInstance.getList(sinkName).size());
     }

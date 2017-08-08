@@ -16,70 +16,65 @@
 
 package com.hazelcast.jet.impl.operation;
 
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.JetImplDataSerializerHook;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CompletableFuture;
 
-import static com.hazelcast.jet.impl.util.Util.formatIds;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 
-public class ExecuteOperation extends AsyncExecutionOperation  {
+public class JoinJobOperation extends AsyncExecutionOperation implements IdentifiedDataSerializable {
 
-    private volatile CompletionStage<Void> executionFuture;
 
-    private long executionId;
+    private Data dag;
+    private JobConfig config;
+    private volatile CompletableFuture<Boolean> executionFuture;
 
-    public ExecuteOperation() {
+    public JoinJobOperation() {
     }
 
-    public ExecuteOperation(long jobId, long executionId) {
+    public JoinJobOperation(long jobId, Data dag, JobConfig config) {
         super(jobId);
-        this.executionId = executionId;
+        this.dag = dag;
+        this.config = config;
     }
 
     @Override
-    protected void doRun() throws Exception {
-        ILogger logger = getLogger();
+    protected void doRun() {
         JetService service = getService();
-
-        executionFuture = service.execute(getCallerAddress(), jobId, executionId, f -> f.handle((r, error) -> error)
-                .thenAccept(value -> {
-                    if (value != null) {
-                        logger.fine("Execution of " + formatIds(jobId, executionId)
-                                + " completed with failure", value);
-                    } else {
-                        logger.fine("Execution of " + formatIds(jobId, executionId) + " completed");
-                    }
-
-                    doSendResponse(value);
-                }));
+        executionFuture = service.startOrJoinJob(jobId, dag, config);
+        executionFuture.whenComplete((r, t) -> doSendResponse(peel(t)));
     }
 
     @Override
     public void cancel() {
         if (executionFuture != null) {
-            executionFuture.toCompletableFuture().cancel(true);
+            executionFuture.cancel(true);
         }
     }
 
     @Override
     public int getId() {
-        return JetImplDataSerializerHook.EXECUTE_OP;
+        return JetImplDataSerializerHook.JOIN_JOB_OP;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(executionId);
+        out.writeData(dag);
+        out.writeObject(config);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        executionId = in.readLong();
+        dag = in.readData();
+        config = in.readObject();
     }
 }

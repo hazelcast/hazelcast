@@ -50,6 +50,7 @@
                         </xs:all>
                     </xs:complexType>
                 </xs:element>
+                <xs:element name="job-metadata-backup-count" minOccurs="0" type="positive-int" />
             </xs:all>
         </xs:complexType>
     </xs:element>

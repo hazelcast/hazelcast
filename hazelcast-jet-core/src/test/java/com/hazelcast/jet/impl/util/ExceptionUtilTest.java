@@ -78,8 +78,8 @@ public class ExceptionUtilTest extends JetTestSupport {
         try {
             DAG dag = new DAG();
             dag.newVertex("source", ErrorGenerator::new).localParallelism(1);
-            client.newJob(dag).execute().get();
-        } catch (ExecutionException caught) {
+            client.newJob(dag).join();
+        } catch (Exception caught) {
             assertThat(caught.toString(), containsString(ErrorGenerator.newException().toString()));
             TestUtil.assertExceptionInCauses(ErrorGenerator.newException(), caught);
         } finally {
@@ -96,12 +96,12 @@ public class ExceptionUtilTest extends JetTestSupport {
         try {
             DAG dag = new DAG();
             dag.newVertex("source", ErrorGenerator::new).localParallelism(1);
-            client.newJob(dag).execute().get();
-        } catch (ExecutionException caught) {
+            client.newJob(dag).join();
+        } catch (Exception caught) {
             assertThat(caught.toString(), containsString(ErrorGenerator.newException().toString()));
             TestUtil.assertExceptionInCauses(ErrorGenerator.newException(), caught);
         } finally {
-            factory.shutdownAll();
+            factory.terminateAll();
         }
     }
 

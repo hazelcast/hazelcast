@@ -56,12 +56,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurrentConveyor;
 import static com.hazelcast.jet.impl.execution.OutboundCollector.compositeCollector;
 import static com.hazelcast.jet.impl.util.Util.getJetInstance;
-import static com.hazelcast.jet.impl.util.Util.getRemoteMembers;
+import static com.hazelcast.jet.impl.util.Util.idToString;
+import static com.hazelcast.jet.impl.util.Util.memoize;
 import static com.hazelcast.jet.impl.util.Util.readList;
 import static com.hazelcast.jet.impl.util.Util.writeList;
 import static java.util.stream.Collectors.toList;
@@ -76,6 +80,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private final Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap = new HashMap<>();
 
     private Address[] partitionOwners;
+
     private List<VertexDef> vertices = new ArrayList<>();
 
     private final Map<String, ConcurrentConveyor<Object>[]> localConveyorMap = new HashMap<>();
@@ -86,6 +91,13 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     private NodeEngine nodeEngine;
     private long executionId;
+
+    // list of unique remote members
+    private final Supplier<Set<Address>> remoteMembers = memoize(() ->
+            Arrays.stream(partitionOwners)
+                  .filter(a -> !a.equals(nodeEngine.getThisAddress()))
+                  .collect(Collectors.toSet())
+    );
 
     ExecutionPlan() {
     }
@@ -110,7 +122,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 ProcCtx context =
                         new ProcCtx(instance, logger, srcVertex.name(), processorIdx + srcVertex.getProcIdxOffset());
 
-                 String probePrefix = String.format("jet.job.%d.%s#%d", executionId, srcVertex.name(), processorIdx);
+                 String probePrefix = String.format("jet.job.%s.%s#%d", idToString(executionId), srcVertex.name(),
+                         processorIdx);
                  ((NodeEngineImpl) nodeEngine).getMetricsRegistry().scanAndRegister(p, probePrefix);
 
                 // createOutboundEdgeStreams() populates localConveyorMap and edgeSenderConveyorMap.
@@ -241,9 +254,9 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         assert edge.isDistributed() : "Edge is not distributed";
         return edgeSenderConveyorMap.computeIfAbsent(edge.edgeId(), x -> {
             final Map<Address, ConcurrentConveyor<Object>> addrToConveyor = new HashMap<>();
-            for (Address destAddr : getRemoteMembers(nodeEngine)) {
-                final ConcurrentConveyor<Object> conveyor =
-                        createConveyorArray(1, edge.sourceVertex().parallelism(), edge.getConfig().getQueueSize())[0];
+            for (Address destAddr : remoteMembers.get()) {
+                final ConcurrentConveyor<Object> conveyor = createConveyorArray(
+                        1, edge.sourceVertex().parallelism(), edge.getConfig().getQueueSize())[0];
                 final ConcurrentInboundEdgeStream inboundEdgeStream =
                         new ConcurrentInboundEdgeStream(conveyor, edge.destOrdinal(), edge.priority());
                 final int destVertexId = edge.destVertex().vertexId();

@@ -21,12 +21,14 @@ import com.hazelcast.spi.impl.SimpleExecutionCallback;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.jet.impl.util.Util.idToString;
+
 public class ClientInvocationRegistry {
     private final ConcurrentHashMap<Long, ICompletableFuture<Object>> clientInvocations = new ConcurrentHashMap<>();
 
     public void register(long executionId, ICompletableFuture<Object> invocation) {
         if (clientInvocations.putIfAbsent(executionId, invocation) != null) {
-            throw new IllegalStateException("Execution with id " + executionId + " is already registered.");
+            throw new IllegalStateException("Execution with id " + idToString(executionId) + " is already registered.");
         }
         invocation.andThen(new SimpleExecutionCallback<Object>() {
             @Override

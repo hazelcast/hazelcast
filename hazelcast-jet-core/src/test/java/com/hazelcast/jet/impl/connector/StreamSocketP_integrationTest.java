@@ -20,6 +20,7 @@ import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.processor.Sources;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -34,7 +35,6 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.jet.Edge.between;
@@ -90,12 +90,12 @@ public class StreamSocketP_integrationTest extends JetTestSupport {
             dag.edge(between(producer, consumer));
 
             // When
-            Future<Void> job = instance.newJob(dag).execute();
+            Job job = instance.newJob(dag);
             IList<Object> list = instance.getList("consumer");
 
             assertTrueEventually(() -> assertEquals(2, list.size()));
             latch.countDown();
-            job.get();
+            job.join();
             assertEquals(6, list.size());
         }
     }
@@ -127,9 +127,9 @@ public class StreamSocketP_integrationTest extends JetTestSupport {
                     .vertex(sink)
                     .edge(between(producer, sink));
 
-            Future<Void> job = instance.newJob(dag).execute();
+            Job job = instance.newJob(dag);
             acceptationLatch.await();
-            job.cancel(true);
+            job.cancel();
 
             assertTrueEventually(() -> {
                 assertTrue("Socket not closed", accept.get().isClosed());

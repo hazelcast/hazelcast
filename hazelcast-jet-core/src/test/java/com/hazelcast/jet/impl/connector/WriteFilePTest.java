@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Vertex;
@@ -43,19 +44,21 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.processor.Sources.readList;
-import static com.hazelcast.jet.processor.Sinks.writeFile;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static com.hazelcast.jet.processor.Sinks.writeFile;
+import static com.hazelcast.jet.processor.Sources.readList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class WriteFilePTest extends JetTestSupport {
+
+    // only used in when_slowSource_then_fileFlushedAfterEachItem
+    private static final Semaphore semaphore = new Semaphore(0);
 
     private JetInstance instance;
     private Path directory;
@@ -83,7 +86,7 @@ public class WriteFilePTest extends JetTestSupport {
         addItemsToList(0, 10);
 
         // When
-        instance.newJob(dag).execute().get();
+        instance.newJob(dag).join();
 
         // Then
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory)) {
@@ -102,7 +105,7 @@ public class WriteFilePTest extends JetTestSupport {
         createJetMember();
 
         // When
-        instance.newJob(dag).execute().get();
+        instance.newJob(dag).join();
 
         // Then
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory)) {
@@ -119,7 +122,7 @@ public class WriteFilePTest extends JetTestSupport {
         addItemsToList(0, 10);
 
         // When
-        instance.newJob(dag).execute().get();
+        instance.newJob(dag).join();
 
         // Then
         checkFileContents(StandardCharsets.UTF_8, 10);
@@ -132,7 +135,7 @@ public class WriteFilePTest extends JetTestSupport {
         addItemsToList(0, 100_000);
 
         // When
-        instance.newJob(dag).execute().get();
+        instance.newJob(dag).join();
 
         // Then
         checkFileContents(StandardCharsets.UTF_8, 100_000);
@@ -149,7 +152,7 @@ public class WriteFilePTest extends JetTestSupport {
         }
 
         // When
-        instance.newJob(dag).execute().get();
+        instance.newJob(dag).join();
 
         // Then
         checkFileContents(StandardCharsets.UTF_8, 10);
@@ -166,7 +169,7 @@ public class WriteFilePTest extends JetTestSupport {
         }
 
         // When
-        instance.newJob(dag).execute().get();
+        instance.newJob(dag).join();
 
         // Then
         checkFileContents(StandardCharsets.UTF_8, 10);
@@ -175,7 +178,6 @@ public class WriteFilePTest extends JetTestSupport {
     @Test
     public void when_slowSource_then_fileFlushedAfterEachItem() throws Exception {
         // Given
-        Semaphore semaphore = new Semaphore(0);
         int numItems = 10;
 
         DAG dag = new DAG();
@@ -186,7 +188,7 @@ public class WriteFilePTest extends JetTestSupport {
                 .localParallelism(1);
         dag.edge(between(source, sink));
 
-        Future<Void> jobFuture = instance.newJob(dag).execute();
+        Job job = instance.newJob(dag);
         // wait, until the file is created
         assertTrueEventually(() -> assertTrue(Files.exists(file)));
         for (int i = 0; i < numItems; i++) {
@@ -198,7 +200,7 @@ public class WriteFilePTest extends JetTestSupport {
         }
 
         // wait for the job to finish
-        jobFuture.get();
+        job.join();
     }
 
     @Test
@@ -210,7 +212,7 @@ public class WriteFilePTest extends JetTestSupport {
         list.add(text);
 
         // When
-        instance.newJob(dag).execute().get();
+        instance.newJob(dag).join();
 
         // Then
         assertEquals(text + System.getProperty("line.separator"), new String(Files.readAllBytes(file), charset));
@@ -231,7 +233,7 @@ public class WriteFilePTest extends JetTestSupport {
         addItemsToList(0, 10);
 
         // When
-        instance.newJob(dag).execute().get();
+        instance.newJob(dag).join();
 
         // Then
         assertTrue(Files.exists(directory.resolve("subdir1")));
@@ -245,7 +247,7 @@ public class WriteFilePTest extends JetTestSupport {
         addItemsToList(1, 11);
 
         // When
-        instance.newJob(dag).execute().get();
+        instance.newJob(dag).join();
 
         // Then
         checkFileContents(StandardCharsets.UTF_8, 10);

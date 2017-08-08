@@ -63,9 +63,8 @@ public class PartitionAlignmentTest {
 
     @After
     public void after() {
-        factory.shutdownAll();
+        factory.terminateAll();
     }
-
 
     @Test
     public void when_localAndDistributedEdges_thenPartitionsAligned() throws Throwable {

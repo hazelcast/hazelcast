@@ -62,7 +62,6 @@ import static com.hazelcast.jet.processor.Sinks.writeMap;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -112,7 +111,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                         addr.equals(addrs.get(0)) ? MockInputP::new : noop()));
         Vertex sink = dag.newVertex("sink", writeMap("words"));
         dag.edge(between(source.localParallelism(1), sink.localParallelism(1)));
-        instance.newJob(dag).execute().get();
+        instance.newJob(dag).join();
         logger.info("Input generated.");
     }
 
@@ -176,7 +175,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                    .partitioned(entryKey()))
            .edge(between(aggregateStage2, sink.localParallelism(1)));
 
-        benchmark("jet", () -> uncheckCall(instance.newJob(dag).execute()::get));
+        benchmark("jet", () -> instance.newJob(dag).join());
         assertCounts(instance.getMap("counts"));
     }
 
@@ -195,7 +194,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
            .edge(between(combineLocal, combineGlobal).distributed().allToOne())
            .edge(between(combineGlobal, sink));
 
-        benchmark("jet", () -> uncheckCall(instance.newJob(dag).execute()::get));
+        benchmark("jet", () -> instance.newJob(dag).join());
 
         assertCounts((Map<String, Long>) instance.getMap("counts").get("result"));
     }

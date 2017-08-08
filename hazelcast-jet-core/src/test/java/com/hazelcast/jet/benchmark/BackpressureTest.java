@@ -44,13 +44,12 @@ import java.util.Map.Entry;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.processor.Processors.noop;
-import static com.hazelcast.jet.processor.Sinks.writeMap;
 import static com.hazelcast.jet.Traversers.lazy;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
+import static com.hazelcast.jet.processor.Processors.noop;
+import static com.hazelcast.jet.processor.Sinks.writeMap;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -83,8 +82,8 @@ public class BackpressureTest extends JetTestSupport {
     }
 
     @After
-    public void afterClass() {
-        factory.shutdownAll();
+    public void tearDown() {
+        factory.terminateAll();
     }
 
     @Test
@@ -110,7 +109,7 @@ public class BackpressureTest extends JetTestSupport {
                 .distributed().partitioned(wholeItem(), (x, y) -> ptionOwnedByMember2))
            .edge(between(hiccup, sink));
 
-        uncheckCall(jet1.newJob(dag).execute()::get);
+        jet1.newJob(dag).join();
         assertCounts(jet1.getMap("counts"));
     }
 

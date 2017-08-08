@@ -106,6 +106,15 @@ public class JetTestSupport extends HazelcastTestSupport {
         }, timeoutSeconds);
     }
 
+    public static void assertTrueAllTheTime(UncheckedRunnable runnable, long durationSeconds) {
+        HazelcastTestSupport.assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                runnable.run();
+            }
+        }, durationSeconds);
+    }
+
     public Address nextAddress() {
         return instanceFactory.nextAddress();
     }

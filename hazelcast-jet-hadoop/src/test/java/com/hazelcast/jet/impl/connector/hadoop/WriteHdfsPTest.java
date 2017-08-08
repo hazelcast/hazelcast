@@ -107,7 +107,7 @@ public class WriteHdfsPTest extends JetTestSupport {
 
         dag.edge(between(producer, consumer));
 
-        Future<Void> future = instance.newJob(dag).execute();
+        Future<Void> future = instance.newJob(dag).getFuture();
         assertCompletesEventually(future);
 
 
@@ -122,7 +122,7 @@ public class WriteHdfsPTest extends JetTestSupport {
                       .localParallelism(1);
 
         dag.edge(between(producer, consumer));
-        future = instance.newJob(dag).execute();
+        future = instance.newJob(dag).getFuture();
         assertCompletesEventually(future);
 
 

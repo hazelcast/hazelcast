@@ -97,7 +97,7 @@ public class Processors_globalAggregationIntegrationTest extends JetTestSupport 
                     .edge(between(combine, sink).isolated());
         }
 
-        instance.newJob(dag).execute().get();
+        instance.newJob(dag).join();
 
         IList<Long> sinkList = instance.getList("sink");
 

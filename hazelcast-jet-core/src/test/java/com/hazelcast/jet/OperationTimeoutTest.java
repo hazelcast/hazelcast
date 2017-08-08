@@ -51,8 +51,8 @@ public class OperationTimeoutTest extends JetTestSupport {
     }
 
     @After
-    public void shutdown() {
-        factory.shutdownAll();
+    public void tearDown() {
+        factory.terminateAll();
     }
 
     @Test

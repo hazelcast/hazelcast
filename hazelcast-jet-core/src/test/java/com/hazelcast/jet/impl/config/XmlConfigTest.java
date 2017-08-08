@@ -35,10 +35,10 @@ import java.io.InputStream;
 import java.util.Properties;
 
 import static com.hazelcast.jet.config.InstanceConfig.DEFAULT_FLOW_CONTROL_PERIOD_MS;
-import static junit.framework.Assert.assertEquals;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 @Category(QuickTest.class)
@@ -61,7 +61,6 @@ public class XmlConfigTest {
         assertEquals(DEFAULT_FLOW_CONTROL_PERIOD_MS, jetConfig.getInstanceConfig().getFlowControlPeriodMs());
         assertDefaultMemberConfig(jetConfig.getHazelcastConfig());
     }
-
 
     @Test
     public void when_filePathSpecified_usesSpecifiedFile() throws IOException {
@@ -178,6 +177,19 @@ public class XmlConfigTest {
         assertEquals("outboxCapacity", 998, edgeConfig.getOutboxCapacity());
         assertEquals("packetSizeLimit", 997, edgeConfig.getPacketSizeLimit());
         assertEquals("receiveWindowMultiplier", 996, edgeConfig.getReceiveWindowMultiplier());
+    }
+
+    @Test
+    public void when_jobMetadataBackupCount_usesSpecified() {
+        // Given
+        Properties properties = new Properties();
+        properties.put(XmlJetConfigLocator.HAZELCAST_JET_CONFIG_PROPERTY, "classpath:" + TEST_XML_1);
+
+        // When
+        JetConfig jetConfig = XmlJetConfigBuilder.getConfig(properties);
+
+        // Then
+        assertEquals("jobMetadataBackupCount", 4, jetConfig.getJobMetadataBackupCount());
     }
 
     private static void assertConfig(JetConfig jetConfig) {

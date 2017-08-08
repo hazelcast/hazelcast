@@ -16,45 +16,87 @@
 
 package com.hazelcast.jet.impl.operation;
 
+import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
+import com.hazelcast.jet.impl.execution.init.JetImplDataSerializerHook;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isJobRestartRequired;
+import static com.hazelcast.jet.impl.util.Util.formatIds;
+import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
-class InitOperation extends Operation {
+public class InitOperation extends Operation implements IdentifiedDataSerializable {
 
+    private long jobId;
     private long executionId;
+    private int coordinatorMemberListVersion;
+    private Set<MemberInfo> participants;
     private Supplier<ExecutionPlan> planSupplier;
 
-    InitOperation(long executionId, ExecutionPlan plan) {
+    public InitOperation() {
+    }
+
+    public InitOperation(long jobId, long executionId, int coordinatorMemberListVersion, Set<MemberInfo> participants,
+                         ExecutionPlan plan) {
+        this.jobId = jobId;
+        this.executionId = executionId;
+        this.coordinatorMemberListVersion = coordinatorMemberListVersion;
+        this.participants = participants;
         this.executionId = executionId;
         this.planSupplier = () -> plan;
     }
 
-    private InitOperation() {
-        // for deserialization
+    @Override
+    public void run() throws Exception {
+        ILogger logger = getLogger();
+        JetService service = getService();
+
+        Address caller = getCallerAddress();
+        logger.fine("Initializing execution plan for " + formatIds(jobId, executionId) + " from " + caller);
+        ExecutionPlan plan = planSupplier.get();
+        service.initExecution(jobId, executionId, caller, coordinatorMemberListVersion, participants, plan);
     }
 
     @Override
-    public void run() throws Exception {
-        getLogger().info("Initializing execution plan for job " + executionId + " from " + getCallerAddress() + ".");
-        JetService service = getService();
-        service.initExecution(executionId, planSupplier.get());
-        getLogger().fine("Execution plan for job " + executionId + " initialized.");
+    public ExceptionAction onInvocationException(Throwable throwable) {
+        return isJobRestartRequired(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return JetImplDataSerializerHook.FACTORY_ID;
+    }
+
+    @Override
+    public int getId() {
+        return JetImplDataSerializerHook.INIT_OP;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
+        out.writeLong(jobId);
         out.writeLong(executionId);
+        out.writeInt(coordinatorMemberListVersion);
+        out.writeInt(participants.size());
+        for (MemberInfo participant : participants) {
+            participant.writeData(out);
+        }
         Data planBlob = getNodeEngine().getSerializationService().toData(planSupplier.get());
         out.writeData(planBlob);
     }
@@ -62,7 +104,17 @@ class InitOperation extends Operation {
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+
+        jobId = in.readLong();
         executionId = in.readLong();
+        coordinatorMemberListVersion = in.readInt();
+        int count = in.readInt();
+        participants = new HashSet<>();
+        for (int i = 0; i < count; i++) {
+            MemberInfo participant = new MemberInfo();
+            participant.readData(in);
+            participants.add(participant);
+        }
 
         final Data planBlob = in.readData();
         planSupplier = () -> {

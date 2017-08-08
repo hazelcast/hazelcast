@@ -17,25 +17,25 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.client.impl.ClientEngineImpl;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.Member;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.JetBuildInfo;
-import com.hazelcast.jet.DAG;
+import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JobStatus;
 import com.hazelcast.jet.TopologyChangedException;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.impl.deployment.JetClassLoader;
-import com.hazelcast.jet.impl.execution.ExecutionContext;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.impl.coordination.JobCoordinationService;
+import com.hazelcast.jet.impl.coordination.JobRepository;
 import com.hazelcast.jet.impl.execution.ExecutionService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
-import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
-import com.hazelcast.jet.impl.operation.AsyncExecutionOperation;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.CanCancelOperations;
 import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.LiveOperations;
@@ -49,37 +49,30 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
 
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static java.util.Collections.emptyMap;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Consumer;
 
 public class JetService
         implements ManagedService, ConfigurableService<JetConfig>, PacketHandler, LiveOperationsTracker,
         CanCancelOperations, MembershipAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
-    public static final String METADATA_MAP_PREFIX = "__jet_job_metadata_";
 
+    private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private final ClientInvocationRegistry clientInvocationRegistry;
     private final LiveOperationRegistry liveOperationRegistry;
 
-    // The type of these variables is CHM and not ConcurrentMap because we
-    // rely on specific semantics of computeIfAbsent. ConcurrentMap.computeIfAbsent
-    // does not guarantee at most one computation per key.
-    private final ConcurrentHashMap<Long, ExecutionContext> executionContexts = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Long, JetClassLoader> classLoaders = new ConcurrentHashMap<>();
-
-    private JetConfig config = new JetConfig();
-    private NodeEngineImpl nodeEngine;
+    private JetConfig config;
     private JetInstance jetInstance;
     private Networking networking;
     private ExecutionService executionService;
-
+    private JobRepository jobRepository;
+    private JobCoordinationService jobCoordinationService;
+    private JobExecutionService jobExecutionService;
 
     public JetService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
@@ -98,17 +91,28 @@ public class JetService
 
     @Override
     public void init(NodeEngine engine, Properties properties) {
+        if (config == null) {
+            throw new IllegalStateException("JetConfig is not initialized");
+        }
+
         jetInstance = new JetInstanceImpl((HazelcastInstanceImpl) engine.getHazelcastInstance(), config);
-        networking = new Networking(engine, executionContexts, config.getInstanceConfig().getFlowControlPeriodMs());
         executionService = new ExecutionService(nodeEngine.getHazelcastInstance(),
                 config.getInstanceConfig().getCooperativeThreadCount());
+
+        jobRepository = new JobRepository(jetInstance);
+
+        jobExecutionService = new JobExecutionService(nodeEngine, executionService);
+        jobCoordinationService = new JobCoordinationService(nodeEngine, config, jobRepository, jobExecutionService);
+        networking = new Networking(engine, jobExecutionService, config.getInstanceConfig().getFlowControlPeriodMs());
 
         ClientEngineImpl clientEngine = engine.getService(ClientEngineImpl.SERVICE_NAME);
         ExceptionUtil.registerJetExceptions(clientEngine.getClientExceptionFactory());
 
+        jobCoordinationService.init();
+
         JetBuildInfo jetBuildInfo = BuildInfoProvider.getBuildInfo().getJetBuildInfo();
         logger.info("Starting Jet " + jetBuildInfo.getVersion() + " (" + jetBuildInfo.getBuild() + " - " +
-                jetBuildInfo.getRevision() + ") ");
+                jetBuildInfo.getRevision() + ")");
         logger.info("Setting number of cooperative threads and default parallelism to "
                 + config.getInstanceConfig().getCooperativeThreadCount());
 
@@ -123,48 +127,35 @@ public class JetService
 
     @Override
     public void shutdown(boolean terminate) {
-        networking.destroy();
+        jobExecutionService.reset("shutdown", HazelcastInstanceNotActiveException::new);
+        networking.shutdown();
         executionService.shutdown();
-        executionContexts.forEach((jobId, exeCtx) -> exeCtx.getJobFuture().toCompletableFuture().cancel(true));
     }
 
     @Override
     public void reset() {
+        jobCoordinationService.reset();
+        jobExecutionService.reset("reset", TopologyChangedException::new);
     }
 
-    // End ManagedService
+    public void initExecution(long jobId, long executionId, Address coordinator, int coordinatorMemberListVersion,
+                              Set<MemberInfo> participants, ExecutionPlan plan) {
+        jobExecutionService.initExecution(
+                jobId, executionId, coordinator, coordinatorMemberListVersion, participants, plan
+        );
+    }
 
-
-    public void initExecution(long executionId, ExecutionPlan plan) {
-        final ExecutionContext[] created = {null};
-        try {
-            executionContexts.compute(executionId, (k, v) -> {
-                if (v != null) {
-                    throw new IllegalStateException("Execution context " + executionId + " already exists");
-                }
-                return (created[0] = new ExecutionContext(executionId, nodeEngine, executionService)).initialize(plan);
-            });
-        } catch (Throwable t) {
-            // We want the context be put to the map even in case the initialization fails.
-            // We cannot simply move the initialize() call out of compute(), because other thread could
-            // see it before initialization is done.
-            if (created[0] != null) {
-                executionContexts.put(executionId, created[0]);
-            }
-            throw t;
-        }
+    public CompletionStage<Void> execute(Address coordinator, long jobId, long executionId,
+                                         Consumer<CompletionStage<Void>> doneCallback) {
+        return jobExecutionService.execute(coordinator, jobId, executionId, doneCallback);
     }
 
     public void completeExecution(long executionId, Throwable error) {
-        ExecutionContext context = executionContexts.remove(executionId);
-        if (context != null) {
-            context.complete(error);
-        }
-        JetClassLoader removedCL = classLoaders.remove(executionId);
-        // class loader is lazily initialized, job might complete before it happens
-        if (removedCL != null) {
-            removedCL.getJobMetadataMap().destroy();
-        }
+        jobExecutionService.completeExecution(executionId, error);
+    }
+
+    public JobStatus getJobStatus(long jobId) {
+        return jobCoordinationService.getJobStatus(jobId);
     }
 
     public JetInstance getJetInstance() {
@@ -179,24 +170,21 @@ public class JetService
         return clientInvocationRegistry;
     }
 
-    public ClassLoader getClassLoader(long executionId) {
-        IMap<String, byte[]> jobMetadataMap = getJetInstance().getMap(METADATA_MAP_PREFIX + executionId);
-        return classLoaders.computeIfAbsent(executionId, k -> AccessController.doPrivileged(
-                (PrivilegedAction<JetClassLoader>) () -> new JetClassLoader(jobMetadataMap)
-        ));
+    public JobRepository getJobRepository() {
+        return jobRepository;
     }
 
-    public ExecutionContext getExecutionContext(long executionId) {
-        return executionContexts.get(executionId);
+    public JobCoordinationService getJobCoordinationService() {
+        return jobCoordinationService;
     }
 
-    public Map<Member, ExecutionPlan> createExecutionPlans(DAG dag) {
-        return ExecutionPlanBuilder.createExecutionPlans(nodeEngine, dag,
-                config.getInstanceConfig().getCooperativeThreadCount());
+    public JobExecutionService getJobExecutionService() {
+        return jobExecutionService;
     }
 
-
-    // LiveOperationsTracker
+    public ClassLoader getClassLoader(long jobId) {
+        return jobCoordinationService.getClassLoader(jobId);
+    }
 
     @Override
     public void populate(LiveOperations liveOperations) {
@@ -208,9 +196,6 @@ public class JetService
         return liveOperationRegistry.cancel(caller, callId);
     }
 
-
-    // PacketHandler
-
     @Override
     public void handle(Packet packet) throws IOException {
         networking.handle(packet);
@@ -219,17 +204,7 @@ public class JetService
     @Override
     public void memberRemoved(MembershipServiceEvent event) {
         Address address = event.getMember().getAddress();
-
-        // complete the processors, whose caller is dead, with TopologyChangedException
-        for (AsyncExecutionOperation op :
-                liveOperationRegistry.liveOperations.getOrDefault(address, emptyMap()).values()) {
-            ExecutionContext ec = executionContexts.get(op.getExecutionId());
-            if (ec == null || ec.getJobFuture() == null) {
-                continue;
-            }
-            ec.getJobFuture().whenComplete((aVoid, throwable) ->
-                    completeExecution(op.getExecutionId(), new TopologyChangedException("Topology has been changed")));
-        }
+        jobExecutionService.onMemberLeave(address);
     }
 
     @Override
@@ -239,4 +214,9 @@ public class JetService
     @Override
     public void memberAttributeChanged(MemberAttributeServiceEvent event) {
     }
+
+    public CompletableFuture<Boolean> startOrJoinJob(long jobId, Data dag, JobConfig config) {
+        return jobCoordinationService.startOrJoinJob(jobId, dag, config);
+    }
+
 }

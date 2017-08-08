@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ResourceConfig;
-import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.nio.IOUtil;
 
 import java.io.BufferedInputStream;
@@ -35,34 +34,27 @@ import java.util.zip.DeflaterOutputStream;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
-class ResourceUploader {
+final class ResourceUploader {
 
-    private final IMap<String, byte[]> targetMap;
-    private final Map<String, byte[]> tmpMap = new HashMap<>();
+    private ResourceUploader() { }
 
-    ResourceUploader(IMap<String, byte[]> targetMap) {
-        this.targetMap = targetMap;
-    }
-
-    void uploadMetadata(JobConfig jobConfig) {
-        if (!targetMap.isEmpty()) {
-            throw new IllegalStateException("Map not empty: " + targetMap.getName());
-        }
+    static void uploadMetadata(IMap<String, byte[]> resourcesMap, long jobId, JobConfig jobConfig) {
+        Map<String, byte[]> tmpMap = new HashMap<>();
 
         try {
             for (ResourceConfig rc : jobConfig.getResourceConfigs()) {
                 if (rc.isArchive()) {
-                    loadJar(rc.getUrl());
+                    loadJar(tmpMap, jobId, rc.getUrl());
                 } else {
-                    readStreamAndPutCompressedToMap(rc.getUrl().openStream(), rc.getId());
+                    readStreamAndPutCompressedToMap(tmpMap, jobId, rc.getUrl().openStream(), rc.getId());
                 }
             }
 
             // now upload it all
-            targetMap.putAll(tmpMap);
+            resourcesMap.putAll(tmpMap);
         } catch (Throwable e) {
             try {
-                targetMap.destroy();
+                resourcesMap.destroy();
             } catch (Throwable ignored) {
                 // ignore failure in cleanup in exception handler
             }
@@ -73,24 +65,25 @@ class ResourceUploader {
 
     /**
      * Unzips the Jar archive and processes individual entries using
-     * {@link #readStreamAndPutCompressedToMap(InputStream, String)}.
+     * {@link #readStreamAndPutCompressedToMap(Map, long, InputStream, String)}.
      */
-    private void loadJar(URL url) throws IOException {
+    private static void loadJar(Map<String, byte[]> map, long jobId, URL url) throws IOException {
         try (JarInputStream jis = new JarInputStream(new BufferedInputStream(url.openStream()))) {
             JarEntry jarEntry;
             while ((jarEntry = jis.getNextJarEntry()) != null) {
                 if (jarEntry.isDirectory()) {
                     continue;
                 }
-                readStreamAndPutCompressedToMap(jis, jarEntry.getName());
+                readStreamAndPutCompressedToMap(map, jobId, jis, jarEntry.getName());
             }
         }
     }
 
-    private void readStreamAndPutCompressedToMap(InputStream in, String resourceId) throws IOException {
-        String key = JetClassLoader.METADATA_RESOURCES_PREFIX + resourceId;
+    private static void readStreamAndPutCompressedToMap(Map<String, byte[]> map, long jobId,
+                                                        InputStream in, String resourceId) throws IOException {
+        String key = jobId + '/' + resourceId;
         // ignore duplicates: the first resource in first jar takes precedence
-        if (tmpMap.containsKey(key)) {
+        if (map.containsKey(key)) {
             return;
         }
 
@@ -98,6 +91,6 @@ class ResourceUploader {
         try (DeflaterOutputStream compressor = new DeflaterOutputStream(baos)) {
             IOUtil.drainTo(in, compressor);
         }
-        tmpMap.put(key, baos.toByteArray());
+        map.put(key, baos.toByteArray());
     }
 }

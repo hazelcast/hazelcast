@@ -16,26 +16,24 @@
 
 package com.hazelcast.jet.impl.deployment;
 
-import com.hazelcast.core.IMap;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.nio.IOUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Map;
 import java.util.zip.InflaterInputStream;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
 public class JetClassLoader extends ClassLoader {
 
-    public static final String METADATA_RESOURCES_PREFIX = "res:";
+    private final Map<String, byte[]> resources;
 
-    private final IMap<String, byte[]> jobMetadataMap;
-
-    public JetClassLoader(IMap<String, byte[]> jobMetadataMap) {
+    public JetClassLoader(Map<String, byte[]> resources) {
         super(JetClassLoader.class.getClassLoader());
-        this.jobMetadataMap = jobMetadataMap;
+        this.resources = resources;
     }
 
     @Override
@@ -58,7 +56,7 @@ public class JetClassLoader extends ClassLoader {
             return null;
         }
         // we distinguish between the case "resource found, but not accessible by URL" and "resource not found"
-        if (jobMetadataMap.containsKey(METADATA_RESOURCES_PREFIX + name)) {
+        if (resources.containsKey(name)) {
             throw new IllegalArgumentException("Resource not accessible by URL: " + name);
         }
         return null;
@@ -74,15 +72,11 @@ public class JetClassLoader extends ClassLoader {
 
     @SuppressWarnings("unchecked")
     private InputStream resourceStream(String name) {
-        byte[] classData = jobMetadataMap.get(METADATA_RESOURCES_PREFIX + name);
+        byte[] classData = resources.get(name);
         if (classData == null) {
             return null;
         }
         return new InflaterInputStream(new ByteArrayInputStream(classData));
-    }
-
-    public IMap<String, byte[]> getJobMetadataMap() {
-        return jobMetadataMap;
     }
 
     private static boolean isEmpty(String className) {

@@ -68,7 +68,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
 
         dag.edge(between(source, sink));
 
-        Future<Void> jobFuture = instance.newJob(dag).execute();
+        Future<Void> jobFuture = instance.newJob(dag).getFuture();
         sleepAtLeastSeconds(3);
         range(0, messageCount).forEach(i -> {
             produce(topic1, i, Integer.toString(i));

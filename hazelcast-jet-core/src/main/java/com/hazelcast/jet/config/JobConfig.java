@@ -31,7 +31,23 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class JobConfig implements Serializable {
 
+    private boolean splitBrainProtectionEnabled;
     private final List<ResourceConfig> resourceConfigs = new ArrayList<>();
+
+    /**
+     * Returns true if split brain protection is enabled
+     */
+    public boolean isSplitBrainProtectionEnabled() {
+        return splitBrainProtectionEnabled;
+    }
+
+    /**
+     * Sets split brain protection configuration
+     */
+    public JobConfig setSplitBrainProtectionEnabled(boolean splitBrainProtectionEnabled) {
+        this.splitBrainProtectionEnabled = splitBrainProtectionEnabled;
+        return this;
+    }
 
     /**
      * Adds the supplied classes to the list of resources that will be
@@ -161,4 +177,5 @@ public class JobConfig implements Serializable {
         String urlFile = url.getPath();
         return urlFile.substring(urlFile.lastIndexOf('/') + 1, urlFile.length());
     }
+
 }

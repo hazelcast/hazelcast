@@ -21,6 +21,7 @@ import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.spi.NodeEngine;
@@ -30,18 +31,23 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
-import static com.hazelcast.jet.impl.util.Util.getRemoteMembers;
+import static com.hazelcast.jet.impl.util.Util.formatIds;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
-import static java.util.Collections.unmodifiableSet;
 
 public class ExecutionContext {
+
+    private final long jobId;
+    private final long executionId;
+    private final Address coordinator;
+    private final Set<Address> participants;
+    private final Object executionLock = new Object();
 
     // dest vertex id --> dest ordinal --> sender addr --> receiver tasklet
     private Map<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> receiverMap = emptyMap();
@@ -52,22 +58,23 @@ public class ExecutionContext {
     private List<ProcessorSupplier> procSuppliers = emptyList();
     private List<Processor> processors = emptyList();
 
-    private Set<Address> participatingMembers = emptySet();
     private List<Tasklet> tasklets;
     private CompletionStage<Void> jobFuture;
 
-    private final long executionId;
     private final NodeEngine nodeEngine;
     private final ExecutionService execService;
 
-    public ExecutionContext(long executionId, NodeEngine nodeEngine, ExecutionService execService) {
+    public ExecutionContext(NodeEngine nodeEngine, ExecutionService execService,
+                            long jobId, long executionId, Address coordinator, Set<Address> participants) {
+        this.jobId = jobId;
         this.executionId = executionId;
+        this.coordinator = coordinator;
+        this.participants = new HashSet<>(participants);
         this.execService = execService;
         this.nodeEngine = nodeEngine;
     }
 
     public ExecutionContext initialize(ExecutionPlan plan) {
-        this.participatingMembers = unmodifiableSet(new HashSet<>(getRemoteMembers(nodeEngine)));
         // Must be populated early, so all processor suppliers are
         // available to be completed in the case of init failure
         procSuppliers = unmodifiableList(plan.getProcessorSuppliers());
@@ -80,15 +87,38 @@ public class ExecutionContext {
     }
 
     public CompletionStage<Void> execute(Consumer<CompletionStage<Void>> doneCallback) {
-        JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
-        ClassLoader cl = service.getClassLoader(executionId);
-        jobFuture = execService.execute(tasklets, doneCallback, cl);
-        jobFuture.whenComplete((r, e) -> tasklets.clear());
-        return jobFuture;
+        synchronized (executionLock) {
+            if (jobFuture != null) {
+                jobFuture.whenComplete((r, e) -> doneCallback.accept(jobFuture));
+            } else {
+                JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
+                ClassLoader cl = service.getClassLoader(jobId);
+                jobFuture = execService.execute(tasklets, doneCallback, cl);
+                jobFuture.whenComplete((r, e) -> tasklets.clear());
+            }
+
+            return jobFuture;
+        }
     }
 
-    public CompletionStage<Void> getJobFuture() {
-        return jobFuture;
+    public CompletionStage<Void> cancel() {
+        synchronized (executionLock) {
+            if (jobFuture == null) {
+                jobFuture = new CompletableFuture<>();
+            }
+
+            jobFuture.toCompletableFuture().cancel(true);
+
+            return jobFuture;
+        }
+    }
+
+    public long getJobId() {
+        return jobId;
+    }
+
+    public long getExecutionId() {
+        return executionId;
     }
 
     public Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap() {
@@ -99,8 +129,21 @@ public class ExecutionContext {
         return receiverMap;
     }
 
+    public boolean verify(Address coordinator, long jobId) {
+        return this.coordinator.equals(coordinator) && this.jobId == jobId;
+    }
+
+    // should not leak exceptions thrown by processor suppliers
     public void complete(Throwable error) {
-        procSuppliers.forEach(s -> s.complete(error));
+        ILogger logger = nodeEngine.getLogger(getClass());
+        procSuppliers.forEach(s -> {
+            try {
+                s.complete(error);
+            } catch (Exception e) {
+                logger.severe(formatIds(jobId, executionId)
+                        + " encountered an exception in ProcessorSupplier.complete(), ignoring it", e);
+            }
+        });
         MetricsRegistry metricsRegistry = ((NodeEngineImpl) nodeEngine).getMetricsRegistry();
         processors.forEach(metricsRegistry::deregister);
     }
@@ -113,6 +156,15 @@ public class ExecutionContext {
     }
 
     public boolean isParticipating(Address member) {
-        return participatingMembers != null && participatingMembers.contains(member);
+        return participants.contains(member);
     }
+
+    public Address getCoordinator() {
+        return coordinator;
+    }
+
+    public boolean isCoordinatorOrParticipating(Address member) {
+        return coordinator.equals(member) || isParticipating(member);
+    }
+
 }

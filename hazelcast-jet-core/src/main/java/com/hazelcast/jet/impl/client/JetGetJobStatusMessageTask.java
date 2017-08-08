@@ -17,37 +17,40 @@
 package com.hazelcast.jet.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.JetCancelJobCodec;
-import com.hazelcast.client.impl.protocol.codec.JetCancelJobCodec.RequestParameters;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
 import com.hazelcast.instance.Node;
+import com.hazelcast.jet.impl.operation.GetJobStatusOperation;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.serialization.SerializationService;
 
-public class JetCancelJobMessageTask extends AbstractJetMessageTask<RequestParameters> {
-    protected JetCancelJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
-        super(clientMessage, node, connection, JetCancelJobCodec::decodeRequest,
-                o -> JetCancelJobCodec.encodeResponse());
-    }
+public class JetGetJobStatusMessageTask extends AbstractJetMessageTask<JetGetJobStatusCodec.RequestParameters> {
 
-    @Override
-    protected void processMessage() {
-        getJetService().getClientInvocationRegistry().cancel(parameters.jobId);
-        sendResponse(null);
+    protected JetGetJobStatusMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+        super(clientMessage, node, connection, JetGetJobStatusCodec::decodeRequest,
+                o -> JetGetJobStatusCodec.encodeResponse((Data) o));
     }
 
     @Override
     protected Operation prepareOperation() {
-        return null;
+        return new GetJobStatusOperation(parameters.jobId);
     }
 
+    @Override
+    public void onResponse(Object response) {
+        SerializationService serializationService = nodeEngine.getSerializationService();
+        sendResponse(serializationService.toData(response));
+    }
 
     @Override
     public String getMethodName() {
-        return "execute";
+        return "getStatus";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{};
+        return new Object[0];
     }
+
 }

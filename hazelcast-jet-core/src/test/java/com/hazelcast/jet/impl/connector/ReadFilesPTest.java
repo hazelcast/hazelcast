@@ -68,7 +68,7 @@ public class ReadFilesPTest extends JetTestSupport {
         File file2 = new File(directory, randomName());
         appendToFile(file2, "hello2", "world2");
 
-        instance.newJob(dag).execute().get();
+        instance.newJob(dag).join();
 
         assertEquals(4, list.size());
 
@@ -83,7 +83,7 @@ public class ReadFilesPTest extends JetTestSupport {
         final int listLength = 10000;
         appendToFile(file1, IntStream.range(0, listLength).mapToObj(String::valueOf).toArray(String[]::new));
 
-        instance.newJob(dag).execute().get();
+        instance.newJob(dag).join();
 
         assertEquals(listLength, list.size());
     }
@@ -97,7 +97,7 @@ public class ReadFilesPTest extends JetTestSupport {
         File file2 = new File(directory, "file2.txt");
         appendToFile(file2, "hello2", "world2");
 
-        instance.newJob(dag).execute().get();
+        instance.newJob(dag).join();
 
         assertEquals(Arrays.asList("hello2", "world2"), new ArrayList<>(list));
 
@@ -111,7 +111,7 @@ public class ReadFilesPTest extends JetTestSupport {
         File file1 = new File(directory, randomName());
         assertTrue(file1.mkdir());
 
-        instance.newJob(dag).execute().get();
+        instance.newJob(dag).join();
 
         assertEquals(0, list.size());
 

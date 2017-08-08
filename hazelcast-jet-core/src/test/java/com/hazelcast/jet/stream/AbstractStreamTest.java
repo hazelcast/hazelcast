@@ -85,8 +85,8 @@ public abstract class AbstractStreamTest extends JetTestSupport {
     }
 
     @AfterClass
-    public static void shutdown() {
-        factory.shutdownAll();
+    public static void tearDown() {
+        factory.terminateAll();
         factory = null;
         instances = null;
         instance = null;

@@ -17,31 +17,25 @@
 package com.hazelcast.jet.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.JetExecuteJobCodec;
-import com.hazelcast.client.impl.protocol.codec.JetExecuteJobCodec.RequestParameters;
+import com.hazelcast.client.impl.protocol.codec.JetJoinJobCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.operation.ExecuteJobOperation;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.impl.operation.JoinJobOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
-import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
-
-public class JetExecuteJobMessageTask extends AbstractJetMessageTask<RequestParameters> {
-    protected JetExecuteJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
-        super(clientMessage, node, connection, JetExecuteJobCodec::decodeRequest,
-                o -> JetExecuteJobCodec.encodeResponse());
+public class JetJoinJobMessageTask extends AbstractJetMessageTask<JetJoinJobCodec.RequestParameters> {
+    protected JetJoinJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+        super(clientMessage, node, connection, JetJoinJobCodec::decodeRequest,
+                o -> JetJoinJobCodec.encodeResponse());
     }
 
     @Override
     protected Operation prepareOperation() {
-        JetService service = getService(JetService.SERVICE_NAME);
-        ClassLoader cl = service.getClassLoader(parameters.executionId);
-        DAG dag = deserializeWithCustomClassLoader(nodeEngine.getSerializationService(), cl, parameters.dag);
-        return new ExecuteJobOperation(parameters.executionId, dag);
+        JobConfig jobConfig = nodeEngine.getSerializationService().toObject(parameters.jobConfig);
+        return new JoinJobOperation(parameters.jobId, parameters.dag, jobConfig);
     }
 
     @Override
@@ -51,7 +45,7 @@ public class JetExecuteJobMessageTask extends AbstractJetMessageTask<RequestPara
         InvocationBuilder builder = getInvocationBuilder(op).setResultDeserialized(false);
 
         InternalCompletableFuture<Object> invocation = builder.invoke();
-        getJetService().getClientInvocationRegistry().register(parameters.executionId, invocation);
+        getJetService().getClientInvocationRegistry().register(parameters.jobId, invocation);
         invocation.andThen(this);
     }
 
@@ -62,7 +56,7 @@ public class JetExecuteJobMessageTask extends AbstractJetMessageTask<RequestPara
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.dag};
+        return new Object[]{};
     }
 
     @Override

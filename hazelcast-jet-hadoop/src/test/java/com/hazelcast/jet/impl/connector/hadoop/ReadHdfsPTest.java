@@ -125,7 +125,7 @@ public class ReadHdfsPTest extends JetTestSupport {
                          .localParallelism(1);
         dag.edge(between(source, sink));
 
-        Future<Void> future = instance.newJob(dag).execute();
+        Future<Void> future = instance.newJob(dag).getFuture();
         assertCompletesEventually(future);
 
 

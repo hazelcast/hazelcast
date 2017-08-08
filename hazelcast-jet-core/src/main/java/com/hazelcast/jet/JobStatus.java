@@ -17,28 +17,38 @@
 package com.hazelcast.jet;
 
 /**
- * Thrown when a topology change (member addition/removal) happens
- * while executing a job.
+ * Represents current status of the job from the perspective of the job coordinator.
  */
-public class TopologyChangedException extends JetException {
+public enum JobStatus {
 
     /**
-     * Creates the exception
+     * The job is submitted but not started yet.
      */
-    public TopologyChangedException() {
-    }
+    NOT_STARTED,
 
     /**
-     * Creates the exception with a message.
+     * The job is in the initialization phase, in which it starts the execution.
      */
-    public TopologyChangedException(String message) {
-        super(message);
-    }
+    STARTING,
 
     /**
-     * Creates the exception with a message and a cause.
+     * The job is currently running.
      */
-    public TopologyChangedException(String message, Throwable cause) {
-        super(message, cause);
-    }
+    RUNNING,
+
+    /**
+     * The job is performing a restart, because a job participant has left while the job was running.
+     */
+    RESTARTING,
+
+    /**
+     * The job is failed with an exception thrown by the DAG.
+     */
+    FAILED,
+
+    /**
+     * The job is completed successfully.
+     */
+    COMPLETED
+
 }

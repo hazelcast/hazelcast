@@ -16,28 +16,34 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.JobStatus;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.operation.ExecuteJobOperation;
-import com.hazelcast.logging.ILogger;
+import com.hazelcast.jet.impl.operation.GetJobStatusOperation;
+import com.hazelcast.jet.impl.operation.JoinJobOperation;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 
-import java.util.concurrent.Future;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
+/**
+ * Member-side {@code JetInstance} implementation
+ */
 public class JetInstanceImpl extends AbstractJetInstance {
     private final NodeEngine nodeEngine;
     private final JetConfig config;
-    private final ILogger logger;
 
     public JetInstanceImpl(HazelcastInstanceImpl hazelcastInstance, JetConfig config) {
         super(hazelcastInstance);
         this.nodeEngine = hazelcastInstance.node.getNodeEngine();
-        this.logger = nodeEngine.getLogger(JetInstance.class);
         this.config = config;
     }
 
@@ -48,34 +54,50 @@ public class JetInstanceImpl extends AbstractJetInstance {
 
     @Override
     public Job newJob(DAG dag) {
-        return newJob(dag, new JobConfig());
+        JobImpl job = new JobImpl(dag, new JobConfig());
+        job.init();
+        return job;
     }
 
     @Override
     public Job newJob(DAG dag, JobConfig config) {
-        return new JobImpl(dag, config);
+        JobImpl job = new JobImpl(dag, config);
+        job.init();
+        return job;
     }
 
-    private class JobImpl implements Job {
-
-        private final DAG dag;
-        private final JobConfig config;
+    private class JobImpl extends AbstractJobImpl {
 
         JobImpl(DAG dag, JobConfig config) {
-            this.dag = dag;
-            this.config = config;
+            super(JetInstanceImpl.this, dag, config);
         }
 
         @Override
-        public Future<Void> execute() {
-            long executionId = getIdGenerator().newId();
-            new ResourceUploader(JetInstanceImpl.this.getMap(JetService.METADATA_MAP_PREFIX + executionId))
-                    .uploadMetadata(config);
+        protected Address getMasterAddress() {
+            return nodeEngine.getMasterAddress();
+        }
 
-            Operation op = new ExecuteJobOperation(executionId, dag);
+        @Override
+        protected ICompletableFuture<Void> sendJoinRequest(Address masterAddress) {
+            Data dag = nodeEngine.getSerializationService().toData(getDAG());
+            Operation op = new JoinJobOperation(getJobId(), dag, getConfig());
             return nodeEngine.getOperationService()
-                             .createInvocationBuilder(JetService.SERVICE_NAME, op, nodeEngine.getThisAddress())
-                             .invoke();
+                                      .createInvocationBuilder(JetService.SERVICE_NAME, op, masterAddress)
+                                      .invoke();
+        }
+
+        @Override
+        protected JobStatus sendJobStatusRequest() {
+            try {
+                Operation op = new GetJobStatusOperation(getJobId());
+                OperationService operationService = nodeEngine.getOperationService();
+                InternalCompletableFuture<JobStatus> f = operationService
+                        .createInvocationBuilder(JetService.SERVICE_NAME, op, getMasterAddress()).invoke();
+
+                return f.get();
+            } catch (Throwable t) {
+                throw rethrow(t);
+            }
         }
     }
 }

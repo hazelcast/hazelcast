@@ -77,7 +77,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     @After
     public void after() throws Exception {
         Hazelcast.shutdownAll();
-        factory.shutdownAll();
+        factory.terminateAll();
     }
 
     @Test
@@ -141,6 +141,6 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     }
 
     private void executeAndWait(DAG dag) {
-        assertCompletesEventually(jet.newJob(dag).execute());
+        assertCompletesEventually(jet.newJob(dag).getFuture());
     }
 }

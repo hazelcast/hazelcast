@@ -74,6 +74,10 @@ public class JetTestInstanceFactory {
         factory.shutdownAll();
     }
 
+    public void terminateAll() {
+        factory.terminateAll();
+    }
+
     public Address nextAddress() {
         return factory.nextAddress();
     }

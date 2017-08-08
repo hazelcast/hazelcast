@@ -34,4 +34,6 @@
        <packet-size-limit>997</packet-size-limit>
        <receive-window-multiplier>996</receive-window-multiplier>
     </edge-defaults>
+
+    <job-metadata-backup-count>4</job-metadata-backup-count>
 </hazelcast-jet>

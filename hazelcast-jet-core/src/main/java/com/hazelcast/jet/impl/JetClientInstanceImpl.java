@@ -19,26 +19,39 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetCancelJobCodec;
-import com.hazelcast.client.impl.protocol.codec.JetExecuteJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec.ResponseParameters;
+import com.hazelcast.client.impl.protocol.codec.JetJoinJobCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.Member;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.JobStatus;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import javax.annotation.Nonnull;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.Util.idToString;
+
+/**
+ * Client-side {@code JetInstance} implementation
+ */
 public class JetClientInstanceImpl extends AbstractJetInstance {
 
     private final HazelcastClientInstanceImpl client;
@@ -59,49 +72,67 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
 
     @Override
     public Job newJob(DAG dag) {
-        return new JobImpl(dag);
+        JobImpl job = new JobImpl(dag, new JobConfig());
+        job.init();
+        return job;
     }
 
     @Override
     public Job newJob(DAG dag, JobConfig config) {
-        return new JobImpl(dag, config);
+        JobImpl job = new JobImpl(dag, config);
+        job.init();
+        return job;
     }
 
-    private class JobImpl implements Job {
+    private class JobImpl extends AbstractJobImpl {
 
-        private final DAG dag;
-        private final JobConfig config;
-
-        protected JobImpl(DAG dag) {
-            this(dag, new JobConfig());
-        }
-
-        protected JobImpl(DAG dag, JobConfig config) {
-            this.dag = dag;
-            this.config = config;
+        JobImpl(DAG dag, JobConfig config) {
+            super(JetClientInstanceImpl.this, dag, config);
         }
 
         @Override
-        public Future<Void> execute() {
-            long executionId = getIdGenerator().newId();
-            new ResourceUploader(client.getMap(JetService.METADATA_MAP_PREFIX + executionId))
-                    .uploadMetadata(config);
-
-            Data dagData = client.getSerializationService().toData(dag);
-            Address executionAddress = client.getPartitionService().getPartition(executionId).getOwner().getAddress();
-            ClientInvocation invocation = new ClientInvocation(client,
-                    JetExecuteJobCodec.encodeRequest(executionId, dagData), executionAddress);
-            return new ExecutionFuture(invocation.invoke(), executionId, executionAddress);
+        protected Address getMasterAddress() {
+            Set<Member> members = client.getCluster().getMembers();
+            Member master = members.iterator().next();
+            return master.getAddress();
         }
+
+        @Override
+        protected ICompletableFuture<Void> sendJoinRequest(Address masterAddress) {
+            ClientInvocation invocation = new ClientInvocation(client, createJoinJobRequest(), masterAddress);
+            return new ExecutionFuture(invocation.invoke(), getJobId(), masterAddress);
+        }
+
+        @Override
+        protected JobStatus sendJobStatusRequest() {
+            Address masterAddress = getMasterAddress();
+            ClientMessage request = JetGetJobStatusCodec.encodeRequest(getJobId());
+            ClientInvocation invocation = new ClientInvocation(client, request, masterAddress);
+            try {
+                ClientMessage clientMessage = invocation.invoke().get();
+                ResponseParameters response = JetGetJobStatusCodec.decodeResponse(clientMessage);
+                return JetClientInstanceImpl.this.client.getSerializationService().toObject(response.response);
+            } catch (Exception e) {
+                throw rethrow(e);
+            }
+        }
+
+        private ClientMessage createJoinJobRequest() {
+            SerializationService serializationService = client.getSerializationService();
+            Data dag = serializationService.toData(getDAG());
+            Data jobConfig = serializationService.toData(getConfig());
+            return JetJoinJobCodec.encodeRequest(getJobId(), dag, jobConfig);
+        }
+
     }
 
-    private final class ExecutionFuture implements Future<Void> {
+    private final class ExecutionFuture implements ICompletableFuture<Void> {
 
         private final ClientInvocationFuture future;
         private final long executionId;
         private final Address executionAddress;
 
-        protected ExecutionFuture(ClientInvocationFuture future, long executionId, Address executionAddress) {
+        ExecutionFuture(ClientInvocationFuture future, long executionId, Address executionAddress) {
             this.future = future;
             this.executionId = executionId;
             this.executionAddress = executionAddress;
@@ -122,7 +153,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
 
                 @Override
                 public void onFailure(Throwable throwable) {
-                    logger.warning("Error cancelling job with id " + executionId, throwable);
+                    logger.warning("Error cancelling job with executionId " + idToString(executionId), throwable);
                 }
             });
             return true;
@@ -150,5 +181,36 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
             future.get(timeout, unit);
             return null;
         }
+
+        @Override
+        public void andThen(ExecutionCallback<Void> callback) {
+            future.andThen(new ExecutionCallback<ClientMessage>() {
+                @Override
+                public void onResponse(ClientMessage response) {
+                    callback.onResponse(null);
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    callback.onFailure(t);
+                }
+            });
+        }
+
+        @Override
+        public void andThen(ExecutionCallback<Void> callback, Executor executor) {
+            future.andThen(new ExecutionCallback<ClientMessage>() {
+                @Override
+                public void onResponse(ClientMessage response) {
+                    callback.onResponse(null);
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    callback.onFailure(t);
+                }
+            }, executor);
+        }
+
     }
 }
