@@ -79,11 +79,11 @@ public class VersionTest {
 
     @Test
     public void isUnknownGreaterOrEqual() throws Exception {
-        assertTrue(V3_0.isUnknownGreaterOrEqual(of(2, 0)));
-        assertTrue(V3_0.isUnknownGreaterOrEqual(of(3, 0)));
-        assertTrue(V3_0.isUnknownGreaterOrEqual(of(3, 0)));
-        assertFalse(V3_0.isUnknownGreaterOrEqual(of(4, 0)));
-        assertTrue(UNKNOWN.isUnknownGreaterOrEqual(of(4, 0)));
+        assertTrue(V3_0.isUnknownOrGreaterOrEqual(of(2, 0)));
+        assertTrue(V3_0.isUnknownOrGreaterOrEqual(of(3, 0)));
+        assertTrue(V3_0.isUnknownOrGreaterOrEqual(of(3, 0)));
+        assertFalse(V3_0.isUnknownOrGreaterOrEqual(of(4, 0)));
+        assertTrue(UNKNOWN.isUnknownOrGreaterOrEqual(of(4, 0)));
     }
 
     @Test
@@ -114,10 +114,10 @@ public class VersionTest {
 
     @Test
     public void isUnknownLessOrEqual() throws Exception {
-        assertFalse(V3_0.isUnknownLessOrEqual(of(2, 0)));
-        assertTrue(V3_0.isUnknownLessOrEqual(of(3, 0)));
-        assertTrue(V3_0.isUnknownLessOrEqual(of(4, 0)));
-        assertTrue(UNKNOWN.isUnknownLessOrEqual(of(4, 0)));
+        assertFalse(V3_0.isUnknownOrLessOrEqual(of(2, 0)));
+        assertTrue(V3_0.isUnknownOrLessOrEqual(of(3, 0)));
+        assertTrue(V3_0.isUnknownOrLessOrEqual(of(4, 0)));
+        assertTrue(UNKNOWN.isUnknownOrLessOrEqual(of(4, 0)));
     }
 
     @Test

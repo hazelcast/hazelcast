@@ -108,22 +108,22 @@ public class VersionUnknownTest {
 
     @Test
     public void unknown_is_unknownGreaterOrEqual_any() throws Exception {
-        assertTrue(UNKNOWN.isUnknownGreaterOrEqual(ANY_VERSION));
+        assertTrue(UNKNOWN.isUnknownOrGreaterOrEqual(ANY_VERSION));
     }
 
     @Test
     public void unknown_is_unknownGreaterOrEqual_unknown() throws Exception {
-        assertTrue(UNKNOWN.isUnknownGreaterOrEqual(UNKNOWN));
+        assertTrue(UNKNOWN.isUnknownOrGreaterOrEqual(UNKNOWN));
     }
 
     @Test
     public void unknown_is_unknownLessOrEqual_any() throws Exception {
-        assertTrue(UNKNOWN.isUnknownLessOrEqual(ANY_VERSION));
+        assertTrue(UNKNOWN.isUnknownOrLessOrEqual(ANY_VERSION));
     }
 
     @Test
     public void unknown_is_unknownLessOrEqual_unknown() throws Exception {
-        assertTrue(UNKNOWN.isUnknownLessOrEqual(UNKNOWN));
+        assertTrue(UNKNOWN.isUnknownOrLessOrEqual(UNKNOWN));
     }
 
     @Test
@@ -163,12 +163,12 @@ public class VersionUnknownTest {
 
     @Test
     public void any_isNot_unknownGreaterOrEqual_unknown() throws Exception {
-        assertFalse(ANY_VERSION.isUnknownGreaterOrEqual(UNKNOWN));
+        assertFalse(ANY_VERSION.isUnknownOrGreaterOrEqual(UNKNOWN));
     }
 
     @Test
     public void any_isNot_unknownLessOrEqual_unknown() throws Exception {
-        assertFalse(ANY_VERSION.isUnknownLessOrEqual(UNKNOWN));
+        assertFalse(ANY_VERSION.isUnknownOrLessOrEqual(UNKNOWN));
     }
 
 }
