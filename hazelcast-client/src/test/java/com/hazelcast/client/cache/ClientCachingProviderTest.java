@@ -37,18 +37,19 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.junit.Assert.assertNotNull;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ClientCachingProviderTest extends CachingProviderTest {
 
+    private static final String CONFIG_CLASSPATH_LOCATION = "test-hazelcast-jcache.xml";
     private final List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>();
 
     @Before
     public void setup() {
         // start a member
         Config config = new Config();
-        config.getGroupConfig().setName("test-group1");
-        config.getGroupConfig().setPassword("test-pass1");
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         instances.add(instance);
         // start two client instances
@@ -73,8 +74,6 @@ public class ClientCachingProviderTest extends CachingProviderTest {
         // we are using real instances.
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setInstanceName(instanceName);
-        clientConfig.getGroupConfig().setName("test-group1");
-        clientConfig.getGroupConfig().setPassword("test-pass1");
         HazelcastInstance instance = HazelcastClient.newHazelcastClient(clientConfig);
         instances.add(instance);
         return instance;
@@ -83,6 +82,13 @@ public class ClientCachingProviderTest extends CachingProviderTest {
     @Override
     protected CachingProvider createCachingProvider(HazelcastInstance defaultInstance) {
         return HazelcastClientCachingProvider.createCachingProvider(defaultInstance);
+    }
+
+    @Override
+    protected void assertInstanceStarted(String instanceName) {
+        HazelcastInstance otherInstance = HazelcastClient.getHazelcastClientByName(instanceName);
+        assertNotNull(otherInstance);
+        otherInstance.getLifecycleService().terminate();
     }
 
     @After
