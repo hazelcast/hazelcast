@@ -27,9 +27,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.HashSet;
 import java.util.Properties;
-import java.util.Set;
 
 import static com.hazelcast.cache.HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION;
 import static com.hazelcast.cache.HazelcastCachingProvider.HAZELCAST_INSTANCE_ITSELF;
@@ -47,17 +45,6 @@ import static com.hazelcast.util.StringUtil.isNullOrEmptyAfterTrim;
  */
 public final class HazelcastServerCachingProvider
         extends AbstractHazelcastCachingProvider {
-
-    private static final Set<String> SUPPORTED_SCHEMES;
-
-    static {
-        Set<String> supportedSchemes = new HashSet<String>();
-        supportedSchemes.add("classpath");
-        supportedSchemes.add("file");
-        supportedSchemes.add("http");
-        supportedSchemes.add("https");
-        SUPPORTED_SCHEMES = supportedSchemes;
-    }
 
     /**
      * Helper method for creating caching provider for testing, etc.
@@ -198,27 +185,6 @@ public final class HazelcastServerCachingProvider
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-    }
-
-    // returns true when location itself or its resolved value as system property placeholder has one of supported schemes
-    // from which Config objects can be initialized
-    boolean isConfigLocation(URI location) {
-        String scheme = location.getScheme();
-        if (scheme == null) {
-            // interpret as place holder
-            try {
-                String resolvedPlaceholder = System.getProperty(location.getRawSchemeSpecificPart());
-                if (resolvedPlaceholder == null) {
-                    return false;
-                }
-                location = new URI(resolvedPlaceholder);
-                scheme = location.getScheme();
-            } catch (URISyntaxException e) {
-                return false;
-            }
-        }
-
-        return (scheme != null && SUPPORTED_SCHEMES.contains(scheme.toLowerCase()));
     }
 
     private Config getConfig(URL configURL, ClassLoader theClassLoader, String instanceName)

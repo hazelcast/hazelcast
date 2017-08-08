@@ -30,8 +30,10 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.WeakHashMap;
 
 /**
@@ -60,6 +62,16 @@ public abstract class AbstractHazelcastCachingProvider
             + "specify Hazelcast instance name via "
             + "\"HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME\" property "
             + "in \"properties\" parameter.";
+    protected static final Set<String> SUPPORTED_SCHEMES;
+
+    static {
+        Set<String> supportedSchemes = new HashSet<String>();
+        supportedSchemes.add("classpath");
+        supportedSchemes.add("file");
+        supportedSchemes.add("http");
+        supportedSchemes.add("https");
+        SUPPORTED_SCHEMES = supportedSchemes;
+    }
 
     protected volatile HazelcastInstance hazelcastInstance;
 
@@ -226,4 +238,25 @@ public abstract class AbstractHazelcastCachingProvider
                                                                                       URI uri,
                                                                                       ClassLoader classLoader,
                                                                                       Properties properties);
+
+    // returns true when location itself or its resolved value as system property placeholder has one of supported schemes
+    // from which Config objects can be initialized
+    protected boolean isConfigLocation(URI location) {
+        String scheme = location.getScheme();
+        if (scheme == null) {
+            // interpret as place holder
+            try {
+                String resolvedPlaceholder = System.getProperty(location.getRawSchemeSpecificPart());
+                if (resolvedPlaceholder == null) {
+                    return false;
+                }
+                location = new URI(resolvedPlaceholder);
+                scheme = location.getScheme();
+            } catch (URISyntaxException e) {
+                return false;
+            }
+        }
+
+        return (scheme != null && SUPPORTED_SCHEMES.contains(scheme.toLowerCase()));
+    }
 }

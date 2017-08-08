@@ -198,7 +198,7 @@ public class CachingProviderTest extends HazelcastTestSupport {
         assertEquals(instance, cacheManager.getHazelcastInstance());
     }
 
-    private void assertInstanceStarted(String instanceName) {
+    protected void assertInstanceStarted(String instanceName) {
         HazelcastInstance otherInstance = Hazelcast.getHazelcastInstanceByName(instanceName);
         assertNotNull(otherInstance);
         otherInstance.getLifecycleService().terminate();
