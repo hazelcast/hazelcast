@@ -188,9 +188,9 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
         return clusterVersion.isLessOrEqual(version);
     }
 
-    boolean isClusterVersionUnknownLessOrEqual(Version version) {
+    boolean isClusterVersionUnknownOrLessOrEqual(Version version) {
         Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
-        return clusterVersion.isUnknownLessOrEqual(version);
+        return clusterVersion.isUnknownOrLessOrEqual(version);
     }
 
     boolean isClusterVersionGreaterThan(Version version) {
@@ -208,9 +208,9 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
         return clusterVersion.isGreaterOrEqual(version);
     }
 
-    boolean isClusterVersionUnknownGreaterOrEqual(Version version) {
+    boolean isClusterVersionUnknownOrGreaterOrEqual(Version version) {
         Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
-        return clusterVersion.isUnknownGreaterOrEqual(version);
+        return clusterVersion.isUnknownOrGreaterOrEqual(version);
     }
 
     boolean isClusterVersionEqualTo(Version version) {

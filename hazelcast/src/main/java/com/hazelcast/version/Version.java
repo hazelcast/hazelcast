@@ -193,7 +193,7 @@ public final class Version implements IdentifiedDataSerializable, Comparable<Ver
      * @param version other version to compare to
      * @return {@code true} if this version is unknown or if this version is greater than or equal to {@code version}
      */
-    public boolean isUnknownGreaterOrEqual(Version version) {
+    public boolean isUnknownOrGreaterOrEqual(Version version) {
         return isUnknown() || (!version.isUnknown() && compareTo(version) >= 0);
     }
 
@@ -225,7 +225,7 @@ public final class Version implements IdentifiedDataSerializable, Comparable<Ver
      * @param version other version to compare to
      * @return {@code true} if this version is unknown or if this version is less than or equal to {@code version}
      */
-    public boolean isUnknownLessOrEqual(Version version) {
+    public boolean isUnknownOrLessOrEqual(Version version) {
         return isUnknown() || compareTo(version) <= 0;
     }
 
