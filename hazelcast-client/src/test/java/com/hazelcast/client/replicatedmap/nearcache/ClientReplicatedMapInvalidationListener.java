@@ -27,6 +27,8 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
+
 class ClientReplicatedMapInvalidationListener
         extends ReplicatedMapAddNearCacheEntryListenerCodec.AbstractEventHandler
         implements NearCacheInvalidationListener, EventHandler<ClientMessage> {
@@ -52,6 +54,10 @@ class ClientReplicatedMapInvalidationListener
     public void handle(Data dataKey, Data value, Data oldValue, Data mergingValue, int eventType, String uuid,
                        int numberOfAffectedEntries) {
         EntryEventType entryEventType = EntryEventType.getByType(eventType);
+        if (entryEventType == null) {
+            return;
+        }
+        sleepMillis(100);
         switch (entryEventType) {
             case ADDED:
             case REMOVED:
