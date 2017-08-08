@@ -240,6 +240,11 @@ public class AbstractSerializationServiceTest {
 
         TypedBaseClass typedBaseObject = new TypedBaseClass(baseObject);
         Data typedData = abstractSerializationService.toData(typedBaseObject);
+
+        deserializedObject = abstractSerializationService.toObject(typedData);
+        assertEquals(BaseClass.class, deserializedObject.getClass());
+        assertEquals(baseObject, deserializedObject);
+
         deserializedObject = abstractSerializationService.toObject(typedData, TypedBaseClass.class);
         assertEquals(typedBaseObject, deserializedObject);
     }
@@ -263,12 +268,14 @@ public class AbstractSerializationServiceTest {
         @Override
         public void writeData(ObjectDataOutput out)
                 throws IOException {
+            innerObj.writeData(out);
             out.writeInt(innerObj.intField);
         }
 
         @Override
         public void readData(ObjectDataInput in)
                 throws IOException {
+            innerObj.readData(in);
             innerObj.intField = in.readInt();
         }
 
