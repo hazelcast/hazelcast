@@ -15,7 +15,6 @@
  */
 package com.hazelcast.client.cache.impl.nearcache;
 
-import com.hazelcast.cache.CacheUtil;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.HazelcastServerCacheManager;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
@@ -30,9 +29,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCache;
-import com.hazelcast.internal.nearcache.NearCacheInvalidationListener;
 import com.hazelcast.internal.nearcache.NearCacheManager;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -45,12 +42,15 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import javax.cache.spi.CachingProvider;
-import java.util.Arrays;
 import java.util.Collection;
 
+import static com.hazelcast.cache.CacheUtil.getPrefixedCacheName;
 import static com.hazelcast.client.cache.nearcache.ClientCacheInvalidationListener.createInvalidationEventHandler;
+import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -68,8 +68,9 @@ import static org.junit.Assert.assertTrue;
  * received.
  */
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({SlowTest.class})
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Category(SlowTest.class)
+@SuppressWarnings({"ConstantConditions", "WeakerAccess"})
 public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
 
     static final String DEFAULT_CACHE_NAME = "com.hazelcast.client.cache.impl.nearcache.ClientNearCacheInvalidationTest";
@@ -94,7 +95,7 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
 
     @Parameters(name = "fromMember:{0}, format:{1}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {false, InMemoryFormat.BINARY},
                 {false, InMemoryFormat.OBJECT},
                 {true, InMemoryFormat.BINARY},
@@ -102,42 +103,43 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
         });
     }
 
-    private HazelcastInstance member;
     private TestHazelcastFactory hazelcastFactory;
     private NearCacheTestContext testContext;
-    private NearCacheInvalidationListener invalidationListener;
 
     @Before
+    @SuppressWarnings("unchecked")
     public void setup() {
+        Config config = getConfig();
+        ClientConfig clientConfig = createClientConfig()
+                .addNearCacheConfig(createNearCacheConfig(inMemoryFormat));
+
         hazelcastFactory = new TestHazelcastFactory();
-        member = hazelcastFactory.newHazelcastInstance(getConfig());
+
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
         if (MEMBER_COUNT > 1) {
             HazelcastInstance[] allMembers = new HazelcastInstance[MEMBER_COUNT];
             allMembers[0] = member;
             for (int i = 1; i < MEMBER_COUNT; i++) {
-                allMembers[i] = hazelcastFactory.newHazelcastInstance(getConfig());
+                allMembers[i] = hazelcastFactory.newHazelcastInstance(config);
             }
             waitAllForSafeState(allMembers);
         }
-        ClientConfig clientConfig = createClientConfig();
-        clientConfig.addNearCacheConfig(createNearCacheConfig(inMemoryFormat));
+
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
         NearCacheManager nearCacheManager = client.client.getNearCacheManager();
         CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
+        HazelcastServerCachingProvider memberProvider = HazelcastServerCachingProvider.createCachingProvider(member);
         HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
-        HazelcastServerCacheManager memberCacheManager = (HazelcastServerCacheManager) HazelcastServerCachingProvider
-                .createCachingProvider(member).getCacheManager();
+        HazelcastServerCacheManager memberCacheManager = (HazelcastServerCacheManager) memberProvider.getCacheManager();
 
         ICache<Object, String> cache = cacheManager.createCache(DEFAULT_CACHE_NAME, createCacheConfig(inMemoryFormat));
-        ICache<Object, String> memberCache = member.getCacheManager().getCache(
-                CacheUtil.getPrefixedCacheName(DEFAULT_CACHE_NAME, null, null));
+        ICache<Object, String> memberCache = memberCacheManager.getCache(getPrefixedCacheName(DEFAULT_CACHE_NAME, null, null));
 
         NearCache<Object, String> nearCache = nearCacheManager.getNearCache(
                 cacheManager.getCacheNameWithPrefix(DEFAULT_CACHE_NAME));
-        invalidationListener = createInvalidationEventHandler(cache);
 
         testContext = new NearCacheTestContext(client, member, cacheManager, memberCacheManager, nearCacheManager, cache,
-                memberCache, nearCache, invalidationListener);
+                memberCache, nearCache, createInvalidationEventHandler(cache));
 
         // make sure several partitions are populated with data
         for (int i = 0; i < INITIAL_POPULATION_COUNT; i++) {
@@ -147,9 +149,8 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        Config config = super.getConfig();
-        config.setProperty(GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), "false");
-        return config;
+        return super.getConfig()
+                .setProperty(CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), "false");
     }
 
     @After
@@ -211,15 +212,14 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
     }
 
     private void waitEndOfInvalidationsFromInitialPopulation() {
-        AssertTask assertTask = new AssertTask() {
+        assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(INITIAL_POPULATION_COUNT, invalidationListener.getInvalidationCount());
-                invalidationListener.resetInvalidationCount();
+                long invalidationCount = testContext.invalidationListener.getInvalidationCount();
+                assertEquals(INITIAL_POPULATION_COUNT, invalidationCount);
+                testContext.invalidationListener.resetInvalidationCount();
             }
-        };
-
-        assertTrueEventually(assertTask);
+        });
     }
 
     private void assertNoFurtherInvalidation() {
@@ -230,18 +230,20 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
         AssertTask assertTask = new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(expectedInvalidationCount, invalidationListener.getInvalidationCount());
+                long invalidationCount = testContext.invalidationListener.getInvalidationCount();
+                assertEquals(expectedInvalidationCount, invalidationCount);
             }
         };
 
         assertTrueAllTheTime(assertTask, TIMEOUT);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private void assertLeastInvalidationCount(final int leastInvalidationCount) {
         AssertTask assertTask = new AssertTask() {
             @Override
             public void run() throws Exception {
-                long invalidationCount = invalidationListener.getInvalidationCount();
+                long invalidationCount = testContext.invalidationListener.getInvalidationCount();
                 assertTrue("invalidationCount = [" + invalidationCount + "] " +
                         "but should be >= [" + leastInvalidationCount + "]", invalidationCount >= leastInvalidationCount);
             }
@@ -249,7 +251,6 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
 
         assertTrueAllTheTime(assertTask, TIMEOUT);
     }
-
 
     private void clear() {
         if (invokeCacheOperationsFromMember) {
