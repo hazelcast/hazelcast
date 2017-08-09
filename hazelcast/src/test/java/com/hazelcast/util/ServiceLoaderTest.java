@@ -58,8 +58,27 @@ import static org.junit.Assert.assertTrue;
 public class ServiceLoaderTest extends HazelcastTestSupport {
 
     @Test
+    public void selectClassLoaders_whenTCCL_isNull_thenDoNotSelectNullClassloader() {
+        Thread.currentThread().setContextClassLoader(null);
+        ClassLoader dummyClassLoader = new URLClassLoader(new URL[0]);
+        List<ClassLoader> classLoaders = ServiceLoader.selectClassLoaders(dummyClassLoader);
+
+        assertNotContains(classLoaders, null);
+    }
+
+    @Test
+    public void selectClassLoaders_whenPassedClassLoaderIsisNull_thenDoNotSelectNullClassloader() {
+        Thread.currentThread().setContextClassLoader(null);
+        List<ClassLoader> classLoaders = ServiceLoader.selectClassLoaders(null);
+
+        assertNotContains(classLoaders, null);
+    }
+
+    @Test
     public void testMultipleClassloaderLoadsTheSameClass() throws Exception {
         ClassLoader parent = this.getClass().getClassLoader();
+
+        //child classloader will steal bytecode from the parent and will define classes on its own
         ClassLoader childLoader = new StealingClassloader(parent);
 
         Class<?> interfaceClass = childLoader.loadClass(PortableHook.class.getName());

@@ -101,12 +101,7 @@ public final class ServiceLoader {
     private static Set<URLDefinition> collectFactoryUrls(String factoryId, ClassLoader classLoader) {
         String resourceName = "META-INF/services/" + factoryId;
         try {
-            Enumeration<URL> configs;
-            if (classLoader != null) {
-                configs = classLoader.getResources(resourceName);
-            } else {
-                configs = ClassLoader.getSystemResources(resourceName);
-            }
+            Enumeration<URL> configs = classLoader.getResources(resourceName);
 
             Set<URLDefinition> urlDefinitions = new HashSet<URLDefinition>();
             while (configs.hasMoreElements()) {
@@ -167,7 +162,7 @@ public final class ServiceLoader {
 
         // check if TCCL is same as given classLoader
         ClassLoader tccl = Thread.currentThread().getContextClassLoader();
-        if (tccl != classLoader) {
+        if (tccl != null && tccl != classLoader) {
             classLoaders.add(tccl);
         }
 
