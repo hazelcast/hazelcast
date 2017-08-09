@@ -195,6 +195,11 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
         assertFalse(cache.containsKey(23));
     }
 
+    @Test(expected = MethodNotAvailableException.class)
+    public void testEvict() {
+        adapter.evict(23);
+    }
+
     @Test
     public void testInvoke() {
         cache.put(23, "value-23");
@@ -304,6 +309,11 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
         assertEquals(1, cache.size());
         assertTrue(cache.containsKey(23));
         assertFalse(cache.containsKey(42));
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testEvictAll() {
+        adapter.evictAll();
     }
 
     @Test

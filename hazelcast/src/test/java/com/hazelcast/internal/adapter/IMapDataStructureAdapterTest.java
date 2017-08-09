@@ -189,6 +189,20 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
         assertFalse(map.containsKey(23));
     }
 
+    @Test
+    public void testEvict() {
+        mapWithLoader.put(23, "value-23");
+        mapWithLoader.put(42, "value-42");
+        mapWithLoader.put(65, "value-65");
+
+        adapterWithLoader.evict(42);
+
+        assertEquals(2, mapWithLoader.size());
+        assertTrue(mapWithLoader.containsKey(23));
+        assertFalse(mapWithLoader.containsKey(42));
+        assertTrue(mapWithLoader.containsKey(65));
+    }
+
     @Test(expected = MethodNotAvailableException.class)
     public void testInvoke() {
         adapter.invoke(23, new ICacheReplaceEntryProcessor(), "value", "newValue");
@@ -327,6 +341,20 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
     @Test(expected = MethodNotAvailableException.class)
     public void testRemoveAllWithKeys() {
         adapter.removeAll(singleton(42));
+    }
+
+    @Test
+    public void testEvictAll() {
+        mapWithLoader.put(23, "value-23");
+        mapWithLoader.put(42, "value-42");
+        mapWithLoader.put(65, "value-65");
+
+        adapterWithLoader.evictAll();
+
+        assertEquals(0, mapWithLoader.size());
+        assertFalse(mapWithLoader.containsKey(23));
+        assertFalse(mapWithLoader.containsKey(42));
+        assertFalse(mapWithLoader.containsKey(65));
     }
 
     @Test(expected = MethodNotAvailableException.class)

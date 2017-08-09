@@ -158,6 +158,11 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
     }
 
     @Test(expected = MethodNotAvailableException.class)
+    public void testEvict() {
+        adapter.evict(23);
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
     public void testInvoke() {
         adapter.invoke(23, new ICacheReplaceEntryProcessor(), "value", "newValue");
     }
@@ -228,6 +233,11 @@ public class TransactionalMapDataStructureAdapterTest extends HazelcastTestSuppo
     @Test(expected = MethodNotAvailableException.class)
     public void testRemoveAllWithKeys() {
         adapter.removeAll(singleton(42));
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testEvictAll() {
+        adapter.evictAll();
     }
 
     @Test(expected = MethodNotAvailableException.class)
