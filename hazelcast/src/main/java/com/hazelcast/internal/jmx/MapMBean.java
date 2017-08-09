@@ -208,6 +208,12 @@ public class MapMBean extends HazelcastMBean<IMap> {
     public void clear() {
         managedObject.clear();
     }
+    
+    @ManagedAnnotation(value = "evictAll", operation = true)
+    @ManagedDescription("Evict Map")
+    public void evictAll() {
+        managedObject.evictAll();
+    }
 
     @ManagedAnnotation(value = "values", operation = true)
     public String values(String query) {
