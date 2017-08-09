@@ -55,8 +55,8 @@ public class LoggingServiceImpl implements LoggingService {
     public LoggingServiceImpl(String groupName, String loggingType, BuildInfo buildInfo) {
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
         JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
-        versionMessage = "[" + groupName + "]" + (jetBuildInfo != null ? " [" + jetBuildInfo.getVersion() + "]" : "")
-                + " [" + buildInfo.getVersion() + "] ";
+        versionMessage = "[" + groupName + "] ["
+                + (jetBuildInfo != null ?  jetBuildInfo.getVersion() : buildInfo.getVersion()) + "] ";
     }
 
     public void setThisMember(MemberImpl thisMember) {
