@@ -465,8 +465,10 @@ public class NearCacheTest extends NearCacheTestSupport {
         nearCacheConfig.setCacheLocalEntries(true);
         config.getMapConfig(mapName).setNearCacheConfig(nearCacheConfig);
 
-        TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(2);
+        int nodeCount = 3;
+        TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(nodeCount);
         HazelcastInstance[] instances = hazelcastInstanceFactory.newInstances(config);
+        assertClusterSizeEventually(nodeCount, instances);
 
         IMap<Integer, Integer> map = instances[0].getMap(mapName);
         HashSet<Integer> keys = new HashSet<Integer>();
@@ -477,13 +479,18 @@ public class NearCacheTest extends NearCacheTestSupport {
             keys.add(i);
         }
 
+        assertEquals(mapSize, getNearCacheSize(map));
+
         // generate Near Cache hits
         Map<Integer, Integer> allEntries = map.getAll(keys);
         assertEquals(0, allEntries.size());
 
         // check Near Cache hits
-        long hits = getNearCacheStats(map).getHits();
-        assertEquals(format("Near Cache hits should be %d but were %d", mapSize, hits), mapSize, hits);
+        NearCacheStats nearCacheStats = getNearCacheStats(map);
+        long hits = nearCacheStats.getHits();
+
+        String message = format("Near Cache hits should be %d but were %d. All stats = [%s]", mapSize, hits, nearCacheStats);
+        assertEquals(message, mapSize, hits);
     }
 
     @Test
