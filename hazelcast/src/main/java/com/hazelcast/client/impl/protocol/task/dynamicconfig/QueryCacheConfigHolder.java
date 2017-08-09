@@ -154,10 +154,12 @@ public class QueryCacheConfigHolder {
                 entryListenerConfigs.add((EntryListenerConfig) holder.asListenerConfig(serializationService));
             }
             config.setEntryListenerConfigs(entryListenerConfigs);
+        } else {
+            config.setEntryListenerConfigs(new ArrayList<EntryListenerConfig>());
         }
         config.setIncludeValue(includeValue);
         config.setInMemoryFormat(InMemoryFormat.valueOf(inMemoryFormat));
-        config.setIndexConfigs(indexConfigs);
+        config.setIndexConfigs(indexConfigs == null ? new ArrayList<MapIndexConfig>() : indexConfigs);
         config.setName(name);
         config.setPredicateConfig(predicateConfigHolder.asPredicateConfig(serializationService));
         config.setPopulate(populate);
@@ -172,6 +174,8 @@ public class QueryCacheConfigHolder {
         holder.setDelaySeconds(config.getDelaySeconds());
         holder.setEvictionConfigHolder(EvictionConfigHolder.of(config.getEvictionConfig(), serializationService));
         holder.setIncludeValue(config.isIncludeValue());
+        holder.setInMemoryFormat(config.getInMemoryFormat().toString());
+        holder.setName(config.getName());
         if (config.getIndexConfigs() != null && !config.getIndexConfigs().isEmpty()) {
             List<MapIndexConfig> indexConfigs = new ArrayList<MapIndexConfig>(config.getIndexConfigs().size());
             for (MapIndexConfig indexConfig : config.getIndexConfigs()) {
@@ -188,7 +192,7 @@ public class QueryCacheConfigHolder {
             holder.setListenerConfigs(listenerConfigHolders);
         }
         holder.setPredicateConfigHolder(PredicateConfigHolder.of(config.getPredicateConfig(), serializationService));
-        holder.setEvictionConfigHolder(EvictionConfigHolder.of(config.getEvictionConfig(), serializationService));
+        holder.setPopulate(config.isPopulate());
         return holder;
     }
 

@@ -38,8 +38,11 @@ import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.PredicateConfig;
+import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
@@ -55,7 +58,9 @@ import com.hazelcast.core.RingbufferStore;
 import com.hazelcast.core.RingbufferStoreFactory;
 import com.hazelcast.internal.eviction.EvictableEntryView;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
+import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.listener.EntryAddedListener;
+import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -329,6 +334,73 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMapConfig() {
+        MapConfig config = getMapConfig();
+        driver.getConfig().addMapConfig(config);
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
+    public void testDefaultMapConfig() {
+        MapConfig config = new MapConfig(name);
+        driver.getConfig().addMapConfig(config);
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
+    public void testMapConfig_withEntryListenerImplementation() {
+        MapConfig config = getMapConfig_withEntryListenerImplementation();
+        driver.getConfig().addMapConfig(config);
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
+    public void testMapConfig_withEntryListenerClassName() {
+        MapConfig config = getMapConfig_withEntryListenerClassName();
+        driver.getConfig().addMapConfig(config);
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
+    public void testMapConfig_withQueryCacheConfig() {
+        MapConfig config = getMapConfig_withQueryCacheConfig();
+        driver.getConfig().addMapConfig(config);
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
+    public void testMapConfig_withQueryCacheConfig_andEntryListenerConfigByClassName() {
+        MapConfig config = getMapConfig_withQueryCacheConfig();
+        config.getQueryCacheConfigs().get(0).addEntryListenerConfig(entryListenerConfigWithClassName());
+        driver.getConfig().addMapConfig(config);
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
+    public void testMapConfig_withQueryCacheConfig_andEntryListenerConfigByImplementation() {
+        MapConfig config = getMapConfig_withQueryCacheConfig();
+        config.getQueryCacheConfigs().get(0).addEntryListenerConfig(entryListenerConfigWithImplementation());
+        driver.getConfig().addMapConfig(config);
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
+    public void testMapConfig_withMapPartitionLostListener_byClassName() {
+        MapConfig config = getMapConfig();
+        config.addMapPartitionLostListenerConfig(getMapPartitionLostListenerConfig_byClassName());
+        driver.getConfig().addMapConfig(config);
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
+    public void testMapConfig_withMapPartitionLostListener_byImplementation() {
+        MapConfig config = getMapConfig();
+        config.addMapPartitionLostListenerConfig(getMapPartitionLostListenerConfig_byImplementation());
+        driver.getConfig().addMapConfig(config);
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
     public void testDefaultCacheConfig() {
         CacheSimpleConfig config = new CacheSimpleConfig();
         config.setName(name);
@@ -543,22 +615,12 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         return setConfig;
     }
 
-    // todo MapConfig tests missing
-    @Test
-    public void testMapConfig() {
-        MapConfig config = getMapConfig();
-
-        driver.getConfig().addMapConfig(config);
-
-        assertConfigurationsEqualsOnAllMembers(config);
-    }
-
     private MapConfig getMapConfig() {
         MapConfig config = new MapConfig(name);
         config.setAsyncBackupCount(3);
         config.setBackupCount(2);
-        config.setCacheDeserializedValues(CacheDeserializedValues.INDEX_ONLY);
-        config.setEvictionPolicy(EvictionPolicy.LRU);
+        config.setCacheDeserializedValues(CacheDeserializedValues.ALWAYS);
+        config.setEvictionPolicy(EvictionPolicy.RANDOM);
         config.setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true));
         config.setInMemoryFormat(InMemoryFormat.OBJECT);
         config.setMergePolicy("com.hazelcast.SomeMergePolicy");
@@ -568,6 +630,49 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         config.addMapAttributeConfig(new MapAttributeConfig("attributeName", "com.attribute.extractor"));
         config.addMapIndexConfig(new MapIndexConfig("attr", true));
         return config;
+    }
+
+    private MapConfig getMapConfig_withEntryListenerImplementation() {
+        return new MapConfig(name).addEntryListenerConfig(entryListenerConfigWithImplementation());
+    }
+
+    private MapConfig getMapConfig_withEntryListenerClassName() {
+        return new MapConfig(name).addEntryListenerConfig(entryListenerConfigWithClassName());
+    }
+
+    private MapConfig getMapConfig_withQueryCacheConfig() {
+        return new MapConfig(name).addQueryCacheConfig(getQueryCacheConfig());
+    }
+
+    private EntryListenerConfig entryListenerConfigWithImplementation() {
+        return new EntryListenerConfig(new SampleEntryListener(), false, true);
+    }
+
+    private EntryListenerConfig entryListenerConfigWithClassName() {
+        return new EntryListenerConfig("com.hazelcast.someListener", false, true);
+    }
+
+    private QueryCacheConfig getQueryCacheConfig() {
+        QueryCacheConfig config = new QueryCacheConfig(randomName())
+                .setBatchSize(131)
+                .setDelaySeconds(98)
+                .setInMemoryFormat(InMemoryFormat.BINARY)
+                .setBufferSize(873)
+                .setPopulate(true)
+                .setIncludeValue(true)
+                .setCoalesce(true)
+                .setPredicateConfig(new PredicateConfig("com.hazelcast.Predicate"))
+                .setEvictionConfig(
+                        new EvictionConfig(32, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, "com.hazelcast.Comparator"));
+        return config;
+    }
+
+    private MapPartitionLostListenerConfig getMapPartitionLostListenerConfig_byClassName() {
+        return new MapPartitionLostListenerConfig("com.hazelcast.PartitionLostListener");
+    }
+
+    private MapPartitionLostListenerConfig getMapPartitionLostListenerConfig_byImplementation() {
+        return new MapPartitionLostListenerConfig(new SamplePartitionLostListener());
     }
 
     private ListConfig getListConfig() {
@@ -694,6 +799,17 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         @Override
         public boolean equals(Object obj) {
             return (obj instanceof SampleRingbufferStoreFactory);
+        }
+    }
+
+    public static class SamplePartitionLostListener implements MapPartitionLostListener, Serializable {
+        @Override
+        public void partitionLost(MapPartitionLostEvent event) {
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return (obj instanceof SamplePartitionLostListener);
         }
     }
 

@@ -94,6 +94,7 @@ public class AddMapConfigMessageTask
             for (QueryCacheConfigHolder holder : parameters.queryCacheConfigs) {
                 queryCacheConfigs.add(holder.asQueryCacheConfig(serializationService));
             }
+            config.setQueryCacheConfigs(queryCacheConfigs);
         }
         return config;
     }
