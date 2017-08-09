@@ -92,10 +92,13 @@
                                     <mainClass>com.hazelcast.console.ConsoleApp</mainClass>
                                     <overrideInstructions>
                                         <Import-Package>
+                                            sun.misc;resolution:=optional,
                                             org.hibernate.*;resolution:=optional,
                                             org.springframework.*;resolution:=optional,
                                             javax.servlet.*;resolution:=optional,
                                             javax.security.*;resolution:=optional,
+                                            javax.crypto.*;resolution:=optional,
+                                            sun.misc;resolution:=optional
                                             org.slf4j.*;resolution:=optional,
                                             org.apache.log4j.*;resolution:=optional,
                                             org.apache.logging.log4j;resolution:=optional,
@@ -103,7 +106,6 @@
                                             org.apache.commons.logging;resolution:=optional,
                                             javax.script.*;resolution:=optional,
                                             org.jclouds.*;resolution:=optional,
-                                            com.google.*;resolution:=optional
                                         </Import-Package>
                                     </overrideInstructions>
                                 </transformer>
@@ -174,5 +176,21 @@
             <artifactId>hazelcast-wm</artifactId>
             <version>3.8.1</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <scope>test</scope>
+            <version>${project.parent.version}</version>
+            <classifier>tests</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.utils</artifactId>
+            <version>${felix.utils.version}</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 </project>
