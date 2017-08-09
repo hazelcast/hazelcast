@@ -193,7 +193,7 @@ This section lists the fixed issues for Hazelcast 3.8 and 3.8.x releases.
 
 4. Known Issues
 
-None.
+**Upgrading from 3.6.x to 3.8.x (Hazelcast IMDG Enterprise) when using `JCache`:** Due to a compatibility problem, `CacheConfig` serialization may not work if your member is 3.8.x where x < 5. Hence, you will need to use Hazelcast 3.8.5 or higher version where the problem is being fixed. This issue affects Hazelcast IMDG Enterprise only.
 
 5. Removed/Deprecated Features
 
