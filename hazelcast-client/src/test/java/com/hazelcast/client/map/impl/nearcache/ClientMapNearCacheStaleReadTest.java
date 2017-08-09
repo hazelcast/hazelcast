@@ -72,14 +72,14 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
     private HazelcastInstance client;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         TestHazelcastFactory factory = new TestHazelcastFactory();
         valuePut = new AtomicInteger(0);
         stop = new AtomicBoolean(false);
         failed = new AtomicBoolean(false);
         assertionViolationCount = new AtomicInteger(0);
 
-        Config config = new Config();
+        Config config = getConfig();
         config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "2");
         member = factory.newHazelcastInstance(config);
 

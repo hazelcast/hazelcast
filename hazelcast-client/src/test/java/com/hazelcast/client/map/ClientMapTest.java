@@ -100,7 +100,7 @@ public class ClientMapTest extends HazelcastTestSupport {
 
         server = hazelcastFactory.newHazelcastInstance(config);
 
-        ClientConfig clientConfig = new ClientConfig();
+        ClientConfig clientConfig = getClientConfig();
         clientConfig.getSerializationConfig()
                 .addPortableFactory(TestSerializationConstants.PORTABLE_FACTORY_ID, new PortableFactory() {
                     public Portable create(int classId) {
@@ -118,7 +118,7 @@ public class ClientMapTest extends HazelcastTestSupport {
 
     @Test
     @SuppressWarnings("deprecation")
-    public void testIssue537() throws InterruptedException {
+    public void testIssue537() {
         final CountDownLatch latch = new CountDownLatch(2);
         final CountDownLatch nullLatch = new CountDownLatch(2);
 
@@ -156,7 +156,7 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSerializationServiceNullClassLoaderProblem() throws Exception {
+    public void testSerializationServiceNullClassLoaderProblem() {
         IMap<Integer, SampleTestObjects.PortableEmployee> map = client.getMap("test");
 
         // If the classloader is null the following call throws NullPointerException
@@ -164,7 +164,7 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testContains() throws Exception {
+    public void testContains() {
         IMap<String, String> map = createMap();
         fillMap(map);
 
@@ -211,7 +211,7 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testFlush() throws InterruptedException {
+    public void testFlush() {
         flushMapStore.latch = new CountDownLatch(1);
         IMap<Long, String> map = client.getMap("flushMap");
         map.put(1L, "value");
@@ -371,7 +371,7 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutTtl() throws Exception {
+    public void testPutTtl() {
         final IMap<String, String> map = createMap();
         map.put("key1", "value1", 1, TimeUnit.SECONDS);
         assertNotNull(map.get("key1"));
@@ -384,14 +384,14 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutIfAbsent() throws Exception {
+    public void testPutIfAbsent() {
         IMap<String, String> map = createMap();
         assertNull(map.putIfAbsent("key1", "value1"));
         assertEquals("value1", map.putIfAbsent("key1", "value3"));
     }
 
     @Test
-    public void testPutIfAbsentTtl() throws Exception {
+    public void testPutIfAbsentTtl() {
         final IMap<String, String> map = createMap();
         assertNull(map.putIfAbsent("key1", "value1", 1, TimeUnit.SECONDS));
         assertEquals("value1", map.putIfAbsent("key1", "value3", 1, TimeUnit.SECONDS));
@@ -406,7 +406,7 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSet() throws Exception {
+    public void testSet() {
         final IMap<String, String> map = createMap();
         map.set("key1", "value1");
         assertEquals("value1", map.get("key1"));
@@ -426,7 +426,7 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutTransient() throws InterruptedException {
+    public void testPutTransient() throws Exception {
         transientMapStore.latch = new CountDownLatch(1);
         IMap<Long, String> map = client.getMap("putTransientMap");
         map.putTransient(3L, "value1", 100, TimeUnit.SECONDS);
@@ -531,7 +531,7 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testReplace() throws Exception {
+    public void testReplace() {
         IMap<String, String> map = createMap();
         assertNull(map.replace("key1", "value1"));
         map.put("key1", "value1");
@@ -545,7 +545,7 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExecuteOnKey() throws Exception {
+    public void testExecuteOnKey() {
         IMap<Integer, Integer> map = createMap();
         map.put(1, 1);
         assertEquals(2, map.executeOnKey(1, new IncrementerEntryProcessor()));
@@ -601,7 +601,7 @@ public class ClientMapTest extends HazelcastTestSupport {
 
     @Test
     @SuppressWarnings("deprecation")
-    public void testListener() throws InterruptedException {
+    public void testListener() throws Exception {
         IMap<String, String> map = createMap();
         final CountDownLatch latch1Add = new CountDownLatch(5);
         final CountDownLatch latch1Remove = new CountDownLatch(2);
@@ -634,7 +634,7 @@ public class ClientMapTest extends HazelcastTestSupport {
         map.addEntryListener(listener1, false);
         map.addEntryListener(listener2, "key3", true);
 
-        Thread.sleep(1000);
+        sleepSeconds(1);
 
         map.put("key1", "value1");
         map.put("key2", "value2");
@@ -653,7 +653,7 @@ public class ClientMapTest extends HazelcastTestSupport {
 
     @Test
     @SuppressWarnings("deprecation")
-    public void testPredicateListenerWithPortableKey() throws InterruptedException {
+    public void testPredicateListenerWithPortableKey() throws Exception {
         IMap<Portable, Integer> tradeMap = createMap();
 
         final AtomicInteger atomicInteger = new AtomicInteger(0);
@@ -709,7 +709,7 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExecuteOnKeys() throws Exception {
+    public void testExecuteOnKeys() {
         String name = randomString();
         IMap<Integer, Integer> map = client.getMap(name);
         IMap<Integer, Integer> map2 = client.getMap(name);
@@ -760,7 +760,7 @@ public class ClientMapTest extends HazelcastTestSupport {
      */
     @Test
     @SuppressWarnings({"deprecation", "unchecked"})
-    public void testEntryListener() throws InterruptedException {
+    public void testEntryListener() throws Exception {
         CountDownLatch gateAdd = new CountDownLatch(3);
         CountDownLatch gateRemove = new CountDownLatch(1);
         CountDownLatch gateEvict = new CountDownLatch(1);
@@ -801,7 +801,7 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapStatistics() throws Exception {
+    public void testMapStatistics() {
         String name = randomString();
         IMap<Integer, Integer> map = client.getMap(name);
 
@@ -823,7 +823,7 @@ public class ClientMapTest extends HazelcastTestSupport {
 
     @Test
     @SuppressWarnings("deprecation")
-    public void testEntryListenerWithPredicateOnDeleteOperation() throws Exception {
+    public void testEntryListenerWithPredicateOnDeleteOperation() {
         IMap<String, String> serverMap = server.getMap("A");
         IMap<String, String> clientMap = client.getMap("A");
 
@@ -838,6 +838,10 @@ public class ClientMapTest extends HazelcastTestSupport {
         serverMap.put("A", "B");
         clientMap.delete("A");
         assertOpenEventually(latch, 10);
+    }
+
+    protected ClientConfig getClientConfig() {
+        return new ClientConfig();
     }
 
     private <K, V> IMap<K, V> createMap() {

@@ -19,26 +19,38 @@ package com.hazelcast.client.map;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.HazelcastTestSupport;
+import org.junit.After;
 import org.junit.Before;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
-public class ClientMapPartitionIteratorTest extends AbstractMapPartitionIteratorTest {
+@SuppressWarnings("WeakerAccess")
+public abstract class AbstractClientMapTest extends HazelcastTestSupport {
+
+    protected final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
+    protected HazelcastInstance client;
+
+    protected HazelcastInstance member1;
+    protected HazelcastInstance member2;
 
     @Before
-    public void setup() {
+    public final void startHazelcastInstances() {
         Config config = getConfig();
         ClientConfig clientConfig = getClientConfig();
 
-        factory = new TestHazelcastFactory();
-        server = factory.newHazelcastInstance(config);
-        client = factory.newHazelcastClient(clientConfig);
+        member1 = hazelcastFactory.newHazelcastInstance(config);
+        member2 = hazelcastFactory.newHazelcastInstance(config);
+
+        client = hazelcastFactory.newHazelcastClient(clientConfig);
+    }
+
+    @After
+    public final void stopHazelcastInstances() {
+        hazelcastFactory.terminateAll();
+    }
+
+    protected ClientConfig getClientConfig() {
+        return new ClientConfig();
     }
 }

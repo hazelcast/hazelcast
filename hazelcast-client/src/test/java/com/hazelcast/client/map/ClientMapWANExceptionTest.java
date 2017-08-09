@@ -75,7 +75,7 @@ public class ClientMapWANExceptionTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        Config config = new Config();
+        Config config = super.getConfig();
         WanReplicationConfig wanConfig = new WanReplicationConfig();
         wanConfig.setName("dummyWan");
 

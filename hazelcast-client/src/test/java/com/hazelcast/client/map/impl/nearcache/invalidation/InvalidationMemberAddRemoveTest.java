@@ -160,7 +160,7 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
     }
 
     protected Config createConfig() {
-        Config config = new Config();
+        Config config = getConfig();
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "271");
         config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), "true");
         config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), Integer.toString(INVALIDATION_BATCH_SIZE));

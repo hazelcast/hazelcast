@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.map;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
@@ -56,7 +57,7 @@ public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
     private HazelcastInstance member3;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
         mapStoreConfig.setImplementation(mapStore).setWriteDelaySeconds(3000);
@@ -69,18 +70,17 @@ public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
         member2 = hazelcastFactory.newHazelcastInstance(config);
         member3 = hazelcastFactory.newHazelcastInstance(config);
 
-        client = hazelcastFactory.newHazelcastClient();
+        client = hazelcastFactory.newHazelcastClient(getClientConfig());
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         client.shutdown();
 
         member1.shutdown();
         member2.shutdown();
         member3.shutdown();
     }
-
 
     @Test
     @Ignore //https://github.com/hazelcast/hazelcast/issues/7492
@@ -115,6 +115,10 @@ public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
         hazelcastFactory.shutdownAll();
     }
 
+    protected ClientConfig getClientConfig() {
+        return new ClientConfig();
+    }
+
     protected Config newMapStoredConfig(MapStore store, int writeDelaySeconds) {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
@@ -138,5 +142,4 @@ public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
             }
         });
     }
-
 }

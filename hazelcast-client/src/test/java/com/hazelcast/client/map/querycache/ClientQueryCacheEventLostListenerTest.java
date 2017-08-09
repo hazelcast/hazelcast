@@ -48,15 +48,15 @@ public class ClientQueryCacheEventLostListenerTest extends HazelcastTestSupport 
     private HazelcastInstance node;
 
     @Before
-    public void setUp() throws Exception {
-        Config config = new Config();
+    public void setUp() {
+        Config config = getConfig();
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
 
         node = factory.newHazelcastInstance(config);
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         factory.shutdownAll();
     }
 

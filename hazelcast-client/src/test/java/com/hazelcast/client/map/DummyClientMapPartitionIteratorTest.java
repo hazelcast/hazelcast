@@ -29,9 +29,10 @@ import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class DummyClientMapPartitionIteratorTest extends AbstractMapPartitionIteratorTest {
 
@@ -46,14 +47,15 @@ public class DummyClientMapPartitionIteratorTest extends AbstractMapPartitionIte
         client = factory.newHazelcastClient(getClientConfig(server));
     }
 
-    private static ClientConfig getClientConfig(HazelcastInstance instance) {
+    private ClientConfig getClientConfig(HazelcastInstance instance) {
         Address address = instance.getCluster().getLocalMember().getAddress();
         String addressString = address.getHost() + ":" + address.getPort();
-        ClientConfig clientConfig = new ClientConfig();
-        ClientNetworkConfig networkConfig = new ClientNetworkConfig();
-        networkConfig.setSmartRouting(false);
-        networkConfig.addAddress(addressString);
-        clientConfig.setNetworkConfig(networkConfig);
-        return clientConfig;
+
+        ClientNetworkConfig networkConfig = new ClientNetworkConfig()
+                .setSmartRouting(false)
+                .addAddress(addressString);
+
+        return getClientConfig()
+                .setNetworkConfig(networkConfig);
     }
 }
