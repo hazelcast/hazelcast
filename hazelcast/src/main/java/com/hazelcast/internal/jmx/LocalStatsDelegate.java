@@ -38,7 +38,7 @@ public class LocalStatsDelegate<T> {
     public LocalStatsDelegate(StatsSupplier<T> supplier, long intervalSec) {
         this.supplier = supplier;
         this.intervalMs = TimeUnit.SECONDS.toMillis(intervalSec);
-        localStats = supplier.getEmpty();
+        this.localStats = supplier.getEmpty();
     }
 
     public T getLocalStats() {
