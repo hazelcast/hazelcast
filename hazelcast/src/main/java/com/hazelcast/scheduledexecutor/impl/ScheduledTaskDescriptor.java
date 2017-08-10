@@ -143,8 +143,11 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
     void stopForMigration() {
         // Result is not set, allowing task to get re-scheduled, if/when needed.
         this.isTaskOwner = false;
-        this.future.cancel(true);
-        this.future = null;
+
+        if (future != null) {
+            this.future.cancel(true);
+            this.future = null;
+        }
     }
 
     boolean cancel(boolean mayInterrupt)
