@@ -22,6 +22,7 @@ import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * Represents actual storage layer behind a {@link RecordStore}.
@@ -51,6 +52,18 @@ public interface Storage<K, R> {
     boolean containsKey(K key);
 
     Collection<R> values();
+
+    /**
+     * Returned iterator from this method doesn't throw {@link java.util.ConcurrentModificationException} to fail fast.
+     * Because fail fast may not be the desired behaviour always. For example if you are caching an iterator as in
+     * {@link AbstractEvictableRecordStore#expirationIterator} and you know that in next rounds you will
+     * eventually visit all entries, you don't need fail fast behaviour.
+     *
+     * Note that returned iterator is not thread-safe !!!
+     *
+     * @return new iterator instance
+     */
+    Iterator<R> mutationTolerantIterator();
 
     int size();
 

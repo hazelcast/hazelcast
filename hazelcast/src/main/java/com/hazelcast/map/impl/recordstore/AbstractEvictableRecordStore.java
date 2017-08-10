@@ -156,7 +156,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     private void initExpirationIterator() {
         if (expirationIterator == null || !expirationIterator.hasNext()) {
-            expirationIterator = storage.values().iterator();
+            expirationIterator = storage.mutationTolerantIterator();
         }
     }
 
