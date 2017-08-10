@@ -52,6 +52,7 @@ public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
     private static final int CHARS_LENGTH = 32;
 
     private final StringBuffer tmpSb = new StringBuffer();
+    private final boolean includeEpochTime;
 
     private int sectionLevel = -1;
     private PrintWriter printWriter;
@@ -65,6 +66,14 @@ public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
 
     // used to write primitives without causing litter.
     private StringBuilder stringBuilder = new StringBuilder();
+
+    public DiagnosticsLogWriterImpl() {
+        this(false);
+    }
+
+    public DiagnosticsLogWriterImpl(boolean includeEpochTime) {
+        this.includeEpochTime = includeEpochTime;
+    }
 
     @Override
     public void writeSectionKeyValue(String sectionName, long timeMillis, String key, long value) {
@@ -102,6 +111,11 @@ public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
         if (sectionLevel == -1) {
             appendDateTime(timeMillis);
             write(' ');
+
+            if (includeEpochTime) {
+                write(timeMillis);
+                write(' ');
+            }
         }
 
         if (sectionLevel >= 0) {
