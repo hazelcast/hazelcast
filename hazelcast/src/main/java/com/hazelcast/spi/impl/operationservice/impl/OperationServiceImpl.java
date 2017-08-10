@@ -47,6 +47,7 @@ import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
@@ -64,8 +65,6 @@ import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_CALL_TIMEOUT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_REPLICA_INDEX;
-import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_COUNT;
-import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.util.CollectionUtil.toIntegerList;
@@ -127,7 +126,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     private final AsyncInboundResponseHandler asyncInboundResponseHandler;
     private final InternalSerializationService serializationService;
     private final InboundResponseHandler inboundResponseHandler;
-    private final Address thisAddress;
+    private final int invocationMaxRetryCount;
+    private final long invocationRetryPauseMillis;
 
     // contains the current executing asyncOperations. This information is needed for the operation-ping.
     // this is a temporary solution till we found a better async operation abstraction
@@ -138,15 +138,18 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
-        this.thisAddress = node.getThisAddress();
+        Address thisAddress = node.getThisAddress();
         this.logger = node.getLogger(OperationService.class);
         this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
+
+        this.invocationMaxRetryCount = node.getProperties().getInteger(GroupProperty.INVOCATION_MAX_RETRY_COUNT);
+        this.invocationRetryPauseMillis = node.getProperties().getMillis(GroupProperty.INVOCATION_RETRY_PAUSE);
 
         this.backpressureRegulator = new BackpressureRegulator(
                 node.getProperties(), node.getLogger(BackpressureRegulator.class));
 
-        this.outboundResponseHandler = new OutboundResponseHandler(
-                thisAddress, serializationService, node, node.getLogger(OutboundResponseHandler.class));
+        this.outboundResponseHandler = new OutboundResponseHandler(thisAddress, serializationService, node,
+                node.getLogger(OutboundResponseHandler.class));
 
         this.invocationRegistry = new InvocationRegistry(
                 node.getLogger(OperationServiceImpl.class), backpressureRegulator.newCallIdSequence());
@@ -262,13 +265,15 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
         checkNotNegative(partitionId, "Partition ID cannot be negative!");
-        return new InvocationBuilderImpl(invocationContext, serviceName, op, partitionId);
+        return new InvocationBuilderImpl(invocationContext, serviceName, op, partitionId)
+                .setTryCount(invocationMaxRetryCount).setTryPauseMillis(invocationRetryPauseMillis);
     }
 
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
         checkNotNull(target, "Target cannot be null!");
-        return new InvocationBuilderImpl(invocationContext, serviceName, op, target);
+        return new InvocationBuilderImpl(invocationContext, serviceName, op, target)
+                .setTryCount(invocationMaxRetryCount).setTryPauseMillis(invocationRetryPauseMillis);
     }
 
     @Override
@@ -294,7 +299,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 .setReplicaIndex(DEFAULT_REPLICA_INDEX);
 
         return new PartitionInvocation(
-                invocationContext, op, DEFAULT_TRY_COUNT, DEFAULT_TRY_PAUSE_MILLIS,
+                invocationContext, op, invocationMaxRetryCount, invocationRetryPauseMillis,
                 DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT).invoke();
     }
 
@@ -302,7 +307,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     @SuppressWarnings("unchecked")
     public <E> InternalCompletableFuture<E> invokeOnPartition(Operation op) {
         return new PartitionInvocation(
-                invocationContext, op, DEFAULT_TRY_COUNT, DEFAULT_TRY_PAUSE_MILLIS,
+                invocationContext, op, invocationMaxRetryCount, invocationRetryPauseMillis,
                 DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT).invoke();
     }
 
@@ -311,8 +316,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target) {
         op.setServiceName(serviceName);
 
-        return new TargetInvocation(invocationContext, op, target, DEFAULT_TRY_COUNT,
-                DEFAULT_TRY_PAUSE_MILLIS, DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT).invoke();
+        return new TargetInvocation(invocationContext, op, target, invocationMaxRetryCount, invocationRetryPauseMillis,
+                DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT).invoke();
     }
 
     @Override
@@ -320,7 +325,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     public <V> void asyncInvokeOnPartition(String serviceName, Operation op, int partitionId, ExecutionCallback<V> callback) {
         op.setServiceName(serviceName).setPartitionId(partitionId).setReplicaIndex(DEFAULT_REPLICA_INDEX);
 
-        InvocationFuture future = new PartitionInvocation(invocationContext, op, DEFAULT_TRY_COUNT, DEFAULT_TRY_PAUSE_MILLIS,
+        InvocationFuture future = new PartitionInvocation(invocationContext, op,
+                invocationMaxRetryCount, invocationRetryPauseMillis,
                 DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT).invokeAsync();
 
         if (callback != null) {

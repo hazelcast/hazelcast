@@ -25,6 +25,7 @@ import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.predicates.QueryOptimizerFactory;
+import com.hazelcast.spi.InvocationBuilder;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -239,6 +240,19 @@ public final class GroupProperty {
      */
     public static final HazelcastProperty OPERATION_BACKUP_TIMEOUT_MILLIS
             = new HazelcastProperty("hazelcast.operation.backup.timeout.millis", 5000, MILLISECONDS);
+
+    /**
+     * Maximum number of retries for an invocation. After threshold is reached, invocation is assumed as failed.
+     */
+    public static final HazelcastProperty INVOCATION_MAX_RETRY_COUNT
+            = new HazelcastProperty("hazelcast.invocation.max.retry.count", InvocationBuilder.DEFAULT_TRY_COUNT);
+
+    /**
+     * Pause time between each retry cycle of an invocation in milliseconds.
+     */
+    public static final HazelcastProperty INVOCATION_RETRY_PAUSE
+            = new HazelcastProperty("hazelcast.invocation.retry.pause.millis",
+            InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS, MILLISECONDS);
 
     public static final HazelcastProperty SOCKET_BIND_ANY
             = new HazelcastProperty("hazelcast.socket.bind.any", true);
