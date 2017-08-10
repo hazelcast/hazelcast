@@ -562,13 +562,17 @@ public class NearCacheTest extends NearCacheTestSupport {
         IMap<Integer, Integer> map = hz.getMap(mapName);
         populateNearCache(map, mapSize);
 
+        assertEquals(mapSize, getNearCacheSize(map));
+
         for (int i = 0; i < mapSize; i++) {
             Future<Integer> future = map.getAsync(i);
             assertNull(future.get());
         }
 
-        long hits = getNearCacheStats(map).getHits();
-        assertEquals(format("Near Cache hits should be %d but were %d", mapSize, hits), mapSize, hits);
+        NearCacheStats nearCacheStats = getNearCacheStats(map);
+        long hits = nearCacheStats.getHits();
+        assertEquals(format("Near Cache hits should be %d but were %d. All stats are here = [%s]",
+                mapSize, hits, nearCacheStats), mapSize, hits);
     }
 
     @Test
