@@ -33,14 +33,14 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class MultiLineDiagnosticsLogWriterTest extends HazelcastTestSupport {
+public class DiagnosticsLogWriterImplTest extends HazelcastTestSupport {
 
-    protected DiagnosticsLogWriter writer;
+    protected DiagnosticsLogWriterImpl writer;
     private CharArrayWriter out = new CharArrayWriter();
 
     @Before
     public void setupLogWriter() {
-        writer = new MultiLineDiagnosticsLogWriter();
+        writer = new DiagnosticsLogWriterImpl();
         writer.init(new PrintWriter(out));
     }
 
@@ -155,7 +155,7 @@ public class MultiLineDiagnosticsLogWriterTest extends HazelcastTestSupport {
 
     private void assertLongValue(long value) {
         CharArrayWriter out = new CharArrayWriter();
-        MultiLineDiagnosticsLogWriter writer = new MultiLineDiagnosticsLogWriter();
+        DiagnosticsLogWriterImpl writer = new DiagnosticsLogWriterImpl();
         writer.init(new PrintWriter(out));
 
         writer.writeLong(value);

@@ -70,35 +70,38 @@ public class MetricsPlugin extends DiagnosticsPlugin {
 
     @Override
     public void run(DiagnosticsLogWriter writer) {
-        writer.startSection("Metrics");
         probeRenderer.writer = writer;
+        // we set the time explicitly so that for this particular rendering of the probes, all metrics have exactly
+        // the same timestamp.
+        probeRenderer.timeMillis = System.currentTimeMillis();
         metricsRegistry.render(probeRenderer);
         probeRenderer.writer = null;
-        writer.endSection();
     }
 
     private static class ProbeRendererImpl implements ProbeRenderer {
+        private static final String SECTION_NAME = "Metric";
 
         private DiagnosticsLogWriter writer;
+        private long timeMillis;
 
         @Override
         public void renderLong(String name, long value) {
-            writer.writeKeyValueEntry(name, value);
+            writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, value);
         }
 
         @Override
         public void renderDouble(String name, double value) {
-            writer.writeKeyValueEntry(name, value);
+            writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, value);
         }
 
         @Override
         public void renderException(String name, Exception e) {
-            writer.writeKeyValueEntry(name, e.getClass().getName() + ':' + e.getMessage());
+            writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, e.getClass().getName() + ':' + e.getMessage());
         }
 
         @Override
         public void renderNoValue(String name) {
-            writer.writeKeyValueEntry(name, "NA");
+            writer.writeSectionKeyValue(SECTION_NAME, timeMillis, name, "NA");
         }
     }
 }

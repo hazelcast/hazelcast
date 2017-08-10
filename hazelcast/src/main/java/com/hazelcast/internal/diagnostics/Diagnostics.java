@@ -89,14 +89,6 @@ public class Diagnostics {
             .setDeprecatedName("hazelcast.performance.monitor.max.rolled.file.count");
 
     /**
-     * Determines if a human friendly, but more difficult to parse, output format is selected for dumping the metrics.
-     * <p/>
-     * The default is true.
-     */
-    public static final HazelcastProperty HUMAN_FRIENDLY_FORMAT = new HazelcastProperty(PREFIX + ".human.friendly.format", true)
-            .setDeprecatedName("hazelcast.performance.monitor.human.friendly.format");
-
-    /**
      * Configures the output directory of the performance log files.
      *
      * Defaults to the 'user.dir'.
@@ -104,7 +96,6 @@ public class Diagnostics {
     public static final HazelcastProperty DIRECTORY
             = new HazelcastProperty(PREFIX + ".directory", "" + System.getProperty("user.dir"));
 
-    final boolean singleLine;
     final HazelcastProperties properties;
     final String directory;
     DiagnosticsLogFile diagnosticsLogFile;
@@ -127,7 +118,6 @@ public class Diagnostics {
         this.properties = properties;
         this.enabled = properties.getBoolean(ENABLED);
         this.directory = properties.getString(DIRECTORY);
-        this.singleLine = !properties.getBoolean(HUMAN_FRIENDLY_FORMAT);
     }
 
     // just for testing. Returns the current file the system is writing to.

@@ -158,7 +158,7 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
                 assertContains(content, "SystemProperties[");
                 assertContains(content, "BuildInfo[");
                 assertContains(content, "ConfigProperties[");
-                assertContains(content, "Metrics[");
+                assertContains(content, "Metric[");
             }
         });
     }

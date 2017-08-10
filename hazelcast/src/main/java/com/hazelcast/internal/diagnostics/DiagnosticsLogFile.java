@@ -55,13 +55,10 @@ final class DiagnosticsLogFile {
     private PrintWriter printWriter;
     private int maxRollingFileCount;
     private int maxRollingFileSizeBytes;
-    private final DiagnosticsLogWriter logWriter;
+    private final DiagnosticsLogWriterImpl logWriter =  new DiagnosticsLogWriterImpl();
 
     DiagnosticsLogFile(Diagnostics diagnostics) {
         this.diagnostics = diagnostics;
-        this.logWriter = diagnostics.singleLine
-                ? new SingleLineDiagnosticsLogWriter()
-                : new MultiLineDiagnosticsLogWriter();
         this.logger = diagnostics.logger;
         this.fileName = diagnostics.fileName + "-%03d.log";
 
