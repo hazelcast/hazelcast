@@ -24,12 +24,12 @@ import java.io.PrintWriter;
 
 public class AbstractDiagnosticsPluginTest extends HazelcastTestSupport {
 
-    protected DiagnosticsLogWriter logWriter;
+    protected DiagnosticsLogWriterImpl logWriter;
     private CharArrayWriter out;
 
     @Before
     public void setupLogWriter() {
-        logWriter = new MultiLineDiagnosticsLogWriter();
+        logWriter = new DiagnosticsLogWriterImpl();
         out = new CharArrayWriter();
         logWriter.init(new PrintWriter(out));
     }

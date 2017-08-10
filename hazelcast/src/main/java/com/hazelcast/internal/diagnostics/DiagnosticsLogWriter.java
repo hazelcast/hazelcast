@@ -16,148 +16,27 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import java.io.PrintWriter;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.TimeZone;
+public interface DiagnosticsLogWriter {
 
-import static java.util.Calendar.DAY_OF_MONTH;
-import static java.util.Calendar.HOUR_OF_DAY;
-import static java.util.Calendar.MINUTE;
-import static java.util.Calendar.MONTH;
-import static java.util.Calendar.SECOND;
-import static java.util.Calendar.YEAR;
+    void writeSectionKeyValue(String sectionName, long timeMillis, String key, long value);
 
-/**
- * A writer like structure dedicated for the {@link DiagnosticsPlugin} rendering.
- */
-public abstract class DiagnosticsLogWriter {
+    void writeSectionKeyValue(String sectionName, long timeMillis, String key, double value);
 
-    //32 chars should be more than enough to encode primitives
-    private static final int CHARS_LENGTH = 32;
+    void writeSectionKeyValue(String sectionName, long timeMillis, String key, String value);
 
-    protected int sectionLevel = -1;
-    private PrintWriter printWriter;
+    void startSection(String sectionName);
 
-    // lots of stuff to write a date without generating litter
-    private final Calendar calendar = new GregorianCalendar(TimeZone.getDefault());
-    private final Date date = new Date();
+    void endSection();
 
-    // used for encoding primitives.
-    private char[] chars = new char[CHARS_LENGTH];
+    void writeEntry(String s);
 
-    // used to write primitives without causing litter.
-    private StringBuilder stringBuilder = new StringBuilder();
+    void writeKeyValueEntry(String key, String value);
 
-    public abstract void startSection(String name);
+    void writeKeyValueEntry(String key, double value);
 
-    public abstract void endSection();
+    void writeKeyValueEntry(String key, long value);
 
-    public abstract void writeEntry(String s);
+    void writeKeyValueEntry(String key, boolean value);
 
-    public abstract void writeKeyValueEntry(String key, String value);
-
-    public abstract void writeKeyValueEntry(String key, double value);
-
-    public abstract void writeKeyValueEntry(String key, long value);
-
-    public abstract void writeKeyValueEntry(String key, boolean value);
-
-    public abstract void writeKeyValueEntryAsDateTime(String key, long epochMillis);
-
-    protected void init(PrintWriter printWriter) {
-        this.printWriter = printWriter;
-    }
-
-    protected DiagnosticsLogWriter write(char c) {
-        printWriter.write(c);
-        return this;
-    }
-
-    protected DiagnosticsLogWriter write(int i) {
-        stringBuilder.append(i);
-        flushSb();
-        return this;
-    }
-
-    protected DiagnosticsLogWriter write(double i) {
-        stringBuilder.append(i);
-        flushSb();
-        return this;
-    }
-
-    protected DiagnosticsLogWriter write(long i) {
-        stringBuilder.append(i);
-        flushSb();
-        return this;
-    }
-
-    private void flushSb() {
-        int length = stringBuilder.length();
-        stringBuilder.getChars(0, length, chars, 0);
-        printWriter.write(chars, 0, length);
-        stringBuilder.setLength(0);
-    }
-
-    protected DiagnosticsLogWriter write(boolean b) {
-        write(b ? "true" : "false");
-        return this;
-    }
-
-    protected DiagnosticsLogWriter write(String s) {
-        printWriter.write(s == null ? "null" : s);
-        return this;
-    }
-
-    protected void appendDateTime() {
-        appendDateTime(System.currentTimeMillis());
-    }
-
-    // we can't rely on DateFormat since it generates a ton of garbage
-    protected void appendDateTime(long epochMillis) {
-        date.setTime(epochMillis);
-        calendar.setTime(date);
-        appendDate();
-        write(' ');
-        appendTime();
-    }
-
-    @SuppressWarnings("checkstyle:magicnumber")
-    private void appendDate() {
-        int dayOfMonth = calendar.get(DAY_OF_MONTH);
-        if (dayOfMonth < 10) {
-            write('0');
-        }
-        write(dayOfMonth);
-        write('-');
-        int month = calendar.get(MONTH) + 1;
-        if (month < 10) {
-            write('0');
-        }
-        write(month);
-        write('-');
-        write(calendar.get(YEAR));
-    }
-
-    @SuppressWarnings("checkstyle:magicnumber")
-    private void appendTime() {
-        int hour = calendar.get(HOUR_OF_DAY);
-        if (hour < 10) {
-            write('0');
-        }
-        write(hour);
-        write(':');
-        int minute = calendar.get(MINUTE);
-        if (minute < 10) {
-            write('0');
-        }
-        write(minute);
-        write(':');
-        int second = calendar.get(SECOND);
-        if (second < 10) {
-            write('0');
-        }
-        write(second);
-    }
+    void writeKeyValueEntryAsDateTime(String key, long epochMillis);
 }
