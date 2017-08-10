@@ -109,18 +109,19 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
     @Before
     @SuppressWarnings("unchecked")
     public void setup() {
-        Config config = getConfig();
         ClientConfig clientConfig = createClientConfig()
                 .addNearCacheConfig(createNearCacheConfig(inMemoryFormat));
 
         hazelcastFactory = new TestHazelcastFactory();
 
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
+        // every instance should have its own getConfig() call because an existing EE test relies on this.
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(getConfig());
         if (MEMBER_COUNT > 1) {
             HazelcastInstance[] allMembers = new HazelcastInstance[MEMBER_COUNT];
             allMembers[0] = member;
             for (int i = 1; i < MEMBER_COUNT; i++) {
-                allMembers[i] = hazelcastFactory.newHazelcastInstance(config);
+                // every instance should have its own getConfig() call because an existing EE test relies on this.
+                allMembers[i] = hazelcastFactory.newHazelcastInstance(getConfig());
             }
             waitAllForSafeState(allMembers);
         }
@@ -204,11 +205,7 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
 
         destroyCacheFromCacheManager();
 
-        if (invokeCacheOperationsFromMember) {
-            assertNoFurtherInvalidation();
-        } else {
-            assertNoFurtherInvalidationThan(MEMBER_COUNT);
-        }
+        assertLeastInvalidationCount(1);
     }
 
     private void waitEndOfInvalidationsFromInitialPopulation() {
