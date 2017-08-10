@@ -49,11 +49,14 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.EXPLICIT_SUSPICION;
+import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.F_ID;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.HEARTBEAT;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.PROMOTE_LITE_MEMBER;
-import static com.hazelcast.internal.cluster.impl.PacketFiltersUtil.dropOperationsBetween;
-import static com.hazelcast.internal.cluster.impl.PacketFiltersUtil.dropOperationsFrom;
+import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
+import static com.hazelcast.test.PacketFiltersUtil.dropOperationsFrom;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -259,7 +262,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(3, hz2);
 
-        dropOperationsBetween(hz3, hz1, PROMOTE_LITE_MEMBER);
+        dropOperationsBetween(hz3, hz1, F_ID, singletonList(PROMOTE_LITE_MEMBER));
         final Cluster cluster = hz3.getCluster();
         Future<Exception> future = spawn(new Callable<Exception>() {
             @Override
@@ -292,9 +295,9 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(3, hz2);
 
-        dropOperationsBetween(hz3, hz1, PROMOTE_LITE_MEMBER, EXPLICIT_SUSPICION);
-        dropOperationsFrom(hz2, MEMBER_INFO_UPDATE, EXPLICIT_SUSPICION);
-        dropOperationsFrom(hz1, HEARTBEAT);
+        dropOperationsBetween(hz3, hz1, F_ID, asList(PROMOTE_LITE_MEMBER, EXPLICIT_SUSPICION));
+        dropOperationsFrom(hz2, F_ID, asList(MEMBER_INFO_UPDATE, EXPLICIT_SUSPICION));
+        dropOperationsFrom(hz1, F_ID, singletonList(HEARTBEAT));
 
         final Cluster cluster = hz3.getCluster();
         Future future = spawn(new Runnable() {
@@ -311,7 +314,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
 
         assertMasterAddressEventually(getAddress(hz2), hz3);
 
-        dropOperationsBetween(hz3, hz1, EXPLICIT_SUSPICION);
+        dropOperationsBetween(hz3, hz1, F_ID, singletonList(EXPLICIT_SUSPICION));
         try {
             future.get();
             fail("Promotion should fail!");

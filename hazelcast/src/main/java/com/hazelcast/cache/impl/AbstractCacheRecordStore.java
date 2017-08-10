@@ -541,7 +541,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                              boolean disableWriteThrough, int completionId, String origin) {
         R record = createRecord(value, now, expiryTime);
         try {
-            doPutRecord(key, record);
+            doPutRecord(key, record, origin);
         } catch (Throwable error) {
             onCreateRecordError(key, value, expiryTime, now, disableWriteThrough,
                     completionId, origin, record, error);
@@ -913,10 +913,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         if (oldRecord != null) {
             cacheService.eventJournal.writeUpdateEvent(
                     objectNamespace, partitionId, key, oldRecord.getValue(), record.getValue());
-            invalidateEntry(key, source);
         } else {
             cacheService.eventJournal.writeCreatedEvent(objectNamespace, partitionId, key, record.getValue());
         }
+        invalidateEntry(key, source);
         return oldRecord;
     }
 
@@ -1018,7 +1018,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             // not be added to the cache or listeners called or writers called.
             if (record == null || isExpired) {
                 isOnNewPut = true;
-                record = createRecordWithExpiry(key, value, expiryPolicy, now, disableWriteThrough, completionId);
+                record = createRecordWithExpiry(key, value, expiryPolicy, now, disableWriteThrough, completionId, source);
                 isSaveSucceed = record != null;
             } else {
                 if (getValue) {
@@ -1076,7 +1076,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         try {
             if (record == null || isExpired) {
                 saved = createRecordWithExpiry(key, value, expiryPolicy, now,
-                        disableWriteThrough, completionId) != null;
+                        disableWriteThrough, completionId, source) != null;
             } else {
                 if (isEventsEnabled()) {
                     publishEvent(createCacheCompleteEvent(toEventData(key), completionId));

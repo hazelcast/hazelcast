@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.map;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -34,8 +35,10 @@ public class ClientMapPartitionIteratorTest extends AbstractMapPartitionIterator
     @Before
     public void setup() {
         Config config = getConfig();
+        ClientConfig clientConfig = getClientConfig();
+
         factory = new TestHazelcastFactory();
         server = factory.newHazelcastInstance(config);
-        client = factory.newHazelcastClient();
+        client = factory.newHazelcastClient(clientConfig);
     }
 }

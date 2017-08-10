@@ -19,6 +19,7 @@ package com.hazelcast.cache;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.ClasspathXmlConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -39,6 +40,7 @@ import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceI
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceName;
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByLocation;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -92,25 +94,22 @@ public class CachingProviderTest extends HazelcastTestSupport {
         assertCacheManagerInstance(cacheManager, instance2);
     }
 
-    @Test(expected = CacheException.class)
-    public void whenDefaultURI_invalidInstanceNameAsProperty_thenFails() throws URISyntaxException {
+    @Test
+    public void whenDefaultURI_inexistentInstanceNameAsProperty_thenStartsOtherInstance() throws URISyntaxException {
         cachingProvider.getCacheManager(null, null, propertiesByInstanceName("instance-does-not-exist"));
+        assertInstanceStarted("instance-does-not-exist");
     }
 
-    @Test(expected = CacheException.class)
-    public void whenOtherURI_invalidInstanceNameAsProperty_thenFails() throws URISyntaxException {
+    @Test
+    public void whenOtherURI_inexistentInstanceNameAsProperty_thenStartsNewInstance() throws URISyntaxException {
         cachingProvider.getCacheManager(new URI("other-uri"), null, propertiesByInstanceName("instance-does-not-exist"));
+        assertInstanceStarted("instance-does-not-exist");
     }
 
     @Test
     public void whenDefaultURI_noInstanceName_thenUseDefaultHazelcastInstance() throws URISyntaxException {
         HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager();
         assertCacheManagerInstance(cacheManager, instance1);
-    }
-
-    @Test(expected = CacheException.class)
-    public void whenOtherURI_noInstanceName_thenFails() throws URISyntaxException {
-        cachingProvider.getCacheManager(new URI("other-uri"), null);
     }
 
     @Test
@@ -120,15 +119,24 @@ public class CachingProviderTest extends HazelcastTestSupport {
         assertCacheManagerInstance(cacheManager, instance2);
     }
 
-    @Test(expected = CacheException.class)
-    public void whenInvalidInstanceNameAsUri_thenFails() throws URISyntaxException {
+    @Test
+    public void whenInexistentInstanceNameAsUri_thenOtherInstanceIsStarted() throws URISyntaxException {
         cachingProvider.getCacheManager(new URI("does-not-exist"), null);
+        assertInstanceStarted("does-not-exist");
     }
 
     @Test
     public void whenConfigLocationAsUri_thenThatInstanceIsUsed() throws URISyntaxException {
         HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
                 new URI("classpath:" + CONFIG_CLASSPATH_LOCATION), null);
+        assertCacheManagerInstance(cacheManager, instance3);
+    }
+
+    @Test
+    public void whenConfigLocationAsUriViaProperty_thenThatInstanceIsUsed() throws URISyntaxException {
+        System.setProperty("PROPERTY_PLACEHOLDER", "classpath:" + CONFIG_CLASSPATH_LOCATION);
+        HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
+                new URI("PROPERTY_PLACEHOLDER"), null);
         assertCacheManagerInstance(cacheManager, instance3);
     }
 
@@ -188,5 +196,11 @@ public class CachingProviderTest extends HazelcastTestSupport {
 
     protected void assertCacheManagerInstance(HazelcastCacheManager cacheManager, HazelcastInstance instance) {
         assertEquals(instance, cacheManager.getHazelcastInstance());
+    }
+
+    protected void assertInstanceStarted(String instanceName) {
+        HazelcastInstance otherInstance = Hazelcast.getHazelcastInstanceByName(instanceName);
+        assertNotNull(otherInstance);
+        otherInstance.getLifecycleService().terminate();
     }
 }

@@ -37,23 +37,24 @@ import static junit.framework.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
+@SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
 public class ResultSetTest {
 
     @Test
-    public void testSize_whenEmpty() throws Exception {
+    public void testSize_whenEmpty() {
         List<Map.Entry<Object, Object>> emptyList = Collections.emptyList();
         ResultSet<Object, Object> resultSet = new ResultSet<Object, Object>(emptyList, IterationType.KEY);
         assertEquals(0, resultSet.size());
     }
 
     @Test
-    public void testSize_whenNull() throws Exception {
+    public void testSize_whenNull() {
         ResultSet<Object, Object> resultSet = new ResultSet<Object, Object>(null, IterationType.KEY);
         assertEquals(0, resultSet.size());
     }
 
     @Test
-    public void testSize_whenNotEmpty() throws Exception {
+    public void testSize_whenNotEmpty() {
         List<Map.Entry<Object, Object>> entries = new ArrayList<Map.Entry<Object, Object>>();
         entries.add(new MapEntrySimple<Object, Object>(null, null));
         ResultSet<Object, Object> resultSet = new ResultSet<Object, Object>(entries, IterationType.KEY);
@@ -61,7 +62,7 @@ public class ResultSetTest {
     }
 
     @Test
-    public void testIterator_whenEmpty() throws Exception {
+    public void testIterator_whenEmpty() {
         List<Map.Entry<Object, Object>> emptyList = Collections.emptyList();
         ResultSet<Object, Object> resultSet = new ResultSet<Object, Object>(emptyList, IterationType.KEY);
         Iterator iterator = resultSet.iterator();
@@ -69,14 +70,14 @@ public class ResultSetTest {
     }
 
     @Test
-    public void testIterator_whenNull() throws Exception {
+    public void testIterator_whenNull() {
         ResultSet<Object, Object> resultSet = new ResultSet<Object, Object>(null, IterationType.KEY);
         Iterator iterator = resultSet.iterator();
         assertFalse(iterator.hasNext());
     }
 
     @Test
-    public void testIterator_whenNotEmpty_IterationType_Key() throws Exception {
+    public void testIterator_whenNotEmpty_IterationType_Key() {
         List<Map.Entry<Object, Object>> entries = new ArrayList<Map.Entry<Object, Object>>();
         MapEntrySimple<Object, Object> entry = new MapEntrySimple<Object, Object>("key", "value");
         entries.add(entry);
@@ -87,7 +88,7 @@ public class ResultSetTest {
     }
 
     @Test
-    public void testIterator_whenNotEmpty_IterationType_Value() throws Exception {
+    public void testIterator_whenNotEmpty_IterationType_Value() {
         List<Map.Entry<Object, Object>> entries = new ArrayList<Map.Entry<Object, Object>>();
         MapEntrySimple<Object, Object> entry = new MapEntrySimple<Object, Object>("key", "value");
         entries.add(entry);
@@ -98,7 +99,7 @@ public class ResultSetTest {
     }
 
     @Test
-    public void testIterator_whenNotEmpty_IterationType_Entry() throws Exception {
+    public void testIterator_whenNotEmpty_IterationType_Entry() {
         List<Map.Entry<Object, Object>> entries = new ArrayList<Map.Entry<Object, Object>>();
         MapEntrySimple<Object, Object> entry = new MapEntrySimple<Object, Object>("key", "value");
         entries.add(entry);
@@ -108,8 +109,5 @@ public class ResultSetTest {
         Map.Entry<Object, Object> entryFromIterator = iterator.next();
         assertEquals("key", entryFromIterator.getKey());
         assertEquals("value", entryFromIterator.getValue());
-
     }
-
-
 }

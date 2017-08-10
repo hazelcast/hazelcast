@@ -44,7 +44,7 @@ public class ReplicatedMapPutSerializationTest extends HazelcastTestSupport {
     static AtomicInteger deSerializationCount = new AtomicInteger(0);
 
     @Test
-    public void testPutShouldNotDeserializeData() throws Exception {
+    public void testPutShouldNotDeserializeData() {
         String mapName = randomName();
         Config config = new Config();
         config.getReplicatedMapConfig(mapName).setInMemoryFormat(InMemoryFormat.BINARY);
@@ -57,12 +57,12 @@ public class ReplicatedMapPutSerializationTest extends HazelcastTestSupport {
         map.put(key, value);
         map.put(key, value);
 
-        // only deserialized once in the proxy.
+        // only deserialized once in the proxy
         assertEquals(1, deSerializationCount.get());
     }
 
-
     static class SerializationCountingData implements DataSerializable {
+
         public SerializationCountingData() {
         }
 
@@ -75,5 +75,4 @@ public class ReplicatedMapPutSerializationTest extends HazelcastTestSupport {
             deSerializationCount.incrementAndGet();
         }
     }
-
 }

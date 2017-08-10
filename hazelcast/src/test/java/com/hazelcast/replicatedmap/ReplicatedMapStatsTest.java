@@ -40,7 +40,7 @@ import static org.junit.Assert.assertTrue;
 public class ReplicatedMapStatsTest extends HazelcastTestSupport {
 
     @Test
-    public void testGetOperationCount() throws Exception {
+    public void testGetOperationCount() {
         ReplicatedMap<Integer, Integer> replicatedMap = getReplicatedMap();
         replicatedMap.put(1, 1);
         int count = 100;
@@ -52,7 +52,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutOperationCount() throws Exception {
+    public void testPutOperationCount() {
         ReplicatedMap<Integer, Integer> replicatedMap = getReplicatedMap();
         int count = 100;
         for (int i = 0; i < count; i++) {
@@ -63,7 +63,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemoveOperationCount() throws Exception {
+    public void testRemoveOperationCount() {
         ReplicatedMap<Integer, Integer> replicatedMap = getReplicatedMap();
         int count = 100;
         for (int i = 0; i < count; i++) {
@@ -76,7 +76,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
 
 
     @Test
-    public void testHitsGenerated() throws Exception {
+    public void testHitsGenerated() {
         ReplicatedMap<Integer, Integer> replicatedMap = getReplicatedMap();
         for (int i = 0; i < 100; i++) {
             replicatedMap.put(i, i);
@@ -87,7 +87,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutAndHitsGenerated() throws Exception {
+    public void testPutAndHitsGenerated() {
         ReplicatedMap<Integer, Integer> replicatedMap = getReplicatedMap();
         for (int i = 0; i < 100; i++) {
             replicatedMap.put(i, i);
@@ -98,7 +98,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetAndHitsGenerated() throws Exception {
+    public void testGetAndHitsGenerated() {
         ReplicatedMap<Integer, Integer> replicatedMap = getReplicatedMap();
         for (int i = 0; i < 100; i++) {
             replicatedMap.put(i, i);
@@ -109,7 +109,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testHitsGenerated_updatedConcurrently() throws Exception {
+    public void testHitsGenerated_updatedConcurrently() {
         final ReplicatedMap<Integer, Integer> replicatedMap = getReplicatedMap();
         final int actionCount = 100;
         for (int i = 0; i < actionCount; i++) {
@@ -132,15 +132,14 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         assertEquals(actionCount, initialHits);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() throws Exception {
                 assertEquals(actionCount * 2, stats.getHits());
             }
         });
     }
 
     @Test
-    public void testLastAccessTime() throws InterruptedException {
+    public void testLastAccessTime() {
         final long startTime = Clock.currentTimeMillis();
         ReplicatedMap<String, String> replicatedMap = getReplicatedMap();
         String key = "key";
@@ -152,7 +151,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testLastAccessTime_updatedConcurrently() throws InterruptedException {
+    public void testLastAccessTime_updatedConcurrently() {
         final long startTime = Clock.currentTimeMillis();
         final ReplicatedMap<String, String> map = getReplicatedMap();
         final String key = "key";
@@ -173,15 +172,14 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         assertTrue(lastAccessTime >= startTime);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() throws Exception {
                 assertTrue(stats.getLastAccessTime() >= lastAccessTime);
             }
         });
     }
 
     @Test
-    public void testLastUpdateTime() throws InterruptedException {
+    public void testLastUpdateTime() {
         final long startTime = Clock.currentTimeMillis();
 
         ReplicatedMap<String, String> replicatedMap = getReplicatedMap();
@@ -198,7 +196,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testLastUpdateTime_updatedConcurrently() throws InterruptedException {
+    public void testLastUpdateTime_updatedConcurrently() {
         final long startTime = Clock.currentTimeMillis();
         final ReplicatedMap<String, String> map = getReplicatedMap();
 
@@ -220,8 +218,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         assertTrue(lastUpdateTime >= startTime);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() throws Exception {
                 assertTrue(stats.getLastUpdateTime() >= lastUpdateTime);
             }
         });

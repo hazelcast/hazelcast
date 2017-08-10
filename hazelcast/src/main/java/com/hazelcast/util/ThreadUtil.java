@@ -82,4 +82,8 @@ public final class ThreadUtil {
     public static String createThreadPoolName(String hzName, String poolName) {
         return createThreadName(hzName, poolName) + ".thread-";
     }
+
+    public static void assertRunningOnPartitionThread() {
+        assert Thread.currentThread().getName().contains("partition-operation");
+    }
 }

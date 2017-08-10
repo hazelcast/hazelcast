@@ -36,19 +36,18 @@ import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
-
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -61,14 +60,16 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.internal.cluster.Versions.V3_8;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.Boolean.getBoolean;
 
-@SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount"})
-public class ClusterWideConfigurationService implements MigrationAwareService,
+@SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
+public class ClusterWideConfigurationService implements PreJoinAwareService,
         CoreService, ClusterVersionListener, ManagedService, ConfigurationService, SplitBrainHandlerService {
     public static final String SERVICE_NAME = "configuration-service";
     public static final int CONFIG_PUBLISH_MAX_ATTEMPT_COUNT = 100;
@@ -143,7 +144,7 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
     }
 
     @Override
-    public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
+    public Operation getPreJoinOperation() {
         if (version.isLessOrEqual(V3_8)) {
             return null;
         }
@@ -152,7 +153,7 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
             // there is no dynamic configuration -> no need to send an empty operation
             return null;
         }
-        return new DynamicConfigReplicationOperation(allConfigurations, ConfigCheckMode.WARNING);
+        return new DynamicConfigPreJoinOperation(allConfigurations, ConfigCheckMode.WARNING);
     }
 
     private boolean noConfigurationExist(IdentifiedDataSerializable[] configurations) {
@@ -166,21 +167,6 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
             all.addAll(values);
         }
         return all.toArray(new IdentifiedDataSerializable[0]);
-    }
-
-    @Override
-    public void beforeMigration(PartitionMigrationEvent event) {
-        //no-op
-    }
-
-    @Override
-    public void commitMigration(PartitionMigrationEvent event) {
-        //no-op
-    }
-
-    @Override
-    public void rollbackMigration(PartitionMigrationEvent event) {
-        //no-op
     }
 
     @Override
@@ -207,6 +193,18 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
 
     @Override
     public void broadcastConfig(IdentifiedDataSerializable config) {
+        ICompletableFuture<Object> future = broadcastConfigAsync(config);
+        try {
+            future.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            rethrow(e);
+        } catch (ExecutionException e) {
+            rethrow(e);
+        }
+    }
+
+    public ICompletableFuture<Object> broadcastConfigAsync(IdentifiedDataSerializable config) {
         if (version.isLessOrEqual(V3_8)) {
             throw new UnsupportedOperationException("Adding dynamic configuration is only supported when running "
                     + " in cluster version 3.9+. The current cluster version:" + version);
@@ -216,7 +214,8 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
         // and avoid config serialization altogether.
         // we certainly do not want the dynamic config service to reference object a user can mutate
         IdentifiedDataSerializable clonedConfig = cloneConfig(config);
-        invokeOnStableClusterSerial(nodeEngine, new AddDynamicConfigOperationFactory(clonedConfig),
+        ClusterService clusterService = nodeEngine.getClusterService();
+        return invokeOnStableClusterSerial(nodeEngine, new AddDynamicConfigOperationFactory(clusterService, clonedConfig),
                 CONFIG_PUBLISH_MAX_ATTEMPT_COUNT);
     }
 
@@ -303,7 +302,7 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
 
     private void registerEventJournalConfig(EventJournalConfig eventJournalConfig, ConfigCheckMode configCheckMode) {
         String mapName = eventJournalConfig.getMapName();
-        String cacheName = eventJournalConfig.getMapName();
+        String cacheName = eventJournalConfig.getCacheName();
         synchronized (journalMutex) {
             EventJournalConfig currentMapJournalConfig = null;
             if (mapName != null) {
@@ -542,7 +541,7 @@ public class ClusterWideConfigurationService implements MigrationAwareService,
         if (noConfigurationExist(allConfigurations)) {
             return null;
         }
-        return new Merger(nodeEngine, new DynamicConfigReplicationOperation(allConfigurations, ConfigCheckMode.SILENT));
+        return new Merger(nodeEngine, new DynamicConfigPreJoinOperation(allConfigurations, ConfigCheckMode.SILENT));
     }
 
     public static class Merger implements Runnable {

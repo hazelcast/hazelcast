@@ -1365,6 +1365,8 @@ public class Config {
     }
 
     /**
+     * Returns the {@link URL} to the XML configuration, which has been parsed to create this {@link Config} instance.
+     *
      * @return the configurationUrl
      */
     public URL getConfigurationUrl() {
@@ -1372,6 +1374,10 @@ public class Config {
     }
 
     /**
+     * Sets the {@link URL} to the XML configuration, which has been parsed to create this {@link Config} instance.
+     * <p>
+     * Is set by the {@link XmlConfigBuilder}, when the XML configuration was retrieved from a URL.
+     *
      * @param configurationUrl the configurationUrl to set
      */
     public Config setConfigurationUrl(URL configurationUrl) {
@@ -1380,6 +1386,8 @@ public class Config {
     }
 
     /**
+     * Returns the {@link File} to the XML configuration, which has been parsed to create this {@link Config} instance.
+     *
      * @return the configurationFile
      */
     public File getConfigurationFile() {
@@ -1387,6 +1395,10 @@ public class Config {
     }
 
     /**
+     * Sets the {@link File} to the XML configuration, which has been parsed to create this {@link Config} instance.
+     * <p>
+     * Is set by the {@link XmlConfigBuilder}, when the XML configuration was retrieved from a file.
+     *
      * @param configurationFile the configurationFile to set
      */
     public Config setConfigurationFile(File configurationFile) {

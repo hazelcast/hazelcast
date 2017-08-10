@@ -16,30 +16,32 @@
 
 package com.hazelcast.client.map;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Test;
-import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 
+import static java.util.Arrays.asList;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 public abstract class AbstractMapPartitionIteratorTest extends HazelcastTestSupport {
 
-    @Parameterized.Parameter
+    @Parameter
     public boolean prefetchValues;
 
-    @Parameterized.Parameters(name = "prefetchValues:{0}")
+    @Parameters(name = "prefetchValues:{0}")
     public static Iterable<Object[]> parameters() {
-        return Arrays.asList(new Object[]{Boolean.TRUE}, new Object[]{Boolean.FALSE});
+        return asList(new Object[]{Boolean.TRUE}, new Object[]{Boolean.FALSE});
     }
 
     protected TestHazelcastFactory factory;
@@ -98,6 +100,10 @@ public abstract class AbstractMapPartitionIteratorTest extends HazelcastTestSupp
             Map.Entry entry = iterator.next();
             assertEquals(value, entry.getValue());
         }
+    }
+
+    protected ClientConfig getClientConfig() {
+        return new ClientConfig();
     }
 
     private <K, V> ClientMapProxy<K, V> getMapProxy() {

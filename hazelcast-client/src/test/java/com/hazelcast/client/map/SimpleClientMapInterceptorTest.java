@@ -24,6 +24,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -37,7 +38,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class SimpleClientMapInterceptorTest {
+public class SimpleClientMapInterceptorTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastInstance client;
@@ -46,7 +47,7 @@ public class SimpleClientMapInterceptorTest {
 
     @Before
     public void setup() {
-        Config config = new Config();
+        Config config = getConfig();
         config.getSerializationConfig().addPortableFactory(PortableHelpersFactory.ID, new PortableHelpersFactory());
         hazelcastFactory.newHazelcastInstance(config);
         hazelcastFactory.newHazelcastInstance(config);
@@ -78,7 +79,6 @@ public class SimpleClientMapInterceptorTest {
         map.put(7, "Hong Kong");
 
         map.remove(1);
-
 
         try {
             map.remove(2);

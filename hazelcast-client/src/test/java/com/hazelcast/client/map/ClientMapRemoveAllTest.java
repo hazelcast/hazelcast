@@ -17,7 +17,6 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicate;
@@ -53,15 +52,15 @@ public class ClientMapRemoveAllTest extends HazelcastTestSupport {
     private HazelcastInstance client;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         factory = new TestHazelcastFactory();
-        factory.newInstances(new Config(), NODE_COUNT);
+        factory.newInstances(getConfig(), NODE_COUNT);
 
         client = factory.newHazelcastClient();
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         factory.shutdownAll();
     }
 
@@ -114,6 +113,7 @@ public class ClientMapRemoveAllTest extends HazelcastTestSupport {
     }
 
     private static final class OddFinderPredicate implements Predicate<Integer, Integer> {
+
         @Override
         public boolean apply(Map.Entry<Integer, Integer> mapEntry) {
             return mapEntry.getKey() % 2 != 0;

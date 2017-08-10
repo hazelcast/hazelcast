@@ -57,11 +57,10 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
     String description;
     ObjectName objectName;
 
-
     protected HazelcastMBean(T managedObject, ManagementService service) {
         this.managedObject = managedObject;
         this.service = service;
-        updateIntervalSec = service.instance.node.getProperties().getLong(GroupProperty.JMX_UPDATE_INTERVAL_SECONDS);
+        this.updateIntervalSec = service.instance.node.getProperties().getLong(GroupProperty.JMX_UPDATE_INTERVAL_SECONDS);
     }
 
     public void register(HazelcastMBean mbean) {

@@ -70,7 +70,7 @@ import static java.util.logging.Level.INFO;
  * alive. Also if no operations are running, it will still send a period packet to each member. This is a different system than
  * the regular heartbeats, but it has similar characteristics. The reason the packet is always send is for debugging purposes.
  */
-class InvocationMonitor implements PacketHandler, MetricsProvider {
+public class InvocationMonitor implements PacketHandler, MetricsProvider {
 
     private static final long ON_MEMBER_LEFT_DELAY_MILLIS = 1111;
     private static final int HEARTBEAT_CALL_TIMEOUT_RATIO = 4;
@@ -83,7 +83,7 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
     private final ILogger logger;
     private final ScheduledExecutorService scheduler;
     private final Address thisAddress;
-    private final ConcurrentMap<Address, AtomicLong> lastHeartbeatPerMember = new ConcurrentHashMap<Address, AtomicLong>();
+    private final ConcurrentMap<Address, AtomicLong> heartbeatPerMember = new ConcurrentHashMap<Address, AtomicLong>();
 
     @Probe(name = "backupTimeouts", level = MANDATORY)
     private final SwCounter backupTimeoutsCount = newSwCounter();
@@ -122,6 +122,16 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
         this.invocationTimeoutMillis = invocationTimeoutMillis(properties);
         this.heartbeatBroadcastPeriodMillis = heartbeatBroadcastPeriodMillis(properties);
         this.scheduler = newScheduler(nodeEngine.getHazelcastInstance().getName());
+    }
+
+    // Only accessed by diagnostics.
+    public ConcurrentMap<Address, AtomicLong> getHeartbeatPerMember() {
+        return heartbeatPerMember;
+    }
+
+    // Only accessed by diagnostics.
+    public long getHeartbeatBroadcastPeriodMillis() {
+        return heartbeatBroadcastPeriodMillis;
     }
 
     @Override
@@ -217,7 +227,7 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
             return 0;
         }
 
-        AtomicLong heartbeat = lastHeartbeatPerMember.get(memberAddress);
+        AtomicLong heartbeat = heartbeatPerMember.get(memberAddress);
         return heartbeat == null ? 0 : heartbeat.get();
     }
 
@@ -338,7 +348,7 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
 
         @Override
         public void run0() {
-            lastHeartbeatPerMember.remove(leftMember.getAddress());
+            heartbeatPerMember.remove(leftMember.getAddress());
 
             for (Invocation invocation : invocationRegistry) {
                 if (hasMemberLeft(invocation)) {
@@ -376,11 +386,11 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
         @Override
         public void run0() {
             heartbeatPacketsReceived.inc();
-            long timeMillis = Clock.currentTimeMillis();
-            updateMemberHeartbeat(timeMillis);
+            long nowMillis = Clock.currentTimeMillis();
+            updateMemberHeartbeat(nowMillis);
             final OperationControl opControl = serializationService.toObject(payload);
             for (long callId : opControl.runningOperations()) {
-                updateHeartbeat(callId, timeMillis);
+                updateHeartbeat(callId, nowMillis);
             }
             for (CanCancelOperations service : serviceManager.getServices(CanCancelOperations.class)) {
                 final long[] opsToCancel = opControl.operationsToCancel();
@@ -392,24 +402,25 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
             }
         }
 
-        private void updateMemberHeartbeat(long timeMillis) {
-            AtomicLong lastMemberHeartbeat = lastHeartbeatPerMember.get(sender);
-            if (lastMemberHeartbeat == null) {
-                lastMemberHeartbeat = new AtomicLong();
-                lastHeartbeatPerMember.put(sender, lastMemberHeartbeat);
+        private void updateMemberHeartbeat(long nowMillis) {
+            AtomicLong heartbeat = heartbeatPerMember.get(sender);
+            if (heartbeat == null) {
+                heartbeat = new AtomicLong(nowMillis);
+                heartbeatPerMember.put(sender, heartbeat);
+                return;
             }
 
-            lastMemberHeartbeat.set(timeMillis);
+            heartbeat.set(nowMillis);
         }
 
-        private void updateHeartbeat(long callId, long timeMillis) {
+        private void updateHeartbeat(long callId, long nowMillis) {
             Invocation invocation = invocationRegistry.get(callId);
             if (invocation == null) {
                 // the invocation doesn't exist anymore, so we are done.
                 return;
             }
 
-            invocation.lastHeartbeatMillis = timeMillis;
+            invocation.lastHeartbeatMillis = nowMillis;
         }
     }
 

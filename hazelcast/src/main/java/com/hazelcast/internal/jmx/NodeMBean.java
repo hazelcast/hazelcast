@@ -52,7 +52,7 @@ public class NodeMBean extends HazelcastMBean<Node> {
     @ManagedAnnotation("masterAddress")
     @ManagedDescription("The master address of the cluster")
     public String getMasterAddress() {
-        Address a = managedObject.getMasterAddress();
-        return a == null ? null : a.toString();
+        Address masterAddress = managedObject.getMasterAddress();
+        return masterAddress == null ? null : masterAddress.toString();
     }
 }

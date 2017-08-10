@@ -142,7 +142,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
             return;
         }
 
-        if (!partitionService.isReplicaSyncAllowed()) {
+        if (!partitionService.isMigrationAllowed()) {
             logger.finest("Cannot send sync replica request for partitionId=" + partitionId + ", replicaIndex=" + replicaIndex
                     + ", namespaces=" + namespaces + ". Sync is not allowed.");
             return;
@@ -445,7 +445,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
         @Override
         public void run() {
             if (!node.nodeEngine.isRunning() || !node.getNodeExtension().isStartCompleted()
-                    || !partitionService.isReplicaSyncAllowed()) {
+                    || !partitionService.isMigrationAllowed()) {
                 return;
             }
 

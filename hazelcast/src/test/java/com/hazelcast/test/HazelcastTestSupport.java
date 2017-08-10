@@ -65,6 +65,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -74,7 +75,6 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
@@ -97,6 +97,9 @@ public abstract class HazelcastTestSupport {
 
     @Rule
     public JitterRule jitterRule = new JitterRule();
+
+    @Rule
+    public DumpBuildInfoOnFailureRule dumpInfoRule = new DumpBuildInfoOnFailureRule();
 
     static {
         ASSERT_TRUE_EVENTUALLY_TIMEOUT = getInteger("hazelcast.assertTrueEventually.timeout", 120);
@@ -755,6 +758,25 @@ public abstract class HazelcastTestSupport {
         fail(formatAssertMessage("", expected, null));
     }
 
+    public static void assertPropertiesEquals(Properties expected, Properties actual) {
+        if (expected == null && actual == null) {
+            return;
+        }
+
+        if (expected == null || actual == null) {
+            fail(formatAssertMessage("", expected, actual));
+        }
+
+        for (String key : expected.stringPropertyNames()) {
+            assertEquals("Unexpected value for key " + key, expected.getProperty(key), actual.getProperty(key));
+        }
+
+        for (String key : actual.stringPropertyNames()) {
+            assertEquals("Unexpected value for key " + key + " from actual object", expected.getProperty(key),
+                    actual.getProperty(key));
+        }
+    }
+
     private static String formatAssertMessage(String message, Object expected, Object actual) {
         StringBuilder assertMessage = new StringBuilder();
         if (message != null && !message.isEmpty()) {
@@ -1212,7 +1234,7 @@ public abstract class HazelcastTestSupport {
 
     @SuppressWarnings("unchecked")
     private static TestHazelcastInstanceFactory createHazelcastInstanceFactory0(Integer nodeCount) {
-        if (isRunningCompatibilityTest() && BuildInfoProvider.BUILD_INFO.isEnterprise()) {
+        if (isRunningCompatibilityTest() && BuildInfoProvider.getBuildInfo().isEnterprise()) {
             try {
                 String className = "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
                 Class<? extends TestHazelcastInstanceFactory> compatibilityTestFactoryClass

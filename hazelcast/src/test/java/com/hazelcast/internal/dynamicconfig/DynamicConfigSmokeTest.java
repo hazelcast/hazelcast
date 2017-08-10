@@ -96,7 +96,6 @@ public class DynamicConfigSmokeTest extends HazelcastTestSupport {
 
         //start an instance AFTER the config was already submitted
         HazelcastInstance i3 = factory.newHazelcastInstance();
-        waitAllForSafeState(i1, i2, i3);
 
         multiMapConfig = i3.getConfig().getMultiMapConfig(mapName);
         assertEquals(TestConfigUtils.NON_DEFAULT_BACKUP_COUNT, multiMapConfig.getBackupCount());
@@ -179,5 +178,27 @@ public class DynamicConfigSmokeTest extends HazelcastTestSupport {
             topicConfig = instance.getConfig().getTopicConfig(topicName);
             assertEquals(listenerClassName, topicConfig.getMessageListenerConfigs().get(0).getClassName());
         }
+    }
+
+    @Test
+    public void mapConfig_withLiteMemberJoiningLater_isImmediatelyAvailable() {
+        String mapName = randomMapName();
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        HazelcastInstance i1 = factory.newHazelcastInstance();
+        HazelcastInstance i2 = factory.newHazelcastInstance();
+
+        MapConfig mapConfig = new MapConfig(mapName);
+        mapConfig.setBackupCount(TestConfigUtils.NON_DEFAULT_BACKUP_COUNT);
+        Config config = i1.getConfig();
+        config.addMapConfig(mapConfig);
+
+        //start a lite member after the dynamic config was submitted
+        Config liteConfig = new Config();
+        liteConfig.setLiteMember(true);
+        HazelcastInstance i3 = factory.newHazelcastInstance(liteConfig);
+
+        MapConfig mapConfigOnLiteMember = i3.getConfig().getMapConfig(mapName);
+        assertEquals(TestConfigUtils.NON_DEFAULT_BACKUP_COUNT, mapConfigOnLiteMember.getBackupCount());
     }
 }

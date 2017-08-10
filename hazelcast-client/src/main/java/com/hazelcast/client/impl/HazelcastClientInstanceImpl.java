@@ -102,7 +102,7 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.diagnostics.ConfigPropertiesPlugin;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.diagnostics.MetricsPlugin;
-import com.hazelcast.internal.diagnostics.NetworkingPlugin;
+import com.hazelcast.internal.diagnostics.NetworkingImbalancePlugin;
 import com.hazelcast.internal.diagnostics.SystemLogPlugin;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -216,7 +216,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         GroupConfig groupConfig = config.getGroupConfig();
         String loggingType = config.getProperty(GroupProperty.LOGGING_TYPE.getName());
         loggingService = new ClientLoggingService(groupConfig.getName(),
-                loggingType, BuildInfoProvider.BUILD_INFO, instanceName);
+                loggingType, BuildInfoProvider.getBuildInfo(), instanceName);
         ClassLoader classLoader = config.getClassLoader();
         clientExtension = createClientInitializer(classLoader);
         clientExtension.beforeStart(this);
@@ -427,8 +427,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         diagnostics.register(
                 new SystemLogPlugin(properties, connectionManager, this, loggingService.getLogger(SystemLogPlugin.class)));
         diagnostics.register(
-                new NetworkingPlugin(properties, connectionManager.getEventLoopGroup(),
-                        loggingService.getLogger(NetworkingPlugin.class)));
+                new NetworkingImbalancePlugin(properties, connectionManager.getEventLoopGroup(),
+                        loggingService.getLogger(NetworkingImbalancePlugin.class)));
 
         metricsRegistry.collectMetrics(listenerService);
 

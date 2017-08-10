@@ -64,6 +64,8 @@ public abstract class DiagnosticsLogWriter {
 
     public abstract void writeKeyValueEntry(String key, boolean value);
 
+    public abstract void writeKeyValueEntryAsDateTime(String key, long epochMillis);
+
     protected void init(PrintWriter printWriter) {
         this.printWriter = printWriter;
     }
@@ -108,19 +110,32 @@ public abstract class DiagnosticsLogWriter {
         return this;
     }
 
-    // we can't rely on DateFormat since it generates a ton of garbage
     protected void appendDateTime() {
-        date.setTime(System.currentTimeMillis());
+        appendDateTime(System.currentTimeMillis());
+    }
+
+    // we can't rely on DateFormat since it generates a ton of garbage
+    protected void appendDateTime(long epochMillis) {
+        date.setTime(epochMillis);
         calendar.setTime(date);
         appendDate();
         write(' ');
         appendTime();
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     private void appendDate() {
-        write(calendar.get(DAY_OF_MONTH));
+        int dayOfMonth = calendar.get(DAY_OF_MONTH);
+        if (dayOfMonth < 10) {
+            write('0');
+        }
+        write(dayOfMonth);
         write('-');
-        write(calendar.get(MONTH) + 1);
+        int month = calendar.get(MONTH) + 1;
+        if (month < 10) {
+            write('0');
+        }
+        write(month);
         write('-');
         write(calendar.get(YEAR));
     }

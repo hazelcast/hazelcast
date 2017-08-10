@@ -46,7 +46,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 public class DistributedExecutorService implements ManagedService, RemoteService, LiveOperationsTracker,
-        StatisticsAwareService {
+        StatisticsAwareService<LocalExecutorStats> {
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
 

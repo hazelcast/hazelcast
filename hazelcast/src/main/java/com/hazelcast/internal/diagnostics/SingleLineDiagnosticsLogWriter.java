@@ -58,7 +58,7 @@ class SingleLineDiagnosticsLogWriter extends DiagnosticsLogWriter {
 
     private void appendComma() {
         if (firstEntry) {
-            firstEntry = false;
+            this.firstEntry = false;
         } else {
             write(',');
         }
@@ -89,8 +89,15 @@ class SingleLineDiagnosticsLogWriter extends DiagnosticsLogWriter {
     }
 
     @Override
+    public void writeKeyValueEntryAsDateTime(String key, long epochMillis) {
+        appendComma();
+        write(key).write('=');
+        appendDateTime(epochMillis);
+    }
+
+    @Override
     protected void init(PrintWriter writer) {
-        firstEntry = true;
+        this.firstEntry = true;
         super.init(writer);
     }
 }

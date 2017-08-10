@@ -28,7 +28,7 @@ import java.util.Map;
  *
  * @see StatisticsAwareService
  */
-class MapStatisticsAwareService implements StatisticsAwareService {
+class MapStatisticsAwareService implements StatisticsAwareService<LocalMapStats> {
 
     private final MapServiceContext mapServiceContext;
 

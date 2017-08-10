@@ -100,7 +100,8 @@ public class ConfigConstructor extends AbstractStarterObjectConstructor {
             if ((setter = getSetter(otherConfigClass, otherReturnType, createSetterName(method))) != null) {
 
                 if (Properties.class.isAssignableFrom(returnType)) {
-                    //ignore
+                    Properties original = (Properties) method.invoke(thisConfigObject, null);
+                    updateConfig(setter, otherConfigObject, copy(original));
                 } else if (Map.class.isAssignableFrom(returnType) || ConcurrentMap.class.isAssignableFrom(returnType)) {
                     Map map = (Map) method.invoke(thisConfigObject, null);
                     Map otherMap = ConcurrentMap.class.isAssignableFrom(returnType) ? new ConcurrentHashMap() : new HashMap();
@@ -183,5 +184,18 @@ public class ConfigConstructor extends AbstractStarterObjectConstructor {
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Method method = obj.getClass().getMethod(getter, null);
         return method.invoke(obj, null);
+    }
+
+    private static Properties copy(Properties original) {
+        if (original == null) {
+            return null;
+        }
+
+        Properties copy = new Properties();
+        for (String name : original.stringPropertyNames()) {
+            copy.setProperty(name, original.getProperty(name));
+        }
+
+        return copy;
     }
 }

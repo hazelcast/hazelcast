@@ -26,6 +26,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStoreAdapter;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.impl.MapService;
@@ -47,7 +48,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
-import static com.hazelcast.instance.BuildInfoProvider.BUILD_INFO;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
@@ -93,7 +93,7 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
 
     protected void testNearCacheExpiration(final IMap<Integer, Integer> map, final int size, int expireSeconds) {
         populateMap(map, size);
-        populateNearCache(map, size);
+        populateNearCacheEventually(map, size);
 
         final NearCacheStats statsBeforeExpiration = getNearCacheStatsCopy(map);
         assertTrueEventually(new AssertTask() {
@@ -134,6 +134,17 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
         });
     }
 
+    private void populateNearCacheEventually(final IMap<Integer, Integer> map, final int size) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                populateNearCache(map, size);
+                long ownedEntryCount = getNearCacheStats(map).getOwnedEntryCount();
+                assertEquals("Near Cache has not reached expected size", size, ownedEntryCount);
+            }
+        });
+    }
+
     /**
      * Tests the Near Cache memory cost calculation.
      * <p>
@@ -168,7 +179,7 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
         // the Near Cache is filled, we should see some memory costs now
         assertTrue("The Near Cache is filled, there should be some owned entry memory costs",
                 getNearCacheStats(map).getOwnedEntryMemoryCost() > 0);
-        if (isMember && !BUILD_INFO.isEnterprise()) {
+        if (isMember && !BuildInfoProvider.getBuildInfo().isEnterprise()) {
             // the heap costs are just calculated on member on-heap maps
             assertTrue("The Near Cache is filled, there should be some heap costs", map.getLocalMapStats().getHeapCost() > 0);
         }

@@ -69,7 +69,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        nodeConfig = new Config();
+        nodeConfig = getConfig();
         MapConfig mapConfig = new MapConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
@@ -136,7 +136,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
     public void mapSize_After_MapStore_OperationQueue_OverFlow() throws Exception {
         int maxCapacity = 1000;
 
-        Config config = new Config();
+        Config config = getConfig();
         config.setProperty(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.getName(), String.valueOf(maxCapacity));
 
         MapConfig mapConfig = new MapConfig();
@@ -183,7 +183,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
     public void mapStore_OperationQueue_AtMaxCapacity() {
         int maxCapacity = 1000;
 
-        Config config = new Config();
+        Config config = getConfig();
         config.setProperty(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.getName(), String.valueOf(maxCapacity));
 
         MapConfig mapConfig = new MapConfig();
@@ -220,7 +220,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
 
     @Test
     public void destroyMap_configuredWithMapStore() {
-        Config config = new Config();
+        Config config = getConfig();
         MapConfig mapConfig = new MapConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
 

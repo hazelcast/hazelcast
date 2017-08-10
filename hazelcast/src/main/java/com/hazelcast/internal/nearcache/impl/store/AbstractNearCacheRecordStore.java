@@ -275,6 +275,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
                 }
                 if (staleReadDetector.isStaleRead(key, record)) {
                     remove(key);
+                    nearCacheStats.incrementMisses();
                     return null;
                 }
                 if (isRecordExpired(record)) {
@@ -436,13 +437,16 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     private void initInvalidationMetaData(R record, K key, Data keyData) {
+        if (staleReadDetector == ALWAYS_FRESH) {
+            // means invalidation event creation is disabled for this near cache.
+            return;
+        }
+
         int partitionId = staleReadDetector.getPartitionId(keyData == null ? toData(key) : keyData);
         MetaDataContainer metaDataContainer = staleReadDetector.getMetaDataContainer(partitionId);
-        if (metaDataContainer != null) {
-            record.setPartitionId(partitionId);
-            record.setInvalidationSequence(metaDataContainer.getSequence());
-            record.setUuid(metaDataContainer.getUuid());
-        }
+        record.setPartitionId(partitionId);
+        record.setInvalidationSequence(metaDataContainer.getSequence());
+        record.setUuid(metaDataContainer.getUuid());
     }
 
     private long nextReservationId() {

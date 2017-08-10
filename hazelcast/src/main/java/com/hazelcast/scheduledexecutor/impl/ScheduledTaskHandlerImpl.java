@@ -186,9 +186,11 @@ public final class ScheduledTaskHandlerImpl
 
         Address addr = null;
         if (!"-".equals(parts[0])) {
-            String[] hostParts = parts[0].split(":");
+            int lastColonIx = parts[0].lastIndexOf(':');
+            String host = parts[0].substring(0, lastColonIx);
+            int port = Integer.parseInt(parts[0].substring(lastColonIx + 1));
             try {
-                addr = new Address(hostParts[0], Integer.parseInt(hostParts[1]));
+                addr = new Address(host, port);
             } catch (UnknownHostException e) {
                 throw new IllegalArgumentException("Wrong urn format.", e);
             }

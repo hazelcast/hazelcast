@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.map;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
@@ -47,7 +48,6 @@ public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTes
     public void teardown() {
         factory.terminateAll();
     }
-
 
     @Test(expected = NoSuchElementException.class)
     public void test_next_Throws_Exception_On_EmptyPartition() throws Exception {
@@ -116,7 +116,6 @@ public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTes
         assertTrue(iterator.hasNext());
     }
 
-
     @Test
     public void test_with_projection_and_true_predicate() throws Exception {
         final ClientMapProxy<String, String> proxy = getMapProxy();
@@ -154,7 +153,6 @@ public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTes
         for (Map.Entry<String, Integer> i : projected) {
             assertTrue(i.getValue() % 2 == 0);
         }
-
 
         final Collection<Integer> actualValues = intMap.values();
         assertEquals(actualValues.size() / 2, projected.size());
@@ -198,6 +196,10 @@ public abstract class AbstractMapQueryPartitionIteratorTest extends HazelcastTes
             String val = iterator.next();
             assertEquals(value, val);
         }
+    }
+
+    protected ClientConfig getClientConfig() {
+        return new ClientConfig();
     }
 
     private <K, V> ClientMapProxy<K, V> getMapProxy() {

@@ -129,6 +129,16 @@ public final class MembersView implements IdentifiedDataSerializable {
         return addresses;
     }
 
+    public MemberInfo getMember(Address address) {
+        for (MemberInfo member : members) {
+            if (member.getAddress().equals(address)) {
+                return member;
+            }
+        }
+
+        return null;
+    }
+
     public boolean isLaterThan(MembersView other) {
         return version > other.version;
     }

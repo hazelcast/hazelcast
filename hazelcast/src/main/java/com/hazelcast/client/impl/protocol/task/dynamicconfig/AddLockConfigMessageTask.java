@@ -20,9 +20,8 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddLockConfigCodec;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.dynamicconfig.AddDynamicConfigOperationFactory;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public class AddLockConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddLockConfigCodec.RequestParameters> {
@@ -42,10 +41,10 @@ public class AddLockConfigMessageTask
     }
 
     @Override
-    protected OperationFactory getOperationFactory() {
+    protected IdentifiedDataSerializable getConfig() {
         LockConfig config = new LockConfig(parameters.name);
         config.setQuorumName(parameters.quorumName);
-        return new AddDynamicConfigOperationFactory(config);
+        return config;
     }
 
     @Override

@@ -29,6 +29,7 @@ public interface IndexStore {
     void updateIndex(Object oldValue, Object newValue, QueryableEntry entry);
     void removeIndex(Object oldValue, Data indexKey);
     void clear();
+    void destroy();
 
     Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to);
     Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue);

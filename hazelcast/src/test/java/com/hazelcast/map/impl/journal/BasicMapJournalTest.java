@@ -101,7 +101,7 @@ public class BasicMapJournalTest extends HazelcastTestSupport {
             int partitionId,
             Predicate<? super EventJournalMapEvent<K, V>> predicate,
             Projection<? super EventJournalMapEvent<K, V>, T> projection) {
-        return ((MapProxyImpl<K, V>) map).readFromEventJournal(startSequence, maxSize, partitionId, predicate, projection);
+        return ((MapProxyImpl<K, V>) map).readFromEventJournal(startSequence, 1, maxSize, partitionId, predicate, projection);
     }
 
 

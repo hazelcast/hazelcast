@@ -22,12 +22,10 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -71,8 +69,7 @@ public final class ServiceLoader {
     }
 
     public static <T> Iterator<T> iterator(Class<T> expectedType, String factoryId, ClassLoader classLoader) throws Exception {
-        Set<ServiceDefinition> serviceDefinitions = getServiceDefinitions(factoryId, classLoader);
-        ClassIterator<T> classIterator = new ClassIterator<T>(serviceDefinitions, expectedType);
+        Iterator<Class<T>> classIterator = classIterator(expectedType, factoryId, classLoader);
         return new NewInstanceIterator<T>(classIterator);
     }
 
@@ -104,21 +101,18 @@ public final class ServiceLoader {
     private static Set<URLDefinition> collectFactoryUrls(String factoryId, ClassLoader classLoader) {
         String resourceName = "META-INF/services/" + factoryId;
         try {
-            Enumeration<URL> configs;
-            if (classLoader != null) {
-                configs = classLoader.getResources(resourceName);
-            } else {
-                configs = ClassLoader.getSystemResources(resourceName);
-            }
+            Enumeration<URL> configs = classLoader.getResources(resourceName);
 
             Set<URLDefinition> urlDefinitions = new HashSet<URLDefinition>();
             while (configs.hasMoreElements()) {
                 URL url = configs.nextElement();
-                URI uri = new URI(url.toExternalForm().replace(" ", "%20"));
+                String externalForm = url.toExternalForm()
+                                         .replace(" ", "%20")
+                                         .replace("^", "%5e");
+                URI uri = new URI(externalForm);
 
-                ClassLoader highestClassLoader = findHighestReachableClassLoader(url, classLoader, resourceName);
-                if (!highestClassLoader.getClass().getName().equals(IGNORED_GLASSFISH_MAGIC_CLASSLOADER)) {
-                    urlDefinitions.add(new URLDefinition(uri, highestClassLoader));
+                if (!classLoader.getClass().getName().equals(IGNORED_GLASSFISH_MAGIC_CLASSLOADER)) {
+                    urlDefinitions.add(new URLDefinition(uri, classLoader));
                 }
             }
             return urlDefinitions;
@@ -161,45 +155,6 @@ public final class ServiceLoader {
         return Collections.emptySet();
     }
 
-    private static ClassLoader findHighestReachableClassLoader(URL url, ClassLoader classLoader, String resourceName) {
-        if (classLoader.getParent() == null) {
-            return classLoader;
-        }
-
-        ClassLoader highestClassLoader = classLoader;
-
-        ClassLoader current = classLoader;
-        while (current.getParent() != null) {
-            // if we have a filtering classloader in hierarchy, we need to stop!
-            if (FILTERING_CLASS_LOADER.equals(current.getClass().getCanonicalName())) {
-                break;
-            }
-
-            ClassLoader parent = current.getParent();
-            try {
-                Enumeration<URL> resources = parent.getResources(resourceName);
-                if (resources != null) {
-                    while (resources.hasMoreElements()) {
-                        URL resourceURL = resources.nextElement();
-                        if (url.toURI().equals(resourceURL.toURI())) {
-                            highestClassLoader = parent;
-                        }
-                    }
-                }
-            } catch (IOException ignore) {
-                // we want to ignore failures and keep searching
-                ignore(ignore);
-            } catch (URISyntaxException ignore) {
-                // we want to ignore failures and keep searching
-                ignore(ignore);
-            }
-
-            // going on with the search upwards the hierarchy
-            current = current.getParent();
-        }
-        return highestClassLoader;
-    }
-
     static List<ClassLoader> selectClassLoaders(ClassLoader classLoader) {
         // list prevents reordering!
         List<ClassLoader> classLoaders = new ArrayList<ClassLoader>();
@@ -210,7 +165,7 @@ public final class ServiceLoader {
 
         // check if TCCL is same as given classLoader
         ClassLoader tccl = Thread.currentThread().getContextClassLoader();
-        if (tccl != classLoader) {
+        if (tccl != null && tccl != classLoader) {
             classLoaders.add(tccl);
         }
 
@@ -355,7 +310,7 @@ public final class ServiceLoader {
     /**
      * Iterates over services. It skips services which implement an interface with the expected name,
      * but loaded by a different classloader.
-     *
+     * <p>
      * When a service does not implement an interface with expected name then it throws an exception
      *
      * @param <T>
@@ -365,6 +320,7 @@ public final class ServiceLoader {
         private final Iterator<ServiceDefinition> iterator;
         private final Class<T> expectedType;
         private Class<T> nextClass;
+        private Set<Class<?>> alreadyProvidedClasses = new HashSet<Class<?>>();
 
         ClassIterator(Set<ServiceDefinition> serviceDefinitions, Class<T> expectedType) {
             iterator = serviceDefinitions.iterator();
@@ -388,8 +344,10 @@ public final class ServiceLoader {
                 try {
                     Class<?> candidate = loadClass(className, classLoader);
                     if (expectedType.isAssignableFrom(candidate)) {
-                        nextClass = (Class<T>) candidate;
-                        return true;
+                        if (!isDuplicate(candidate)) {
+                            nextClass = (Class<T>) candidate;
+                            return true;
+                        }
                     } else {
                         onNonAssignableClass(className, candidate);
                     }
@@ -398,6 +356,10 @@ public final class ServiceLoader {
                 }
             }
             return false;
+        }
+
+        private boolean isDuplicate(Class<?> candidate) {
+            return !alreadyProvidedClasses.add(candidate);
         }
 
         private Class<?> loadClass(String className, ClassLoader classLoader) throws ClassNotFoundException {

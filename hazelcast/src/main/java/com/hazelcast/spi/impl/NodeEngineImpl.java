@@ -27,8 +27,10 @@ import com.hazelcast.internal.diagnostics.ConfigPropertiesPlugin;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.diagnostics.InvocationPlugin;
 import com.hazelcast.internal.diagnostics.MemberHazelcastInstanceInfoPlugin;
+import com.hazelcast.internal.diagnostics.MemberHeartbeatPlugin;
 import com.hazelcast.internal.diagnostics.MetricsPlugin;
-import com.hazelcast.internal.diagnostics.NetworkingPlugin;
+import com.hazelcast.internal.diagnostics.NetworkingImbalancePlugin;
+import com.hazelcast.internal.diagnostics.OperationHeartbeatPlugin;
 import com.hazelcast.internal.diagnostics.OverloadedConnectionsPlugin;
 import com.hazelcast.internal.diagnostics.PendingInvocationsPlugin;
 import com.hazelcast.internal.diagnostics.SlowOperationPlugin;
@@ -62,6 +64,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PostJoinAwareService;
+import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.SharedService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
@@ -251,7 +254,9 @@ public class NodeEngineImpl implements NodeEngine {
         diagnostics.register(new MemberHazelcastInstanceInfoPlugin(this));
         diagnostics.register(new SystemLogPlugin(this));
         diagnostics.register(new StoreLatencyPlugin(this));
-        diagnostics.register(new NetworkingPlugin(this));
+        diagnostics.register(new MemberHeartbeatPlugin(this));
+        diagnostics.register(new NetworkingImbalancePlugin(this));
+        diagnostics.register(new OperationHeartbeatPlugin(this));
     }
 
     public Diagnostics getDiagnostics() {
@@ -451,8 +456,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     /**
-     * Collects all post-join operations. This will include event registrations which are not
-     * local and operations returned from services implementing {@link PostJoinAwareService}.
+     * Collects all post-join operations from {@link PostJoinAwareService}s.
      * <p>
      * Post join operations should return response, at least a {@code null} response.
      * <p>
@@ -465,17 +469,13 @@ public class NodeEngineImpl implements NodeEngine {
      */
     public Operation[] getPostJoinOperations() {
         final Collection<Operation> postJoinOps = new LinkedList<Operation>();
-        Operation eventPostJoinOp = eventService.getPostJoinOperation();
-        if (eventPostJoinOp != null) {
-            postJoinOps.add(eventPostJoinOp);
-        }
         Collection<PostJoinAwareService> services = getServices(PostJoinAwareService.class);
         for (PostJoinAwareService service : services) {
-            final Operation postJoinOperation = service.getPostJoinOperation();
+            Operation postJoinOperation = service.getPostJoinOperation();
             if (postJoinOperation != null) {
                 if (postJoinOperation.getPartitionId() >= 0) {
                     logger.severe(
-                            "Post-join operations cannot implement PartitionAwareOperation! Service: "
+                            "Post-join operations should not have partition ID set! Service: "
                                     + service + ", Operation: "
                                     + postJoinOperation);
                     continue;
@@ -484,6 +484,25 @@ public class NodeEngineImpl implements NodeEngine {
             }
         }
         return postJoinOps.isEmpty() ? null : postJoinOps.toArray(new Operation[postJoinOps.size()]);
+    }
+
+    public Operation[] getPreJoinOperations() {
+        final Collection<Operation> preJoinOps = new LinkedList<Operation>();
+        Collection<PreJoinAwareService> services = getServices(PreJoinAwareService.class);
+        for (PreJoinAwareService service : services) {
+            final Operation preJoinOperation = service.getPreJoinOperation();
+            if (preJoinOperation != null) {
+                if (preJoinOperation.getPartitionId() >= 0) {
+                    logger.severe(
+                            "Pre-join operations operations should not have partition ID set! Service: "
+                                    + service + ", Operation: "
+                                    + preJoinOperation);
+                    continue;
+                }
+                preJoinOps.add(preJoinOperation);
+            }
+        }
+        return preJoinOps.isEmpty() ? null : preJoinOps.toArray(new Operation[preJoinOps.size()]);
     }
 
     public void reset() {

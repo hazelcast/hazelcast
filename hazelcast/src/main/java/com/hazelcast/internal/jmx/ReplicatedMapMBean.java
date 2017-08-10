@@ -30,7 +30,7 @@ public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {
 
     protected ReplicatedMapMBean(ReplicatedMapProxy managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = service.createObjectName("ReplicatedMap", managedObject.getName());
+        this.objectName = service.createObjectName("ReplicatedMap", managedObject.getName());
     }
 
     @ManagedAnnotation("localOwnedEntryCount")

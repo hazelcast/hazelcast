@@ -27,7 +27,14 @@ import com.hazelcast.spi.impl.MutatingOperation;
 import java.io.IOException;
 
 /**
- * Reserve offer backup operation for the transactional queue.
+ * Transaction prepare operation for a queue offer, executed on the backup replica.
+ * <p>
+ * Adds the item ID to the collection of IDs offered by a transaction.
+ * The check if the queue can accomodate for all items offered in a
+ * transaction is done on the partition owner.
+ *
+ * @see TxnReserveOfferOperation
+ * @see com.hazelcast.core.TransactionalQueue#offer(Object)
  */
 public class TxnReserveOfferBackupOperation extends QueueOperation implements BackupOperation, MutatingOperation {
 

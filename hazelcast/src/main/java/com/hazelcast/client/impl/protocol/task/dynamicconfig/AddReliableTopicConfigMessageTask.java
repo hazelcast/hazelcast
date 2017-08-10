@@ -21,9 +21,8 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReliableTopicCon
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.dynamicconfig.AddDynamicConfigOperationFactory;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.topic.TopicOverloadPolicy;
 
 import java.util.List;
@@ -47,7 +46,7 @@ public class AddReliableTopicConfigMessageTask
     }
 
     @Override
-    protected OperationFactory getOperationFactory() {
+    protected IdentifiedDataSerializable getConfig() {
         ReliableTopicConfig config = new ReliableTopicConfig(parameters.name);
         config.setStatisticsEnabled(parameters.statisticsEnabled);
         config.setReadBatchSize(parameters.readBatchSize);
@@ -58,7 +57,7 @@ public class AddReliableTopicConfigMessageTask
             config.setMessageListenerConfigs(
                     (List<ListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs));
         }
-        return new AddDynamicConfigOperationFactory(config);
+        return config;
     }
 
     @Override

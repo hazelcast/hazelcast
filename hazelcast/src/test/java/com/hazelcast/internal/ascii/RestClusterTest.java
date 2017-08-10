@@ -184,7 +184,7 @@ public class RestClusterTest extends HazelcastTestSupport {
         HazelcastTestSupport.waitInstanceForSafeState(instance);
         String result = String.format("{\"status\":\"success\",\"response\":\"[%s]\n%s\n%s\"}",
                 instance.getCluster().getLocalMember().toString(),
-                BuildInfoProvider.BUILD_INFO.getVersion(),
+                BuildInfoProvider.getBuildInfo().getVersion(),
                 System.getProperty("java.version"));
         assertEquals(result, communicator.listClusterNodes("dev", "dev-pass"));
     }

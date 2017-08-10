@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+@SuppressWarnings("checkstyle:methodcount")
 public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V> {
 
     private final ReplicatedMap<K, V> map;
@@ -101,6 +102,12 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     @Override
     @MethodNotAvailable
     public ICompletableFuture<V> removeAsync(K key) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public boolean evict(K key) {
         throw new MethodNotAvailableException();
     }
 
@@ -180,6 +187,12 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     @Override
     @MethodNotAvailable
     public void removeAll(Set<K> keys) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public void evictAll() {
         throw new MethodNotAvailableException();
     }
 

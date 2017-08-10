@@ -33,9 +33,9 @@ public class QueueMBean extends HazelcastMBean<IQueue> {
 
     protected QueueMBean(IQueue managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = service.createObjectName("IQueue", managedObject.getName());
+        this.objectName = service.createObjectName("IQueue", managedObject.getName());
         StatsSupplier<LocalQueueStats> localQueueStatsSupplier = new LocalQueueStatsSupplier(managedObject);
-        localQueueStatsDelegate = new LocalStatsDelegate<LocalQueueStats>(localQueueStatsSupplier, updateIntervalSec);
+        this.localQueueStatsDelegate = new LocalStatsDelegate<LocalQueueStats>(localQueueStatsSupplier, updateIntervalSec);
     }
 
     @ManagedAnnotation("localOwnedItemCount")

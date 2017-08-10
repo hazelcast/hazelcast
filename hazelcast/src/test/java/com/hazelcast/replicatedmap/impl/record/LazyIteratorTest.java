@@ -41,8 +41,8 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class LazyIteratorTest
-        extends HazelcastTestSupport {
+@SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
+public class LazyIteratorTest extends HazelcastTestSupport {
 
     private static final InternalReplicatedMapStorage<String, Integer> TEST_DATA_SIMPLE;
     private static final InternalReplicatedMapStorage<String, Integer> TEST_DATA_TOMBS;
@@ -67,37 +67,35 @@ public class LazyIteratorTest
     }
 
     @Test
-    public void test_lazy_set_size() throws Exception {
+    public void test_lazy_set_size() {
         KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazySet<String, Integer, String> set = new LazySet<String, Integer, String>(factory, TEST_DATA_SIMPLE);
         assertEquals(100, set.size());
     }
 
     @Test
-    public void test_lazy_set_empty() throws Exception {
+    public void test_lazy_set_empty() {
         KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazySet<String, Integer, String> set = new LazySet<String, Integer, String>(factory, TEST_DATA_SIMPLE);
         assertFalse(set.isEmpty());
     }
 
     @Test
-    public void test_lazy_collection_size() throws Exception {
+    public void test_lazy_collection_size() {
         ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_SIMPLE);
         assertEquals(100, collection.size());
     }
 
     @Test
-    public void test_lazy_collection_empty() throws Exception {
+    public void test_lazy_collection_empty() {
         ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_SIMPLE);
         assertFalse(collection.isEmpty());
     }
 
     @Test
-    public void test_lazy_values_no_tombs_with_has_next()
-            throws Exception {
-
+    public void test_lazy_values_no_tombs_with_has_next() {
         ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_SIMPLE);
         Iterator<Integer> iterator = collection.iterator();
@@ -113,9 +111,7 @@ public class LazyIteratorTest
     }
 
     @Test
-    public void test_lazy_values_no_tombs_with_has_next_every_second_time()
-            throws Exception {
-
+    public void test_lazy_values_no_tombs_with_has_next_every_second_time() {
         ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_SIMPLE);
         Iterator<Integer> iterator = collection.iterator();
@@ -125,16 +121,13 @@ public class LazyIteratorTest
             if (i % 2 == 0) {
                 iterator.hasNext();
             }
-
             values.add(iterator.next());
         }
         assertEquals(100, values.size());
     }
 
     @Test
-    public void test_lazy_values_no_tombs_more_elements_possible()
-            throws Exception {
-
+    public void test_lazy_values_no_tombs_more_elements_possible() {
         ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_SIMPLE);
         Iterator<Integer> iterator = collection.iterator();
@@ -149,15 +142,13 @@ public class LazyIteratorTest
             iterator.next();
             fail("Shouldn't have further elements!");
         } catch (NoSuchElementException e) {
-            // We need to catch it here since we won't have a successful test
+            // we need to catch it here since we won't have a successful test
             // if any of the prior calls would throw it!
         }
     }
 
     @Test
-    public void test_lazy_values_with_tombs_with_has_next()
-            throws Exception {
-
+    public void test_lazy_values_with_tombs_with_has_next() {
         ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_TOMBS);
         Iterator<Integer> iterator = collection.iterator();
@@ -173,9 +164,7 @@ public class LazyIteratorTest
     }
 
     @Test
-    public void test_lazy_values_with_tombs_with_next()
-            throws Exception {
-
+    public void test_lazy_values_with_tombs_with_next() {
         ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_TOMBS);
         Iterator<Integer> iterator = collection.iterator();
@@ -190,15 +179,13 @@ public class LazyIteratorTest
             iterator.next();
             fail("Shouldn't have further elements!");
         } catch (NoSuchElementException e) {
-            // We need to catch it here since we won't have a successful test
+            // we need to catch it here since we won't have a successful test
             // if any of the prior calls would throw it!
         }
     }
 
     @Test
-    public void test_lazy_values_with_tombs_copy()
-            throws Exception {
-
+    public void test_lazy_values_with_tombs_copy() {
         ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_TOMBS);
 
@@ -215,15 +202,13 @@ public class LazyIteratorTest
             iterator.next();
             fail("Shouldn't have further elements!");
         } catch (NoSuchElementException e) {
-            // We need to catch it here since we won't have a successful test
+            // we need to catch it here since we won't have a successful test
             // if any of the prior calls would throw it!
         }
     }
 
     @Test
-    public void test_lazy_values_with_tombs_to_array_new_array()
-            throws Exception {
-
+    public void test_lazy_values_with_tombs_to_array_new_array() {
         ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_TOMBS);
 
@@ -232,9 +217,7 @@ public class LazyIteratorTest
     }
 
     @Test
-    public void test_lazy_values_with_tombs_to_array_passed_array_too_small()
-            throws Exception {
-
+    public void test_lazy_values_with_tombs_to_array_passed_array_too_small() {
         ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_TOMBS);
 
@@ -243,9 +226,7 @@ public class LazyIteratorTest
     }
 
     @Test
-    public void test_lazy_values_with_tombs_to_array_passed_array_matching_size()
-            throws Exception {
-
+    public void test_lazy_values_with_tombs_to_array_passed_array_matching_size() {
         ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_TOMBS);
 
@@ -254,9 +235,7 @@ public class LazyIteratorTest
     }
 
     @Test
-    public void test_lazy_keyset_no_tombs_with_has_next()
-            throws Exception {
-
+    public void test_lazy_keyset_no_tombs_with_has_next() {
         KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazySet<String, Integer, String> collection = new LazySet<String, Integer, String>(factory, TEST_DATA_SIMPLE);
         Iterator<String> iterator = collection.iterator();
@@ -272,9 +251,7 @@ public class LazyIteratorTest
     }
 
     @Test
-    public void test_lazy_keyset_no_tombs_with_has_next_every_second_time()
-            throws Exception {
-
+    public void test_lazy_keyset_no_tombs_with_has_next_every_second_time() {
         KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazySet<String, Integer, String> collection = new LazySet<String, Integer, String>(factory, TEST_DATA_SIMPLE);
         Iterator<String> iterator = collection.iterator();
@@ -291,9 +268,7 @@ public class LazyIteratorTest
     }
 
     @Test
-    public void test_lazy_keyset_no_tombs_more_elements_possible()
-            throws Exception {
-
+    public void test_lazy_keyset_no_tombs_more_elements_possible() {
         KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazySet<String, Integer, String> collection = new LazySet<String, Integer, String>(factory, TEST_DATA_SIMPLE);
         Iterator<String> iterator = collection.iterator();
@@ -308,15 +283,13 @@ public class LazyIteratorTest
             iterator.next();
             fail("Shouldn't have further elements!");
         } catch (NoSuchElementException e) {
-            // We need to catch it here since we won't have a successful test
+            // we need to catch it here since we won't have a successful test
             // if any of the prior calls would throw it!
         }
     }
 
     @Test
-    public void test_lazy_keyset_with_tombs_with_has_next()
-            throws Exception {
-
+    public void test_lazy_keyset_with_tombs_with_has_next() {
         KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazySet<String, Integer, String> collection = new LazySet<String, Integer, String>(factory, TEST_DATA_TOMBS);
         Iterator<String> iterator = collection.iterator();
@@ -332,9 +305,7 @@ public class LazyIteratorTest
     }
 
     @Test
-    public void test_lazy_keyset_with_tombs_with_next()
-            throws Exception {
-
+    public void test_lazy_keyset_with_tombs_with_next() {
         KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazySet<String, Integer, String> collection = new LazySet<String, Integer, String>(factory, TEST_DATA_TOMBS);
         Iterator<String> iterator = collection.iterator();
@@ -349,15 +320,13 @@ public class LazyIteratorTest
             iterator.next();
             fail("Shouldn't have further elements!");
         } catch (NoSuchElementException e) {
-            // We need to catch it here since we won't have a successful test
+            // we need to catch it here since we won't have a successful test
             // if any of the prior calls would throw it!
         }
     }
 
     @Test
-    public void test_lazy_keyset_with_tombs_copy()
-            throws Exception {
-
+    public void test_lazy_keyset_with_tombs_copy() {
         KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazySet<String, Integer, String> collection = new LazySet<String, Integer, String>(factory, TEST_DATA_TOMBS);
 
@@ -374,15 +343,13 @@ public class LazyIteratorTest
             iterator.next();
             fail("Shouldn't have further elements!");
         } catch (NoSuchElementException e) {
-            // We need to catch it here since we won't have a successful test
+            // we need to catch it here since we won't have a successful test
             // if any of the prior calls would throw it!
         }
     }
 
     @Test
-    public void test_lazy_keyset_with_tombs_to_array_new_array()
-            throws Exception {
-
+    public void test_lazy_keyset_with_tombs_to_array_new_array() {
         KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazySet<String, Integer, String> collection = new LazySet<String, Integer, String>(factory, TEST_DATA_TOMBS);
 
@@ -391,9 +358,7 @@ public class LazyIteratorTest
     }
 
     @Test
-    public void test_lazy_keyset_with_tombs_to_array_passed_array_too_small()
-            throws Exception {
-
+    public void test_lazy_keyset_with_tombs_to_array_passed_array_too_small() {
         KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazySet<String, Integer, String> collection = new LazySet<String, Integer, String>(factory, TEST_DATA_TOMBS);
 
@@ -402,9 +367,7 @@ public class LazyIteratorTest
     }
 
     @Test
-    public void test_lazy_keyset_with_tombs_to_array_passed_array_matching_size()
-            throws Exception {
-
+    public void test_lazy_keyset_with_tombs_to_array_passed_array_matching_size() {
         KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazySet<String, Integer, String> collection = new LazySet<String, Integer, String>(factory, TEST_DATA_TOMBS);
 
@@ -413,9 +376,7 @@ public class LazyIteratorTest
     }
 
     @Test
-    public void test_lazy_entryset_no_tombs_with_has_next()
-            throws Exception {
-
+    public void test_lazy_entryset_no_tombs_with_has_next() {
         EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazySet<String, Integer, Map.Entry<String, Integer>> collection = //
                 new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_SIMPLE);
@@ -432,9 +393,7 @@ public class LazyIteratorTest
     }
 
     @Test
-    public void test_lazy_entryset_no_tombs_with_has_next_every_second_time()
-            throws Exception {
-
+    public void test_lazy_entryset_no_tombs_with_has_next_every_second_time() {
         EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazySet<String, Integer, Map.Entry<String, Integer>> collection = //
                 new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_SIMPLE);
@@ -452,9 +411,7 @@ public class LazyIteratorTest
     }
 
     @Test
-    public void test_lazy_entryset_no_tombs_more_elements_possible()
-            throws Exception {
-
+    public void test_lazy_entryset_no_tombs_more_elements_possible() {
         EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
         LazySet<String, Integer, Map.Entry<String, Integer>> collection = //
                 new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_SIMPLE);
@@ -470,18 +427,16 @@ public class LazyIteratorTest
             iterator.next();
             fail("Shouldn't have further elements!");
         } catch (NoSuchElementException e) {
-            // We need to catch it here since we won't have a successful test
+            // we need to catch it here since we won't have a successful test
             // if any of the prior calls would throw it!
         }
     }
 
     @Test
-    public void test_lazy_entryset_with_tombs_with_has_next()
-            throws Exception {
-
+    public void test_lazy_entryset_with_tombs_with_has_next() {
         EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
-        LazySet<String, Integer, Map.Entry<String, Integer>> collection = //
-                new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_TOMBS);
+        LazySet<String, Integer, Map.Entry<String, Integer>> collection
+                = new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_TOMBS);
         Iterator<Map.Entry<String, Integer>> iterator = collection.iterator();
 
         int count = 0;
@@ -495,12 +450,10 @@ public class LazyIteratorTest
     }
 
     @Test
-    public void test_lazy_entryset_with_tombs_with_next()
-            throws Exception {
-
+    public void test_lazy_entryset_with_tombs_with_next() {
         EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
-        LazySet<String, Integer, Map.Entry<String, Integer>> collection = //
-                new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_TOMBS);
+        LazySet<String, Integer, Map.Entry<String, Integer>> collection
+                = new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_TOMBS);
         Iterator<Map.Entry<String, Integer>> iterator = collection.iterator();
 
         Set<Integer> values = new HashSet<Integer>();
@@ -513,18 +466,16 @@ public class LazyIteratorTest
             iterator.next();
             fail("Shouldn't have further elements!");
         } catch (NoSuchElementException e) {
-            // We need to catch it here since we won't have a successful test
+            // we need to catch it here since we won't have a successful test
             // if any of the prior calls would throw it!
         }
     }
 
     @Test
-    public void test_lazy_entryset_with_tombs_copy()
-            throws Exception {
-
+    public void test_lazy_entryset_with_tombs_copy() {
         EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
-        LazySet<String, Integer, Map.Entry<String, Integer>> collection = //
-                new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_TOMBS);
+        LazySet<String, Integer, Map.Entry<String, Integer>> collection
+                = new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_TOMBS);
 
         Set<Map.Entry<String, Integer>> copy = new HashSet<Map.Entry<String, Integer>>(collection);
         Iterator<Map.Entry<String, Integer>> iterator = copy.iterator();
@@ -539,44 +490,38 @@ public class LazyIteratorTest
             iterator.next();
             fail("Shouldn't have further elements!");
         } catch (NoSuchElementException e) {
-            // We need to catch it here since we won't have a successful test
+            // we need to catch it here since we won't have a successful test
             // if any of the prior calls would throw it!
         }
     }
 
     @Test
-    public void test_lazy_entryset_with_tombs_to_array_new_array()
-            throws Exception {
-
+    public void test_lazy_entryset_with_tombs_to_array_new_array() {
         EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
-        LazySet<String, Integer, Map.Entry<String, Integer>> collection = //
-                new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_TOMBS);
+        LazySet<String, Integer, Map.Entry<String, Integer>> collection
+                = new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_TOMBS);
 
         Object[] array = collection.toArray();
         assertEquals(50, array.length);
     }
 
     @Test
-    public void test_lazy_entryset_with_tombs_to_array_passed_array_too_small()
-            throws Exception {
-
+    public void test_lazyEntrySet_with_tombs_to_array_passed_array_too_small() {
         EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
-        LazySet<String, Integer, Map.Entry<String, Integer>> collection = //
-                new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_TOMBS);
+        LazySet<String, Integer, Map.Entry<String, Integer>> collection
+                = new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_TOMBS);
 
-        Map.Entry<String, Integer>[] array = collection.toArray(new Map.Entry[0]);
+        Map.Entry[] array = collection.toArray(new Map.Entry[0]);
         assertEquals(50, array.length);
     }
 
     @Test
-    public void test_lazy_entryset_with_tombs_to_array_passed_array_matching_size()
-            throws Exception {
-
+    public void test_lazy_entryset_with_tombs_to_array_passed_array_matching_size() {
         EntrySetIteratorFactory<String, Integer> factory = new EntrySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
-        LazySet<String, Integer, Map.Entry<String, Integer>> collection = //
-                new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_TOMBS);
+        LazySet<String, Integer, Map.Entry<String, Integer>> collection
+                = new LazySet<String, Integer, Map.Entry<String, Integer>>(factory, TEST_DATA_TOMBS);
 
-        Map.Entry<String, Integer>[] array = collection.toArray(new Map.Entry[50]);
+        Map.Entry[] array = collection.toArray(new Map.Entry[50]);
         assertEquals(50, array.length);
     }
 
@@ -599,7 +544,6 @@ public class LazyIteratorTest
 
         @Override
         public void evict(Object key) {
-
         }
 
         @Override
@@ -668,12 +612,10 @@ public class LazyIteratorTest
 
         @Override
         public void clearWithVersion(long version) {
-
         }
 
         @Override
         public void reset() {
-
         }
 
         @Override
@@ -712,7 +654,6 @@ public class LazyIteratorTest
 
         @Override
         public void putRecords(Collection<RecordMigrationInfo> records, long version) {
-
         }
 
         @Override
@@ -737,14 +678,11 @@ public class LazyIteratorTest
 
         @Override
         public void setLoaded(boolean loaded) {
-
         }
 
         @Override
         public boolean merge(Object key, ReplicatedMapEntryView entryView, ReplicatedMapMergePolicy policy) {
             return false;
         }
-
     }
-
 }

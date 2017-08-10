@@ -27,12 +27,14 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.util.Arrays;
 import java.util.Collection;
 
+import static java.util.Arrays.asList;
+
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientNearCacheTest extends ClientNearCacheTestSupport {
 
@@ -41,7 +43,7 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
 
     @Parameters(name = "format:{0}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {InMemoryFormat.BINARY},
                 {InMemoryFormat.OBJECT},
         });
@@ -63,17 +65,20 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
     }
 
     @Test
-    @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/10031")
     public void putToCacheAndGetInvalidationEventWhenNodeShutdown() {
         putToCacheAndGetInvalidationEventWhenNodeShutdown(inMemoryFormat);
     }
 
     @Test
+    @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/10988")
+    // FIXME before 3.9 release
     public void putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCache() {
         putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCache(inMemoryFormat);
     }
 
     @Test
+    @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/10988")
+    // FIXME before 3.9 release
     public void putToCacheAndRemoveFromOtherNodeThenCantGetUpdatedFromClientNearCache() {
         putToCacheAndRemoveFromOtherNodeThenCantGetUpdatedFromClientNearCache(inMemoryFormat);
     }
@@ -84,6 +89,8 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
     }
 
     @Test
+    @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/10988")
+    // FIXME before 3.9 release
     public void putToCacheAndClearOrDestroyThenCantGetAnyRecordFromClientNearCache() {
         putToCacheAndClearOrDestroyThenCantGetAnyRecordFromClientNearCache(inMemoryFormat);
     }

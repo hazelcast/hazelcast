@@ -31,9 +31,9 @@ public interface HazelcastInternalOSGiService
      * Default ID for {@link HazelcastInternalOSGiService} instance
      */
     String DEFAULT_ID =
-            BuildInfoProvider.BUILD_INFO.getVersion()
+            BuildInfoProvider.getBuildInfo().getVersion()
             + "#"
-            + (BuildInfoProvider.BUILD_INFO.isEnterprise() ? "EE" : "OSS");
+            + (BuildInfoProvider.getBuildInfo().isEnterprise() ? "EE" : "OSS");
 
     /**
      * Default group name to be used when grouping is not disabled with

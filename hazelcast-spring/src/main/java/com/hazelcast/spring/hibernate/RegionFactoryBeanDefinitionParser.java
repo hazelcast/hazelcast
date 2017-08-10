@@ -28,8 +28,7 @@ import org.w3c.dom.Node;
 
 /**
  * Parser for RegionFactory.
- * <p/>
- * <p/>
+ * <p>
  * Sample Spring XML for Hibernate RegionFactory
  * <pre>
  * <code>
@@ -64,9 +63,9 @@ public class RegionFactoryBeanDefinitionParser extends AbstractBeanDefinitionPar
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         try {
             if ("DISTRIBUTED".equals(mode)) {
-                 clz = ClassLoaderUtil.loadClass(classLoader, CACHE_REGION_FACTORY);
+                clz = ClassLoaderUtil.loadClass(classLoader, CACHE_REGION_FACTORY);
             } else if ("LOCAL".equals(mode)) {
-                 clz = ClassLoaderUtil.loadClass(classLoader, LOCAL_CACHE_REGION_FACTORY);
+                clz = ClassLoaderUtil.loadClass(classLoader, LOCAL_CACHE_REGION_FACTORY);
             } else {
                 throw new IllegalArgumentException("Unknown Hibernate L2 cache mode: " + mode);
             }

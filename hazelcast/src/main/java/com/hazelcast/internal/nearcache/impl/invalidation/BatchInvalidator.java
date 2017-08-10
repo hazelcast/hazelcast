@@ -207,11 +207,7 @@ public class BatchInvalidator extends Invalidator {
 
     @Override
     public void destroy(String dataStructureName, String sourceUuid) {
-        InvalidationQueue invalidationQueue = invalidationQueues.remove(dataStructureName);
-        if (invalidationQueue != null) {
-            invalidateInternal(newClearInvalidation(dataStructureName, sourceUuid), dataStructureName.hashCode());
-        }
-
+        invalidationQueues.remove(dataStructureName);
         super.destroy(dataStructureName, sourceUuid);
     }
 

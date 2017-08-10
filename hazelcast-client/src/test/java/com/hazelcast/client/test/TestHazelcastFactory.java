@@ -96,7 +96,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
                 Collection<InetSocketAddress> inetAddresses = new ArrayList<InetSocketAddress>();
                 for (Address address : getKnownAddresses()) {
                     Collection<InetSocketAddress> addresses = AddressHelper.getPossibleSocketAddresses(address.getPort(),
-                            address.getHost(), 3);
+                            address.getHost(), 1);
                     inetAddresses.addAll(addresses);
                 }
                 return inetAddresses;

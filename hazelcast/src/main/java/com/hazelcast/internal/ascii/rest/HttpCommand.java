@@ -50,6 +50,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
 
     protected final String uri;
     protected ByteBuffer response;
+    protected boolean nextLine;
 
 
     public HttpCommand(TextCommandConstants.TextCommandType type, String uri) {
@@ -165,6 +166,22 @@ public abstract class HttpCommand extends AbstractTextCommand {
     public boolean writeTo(ByteBuffer dst) {
         copyToHeapBuffer(response, dst);
         return !response.hasRemaining();
+    }
+
+    @Override
+    public boolean readFrom(ByteBuffer src) {
+        while (src.hasRemaining()) {
+            char c = (char) src.get();
+            if (c == '\n') {
+                if (nextLine) {
+                    return true;
+                }
+                nextLine = true;
+            } else if (c != '\r') {
+                nextLine = false;
+            }
+        }
+        return false;
     }
 
     @Override

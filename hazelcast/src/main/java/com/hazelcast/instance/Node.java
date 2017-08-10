@@ -113,7 +113,7 @@ public class Node {
 
     public final HazelcastInstanceImpl hazelcastInstance;
 
-    public final DynamicConfigurationAwareConfig config;
+    public final Config config;
 
     public final NodeEngineImpl nodeEngine;
     public final ClientEngineImpl clientEngine;
@@ -205,7 +205,7 @@ public class Node {
 
             nodeEngine = new NodeEngineImpl(this);
             config.setConfigurationService(nodeEngine.getConfigurationService());
-            config.setSecurityService(getSecurityService());
+            config.onSecurityServiceUpdated(getSecurityService());
             MetricsRegistry metricsRegistry = nodeEngine.getMetricsRegistry();
             metricsRegistry.collectMetrics(nodeExtension);
             healthMonitor = new HealthMonitor(this);

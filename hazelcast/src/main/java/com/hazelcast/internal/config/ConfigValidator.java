@@ -20,12 +20,14 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
-import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+
+import java.util.EnumSet;
 
 import static com.hazelcast.config.EvictionPolicy.NONE;
 import static com.hazelcast.config.EvictionPolicy.RANDOM;
@@ -33,6 +35,7 @@ import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.MapConfig.DEFAULT_EVICTION_PERCENTAGE;
 import static com.hazelcast.config.MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
+import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static java.lang.String.format;
 
@@ -42,6 +45,9 @@ import static java.lang.String.format;
 public final class ConfigValidator {
 
     private static final ILogger LOGGER = Logger.getLogger(ConfigValidator.class);
+
+    private static final EnumSet<EvictionConfig.MaxSizePolicy> SUPPORTED_ON_HEAP_NEAR_CACHE_MAXSIZE_POLICIES
+            = EnumSet.of(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
 
     private ConfigValidator() {
     }
@@ -64,10 +70,15 @@ public final class ConfigValidator {
      * @param nearCacheConfig the {@link NearCacheConfig} to be checked
      * @param isClient        {@code true} if the config is for a Hazelcast client, {@code false} otherwise
      */
-    public static void checkNearCacheConfig(String mapName, NearCacheConfig nearCacheConfig, boolean isClient) {
-        checkLocalUpdatePolicy(mapName, nearCacheConfig);
-        checkNotNative(nearCacheConfig.getInMemoryFormat());
+    public static void checkNearCacheConfig(String mapName, NearCacheConfig nearCacheConfig,
+                                            NativeMemoryConfig nativeMemoryConfig, boolean isClient) {
+        InMemoryFormat inMemoryFormat = nearCacheConfig.getInMemoryFormat();
+
+        checkNotNative(inMemoryFormat);
+        checkLocalUpdatePolicy(mapName, nearCacheConfig.getLocalUpdatePolicy());
         checkEvictionConfig(nearCacheConfig.getEvictionConfig(), true);
+        checkOnHeapNearCacheMaxSizePolicy(nearCacheConfig);
+        checkNearCacheNativeMemoryConfig(nearCacheConfig.getInMemoryFormat(), nativeMemoryConfig, getBuildInfo().isEnterprise());
 
         if (isClient && nearCacheConfig.isCacheLocalEntries()) {
             throw new IllegalArgumentException("The Near Cache option `cache-local-entries` is not supported in "
@@ -77,13 +88,49 @@ public final class ConfigValidator {
     }
 
     /**
+     * Checks precondition to use {@link InMemoryFormat#NATIVE}
+     *
+     * @param nativeMemoryConfig native memory configuration
+     */
+    // not private for testing
+    static void checkNearCacheNativeMemoryConfig(InMemoryFormat inMemoryFormat,
+                                                        NativeMemoryConfig nativeMemoryConfig, boolean isEnterprise) {
+        if (!isEnterprise) {
+            return;
+        }
+
+        if (inMemoryFormat != NATIVE) {
+            return;
+        }
+
+        if (nativeMemoryConfig != null && nativeMemoryConfig.isEnabled()) {
+            return;
+        }
+
+        throw new IllegalArgumentException("Enable native memory config to use NATIVE in-memory-format for Near Cache");
+    }
+
+    private static void checkOnHeapNearCacheMaxSizePolicy(NearCacheConfig nearCacheConfig) {
+        InMemoryFormat inMemoryFormat = nearCacheConfig.getInMemoryFormat();
+        if (inMemoryFormat == NATIVE) {
+            return;
+        }
+
+        EvictionConfig.MaxSizePolicy maxSizePolicy = nearCacheConfig.getEvictionConfig().getMaximumSizePolicy();
+        if (!SUPPORTED_ON_HEAP_NEAR_CACHE_MAXSIZE_POLICIES.contains(maxSizePolicy)) {
+            throw new IllegalArgumentException(format("Near cache maximum size policy %s cannot be used with %s storage."
+                            + " Supported maximum size policies are: %s",
+                    maxSizePolicy, inMemoryFormat, SUPPORTED_ON_HEAP_NEAR_CACHE_MAXSIZE_POLICIES));
+        }
+    }
+
+    /**
      * Checks IMaps' supported Near Cache local update policy configuration.
      *
-     * @param mapName         name of the map that Near Cache will be created for
-     * @param nearCacheConfig the {@link NearCacheConfig} to be checked
+     * @param mapName           name of the map that Near Cache will be created for
+     * @param localUpdatePolicy local update policy
      */
-    public static void checkLocalUpdatePolicy(String mapName, NearCacheConfig nearCacheConfig) {
-        NearCacheConfig.LocalUpdatePolicy localUpdatePolicy = nearCacheConfig.getLocalUpdatePolicy();
+    public static void checkLocalUpdatePolicy(String mapName, NearCacheConfig.LocalUpdatePolicy localUpdatePolicy) {
         if (localUpdatePolicy != INVALIDATE) {
             throw new IllegalArgumentException(format("Wrong `local-update-policy` option is selected for `%s` map Near Cache."
                     + " Only `%s` option is supported but found `%s`", mapName, INVALIDATE, localUpdatePolicy));
@@ -150,7 +197,7 @@ public final class ConfigValidator {
      * @param inMemoryFormat supplied inMemoryFormat
      */
     private static void checkNotNative(InMemoryFormat inMemoryFormat) {
-        if (inMemoryFormat == NATIVE && !BuildInfoProvider.BUILD_INFO.isEnterprise()) {
+        if (inMemoryFormat == NATIVE && !getBuildInfo().isEnterprise()) {
             throw new IllegalArgumentException("NATIVE storage format is supported in Hazelcast Enterprise only."
                     + " Make sure you have Hazelcast Enterprise JARs on your classpath!");
         }

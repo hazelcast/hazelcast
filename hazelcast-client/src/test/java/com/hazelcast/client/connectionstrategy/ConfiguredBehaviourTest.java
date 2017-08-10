@@ -40,7 +40,6 @@ import java.util.concurrent.CountDownLatch;
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.ASYNC;
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CONNECTED;
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -52,16 +51,6 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
     @After
     public void tearDown() {
         hazelcastFactory.terminateAll();
-    }
-
-    @Test
-    public void testDefaultStartMode() {
-        hazelcastFactory.newHazelcastInstance();
-
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
-
-        // Since default start mode is synch mode, this should not throw exception
-        client.getMap(randomMapName());
     }
 
     @Test(expected = HazelcastClientOfflineException.class)
@@ -134,41 +123,6 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         HazelcastInstance ownerServer = getOwnerServer(hazelcastFactory, clientInstanceImpl);
         ownerServer.shutdown();
-
-        map.put(1, 5);
-    }
-
-    @Test
-    public void testReconnectModeONSingleMember() {
-        HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
-
-        ClientConfig clientConfig = new ClientConfig();
-        // Default reconnect mode is ON
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-
-        // no exception at this point
-        IMap<Integer, Integer> map = client.getMap(randomMapName());
-        map.put(1, 5);
-
-        hazelcastInstance.shutdown();
-
-        hazelcastFactory.newHazelcastInstance();
-
-        map.put(1, 5);
-    }
-
-    @Test
-    public void testReconnectModeONTwoMembers() {
-        HazelcastInstance[] hazelcastInstances = hazelcastFactory.newInstances(getConfig(), 2);
-
-        ClientConfig clientConfig = new ClientConfig();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-
-        // no exception at this point
-        IMap<Integer, Integer> map = client.getMap(randomMapName());
-        map.put(1, 5);
-
-        hazelcastInstances[0].shutdown();
 
         map.put(1, 5);
     }

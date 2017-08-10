@@ -21,9 +21,8 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddSetConfigCodec;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.dynamicconfig.AddDynamicConfigOperationFactory;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.List;
 
@@ -45,7 +44,7 @@ public class AddSetConfigMessageTask
     }
 
     @Override
-    protected OperationFactory getOperationFactory() {
+    protected IdentifiedDataSerializable getConfig() {
         SetConfig config = new SetConfig(parameters.name);
         config.setAsyncBackupCount(parameters.asyncBackupCount);
         config.setBackupCount(parameters.backupCount);
@@ -56,7 +55,7 @@ public class AddSetConfigMessageTask
                     adaptListenerConfigs(parameters.listenerConfigs);
             config.setItemListenerConfigs(itemListenerConfigs);
         }
-        return new AddDynamicConfigOperationFactory(config);
+        return config;
     }
 
     @Override

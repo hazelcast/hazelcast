@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Message;
 import com.hazelcast.monitor.LocalTopicStats;
@@ -32,6 +33,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static java.util.Arrays.asList;
@@ -247,18 +249,48 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
 
         topic.addMessageListener(listener);
+        final ITopic<Object> anotherTopic = local.getReliableTopic("anotherTopic");
 
         final int messageCount = 10;
         final LocalTopicStats localTopicStats = topic.getLocalTopicStats();
         for (int k = 0; k < messageCount; k++) {
             topic.publish("foo");
+            anotherTopic.publish("foo");
         }
+
 
         assertEquals(messageCount, localTopicStats.getPublishOperationCount());
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 assertEquals(messageCount, localTopicStats.getReceiveOperationCount());
+            }
+        });
+
+        final ReliableTopicService reliableTopicService = getNode(local).nodeEngine.getService(ReliableTopicService.SERVICE_NAME);
+        final Map<String, LocalTopicStats> stats = reliableTopicService.getStats();
+        assertEquals(2, stats.size());
+        assertEquals(messageCount, stats.get(topic.getName()).getPublishOperationCount());
+        assertEquals(messageCount, stats.get(topic.getName()).getReceiveOperationCount());
+        assertEquals(messageCount, stats.get(anotherTopic.getName()).getPublishOperationCount());
+        assertEquals(0, stats.get(anotherTopic.getName()).getReceiveOperationCount());
+    }
+
+    @Test
+    public void testDestroyTopicRemovesStatistics() {
+        topic.publish("foobar");
+
+        final ReliableTopicService reliableTopicService = getNode(local).nodeEngine.getService(ReliableTopicService.SERVICE_NAME);
+        final Map<String, LocalTopicStats> stats = reliableTopicService.getStats();
+        assertEquals(1, stats.size());
+        assertEquals(1, stats.get(topic.getName()).getPublishOperationCount());
+
+        topic.destroy();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertFalse(reliableTopicService.getStats().containsKey(topic.getName()));
             }
         });
     }

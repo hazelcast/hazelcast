@@ -35,6 +35,7 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.MemberRemoveOperation;
+import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.cluster.impl.operations.PromoteLiteMemberOp;
 import com.hazelcast.internal.cluster.impl.operations.ShutdownNodeOp;
 import com.hazelcast.internal.cluster.impl.operations.TriggerExplicitSuspicionOp;
@@ -151,6 +152,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         nodeEngine.getExecutionService().register(MEMBERSHIP_EVENT_EXECUTOR_NAME, 1, Integer.MAX_VALUE, ExecutorType.CACHED);
         registerMetrics();
     }
+
+
 
     private void registerMetrics() {
         MetricsRegistry metricsRegistry = node.nodeEngine.getMetricsRegistry();
@@ -407,9 +410,10 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
+    @SuppressWarnings("checkstyle:parameternumber")
     public boolean finalizeJoin(MembersView membersView, Address callerAddress, String callerUuid,
                                 String clusterId, ClusterState clusterState, Version clusterVersion,
-                                long clusterStartTime, long masterTime) {
+                                long clusterStartTime, long masterTime, OnJoinOp preJoinOp) {
         lock.lock();
         try {
             if (!checkValidMaster(callerAddress)) {
@@ -438,6 +442,12 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             ClusterClockImpl clusterClock = getClusterClock();
             clusterClock.setClusterStartTime(clusterStartTime);
             clusterClock.setMasterTime(masterTime);
+
+            // run pre-join op before member list update, so operations other than join ops will be refused by operation service
+            if (preJoinOp != null) {
+                nodeEngine.getOperationService().run(preJoinOp);
+            }
+
             membershipManager.updateMembers(membersView);
             clusterHeartbeatManager.heartbeat();
 
@@ -1076,7 +1086,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return clusterHeartbeatManager;
     }
 
-    // used for 3.8 compatibility
+    // RU_COMPAT_WITH_3_8
     public MembershipManagerCompat getMembershipManagerCompat() {
         assert getClusterVersion().isLessThan(Versions.V3_9) : "Cluster version should be less than 3.9";
         return membershipManagerCompat;
@@ -1118,6 +1128,11 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         } finally {
             lock.unlock();
         }
+    }
+
+    @Override
+    public int getMemberListVersion() {
+        return membershipManager.getMemberListVersion();
     }
 
     private MemberImpl getMasterMember() {

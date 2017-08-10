@@ -27,6 +27,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.journal.EventJournalInitialSubscriberState;
+import com.hazelcast.journal.EventJournalReader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
@@ -77,7 +78,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @param <V> the type of value.
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
-public class CacheProxy<K, V> extends AbstractCacheProxy<K, V> {
+public class CacheProxy<K, V> extends AbstractCacheProxy<K, V> implements EventJournalReader<EventJournalCacheEvent<K, V>> {
 
     protected final ILogger logger;
 
@@ -117,6 +118,7 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V> {
         }
         HashSet<Data> keysData = new HashSet<Data>(keys.size());
         for (K key : keys) {
+            validateNotNull(key);
             keysData.add(serializationService.toData(key));
         }
         LoadAllTask loadAllTask = new LoadAllTask(operationProvider, keysData, replaceExistingValues, completionListener);
@@ -199,6 +201,9 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V> {
     public void removeAll(Set<? extends K> keys) {
         ensureOpen();
         validateNotNull(keys);
+        if (keys.isEmpty()) {
+            return;
+        }
         removeAllInternal(keys);
     }
 
@@ -255,6 +260,7 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V> {
         checkNotNull(entryProcessor, "Entry Processor is null");
         Map<K, EntryProcessorResult<T>> allResult = new HashMap<K, EntryProcessorResult<T>>();
         for (K key : keys) {
+            validateNotNull(key);
             CacheEntryProcessorResult<T> ceResult;
             try {
                 T result = invoke(key, entryProcessor, arguments);
@@ -369,51 +375,23 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V> {
                 .deregisterListener(AbstractCacheService.SERVICE_NAME, name, id);
     }
 
-    /**
-     * Subscribe to the event journal for this cache and a specific partition ID.
-     * The method will return the newest and oldest event journal sequence.
-     *
-     * @param partitionId the partition ID of the entries to which we are subscribing
-     * @return future with the initial subscriber state containing the newest and oldest event journal sequence
-     * @throws UnsupportedOperationException if the cluster version is lower than 3.9 or there is no event journal
-     *                                       configured for this cache
-     * @since 3.9
-     */
+    @Override
     public ICompletableFuture<EventJournalInitialSubscriberState> subscribeToEventJournal(int partitionId) {
         final CacheEventJournalSubscribeOperation op = new CacheEventJournalSubscribeOperation(nameWithPrefix);
         op.setPartitionId(partitionId);
         return getNodeEngine().getOperationService().invokeOnPartition(op);
     }
 
-    /**
-     * Reads from the event journal. The returned future may throw {@link UnsupportedOperationException}
-     * if the cluster version is lower than 3.9 or there is no event journal configured for this cache.
-     * <p>
-     * <b>NOTE:</b>
-     * Configuring evictions may cause unexpected results when reading from the event journal and
-     * there are cluster changes (a backup replica is promoted into a partition owner). See
-     * {@link com.hazelcast.cache.impl.journal.CacheEventJournal} for more details.
-     *
-     * @param startSequence the sequence of the first item to read
-     * @param maxSize       the maximum number of items to read
-     * @param partitionId   the partition ID of the entries in the journal
-     * @param predicate     the predicate which the events must pass to be included in the response.
-     *                      May be {@code null} in which case all events pass the predicate
-     * @param projection    the projection which is applied to the events before returning.
-     *                      May be {@code null} in which case the event is returned without being projected
-     * @param <T>           the return type of the projection. It is equal to the journal event type
-     *                      if the projection is {@code null} or it is the identity projection
-     * @return the future with the filtered and projected journal items
-     * @since 3.9
-     */
+    @Override
     public <T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(
             long startSequence,
+            int minSize,
             int maxSize,
             int partitionId,
             Predicate<? super EventJournalCacheEvent<K, V>> predicate,
             Projection<? super EventJournalCacheEvent<K, V>, T> projection) {
         final CacheEventJournalReadOperation<K, V, T> op = new CacheEventJournalReadOperation<K, V, T>(
-                nameWithPrefix, startSequence, 1, maxSize, predicate, projection);
+                nameWithPrefix, startSequence, minSize, maxSize, predicate, projection);
         op.setPartitionId(partitionId);
         return getNodeEngine().getOperationService().invokeOnPartition(op);
     }

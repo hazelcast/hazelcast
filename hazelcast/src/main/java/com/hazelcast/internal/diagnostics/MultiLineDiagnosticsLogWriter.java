@@ -127,6 +127,12 @@ class MultiLineDiagnosticsLogWriter extends DiagnosticsLogWriter {
         write(value);
     }
 
+    @Override
+    public void writeKeyValueEntryAsDateTime(String key, long epochMillis) {
+        writeKeyValueHead(key);
+        appendDateTime(epochMillis);
+    }
+
     private void writeKeyValueHead(String key) {
         write(INDENTS[sectionLevel]);
         write(key);

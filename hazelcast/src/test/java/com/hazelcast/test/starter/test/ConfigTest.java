@@ -28,6 +28,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Properties;
+
+import static com.hazelcast.test.HazelcastTestSupport.assertPropertiesEquals;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -44,6 +47,8 @@ public class ConfigTest {
 
         thisConfig.addListenerConfig(new ListenerConfig("the.listener.config.class"));
 
+        thisConfig.setProperties(buildPropertiesWithDefaults());
+
         ConfigConstructor configConstructor = new ConfigConstructor(Config.class);
 
         Config otherConfig = (Config) configConstructor.createNew(thisConfig);
@@ -51,5 +56,14 @@ public class ConfigTest {
         assertEquals(otherConfig.getMapConfigs().size(), thisConfig.getMapConfigs().size());
         assertEquals(otherConfig.getListConfigs().size(), thisConfig.getListConfigs().size());
         assertEquals(otherConfig.getListenerConfigs().size(), thisConfig.getListenerConfigs().size());
+        assertPropertiesEquals(thisConfig.getProperties(), otherConfig.getProperties());
+    }
+
+    private Properties buildPropertiesWithDefaults() {
+        Properties defaults = new Properties();
+        defaults.setProperty("key1", "value1");
+        Properties configProperties = new Properties(defaults);
+        configProperties.setProperty("key2", "value2");
+        return configProperties;
     }
 }

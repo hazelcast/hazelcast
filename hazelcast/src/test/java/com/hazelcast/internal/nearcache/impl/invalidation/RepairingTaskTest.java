@@ -75,7 +75,7 @@ public class RepairingTaskTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
     public void whenReconciliationIntervalSecondsIsNotZeroButSmallerThanThresholdValue_thenThrowException() {
-        int thresholdValue = (int) MIN_RECONCILIATION_INTERVAL_SECONDS;
+        int thresholdValue = Integer.parseInt(MIN_RECONCILIATION_INTERVAL_SECONDS.getDefaultValue());
         Config config = getConfigWithReconciliationInterval(getInt(1, thresholdValue));
         newRepairingTask(config);
     }

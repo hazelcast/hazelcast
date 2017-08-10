@@ -64,7 +64,7 @@ public class AbstractDistributedObjectTest extends HazelcastTestSupport {
 
     @Test
     public void testClusterVersion_isUnknownGreaterOrEqual_currentVersion() {
-        assertTrue(object.isClusterVersionUnknownGreaterOrEqual(CURRENT_CLUSTER_VERSION));
+        assertTrue(object.isClusterVersionUnknownOrGreaterOrEqual(CURRENT_CLUSTER_VERSION));
     }
 
     @Test
@@ -84,7 +84,7 @@ public class AbstractDistributedObjectTest extends HazelcastTestSupport {
 
     @Test
     public void testClusterVersion_isUnknownLessOrEqual_currentVersion() {
-        assertTrue(object.isClusterVersionUnknownLessOrEqual(CURRENT_CLUSTER_VERSION));
+        assertTrue(object.isClusterVersionUnknownOrLessOrEqual(CURRENT_CLUSTER_VERSION));
     }
 
     @Test

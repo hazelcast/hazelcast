@@ -31,5 +31,4 @@ public class HigherHitsReplicatedMapMergePolicyTest extends AbstractReplicatedMa
     public void given() {
         policy = HigherHitsMapMergePolicy.INSTANCE;
     }
-
 }

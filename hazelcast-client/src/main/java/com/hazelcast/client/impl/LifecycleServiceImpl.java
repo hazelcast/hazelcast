@@ -81,7 +81,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
                 }
             }
         }
-        buildInfo = BuildInfoProvider.BUILD_INFO;
+        buildInfo = BuildInfoProvider.getBuildInfo();
         fireLifecycleEvent(STARTING);
     }
 

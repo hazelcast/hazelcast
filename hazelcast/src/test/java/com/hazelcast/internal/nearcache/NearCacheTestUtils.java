@@ -305,19 +305,56 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     /**
      * Asserts the number of Near Cache invalidations.
      *
+     * @param context          the given {@link NearCacheTestContext} to retrieve the {@link NearCacheInvalidationListener} from
+     * @param minInvalidations lower bound of Near Cache invalidations to wait for
+     * @param maxInvalidations upper bound of Near Cache invalidations to wait for
+     */
+    public static void assertNearCacheInvalidationsBetween(final NearCacheTestContext<?, ?, ?, ?> context,
+                                                           final int minInvalidations, final int maxInvalidations) {
+        if (context.nearCacheConfig.isInvalidateOnChange() && context.invalidationListener != null && minInvalidations > 0) {
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    long invalidationCount = context.invalidationListener.getInvalidationCount();
+                    assertTrue(format("Expected between %d and %d Near Cache invalidations, but found %d (%s)",
+                            minInvalidations, maxInvalidations, invalidationCount, context.stats),
+                            minInvalidations <= invalidationCount && invalidationCount <= maxInvalidations);
+                }
+            });
+            context.invalidationListener.resetInvalidationCount();
+        }
+    }
+
+    /**
+     * Asserts the number of Near Cache invalidations.
+     *
      * @param context       the given {@link NearCacheTestContext} to retrieve the {@link NearCacheInvalidationListener} from
      * @param invalidations the given number of Near Cache invalidations to wait for
      */
-    public static void assertNearCacheInvalidations(final NearCacheTestContext<?, ?, ?, ?> context, final int invalidations) {
+    public static void assertNearCacheInvalidations(NearCacheTestContext<?, ?, ?, ?> context, int invalidations) {
         if (context.nearCacheConfig.isInvalidateOnChange() && context.invalidationListener != null && invalidations > 0) {
+            assertNearCacheInvalidations(context.invalidationListener, invalidations, context.stats);
+        }
+    }
+
+    /**
+     * Asserts the number of Near Cache invalidations.
+     *
+     * @param listener      the given {@link NearCacheInvalidationListener}
+     * @param invalidations the given number of Near Cache invalidations to wait for
+     * @param stats         the given {@link NearCacheStats} for the assert message
+     */
+    public static void assertNearCacheInvalidations(final NearCacheInvalidationListener listener, final int invalidations,
+                                                    final NearCacheStats stats) {
+        if (listener != null && invalidations > 0) {
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() throws Exception {
                     assertEqualsFormat("Expected %d Near Cache invalidations, but found %d (%s)",
-                            invalidations, context.invalidationListener.getInvalidationCount(), context.stats);
+                            invalidations, listener.getInvalidationCount(), stats);
                 }
             });
-            context.invalidationListener.resetInvalidationCount();
+            listener.resetInvalidationCount();
         }
     }
 

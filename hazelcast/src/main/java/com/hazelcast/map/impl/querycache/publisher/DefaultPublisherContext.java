@@ -20,7 +20,7 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipAdapter;
 import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheScheduler;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
@@ -182,7 +182,7 @@ public class DefaultPublisherContext implements PublisherContext {
     }
 
     private void handleSubscriberAddRemove() {
-        ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
+        ClusterService clusterService = nodeEngine.getClusterService();
         clusterService.addMembershipListener(new MembershipAdapter() {
             @Override
             public void memberRemoved(MembershipEvent membershipEvent) {

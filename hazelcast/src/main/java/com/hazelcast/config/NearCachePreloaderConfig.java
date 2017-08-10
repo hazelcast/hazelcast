@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
@@ -31,8 +30,10 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 /**
  * Configuration for eviction.
  * You can set a limit for number of entries or total memory cost of entries.
+ *
+ * @since 3.8
  */
-@Beta
+@SuppressWarnings("WeakerAccess")
 public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Serializable {
 
     /**
@@ -57,6 +58,8 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
 
     public NearCachePreloaderConfig(NearCachePreloaderConfig nearCachePreloaderConfig) {
         this(nearCachePreloaderConfig.enabled, nearCachePreloaderConfig.directory);
+        this.storeInitialDelaySeconds = nearCachePreloaderConfig.storeInitialDelaySeconds;
+        this.storeIntervalSeconds = nearCachePreloaderConfig.storeIntervalSeconds;
     }
 
     public NearCachePreloaderConfig(String directory) {
@@ -150,7 +153,7 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -160,7 +163,6 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
         }
 
         NearCachePreloaderConfig that = (NearCachePreloaderConfig) o;
-
         if (enabled != that.enabled) {
             return false;
         }
@@ -185,10 +187,10 @@ public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Ser
     /**
      * A readonly version of the {@link NearCachePreloaderConfig}.
      */
-    @Beta
     @PrivateApi
     private static class NearCachePreloaderConfigReadOnly extends NearCachePreloaderConfig {
 
+        @SuppressWarnings("unused")
         public NearCachePreloaderConfigReadOnly() {
         }
 

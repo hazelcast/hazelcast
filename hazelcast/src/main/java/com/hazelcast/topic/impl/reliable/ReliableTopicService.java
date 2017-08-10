@@ -18,12 +18,32 @@ package com.hazelcast.topic.impl.reliable;
 
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
+import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.StatisticsAwareService;
+import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.MapUtil;
 
-public class ReliableTopicService implements RemoteService {
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+
+public class ReliableTopicService implements ManagedService, RemoteService, StatisticsAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:reliableTopicService";
+    private final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<String, LocalTopicStatsImpl>();
+    private final ConstructorFunction<String, LocalTopicStatsImpl> localTopicStatsConstructorFunction =
+            new ConstructorFunction<String, LocalTopicStatsImpl>() {
+                public LocalTopicStatsImpl createNew(String mapName) {
+                    return new LocalTopicStatsImpl();
+                }
+            };
 
     private final NodeEngine nodeEngine;
 
@@ -39,6 +59,40 @@ public class ReliableTopicService implements RemoteService {
 
     @Override
     public void destroyDistributedObject(String objectName) {
-        //no-op
+        statsMap.remove(objectName);
+    }
+
+    /**
+     * Returns reliable topic statistics local to this member
+     * for the reliable topic with {@code name}.
+     *
+     * @param name the name of the reliable topic
+     * @return the statistics local to this member
+     */
+    public LocalTopicStatsImpl getLocalTopicStats(String name) {
+        return getOrPutSynchronized(statsMap, name, statsMap, localTopicStatsConstructorFunction);
+    }
+
+    @Override
+    public Map<String, LocalTopicStats> getStats() {
+        Map<String, LocalTopicStats> topicStats = MapUtil.createHashMap(statsMap.size());
+        for (Map.Entry<String, LocalTopicStatsImpl> queueStat : statsMap.entrySet()) {
+            topicStats.put(queueStat.getKey(), queueStat.getValue());
+        }
+        return topicStats;
+    }
+
+    @Override
+    public void init(NodeEngine nodeEngine, Properties properties) {
+    }
+
+    @Override
+    public void reset() {
+        statsMap.clear();
+    }
+
+    @Override
+    public void shutdown(boolean terminate) {
+        reset();
     }
 }

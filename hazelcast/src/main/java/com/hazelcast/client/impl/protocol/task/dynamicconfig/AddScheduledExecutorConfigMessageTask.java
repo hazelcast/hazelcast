@@ -20,9 +20,8 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddScheduledExecutorConfigCodec;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.dynamicconfig.AddDynamicConfigOperationFactory;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public class AddScheduledExecutorConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddScheduledExecutorConfigCodec.RequestParameters> {
@@ -42,10 +41,10 @@ public class AddScheduledExecutorConfigMessageTask
     }
 
     @Override
-    protected OperationFactory getOperationFactory() {
+    protected IdentifiedDataSerializable getConfig() {
         ScheduledExecutorConfig config = new ScheduledExecutorConfig(parameters.name, parameters.durability,
                 parameters.capacity, parameters.poolSize);
-        return new AddDynamicConfigOperationFactory(config);
+        return config;
     }
 
     @Override

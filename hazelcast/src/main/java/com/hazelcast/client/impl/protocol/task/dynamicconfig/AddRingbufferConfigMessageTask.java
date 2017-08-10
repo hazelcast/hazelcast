@@ -22,9 +22,8 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.dynamicconfig.AddDynamicConfigOperationFactory;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public class AddRingbufferConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddRingbufferConfigCodec.RequestParameters> {
@@ -44,7 +43,7 @@ public class AddRingbufferConfigMessageTask
     }
 
     @Override
-    protected OperationFactory getOperationFactory() {
+    protected IdentifiedDataSerializable getConfig() {
         RingbufferConfig config = new RingbufferConfig(parameters.name);
         config.setAsyncBackupCount(parameters.asyncBackupCount);
         config.setBackupCount(parameters.backupCount);
@@ -55,7 +54,7 @@ public class AddRingbufferConfigMessageTask
             RingbufferStoreConfig storeConfig = parameters.ringbufferStoreConfig.asRingbufferStoreConfig(serializationService);
             config.setRingbufferStoreConfig(storeConfig);
         }
-        return new AddDynamicConfigOperationFactory(config);
+        return config;
     }
 
     @Override

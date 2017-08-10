@@ -80,7 +80,7 @@ public class MockNodeContext implements NodeContext {
      * @return {@code NodeExtension} suitable for sampling serialized objects in OSS or EE environment
      */
     private NodeExtension constructSamplingNodeExtension(Node node) {
-        if (BuildInfoProvider.BUILD_INFO.isEnterprise()) {
+        if (BuildInfoProvider.getBuildInfo().isEnterprise()) {
             try {
                 Class<? extends NodeExtension> klass = (Class<? extends NodeExtension>)
                         Class.forName("com.hazelcast.test.compatibility.SamplingEnterpriseNodeExtension");

@@ -21,23 +21,31 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ascii.TextChannelInboundHandler;
 import com.hazelcast.util.StringUtil;
 
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.HTTP_POST;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class HttpPostCommand extends HttpCommand {
+
     private static final int RADIX = 16;
-    private static final int CAPACITY = 500;
+    @SuppressWarnings("checkstyle:magicnumber")
+    private static final int INITIAL_CAPACITY = 1 << 8;
+    // 65536, no specific reason, similar to UDP packet size limit
+    @SuppressWarnings("checkstyle:magicnumber")
+    private static final int MAX_CAPACITY = 1 << 16;
+    private static final byte LINE_FEED = 0x0A;
+    private static final byte CARRIAGE_RETURN = 0x0D;
 
-    boolean nextLine;
-    boolean readyToReadData;
-
-    private ByteBuffer data;
-    private ByteBuffer line = ByteBuffer.allocate(CAPACITY);
-    private String contentType;
     private final TextChannelInboundHandler readHandler;
+
     private boolean chunked;
+    private boolean nextLine;
+    private boolean readyToReadData;
+    private ByteBuffer data;
+    private String contentType;
+    private ByteBuffer lineBuffer = ByteBuffer.allocate(INITIAL_CAPACITY);
 
     public HttpPostCommand(TextChannelInboundHandler readHandler, String uri) {
         super(HTTP_POST, uri);
@@ -71,57 +79,20 @@ public class HttpPostCommand extends HttpCommand {
         return complete;
     }
 
-    public byte[] getData() {
-        if (data == null) {
-            return null;
-        } else {
-            return data.array();
-        }
-    }
-
-    public byte[] getContentType() {
-        if (contentType == null) {
-            return null;
-        } else {
-            return stringToBytes(contentType);
-        }
-    }
-
-    private void dataNullCheck(int dataSize) {
-        if (data != null) {
-            ByteBuffer newData = ByteBuffer.allocate(data.capacity() + dataSize);
-            newData.put(data.array());
-            data = newData;
-        } else {
-            data = ByteBuffer.allocate(dataSize);
-        }
-    }
-
-    private void setReadyToReadData(ByteBuffer cb) {
-        while (!readyToReadData && cb.hasRemaining()) {
-            byte b = cb.get();
-            char c = (char) b;
-            if (c == '\n') {
-                processLine(StringUtil.lowerCaseInternal(toStringAndClear(line)));
-                if (nextLine) {
-                    readyToReadData = true;
-                }
-                nextLine = true;
-            } else if (c != '\r') {
-                nextLine = false;
-                line.put(b);
-            }
-        }
-    }
-
-    public boolean doActualRead(ByteBuffer cb) {
+    private boolean doActualRead(ByteBuffer cb) {
         if (readyToReadData) {
             if (chunked && (data == null || !data.hasRemaining())) {
-                boolean done = readLine(cb);
+
+                if (data != null && cb.hasRemaining()) {
+                    readCRLFOrPositionChunkSize(cb);
+                }
+
+                boolean done = readChunkSize(cb);
                 if (done) {
                     return true;
                 }
             }
+
             IOUtil.copyToHeapBuffer(cb, data);
         }
 
@@ -130,7 +101,59 @@ public class HttpPostCommand extends HttpCommand {
         return !chunked && ((data != null) && !data.hasRemaining());
     }
 
-    String toStringAndClear(ByteBuffer bb) {
+    private void setReadyToReadData(ByteBuffer cb) {
+        while (!readyToReadData && cb.hasRemaining()) {
+            byte b = cb.get();
+            if (b == CARRIAGE_RETURN) {
+                readLF(cb);
+                processLine(StringUtil.lowerCaseInternal(toStringAndClear(lineBuffer)));
+                if (nextLine) {
+                    readyToReadData = true;
+                }
+                nextLine = true;
+                break;
+            }
+
+            nextLine = false;
+            appendToBuffer(b);
+        }
+    }
+
+    public byte[] getData() {
+        if (data == null) {
+            return null;
+        } else {
+            return data.array();
+        }
+    }
+
+    byte[] getContentType() {
+        if (contentType == null) {
+            return null;
+        } else {
+            return stringToBytes(contentType);
+        }
+    }
+
+    private void readCRLFOrPositionChunkSize(ByteBuffer cb) {
+        byte b = cb.get();
+        if (b == CARRIAGE_RETURN) {
+            readLF(cb);
+        } else {
+            cb.position(cb.position() - 1);
+        }
+    }
+
+    private void readLF(ByteBuffer cb) {
+        assert cb.hasRemaining() : "'\\n' should follow '\\r'";
+
+        byte b = cb.get();
+        if (b != LINE_FEED) {
+            throw new IllegalStateException("'\\n' should follow '\\r', but got '" + (char) b + "'");
+        }
+    }
+
+    private String toStringAndClear(ByteBuffer bb) {
         if (bb == null) {
             return "";
         }
@@ -144,19 +167,20 @@ public class HttpPostCommand extends HttpCommand {
         return result;
     }
 
-    boolean readLine(ByteBuffer cb) {
+    private boolean readChunkSize(ByteBuffer cb) {
         boolean hasLine = false;
         while (cb.hasRemaining()) {
             byte b = cb.get();
-            char c = (char) b;
-            if (c == '\n') {
+            if (b == CARRIAGE_RETURN) {
+                readLF(cb);
                 hasLine = true;
-            } else if (c != '\r') {
-                line.put(b);
+                break;
             }
+            appendToBuffer(b);
         }
+
         if (hasLine) {
-            String lineStr = toStringAndClear(line).trim();
+            String lineStr = toStringAndClear(lineBuffer).trim();
 
             // hex string
             int dataSize = lineStr.length() == 0 ? 0 : Integer.parseInt(lineStr, RADIX);
@@ -166,6 +190,36 @@ public class HttpPostCommand extends HttpCommand {
             dataNullCheck(dataSize);
         }
         return false;
+    }
+
+    private void dataNullCheck(int dataSize) {
+        if (data != null) {
+            ByteBuffer newData = ByteBuffer.allocate(data.capacity() + dataSize);
+            newData.put(data.array());
+            data = newData;
+        } else {
+            data = ByteBuffer.allocate(dataSize);
+        }
+    }
+
+    private void appendToBuffer(byte b) {
+        if (!lineBuffer.hasRemaining()) {
+            expandBuffer();
+        }
+        lineBuffer.put(b);
+    }
+
+    private void expandBuffer() {
+        if (lineBuffer.capacity() == MAX_CAPACITY) {
+            throw new BufferOverflowException();
+        }
+
+        int capacity = lineBuffer.capacity() << 1;
+
+        ByteBuffer newBuffer = ByteBuffer.allocate(capacity);
+        lineBuffer.flip();
+        newBuffer.put(lineBuffer);
+        lineBuffer = newBuffer;
     }
 
     private void processLine(String currentLine) {

@@ -62,7 +62,6 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
 import java.io.EOFException;
@@ -76,11 +75,13 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -173,7 +174,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                 ClassLoader configClassLoader = client.getClientConfig().getClassLoader();
                 return ClassLoaderUtil.newInstance(configClassLoader, className);
             } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
+                throw rethrow(e);
             }
         } else {
             strategy = new DefaultClientConnectionStrategy();
@@ -261,10 +262,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         }
         alive = false;
 
-        ClientExecutionServiceImpl.shutdownExecutor("clusterExecutor", clusterConnectionExecutor, logger);
         for (Connection connection : activeConnections.values()) {
             connection.close("Hazelcast client is shutting down", null);
         }
+        ClientExecutionServiceImpl.shutdownExecutor("cluster", clusterConnectionExecutor, logger);
         stopEventLoopGroup();
         connectionListeners.clear();
         heartbeat.shutdown();
@@ -361,7 +362,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                 }
             }
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -423,19 +424,37 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     }
 
     private void fireConnectionRemovedEvent(ClientConnection connection) {
-        if (connection.isAuthenticatedAsOwner() && client.getLifecycleService().isRunning()) {
-            fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
+        if (connection.isAuthenticatedAsOwner()) {
+            disconnectFromCluster(connection);
         }
 
         for (ConnectionListener listener : connectionListeners) {
             listener.connectionRemoved(connection);
         }
-        Address endpoint = connection.getEndPoint();
-        if (endpoint != null && endpoint.equals(ownerConnectionAddress)) {
-            setOwnerConnectionAddress(null);
-            connectionStrategy.onDisconnectFromCluster();
-        }
         connectionStrategy.onDisconnect(connection);
+    }
+
+    private void disconnectFromCluster(final ClientConnection connection) {
+        clusterConnectionExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                Address endpoint = connection.getEndPoint();
+                /**
+                 * it may be possible that while waiting on executor queue, the client got connected (another connection),
+                 * then we do not need to do anything for cluster disconnect.
+                 */
+                if (endpoint == null || !endpoint.equals(ownerConnectionAddress)) {
+                    return;
+                }
+
+                setOwnerConnectionAddress(null);
+                connectionStrategy.onDisconnectFromCluster();
+
+                if (client.getLifecycleService().isRunning()) {
+                    fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
+                }
+            }
+        });
     }
 
     private void fireConnectionEvent(final LifecycleEvent.LifecycleState state) {
@@ -483,7 +502,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             if (socketChannel != null) {
                 socketChannel.close();
             }
-            throw ExceptionUtil.rethrow(e, IOException.class);
+            throw rethrow(e, IOException.class);
         }
     }
 
@@ -595,11 +614,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
             clientMessage = ClientAuthenticationCodec
                     .encodeRequest(cr.getUsername(), cr.getPassword(), uuid, ownerUuid, asOwner, ClientTypes.JAVA,
-                            serializationVersion, BuildInfoProvider.BUILD_INFO.getVersion());
+                            serializationVersion, BuildInfoProvider.getBuildInfo().getVersion());
         } else {
             Data data = ss.toData(credentials);
             clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid,
-                    asOwner, ClientTypes.JAVA, serializationVersion, BuildInfoProvider.BUILD_INFO.getVersion());
+                    asOwner, ClientTypes.JAVA, serializationVersion, BuildInfoProvider.getBuildInfo().getVersion());
         }
         return clientMessage;
     }
@@ -716,10 +735,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     @Override
     public void connectToCluster() {
         try {
-            connectToClusterInternal();
+            connectToClusterAsync().get();
         } catch (Exception e) {
-            logger.warning("Could not connect to cluster shutting down the client" + e.getMessage());
-            client.getLifecycleService().shutdown();
             throw rethrow(e);
         }
     }
@@ -727,17 +744,19 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     private void connectToClusterInternal() {
         int attempt = 0;
         Set<InetSocketAddress> triedAddresses = new HashSet<InetSocketAddress>();
+
+        mainLoop:
         while (attempt < connectionAttemptLimit) {
             attempt++;
-            final long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
+            long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
 
-            final Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
+            Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
             for (InetSocketAddress inetSocketAddress : socketAddresses) {
                 if (!client.getLifecycleService().isRunning()) {
                     if (logger.isFinestEnabled()) {
                         logger.finest("Giving up on retrying to connect to cluster since client is shutdown.");
                     }
-                    break;
+                    break mainLoop;
                 }
                 triedAddresses.add(inetSocketAddress);
                 if (connectAsOwner(inetSocketAddress) != null) {
@@ -753,6 +772,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                 try {
                     Thread.sleep(remainingTime);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     break;
                 }
             }
@@ -762,14 +782,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     }
 
     @Override
-    public void connectToClusterAsync() {
-        clusterConnectionExecutor.execute(new Runnable() {
+    public Future<Void> connectToClusterAsync() {
+        return clusterConnectionExecutor.submit(new Callable<Void>() {
             @Override
-            public void run() {
+            public Void call() throws Exception {
                 try {
                     connectToClusterInternal();
                 } catch (Exception e) {
-                    logger.warning("Could not re-connect to cluster shutting down the client" + e.getMessage());
+                    logger.warning("Could not connect to cluster, shutting down the client" + e.getMessage());
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
@@ -780,7 +800,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                             }
                         }
                     }, client.getName() + ".clientShutdown-").start();
+
+                    throw rethrow(e);
                 }
+                return null;
             }
         });
 

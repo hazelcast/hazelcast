@@ -36,7 +36,7 @@ public class MapMBean extends HazelcastMBean<IMap> {
 
     protected MapMBean(IMap managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = service.createObjectName("IMap", managedObject.getName());
+        this.objectName = service.createObjectName("IMap", managedObject.getName());
         StatsSupplier<LocalMapStats> localMapStatsSupplier = new LocalMapStatsSupplier(managedObject);
         this.localMapStatsDelegate = new LocalStatsDelegate<LocalMapStats>(localMapStatsSupplier, updateIntervalSec);
     }

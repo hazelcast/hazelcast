@@ -28,7 +28,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -38,7 +37,7 @@ public class TxnRemoveOperation extends MultiMapKeyBasedOperation implements Bac
 
     long recordId;
     Data value;
-    long begin = -1;
+    long startTimeNanos = -1;
 
     public TxnRemoveOperation() {
     }
@@ -51,7 +50,7 @@ public class TxnRemoveOperation extends MultiMapKeyBasedOperation implements Bac
 
     @Override
     public void run() throws Exception {
-        begin = Clock.currentTimeMillis();
+        startTimeNanos = System.nanoTime();
         MultiMapContainer container = getOrCreateContainer();
         MultiMapValue multiMapValue = container.getMultiMapValueOrNull(dataKey);
         response = true;
@@ -74,9 +73,9 @@ public class TxnRemoveOperation extends MultiMapKeyBasedOperation implements Bac
 
     @Override
     public void afterRun() throws Exception {
-        long elapsed = Math.max(0, Clock.currentTimeMillis() - begin);
+        long elapsed = Math.max(0, System.nanoTime() - startTimeNanos);
         final MultiMapService service = getService();
-        service.getLocalMultiMapStatsImpl(name).incrementRemoves(elapsed);
+        service.getLocalMultiMapStatsImpl(name).incrementRemoveLatencyNanos(elapsed);
         if (Boolean.TRUE.equals(response)) {
             getOrCreateContainer().update();
             publishEvent(EntryEventType.REMOVED, dataKey, null, value);

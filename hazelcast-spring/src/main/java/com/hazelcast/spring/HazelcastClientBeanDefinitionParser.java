@@ -35,6 +35,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SSLConfig;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.ManagedList;
@@ -50,9 +51,8 @@ import java.util.List;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
- * BeanDefinitionParser for Hazelcast Client Configuration
- * <p/>
- * <p/>
+ * BeanDefinitionParser for Hazelcast Client Configuration.
+ * <p>
  * <b>Sample Spring XML for Hazelcast Client:</b>
  * <pre>
  * &lt;hz:client id="client"&gt;
@@ -85,15 +85,14 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private BeanDefinitionBuilder builder;
 
-        //= new HashMap<String, NearCacheConfig>();
-        private ManagedMap nearCacheConfigMap;
+        private ManagedMap<String, BeanDefinition> nearCacheConfigMap;
 
         public SpringXmlBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
             this.builder = BeanDefinitionBuilder.rootBeanDefinition(HazelcastClient.class);
             this.builder.setFactoryMethod("newHazelcastClient");
             this.builder.setDestroyMethodName("shutdown");
-            this.nearCacheConfigMap = new ManagedMap();
+            this.nearCacheConfigMap = new ManagedMap<String, BeanDefinition>();
 
             this.configBuilder = BeanDefinitionBuilder.rootBeanDefinition(ClientConfig.class);
             configBuilder.addPropertyValue("nearCacheConfigMap", nearCacheConfigMap);
@@ -103,6 +102,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             return builder.getBeanDefinition();
         }
 
+        @SuppressWarnings("checkstyle:cyclomaticcomplexity")
         public void handleClient(Element element) {
             handleCommonBeanAttributes(element, builder, parserContext);
             handleClientAttributes(element);
@@ -243,19 +243,38 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private void handleNearCache(Node node) {
-            createAndFillListedBean(node, NearCacheConfig.class, "name", nearCacheConfigMap, "name");
+            BeanDefinitionBuilder nearCacheConfigBuilder = createBeanBuilder(NearCacheConfig.class);
+            fillAttributeValues(node, nearCacheConfigBuilder);
+            for (Node childNode : childElements(node)) {
+                final String nodeName = cleanNodeName(childNode);
+                if ("eviction".equals(nodeName)) {
+                    handleEvictionConfig(childNode, nearCacheConfigBuilder);
+                } else if ("preloader".equals(nodeName)) {
+                    handlePreloaderConfig(childNode, nearCacheConfigBuilder);
+                }
+            }
+            String name = getAttribute(node, "name");
+            nearCacheConfigMap.put(name, nearCacheConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleEvictionConfig(Node node, BeanDefinitionBuilder configBuilder) {
+            configBuilder.addPropertyValue("evictionConfig", getEvictionConfig(node));
+        }
+
+        private void handlePreloaderConfig(Node node, BeanDefinitionBuilder configBuilder) {
+            configBuilder.addPropertyValue("preloaderConfig", getPreloaderConfig(node));
         }
 
         private ManagedMap getQueryCaches(Node childNode) {
-            ManagedMap queryCaches = new ManagedMap();
+            ManagedMap<String, ManagedMap<String, BeanDefinition>> queryCaches
+                    = new ManagedMap<String, ManagedMap<String, BeanDefinition>>();
             for (Node queryCacheNode : childElements(childNode)) {
                 parseQueryCache(queryCaches, queryCacheNode);
             }
             return queryCaches;
         }
 
-        private BeanDefinitionBuilder parseQueryCache(ManagedMap queryCaches,
-                                                      Node queryCacheNode) {
+        private void parseQueryCache(ManagedMap<String, ManagedMap<String, BeanDefinition>> queryCaches, Node queryCacheNode) {
             final BeanDefinitionBuilder builder = createBeanBuilder(QueryCacheConfig.class);
 
             NamedNodeMap attributes = queryCacheNode.getAttributes();
@@ -271,15 +290,12 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
             builder.addPropertyValue("name", cacheName);
 
-            ManagedMap configMap = (ManagedMap) queryCaches.get(mapName);
+            ManagedMap<String, BeanDefinition> configMap = queryCaches.get(mapName);
             if (configMap == null) {
-                configMap = new ManagedMap<String, QueryCacheConfig>();
+                configMap = new ManagedMap<String, BeanDefinition>();
                 queryCaches.put(mapName, configMap);
             }
             configMap.put(cacheName, builder.getBeanDefinition());
-
-
-            return builder;
         }
 
         private void parseQueryCacheInternal(BeanDefinitionBuilder builder, Node node, String nodeName, String textContent) {
@@ -293,12 +309,10 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 boolean includeValue = getBooleanValue(textContent);
                 builder.addPropertyValue("includeValue", includeValue);
             } else if ("batch-size".equals(nodeName)) {
-                int batchSize = getIntegerValue("batch-size", textContent.trim()
-                );
+                int batchSize = getIntegerValue("batch-size", textContent.trim());
                 builder.addPropertyValue("batchSize", batchSize);
             } else if ("buffer-size".equals(nodeName)) {
-                int bufferSize = getIntegerValue("buffer-size", textContent.trim()
-                );
+                int bufferSize = getIntegerValue("buffer-size", textContent.trim());
                 builder.addPropertyValue("bufferSize", bufferSize);
             } else if ("delay-seconds".equals(nodeName)) {
                 int delaySeconds = getIntegerValue("delay-seconds", textContent.trim()
@@ -332,8 +346,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             return predicateBuilder;
         }
 
-        private ManagedList getIndexes(Node node) {
-            ManagedList indexes = new ManagedList();
+        private ManagedList<BeanDefinition> getIndexes(Node node) {
+            ManagedList<BeanDefinition> indexes = new ManagedList<BeanDefinition>();
             for (Node indexNode : childElements(node)) {
                 final BeanDefinitionBuilder indexConfBuilder = createBeanBuilder(MapIndexConfig.class);
                 fillAttributeValues(indexNode, indexConfBuilder);
@@ -342,8 +356,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             return indexes;
         }
 
-        private ManagedList getEntryListeners(Node node) {
-            ManagedList listeners = new ManagedList();
+        private ManagedList<BeanDefinition> getEntryListeners(Node node) {
+            ManagedList<BeanDefinition> listeners = new ManagedList<BeanDefinition>();
             final String implementationAttr = "implementation";
             for (Node listenerNode : childElements(node)) {
                 BeanDefinitionBuilder listenerConfBuilder = createBeanBuilder(EntryListenerConfig.class);
@@ -356,7 +370,5 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
             return listeners;
         }
-
     }
 }
-

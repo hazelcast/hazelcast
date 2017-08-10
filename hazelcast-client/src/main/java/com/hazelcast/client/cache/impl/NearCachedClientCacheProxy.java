@@ -368,7 +368,7 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         key = serializeKeys ? toData(key) : key;
         Object cached = getCachedValue(key, false);
         if (cached != NOT_CACHED) {
-            return true;
+            return cached != null;
         }
         return super.containsKeyInternal(key);
     }
@@ -800,18 +800,20 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
             extends CacheAddNearCacheInvalidationListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
-        private volatile RepairingHandler repairingHandler;
+        private final RepairingHandler repairingHandler;
+
+        public RepairableNearCacheEventHandler() {
+            getRepairingTask().deregisterHandler(nameWithPrefix);
+            this.repairingHandler = getRepairingTask().registerAndGetHandler(nameWithPrefix, nearCache);
+        }
 
         @Override
         public void beforeListenerRegister() {
-            nearCache.clear();
-            getRepairingTask().deregisterHandler(nameWithPrefix);
+
         }
 
         @Override
         public void onListenerRegister() {
-            nearCache.clear();
-            repairingHandler = getRepairingTask().registerAndGetHandler(nameWithPrefix, nearCache);
         }
 
         @Override

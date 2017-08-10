@@ -25,6 +25,7 @@ import com.hazelcast.nio.ConnectionListenable;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.concurrent.Future;
 
 /**
  * Responsible for managing {@link com.hazelcast.client.connection.nio.ClientConnection} objects.
@@ -71,5 +72,5 @@ public interface ClientConnectionManager extends ConnectionListenable {
 
     void connectToCluster();
 
-    void connectToClusterAsync();
+    Future<Void> connectToClusterAsync();
 }

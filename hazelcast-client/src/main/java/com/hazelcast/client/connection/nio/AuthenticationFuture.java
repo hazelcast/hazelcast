@@ -19,6 +19,7 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.nio.Connection;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -46,6 +47,6 @@ class AuthenticationFuture {
             return connection;
         }
         assert throwable != null;
-        throw throwable;
+        throw new ExecutionException(throwable);
     }
 }

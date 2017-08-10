@@ -29,20 +29,26 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.Collection;
 
+import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
 /**
  * Sent by the master to all members to finalize the join operation from a joining/returning node.
  */
 public class FinalizeJoinOp extends MembersUpdateOp {
+    /**
+     * Operations to be executed before node is marked as joined.
+     * @see com.hazelcast.spi.PreJoinAwareService
+     * @since 3.9
+     */
+    private OnJoinOp preJoinOp;
     /** The operation to be executed on the target node after join completes, can be {@code null}. */
-    private PostJoinOp postJoinOp;
+    private OnJoinOp postJoinOp;
     private String clusterId;
     private long clusterStartTime;
     private ClusterState clusterState;
@@ -53,10 +59,15 @@ public class FinalizeJoinOp extends MembersUpdateOp {
     public FinalizeJoinOp() {
     }
 
-    public FinalizeJoinOp(String targetUuid, MembersView members, PostJoinOp postJoinOp,
+    @SuppressWarnings("checkstyle:parameternumber")
+    public FinalizeJoinOp(String targetUuid, MembersView members, OnJoinOp preJoinOp, OnJoinOp postJoinOp,
                           long masterTime, String clusterId, long clusterStartTime, ClusterState clusterState,
                           Version clusterVersion, PartitionRuntimeState partitionRuntimeState, boolean sendResponse) {
         super(targetUuid, members, masterTime, partitionRuntimeState, sendResponse);
+        if (clusterVersion.isLessThan(V3_9)) {
+            assert preJoinOp == null : "Cannot execute pre join operations when cluster version is " + clusterVersion;
+        }
+        this.preJoinOp = preJoinOp;
         this.postJoinOp = postJoinOp;
         this.clusterId = clusterId;
         this.clusterStartTime = clusterStartTime;
@@ -72,8 +83,9 @@ public class FinalizeJoinOp extends MembersUpdateOp {
         Address callerAddress = getConnectionEndpointOrThisAddress();
         String callerUuid = getCallerUuid();
 
+        preparePostOp(preJoinOp);
         finalized = clusterService.finalizeJoin(getMembersView(), callerAddress, callerUuid,
-                clusterId, clusterState, clusterVersion, clusterStartTime, masterTime);
+                clusterId, clusterState, clusterVersion, clusterStartTime, masterTime, preJoinOp);
 
         if (!finalized) {
             return;
@@ -91,23 +103,22 @@ public class FinalizeJoinOp extends MembersUpdateOp {
         }
 
         sendPostJoinOperations();
-        runPostJoinOp();
+        preparePostOp(postJoinOp);
+        getNodeEngine().getOperationService().run(postJoinOp);
     }
 
-    private void runPostJoinOp() {
-        if (postJoinOp == null) {
+    private void preparePostOp(Operation postOp) {
+        if (postOp == null) {
             return;
         }
 
         ClusterServiceImpl clusterService = getService();
         NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
-        InternalOperationService operationService = nodeEngine.getOperationService();
 
-        postJoinOp.setNodeEngine(nodeEngine);
-        OperationAccessor.setCallerAddress(postJoinOp, getCallerAddress());
-        OperationAccessor.setConnection(postJoinOp, getConnection());
-        postJoinOp.setOperationResponseHandler(createEmptyResponseHandler());
-        operationService.run(postJoinOp);
+        postOp.setNodeEngine(nodeEngine);
+        OperationAccessor.setCallerAddress(postOp, getCallerAddress());
+        OperationAccessor.setConnection(postOp, getConnection());
+        postOp.setOperationResponseHandler(createEmptyResponseHandler());
     }
 
     private void sendPostJoinOperations() {
@@ -124,7 +135,7 @@ public class FinalizeJoinOp extends MembersUpdateOp {
 
             for (Member member : members) {
                 if (!member.localMember()) {
-                    PostJoinOp operation = new PostJoinOp(postJoinOperations);
+                    OnJoinOp operation = new OnJoinOp(postJoinOperations);
                     operationService.invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, operation, member.getAddress());
                 }
             }
@@ -144,15 +155,18 @@ public class FinalizeJoinOp extends MembersUpdateOp {
         out.writeLong(clusterStartTime);
         out.writeUTF(clusterState.toString());
         out.writeObject(clusterVersion);
+        if (clusterVersion.isGreaterOrEqual(V3_9)) {
+            out.writeObject(preJoinOp);
+        }
     }
 
     @Override
     protected void readInternalImpl(ObjectDataInput in) throws IOException {
         super.readInternalImpl(in);
 
-        boolean hasPJOp = in.readBoolean();
-        if (hasPJOp) {
-            postJoinOp = new PostJoinOp();
+        boolean hasPostJoinOp = in.readBoolean();
+        if (hasPostJoinOp) {
+            postJoinOp = new OnJoinOp();
             postJoinOp.readData(in);
         }
         clusterId = in.readUTF();
@@ -160,6 +174,9 @@ public class FinalizeJoinOp extends MembersUpdateOp {
         String stateName = in.readUTF();
         clusterState = ClusterState.valueOf(stateName);
         clusterVersion = in.readObject();
+        if (clusterVersion.isGreaterOrEqual(V3_9)) {
+            preJoinOp = in.readObject();
+        }
     }
 
     @Override

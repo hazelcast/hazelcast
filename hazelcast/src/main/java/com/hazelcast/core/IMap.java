@@ -102,8 +102,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     /**
      * {@inheritDoc}
      * <p>
-     * No atomicity guarantees are given. It could be that in case of failure some of the key/value-pairs get written, while
-     * others are not.
+     *      No atomicity guarantees are given. It could be that in case of failure
+     *      some of the key/value-pairs get written, while others are not.
+     * </p>
+     * <p>
+     *      <p><b>Warning:</b></p>
+     *      If you have previously set a TTL for the key, the TTL remains unchanged and the entry will
+     *      expire when the initial TTL has elapsed.
+     * </p>
      */
     void putAll(Map<? extends K, ? extends V> m);
 
@@ -156,16 +162,22 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     /**
      * {@inheritDoc}
      * <p/>
-     * <p><b>Warning:</b></p>
      * <p>
-     * This method returns a clone of the previous value, not the original (identically equal) value
-     * previously put into the map.
+     *      <p><b>Warning:</b></p>
+     *      This method returns a clone of the previous value, not the original (identically equal) value
+     *      previously put into the map.
      * </p>
-     * <p/>
-     * <p><b>Warning-2:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
+     * <p>
+     *      <p><b>Warning-2:</b></p>
+     *      This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
+     *      the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     *      defined in the <tt>key</tt>'s class.
+     * </p>
+     * <p>
+     *      <p><b>Warning-3:</b></p>
+     *      If you have previously set a TTL for the key, the TTL remains unchanged and the entry will
+     *      expire when the initial TTL has elapsed.
+     * </p>
      *
      * @throws NullPointerException if the specified key or value is null.
      */
@@ -392,10 +404,17 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * </pre>
      * ExecutionException is never thrown.
      * <p/>
-     * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
+     * <p>
+     *      <p><b>Warning:</b></p>
+     *      This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
+     *      the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     *      defined in the <tt>key</tt>'s class.
+     * </p>
+     * <p>
+     *      <p><b>Warning-2:</b></p>
+     *      If you have previously set a TTL for the key, the TTL remains unchanged and the entry will
+     *      expire when the initial TTL has elapsed.
+     * </p>
      *
      * @param key   the key of the map entry.
      * @param value the new value of the map entry.
@@ -501,12 +520,17 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      *     });
      * </pre>
      * ExecutionException is never thrown.
-     * <p/>
-     * <p><b>Warning 1:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
-     * <p/>
+     * <p>
+     *      <p><b>Warning 1:</b></p>
+     *      This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
+     *      the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     *      defined in the <tt>key</tt>'s class.
+     * </p>
+     * <p>
+     *      <p><b>Warning-2:</b></p>
+     *      If you have previously set a TTL for the key, the TTL remains unchanged and the entry will
+     *      expire when the initial TTL has elapsed.
+     * </p>
      *
      * @param key   the key of the map entry.
      * @param value the new value of the map entry.
@@ -623,11 +647,17 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * timeout value. If this method returns false, it means that
      * the caller thread could not acquire the lock for the key within the
      * timeout duration, thus the put operation is not successful.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
+     * <p>
+     *      <p><b>Warning:</b></p>
+     *      This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
+     *      the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     *      defined in the <tt>key</tt>'s class.
+     * </p>
+     * <p>
+     *      <p><b>Warning-2:</b></p>
+     *      If you have previously set a TTL for the key, the TTL remains unchanged and the entry will
+     *      expire when the initial TTL has elapsed.
+     * </p>
      *
      * @param key      key of the entry.
      * @param value    value of the entry.
@@ -748,16 +778,20 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
 
     /**
      * {@inheritDoc}
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
-     * <p/>
-     * <p><b>Warning-2:</b></p>
      * <p>
-     * This method returns a clone of the previous value, not the original (identically equal) value
-     * previously put into the map.
+     *      <p><b>Warning:</b></p>
+     *      This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
+     *      the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     *      defined in the <tt>key</tt>'s class.
+     * </p>
+     * <p>
+     *      <p><b>Warning-2:</b></p>
+     *      This method returns a clone of the previous value, not the original (identically equal) value
+     *      previously put into the map.
+     * </p>
+     * <p>
+     *      <p><b>Warning-3:</b></p>
+     *      If you have previously set a TTL for the key, the same TTL will be again set on the new value.
      * </p>
      *
      * @throws NullPointerException if the specified key or value is null.
@@ -768,16 +802,22 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * Puts an entry into this map.
      * Similar to the put operation except that set
      * doesn't return the old value, which is more efficient.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * This method breaks the contract of EntryListener.
-     * When an entry is updated by set(), it fires an EntryEvent with a null oldValue.
-     * <p/>
-     * <p><b>Warning-2:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in the <tt>key</tt>'s class.
-     * <p/>
+     * <p>
+     *      <p><b>Warning:</b></p>
+     *      This method breaks the contract of EntryListener.
+     *      When an entry is updated by set(), it fires an EntryEvent with a null oldValue.
+     * </p>
+     * <p>
+     *      <p><b>Warning-2:</b></p>
+     *      This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
+     *      the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     *      defined in the <tt>key</tt>'s class.
+     * </p>
+     * <p>
+     *      <p><b>Warning-3:</b></p>
+     *      If you have previously set a TTL for the key, the TTL remains unchanged and the entry will
+     *      expire when the initial TTL has elapsed.
+     * </p>
      *
      * @param key   key of the entry.
      * @param value value of the entry.

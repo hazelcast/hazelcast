@@ -3,6 +3,7 @@ package com.hazelcast.test;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.core.LifecycleService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,8 +26,11 @@ class MergeBarrier {
         MergeCountingListener mergeCountingListener = new MergeCountingListener();
 
         for (HazelcastInstance instance : instances) {
-            String registeration = instance.getLifecycleService().addLifecycleListener(mergeCountingListener);
-            registrations.put(instance, registeration);
+            LifecycleService lifecycleService = instance.getLifecycleService();
+            if (lifecycleService.isRunning()) {
+                String registeration = lifecycleService.addLifecycleListener(mergeCountingListener);
+                registrations.put(instance, registeration);
+            }
         }
     }
 

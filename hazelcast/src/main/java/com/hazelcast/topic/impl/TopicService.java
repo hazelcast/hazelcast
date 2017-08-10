@@ -48,7 +48,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
-public class TopicService implements ManagedService, RemoteService, EventPublishingService, StatisticsAwareService {
+public class TopicService implements ManagedService, RemoteService, EventPublishingService,
+        StatisticsAwareService<LocalTopicStats> {
 
     public static final String SERVICE_NAME = "hz:impl:topicService";
 
@@ -139,10 +140,22 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         return getOrPutSynchronized(statsMap, name, statsMap, localTopicStatsConstructorFunction);
     }
 
+    /**
+     * Increments the number of published messages on the ITopic
+     * with the name {@code topicName}.
+     *
+     * @param topicName the name of the {@link ITopic}
+     */
     public void incrementPublishes(String topicName) {
         getLocalTopicStats(topicName).incrementPublishes();
     }
 
+    /**
+     * Increments the number of received messages on the ITopic
+     * with the name {@code topicName}.
+     *
+     * @param topicName the name of the {@link ITopic}
+     */
     public void incrementReceivedMessages(String topicName) {
         getLocalTopicStats(topicName).incrementReceives();
     }

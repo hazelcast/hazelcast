@@ -31,6 +31,7 @@ import java.util.Set;
 /**
  * Abstracts the Hazelcast data structures with Near Cache support for the Near Cache usage.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public interface DataStructureAdapter<K, V> {
 
     int size();
@@ -56,6 +57,8 @@ public interface DataStructureAdapter<K, V> {
     boolean remove(K key, V oldValue);
 
     ICompletableFuture<V> removeAsync(K key);
+
+    boolean evict(K key);
 
     <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments) throws EntryProcessorException;
 
@@ -83,6 +86,8 @@ public interface DataStructureAdapter<K, V> {
 
     void removeAll(Set<K> keys);
 
+    void evictAll();
+
     <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor,
                                                   Object... arguments);
 
@@ -108,6 +113,7 @@ public interface DataStructureAdapter<K, V> {
         REMOVE("remove", Object.class),
         REMOVE_WITH_OLD_VALUE("remove", Object.class, Object.class),
         REMOVE_ASYNC("removeAsync", Object.class),
+        EVICT("evict", Object.class),
         INVOKE("invoke", Object.class, EntryProcessor.class, Object[].class),
         EXECUTE_ON_KEY("executeOnKey", Object.class, com.hazelcast.map.EntryProcessor.class),
         EXECUTE_ON_KEYS("executeOnKeys", Set.class, com.hazelcast.map.EntryProcessor.class),
@@ -121,6 +127,7 @@ public interface DataStructureAdapter<K, V> {
         PUT_ALL("putAll", Map.class),
         REMOVE_ALL("removeAll"),
         REMOVE_ALL_WITH_KEYS("removeAll", Set.class),
+        EVICT_ALL("evictAll"),
         INVOKE_ALL("invokeAll", Set.class, EntryProcessor.class, Object[].class),
         CLEAR("clear"),
         DESTROY("destroy"),

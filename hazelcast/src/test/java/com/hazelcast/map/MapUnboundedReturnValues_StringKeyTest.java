@@ -26,8 +26,6 @@ import org.junit.runner.RunWith;
 @Category(NightlyTest.class)
 public class MapUnboundedReturnValues_StringKeyTest extends MapUnboundedReturnValuesTestSupport {
 
-    private static final int TEN_MINUTES_IN_MILLIS = 10 * 60 * 1000;
-
     @Test(timeout = TEN_MINUTES_IN_MILLIS)
     public void testMap_SmallLimit_StringKey() {
         runMapFullTest(PARTITION_COUNT, CLUSTER_SIZE, SMALL_LIMIT, PRE_CHECK_TRIGGER_LIMIT_INACTIVE, KeyType.STRING);

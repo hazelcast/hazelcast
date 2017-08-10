@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.map;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -45,6 +45,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
+@SuppressWarnings("WeakerAccess")
 public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "default";
@@ -56,10 +57,12 @@ public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
     private HazelcastInstance member3;
 
     @Before
-    public void setUp() throws Exception {
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+    public void setUp() {
         MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
-        mapStoreConfig.setImplementation(mapStore).setWriteDelaySeconds(3000);
+
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setImplementation(mapStore)
+                .setWriteDelaySeconds(3000);
 
         Config config = getConfig();
         config.getMapConfig(MAP_NAME).setMapStoreConfig(mapStoreConfig);
@@ -69,11 +72,11 @@ public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
         member2 = hazelcastFactory.newHazelcastInstance(config);
         member3 = hazelcastFactory.newHazelcastInstance(config);
 
-        client = hazelcastFactory.newHazelcastClient();
+        client = hazelcastFactory.newHazelcastClient(getClientConfig());
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         client.shutdown();
 
         member1.shutdown();
@@ -81,11 +84,10 @@ public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
         member3.shutdown();
     }
 
-
     @Test
-    @Ignore //https://github.com/hazelcast/hazelcast/issues/7492
-    public void testWriteBehindQueues_emptied_onOwnerAndBackupNodes() throws Exception {
-        IMap map = client.getMap(MAP_NAME);
+    @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/7492")
+    public void testWriteBehindQueues_emptied_onOwnerAndBackupNodes() {
+        IMap<Integer, Integer> map = client.getMap(MAP_NAME);
 
         for (int i = 0; i < 1000; i++) {
             map.put(i, i);
@@ -97,7 +99,7 @@ public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testFlush_shouldNotCause_concurrentStoreOperation() throws Exception {
+    public void testFlush_shouldNotCause_concurrentStoreOperation() {
         int blockStoreOperationSeconds = 5;
         TemporaryBlockerMapStore store = new TemporaryBlockerMapStore(blockStoreOperationSeconds);
         Config config = newMapStoredConfig(store, 2);
@@ -105,7 +107,7 @@ public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
         TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
         hazelcastFactory.newHazelcastInstance(config);
 
-        IMap<String, String> map = hazelcastFactory.newHazelcastClient().getMap(MAP_NAME);
+        IMap<String, String> map = hazelcastFactory.newHazelcastClient(getClientConfig()).getMap(MAP_NAME);
 
         map.put("key", "value");
         map.flush();
@@ -115,15 +117,20 @@ public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
         hazelcastFactory.shutdownAll();
     }
 
+    protected ClientConfig getClientConfig() {
+        return new ClientConfig();
+    }
+
+    @SuppressWarnings("SameParameterValue")
     protected Config newMapStoredConfig(MapStore store, int writeDelaySeconds) {
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setWriteDelaySeconds(writeDelaySeconds);
-        mapStoreConfig.setImplementation(store);
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setEnabled(true)
+                .setWriteDelaySeconds(writeDelaySeconds)
+                .setImplementation(store);
 
         Config config = getConfig();
-        MapConfig mapConfig = config.getMapConfig(MAP_NAME);
-        mapConfig.setMapStoreConfig(mapStoreConfig);
+        config.getMapConfig(MAP_NAME)
+                .setMapStoreConfig(mapStoreConfig);
 
         return config;
     }
@@ -138,5 +145,4 @@ public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
             }
         });
     }
-
 }

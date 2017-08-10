@@ -31,5 +31,4 @@ public class LatestUpdateReplicatedMapMergePolicyTest extends AbstractReplicated
     public void given() {
         policy = LatestUpdateMapMergePolicy.INSTANCE;
     }
-
 }

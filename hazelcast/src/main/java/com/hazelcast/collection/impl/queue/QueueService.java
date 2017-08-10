@@ -71,8 +71,8 @@ import java.util.concurrent.ConcurrentMap;
  * Provides important services via methods for the the Queue
  * such as {@link com.hazelcast.collection.impl.queue.QueueEvictionProcessor }
  */
-public class QueueService implements ManagedService, MigrationAwareService, TransactionalService,
-        RemoteService, EventPublishingService<QueueEvent, ItemListener>, StatisticsAwareService, QuorumAwareService {
+public class QueueService implements ManagedService, MigrationAwareService, TransactionalService, RemoteService,
+        EventPublishingService<QueueEvent, ItemListener>, StatisticsAwareService<LocalQueueStats>, QuorumAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:queueService";
 
@@ -123,7 +123,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         reset();
     }
 
-    public QueueContainer getOrCreateContainer(final String name, boolean fromBackup) throws Exception {
+    public QueueContainer getOrCreateContainer(final String name, boolean fromBackup) {
         QueueContainer container = containerMap.get(name);
         if (container != null) {
             return container;
@@ -265,9 +265,10 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     }
 
     /**
-     * Returns the local queue statistics for the given name and partition ID. If this node is the owner for the partition,
-     * returned stats contain {@link LocalQueueStats#getOwnedItemCount()}, otherwise it contains
-     * {@link LocalQueueStats#getBackupItemCount()}.
+     * Returns the local queue statistics for the given name and
+     * partition ID. If this node is the owner for the partition,
+     * returned stats contain {@link LocalQueueStats#getOwnedItemCount()},
+     * otherwise it contains {@link LocalQueueStats#getBackupItemCount()}.
      *
      * @param name        the name of the queue for which the statistics are returned
      * @param partitionId the partition ID for which the statistics are returned

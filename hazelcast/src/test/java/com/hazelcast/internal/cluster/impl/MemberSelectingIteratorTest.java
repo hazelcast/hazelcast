@@ -57,7 +57,7 @@ public class MemberSelectingIteratorTest extends HazelcastTestSupport {
     @Before
     public void before()
             throws Exception {
-        MemberVersion version = new MemberVersion(BuildInfoProvider.BUILD_INFO.getVersion());
+        MemberVersion version = new MemberVersion(BuildInfoProvider.getBuildInfo().getVersion());
         thisMember = new MemberImpl(new Address("localhost", 5701), version, true, newUnsecureUuidString(), null, true);
         matchingMember = new MemberImpl(new Address("localhost", 5702), version, false, newUnsecureUuidString(), null, true);
         matchingMember2 = new MemberImpl(new Address("localhost", 5703), version, false, newUnsecureUuidString(), null, true);

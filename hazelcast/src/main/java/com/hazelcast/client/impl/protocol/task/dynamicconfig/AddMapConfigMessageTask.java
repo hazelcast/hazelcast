@@ -29,10 +29,9 @@ import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.dynamicconfig.AddDynamicConfigOperationFactory;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +55,7 @@ public class AddMapConfigMessageTask
 
     @Override
     @SuppressWarnings("checkstyle:npathcomplexity")
-    protected OperationFactory getOperationFactory() {
+    protected IdentifiedDataSerializable getConfig() {
         MapConfig config = new MapConfig(parameters.name);
         config.setAsyncBackupCount(parameters.asyncBackupCount);
         config.setBackupCount(parameters.backupCount);
@@ -95,8 +94,9 @@ public class AddMapConfigMessageTask
             for (QueryCacheConfigHolder holder : parameters.queryCacheConfigs) {
                 queryCacheConfigs.add(holder.asQueryCacheConfig(serializationService));
             }
+            config.setQueryCacheConfigs(queryCacheConfigs);
         }
-        return new AddDynamicConfigOperationFactory(config);
+        return config;
     }
 
     private PartitioningStrategyConfig getPartitioningStrategyConfig() {

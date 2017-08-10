@@ -43,8 +43,8 @@ public class MapInvalidationListener implements NearCacheInvalidationListener, I
     public void onInvalidate(Invalidation invalidation) {
         if (invalidation instanceof BatchNearCacheInvalidation) {
             BatchNearCacheInvalidation batch = ((BatchNearCacheInvalidation) invalidation);
-            int invalidationCount = batch.getInvalidations().size();
-            this.invalidationCount.addAndGet(invalidationCount);
+            int batchInvalidationCount = batch.getInvalidations().size();
+            invalidationCount.addAndGet(batchInvalidationCount);
         } else {
             invalidationCount.incrementAndGet();
         }

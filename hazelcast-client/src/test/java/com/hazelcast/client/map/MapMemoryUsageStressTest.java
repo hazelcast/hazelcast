@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.map;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.logging.ILogger;
@@ -54,9 +54,8 @@ public class MapMemoryUsageStressTest extends HazelcastTestSupport {
 
     @Before
     public void launchHazelcastServer() {
-        Config config = getConfig();
-        hazelcastFactory.newHazelcastInstance(config);
-        client = hazelcastFactory.newHazelcastClient();
+        hazelcastFactory.newHazelcastInstance(getConfig());
+        client = hazelcastFactory.newHazelcastClient(getClientConfig());
     }
 
     @After
@@ -80,6 +79,10 @@ public class MapMemoryUsageStressTest extends HazelcastTestSupport {
         assertJoinable(MINUTES.toSeconds(30), threads);
         assertEqualsStringFormat("Expected %d errors, but got %d (" + errorList + ")", 0, errors.get());
         assertTrue(format("Expected the counter to be <= 0, but was %d", counter.get()), counter.get() <= 0);
+    }
+
+    protected ClientConfig getClientConfig() {
+        return new ClientConfig();
     }
 
     private class StressThread extends Thread {

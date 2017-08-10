@@ -674,6 +674,11 @@
                     <action>remove</action>
                 </actions>
             </cache-permission>
+            <config-permission principal="dev">
+                <endpoints>
+                    <endpoint>127.0.0.1</endpoint>
+                </endpoints>
+            </config-permission>
         </client-permissions>
     </security>
 

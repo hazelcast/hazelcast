@@ -86,7 +86,7 @@ public final class PartitionReplicaSyncRequest extends AbstractPartitionOperatio
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
 
-        if (!partitionService.isReplicaSyncAllowed()) {
+        if (!partitionService.isMigrationAllowed()) {
             ILogger logger = getLogger();
             if (logger.isFinestEnabled()) {
                 logger.finest("Migration is paused! Cannot run replica sync -> " + toString());

@@ -23,6 +23,7 @@ import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.ICacheCompletionListener;
 import com.hazelcast.internal.adapter.ICacheReplaceEntryProcessor;
 import com.hazelcast.internal.adapter.IMapReplaceEntryProcessor;
+import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -46,6 +47,7 @@ import static com.hazelcast.config.EvictionPolicy.NONE;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheContent;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheEvictionsEventually;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheInvalidations;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheInvalidationsBetween;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSize;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheStats;
@@ -140,10 +142,14 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     protected abstract <K, V> NearCacheTestContext<K, V, NK, NV> createContext(boolean loaderEnabled);
 
     protected final void populateDataAdapter(NearCacheTestContext<Integer, String, NK, NV> context) {
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+        populateDataAdapter(context, DEFAULT_RECORD_COUNT);
+    }
+
+    protected final void populateDataAdapter(NearCacheTestContext<Integer, String, NK, NV> context, int size) {
+        for (int i = 0; i < size; i++) {
             context.dataAdapter.put(i, "value-" + i);
         }
-        assertNearCacheInvalidations(context, DEFAULT_RECORD_COUNT);
+        assertNearCacheInvalidations(context, size);
     }
 
     protected final void populateNearCache(NearCacheTestContext<Integer, String, NK, NV> context) {
@@ -654,6 +660,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
             }
         }
 
+        assertNearCacheInvalidations(context, DEFAULT_RECORD_COUNT);
         String message = format("Invalidation is not working on %s()", method.getMethodName());
         assertNearCacheSizeEventually(context, 0, message);
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
@@ -717,6 +724,38 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#EVICT} is used.
+     */
+    @Test
+    public void whenEvictIsUsed_thenNearCacheIsInvalidated_onNearCacheAdapter() {
+        whenEntryIsLoaded_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.EVICT);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#EVICT} is used.
+     */
+    @Test
+    public void whenEvictIsUsed_thenNearCacheIsInvalidated_onDataAdapter() {
+        whenEntryIsLoaded_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.EVICT);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#EVICT_ALL} is used.
+     */
+    @Test
+    public void whenEvictAllIsUsed_thenNearCacheIsInvalidated_onNearCacheAdapter() {
+        whenEntryIsLoaded_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.EVICT_ALL);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#EVICT_ALL} is used.
+     */
+    @Test
+    public void whenEvictAllIsUsed_thenNearCacheIsInvalidated_onDataAdapter() {
+        whenEntryIsLoaded_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.EVICT_ALL);
+    }
+
+    /**
      * With the {@link NearCacheTestContext#dataAdapter} we have to set {@link NearCacheConfig#setInvalidateOnChange(boolean)}.
      * With the {@link NearCacheTestContext#nearCacheAdapter} Near Cache invalidations are not needed.
      */
@@ -750,16 +789,33 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 adapter.loadAll(keys, true, listener);
                 listener.await();
                 break;
+            case EVICT:
+                for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+                    adapter.evict(i);
+                }
+                break;
+            case EVICT_ALL:
+                adapter.evictAll();
+                break;
             default:
                 throw new IllegalArgumentException("Unexpected method: " + method);
         }
 
-        // wait until the loader is finished and validate the updated values
+        // wait until the loader is finished and validate the updated or evicted values
         waitUntilLoaded(context);
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            assertEquals("newValue-" + i, context.dataAdapter.get(i));
+            if (method == DataStructureMethods.EVICT || method == DataStructureMethods.EVICT_ALL) {
+                assertNull(context.dataAdapter.get(i));
+            } else {
+                assertEquals("newValue-" + i, context.dataAdapter.get(i));
+            }
         }
 
+        if (method == DataStructureMethods.EVICT_ALL) {
+            assertNearCacheInvalidations(context, 1);
+        } else {
+            assertNearCacheInvalidationsBetween(context, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT * 2);
+        }
         String message = format("Invalidation is not working on %s()", method.getMethodName());
         assertNearCacheSizeEventually(context, 0, message);
     }
@@ -925,6 +981,22 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
             adapter.destroy();
         }
 
+        if (method == DataStructureMethods.CLEAR) {
+            // the ReplicatedMap fires its own map cleared event instead of a Near Cache invalidation
+            if (!(adapter instanceof ReplicatedMapDataStructureAdapter)) {
+                // there should be a single invalidation with a null key
+                assertNearCacheInvalidations(context, 1);
+            }
+        } else if (method == DataStructureMethods.DESTROY) {
+            // the ReplicatedMap fires its own map cleared event instead of a Near Cache invalidation
+            if (!(adapter instanceof ReplicatedMapDataStructureAdapter)) {
+                // there can be 1 or 2 invalidations, depending on when the invalidation listener is de-registered
+                assertNearCacheInvalidationsBetween(context, 1, 2);
+            }
+        } else {
+            // there should be invalidations for each key
+            assertNearCacheInvalidations(context, DEFAULT_RECORD_COUNT);
+        }
         String message = format("Invalidation is not working on %s()", method.getMethodName());
         assertNearCacheSizeEventually(context, 0, message);
     }
@@ -955,35 +1027,30 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         final NearCacheTestContext<Integer, String, NK, NV> context = createContext();
 
         // populate data structure
-        context.dataAdapter.put(1, "value-1");
-        context.dataAdapter.put(2, "value-2");
-        context.dataAdapter.put(3, "value-3");
-        assertNearCacheInvalidations(context, 3);
+        populateDataAdapter(context, 3);
 
         // populate Near Cache
-        context.nearCacheAdapter.get(1);
-        context.nearCacheAdapter.get(2);
-        context.nearCacheAdapter.get(3);
+        populateNearCache(context, DataStructureMethods.GET, 3);
 
+        assertTrue(context.nearCacheAdapter.containsKey(0));
         assertTrue(context.nearCacheAdapter.containsKey(1));
         assertTrue(context.nearCacheAdapter.containsKey(2));
-        assertTrue(context.nearCacheAdapter.containsKey(3));
+        assertFalse(context.nearCacheAdapter.containsKey(3));
         assertFalse(context.nearCacheAdapter.containsKey(4));
-        assertFalse(context.nearCacheAdapter.containsKey(5));
 
         // remove a key which is in the Near Cache
         DataStructureAdapter<Integer, String> adapter = useDataAdapter ? context.dataAdapter : context.nearCacheAdapter;
-        adapter.remove(1);
-        adapter.remove(3);
+        adapter.remove(0);
+        adapter.remove(2);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertFalse(context.nearCacheAdapter.containsKey(1));
-                assertTrue(context.nearCacheAdapter.containsKey(2));
+                assertFalse(context.nearCacheAdapter.containsKey(0));
+                assertTrue(context.nearCacheAdapter.containsKey(1));
+                assertFalse(context.nearCacheAdapter.containsKey(2));
                 assertFalse(context.nearCacheAdapter.containsKey(3));
                 assertFalse(context.nearCacheAdapter.containsKey(4));
-                assertFalse(context.nearCacheAdapter.containsKey(5));
             }
         });
     }
@@ -1000,9 +1067,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         int expectedEvictions = 1;
 
         // populate data structure with an extra entry
-        populateDataAdapter(context);
-        context.dataAdapter.put(DEFAULT_RECORD_COUNT, "value-" + DEFAULT_RECORD_COUNT);
-        assertNearCacheInvalidations(context, DEFAULT_RECORD_COUNT + 1);
+        populateDataAdapter(context, DEFAULT_RECORD_COUNT + 1);
 
         // populate Near Caches
         populateNearCache(context);
@@ -1148,5 +1213,17 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         assertEquals("newValue", context.nearCacheAdapter.get(1));
 
         assertNearCacheStats(context, size, expectedHits, expectedMisses);
+    }
+
+    @Test
+    public void test_containsKey_returns_false_when_called_for_null_cached_key() {
+        NearCacheTestContext<Integer, Integer, NK, NV> context = createContext();
+
+        int absentKey = 1;
+        Integer value = context.nearCacheAdapter.get(absentKey);
+        boolean containsKey = context.nearCacheAdapter.containsKey(absentKey);
+
+        assertNull("returned value should be null", value);
+        assertFalse("containsKey should return false", containsKey);
     }
 }

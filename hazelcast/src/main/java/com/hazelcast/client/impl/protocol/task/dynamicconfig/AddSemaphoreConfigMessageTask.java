@@ -21,9 +21,8 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddSemaphoreConfigC
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddSetConfigCodec;
 import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.dynamicconfig.AddDynamicConfigOperationFactory;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public class AddSemaphoreConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddSemaphoreConfigCodec.RequestParameters> {
@@ -43,13 +42,13 @@ public class AddSemaphoreConfigMessageTask
     }
 
     @Override
-    protected OperationFactory getOperationFactory() {
+    protected IdentifiedDataSerializable getConfig() {
         SemaphoreConfig config = new SemaphoreConfig();
         config.setName(parameters.name);
         config.setBackupCount(parameters.backupCount);
         config.setAsyncBackupCount(parameters.asyncBackupCount);
         config.setInitialPermits(parameters.initialPermits);
-        return new AddDynamicConfigOperationFactory(config);
+        return config;
     }
 
     @Override

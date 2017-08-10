@@ -420,7 +420,7 @@ public class BasicCacheJournalTest extends HazelcastTestSupport {
             int partitionId,
             Predicate<? super EventJournalCacheEvent<K, V>> predicate,
             Projection<? super EventJournalCacheEvent<K, V>, T> projection) {
-        return ((CacheProxy<K, V>) cache).readFromEventJournal(startSequence, maxSize, partitionId, predicate, projection);
+        return ((CacheProxy<K, V>) cache).readFromEventJournal(startSequence, 1, maxSize, partitionId, predicate, projection);
     }
 
     private static <T> TruePredicate<T> truePredicate() {

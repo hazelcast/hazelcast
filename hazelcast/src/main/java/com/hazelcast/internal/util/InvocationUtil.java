@@ -16,32 +16,35 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
+import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.util.futures.ChainingFuture;
+import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.util.executor.ManagedExecutorService;
 
-import java.util.Collection;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
+import java.util.Iterator;
 
-import static java.lang.String.format;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static com.hazelcast.util.IterableUtil.map;
 
 /**
  * Utility methods for invocations
  */
 public final class InvocationUtil {
     private static final int WARMUP_SLEEPING_TIME_MILLIS = 10;
-    private static final int INVOCATION_TIMEOUT_SECONDS = 60;
 
     private InvocationUtil() {
 
@@ -54,55 +57,36 @@ public final class InvocationUtil {
      * If there is a cluster membership change while invoking then it will restart invocations on all members. This
      * implies the operation should be idempotent.
      *
-     * If there is an exception - other than {@link MemberLeftException} while invoking then the iteration
-     * is interrupted and the exception is propagates to the caller.
+     * If there is an exception - other than {@link MemberLeftException} or
+     * {@link com.hazelcast.spi.exception.TargetNotMemberException} while invoking then the iteration
+     * is interrupted and the exception is propagated to the caller.
      *
      * @param nodeEngine
      * @param operationFactory
-     * @param retriesCount
+     * @param maxRetries
      */
-    public static void invokeOnStableClusterSerial(NodeEngine nodeEngine, OperationFactory operationFactory,
-                                                   int retriesCount) {
-        OperationService operationService = nodeEngine.getOperationService();
-        Cluster cluster = nodeEngine.getClusterService();
+    public static ICompletableFuture<Object> invokeOnStableClusterSerial(NodeEngine nodeEngine,
+                                                                                final OperationFactory operationFactory,
+                                                                                int maxRetries) {
         warmUpPartitions(nodeEngine);
-        Collection<Member> originalMembers;
-        int iterationCounter = 0;
-        for (;;) {
-            originalMembers = cluster.getMembers();
-            boolean success = invokeOnMembers(operationService, operationFactory, originalMembers);
-            if (success && cluster.getMembers().equals(originalMembers)) {
-                //we are done.
-                break;
-            }
-            if (iterationCounter++ == retriesCount) {
-                throw new HazelcastException(format("Cluster topology was not stable for %d retries,"
-                        + " invoke on stable cluster failed", retriesCount));
-            }
-        }
-    }
 
-    private static boolean invokeOnMembers(OperationService operationService, OperationFactory operationFactory,
-                                        Collection<Member> members) {
-        for (Member member : members) {
-            Address target = member.getAddress();
-            Operation operation = operationFactory.createOperation();
-            String serviceName = operation.getServiceName();
-            InternalCompletableFuture<?> future = operationService.invokeOnTarget(serviceName, operation, target);
-            try {
-                future.get(INVOCATION_TIMEOUT_SECONDS, SECONDS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new HazelcastException("Interrupted while invoking " + operation + " on " + member, e);
-            } catch (MemberLeftException e) {
-                return false;
-            } catch (ExecutionException e) {
-                throw new HazelcastException("Error while invoking " + operation + " on " + member, e);
-            } catch (TimeoutException e) {
-                throw new HazelcastException("Timeout while invoking " + operation + " on " + member, e);
-            }
-        }
-        return true;
+        final OperationService operationService = nodeEngine.getOperationService();
+        ClusterService clusterService = nodeEngine.getClusterService();
+
+        RestartingMemberIterator memberIterator = new RestartingMemberIterator(clusterService, maxRetries);
+
+        // we are going to iterate over all members and invoke an operation on each of them
+        Iterator<ICompletableFuture<Object>> invocationIterator = map(
+                memberIterator, new InvokeOnMemberFunction(operationFactory, operationService));
+
+        ILogger logger = nodeEngine.getLogger(ChainingFuture.class);
+        ExecutionService executionService = nodeEngine.getExecutionService();
+        ManagedExecutorService executor = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR);
+
+        // ChainingFuture uses the iterator to start invocations.
+        // It invokes on another member only when the previous invocation is completed = invocations are serial.
+        // the future itself completes only when the last invocation completes (or if there is an error)
+        return new ChainingFuture<Object>(invocationIterator, executor, memberIterator, logger);
     }
 
     private static void warmUpPartitions(NodeEngine nodeEngine) {
@@ -116,6 +100,27 @@ public final class InvocationUtil {
                     throw new HazelcastException("Thread interrupted while initializing a partition table", e);
                 }
             }
+        }
+    }
+
+    //IFunction extends Serializable, but this function is only executed locally
+    @SerializableByConvention
+    private static class InvokeOnMemberFunction implements IFunction<Member, ICompletableFuture<Object>> {
+        private final OperationFactory operationFactory;
+        private final OperationService operationService;
+
+        public InvokeOnMemberFunction(OperationFactory operationFactory, OperationService operationService) {
+            this.operationFactory = operationFactory;
+            this.operationService = operationService;
+        }
+
+        @Override
+        public ICompletableFuture<Object> apply(Member member) {
+            Address address = member.getAddress();
+            Operation operation = operationFactory.createOperation();
+            String serviceName = operation.getServiceName();
+
+            return operationService.invokeOnTarget(serviceName, operation, address);
         }
     }
 }

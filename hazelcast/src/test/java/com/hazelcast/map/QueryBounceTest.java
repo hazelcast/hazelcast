@@ -137,6 +137,7 @@ public class QueryBounceTest {
                     ? "age >= " + min + " AND age < " + max // may use sorted index
                     : "id >= " + min + " AND id < " + max;  // may use unsorted index
             Collection<SampleTestObjects.Employee> employees = map.values(new SqlPredicate(sql));
+            assertEquals("There is data loss", COUNT_ENTRIES, map.size());
             assertEquals("Obtained " + employees.size() + " results for query '" + sql + "'",
                     numberOfResults, employees.size());
         }

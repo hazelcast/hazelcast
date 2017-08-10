@@ -18,7 +18,6 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.TypedDataSerializable;
 import com.hazelcast.nio.serialization.BinaryInterface;
 
@@ -39,7 +38,7 @@ import java.util.Set;
  * @param <V> the value type
  */
 @BinaryInterface
-public class LegacyCacheConfig<K, V> implements DataSerializable, TypedDataSerializable {
+public class LegacyCacheConfig<K, V> implements TypedDataSerializable {
 
     private CacheConfig<K, V> config;
 

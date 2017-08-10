@@ -162,6 +162,11 @@ public class SecureApplicationContextTest {
                     String[] actualActions = permConfig.getActions().toArray(new String[0]);
                     assertArrayEquals(expectedActions, actualActions);
                     break;
+                case CONFIG:
+                    assertEquals("dev", permConfig.getPrincipal());
+                    assertEquals(1, permConfig.getEndpoints().size());
+                    assertEquals("127.0.0.1", permConfig.getEndpoints().iterator().next());
+                    break;
             }
         }
     }

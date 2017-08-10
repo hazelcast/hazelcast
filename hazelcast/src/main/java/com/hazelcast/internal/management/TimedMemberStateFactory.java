@@ -63,6 +63,7 @@ import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.topic.impl.TopicService;
+import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.util.ArrayList;
@@ -226,6 +227,9 @@ public class TimedMemberStateFactory {
                     count = handleQueue(memberState, count, config, ((QueueService) service).getStats(), longInstanceNames);
                 } else if (service instanceof TopicService) {
                     count = handleTopic(memberState, count, config, ((TopicService) service).getStats(), longInstanceNames);
+                } else if (service instanceof ReliableTopicService) {
+                    count = handleReliableTopic(memberState, count, config,
+                            ((ReliableTopicService) service).getStats(), longInstanceNames);
                 } else if (service instanceof DistributedExecutorService) {
                     count = handleExecutorService(memberState, count, config,
                             ((DistributedExecutorService) service).getStats(), longInstanceNames);
@@ -302,6 +306,22 @@ public class TimedMemberStateFactory {
                 LocalReplicatedMapStats stats = entry.getValue();
                 memberState.putLocalReplicatedMapStats(name, stats);
                 longInstanceNames.add("r:" + name);
+                ++count;
+            }
+        }
+        return count;
+    }
+
+    private int handleReliableTopic(MemberStateImpl memberState, int count, Config config, Map<String, LocalTopicStats> topics,
+                            Set<String> longInstanceNames) {
+        for (Map.Entry<String, LocalTopicStats> entry : topics.entrySet()) {
+            String name = entry.getKey();
+            if (count >= maxVisibleInstanceCount) {
+                break;
+            } else if (config.findReliableTopicConfig(name).isStatisticsEnabled()) {
+                LocalTopicStats stats = entry.getValue();
+                memberState.putLocalReliableTopicStats(name, stats);
+                longInstanceNames.add("rt:" + name);
                 ++count;
             }
         }

@@ -118,6 +118,11 @@
                         <hz:action>destroy</hz:action>
                     </hz:actions>
                 </hz:cache-permission>
+                <hz:config-permission principal="dev">
+                    <hz:endpoints>
+                        <hz:endpoint>127.0.0.1</hz:endpoint>
+                    </hz:endpoints>
+                </hz:config-permission>
             </hz:client-permissions>
             <hz:security-interceptors>
                 <hz:interceptor class-name="com.hazelcast.spring.security.DummySecurityInterceptor"

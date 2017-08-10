@@ -26,32 +26,23 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(Parameterized.class)
 public class ReplicatedMapWriteOrderTest extends ReplicatedMapAbstractTest {
 
-    int nodeCount;
-    int operations;
-    int keyCount;
-
-    public ReplicatedMapWriteOrderTest(int nodeCount, int operations, int keyCount) {
-        this.nodeCount = nodeCount;
-        this.operations = operations;
-        this.keyCount = keyCount;
-    }
-
-    @Parameterized.Parameters
+    @Parameters
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {2, 50, 1}, {2, 50, 10}, {2, 50, 50},
 //                {3, 50, 1}, {3, 50, 10}, {3, 50, 50},
 //                {3, 10, 10}, {3, 50, 50}, {3, 100, 100},
@@ -69,13 +60,23 @@ public class ReplicatedMapWriteOrderTest extends ReplicatedMapAbstractTest {
         });
     }
 
+    private int nodeCount;
+    private int operations;
+    private int keyCount;
+
+    public ReplicatedMapWriteOrderTest(int nodeCount, int operations, int keyCount) {
+        this.nodeCount = nodeCount;
+        this.operations = operations;
+        this.keyCount = keyCount;
+    }
+
     @After
-    public void setUp() throws Exception {
+    public void setUp() {
         HazelcastInstanceFactory.terminateAll();
     }
 
     @Test
-    public void testDataIntegrity() throws InterruptedException {
+    public void testDataIntegrity() {
         System.out.println("nodeCount = " + nodeCount);
         System.out.println("operations = " + operations);
         System.out.println("keyCount = " + keyCount);
@@ -84,15 +85,13 @@ public class ReplicatedMapWriteOrderTest extends ReplicatedMapAbstractTest {
         TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(nodeCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
         String replicatedMapName = "test";
-        final List<ReplicatedMap> maps = createMapOnEachInstance(instances, replicatedMapName);
+        final List<ReplicatedMap<String, Object>> maps = createMapOnEachInstance(instances, replicatedMapName);
         ArrayList<Integer> keys = generateRandomIntegerList(keyCount);
         Thread[] threads = createThreads(nodeCount, maps, keys, operations);
         for (Thread thread : threads) {
             thread.start();
         }
-        for (Thread thread : threads) {
-            thread.join();
-        }
+        assertJoinable(threads);
         for (int i = 0; i < keyCount; i++) {
             final String key = "foo-" + keys.get(i);
             assertTrueEventually(new AssertTask() {
@@ -107,7 +106,8 @@ public class ReplicatedMapWriteOrderTest extends ReplicatedMapAbstractTest {
                 private void printValues() throws Exception {
                     for (int j = 0; j < maps.size(); j++) {
                         ReplicatedMap map = maps.get(j);
-                        System.out.println("value[" + j + "] = " + map.get(key) + ", store version: " + getStore(map, key).getVersion());
+                        System.out.println("value[" + j + "] = " + map.get(key)
+                                + ", store version: " + getStore(map, key).getVersion());
                     }
                 }
 
@@ -122,12 +122,11 @@ public class ReplicatedMapWriteOrderTest extends ReplicatedMapAbstractTest {
                         assertEquals(v1, v2);
                     }
                 }
-
             }, 120);
         }
     }
 
-    private Thread[] createThreads(int count, List<ReplicatedMap> maps, ArrayList<Integer> keys, int operations) {
+    private Thread[] createThreads(int count, List<ReplicatedMap<String, Object>> maps, ArrayList<Integer> keys, int operations) {
         Thread[] threads = new Thread[count];
         for (int i = 0; i < count; i++) {
             threads[i] = createPutOperationThread(maps.get(i), keys, operations);

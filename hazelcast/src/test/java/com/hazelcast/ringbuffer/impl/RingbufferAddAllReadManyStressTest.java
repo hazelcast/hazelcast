@@ -50,7 +50,8 @@ import static org.junit.Assert.assertEquals;
 @Category(NightlyTest.class)
 public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
 
-    public static final int MAX_BATCH = 100;
+    private final ILogger logger = Logger.getLogger(RingbufferAddAllReadManyStressTest.class);
+    private static final int MAX_BATCH = 100;
     private final AtomicBoolean stop = new AtomicBoolean();
     private Ringbuffer<Long> ringbuffer;
 
@@ -114,13 +115,13 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         producer.start();
 
         sleepAndStop(stop, 60);
-        System.out.println("Waiting fo completion");
+        logger.info("Waiting for completion");
 
         producer.assertSucceedsEventually();
         consumer1.assertSucceedsEventually();
         consumer2.assertSucceedsEventually();
 
-        System.out.println("producer.produced:" + producer.produced);
+        logger.info(producer.getName() + " produced:" + producer.produced);
 
         assertEquals(producer.produced, consumer1.seq);
         assertEquals(producer.produced, consumer2.seq);
@@ -217,7 +218,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
                         if (e.getCause() instanceof StaleSequenceException) {
                             // this consumer is used in a stress test and can fall behind the producer if it gets delayed
                             // by any reason. This is ok, just jump to the the middle of the ringbuffer.
-                            System.out.println(getName() + " has fallen behind, catching up...");
+                            logger.info(getName() + " has fallen behind, catching up...");
                             final long tail = ringbuffer.tailSequence();
                             final long head = ringbuffer.headSequence();
                             seq = tail >= head ? ((tail + head) / 2) : head;
