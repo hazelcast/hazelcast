@@ -65,6 +65,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -755,6 +756,25 @@ public abstract class HazelcastTestSupport {
             throw new ComparisonFailure("", expected, actual);
         }
         fail(formatAssertMessage("", expected, null));
+    }
+
+    public static void assertPropertiesEquals(Properties expected, Properties actual) {
+        if (expected == null && actual == null) {
+            return;
+        }
+
+        if (expected == null || actual == null) {
+            fail(formatAssertMessage("", expected, actual));
+        }
+
+        for (String key : expected.stringPropertyNames()) {
+            assertEquals("Unexpected value for key " + key, expected.getProperty(key), actual.getProperty(key));
+        }
+
+        for (String key : actual.stringPropertyNames()) {
+            assertEquals("Unexpected value for key " + key + " from actual object", expected.getProperty(key),
+                    actual.getProperty(key));
+        }
     }
 
     private static String formatAssertMessage(String message, Object expected, Object actual) {
