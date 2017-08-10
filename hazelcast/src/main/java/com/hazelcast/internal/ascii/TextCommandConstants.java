@@ -77,6 +77,7 @@ public final class TextCommandConstants {
         HTTP_POST((byte) 31),
         HTTP_PUT((byte) 32),
         HTTP_DELETE((byte) 33),
+        HTTP_HEAD((byte) 34),
         NO_OP((byte) 98),
         STOP((byte) 99);
 

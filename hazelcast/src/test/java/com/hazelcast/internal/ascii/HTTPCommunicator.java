@@ -27,6 +27,10 @@ import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @SuppressWarnings("SameParameterValue")
 public class HTTPCommunicator {
@@ -213,10 +217,20 @@ public class HTTPCommunicator {
     static class ConnectionResponse {
         public final String response;
         public final int responseCode;
+        public final Map<String, List<String>> responseHeaders;
 
         private ConnectionResponse(String response, int responseCode) {
+            this(response, responseCode, null);
+        }
+
+        private ConnectionResponse(String response, int responseCode, Map<String, List<String>> responseHeaders) {
             this.response = response;
             this.responseCode = responseCode;
+            if(responseHeaders == null) {
+                this.responseHeaders = Collections.emptyMap();
+            } else {
+                this.responseHeaders = new HashMap<String, List<String>>(responseHeaders);
+            }
         }
     }
 
@@ -231,6 +245,16 @@ public class HTTPCommunicator {
                 builder.append(new String(buffer, 0, readBytes));
             }
             return builder.toString();
+        } finally {
+            httpUrlConnection.disconnect();
+        }
+    }
+
+    private ConnectionResponse doHead(String url) throws IOException {
+        HttpURLConnection httpUrlConnection = (HttpURLConnection) (new URL(url)).openConnection();
+        try {
+            httpUrlConnection.setRequestMethod("HEAD");
+            return new ConnectionResponse(null, httpUrlConnection.getResponseCode(), httpUrlConnection.getHeaderFields());
         } finally {
             httpUrlConnection.disconnect();
         }
@@ -259,6 +283,44 @@ public class HTTPCommunicator {
         }
     }
 
+    public ConnectionResponse headRequestToMapURI() throws IOException {
+        String url = address + "maps/";
+        return doHead(url);
+    }
+
+    public ConnectionResponse headRequestToQueueURI() throws IOException {
+        String url = address + "queues/";
+        return doHead(url);
+    }
+
+    public ConnectionResponse headRequestToUndefinedURI() throws IOException {
+        String url = address + "undefined";
+        return doHead(url);
+    }
+
+    public ConnectionResponse headRequestToClusterInfoURI() throws IOException {
+        String url = address + "cluster";
+        return doHead(url);
+    }
+
+    public ConnectionResponse headRequestToClusterHealthURI() throws IOException {
+        String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
+        String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_URL;
+        return doHead(url);
+    }
+
+    public ConnectionResponse headRequestToClusterVersionURI() throws IOException {
+        String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
+        String url = "http:/" + baseAddress + HttpCommandProcessor.URI_CLUSTER_VERSION_URL;
+        return doHead(url);
+    }
+
+    public ConnectionResponse headRequestToGarbageClusterHealthURI() throws IOException {
+        String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
+        String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_URL + "garbage";
+        return doHead(url);
+    }
+  
     public void setChunkedStreamingLength(int chunkedStreamingLength) {
         this.chunkedStreamingLength = chunkedStreamingLength;
     }

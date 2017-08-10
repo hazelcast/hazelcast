@@ -30,6 +30,7 @@ import com.hazelcast.internal.ascii.rest.HttpCommand;
 import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpDeleteCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpGetCommandParser;
+import com.hazelcast.internal.ascii.rest.HttpHeadCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpPostCommandParser;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.logging.ILogger;
@@ -88,6 +89,7 @@ public class TextChannelInboundHandler implements ChannelInboundHandler {
         MAP_COMMAND_PARSERS.put("POST", new HttpPostCommandParser());
         MAP_COMMAND_PARSERS.put("PUT", new HttpPostCommandParser());
         MAP_COMMAND_PARSERS.put("DELETE", new HttpDeleteCommandParser());
+        MAP_COMMAND_PARSERS.put("HEAD", new HttpHeadCommandParser());
     }
 
     private ByteBuffer commandLineBuffer = ByteBuffer.allocate(INITIAL_CAPACITY);
