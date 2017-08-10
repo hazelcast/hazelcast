@@ -71,10 +71,10 @@ public class Diagnostics {
      * <p/>
      * Every HazelcastInstance will get its own history of log files.
      * <p/>
-     * The default is 10.
+     * The default is 50.
      */
     @SuppressWarnings("checkstyle:magicnumber")
-    public static final HazelcastProperty MAX_ROLLED_FILE_SIZE_MB = new HazelcastProperty(PREFIX + ".max.rolled.file.size.mb", 10)
+    public static final HazelcastProperty MAX_ROLLED_FILE_SIZE_MB = new HazelcastProperty(PREFIX + ".max.rolled.file.size.mb", 50)
             .setDeprecatedName("hazelcast.performance.monitor.max.rolled.file.size.mb");
 
     /**
