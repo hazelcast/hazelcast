@@ -123,10 +123,19 @@ public abstract class DiagnosticsLogWriter {
         appendTime();
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     private void appendDate() {
-        write(calendar.get(DAY_OF_MONTH));
+        int dayOfMonth = calendar.get(DAY_OF_MONTH);
+        if (dayOfMonth < 10) {
+            write('0');
+        }
+        write(dayOfMonth);
         write('-');
-        write(calendar.get(MONTH) + 1);
+        int month = calendar.get(MONTH) + 1;
+        if (month < 10) {
+            write('0');
+        }
+        write(month);
         write('-');
         write(calendar.get(YEAR));
     }
