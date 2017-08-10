@@ -23,6 +23,10 @@ import com.hazelcast.config.InvalidConfigurationException;
 import java.util.Collection;
 import java.util.Map;
 
+import static com.hazelcast.aws.utility.MetadataUtil.AVAILABILITY_ZONE_URI;
+import static com.hazelcast.aws.utility.MetadataUtil.INSTANCE_METADATA_URI;
+import static com.hazelcast.aws.utility.MetadataUtil.retrieveMetadataFromURI;
+
 public class AWSClient {
 
     private final AwsConfig awsConfig;
@@ -50,6 +54,11 @@ public class AWSClient {
 
     public Map<String, String> getAddresses() throws Exception {
         return new DescribeInstances(awsConfig, endpoint).execute();
+    }
+
+    public String getAvailabilityZone() {
+        String uri = INSTANCE_METADATA_URI.concat(AVAILABILITY_ZONE_URI);
+        return retrieveMetadataFromURI(uri);
     }
 
     public void setEndpoint(String s) {

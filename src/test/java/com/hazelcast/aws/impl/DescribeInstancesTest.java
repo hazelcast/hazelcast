@@ -29,6 +29,8 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Map;
 
+import static com.hazelcast.aws.utility.MetadataUtil.IAM_SECURITY_CREDENTIALS_URI;
+import static com.hazelcast.aws.utility.MetadataUtil.INSTANCE_METADATA_URI;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -43,7 +45,7 @@ public class DescribeInstancesTest {
         Environment mockedEnv = mock(Environment.class);
         when(mockedEnv.getEnvVar(Constants.ECS_CREDENTIALS_ENV_VAR_NAME)).thenReturn(null);
 
-        final String uri = "http://" + DescribeInstances.IAM_ROLE_ENDPOINT + "/latest/meta-data/iam/security-credentials/";
+        final String uri = INSTANCE_METADATA_URI + IAM_SECURITY_CREDENTIALS_URI;
 
         DescribeInstances descriptor = spy(new DescribeInstances(new AwsConfig()));
         doReturn("").when(descriptor).retrieveRoleFromURI(uri);
@@ -57,9 +59,9 @@ public class DescribeInstancesTest {
         when(mockedEnv.getEnvVar(Constants.ECS_CREDENTIALS_ENV_VAR_NAME)).thenReturn(null);
 
         final String defaultIamRoleName = "defaultIamRole";
-        final String uri = "http://" + DescribeInstances.IAM_ROLE_ENDPOINT + "/latest/meta-data/iam/security-credentials/";
+        final String uri = INSTANCE_METADATA_URI + IAM_SECURITY_CREDENTIALS_URI;
 
-        final String roleUri = "http://" + DescribeInstances.IAM_ROLE_ENDPOINT + "/latest/meta-data/iam/security-credentials/"+defaultIamRoleName;
+        final String roleUri = INSTANCE_METADATA_URI + IAM_SECURITY_CREDENTIALS_URI + defaultIamRoleName;
         // some dummy creds. Look real, but they aren't.
         final String accessKeyId = "ASIAJDOR231233BVE7GQ";
         final String secretAccessKey = "QU5mTd40xnAbC5Mz2T3Fy7afQVrow+/tYq5GXMf7";
@@ -127,7 +129,7 @@ public class DescribeInstancesTest {
     @Test
     public void test_whenIamRoleExistsInConfig() throws IOException {
         final String someRole = "someRole";
-        final String uri = "http://" + DescribeInstances.IAM_ROLE_ENDPOINT + "/latest/meta-data/iam/security-credentials/"+someRole;
+        final String uri = INSTANCE_METADATA_URI + IAM_SECURITY_CREDENTIALS_URI + someRole;
 
         // some dummy creds. Look real, but they aren't.
         final String accessKeyId = "ASIAJDOR231233BVE7GQ";
@@ -177,8 +179,8 @@ public class DescribeInstancesTest {
 
 
         final String ecsEnvVarCredsUri = "someURL";
-        final String uri = "http://" + DescribeInstances.IAM_TASK_ROLE_ENDPOINT + ecsEnvVarCredsUri;
-        final String defaultRoleUri = "http://" + DescribeInstances.IAM_ROLE_ENDPOINT + "/latest/meta-data/iam/security-credentials/";
+        final String uri = DescribeInstances.IAM_TASK_ROLE_ENDPOINT + ecsEnvVarCredsUri;
+        final String defaultRoleUri = INSTANCE_METADATA_URI + IAM_SECURITY_CREDENTIALS_URI;
 
         Environment mockedEnv = mock(Environment.class);
         when(mockedEnv.getEnvVar(Constants.ECS_CREDENTIALS_ENV_VAR_NAME)).thenReturn(ecsEnvVarCredsUri);

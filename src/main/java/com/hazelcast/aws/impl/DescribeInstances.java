@@ -19,6 +19,7 @@ package com.hazelcast.aws.impl;
 import com.hazelcast.aws.security.EC2RequestSigner;
 import com.hazelcast.aws.utility.CloudyUtility;
 import com.hazelcast.aws.utility.Environment;
+import com.hazelcast.aws.utility.MetadataUtil;
 import com.hazelcast.com.eclipsesource.json.JsonObject;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -26,7 +27,6 @@ import com.hazelcast.config.InvalidConfigurationException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -39,6 +39,8 @@ import java.util.regex.Pattern;
 
 import static com.hazelcast.aws.impl.Constants.DOC_VERSION;
 import static com.hazelcast.aws.impl.Constants.SIGNATURE_METHOD_V4;
+import static com.hazelcast.aws.utility.MetadataUtil.IAM_SECURITY_CREDENTIALS_URI;
+import static com.hazelcast.aws.utility.MetadataUtil.INSTANCE_METADATA_URI;
 import static com.hazelcast.aws.utility.StringUtil.isEmpty;
 import static com.hazelcast.aws.utility.StringUtil.isNotEmpty;
 import static com.hazelcast.nio.IOUtil.closeResource;
@@ -49,8 +51,12 @@ import static com.hazelcast.nio.IOUtil.closeResource;
  */
 public class DescribeInstances {
 
-    public static final String IAM_ROLE_ENDPOINT = "169.254.169.254";
-    public static final String IAM_TASK_ROLE_ENDPOINT = "169.254.170.2";
+    /**
+     * URI to fetch container credentials (when IAM role is enabled)
+     *
+     * see http://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html
+     */
+    public static final String IAM_TASK_ROLE_ENDPOINT = "http://169.254.170.2";
 
     private EC2RequestSigner rs;
     private AwsConfig awsConfig;
@@ -83,19 +89,14 @@ public class DescribeInstances {
     }
 
     private String getDefaultIamRole() throws IOException {
-        try {
-            String query = "latest/meta-data/iam/security-credentials/";
-            String uri = "http://" + IAM_ROLE_ENDPOINT + "/" + query;
-            return retrieveRoleFromURI(uri);
-        } catch (IOException e) {
-            throw new InvalidConfigurationException("Invalid Aws Configuration", e);
-        }
+        String uri = INSTANCE_METADATA_URI.concat(IAM_SECURITY_CREDENTIALS_URI);
+        return retrieveRoleFromURI(uri);
     }
 
     private void fillKeysFromIamRole() {
         try {
-            String query = "latest/meta-data/iam/security-credentials/" + awsConfig.getIamRole();
-            String uri = "http://" + IAM_ROLE_ENDPOINT + "/" + query;
+            String query = IAM_SECURITY_CREDENTIALS_URI.concat(awsConfig.getIamRole());
+            String uri =  INSTANCE_METADATA_URI.concat(query);
             String json = retrieveRoleFromURI(uri);
             parseAndStoreRoleCreds(json);
         } catch (Exception io) {
@@ -112,7 +113,7 @@ public class DescribeInstances {
             throw new IllegalArgumentException("Could not acquire credentials! "
               + "Did not find declared AWS access key or IAM Role, and could not discover IAM Task Role or default role.");
         }
-        uri = "http://" + IAM_TASK_ROLE_ENDPOINT + uri;
+        uri = IAM_TASK_ROLE_ENDPOINT + uri;
 
         String json = "";
         try {
@@ -130,30 +131,8 @@ public class DescribeInstances {
      * @param uri the full URI where a `GET` request will retrieve the role information, represented as JSON.
      * @return The content of the HTTP response, as a String. NOTE: This is NEVER null.
      */
-    String retrieveRoleFromURI(String uri) throws IOException {
-        StringBuilder response = new StringBuilder();
-
-        InputStreamReader is = null;
-        BufferedReader reader = null;
-        try {
-            URL url = new URL(uri);
-            is = new InputStreamReader(url.openStream(), "UTF-8");
-            reader = new BufferedReader(is);
-            String resp;
-            while ((resp = reader.readLine()) != null) {
-                response = response.append(resp);
-            }
-            return response.toString();
-        } catch (IOException io) {
-            throw new InvalidConfigurationException("Unable to lookup role in URI: " + uri, io);
-        } finally {
-            if (is != null) {
-                is.close();
-            }
-            if (reader != null) {
-                reader.close();
-            }
-        }
+    String retrieveRoleFromURI(String uri) {
+        return MetadataUtil.retrieveMetadataFromURI(uri);
     }
 
     /**

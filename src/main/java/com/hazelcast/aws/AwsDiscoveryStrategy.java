@@ -26,10 +26,12 @@ import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
+import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 import com.hazelcast.util.StringUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.aws.AwsProperties.ACCESS_KEY;
@@ -50,9 +52,13 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
  * @see AWSClient
  */
 public class AwsDiscoveryStrategy extends AbstractDiscoveryStrategy {
+
     private static final ILogger LOGGER = Logger.getLogger(AwsDiscoveryStrategy.class);
     private final AWSClient aws;
     private final int port;
+
+    private final Map<String, Object> memberMetadata = new HashMap<String, Object>();
+
 
     public AwsDiscoveryStrategy(Map<String, Comparable> properties) {
         super(LOGGER, properties);
@@ -62,6 +68,15 @@ public class AwsDiscoveryStrategy extends AbstractDiscoveryStrategy {
         } catch (IllegalArgumentException e) {
             throw new InvalidConfigurationException("AWS configuration is not valid", e);
         }
+    }
+
+    /**
+     * For test purposes only.
+     */
+    AwsDiscoveryStrategy(Map<String, Comparable> properties, AWSClient client) {
+        super(LOGGER, properties);
+        this.port = getOrDefault(PORT.getDefinition(), NetworkConfig.DEFAULT_PORT);
+        this.aws = client;
     }
 
     private AwsConfig getAwsConfig() throws IllegalArgumentException {
@@ -97,6 +112,14 @@ public class AwsDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
         reviewConfiguration(config);
         return config;
+    }
+
+    @Override
+    public Map<String, Object> discoverLocalMetadata() {
+        if (memberMetadata.isEmpty()) {
+            memberMetadata.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, aws.getAvailabilityZone());
+        }
+        return memberMetadata;
     }
 
     private void reviewConfiguration(AwsConfig config) {
