@@ -99,6 +99,7 @@ import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.diagnostics.BuildInfoPlugin;
 import com.hazelcast.internal.diagnostics.ConfigPropertiesPlugin;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.diagnostics.MetricsPlugin;
@@ -418,6 +419,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         }
 
         diagnostics.start();
+        diagnostics.register(
+                new BuildInfoPlugin(loggingService.getLogger(BuildInfoPlugin.class)));
         diagnostics.register(
                 new ConfigPropertiesPlugin(loggingService.getLogger(ConfigPropertiesPlugin.class), properties));
         diagnostics.register(
