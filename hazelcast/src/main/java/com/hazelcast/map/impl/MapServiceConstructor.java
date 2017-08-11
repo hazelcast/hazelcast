@@ -30,7 +30,7 @@ public final class MapServiceConstructor {
         public MapService createNew(NodeEngine nodeEngine) {
             MapServiceContext defaultMapServiceContext = new MapServiceContextImpl(nodeEngine);
             MapServiceFactory factory
-                    = new DefaultMapServiceFactory(defaultMapServiceContext);
+                    = new DefaultMapServiceFactory(nodeEngine, defaultMapServiceContext);
             return factory.createMapService();
         }
     };

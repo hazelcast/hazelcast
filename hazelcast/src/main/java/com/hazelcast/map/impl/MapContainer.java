@@ -37,6 +37,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.IndexInfo;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -54,6 +55,8 @@ import com.hazelcast.wan.WanReplicationService;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -82,6 +85,17 @@ public class MapContainer {
     // On-heap indexes are global, meaning there is only one index per map, stored in the mapContainer.
     // If globalIndexes is null it means that global index is not in use.
     protected final Indexes globalIndexes;
+
+    // RU_COMPAT_38
+    /**
+     * Definitions of indexes that need to be added on partition threads
+     *
+     * @see MapIndexSynchronizer
+     * @see com.hazelcast.map.impl.operation.SynchronizeIndexesForPartitionTask
+     * @see com.hazelcast.map.impl.operation.PostJoinMapOperation
+     * @see com.hazelcast.map.impl.operation.MapReplicationStateHolder
+     */
+    protected final Set<IndexInfo> indexesToAdd = new ConcurrentSkipListSet<IndexInfo>();
 
     /**
      * Holds number of registered {@link InvalidationListener} from clients.
@@ -321,6 +335,7 @@ public class MapContainer {
 
     // callback called when the MapContainer is de-registered from MapService and destroyed - basically on map-destroy
     public void onDestroy() {
+        indexesToAdd.clear();
     }
 
     public boolean shouldCloneOnEntryProcessing(int partitionId) {
@@ -345,6 +360,18 @@ public class MapContainer {
             }
         }
         return definitions;
+    }
+
+    public void addIndexToAdd(IndexInfo indexInfo) {
+        indexesToAdd.add(indexInfo);
+    }
+
+    public Set<IndexInfo> getIndexesToAdd() {
+        return indexesToAdd;
+    }
+
+    public void clearIndexesToAdd() {
+        indexesToAdd.clear();
     }
 
     @SerializableByConvention

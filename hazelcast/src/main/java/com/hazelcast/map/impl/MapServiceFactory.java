@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.spi.NodeEngine;
+
 /**
  * Factory which is used to create a {@link MapService} object
  * and also aware of its {@link MapServiceContext}.
@@ -24,6 +26,13 @@ package com.hazelcast.map.impl;
  * @see MapService
  */
 public interface MapServiceFactory {
+
+    /**
+     * Returns a {@link NodeEngine} implementation.
+     *
+     * @return {@link NodeEngine} implementation
+     */
+    NodeEngine getNodeEngine();
 
     /**
      * Returns a {@link MapServiceContext} implementation.

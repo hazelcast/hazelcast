@@ -148,6 +148,8 @@ import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.IndexInfo;
+import com.hazelcast.query.impl.MapIndexInfo;
 import com.hazelcast.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MAP_DS_FACTORY;
@@ -791,12 +793,12 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         };
         constructors[INDEX_INFO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PostJoinMapOperation.MapIndexInfo.IndexInfo();
+                return new IndexInfo();
             }
         };
         constructors[MAP_INDEX_INFO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PostJoinMapOperation.MapIndexInfo();
+                return new MapIndexInfo();
             }
         };
         constructors[INTERCEPTOR_INFO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
