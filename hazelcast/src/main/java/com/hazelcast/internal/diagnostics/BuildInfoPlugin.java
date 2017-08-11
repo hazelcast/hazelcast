@@ -19,6 +19,7 @@ package com.hazelcast.internal.diagnostics;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.JetBuildInfo;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 /**
@@ -29,7 +30,11 @@ public class BuildInfoPlugin extends DiagnosticsPlugin {
     private final BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
 
     public BuildInfoPlugin(NodeEngineImpl nodeEngine) {
-        super(nodeEngine.getLogger(BuildInfoPlugin.class));
+        this(nodeEngine.getLogger(BuildInfoPlugin.class));
+    }
+
+    public BuildInfoPlugin(ILogger logger) {
+        super(logger);
     }
 
     @Override
