@@ -38,7 +38,7 @@ public final class BigIntegerSumAggregator<I> extends AbstractAggregator<I, BigI
     }
 
     @Override
-    public void accumulateExtracted(BigInteger value) {
+    public void accumulateExtracted(I entry, BigInteger value) {
         sum = sum.add(value);
     }
 

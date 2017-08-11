@@ -37,7 +37,7 @@ public final class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, 
     }
 
     @Override
-    public void accumulateExtracted(R value) {
+    public void accumulateExtracted(I entry, R value) {
         values.add(value);
     }
 

@@ -71,10 +71,10 @@ public abstract class AbstractAggregator<I, E, R> extends Aggregator<I, R> {
                     nullEmptyTargetSkipped = true;
                     continue;
                 }
-                accumulateExtracted(results.get(i));
+                accumulateExtracted(entry, results.get(i));
             }
         } else {
-            accumulateExtracted(extractedValue);
+            accumulateExtracted(entry, extractedValue);
         }
     }
 
@@ -97,10 +97,10 @@ public abstract class AbstractAggregator<I, E, R> extends Aggregator<I, R> {
      * Accumulates a single extracted value.
      * This method may be called multiple times per accumulated entry if the attributePath contains [any] operator.
      *
+     * @param entry The entry containing the value.
      * @param value If attributePath is not null the methods accumulates the value extracted from the attributePath.
      *              If attributePath is null and the input object is a Map.Entry the method accumulates Map.Entry.getValue().
-     *              Otherwise the method accumulates the input value as-is.
      */
-    protected abstract void accumulateExtracted(E value);
+    protected abstract void accumulateExtracted(I entry, E value);
 
 }

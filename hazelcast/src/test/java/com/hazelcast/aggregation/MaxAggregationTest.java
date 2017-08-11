@@ -308,4 +308,24 @@ public class MaxAggregationTest {
 
         assertThat(result, is(equalTo(expectation)));
     }
+
+    @Test(timeout = 60*TimeoutInMillis.MINUTE)
+    public void testMaxBy_withAttributePath_withNull() {
+        List<ValueContainer> values = sampleValueContainers(STRING);
+        Collections.sort(values);
+        Map.Entry<ValueContainer, ValueContainer> expectation = createExtractableEntryWithValue(values.get(values.size() - 1));
+        values.add(null);
+
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Map.Entry<ValueContainer, ValueContainer>> aggregation = Aggregators.maxBy("stringValue");
+        for (ValueContainer value : values) {
+            aggregation.accumulate(createExtractableEntryWithValue(value));
+        }
+
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Map.Entry<ValueContainer, ValueContainer>> resultAggregation = Aggregators.maxBy("stringValue");
+        resultAggregation.combine(aggregation);
+        Map.Entry<ValueContainer, ValueContainer> result = resultAggregation.aggregate();
+
+        assertThat(result, is(equalTo(expectation)));
+    }
+
 }

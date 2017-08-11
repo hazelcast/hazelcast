@@ -39,7 +39,7 @@ public final class NumberAverageAggregator<I> extends AbstractAggregator<I, Numb
     }
 
     @Override
-    public void accumulateExtracted(Number value) {
+    public void accumulateExtracted(I entry, Number value) {
         count++;
         sum += value.doubleValue();
     }

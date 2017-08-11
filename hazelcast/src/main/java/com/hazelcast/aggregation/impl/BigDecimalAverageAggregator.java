@@ -39,7 +39,7 @@ public final class BigDecimalAverageAggregator<I> extends AbstractAggregator<I, 
     }
 
     @Override
-    protected void accumulateExtracted(BigDecimal value) {
+    protected void accumulateExtracted(I entry, BigDecimal value) {
         count++;
         sum = sum.add(value);
     }

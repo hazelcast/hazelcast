@@ -245,5 +245,34 @@ final class TestSamples {
         void setSerializationService(InternalSerializationService serializationService) {
             this.serializationService = serializationService;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            ExtractableEntry<?, ?> that = (ExtractableEntry<?, ?>) o;
+
+            if (key != null ? !key.equals(that.key) : that.key != null) {
+                return false;
+            }
+            return value != null ? value.equals(that.value) : that.value == null;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = key != null ? key.hashCode() : 0;
+            result = 31 * result + (value != null ? value.hashCode() : 0);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "ExtractableEntry{key=" + key + ", value=" + value + '}';
+        }
     }
 }

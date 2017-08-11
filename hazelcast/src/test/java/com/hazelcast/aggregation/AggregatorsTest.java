@@ -42,7 +42,6 @@ import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -156,7 +155,7 @@ public class AggregatorsTest extends HazelcastTestSupport {
         }
 
         @Override
-        protected void accumulateExtracted(Long value) {
+        protected void accumulateExtracted(Map.Entry<Integer, Car> entry, Long value) {
             accumulated.add(value);
         }
 

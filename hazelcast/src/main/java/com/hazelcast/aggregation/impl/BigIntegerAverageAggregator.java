@@ -40,7 +40,7 @@ public final class BigIntegerAverageAggregator<I> extends AbstractAggregator<I, 
     }
 
     @Override
-    public void accumulateExtracted(BigInteger value) {
+    public void accumulateExtracted(I entry, BigInteger value) {
         count++;
         sum = sum.add(value);
     }
