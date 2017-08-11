@@ -1771,6 +1771,18 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertPermissionConfig(expected, config);
     }
 
+    @Test(expected = InvalidConfigurationException.class)
+    public void testCacheConfig_withInvalidEvictionConfig_failsFast() {
+        String xml = HAZELCAST_START_TAG
+                + "    <cache name=\"cache\">"
+                + "        <eviction size=\"10000000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\"/>"
+                + "        <in-memory-format>NATIVE</in-memory-format>\n"
+                + "    </cache>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+    }
+
     private void assertPermissionConfig(PermissionConfig expected, Config config) {
         Iterator<PermissionConfig> permConfigs = config.getSecurityConfig().getClientPermissionConfigs().iterator();
         PermissionConfig configured = permConfigs.next();

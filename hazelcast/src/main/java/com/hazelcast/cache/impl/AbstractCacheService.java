@@ -64,7 +64,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
-import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.cache.impl.CacheProxyUtil.validateCacheConfig;
 import static com.hazelcast.internal.cluster.Versions.V3_9;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
@@ -197,43 +197,19 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
                     String cacheName = fullCacheName.substring(HazelcastCacheManager.CACHE_MANAGER_PREFIX.length());
                     // Lookup prefixed cache name in the config.
                     cacheConfig = findCacheConfig(cacheName);
-                    checkCacheSimpleConfig(cacheName, cacheConfig);
+                    if (cacheConfig == null) {
+                        throw new CacheNotExistsException("Couldn't find cache config with name " + fullCacheName);
+                    }
                     cacheConfig.setManagerPrefix(HazelcastCacheManager.CACHE_MANAGER_PREFIX);
                 }
 
-                checkCacheConfig(fullCacheName, cacheConfig);
+                validateCacheConfig(cacheConfig);
                 putCacheConfigIfAbsent(cacheConfig);
 
                 return new CacheProxy(cacheConfig, nodeEngine, this);
             }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
-        }
-    }
-
-    protected boolean isNativeInMemoryFormatSupported() {
-        return false;
-    }
-
-    protected void checkCacheSimpleConfig(String cacheName, CacheConfig cacheConfig) {
-        if (cacheConfig == null) {
-            throw new CacheNotExistsException("Couldn't find cache config with name " + cacheName);
-        }
-
-        if (NATIVE == cacheConfig.getInMemoryFormat() && !isNativeInMemoryFormatSupported()) {
-            throw new IllegalArgumentException("NATIVE storage format is supported in Hazelcast Enterprise only. "
-                    + "Make sure you have Hazelcast Enterprise JARs on your classpath!");
-        }
-    }
-
-    protected void checkCacheConfig(String cacheName, CacheConfig cacheConfig) {
-        if (cacheConfig == null) {
-            throw new CacheNotExistsException("Couldn't find cache config with name " + cacheName);
-        }
-
-        if (NATIVE == cacheConfig.getInMemoryFormat() && !isNativeInMemoryFormatSupported()) {
-            throw new IllegalArgumentException("NATIVE storage format is supported in Hazelcast Enterprise only. "
-                    + "Make sure you have Hazelcast Enterprise JARs on your classpath!");
         }
     }
 
