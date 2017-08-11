@@ -52,6 +52,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
@@ -82,7 +83,7 @@ abstract class AbstractInternalCacheProxy<K, V>
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
     private final ConcurrentMap<Integer, CountDownLatch> syncLocks;
 
-    private HazelcastServerCacheManager cacheManager;
+    private AtomicReference<HazelcastServerCacheManager> cacheManagerRef = new AtomicReference<HazelcastServerCacheManager>();
 
     AbstractInternalCacheProxy(CacheConfig<K, V> cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
@@ -104,18 +105,25 @@ abstract class AbstractInternalCacheProxy<K, V>
 
     @Override
     public CacheManager getCacheManager() {
-        return cacheManager;
+        return cacheManagerRef.get();
     }
 
     @Override
     public void setCacheManager(HazelcastCacheManager cacheManager) {
         assert cacheManager instanceof HazelcastServerCacheManager;
 
-        this.cacheManager = (HazelcastServerCacheManager) cacheManager;
+        if (cacheManagerRef.get() == cacheManager) {
+            return;
+        }
+
+        if (!this.cacheManagerRef.compareAndSet(null, (HazelcastServerCacheManager) cacheManager)) {
+            throw new IllegalStateException("Cannot overwrite a Cache's CacheManager.");
+        }
     }
 
     @Override
     protected void postDestroy() {
+        CacheManager cacheManager = cacheManagerRef.get();
         if (cacheManager != null) {
             cacheManager.destroyCache(getName());
         }

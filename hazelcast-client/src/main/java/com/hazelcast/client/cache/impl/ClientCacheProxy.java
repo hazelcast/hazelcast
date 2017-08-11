@@ -366,7 +366,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
 
     @Override
     public CacheManager getCacheManager() {
-        return cacheManager;
+        return cacheManagerRef.get();
     }
 
     @Override

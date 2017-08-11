@@ -23,10 +23,12 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.SampleableConcurrentHashMap;
 import org.junit.Test;
 
 import javax.cache.Cache;
+import javax.cache.CacheManager;
 import javax.cache.configuration.FactoryBuilder;
 import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
 import javax.cache.configuration.MutableConfiguration;
@@ -39,6 +41,7 @@ import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 import javax.cache.processor.MutableEntry;
 import java.io.Serializable;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -48,6 +51,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -55,8 +59,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.logging.Logger.getLogger;
+import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -888,4 +895,88 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         assertNotNull(cache.get(1));
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void cacheManagerOfCache_cannotBeOverwritten() throws Exception {
+        Properties properties = HazelcastCachingProvider.propertiesByInstanceItself(getHazelcastInstance());
+        CacheManager cacheManagerFooURI = cachingProvider.getCacheManager(new URI("foo"), null, properties);
+        CacheManager cacheManagerFooClassLoader = cachingProvider.getCacheManager(null,
+                new MaliciousClassLoader(CacheBasicAbstractTest.class.getClassLoader()), properties);
+        CacheConfig cacheConfig = new CacheConfig("the-cache");
+        Cache cache1 = cacheManagerFooURI.createCache("the-cache", cacheConfig);
+        // cache1.cacheManager is cacheManagerFooURI
+        assertEquals(cacheManagerFooURI, cache1.getCacheManager());
+
+        // assert one can still get the cache
+        Cache cache2 = cacheManagerFooURI.getCache("the-cache");
+        assertEquals(cache1, cache2);
+
+        // attempt to overwrite existing cache1's CacheManager -> fails with IllegalStateException
+        Cache cache3 = cacheManagerFooClassLoader.getCache("the-cache");
+    }
+
+    @Test
+    public void cacheManagerOfCache_cannotBeOverwrittenConcurrently() throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicInteger illegalStateExceptionCount = new AtomicInteger();
+
+        Properties properties = HazelcastCachingProvider.propertiesByInstanceItself(getHazelcastInstance());
+        final CacheManager cacheManagerFooURI = cachingProvider.getCacheManager(new URI("foo"), null, properties);
+        final CacheManager cacheManagerFooClassLoader = cachingProvider.getCacheManager(null,
+                new MaliciousClassLoader(CacheBasicAbstractTest.class.getClassLoader()), properties);
+        Future createCacheFromFooURI = spawn(new Runnable() {
+            @Override
+            public void run() {
+                createCacheConcurrently(latch, cacheManagerFooURI, illegalStateExceptionCount);
+            }
+        });
+
+        Future createCacheFromFooClassLoader = spawn(new Runnable() {
+            @Override
+            public void run() {
+                createCacheConcurrently(latch, cacheManagerFooClassLoader, illegalStateExceptionCount);
+            }
+        });
+
+        latch.countDown();
+
+        try {
+            createCacheFromFooURI.get();
+            createCacheFromFooClassLoader.get();
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (!(cause instanceof IllegalStateException)) {
+                getLogger(CacheBasicAbstractTest.class).severe("Unexpected exception", cause);
+                throw new AssertionError(format("Unexpected exception thrown: %s", cause.getMessage()));
+            }
+        }
+
+        // one of two failed
+        assertEquals(1, illegalStateExceptionCount.get());
+    }
+
+    private Cache createCacheConcurrently(CountDownLatch latch, CacheManager cacheManager,
+                                          AtomicInteger illegalStateExceptionCount) {
+        try {
+            latch.await();
+            CacheConfig cacheConfig = new CacheConfig("the-cache");
+            return cacheManager.createCache("the-cache", cacheConfig);
+        } catch (IllegalStateException e) {
+            illegalStateExceptionCount.incrementAndGet();
+            throw ExceptionUtil.rethrow(e);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    public static class MaliciousClassLoader extends ClassLoader {
+
+        public MaliciousClassLoader(ClassLoader parent) {
+            super(parent);
+        }
+
+        @Override
+        public String toString() {
+            return "foo";
+        }
+    }
 }
