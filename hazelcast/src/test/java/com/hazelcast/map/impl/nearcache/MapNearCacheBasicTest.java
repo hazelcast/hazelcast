@@ -98,16 +98,21 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
     }
 
     @Override
-    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean loaderEnabled) {
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(int size, boolean loaderEnabled) {
         IMapMapStore mapStore = loaderEnabled ? new IMapMapStore() : null;
         Config configWithNearCache = createConfig(mapStore, true);
         Config config = createConfig(mapStore, false);
 
-        HazelcastInstance nearCacheInstance = hazelcastFactory.newHazelcastInstance(configWithNearCache);
         HazelcastInstance dataInstance = hazelcastFactory.newHazelcastInstance(config);
-
-        IMap<K, V> nearCacheMap = nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
         IMap<K, V> dataMap = dataInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
+        IMapDataStructureAdapter<K, V> dataAdapter = new IMapDataStructureAdapter<K, V>(dataMap);
+
+        // wait until the initial load is done
+        dataAdapter.waitUntilLoaded();
+        populateDataAdapter(dataAdapter, size);
+
+        HazelcastInstance nearCacheInstance = hazelcastFactory.newHazelcastInstance(configWithNearCache);
+        IMap<K, V> nearCacheMap = nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
 
         NearCacheManager nearCacheManager = getMapNearCacheManager(nearCacheInstance);
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
@@ -116,7 +121,7 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
                 .setNearCacheInstance(nearCacheInstance)
                 .setDataInstance(dataInstance)
                 .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(nearCacheMap))
-                .setDataAdapter(new IMapDataStructureAdapter<K, V>(dataMap))
+                .setDataAdapter(dataAdapter)
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
                 .setLoader(mapStore)

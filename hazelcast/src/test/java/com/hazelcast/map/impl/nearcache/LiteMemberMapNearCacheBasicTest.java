@@ -95,15 +95,20 @@ public class LiteMemberMapNearCacheBasicTest extends AbstractNearCacheBasicTest<
     }
 
     @Override
-    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean loaderEnabled) {
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(int size, boolean loaderEnabled) {
         IMapMapStore mapStore = loaderEnabled ? new IMapMapStore() : null;
         Config config = createConfig(mapStore, false);
         Config liteMemberConfig = createConfig(mapStore, true);
 
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
-        HazelcastInstance liteMember = hazelcastFactory.newHazelcastInstance(liteMemberConfig);
-
         IMap<K, V> memberMap = member.getMap(DEFAULT_NEAR_CACHE_NAME);
+        IMapDataStructureAdapter<K, V> dataAdapter = new IMapDataStructureAdapter<K, V>(memberMap);
+
+        // wait until the initial load is done
+        dataAdapter.waitUntilLoaded();
+        populateDataAdapter(dataAdapter, size);
+
+        HazelcastInstance liteMember = hazelcastFactory.newHazelcastInstance(liteMemberConfig);
         IMap<K, V> liteMemberMap = liteMember.getMap(DEFAULT_NEAR_CACHE_NAME);
 
         NearCacheManager nearCacheManager = getMapNearCacheManager(liteMember);
@@ -113,7 +118,7 @@ public class LiteMemberMapNearCacheBasicTest extends AbstractNearCacheBasicTest<
                 .setNearCacheInstance(liteMember)
                 .setDataInstance(member)
                 .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(liteMemberMap))
-                .setDataAdapter(new IMapDataStructureAdapter<K, V>(memberMap))
+                .setDataAdapter(dataAdapter)
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
                 .setLoader(mapStore)

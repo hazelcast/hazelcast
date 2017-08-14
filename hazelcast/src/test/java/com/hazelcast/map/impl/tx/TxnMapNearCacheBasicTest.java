@@ -101,13 +101,17 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     }
 
     @Override
-    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean loaderEnabled) {
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(int size, boolean loaderEnabled) {
         Config configWithNearCache = createConfig(true);
         Config config = createConfig(false);
 
-        HazelcastInstance nearCacheInstance = hazelcastFactory.newHazelcastInstance(configWithNearCache);
         HazelcastInstance dataInstance = hazelcastFactory.newHazelcastInstance(config);
+        TransactionalMapDataStructureAdapter<K, V> dataAdapter
+                = new TransactionalMapDataStructureAdapter<K, V>(dataInstance, DEFAULT_NEAR_CACHE_NAME);
 
+        populateDataAdapter(dataAdapter, size);
+
+        HazelcastInstance nearCacheInstance = hazelcastFactory.newHazelcastInstance(configWithNearCache);
         // this creates the Near Cache instance
         IMap<K, V> nearCacheMap = nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
 
@@ -118,7 +122,7 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
                 .setNearCacheInstance(nearCacheInstance)
                 .setDataInstance(dataInstance)
                 .setNearCacheAdapter(new TransactionalMapDataStructureAdapter<K, V>(nearCacheInstance, DEFAULT_NEAR_CACHE_NAME))
-                .setDataAdapter(new TransactionalMapDataStructureAdapter<K, V>(dataInstance, DEFAULT_NEAR_CACHE_NAME))
+                .setDataAdapter(dataAdapter)
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
                 .setInvalidationListener(createInvalidationEventHandler(nearCacheMap))
@@ -144,7 +148,6 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
         NearCacheTestContext<Integer, String, Data, String> context = createContext();
 
         // populate the data structure
-        populateDataAdapter(context);
         assertNearCacheSize(context, 0);
         assertNearCacheStats(context, 0, 0, 0);
 

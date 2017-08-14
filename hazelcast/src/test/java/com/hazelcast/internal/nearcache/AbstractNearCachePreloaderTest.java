@@ -105,20 +105,24 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     /**
      * Creates the {@link NearCacheTestContext} used by the Near Cache tests.
      *
-     * @param <K> key type of the created {@link com.hazelcast.internal.adapter.DataStructureAdapter}
-     * @param <V> value type of the created {@link com.hazelcast.internal.adapter.DataStructureAdapter}
+     * @param <K>                     key type of the created {@link DataStructureAdapter}
+     * @param <V>                     value type of the created {@link DataStructureAdapter}
+     * @param createNearCacheInstance determines if a Near Cache instance should be created
+     * @param keyCount                determines the size the backing {@link DataStructureAdapter} should be populated with
+     * @param keyType                 determines the {@link KeyType} of the created keys
      * @return a {@link NearCacheTestContext} used by the Near Cache tests
      */
-    protected abstract <K, V> NearCacheTestContext<K, V, NK, NV> createContext(boolean createClient);
+    protected abstract <K, V> NearCacheTestContext<K, V, NK, NV> createContext(boolean createNearCacheInstance, int keyCount,
+                                                                               KeyType keyType);
 
     /**
-     * Creates the {@link NearCacheTestContext} with only a client used by the Near Cache tests.
+     * Creates the {@link NearCacheTestContext} with only a Near Cache instance used by the Near Cache tests.
      *
      * @param <K> key type of the created {@link com.hazelcast.internal.adapter.DataStructureAdapter}
      * @param <V> value type of the created {@link com.hazelcast.internal.adapter.DataStructureAdapter}
      * @return a {@link NearCacheTestContext} with only a client used by the Near Cache tests
      */
-    protected abstract <K, V> NearCacheTestContext<K, V, NK, NV> createClientContext();
+    protected abstract <K, V> NearCacheTestContext<K, V, NK, NV> createNearCacheContext();
 
     /**
      * Returns the default store file used for the current implementation (IMap or JCache)
@@ -161,7 +165,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
                 .setStoreInitialDelaySeconds(3)
                 .setStoreIntervalSeconds(1);
 
-        NearCacheTestContext<Object, String, NK, NV> context = createContext(true);
+        NearCacheTestContext<Object, String, NK, NV> context = createContext(true, keyCount, keyType);
 
         populateNearCache(context, keyCount, keyType);
         waitForNearCachePersistence(context, 1);
@@ -171,7 +175,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         context.nearCacheInstance.shutdown();
 
         // start a new client which will kick off the Near Cache pre-loader
-        NearCacheTestContext<Object, String, NK, NV> clientContext = createClientContext();
+        NearCacheTestContext<Object, String, NK, NV> clientContext = createNearCacheContext();
 
         // wait until the pre-loading is done, then check for the Near Cache size
         assertNearCachePreloadDoneEventually(clientContext);
@@ -192,7 +196,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         expectedException.expectMessage("Cannot create lock file " + lockFile.getAbsolutePath());
         expectedException.expect(HazelcastException.class);
 
-        createContext(true);
+        createContext(true, 0, null);
     }
 
     @Test(timeout = TEST_TIMEOUT)
@@ -218,7 +222,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
                 .setStoreInitialDelaySeconds(2)
                 .setStoreIntervalSeconds(1);
 
-        NearCacheTestContext<Object, String, NK, NV> context = createContext(true);
+        NearCacheTestContext<Object, String, NK, NV> context = createContext(true, keyCount, keyType);
 
         populateNearCache(context, keyCount, keyType);
         waitForNearCachePersistence(context, 3);
@@ -233,7 +237,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
                 .setStoreIntervalSeconds(1);
 
         // the first client creates the lock file and holds the lock on it
-        NearCacheTestContext<Object, String, NK, NV> context = createContext(true);
+        NearCacheTestContext<Object, String, NK, NV> context = createContext(true, KEY_COUNT, INTEGER);
 
         // assure that the pre-loader is working on the first client
         populateNearCache(context, KEY_COUNT, INTEGER);
@@ -243,7 +247,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         // the second client cannot acquire the lock, so it fails with an exception
         expectedException.expectMessage("Cannot acquire lock on " + getStoreFile());
         expectedException.expect(HazelcastException.class);
-        createClientContext();
+        createNearCacheContext();
     }
 
     @Test
@@ -280,7 +284,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         nearCacheConfig
                 .setName("defaultNearCache")
                 .getPreloaderConfig().setDirectory(preloaderDir.getAbsolutePath());
-        NearCacheTestContext<Object, String, NK, NV> context = createContext(false);
+        NearCacheTestContext<Object, String, NK, NV> context = createContext(false, keyCount, keyType);
 
         // populate the member side data structure, so we have the values to populate the client side Near Cache
         for (int i = 0; i < keyCount; i++) {
@@ -290,7 +294,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         assertNearCacheInvalidations(context, keyCount);
 
         // start the client which will kick off the Near Cache pre-loader
-        NearCacheTestContext<Object, String, NK, NV> clientContext = createClientContext();
+        NearCacheTestContext<Object, String, NK, NV> clientContext = createNearCacheContext();
 
         // wait until the pre-loading is done, then check for the Near Cache size
         assertNearCachePreloadDoneEventually(clientContext);
@@ -303,7 +307,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         nearCacheConfig.getPreloaderConfig().setDirectory("");
 
         ThreadPoolExecutor pool = (ThreadPoolExecutor) newFixedThreadPool(THREAD_COUNT);
-        final NearCacheTestContext<String, String, NK, NV> context = createContext(true);
+        final NearCacheTestContext<String, String, NK, NV> context = createContext(true, 0, null);
         final CountDownLatch startLatch = new CountDownLatch(THREAD_COUNT);
         final CountDownLatch finishLatch = new CountDownLatch(THREAD_COUNT);
         for (int i = 0; i < THREAD_COUNT; i++) {
@@ -333,8 +337,8 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         pool.shutdownNow();
     }
 
-    protected NearCacheConfig getNearCacheConfig(InMemoryFormat inMemoryFormat, boolean serializeKeys,
-                                                 boolean invalidationOnChange, int maxSize, String preloaderDir) {
+    protected final NearCacheConfig getNearCacheConfig(InMemoryFormat inMemoryFormat, boolean serializeKeys,
+                                                       boolean invalidationOnChange, int maxSize, String preloaderDir) {
         EvictionConfig evictionConfig = new EvictionConfig()
                 .setMaximumSizePolicy(MaxSizePolicy.ENTRY_COUNT)
                 .setSize(maxSize)
@@ -354,12 +358,19 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         return nearCacheConfig;
     }
 
-    private void populateNearCache(NearCacheTestContext<Object, String, NK, NV> context, int keyCount, KeyType keyType) {
-        for (int i = 0; i < keyCount; i++) {
-            Object key = createKey(keyType, i);
-            context.dataAdapter.put(key, "value-" + i);
+    @SuppressWarnings("unchecked")
+    protected static void populateDataAdapter(DataStructureAdapter<?, ?> dataAdapter, int size, KeyType keyType) {
+        if (size < 1) {
+            return;
         }
-        assertNearCacheInvalidations(context, keyCount);
+        DataStructureAdapter<Object, String> adapter = (DataStructureAdapter<Object, String>) dataAdapter;
+        for (int i = 0; i < size; i++) {
+            Object key = createKey(keyType, i);
+            adapter.put(key, "value-" + i);
+        }
+    }
+
+    private static void populateNearCache(NearCacheTestContext<Object, String, ?, ?> context, int keyCount, KeyType keyType) {
         for (int i = 0; i < keyCount; i++) {
             Object key = createKey(keyType, i);
             context.nearCacheAdapter.get(key);
