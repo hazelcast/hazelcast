@@ -21,12 +21,14 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
 
+import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K, V> {
@@ -60,6 +62,32 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     @Override
     public V put(K key, V value) {
         return cache.getAndPut(key, value);
+    }
+
+    @Override
+    public ICompletableFuture<V> putAsync(K key, V value) {
+        return cache.getAndPutAsync(key, value);
+    }
+
+    @Override
+    @MethodNotAvailable
+    public ICompletableFuture<V> putAsync(K key, V value, long time, TimeUnit unit) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    public ICompletableFuture<V> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return cache.getAndPutAsync(key, value, expiryPolicy);
+    }
+
+    @Override
+    public ICompletableFuture<Void> putAsyncVoid(K key, V value) {
+        return cache.putAsync(key, value);
+    }
+
+    @Override
+    public ICompletableFuture<Void> putAsyncVoid(K key, V value, ExpiryPolicy expiryPolicy) {
+        return cache.putAsync(key, value, expiryPolicy);
     }
 
     @Override
