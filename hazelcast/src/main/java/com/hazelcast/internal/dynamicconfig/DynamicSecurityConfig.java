@@ -36,12 +36,12 @@ import java.util.Set;
  */
 public class DynamicSecurityConfig extends SecurityConfig {
 
-    private final SecurityConfig securityConfig;
+    private final SecurityConfig staticSecurityConfig;
 
     private final SecurityService securityService;
 
-    public DynamicSecurityConfig(SecurityConfig securityConfig, SecurityService securityService) {
-        this.securityConfig = securityConfig;
+    public DynamicSecurityConfig(SecurityConfig staticSecurityConfig, SecurityService securityService) {
+        this.staticSecurityConfig = staticSecurityConfig;
         this.securityService = securityService;
     }
 
@@ -52,7 +52,7 @@ public class DynamicSecurityConfig extends SecurityConfig {
 
     @Override
     public List<SecurityInterceptorConfig> getSecurityInterceptorConfigs() {
-        return securityConfig.getSecurityInterceptorConfigs();
+        return staticSecurityConfig.getSecurityInterceptorConfigs();
     }
 
     @Override
@@ -62,7 +62,7 @@ public class DynamicSecurityConfig extends SecurityConfig {
 
     @Override
     public boolean isEnabled() {
-        return securityConfig.isEnabled();
+        return staticSecurityConfig.isEnabled();
     }
 
     @Override
@@ -87,7 +87,7 @@ public class DynamicSecurityConfig extends SecurityConfig {
 
     @Override
     public List<LoginModuleConfig> getClientLoginModuleConfigs() {
-        return securityConfig.getClientLoginModuleConfigs();
+        return staticSecurityConfig.getClientLoginModuleConfigs();
     }
 
     @Override
@@ -97,7 +97,7 @@ public class DynamicSecurityConfig extends SecurityConfig {
 
     @Override
     public List<LoginModuleConfig> getMemberLoginModuleConfigs() {
-        return securityConfig.getMemberLoginModuleConfigs();
+        return staticSecurityConfig.getMemberLoginModuleConfigs();
     }
 
     @Override
@@ -107,7 +107,7 @@ public class DynamicSecurityConfig extends SecurityConfig {
 
     @Override
     public PermissionPolicyConfig getClientPolicyConfig() {
-        return securityConfig.getClientPolicyConfig();
+        return staticSecurityConfig.getClientPolicyConfig();
     }
 
     @Override
@@ -121,7 +121,10 @@ public class DynamicSecurityConfig extends SecurityConfig {
      */
     @Override
     public Set<PermissionConfig> getClientPermissionConfigs() {
-        return Collections.unmodifiableSet(securityService.getClientPermissionConfigs());
+        Set<PermissionConfig> permissionConfigs = securityService != null
+                ? securityService.getClientPermissionConfigs()
+                : staticSecurityConfig.getClientPermissionConfigs();
+        return Collections.unmodifiableSet(permissionConfigs);
     }
 
     /**
@@ -129,14 +132,16 @@ public class DynamicSecurityConfig extends SecurityConfig {
      */
     @Override
     public SecurityConfig setClientPermissionConfigs(Set<PermissionConfig> permissions) {
+        if (securityService == null) {
+            throw new UnsupportedOperationException("Unsupported operation");
+        }
         securityService.refreshClientPermissions(permissions);
-        securityConfig.setClientPermissionConfigs(permissions);
-        return securityConfig;
+        return this;
     }
 
     @Override
     public CredentialsFactoryConfig getMemberCredentialsConfig() {
-        return securityConfig.getMemberCredentialsConfig();
+        return staticSecurityConfig.getMemberCredentialsConfig();
     }
 
     @Override
