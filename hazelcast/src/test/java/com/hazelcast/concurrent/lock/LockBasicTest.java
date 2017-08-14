@@ -322,7 +322,7 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
 
     @Test
     public void testLockLeaseTime_lockIsReleasedEventuallyWhenPartitionIsMigrating() {
-        final InternalPartitionService ps = getNode(instances[0]).nodeEngine.getPartitionService();
+        final InternalPartitionService ps = getNode(instances[instances.length-1]).nodeEngine.getPartitionService();
         final int partitionId = ps.getPartitionId(lock.getName());
         final InternalPartitionImpl partition = (InternalPartitionImpl) ps.getPartition(partitionId);
         final int leaseTime = 1000;
