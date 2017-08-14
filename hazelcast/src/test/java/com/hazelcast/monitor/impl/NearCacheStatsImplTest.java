@@ -69,6 +69,10 @@ public class NearCacheStatsImplTest extends HazelcastTestSupport {
         nearCacheStats.incrementExpirations();
         nearCacheStats.incrementExpirations();
 
+        nearCacheStats.incrementInvalidations();
+        nearCacheStats.incrementInvalidations();
+        nearCacheStats.addInvalidations(5);
+
         nearCacheStats.addPersistence(200, 300, 400);
     }
 
@@ -178,6 +182,7 @@ public class NearCacheStatsImplTest extends HazelcastTestSupport {
         assertEquals(305, stats.getMisses());
         assertEquals(4, stats.getEvictions());
         assertEquals(3, stats.getExpirations());
+        assertEquals(7, stats.getInvalidations());
         assertEquals(expectedPersistenceCount, stats.getPersistenceCount());
         assertTrue(stats.getLastPersistenceTime() > 0);
         assertEquals(expectedDuration, stats.getLastPersistenceDuration());

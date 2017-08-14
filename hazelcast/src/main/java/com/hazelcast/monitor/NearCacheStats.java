@@ -76,6 +76,13 @@ public interface NearCacheStats extends LocalInstanceStats {
     long getExpirations();
 
     /**
+     * Returns the number of invalidations of Near Cache entries owned by this member.
+     *
+     * @return number of invalidations of Near Cache entries owned by this member.
+     */
+    long getInvalidations();
+
+    /**
      * Returns the number of Near Cache key persistences (when the pre-load feature is enabled).
      *
      * @return the number of Near Cache key persistences

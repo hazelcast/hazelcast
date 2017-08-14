@@ -23,7 +23,6 @@ import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.ICacheCompletionListener;
 import com.hazelcast.internal.adapter.ICacheReplaceEntryProcessor;
 import com.hazelcast.internal.adapter.IMapReplaceEntryProcessor;
-import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -46,6 +45,8 @@ import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.EvictionPolicy.NONE;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheContent;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheEvictionsEventually;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheInvalidationEvents;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheInvalidationEventsBetween;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheInvalidations;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheInvalidationsBetween;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSize;
@@ -149,6 +150,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         for (int i = 0; i < size; i++) {
             context.dataAdapter.put(i, "value-" + i);
         }
+        assertNearCacheInvalidationEvents(context, size);
         assertNearCacheInvalidations(context, size);
     }
 
@@ -660,6 +662,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
             }
         }
 
+        assertNearCacheInvalidationEvents(context, DEFAULT_RECORD_COUNT);
         assertNearCacheInvalidations(context, DEFAULT_RECORD_COUNT);
         String message = format("Invalidation is not working on %s()", method.getMethodName());
         assertNearCacheSizeEventually(context, 0, message);
@@ -812,10 +815,13 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         }
 
         if (method == DataStructureMethods.EVICT_ALL) {
-            assertNearCacheInvalidations(context, 1);
+            assertNearCacheInvalidationEvents(context, 1);
         } else {
-            assertNearCacheInvalidationsBetween(context, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT * 2);
+            // TODO: check why this is not deterministic
+            assertNearCacheInvalidationEventsBetween(context, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT * 2);
         }
+        // TODO: check why this is not deterministic
+        assertNearCacheInvalidationsBetween(context, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT * 2);
         String message = format("Invalidation is not working on %s()", method.getMethodName());
         assertNearCacheSizeEventually(context, 0, message);
     }
@@ -981,22 +987,14 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
             adapter.destroy();
         }
 
-        if (method == DataStructureMethods.CLEAR) {
-            // the ReplicatedMap fires its own map cleared event instead of a Near Cache invalidation
-            if (!(adapter instanceof ReplicatedMapDataStructureAdapter)) {
-                // there should be a single invalidation with a null key
-                assertNearCacheInvalidations(context, 1);
-            }
-        } else if (method == DataStructureMethods.DESTROY) {
-            // the ReplicatedMap fires its own map cleared event instead of a Near Cache invalidation
-            if (!(adapter instanceof ReplicatedMapDataStructureAdapter)) {
-                // there can be 1 or 2 invalidations, depending on when the invalidation listener is de-registered
-                assertNearCacheInvalidationsBetween(context, 1, 2);
-            }
+        if (method == DataStructureMethods.CLEAR || method == DataStructureMethods.DESTROY) {
+            // TODO: check why this is not deterministic with members on DESTROY
+            assertNearCacheInvalidationEventsBetween(context, 1, 2);
         } else {
-            // there should be invalidations for each key
-            assertNearCacheInvalidations(context, DEFAULT_RECORD_COUNT);
+            assertNearCacheInvalidationEvents(context, DEFAULT_RECORD_COUNT);
         }
+        // TODO: check why this is not deterministic with members on DESTROY
+        assertNearCacheInvalidationsBetween(context, DEFAULT_RECORD_COUNT, DEFAULT_RECORD_COUNT * 2);
         String message = format("Invalidation is not working on %s()", method.getMethodName());
         assertNearCacheSizeEventually(context, 0, message);
     }
@@ -1038,7 +1036,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         assertFalse(context.nearCacheAdapter.containsKey(3));
         assertFalse(context.nearCacheAdapter.containsKey(4));
 
-        // remove a key which is in the Near Cache
+        // remove keys which are in the Near Cache
         DataStructureAdapter<Integer, String> adapter = useDataAdapter ? context.dataAdapter : context.nearCacheAdapter;
         adapter.remove(0);
         adapter.remove(2);
@@ -1203,6 +1201,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         // wait for the invalidation to be processed
         int expectedSize = isNearCacheDirectlyUpdated ? size : size - 1;
         assertNearCacheSizeEventually(context, expectedSize);
+        assertNearCacheInvalidationEvents(context, 1);
         assertNearCacheInvalidations(context, 1);
 
         long expectedHits = context.stats.getHits() + (isNearCacheDirectlyUpdated ? 2 : 1);

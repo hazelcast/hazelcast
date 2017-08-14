@@ -28,6 +28,7 @@ import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
 import com.hazelcast.internal.adapter.MethodAvailableMatcher;
 import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
+import com.hazelcast.internal.adapter.TransactionalMapDataStructureAdapter;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.internal.nearcache.impl.record.NearCacheDataRecord;
 import com.hazelcast.internal.nearcache.impl.record.NearCacheObjectRecord;
@@ -303,58 +304,120 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     }
 
     /**
-     * Asserts the number of Near Cache invalidations.
+     * Asserts the number of received Near Cache invalidation events.
      *
      * @param context          the given {@link NearCacheTestContext} to retrieve the {@link NearCacheInvalidationListener} from
+     * @param minInvalidations lower bound of Near Cache invalidation events to wait for
+     * @param maxInvalidations upper bound of Near Cache invalidation events to wait for
+     */
+    public static void assertNearCacheInvalidationEventsBetween(final NearCacheTestContext<?, ?, ?, ?> context,
+                                                                final int minInvalidations, final int maxInvalidations) {
+        // the ReplicatedMap fires its own map cleared event instead of a Near Cache invalidation
+        if (context.nearCacheAdapter instanceof ReplicatedMapDataStructureAdapter) {
+            return;
+        }
+        if (minInvalidations == 0) {
+            return;
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                long invalidationCount = context.invalidationListener.getInvalidationCount();
+                assertTrue(format("Expected between %d and %d Near Cache invalidation events, but found %d (%s)",
+                        minInvalidations, maxInvalidations, invalidationCount, context.stats),
+                        minInvalidations <= invalidationCount && invalidationCount <= maxInvalidations);
+            }
+        });
+        context.invalidationListener.resetInvalidationCount();
+    }
+
+    /**
+     * Asserts the number of received Near Cache invalidation events.
+     *
+     * @param context       the given {@link NearCacheTestContext} to retrieve the {@link NearCacheInvalidationListener} from
+     * @param invalidations the given number of Near Cache invalidation events to wait for
+     */
+    public static void assertNearCacheInvalidationEvents(final NearCacheTestContext<?, ?, ?, ?> context,
+                                                         final int invalidations) {
+        // the ReplicatedMap fires its own map cleared event instead of a Near Cache invalidation
+        if (context.nearCacheAdapter instanceof ReplicatedMapDataStructureAdapter) {
+            return;
+        }
+        if (invalidations == 0) {
+            return;
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEqualsFormat("Expected %d Near Cache invalidation events, but found %d (%s)",
+                        invalidations, context.invalidationListener.getInvalidationCount(), context.stats);
+            }
+        });
+        context.invalidationListener.resetInvalidationCount();
+    }
+
+    /**
+     * Asserts the number of invalidated Near Cache entries.
+     *
+     * @param context          the given {@link NearCacheTestContext} to retrieve the {@link NearCacheStats} from
      * @param minInvalidations lower bound of Near Cache invalidations to wait for
      * @param maxInvalidations upper bound of Near Cache invalidations to wait for
      */
     public static void assertNearCacheInvalidationsBetween(final NearCacheTestContext<?, ?, ?, ?> context,
                                                            final int minInvalidations, final int maxInvalidations) {
-        if (context.nearCacheConfig.isInvalidateOnChange() && context.invalidationListener != null && minInvalidations > 0) {
+        if (context.nearCacheConfig.isInvalidateOnChange() && minInvalidations > 0) {
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() throws Exception {
-                    long invalidationCount = context.invalidationListener.getInvalidationCount();
+                    long invalidationCount = context.stats.getInvalidations();
                     assertTrue(format("Expected between %d and %d Near Cache invalidations, but found %d (%s)",
                             minInvalidations, maxInvalidations, invalidationCount, context.stats),
                             minInvalidations <= invalidationCount && invalidationCount <= maxInvalidations);
                 }
             });
-            context.invalidationListener.resetInvalidationCount();
+            ((NearCacheStatsImpl) context.stats).resetInvalidations();
         }
     }
 
     /**
-     * Asserts the number of Near Cache invalidations.
+     * Asserts the number of invalidated Near Cache entries.
      *
-     * @param context       the given {@link NearCacheTestContext} to retrieve the {@link NearCacheInvalidationListener} from
+     * @param context       the given {@link NearCacheTestContext} to retrieve the {@link NearCacheStats} from
      * @param invalidations the given number of Near Cache invalidations to wait for
      */
     public static void assertNearCacheInvalidations(NearCacheTestContext<?, ?, ?, ?> context, int invalidations) {
-        if (context.nearCacheConfig.isInvalidateOnChange() && context.invalidationListener != null && invalidations > 0) {
-            assertNearCacheInvalidations(context.invalidationListener, invalidations, context.stats);
+        // the TransactionalMap doesn't populate the Near Cache in the first place, so no entries can be invalidated
+        if (context.nearCacheAdapter instanceof TransactionalMapDataStructureAdapter) {
+            return;
         }
+        if (!context.nearCacheConfig.isInvalidateOnChange()) {
+            return;
+        }
+        if (context.stats == null) {
+            return;
+        }
+        assertNearCacheInvalidations(context.stats, invalidations);
     }
 
     /**
-     * Asserts the number of Near Cache invalidations.
+     * Asserts the number of invalidated Near Cache entries.
      *
-     * @param listener      the given {@link NearCacheInvalidationListener}
-     * @param invalidations the given number of Near Cache invalidations to wait for
      * @param stats         the given {@link NearCacheStats} for the assert message
+     * @param invalidations the given number of Near Cache invalidations to wait for
      */
-    public static void assertNearCacheInvalidations(final NearCacheInvalidationListener listener, final int invalidations,
-                                                    final NearCacheStats stats) {
-        if (listener != null && invalidations > 0) {
+    public static void assertNearCacheInvalidations(final NearCacheStats stats, final int invalidations) {
+        if (invalidations > 0) {
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() throws Exception {
+                    System.out.println(stats);
                     assertEqualsFormat("Expected %d Near Cache invalidations, but found %d (%s)",
-                            invalidations, listener.getInvalidationCount(), stats);
+                            invalidations, stats.getInvalidations(), stats);
                 }
             });
-            listener.resetInvalidationCount();
+            ((NearCacheStatsImpl) stats).resetInvalidations();
         }
     }
 

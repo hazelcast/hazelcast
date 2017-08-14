@@ -135,6 +135,16 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     @Override
+    public boolean invalidate(K key) {
+        return nearCacheRecordStore.invalidate(key);
+    }
+
+    @Override
+    public void invalidateAll() {
+        nearCacheRecordStore.invalidateAll();
+    }
+
+    @Override
     public void clear() {
         nearCacheRecordStore.clear();
     }
