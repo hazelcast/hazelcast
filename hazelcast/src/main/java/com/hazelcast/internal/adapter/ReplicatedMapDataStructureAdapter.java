@@ -63,6 +63,24 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     }
 
     @Override
+    @MethodNotAvailable
+    public ICompletableFuture<Void> setAsync(K key, V value) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit timeunit) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public ICompletableFuture<Void> setAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
     public V put(K key, V value) {
         return map.put(key, value);
     }
@@ -82,18 +100,6 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
     @Override
     @MethodNotAvailable
     public ICompletableFuture<V> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        throw new MethodNotAvailableException();
-    }
-
-    @Override
-    @MethodNotAvailable
-    public ICompletableFuture<Void> putAsyncVoid(K key, V value) {
-        throw new MethodNotAvailableException();
-    }
-
-    @Override
-    @MethodNotAvailable
-    public ICompletableFuture<Void> putAsyncVoid(K key, V value, ExpiryPolicy expiryPolicy) {
         throw new MethodNotAvailableException();
     }
 

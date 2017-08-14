@@ -62,6 +62,22 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
+    public ICompletableFuture<Void> setAsync(K key, V value) {
+        return map.setAsync(key, value);
+    }
+
+    @Override
+    public ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit timeunit) {
+        return map.setAsync(key, value, ttl, timeunit);
+    }
+
+    @Override
+    @MethodNotAvailable
+    public ICompletableFuture<Void> setAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
     public V put(K key, V value) {
         return map.put(key, value);
     }
@@ -79,18 +95,6 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     @Override
     @MethodNotAvailable
     public ICompletableFuture<V> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        throw new MethodNotAvailableException();
-    }
-
-    @Override
-    @MethodNotAvailable
-    public ICompletableFuture<Void> putAsyncVoid(K key, V value) {
-        throw new MethodNotAvailableException();
-    }
-
-    @Override
-    @MethodNotAvailable
-    public ICompletableFuture<Void> putAsyncVoid(K key, V value, ExpiryPolicy expiryPolicy) {
         throw new MethodNotAvailableException();
     }
 

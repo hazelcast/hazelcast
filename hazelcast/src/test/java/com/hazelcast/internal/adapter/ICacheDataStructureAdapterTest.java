@@ -118,6 +118,35 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testSetAsync() throws Exception {
+        cache.put(42, "oldValue");
+
+        ICompletableFuture<Void> future = adapter.setAsync(42, "newValue");
+        Void oldValue = future.get();
+
+        assertNull(oldValue);
+        assertEquals("newValue", cache.get(42));
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testSetAsyncWithTtl() {
+        adapter.setAsync(42, "value", 1, TimeUnit.MILLISECONDS);
+    }
+
+    @Test
+    public void testSetAsyncWithExpiryPolicy() throws Exception {
+        ExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(1000, 1, 1, TimeUnit.MILLISECONDS);
+        adapter.setAsync(42, "value", expiryPolicy).get();
+        String value = cache.get(42);
+        if (value != null) {
+            assertEquals("value", value);
+
+            sleepMillis(1100);
+            assertNull(cache.get(42));
+        }
+    }
+
+    @Test
     public void testPut() {
         cache.put(42, "oldValue");
 
@@ -150,33 +179,15 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
         ExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(1000, 1, 1, TimeUnit.MILLISECONDS);
         ICompletableFuture<String> future = adapter.putAsync(42, "newValue", expiryPolicy);
         String oldValue = future.get();
+        String newValue = cache.get(42);
 
         assertEquals("oldValue", oldValue);
-        assertEquals("newValue", cache.get(42));
+        if (newValue != null) {
+            assertEquals("newValue", newValue);
 
-        sleepMillis(1100);
-        assertNull(cache.get(42));
-    }
-
-    @Test
-    public void testPutAsyncVoid() throws Exception {
-        cache.put(42, "oldValue");
-
-        ICompletableFuture<Void> future = adapter.putAsyncVoid(42, "newValue");
-        Void oldValue = future.get();
-
-        assertNull(oldValue);
-        assertEquals("newValue", cache.get(42));
-    }
-
-    @Test
-    public void testPutAsyncVoidWithExpiryPolicy() throws Exception {
-        ExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(500, 1, 1, TimeUnit.MILLISECONDS);
-        adapter.putAsyncVoid(42, "value", expiryPolicy).get();
-        assertEquals("value", cache.get(42));
-
-        sleepMillis(600);
-        assertNull(cache.get(42));
+            sleepMillis(1100);
+            assertNull(cache.get(42));
+        }
     }
 
     @Test

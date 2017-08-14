@@ -60,6 +60,22 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     }
 
     @Override
+    public ICompletableFuture<Void> setAsync(K key, V value) {
+        return cache.putAsync(key, value);
+    }
+
+    @Override
+    @MethodNotAvailable
+    public ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit timeunit) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    public ICompletableFuture<Void> setAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        return cache.putAsync(key, value, expiryPolicy);
+    }
+
+    @Override
     public V put(K key, V value) {
         return cache.getAndPut(key, value);
     }
@@ -78,16 +94,6 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     @Override
     public ICompletableFuture<V> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         return cache.getAndPutAsync(key, value, expiryPolicy);
-    }
-
-    @Override
-    public ICompletableFuture<Void> putAsyncVoid(K key, V value) {
-        return cache.putAsync(key, value);
-    }
-
-    @Override
-    public ICompletableFuture<Void> putAsyncVoid(K key, V value, ExpiryPolicy expiryPolicy) {
-        return cache.putAsync(key, value, expiryPolicy);
     }
 
     @Override

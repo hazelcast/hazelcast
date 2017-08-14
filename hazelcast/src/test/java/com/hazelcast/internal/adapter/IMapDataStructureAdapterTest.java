@@ -118,6 +118,35 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testSetAsync() throws Exception {
+        map.put(42, "oldValue");
+
+        ICompletableFuture<Void> future = adapter.setAsync(42, "newValue");
+        Void oldValue = future.get();
+
+        assertNull(oldValue);
+        assertEquals("newValue", map.get(42));
+    }
+
+    @Test
+    public void testSetAsyncWithTtl() {
+        adapter.setAsync(42, "value", 1000, TimeUnit.MILLISECONDS);
+        String value = map.get(42);
+        if (value != null) {
+            assertEquals("value", value);
+
+            sleepMillis(1100);
+            assertNull(map.get(42));
+        }
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testSetAsyncWithExpiryPolicy() {
+        ExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(1, 1, 1, TimeUnit.MILLISECONDS);
+        adapter.setAsync(42, "value", expiryPolicy);
+    }
+
+    @Test
     public void testPut() {
         map.put(42, "oldValue");
 
@@ -139,29 +168,26 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutAsyncWithTtl() {
-        adapter.putAsync(42, "value", 1000, TimeUnit.MILLISECONDS);
-        assertEquals("value", map.get(42));
+    public void testPutAsyncWithTtl() throws Exception {
+        map.put(42, "oldValue");
 
-        sleepMillis(1100);
-        assertNull(map.get(42));
+        ICompletableFuture<String> future = adapter.putAsync(42, "newValue", 1000, TimeUnit.MILLISECONDS);
+        String oldValue = future.get();
+        String newValue = map.get(42);
+
+        assertEquals("oldValue", oldValue);
+        if (newValue != null) {
+            assertEquals("newValue", newValue);
+
+            sleepMillis(1100);
+            assertNull(map.get(42));
+        }
     }
 
     @Test(expected = MethodNotAvailableException.class)
     public void testPutAsyncWithExpiryPolicy() {
         ExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(1, 1, 1, TimeUnit.MILLISECONDS);
         adapter.putAsync(42, "value", expiryPolicy);
-    }
-
-    @Test(expected = MethodNotAvailableException.class)
-    public void testPutAsyncVoid() {
-        adapter.putAsyncVoid(42, "value");
-    }
-
-    @Test(expected = MethodNotAvailableException.class)
-    public void testPutAsyncVoidWithExpiryPolicy() {
-        ExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(1, 1, 1, TimeUnit.MILLISECONDS);
-        adapter.putAsyncVoid(42, "value", expiryPolicy);
     }
 
     @Test
