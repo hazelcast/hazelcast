@@ -102,7 +102,6 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
 
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(int size, boolean loaderEnabled) {
-        Config configWithNearCache = createConfig(true);
         Config config = createConfig(false);
 
         HazelcastInstance dataInstance = hazelcastFactory.newHazelcastInstance(config);
@@ -111,22 +110,17 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
 
         populateDataAdapter(dataAdapter, size);
 
-        HazelcastInstance nearCacheInstance = hazelcastFactory.newHazelcastInstance(configWithNearCache);
-        // this creates the Near Cache instance
-        IMap<K, V> nearCacheMap = nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
-
-        NearCacheManager nearCacheManager = getMapNearCacheManager(nearCacheInstance);
-        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
-
-        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(nearCacheInstance))
-                .setNearCacheInstance(nearCacheInstance)
+        NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
+        return builder
                 .setDataInstance(dataInstance)
-                .setNearCacheAdapter(new TransactionalMapDataStructureAdapter<K, V>(nearCacheInstance, DEFAULT_NEAR_CACHE_NAME))
                 .setDataAdapter(dataAdapter)
-                .setNearCache(nearCache)
-                .setNearCacheManager(nearCacheManager)
-                .setInvalidationListener(createInvalidationEventHandler(nearCacheMap))
                 .build();
+    }
+
+    @Override
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createNearCacheContext() {
+        NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
+        return builder.build();
     }
 
     protected Config createConfig(boolean withNearCache) {
@@ -137,6 +131,23 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
             config.getMapConfig(DEFAULT_NEAR_CACHE_NAME).setNearCacheConfig(nearCacheConfig);
         }
         return config;
+    }
+
+    private <K, V> NearCacheTestContextBuilder<K, V, Data, String> createNearCacheContextBuilder() {
+        Config configWithNearCache = createConfig(true);
+
+        HazelcastInstance nearCacheInstance = hazelcastFactory.newHazelcastInstance(configWithNearCache);
+        IMap<K, V> nearCacheMap = nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
+
+        NearCacheManager nearCacheManager = getMapNearCacheManager(nearCacheInstance);
+        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
+
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(nearCacheInstance))
+                .setNearCacheInstance(nearCacheInstance)
+                .setNearCacheAdapter(new TransactionalMapDataStructureAdapter<K, V>(nearCacheInstance, DEFAULT_NEAR_CACHE_NAME))
+                .setNearCache(nearCache)
+                .setNearCacheManager(nearCacheManager)
+                .setInvalidationListener(createInvalidationEventHandler(nearCacheMap));
     }
 
     /**
@@ -179,6 +190,18 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     @Test
     @Override
     @Ignore(value = "This test doesn't work with the TransactionalMap due to its limited implementation")
+    public void testNearCacheExpiration_withTTL() {
+    }
+
+    @Test
+    @Override
+    @Ignore(value = "This test doesn't work with the TransactionalMap due to its limited implementation")
+    public void testNearCacheExpiration_withMaxIdle() {
+    }
+
+    @Test
+    @Override
+    @Ignore(value = "This test doesn't work with the TransactionalMap due to its limited implementation")
     public void testNearCacheMemoryCostCalculation() {
     }
 
@@ -198,5 +221,11 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     @Override
     @Ignore(value = "This test doesn't work with the TransactionalMap due to its limited implementation")
     public void whenNearCacheIsFull_thenPutOnSameKeyShouldUpdateValue_onDataAdapter() {
+    }
+
+    @Test
+    @Override
+    @Ignore(value = "This test doesn't work with the TransactionalMap due to its limited implementation")
+    public void whenValueIsUpdated_thenAnotherNearCacheContextShouldBeInvalidated() {
     }
 }

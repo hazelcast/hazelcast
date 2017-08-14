@@ -53,6 +53,7 @@ import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeThat;
@@ -244,6 +245,22 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
 
             assertNearCacheRecord(getRecordFromNearCache(context, nearCacheKey), i, inMemoryFormat);
         }
+    }
+
+    /**
+     * Asserts that the Near Cache contains the same reference than the given value, when in-memory-format is OBJECT.
+     *
+     * @param context the {@link NearCacheTestContext} to retrieve the Near Cache from
+     * @param key     the key to check the value reference for
+     * @param value   the value reference to compare with the Near Cache reference
+     */
+    public static void assertNearCacheReference(NearCacheTestContext<?, ?, ?, ?> context, int key, Object value) {
+        if (context.nearCacheConfig.getInMemoryFormat() != InMemoryFormat.OBJECT) {
+            return;
+        }
+        Object nearCacheKey = getNearCacheKey(context, key);
+        Object nearCacheValue = getValueFromNearCache(context, nearCacheKey);
+        assertSame(value, nearCacheValue);
     }
 
     /**

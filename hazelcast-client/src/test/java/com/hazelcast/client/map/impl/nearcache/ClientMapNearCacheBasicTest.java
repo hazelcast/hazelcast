@@ -98,7 +98,6 @@ public class ClientMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(int size, boolean loaderEnabled) {
         IMapMapStore mapStore = loaderEnabled ? new IMapMapStore() : null;
         Config config = createConfig(mapStore);
-        ClientConfig clientConfig = createClientConfig();
 
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
         IMap<K, V> memberMap = member.getMap(DEFAULT_NEAR_CACHE_NAME);
@@ -108,22 +107,18 @@ public class ClientMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data
         dataAdapter.waitUntilLoaded();
         populateDataAdapter(dataAdapter, size);
 
-        HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
-        IMap<K, V> clientMap = client.getMap(DEFAULT_NEAR_CACHE_NAME);
-
-        NearCacheManager nearCacheManager = client.client.getNearCacheManager();
-        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
-
-        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())
-                .setNearCacheInstance(client)
+        NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
+        return builder
                 .setDataInstance(member)
-                .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(clientMap))
                 .setDataAdapter(dataAdapter)
-                .setNearCache(nearCache)
-                .setNearCacheManager(nearCacheManager)
                 .setLoader(mapStore)
-                .setInvalidationListener(createInvalidationEventHandler(clientMap))
                 .build();
+    }
+
+    @Override
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createNearCacheContext() {
+        NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
+        return builder.build();
     }
 
     protected Config createConfig(IMapMapStore mapStore) {
@@ -138,5 +133,22 @@ public class ClientMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data
     protected ClientConfig createClientConfig() {
         return new ClientConfig()
                 .addNearCacheConfig(nearCacheConfig);
+    }
+
+    private <K, V> NearCacheTestContextBuilder<K, V, Data, String> createNearCacheContextBuilder() {
+        ClientConfig clientConfig = createClientConfig();
+
+        HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
+        IMap<K, V> clientMap = client.getMap(DEFAULT_NEAR_CACHE_NAME);
+
+        NearCacheManager nearCacheManager = client.client.getNearCacheManager();
+        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
+
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())
+                .setNearCacheInstance(client)
+                .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(clientMap))
+                .setNearCache(nearCache)
+                .setNearCacheManager(nearCacheManager)
+                .setInvalidationListener(createInvalidationEventHandler(clientMap));
     }
 }

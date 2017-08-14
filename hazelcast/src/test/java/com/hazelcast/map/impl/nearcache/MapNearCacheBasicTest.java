@@ -32,8 +32,8 @@ import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.NearCacheTestUtils;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -100,7 +100,6 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(int size, boolean loaderEnabled) {
         IMapMapStore mapStore = loaderEnabled ? new IMapMapStore() : null;
-        Config configWithNearCache = createConfig(mapStore, true);
         Config config = createConfig(mapStore, false);
 
         HazelcastInstance dataInstance = hazelcastFactory.newHazelcastInstance(config);
@@ -111,23 +110,17 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
         dataAdapter.waitUntilLoaded();
         populateDataAdapter(dataAdapter, size);
 
-        HazelcastInstance nearCacheInstance = hazelcastFactory.newHazelcastInstance(configWithNearCache);
-        IMap<K, V> nearCacheMap = nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
-
-        NearCacheManager nearCacheManager = getMapNearCacheManager(nearCacheInstance);
-        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
-
-        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(nearCacheInstance))
-                .setNearCacheInstance(nearCacheInstance)
+        NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder(mapStore);
+        return builder
                 .setDataInstance(dataInstance)
-                .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(nearCacheMap))
                 .setDataAdapter(dataAdapter)
-                .setNearCache(nearCache)
-                .setNearCacheManager(nearCacheManager)
-                .setLoader(mapStore)
-                .setHasLocalData(true)
-                .setInvalidationListener(createInvalidationEventHandler(nearCacheMap))
                 .build();
+    }
+
+    @Override
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createNearCacheContext() {
+        NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder(null);
+        return builder.build();
     }
 
     protected Config createConfig(IMapMapStore mapStore, boolean withNearCache) {
@@ -141,6 +134,25 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
         }
 
         return config;
+    }
+
+    private <K, V> NearCacheTestContextBuilder<K, V, Data, String> createNearCacheContextBuilder(IMapMapStore mapStore) {
+        Config configWithNearCache = createConfig(mapStore, true);
+
+        HazelcastInstance nearCacheInstance = hazelcastFactory.newHazelcastInstance(configWithNearCache);
+        IMap<K, V> nearCacheMap = nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
+
+        NearCacheManager nearCacheManager = getMapNearCacheManager(nearCacheInstance);
+        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
+
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(nearCacheInstance))
+                .setNearCacheInstance(nearCacheInstance)
+                .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(nearCacheMap))
+                .setNearCache(nearCache)
+                .setNearCacheManager(nearCacheManager)
+                .setLoader(mapStore)
+                .setHasLocalData(true)
+                .setInvalidationListener(createInvalidationEventHandler(nearCacheMap));
     }
 
     public static void addMapStoreConfig(IMapMapStore mapStore, MapConfig mapConfig) {
