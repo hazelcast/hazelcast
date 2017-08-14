@@ -39,18 +39,20 @@ public interface MapLoader<K, V> {
      * for the given key then Hazelcast will call implementation's load (key) method
      * to obtain the value. Implementation can use any means of loading the given key;
      * such as an O/R mapping tool, simple SQL or reading a file etc.
+     * Neither the given key nor the returned value can be null.
      *
-     * @param key
-     * @return value of the key
+     * @param key, cannot be null
+     * @return value of the key, value cannot be null.
      */
     V load(K key);
 
     /**
      * Loads given keys. This is batch load operation so that implementation can
      * optimize the multiple loads.
+     * Neither the given keys nor the returned keys or values can be null.
      *
-     * @param keys keys of the values entries to load
-     * @return map of loaded key-value pairs.
+     * @param keys keys of the values entries to load, keys inside the collection cannot be null
+     * @return map of loaded key-value pairs; Neither keys nor values can be null.
      */
     Map<K, V> loadAll(Collection<K> keys);
 
@@ -59,8 +61,9 @@ public interface MapLoader<K, V> {
      * by loading them in batches. The {@link Iterator} of this {@link Iterable} may implement the
      * {@link Closeable} interface in which case it will be closed once iteration is over.
      * This is intended for releasing resources such as closing a JDBC result set.
+     * The returned keys cannot be null.
      *
-     * @return all the keys
+     * @return all the keys, keys inside the Iterable cannot be null
      */
     Iterable<K> loadAllKeys();
 }

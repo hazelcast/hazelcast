@@ -26,6 +26,7 @@ import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.query.impl.getters.ReflectionHelper;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.util.Preconditions;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -141,7 +142,7 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
                 // Invoke reflectively to preserve backwards binary compatibility. Removable in v4.x
                 allKeys = ReflectionHelper.invokeMethod(mapLoader, "loadAllKeys");
             }
-            return allKeys;
+            return Preconditions.checkNoNullInside(allKeys, "loadAllKeys is not allowed to return nulls inside");
         }
         return null;
     }
@@ -160,6 +161,7 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
             return Collections.EMPTY_MAP;
         }
         if (isMapLoader()) {
+            Preconditions.checkNoNullInside(keys, "keys are not allowed to contain nulls inside");
             return mapLoader.loadAll(keys);
         }
         return null;

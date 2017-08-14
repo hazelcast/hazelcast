@@ -62,22 +62,33 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
         boolean hasInterceptor = mapServiceContext.hasInterceptor(name);
 
         List<Data> keyValueSequence = this.keyValueSequence;
+        boolean foundNulls = false;
         for (int i = 0; i < keyValueSequence.size(); i += 2) {
             Data key = keyValueSequence.get(i);
             Data dataValue = keyValueSequence.get(i + 1);
             // here object conversion is for interceptors.
             Object value = hasInterceptor ? mapServiceContext.toObject(dataValue) : dataValue;
-            Object previousValue = recordStore.putFromLoad(key, value);
-
-            callAfterPutInterceptors(value);
-            Record record = recordStore.getRecord(key);
-            if (isPostProcessing(recordStore)) {
-                value = record.getValue();
+            if (isKeyAndValueLoadable(key, value)) {
+                Object previousValue = recordStore.putFromLoad(key, value);
+                callAfterPutInterceptors(value);
+                Record record = recordStore.getRecord(key);
+                if (isPostProcessing(recordStore)) {
+                    value = record.getValue();
+                }
+                publishEntryEvent(key, previousValue, value);
+                publishWanReplicationEvent(key, value, record);
+                addInvalidation(key);
+            } else {
+                foundNulls = true;
             }
-            publishEntryEvent(key, previousValue, value);
-            publishWanReplicationEvent(key, value, record);
-            addInvalidation(key);
         }
+        if (foundNulls) {
+            getLogger().warning("Key and Value loaded by MapLoader cannot be null. Ignored nulls in the processed entries.");
+        }
+    }
+
+    protected boolean isKeyAndValueLoadable(Data key, Object value) {
+        return (key != null) && (value != null);
     }
 
     private void addInvalidation(Data key) {
