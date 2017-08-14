@@ -16,6 +16,8 @@
 
 package com.hazelcast.scheduledexecutor;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.ICountDownLatch;
@@ -153,7 +155,14 @@ public class ScheduledExecutorServiceSlowTest
     public void scheduleRandomPartitions_getAllScheduled_durable()
             throws ExecutionException, InterruptedException {
 
-        HazelcastInstance[] instances = createClusterWithCount(3);
+        ScheduledExecutorConfig scheduledExecutorConfig = new ScheduledExecutorConfig()
+                .setName("s")
+                .setDurability(2);
+
+        Config config = new Config();
+        config.addScheduledExecutorConfig(scheduledExecutorConfig);
+
+        HazelcastInstance[] instances = createClusterWithCount(4, config);
         IScheduledExecutorService s = getScheduledExecutor(instances, "s");
 
         int expectedTotal = 11;
@@ -162,7 +171,7 @@ public class ScheduledExecutorServiceSlowTest
             futures[i] = s.schedule(new PlainCallableTask(i), 0, SECONDS);
         }
 
-        instances[1].getLifecycleService().shutdown();
+        instances[1].shutdown();
 
         assertEquals(expectedTotal, countScheduledTasksOn(s), 0);
 
