@@ -31,8 +31,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -50,14 +48,15 @@ public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "default";
 
-    private HazelcastInstance client;
+    private TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    private HazelcastInstance member1;
-    private HazelcastInstance member2;
-    private HazelcastInstance member3;
+    @After
+    public void tearDown() throws Exception {
+        hazelcastFactory.shutdownAll();
+    }
 
-    @Before
-    public void setUp() {
+    @Test
+    public void testWriteBehindQueues_emptied_onOwnerAndBackupNodes() {
         MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
@@ -67,26 +66,11 @@ public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
         Config config = getConfig();
         config.getMapConfig(MAP_NAME).setMapStoreConfig(mapStoreConfig);
 
-        TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-        member1 = hazelcastFactory.newHazelcastInstance(config);
-        member2 = hazelcastFactory.newHazelcastInstance(config);
-        member3 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance member1 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance member2 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance member3 = hazelcastFactory.newHazelcastInstance(config);
 
-        client = hazelcastFactory.newHazelcastClient(getClientConfig());
-    }
-
-    @After
-    public void tearDown() {
-        client.shutdown();
-
-        member1.shutdown();
-        member2.shutdown();
-        member3.shutdown();
-    }
-
-    @Test
-    @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/7492")
-    public void testWriteBehindQueues_emptied_onOwnerAndBackupNodes() {
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
         IMap<Integer, Integer> map = client.getMap(MAP_NAME);
 
         for (int i = 0; i < 1000; i++) {
@@ -104,7 +88,6 @@ public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
         TemporaryBlockerMapStore store = new TemporaryBlockerMapStore(blockStoreOperationSeconds);
         Config config = newMapStoredConfig(store, 2);
 
-        TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
         hazelcastFactory.newHazelcastInstance(config);
 
         IMap<String, String> map = hazelcastFactory.newHazelcastClient(getClientConfig()).getMap(MAP_NAME);
@@ -113,8 +96,6 @@ public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
         map.flush();
 
         assertEquals("Expecting only one store after flush", 1, store.getStoreOperationCount());
-
-        hazelcastFactory.shutdownAll();
     }
 
     protected ClientConfig getClientConfig() {
