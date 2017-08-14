@@ -49,6 +49,9 @@ public interface MapLoader<K, V> {
      * Loads given keys. This is batch load operation so that implementation can
      * optimize the multiple loads.
      *
+     * For any key in the input keys, there should be a single mapping in the resulting map. Also the resulting
+     * map should not have any keys that are not part of the input keys.
+     *
      * @param keys keys of the values entries to load
      * @return map of loaded key-value pairs.
      */
