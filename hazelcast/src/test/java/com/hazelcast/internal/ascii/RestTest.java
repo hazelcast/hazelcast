@@ -25,9 +25,9 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -49,8 +49,8 @@ import static org.junit.Assert.assertTrue;
  * This test is intentionally not in the {@link com.hazelcast.test.annotation.ParallelTest} category,
  * since it starts real HazelcastInstances which have REST enabled.
  */
-@RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(SlowTest.class)
 public class RestTest extends HazelcastTestSupport {
 
     private static final AtomicInteger PORT = new AtomicInteger(5701);
