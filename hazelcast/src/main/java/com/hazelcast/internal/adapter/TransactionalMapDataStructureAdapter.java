@@ -23,12 +23,14 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.transaction.TransactionContext;
 
+import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class TransactionalMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V> {
@@ -74,11 +76,47 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
+    @MethodNotAvailable
+    public ICompletableFuture<Void> setAsync(K key, V value) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit timeunit) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public ICompletableFuture<Void> setAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
     public V put(K key, V value) {
         begin();
         V oldValue = transactionalMap.put(key, value);
         commit();
         return oldValue;
+    }
+
+    @Override
+    @MethodNotAvailable
+    public ICompletableFuture<V> putAsync(K key, V value) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public ICompletableFuture<V> putAsync(K key, V value, long ttl, TimeUnit timeunit) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public ICompletableFuture<V> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        throw new MethodNotAvailableException();
     }
 
     @Override

@@ -21,12 +21,14 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Abstracts the Hazelcast data structures with Near Cache support for the Near Cache usage.
@@ -42,7 +44,19 @@ public interface DataStructureAdapter<K, V> {
 
     void set(K key, V value);
 
+    ICompletableFuture<Void> setAsync(K key, V value);
+
+    ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit timeunit);
+
+    ICompletableFuture<Void> setAsync(K key, V value, ExpiryPolicy expiryPolicy);
+
     V put(K key, V value);
+
+    ICompletableFuture<V> putAsync(K key, V value);
+
+    ICompletableFuture<V> putAsync(K key, V value, long ttl, TimeUnit timeunit);
+
+    ICompletableFuture<V> putAsync(K key, V value, ExpiryPolicy expiryPolicy);
 
     boolean putIfAbsent(K key, V value);
 
@@ -105,7 +119,13 @@ public interface DataStructureAdapter<K, V> {
         GET("get", Object.class),
         GET_ASYNC("getAsync", Object.class),
         SET("set", Object.class, Object.class),
+        SET_ASYNC("setAsync", Object.class, Object.class),
+        SET_ASYNC_WITH_AAL("setAsync", Object.class, Object.class, long.class, TimeUnit.class),
+        SET_ASYNC_WITH_EXPIRY_POLICY("setAsync", Object.class, Object.class, ExpiryPolicy.class),
         PUT("put", Object.class, Object.class),
+        PUT_ASYNC("putAsync", Object.class, Object.class),
+        PUT_ASYNC_WITH_TTL("putAsync", Object.class, Object.class, long.class, TimeUnit.class),
+        PUT_ASYNC_WITH_EXPIRY_POLICY("putAsync", Object.class, Object.class, ExpiryPolicy.class),
         PUT_IF_ABSENT("putIfAbsent", Object.class, Object.class),
         PUT_IF_ABSENT_ASYNC("putIfAbsentAsync", Object.class, Object.class),
         REPLACE("replace", Object.class, Object.class),

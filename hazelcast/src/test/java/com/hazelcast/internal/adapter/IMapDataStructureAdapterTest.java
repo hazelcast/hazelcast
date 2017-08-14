@@ -16,9 +16,11 @@
 
 package com.hazelcast.internal.adapter;
 
+import com.hazelcast.cache.HazelcastExpiryPolicy;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
@@ -32,12 +34,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.cache.expiry.ExpiryPolicy;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
@@ -114,6 +118,35 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testSetAsync() throws Exception {
+        map.put(42, "oldValue");
+
+        ICompletableFuture<Void> future = adapter.setAsync(42, "newValue");
+        Void oldValue = future.get();
+
+        assertNull(oldValue);
+        assertEquals("newValue", map.get(42));
+    }
+
+    @Test
+    public void testSetAsyncWithTtl() {
+        adapter.setAsync(42, "value", 1000, TimeUnit.MILLISECONDS);
+        String value = map.get(42);
+        if (value != null) {
+            assertEquals("value", value);
+
+            sleepMillis(1100);
+            assertNull(map.get(42));
+        }
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testSetAsyncWithExpiryPolicy() {
+        ExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(1, 1, 1, TimeUnit.MILLISECONDS);
+        adapter.setAsync(42, "value", expiryPolicy);
+    }
+
+    @Test
     public void testPut() {
         map.put(42, "oldValue");
 
@@ -121,6 +154,40 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
 
         assertEquals("oldValue", oldValue);
         assertEquals("newValue", map.get(42));
+    }
+
+    @Test
+    public void testPutAsync() throws Exception {
+        map.put(42, "oldValue");
+
+        ICompletableFuture<String> future = adapter.putAsync(42, "newValue");
+        String oldValue = future.get();
+
+        assertEquals("oldValue", oldValue);
+        assertEquals("newValue", map.get(42));
+    }
+
+    @Test
+    public void testPutAsyncWithTtl() throws Exception {
+        map.put(42, "oldValue");
+
+        ICompletableFuture<String> future = adapter.putAsync(42, "newValue", 1000, TimeUnit.MILLISECONDS);
+        String oldValue = future.get();
+        String newValue = map.get(42);
+
+        assertEquals("oldValue", oldValue);
+        if (newValue != null) {
+            assertEquals("newValue", newValue);
+
+            sleepMillis(1100);
+            assertNull(map.get(42));
+        }
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testPutAsyncWithExpiryPolicy() {
+        ExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(1, 1, 1, TimeUnit.MILLISECONDS);
+        adapter.putAsync(42, "value", expiryPolicy);
     }
 
     @Test
