@@ -49,6 +49,8 @@ public interface MapLoader<K, V> {
      * Loads given keys. This is batch load operation so that implementation can
      * optimize the multiple loads.
      *
+     * The returned Map should not contain any <code>null</code> keys or values.
+     *
      * @param keys keys of the values entries to load
      * @return map of loaded key-value pairs.
      */
@@ -59,6 +61,8 @@ public interface MapLoader<K, V> {
      * by loading them in batches. The {@link Iterator} of this {@link Iterable} may implement the
      * {@link Closeable} interface in which case it will be closed once iteration is over.
      * This is intended for releasing resources such as closing a JDBC result set.
+     *
+     * The returned Iterable should not contain any <code>null</code> keys.
      *
      * @return all the keys
      */

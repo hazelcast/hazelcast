@@ -65,6 +65,7 @@ import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.updateExpiryTime;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Collections.emptyList;
 
 /**
@@ -222,7 +223,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public Record getRecord(Data key) {
-        return storage.get(key);
+        return storage.get(checkNotNull(key, "key can't be null"));
     }
 
     @Override
