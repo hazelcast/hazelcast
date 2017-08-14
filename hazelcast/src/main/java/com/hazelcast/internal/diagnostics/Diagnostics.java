@@ -90,6 +90,12 @@ public class Diagnostics {
             .setDeprecatedName("hazelcast.performance.monitor.max.rolled.file.count");
 
     /**
+     * True if the epoch time should be included in the 'top' section. This makes it easy to determine the time in epoch format
+     * and prevents needing to parse the date-format section. The default is false since it will cause more noise.
+     */
+    public static final HazelcastProperty INCLUDE_EPOCH_TIME = new HazelcastProperty(PREFIX + ".include.epoch", true);
+
+    /**
      * Configures the output directory of the performance log files.
      *
      * Defaults to the 'user.dir'.
@@ -106,6 +112,7 @@ public class Diagnostics {
 
     final ILogger logger;
     final String fileName;
+    final boolean includeEpochTime;
     private final String hzName;
     private final boolean enabled;
     private ScheduledExecutorService scheduler;
@@ -119,6 +126,7 @@ public class Diagnostics {
         this.properties = properties;
         this.enabled = properties.getBoolean(ENABLED);
         this.directory = properties.getString(DIRECTORY);
+        this.includeEpochTime = properties.getBoolean(INCLUDE_EPOCH_TIME);
     }
 
     // just for testing. Returns the current file the system is writing to.

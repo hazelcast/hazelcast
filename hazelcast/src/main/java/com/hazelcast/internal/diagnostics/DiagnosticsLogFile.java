@@ -55,12 +55,13 @@ final class DiagnosticsLogFile {
     private PrintWriter printWriter;
     private int maxRollingFileCount;
     private int maxRollingFileSizeBytes;
-    private final DiagnosticsLogWriterImpl logWriter =  new DiagnosticsLogWriterImpl();
+    private final DiagnosticsLogWriterImpl logWriter;
 
     DiagnosticsLogFile(Diagnostics diagnostics) {
         this.diagnostics = diagnostics;
         this.logger = diagnostics.logger;
         this.fileName = diagnostics.fileName + "-%03d.log";
+        this.logWriter = new DiagnosticsLogWriterImpl(diagnostics.includeEpochTime);
 
         this.maxRollingFileCount = diagnostics.properties.getInteger(MAX_ROLLED_FILE_COUNT);
         // we accept a float so it becomes easier to testing to create a small file
