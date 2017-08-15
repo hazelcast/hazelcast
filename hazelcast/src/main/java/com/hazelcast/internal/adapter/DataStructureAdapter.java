@@ -120,7 +120,7 @@ public interface DataStructureAdapter<K, V> {
         GET_ASYNC("getAsync", Object.class),
         SET("set", Object.class, Object.class),
         SET_ASYNC("setAsync", Object.class, Object.class),
-        SET_ASYNC_WITH_AAL("setAsync", Object.class, Object.class, long.class, TimeUnit.class),
+        SET_ASYNC_WITH_TTL("setAsync", Object.class, Object.class, long.class, TimeUnit.class),
         SET_ASYNC_WITH_EXPIRY_POLICY("setAsync", Object.class, Object.class, ExpiryPolicy.class),
         PUT("put", Object.class, Object.class),
         PUT_ASYNC("putAsync", Object.class, Object.class),
