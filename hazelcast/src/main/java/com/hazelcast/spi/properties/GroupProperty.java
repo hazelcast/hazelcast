@@ -346,6 +346,10 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.max.join.seconds", 300, SECONDS);
     public static final HazelcastProperty MAX_JOIN_MERGE_TARGET_SECONDS
             = new HazelcastProperty("hazelcast.max.join.merge.target.seconds", 20, SECONDS);
+
+    /**
+     * The interval at which member heartbeat messages are sent
+     */
     public static final HazelcastProperty HEARTBEAT_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.heartbeat.interval.seconds", 5, SECONDS);
 
@@ -371,6 +375,24 @@ public final class GroupProperty {
      */
     public static final HazelcastProperty MAX_NO_MASTER_CONFIRMATION_SECONDS
             = new HazelcastProperty("hazelcast.max.no.master.confirmation.seconds", 350, SECONDS);
+
+    /**
+     * Heartbeat failure detector type. Available options are:
+     * <ul>
+     *    <li><code>deadline</code>:  A deadline based failure detector uses an absolute timeout
+     *    for missing/lost heartbeats. After timeout member is considered as dead/unavailable.
+     *    </li>
+     *    <li><code>phi-accrual</code>: Implementation of 'The Phi Accrual Failure Detector' by Hayashibara et al.
+     *    as defined in their paper. Phi Accrual Failure Detector is adaptive to network/environment conditions,
+     *    that's why a lower {@link #MAX_NO_HEARTBEAT_SECONDS} (for example 10 or 15 seconds) can be used to provide
+     *    faster detection of unavailable members.
+     *    </li>
+     * </ul>
+     *
+     * Default failure detector is <code>deadline</code>.
+     */
+    public static final HazelcastProperty HEARTBEAT_FAILURE_DETECTOR_TYPE
+            = new HazelcastProperty("hazelcast.heartbeat.failuredetector.type", "deadline");
 
     /**
      * The interval at which the master sends the member lists are sent to other non-master members

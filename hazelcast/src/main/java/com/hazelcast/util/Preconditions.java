@@ -152,6 +152,21 @@ public final class Preconditions {
     }
 
     /**
+     * Tests if a value is positive; so larger than 0.
+     *
+     * @param value        the value tested to see if it is positive.
+     * @param errorMessage the message
+     * @return the value
+     * @throws java.lang.IllegalArgumentException if the value is not positive.
+     */
+    public static double checkPositive(double value, String errorMessage) {
+        if (value <= 0) {
+            throw new IllegalArgumentException(errorMessage);
+        }
+        return value;
+    }
+
+    /**
      * Tests if a value is positive; larger than 0.
      *
      * @param value        the value tested to see if it is positive.

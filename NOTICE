@@ -17,3 +17,6 @@ from the Koloboke project (https://github.com/OpenHFT/Koloboke).
 
 The class classloading.ThreadLocalLeakTestUtils contains code originating
 from the Tomcat project (https://github.com/apache/tomcat).
+
+com.hazelcast.internal.cluster.fd.PhiAccrualFailureDetector contains code originating
+from the Akka project (https://github.com/akka/akka/).
