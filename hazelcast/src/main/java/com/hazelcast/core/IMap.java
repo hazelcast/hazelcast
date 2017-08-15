@@ -273,7 +273,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * defined in the <tt>key</tt>'s class.
      * <p/>
      *
-     * @param keys keys to get.
+     * @param keys keys to get. Keys inside the collection cannot be null.
      * @return map of entries.
      * @throws NullPointerException if any of the specified keys are null.
      */
@@ -294,7 +294,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * Loads the given keys. This is a batch load operation so that an implementation can
      * optimize the multiple loads.
      *
-     * @param keys                  keys of the values entries to load.
+     * @param keys                  keys of the values entries to load. Keys inside the collection cannot be null.
      * @param replaceExistingValues when <code>true</code>, existing values in the Map will
      *                              be replaced by those loaded from the MapLoader.
      * @since 3.3

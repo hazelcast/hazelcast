@@ -94,6 +94,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.QueryResultUtils.transformToSet;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequests.newQueryCacheRequest;
 import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
@@ -353,6 +354,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public void putAll(Map<? extends K, ? extends V> map) {
+        checkNotNull(map, "Null argument map is not allowed");
         putAllInternal(map);
     }
 
@@ -567,7 +569,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public void loadAll(Set<K> keys, boolean replaceExistingValues) {
         checkTrue(isMapStoreEnabled(), "First you should configure a map store");
-        checkNotNull(keys, "Parameter keys should not be null.");
+        checkNotNull(keys, NULL_KEYS_ARE_NOT_ALLOWED);
+        checkNoNullInside(keys, NULL_KEY_IS_NOT_ALLOWED);
 
         loadInternal(keys, null, replaceExistingValues);
     }
@@ -685,7 +688,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
-        checkNotNull(keys, "Parameter keys should not be null!");
+        checkNotNull(keys, NULL_KEYS_ARE_NOT_ALLOWED);
 
         if (keys.isEmpty()) {
             return emptyMap();

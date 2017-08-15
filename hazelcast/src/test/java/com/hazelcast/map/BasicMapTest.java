@@ -1267,7 +1267,24 @@ public class BasicMapTest extends HazelcastTestSupport {
                 map.getAll(keys);
             }
         };
-        assertRunnableThrowsNullPointerException(runnable, "remove(keys)");
+        assertRunnableThrowsNullPointerException(runnable, "getAll(keys)");
+
+        runnable = new Runnable() {
+            public void run() {
+                map.executeOnKeys(keys, new EntryProcessor() {
+                    @Override
+                    public Object process(Map.Entry entry) {
+                        return null;
+                    }
+
+                    @Override
+                    public EntryBackupProcessor getBackupProcessor() {
+                        return null;
+                    }
+                });
+            }
+        };
+        assertRunnableThrowsNullPointerException(runnable, "executeOnKeys(keys, entryProcessor)");
 
         runnable = new Runnable() {
             public void run() {
@@ -1554,6 +1571,31 @@ public class BasicMapTest extends HazelcastTestSupport {
             }
         };
         assertRunnableThrowsNullPointerException(runnable, "map.putAll(mapWithNullValue)");
+
+        runnable = new Runnable() {
+            public void run() {
+                map.putAll(null);
+            }
+        };
+        assertRunnableThrowsNullPointerException(runnable, "map.putAll(null)");
+
+        runnable = new Runnable() {
+            public void run() {
+                map.executeOnKeys(null, new EntryProcessor() {
+                    @Override
+                    public Object process(Map.Entry entry) {
+                        return null;
+                    }
+
+                    @Override
+                    public EntryBackupProcessor getBackupProcessor() {
+                        return null;
+                    }
+                });
+            }
+        };
+        assertRunnableThrowsNullPointerException(runnable, "map.executeOnKeys(null, entryProcessor)");
+
     }
 
     public void assertRunnableThrowsNullPointerException(Runnable runnable, String description) {
