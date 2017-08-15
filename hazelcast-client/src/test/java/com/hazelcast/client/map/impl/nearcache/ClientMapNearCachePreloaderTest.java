@@ -110,26 +110,30 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
     }
 
     @Override
-    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean createClient) {
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean createNearCacheInstance, int keyCount,
+                                                                            KeyType keyType) {
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(getConfig());
         IMap<K, V> memberMap = member.getMap(nearCacheConfig.getName());
+        IMapDataStructureAdapter<K, V> dataAdapter = new IMapDataStructureAdapter<K, V>(memberMap);
 
-        if (createClient) {
-            NearCacheTestContextBuilder<K, V, Data, String> contextBuilder = createClientContextBuilder();
+        populateDataAdapter(dataAdapter, keyCount, keyType);
+
+        if (createNearCacheInstance) {
+            NearCacheTestContextBuilder<K, V, Data, String> contextBuilder = createNearCacheContextBuilder();
             return contextBuilder
                     .setDataInstance(member)
-                    .setDataAdapter(new IMapDataStructureAdapter<K, V>(memberMap))
+                    .setDataAdapter(dataAdapter)
                     .build();
         }
         return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(member))
                 .setDataInstance(member)
-                .setDataAdapter(new IMapDataStructureAdapter<K, V>(memberMap))
+                .setDataAdapter(dataAdapter)
                 .build();
     }
 
     @Override
-    protected <K, V> NearCacheTestContext<K, V, Data, String> createClientContext() {
-        NearCacheTestContextBuilder<K, V, Data, String> contextBuilder = createClientContextBuilder();
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createNearCacheContext() {
+        NearCacheTestContextBuilder<K, V, Data, String> contextBuilder = createNearCacheContextBuilder();
         return contextBuilder.build();
     }
 
@@ -137,7 +141,7 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
         return new ClientConfig();
     }
 
-    private <K, V> NearCacheTestContextBuilder<K, V, Data, String> createClientContextBuilder() {
+    private <K, V> NearCacheTestContextBuilder<K, V, Data, String> createNearCacheContextBuilder() {
         ClientConfig clientConfig = getClientConfig()
                 .addNearCacheConfig(nearCacheConfig);
 

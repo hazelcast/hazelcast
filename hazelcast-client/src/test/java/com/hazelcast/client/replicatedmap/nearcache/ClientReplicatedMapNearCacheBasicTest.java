@@ -84,25 +84,27 @@ public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasi
     }
 
     @Override
-    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean loaderEnabled) {
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(int size, boolean loaderEnabled) {
         Config config = createConfig();
         ClientConfig clientConfig = createClientConfig();
 
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
-        HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
-
         ReplicatedMap<K, V> memberMap = member.getReplicatedMap(DEFAULT_NEAR_CACHE_NAME);
+        ReplicatedMapDataStructureAdapter<K, V> dataAdapter = new ReplicatedMapDataStructureAdapter<K, V>(memberMap);
+
+        populateDataAdapter(dataAdapter, size);
+
+        HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
         ReplicatedMap<K, V> clientMap = client.getReplicatedMap(DEFAULT_NEAR_CACHE_NAME);
 
         NearCacheManager nearCacheManager = client.client.getNearCacheManager();
-
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
 
         return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())
                 .setNearCacheInstance(client)
                 .setDataInstance(member)
                 .setNearCacheAdapter(new ReplicatedMapDataStructureAdapter<K, V>(clientMap))
-                .setDataAdapter(new ReplicatedMapDataStructureAdapter<K, V>(memberMap))
+                .setDataAdapter(dataAdapter)
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
                 .setInvalidationListener(createInvalidationEventHandler(clientMap))
