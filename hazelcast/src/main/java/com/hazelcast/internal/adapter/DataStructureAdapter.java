@@ -66,11 +66,15 @@ public interface DataStructureAdapter<K, V> {
 
     boolean replace(K key, V oldValue, V newValue);
 
-    void remove(K key);
+    V remove(K key);
 
     boolean remove(K key, V oldValue);
 
     ICompletableFuture<V> removeAsync(K key);
+
+    void delete(K key);
+
+    ICompletableFuture<Boolean> deleteAsync(K key);
 
     boolean evict(K key);
 
@@ -133,6 +137,8 @@ public interface DataStructureAdapter<K, V> {
         REMOVE("remove", Object.class),
         REMOVE_WITH_OLD_VALUE("remove", Object.class, Object.class),
         REMOVE_ASYNC("removeAsync", Object.class),
+        DELETE("delete", Object.class),
+        DELETE_ASYNC("deleteAsync", Object.class),
         EVICT("evict", Object.class),
         INVOKE("invoke", Object.class, EntryProcessor.class, Object[].class),
         EXECUTE_ON_KEY("executeOnKey", Object.class, com.hazelcast.map.EntryProcessor.class),

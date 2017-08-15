@@ -237,7 +237,7 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
         cache.put(23, "value-23");
         assertTrue(cache.containsKey(23));
 
-        adapter.remove(23);
+        assertEquals("value-23", adapter.remove(23));
         assertFalse(cache.containsKey(23));
     }
 
@@ -258,6 +258,25 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
 
         String value = adapter.removeAsync(23).get();
         assertEquals("value-23", value);
+
+        assertFalse(cache.containsKey(23));
+    }
+
+    @Test
+    public void testDelete() {
+        cache.put(23, "value-23");
+        assertTrue(cache.containsKey(23));
+
+        adapter.delete(23);
+        assertFalse(cache.containsKey(23));
+    }
+
+    @Test
+    public void testDeleteAsync() throws Exception {
+        cache.put(23, "value-23");
+        assertTrue(cache.containsKey(23));
+
+        adapter.deleteAsync(23).get();
 
         assertFalse(cache.containsKey(23));
     }

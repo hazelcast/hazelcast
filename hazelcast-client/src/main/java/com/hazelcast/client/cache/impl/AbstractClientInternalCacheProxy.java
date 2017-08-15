@@ -240,7 +240,9 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         validateConfiguredTypes(cacheConfig, key);
 
         Data keyData = toData(key);
-        return getAndRemoveInternal(keyData, true);
+        ClientDelegatingFuture<T> delegatingFuture = getAndRemoveInternal(keyData, true);
+        onGetAndRemoveAsyncInternal(key, keyData, delegatingFuture, null);
+        return delegatingFuture;
     }
 
     private <T> ClientDelegatingFuture<T> getAndRemoveInternal(Data keyData, boolean withCompletionEvent) {

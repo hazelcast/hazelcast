@@ -1025,6 +1025,38 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#DELETE} is used.
+     */
+    @Test
+    public void whenDeleteIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
+        whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.DELETE);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#DELETE} is used.
+     */
+    @Test
+    public void whenDeleteIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
+        whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.DELETE);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#DELETE_ASYNC} is used.
+     */
+    @Test
+    public void whenDeleteAsyncIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
+        whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.DELETE_ASYNC);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#DELETE_ASYNC} is used.
+     */
+    @Test
+    public void whenDeleteAsyncIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
+        whenEntryIsRemoved_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.DELETE_ASYNC);
+    }
+
+    /**
      * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#REMOVE_ALL)} is used.
      */
     @Test
@@ -1109,13 +1141,19 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 String value = "value-" + i;
                 switch (method) {
                     case REMOVE:
-                        adapter.remove(i);
+                        assertEquals(value, adapter.remove(i));
                         break;
                     case REMOVE_WITH_OLD_VALUE:
                         assertTrue(adapter.remove(i, value));
                         break;
                     case REMOVE_ASYNC:
                         assertEquals(value, getFuture(adapter.removeAsync(i), "Could not remove entry via removeAsync()"));
+                        break;
+                    case DELETE:
+                        adapter.delete(i);
+                        break;
+                    case DELETE_ASYNC:
+                        assertTrue(value, getFuture(adapter.deleteAsync(i), "Could not remove entry via deleteAsync()"));
                         break;
                     case REMOVE_ALL_WITH_KEYS:
                         removeKeys.add(i);
