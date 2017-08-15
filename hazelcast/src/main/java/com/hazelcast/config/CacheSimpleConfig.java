@@ -568,8 +568,9 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable {
      *
      * @param wanReplicationRef the WAN target replication reference
      */
-    public void setWanReplicationRef(WanReplicationRef wanReplicationRef) {
+    public CacheSimpleConfig setWanReplicationRef(WanReplicationRef wanReplicationRef) {
         this.wanReplicationRef = wanReplicationRef;
+        return this;
     }
 
     /**
@@ -640,8 +641,9 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable {
      * @param mergePolicy the class name of {@link com.hazelcast.cache.CacheMergePolicy} implementation
      *                    to be set to this cache config
      */
-    public void setMergePolicy(String mergePolicy) {
+    public CacheSimpleConfig setMergePolicy(String mergePolicy) {
         this.mergePolicy = mergePolicy;
+        return this;
     }
 
     /**
@@ -679,8 +681,9 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable {
      * @param disablePerEntryInvalidationEvents Disables invalidation event sending behaviour if it is {@code true},
      *                                          otherwise enables it
      */
-    public void setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
+    public CacheSimpleConfig setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
         this.disablePerEntryInvalidationEvents = disablePerEntryInvalidationEvents;
+        return this;
     }
 
     @Override

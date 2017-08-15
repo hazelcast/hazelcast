@@ -62,12 +62,14 @@ public class DiscoveryStrategyConfig {
         return discoveryStrategyFactory;
     }
 
-    public void addProperty(String key, Comparable value) {
+    public DiscoveryStrategyConfig addProperty(String key, Comparable value) {
         properties.put(key, value);
+        return this;
     }
 
-    public void removeProperty(String key) {
+    public DiscoveryStrategyConfig removeProperty(String key) {
         properties.remove(key);
+        return this;
     }
 
     public Map<String, Comparable> getProperties() {

@@ -30,11 +30,11 @@ public class SecurityInterceptorConfig {
     public SecurityInterceptorConfig() {
     }
 
-    public SecurityInterceptorConfig(final String className) {
+    public SecurityInterceptorConfig(String className) {
         this.className = className;
     }
 
-    public SecurityInterceptorConfig(final SecurityInterceptor implementation) {
+    public SecurityInterceptorConfig(SecurityInterceptor implementation) {
         this.implementation = implementation;
     }
 
@@ -42,15 +42,17 @@ public class SecurityInterceptorConfig {
         return className;
     }
 
-    public void setClassName(final String className) {
+    public SecurityInterceptorConfig setClassName(String className) {
         this.className = className;
+        return this;
     }
 
     public SecurityInterceptor getImplementation() {
         return implementation;
     }
 
-    public void setImplementation(final SecurityInterceptor implementation) {
+    public SecurityInterceptorConfig setImplementation(SecurityInterceptor implementation) {
         this.implementation = implementation;
+        return this;
     }
 }

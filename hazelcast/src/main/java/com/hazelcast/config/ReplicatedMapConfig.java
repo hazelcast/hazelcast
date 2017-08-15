@@ -269,8 +269,9 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
      * @param asyncFillup {@code true} if the replicated map is available for reads before the initial
      *                    replication is completed, {@code false} otherwise
      */
-    public void setAsyncFillup(boolean asyncFillup) {
+    public ReplicatedMapConfig setAsyncFillup(boolean asyncFillup) {
         this.asyncFillup = asyncFillup;
+        return this;
     }
 
     /**

@@ -30,37 +30,37 @@ public class JobTrackerConfigReadOnly extends JobTrackerConfig {
     }
 
     @Override
-    public JobTrackerConfigReadOnly setName(String name) {
+    public JobTrackerConfig setName(String name) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setMaxThreadSize(int maxThreadSize) {
+    public JobTrackerConfig setMaxThreadSize(int maxThreadSize) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setRetryCount(int retryCount) {
+    public JobTrackerConfig setRetryCount(int retryCount) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setChunkSize(int chunkSize) {
+    public JobTrackerConfig setChunkSize(int chunkSize) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setQueueSize(int queueSize) {
+    public JobTrackerConfig setQueueSize(int queueSize) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setCommunicateStats(boolean communicateStats) {
+    public JobTrackerConfig setCommunicateStats(boolean communicateStats) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setTopologyChangedStrategy(TopologyChangedStrategy topologyChangedStrategy) {
+    public JobTrackerConfig setTopologyChangedStrategy(TopologyChangedStrategy topologyChangedStrategy) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 }

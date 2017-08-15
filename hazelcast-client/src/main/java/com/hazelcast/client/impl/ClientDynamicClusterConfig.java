@@ -350,7 +350,7 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
+    public Config setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
@@ -370,7 +370,7 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public void setMemberAttributeConfig(MemberAttributeConfig memberAttributeConfig) {
+    public Config setMemberAttributeConfig(MemberAttributeConfig memberAttributeConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

@@ -217,8 +217,9 @@ public abstract class CollectionConfig<T extends CollectionConfig>
      *
      * @param itemListenerConfig the item listener to add to this collection
      */
-    public void addItemListenerConfig(ItemListenerConfig itemListenerConfig) {
+    public CollectionConfig addItemListenerConfig(ItemListenerConfig itemListenerConfig) {
         getItemListenerConfigs().add(itemListenerConfig);
+        return this;
     }
 
     @Override

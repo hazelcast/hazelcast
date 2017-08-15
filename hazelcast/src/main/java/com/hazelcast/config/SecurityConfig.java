@@ -48,8 +48,9 @@ public class SecurityConfig {
         return securityInterceptorConfigs;
     }
 
-    public void setSecurityInterceptorConfigs(final List<SecurityInterceptorConfig> securityInterceptorConfigs) {
+    public SecurityConfig setSecurityInterceptorConfigs(final List<SecurityInterceptorConfig> securityInterceptorConfigs) {
         this.securityInterceptorConfigs = securityInterceptorConfigs;
+        return this;
     }
 
     public boolean isEnabled() {
