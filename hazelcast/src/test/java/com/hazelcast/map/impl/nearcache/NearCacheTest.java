@@ -873,34 +873,35 @@ public class NearCacheTest extends NearCacheTestSupport {
 
     @Test
     public void testNearCacheTTLRecordsExpired() {
-        String mapName = randomMapName();
-
-        Config config = getConfig();
-        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig()
-                .setCacheLocalEntries(true)
-                .setTimeToLiveSeconds(MAX_TTL_SECONDS)
-        );
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
-
-        IMap<Integer, Integer> map = instance.getMap(mapName);
-        assertNearCacheExpiration(map, MAX_CACHE_SIZE, MAX_TTL_SECONDS);
+        NearCacheConfig nearCacheConfig = newNearCacheConfig().setTimeToLiveSeconds(MAX_TTL_SECONDS);
+        testNearCacheExpiration(nearCacheConfig);
     }
 
     @Test
     public void testNearCacheMaxIdleRecordsExpired() {
+        NearCacheConfig nearCacheConfig = newNearCacheConfig().setMaxIdleSeconds(MAX_IDLE_SECONDS);
+        testNearCacheExpiration(nearCacheConfig);
+    }
+
+    private void testNearCacheExpiration(NearCacheConfig nearCacheConfig) {
         String mapName = randomMapName();
 
-        Config config = getConfig();
-        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig()
-                .setCacheLocalEntries(true)
-                .setMaxIdleSeconds(MAX_IDLE_SECONDS)
-        );
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        Config config = getConfig();
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
 
-        IMap<Integer, Integer> map = instance.getMap(mapName);
-        assertNearCacheExpiration(map, MAX_CACHE_SIZE, MAX_IDLE_SECONDS);
+        IMap<Integer, Integer> noNearCachedMap = instance1.getMap(mapName);
+        populateMap(noNearCachedMap, MAX_CACHE_SIZE);
+
+        Config configWithNearCache = getConfig();
+        nearCacheConfig.setCacheLocalEntries(true);
+        configWithNearCache.getMapConfig(mapName).setNearCacheConfig(nearCacheConfig);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(configWithNearCache);
+
+        IMap<Integer, Integer> nearCachedMap = instance2.getMap(mapName);
+        populateNearCache(nearCachedMap, MAX_CACHE_SIZE);
+
+        assertNearCacheExpiration(nearCachedMap, MAX_CACHE_SIZE, MAX_IDLE_SECONDS);
     }
 
     @Test(expected = IllegalArgumentException.class)
