@@ -91,10 +91,7 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
         assertEquals("we expect one miss more", statsBeforeEviction.getMisses() + 1, stats.getMisses());
     }
 
-    protected void testNearCacheExpiration(final IMap<Integer, Integer> map, final int size, int expireSeconds) {
-        populateMap(map, size);
-        populateNearCacheEventually(map, size);
-
+    protected void assertNearCacheExpiration(final IMap<Integer, Integer> map, final int size, int expireSeconds) {
         final NearCacheStats statsBeforeExpiration = getNearCacheStatsCopy(map);
         assertTrueEventually(new AssertTask() {
             @Override

@@ -884,7 +884,7 @@ public class NearCacheTest extends NearCacheTestSupport {
         HazelcastInstance instance = factory.newHazelcastInstance(config);
 
         IMap<Integer, Integer> map = instance.getMap(mapName);
-        testNearCacheExpiration(map, MAX_CACHE_SIZE, MAX_TTL_SECONDS);
+        assertNearCacheExpiration(map, MAX_CACHE_SIZE, MAX_TTL_SECONDS);
     }
 
     @Test
@@ -900,7 +900,7 @@ public class NearCacheTest extends NearCacheTestSupport {
         HazelcastInstance instance = factory.newHazelcastInstance(config);
 
         IMap<Integer, Integer> map = instance.getMap(mapName);
-        testNearCacheExpiration(map, MAX_CACHE_SIZE, MAX_IDLE_SECONDS);
+        assertNearCacheExpiration(map, MAX_CACHE_SIZE, MAX_IDLE_SECONDS);
     }
 
     @Test(expected = IllegalArgumentException.class)

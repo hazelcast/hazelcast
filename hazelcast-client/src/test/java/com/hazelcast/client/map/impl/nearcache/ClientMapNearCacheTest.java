@@ -785,16 +785,32 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
     @Test
     public void testNearCacheTTLExpiration() {
-        IMap<Integer, Integer> map = getNearCachedMapFromClient(newTTLNearCacheConfig());
-
-        testNearCacheExpiration(map, MAX_CACHE_SIZE, MAX_TTL_SECONDS);
+        NearCacheConfig nearCacheConfig = newTTLNearCacheConfig();
+        testClientNearCacheExpiration(nearCacheConfig);
     }
 
     @Test
     public void testNearCacheMaxIdleRecordsExpired() {
-        IMap<Integer, Integer> map = getNearCachedMapFromClient(newMaxIdleSecondsNearCacheConfig());
+        NearCacheConfig nearCacheConfig = newMaxIdleSecondsNearCacheConfig();
+        testClientNearCacheExpiration(nearCacheConfig);
+    }
 
-        testNearCacheExpiration(map, MAX_CACHE_SIZE, MAX_IDLE_SECONDS);
+    private void testClientNearCacheExpiration(NearCacheConfig nearCacheConfig) {
+        String mapName = randomMapName();
+
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        populateMap(serverMap, MAX_CACHE_SIZE);
+
+        nearCacheConfig.setName(mapName + "*");
+
+        ClientConfig clientConfig = newClientConfig().addNearCacheConfig(nearCacheConfig);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        populateNearCache(clientMap, MAX_CACHE_SIZE);
+
+        assertNearCacheExpiration(clientMap, MAX_CACHE_SIZE, MAX_TTL_SECONDS);
     }
 
     @Test
