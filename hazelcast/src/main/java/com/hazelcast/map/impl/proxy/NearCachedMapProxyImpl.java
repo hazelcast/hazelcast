@@ -509,7 +509,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     @Override
     public Map<K, Object> executeOnKeysInternal(Set<K> keys, Set<Data> dataKeys, EntryProcessor entryProcessor) {
         if (serializeKeys) {
-            toDataCollection(keys, dataKeys);
+            toDataCollectionWithNonNullKeyValidation(keys, dataKeys);
         }
         try {
             return super.executeOnKeysInternal(keys, dataKeys, entryProcessor);
