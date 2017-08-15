@@ -163,6 +163,8 @@ public class ScheduledExecutorServiceSlowTest
                 .setDurability(2);
 
         Config config = new Config();
+        // Keep the partition count low, makes test faster, and chances of partition loss, less.
+        config.setProperty("hazelcast.partition.count", "10");
         config.addScheduledExecutorConfig(scheduledExecutorConfig);
 
         HazelcastInstance[] instances = createClusterWithCount(4, config);
