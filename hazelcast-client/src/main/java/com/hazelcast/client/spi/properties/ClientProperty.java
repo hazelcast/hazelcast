@@ -74,6 +74,12 @@ public final class ClientProperty {
             = new HazelcastProperty("hazelcast.client.invocation.timeout.seconds", 120, SECONDS);
 
     /**
+     * Pause time between each retry cycle of an invocation in milliseconds.
+     */
+    public static final HazelcastProperty INVOCATION_RETRY_PAUSE_MILLIS
+            = new HazelcastProperty("hazelcast.client.invocation.retry.pause.millis", 1000, MILLISECONDS);
+
+    /**
      * The maximum number of concurrent invocations allowed.
      * <p/>
      * To prevent the system from overloading, user can apply a constraint on the number of concurrent invocations.

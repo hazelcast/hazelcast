@@ -43,6 +43,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_RETRY_PAUSE_MILLIS;
 import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 import static com.hazelcast.spi.impl.operationservice.impl.AsyncInboundResponseHandler.getIdleStrategy;
@@ -52,7 +53,9 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
     private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.client.responsequeue.idlestrategy", "block");
 
-    private static final int CLEAN_RESOURCES_INTERVAL_MILLIS = 100;
+    private static final HazelcastProperty CLEAN_RESOURCES_MILLIS
+            = new HazelcastProperty("hazelcast.client.internal.clean.resources.millis",
+            100, TimeUnit.MILLISECONDS);
 
     protected final HazelcastClientInstanceImpl client;
     protected final ILogger invocationLogger;
@@ -68,12 +71,19 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
 
     private volatile boolean isShutdown;
     private final long invocationTimeoutMillis;
+    private final long invocationRetryPauseMillis;
 
     public ClientInvocationServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.invocationLogger = client.getLoggingService().getLogger(ClientInvocationService.class);
         this.invocationTimeoutMillis = initInvocationTimeoutMillis();
+        this.invocationRetryPauseMillis = initInvocationRetryPauseMillis();
         client.getMetricsRegistry().scanAndRegister(this, "invocations");
+    }
+
+    private long initInvocationRetryPauseMillis() {
+        long pauseTime = client.getProperties().getMillis(INVOCATION_RETRY_PAUSE_MILLIS);
+        return pauseTime > 0 ? pauseTime : Long.parseLong(INVOCATION_RETRY_PAUSE_MILLIS.getDefaultValue());
     }
 
     private long initInvocationTimeoutMillis() {
@@ -89,8 +99,13 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
         responseThread = new ResponseThread(client.getName() + ".response-", classLoader);
         responseThread.start();
         ClientExecutionService executionService = client.getClientExecutionService();
-        executionService.scheduleWithRepetition(new CleanResourcesTask(), CLEAN_RESOURCES_INTERVAL_MILLIS,
-                CLEAN_RESOURCES_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
+        long cleanResourcesMillis = client.getProperties().getMillis(CLEAN_RESOURCES_MILLIS);
+        if (cleanResourcesMillis <= 0) {
+            cleanResourcesMillis = Integer.parseInt(CLEAN_RESOURCES_MILLIS.getDefaultValue());
+
+        }
+        executionService.scheduleWithRepetition(new CleanResourcesTask(), cleanResourcesMillis,
+                cleanResourcesMillis, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -223,6 +238,10 @@ public abstract class ClientInvocationServiceImpl implements ClientInvocationSer
 
     public long getInvocationTimeoutMillis() {
         return invocationTimeoutMillis;
+    }
+
+    public long getInvocationRetryPauseMillis() {
+        return invocationRetryPauseMillis;
     }
 
     private static class ClientPacket {
