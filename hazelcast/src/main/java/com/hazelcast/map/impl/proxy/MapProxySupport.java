@@ -116,6 +116,7 @@ abstract class MapProxySupport<K, V>
         implements IMap<K, V>, InitializingObject {
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
+    protected static final String NULL_KEYS_ARE_NOT_ALLOWED = "Null keys parameter is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
     protected static final String NULL_PREDICATE_IS_NOT_ALLOWED = "Predicate should not be null!";
     protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
@@ -729,7 +730,7 @@ abstract class MapProxySupport<K, V>
             return;
         }
         if (dataKeys.isEmpty()) {
-            toDataCollection(keys, dataKeys);
+            toDataCollectionWithNonNullKeyValidation(keys, dataKeys);
         }
         Collection<Integer> partitions = getPartitionsForKeys(dataKeys);
         Map<Integer, Object> responses;
@@ -1083,7 +1084,7 @@ abstract class MapProxySupport<K, V>
         // TODO: why are we not forwarding to executeOnKeysInternal(keys, entryProcessor, null) or some other kind of fake
         // callback? now there is a lot of code duplication
         if (dataKeys.isEmpty()) {
-            toDataCollection(keys, dataKeys);
+            toDataCollectionWithNonNullKeyValidation(keys, dataKeys);
         }
         Collection<Integer> partitionsForKeys = getPartitionsForKeys(dataKeys);
         Map<K, Object> result = createHashMap(partitionsForKeys.size());
@@ -1176,7 +1177,7 @@ abstract class MapProxySupport<K, V>
         return mapServiceContext.getLocalMapStatsProvider().createLocalMapStats(name);
     }
 
-    protected void toDataCollection(Set<K> keys, Collection<Data> dataKeys) {
+    protected void toDataCollectionWithNonNullKeyValidation(Set<K> keys, Collection<Data> dataKeys) {
         for (K key : keys) {
             checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
             dataKeys.add(toDataWithStrategy(key));

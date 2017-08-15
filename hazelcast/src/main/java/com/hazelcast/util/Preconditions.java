@@ -62,6 +62,25 @@ public final class Preconditions {
     }
 
     /**
+     * Tests if the elements inside the argument collection are not null.
+     * If collection is null or empty the test is ignored.
+     *
+     * @param argument     the iterable tested to see if it does not contain null elements; may be null or empty
+     * @param errorMessage the errorMessage
+     * @return the argument that was tested.
+     * @throws java.lang.NullPointerException if argument is null
+     */
+    public static <T> Iterable<T> checkNoNullInside(Iterable<T> argument, String errorMessage) {
+        if (argument == null) {
+            return argument;
+        }
+        for (T element : argument) {
+            checkNotNull(element, errorMessage);
+        }
+        return argument;
+    }
+
+    /**
      * Tests if an argument is not null.
      *
      * @param argument the argument tested to see if it is not null.
