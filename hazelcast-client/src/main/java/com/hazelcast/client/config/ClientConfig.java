@@ -31,6 +31,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.security.Credentials;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -758,5 +759,48 @@ public class ClientConfig {
     public ClientConfig setUserCodeDeploymentConfig(ClientUserCodeDeploymentConfig userCodeDeploymentConfig) {
         this.userCodeDeploymentConfig = userCodeDeploymentConfig;
         return this;
+    }
+
+    /**
+     *
+     * @param mapName The name of the map for which the query cache config is to be returned.
+     * @param cacheName The name of the query cache config.
+     * @return The query cache config. If the config does not exist, it is created.
+     */
+    public QueryCacheConfig getOrCreateQueryCacheConfig(String mapName, String cacheName) {
+        Map<String, Map<String, QueryCacheConfig>> allQueryCacheConfig = getQueryCacheConfigs();
+
+        Map<String, QueryCacheConfig> mapQueryCacheConfig = lookupByPattern(allQueryCacheConfig, mapName);
+        if (mapQueryCacheConfig == null) {
+            mapQueryCacheConfig = new HashMap<String, QueryCacheConfig>();
+            allQueryCacheConfig.put(mapName, mapQueryCacheConfig);
+        }
+
+        QueryCacheConfig queryCacheConfig = lookupByPattern(mapQueryCacheConfig, cacheName);
+        if (queryCacheConfig == null) {
+            queryCacheConfig = new QueryCacheConfig(cacheName);
+            mapQueryCacheConfig.put(cacheName, queryCacheConfig);
+        }
+
+        return queryCacheConfig;
+    }
+
+    /**
+     *
+     * @param mapName The name of the map for which the query cache config is to be returned.
+     * @param cacheName The name of the query cache config.
+     * @return The query cache config. If no such config exist null is returned.
+     */
+    public QueryCacheConfig getOrNullQueryCacheConfig(String mapName, String cacheName) {
+        if (queryCacheConfigs == null) {
+            return null;
+        }
+
+        Map<String, QueryCacheConfig> mapQueryCacheConfig = lookupByPattern(queryCacheConfigs, mapName);
+        if (mapQueryCacheConfig == null) {
+            return null;
+        }
+
+        return lookupByPattern(mapQueryCacheConfig, cacheName);
     }
 }

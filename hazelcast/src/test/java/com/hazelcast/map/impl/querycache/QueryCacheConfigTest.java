@@ -33,6 +33,7 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.map.impl.querycache.AbstractQueryCacheTestSupport.getMap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -44,16 +45,9 @@ public class QueryCacheConfigTest extends HazelcastTestSupport {
         cacheConfig.setName("cache");
         cacheConfig.getPredicateConfig().setSql("__key > 10");
 
-        MapConfig mapConfig = new MapConfig();
-        mapConfig.setName("test*");
-        mapConfig.addQueryCacheConfig(cacheConfig);
-
-        Config config = new Config();
-        config.addMapConfig(mapConfig);
-
-        HazelcastInstance node = createHazelcastInstance(config);
-        IMap<Integer, Integer> map1 = getMap(node, "test1");
-        IMap<Integer, Integer> map2 = getMap(node, "test2");
+        HazelcastInstance hazelcastInstance = createInstanceWithQueryCacheConfig("test*", cacheConfig);
+        IMap<Integer, Integer> map1 = getMap(hazelcastInstance, "test1");
+        IMap<Integer, Integer> map2 = getMap(hazelcastInstance, "test2");
 
         QueryCache<Integer, Integer> queryCache1 = map1.getQueryCache("cache");
         QueryCache<Integer, Integer> queryCache2 = map2.getQueryCache("cache");
@@ -70,6 +64,22 @@ public class QueryCacheConfigTest extends HazelcastTestSupport {
         assertQueryCacheSizeEventually(19, queryCache2);
     }
 
+    @Test
+    public void testQueryCacheNameConfiguredWithWildCard() {
+        QueryCacheConfig cacheConfig = new QueryCacheConfig();
+        String mapNamePrefix = "MyMap";
+        String mapNameNameWithWildcard = mapNamePrefix + "*";
+
+        cacheConfig.setName("myCache");
+        cacheConfig.getPredicateConfig().setSql("__key > 10");
+
+        HazelcastInstance hazelcastInstance = createInstanceWithQueryCacheConfig(mapNameNameWithWildcard, cacheConfig);
+        IMap<Integer, Integer> map1 = getMap(hazelcastInstance, mapNamePrefix + "_1");
+
+        QueryCache<Integer, Integer> queryCache1 = map1.getQueryCache("myCache");
+        assertNotNull(queryCache1);
+    }
+
     private void assertQueryCacheSizeEventually(final int expected, final QueryCache cache) {
         assertTrueEventually(new AssertTask() {
             @Override
@@ -77,5 +87,17 @@ public class QueryCacheConfigTest extends HazelcastTestSupport {
                 assertEquals(expected, cache.size());
             }
         });
+    }
+
+    protected HazelcastInstance createInstanceWithQueryCacheConfig(String mapName, QueryCacheConfig queryCacheConfig) {
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setName(mapName);
+
+        mapConfig.addQueryCacheConfig(queryCacheConfig);
+
+        Config config = new Config();
+        config.addMapConfig(mapConfig);
+
+        return createHazelcastInstance(config);
     }
 }

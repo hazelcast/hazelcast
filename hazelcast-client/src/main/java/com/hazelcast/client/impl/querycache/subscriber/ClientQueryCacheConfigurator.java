@@ -22,7 +22,6 @@ import com.hazelcast.map.impl.querycache.QueryCacheConfigurator;
 import com.hazelcast.map.impl.querycache.QueryCacheEventService;
 import com.hazelcast.map.impl.querycache.subscriber.AbstractQueryCacheConfigurator;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -42,19 +41,7 @@ public class ClientQueryCacheConfigurator extends AbstractQueryCacheConfigurator
 
     @Override
     public QueryCacheConfig getOrCreateConfiguration(String mapName, String cacheName) {
-        Map<String, Map<String, QueryCacheConfig>> allQueryCacheConfig = clientConfig.getQueryCacheConfigs();
-
-        Map<String, QueryCacheConfig> mapQueryCacheConfig = allQueryCacheConfig.get(mapName);
-        if (mapQueryCacheConfig == null) {
-            mapQueryCacheConfig = new HashMap<String, QueryCacheConfig>();
-            allQueryCacheConfig.put(mapName, mapQueryCacheConfig);
-        }
-
-        QueryCacheConfig config = mapQueryCacheConfig.get(cacheName);
-        if (config == null) {
-            config = new QueryCacheConfig(cacheName);
-            mapQueryCacheConfig.put(cacheName, config);
-        }
+        QueryCacheConfig config = clientConfig.getOrCreateQueryCacheConfig(mapName, cacheName);
 
         setPredicateImpl(config);
         setEntryListener(mapName, cacheName, config);
@@ -64,14 +51,7 @@ public class ClientQueryCacheConfigurator extends AbstractQueryCacheConfigurator
 
     @Override
     public QueryCacheConfig getOrNull(String mapName, String cacheName) {
-        Map<String, Map<String, QueryCacheConfig>> allQueryCacheConfig = clientConfig.getQueryCacheConfigs();
-
-        Map<String, QueryCacheConfig> mapQueryCacheConfig = allQueryCacheConfig.get(mapName);
-        if (mapQueryCacheConfig == null) {
-            return null;
-        }
-
-        return mapQueryCacheConfig.get(cacheName);
+        return clientConfig.getOrNullQueryCacheConfig(mapName, cacheName);
     }
 
     @Override
