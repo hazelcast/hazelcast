@@ -164,6 +164,13 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
 
     boolean merge(Data dataKey, EntryView mergingEntryView, MapMergePolicy mergePolicy);
 
+    /**
+     * Gets a record for the given key.
+     *
+     * @param key the key
+     * @return the record
+     * @throw NullPointerException if key is null.
+     */
     R getRecord(Data key);
 
     /**
