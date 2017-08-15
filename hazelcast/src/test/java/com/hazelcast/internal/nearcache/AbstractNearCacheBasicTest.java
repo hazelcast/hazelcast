@@ -16,7 +16,9 @@
 
 package com.hazelcast.internal.nearcache;
 
+import com.hazelcast.cache.HazelcastExpiryPolicy;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods;
 import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
@@ -29,6 +31,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
+import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessorResult;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,6 +67,7 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.waitUntilLoade
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.Executors.newFixedThreadPool;
+import static java.util.concurrent.TimeUnit.HOURS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -268,12 +272,66 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     /**
+     * Checks that the Near Cache is populated when {@link DataStructureMethods#SET_ASYNC} with
+     * {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE} is used.
+     */
+    @Test
+    public void whenSetAsyncIsUsedWithCacheOnUpdate_thenNearCacheShouldBePopulated() {
+        whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods.SET_ASYNC);
+    }
+
+    /**
+     * Checks that the Near Cache is populated when {@link DataStructureMethods#SET_ASYNC_WITH_TTL} with
+     * {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE} is used.
+     */
+    @Test
+    public void whenSetAsyncWithTtlIsUsedWithCacheOnUpdate_thenNearCacheShouldBePopulated() {
+        whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods.SET_ASYNC_WITH_TTL);
+    }
+
+    /**
+     * Checks that the Near Cache is populated when {@link DataStructureMethods#SET_ASYNC_WITH_EXPIRY_POLICY} with
+     * {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE} is used.
+     */
+    @Test
+    public void whenSetAsyncWithExpiryPolicyIsUsedWithCacheOnUpdate_thenNearCacheShouldBePopulated() {
+        whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods.SET_ASYNC_WITH_EXPIRY_POLICY);
+    }
+
+    /**
      * Checks that the Near Cache is populated when {@link DataStructureMethods#PUT} with
      * {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE} is used.
      */
     @Test
     public void whenPutIsUsedWithCacheOnUpdate_thenNearCacheShouldBePopulated() {
         whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods.PUT);
+    }
+
+    /**
+     * Checks that the Near Cache is populated when {@link DataStructureMethods#PUT_ASYNC} with
+     * {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE} is used.
+     */
+    @Test
+    public void whenPutAsyncIsUsedWithCacheOnUpdate_thenNearCacheShouldBePopulated() {
+        whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods.PUT_ASYNC);
+    }
+
+    /**
+     * Checks that the Near Cache is populated when {@link DataStructureMethods#PUT_ASYNC_WITH_TTL} with
+     * {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE} is used.
+     */
+    @Test
+    public void whenPutAsyncWithTtlIsUsedWithCacheOnUpdate_thenNearCacheShouldBePopulated() {
+        whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods.PUT_ASYNC_WITH_TTL);
+    }
+
+    /**
+     * Checks that the Near Cache is populated when {@link DataStructureMethods#PUT_ASYNC_WITH_EXPIRY_POLICY} with
+     * {@link com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy#CACHE_ON_UPDATE} is used.
+     */
+    @Test
+    public void whenPutAsyncWithExpiryPolicyIsUsedWithCacheOnUpdate_thenNearCacheShouldBePopulated() {
+        whenEntryIsAddedWithCacheOnUpdate_thenNearCacheShouldBePopulated(DataStructureMethods.PUT_ASYNC_WITH_EXPIRY_POLICY);
     }
 
     /**
@@ -327,6 +385,8 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         NearCacheTestContext<Integer, String, NK, NV> context = createContext(0);
         DataStructureAdapter<Integer, String> adapter = context.nearCacheAdapter;
 
+        ExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(1, 1, 1, HOURS);
+
         Map<Integer, String> putAllMap = new HashMap<Integer, String>(DEFAULT_RECORD_COUNT);
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             String value = "value-" + i;
@@ -334,8 +394,27 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 case SET:
                     adapter.set(i, value);
                     break;
+                case SET_ASYNC:
+                    getFuture(adapter.setAsync(i, value), "Could not set value via setAsync()");
+                    break;
+                case SET_ASYNC_WITH_TTL:
+                    getFuture(adapter.setAsync(i, value, 1, HOURS), "Could not set value via setAsync() with TTL");
+                    break;
+                case SET_ASYNC_WITH_EXPIRY_POLICY:
+                    getFuture(adapter.setAsync(i, value, expiryPolicy), "Could not set value via setAsync() with ExpiryPolicy");
+                    break;
                 case PUT:
                     assertNull(adapter.put(i, value));
+                    break;
+                case PUT_ASYNC:
+                    assertNull(getFuture(adapter.putAsync(i, value), "Could not put value via putAsync()"));
+                    break;
+                case PUT_ASYNC_WITH_TTL:
+                    assertNull(getFuture(adapter.putAsync(i, value, 1, HOURS), "Could not put value via putAsync() with TTL"));
+                    break;
+                case PUT_ASYNC_WITH_EXPIRY_POLICY:
+                    ICompletableFuture<String> future = adapter.putAsync(i, value, expiryPolicy);
+                    assertNull(getFuture(future, "Could not put value via putAsync() with ExpiryPolicy"));
                     break;
                 case PUT_IF_ABSENT:
                     assertTrue(adapter.putIfAbsent(i, value));
@@ -384,6 +463,56 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#SET_ASYNC} is used.
+     */
+    @Test
+    public void whenSetAsyncIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.SET_ASYNC);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#SET_ASYNC} is used.
+     */
+    @Test
+    public void whenSetAsyncIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.SET_ASYNC);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#SET_ASYNC_WITH_TTL} is used.
+     */
+    @Test
+    public void whenSetAsyncWithTtlIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.SET_ASYNC_WITH_TTL);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#SET_ASYNC_WITH_TTL} is used.
+     */
+    @Test
+    public void whenSetAsyncWithTtlIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.SET_ASYNC_WITH_TTL);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#SET_ASYNC_WITH_EXPIRY_POLICY}
+     * is used.
+     */
+    @Test
+    public void whenSetAsyncWithExpiryPolicyIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.SET_ASYNC_WITH_EXPIRY_POLICY);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#SET_ASYNC_WITH_EXPIRY_POLICY}
+     * is used.
+     */
+    @Test
+    public void whenSetAsyncWithExpiryPolicyIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.SET_ASYNC_WITH_EXPIRY_POLICY);
+    }
+
+    /**
      * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#PUT} is used.
      */
     @Test
@@ -397,6 +526,56 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     @Test
     public void whenPutIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.PUT);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#PUT_ASYNC} is used.
+     */
+    @Test
+    public void whenPutAsyncIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.PUT_ASYNC);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#PUT_ASYNC} is used.
+     */
+    @Test
+    public void whenPutAsyncIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.PUT_ASYNC);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#PUT_ASYNC_WITH_TTL} is used.
+     */
+    @Test
+    public void whenPutAsyncWithTtlIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.PUT_ASYNC_WITH_TTL);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#PUT_ASYNC_WITH_TTL} is used.
+     */
+    @Test
+    public void whenPutAsyncWithTtlIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.PUT_ASYNC_WITH_TTL);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#PUT_ASYNC_WITH_EXPIRY_POLICY}
+     * is used.
+     */
+    @Test
+    public void whenPutAsyncWithExpiryPolicyIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.PUT_ASYNC_WITH_EXPIRY_POLICY);
+    }
+
+    /**
+     * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#PUT_ASYNC_WITH_EXPIRY_POLICY}
+     * is used.
+     */
+    @Test
+    public void whenPutAsyncWithExpiryPolicyIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.PUT_ASYNC_WITH_EXPIRY_POLICY);
     }
 
     /**
@@ -564,6 +743,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
         // this should invalidate the Near Cache
         IMapReplaceEntryProcessor mapEntryProcessor = new IMapReplaceEntryProcessor("value", "newValue");
+        ExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(1, 1, 1, HOURS);
         Map<Integer, String> invalidationMap = new HashMap<Integer, String>(DEFAULT_RECORD_COUNT);
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             String value = "value-" + i;
@@ -572,8 +752,29 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 case SET:
                     adapter.set(i, newValue);
                     break;
+                case SET_ASYNC:
+                    getFuture(adapter.setAsync(i, newValue), "Could not set value via setAsync()");
+                    break;
+                case SET_ASYNC_WITH_TTL:
+                    getFuture(adapter.setAsync(i, newValue, 1, HOURS), "Could not set value via setAsync() with TTL");
+                    break;
+                case SET_ASYNC_WITH_EXPIRY_POLICY:
+                    ICompletableFuture<Void> voidFuture = adapter.setAsync(i, newValue, expiryPolicy);
+                    getFuture(voidFuture, "Could not set value via setAsync() with ExpiryPolicy");
+                    break;
                 case PUT:
                     assertEquals(value, adapter.put(i, newValue));
+                    break;
+                case PUT_ASYNC:
+                    assertEquals(value, getFuture(adapter.putAsync(i, newValue), "Could not put value via putAsync()"));
+                    break;
+                case PUT_ASYNC_WITH_TTL:
+                    ICompletableFuture<String> ttlFuture = adapter.putAsync(i, newValue, 1, HOURS);
+                    assertEquals(value, getFuture(ttlFuture, "Could not put value via putAsync() with TTL"));
+                    break;
+                case PUT_ASYNC_WITH_EXPIRY_POLICY:
+                    ICompletableFuture<String> expiryFuture = adapter.putAsync(i, newValue, expiryPolicy);
+                    assertEquals(value, getFuture(expiryFuture, "Could not put value via putAsync() with ExpiryPolicy"));
                     break;
                 case REPLACE:
                     assertEquals(value, adapter.replace(i, newValue));
