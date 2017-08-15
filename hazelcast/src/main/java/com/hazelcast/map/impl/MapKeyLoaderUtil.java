@@ -32,6 +32,7 @@ import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public final class MapKeyLoaderUtil {
 
@@ -120,6 +121,8 @@ public final class MapKeyLoaderUtil {
 
         @Override
         public Entry<Integer, Data> apply(Data input) {
+            // Null-pointer here, in case of null key loaded by MapLoader
+            checkNotNull(input, "Key loaded by a MapLoader cannot be null.");
             Integer partition = partitionService.getPartitionId(input);
             return new MapEntrySimple<Integer, Data>(partition, input);
         }
