@@ -155,10 +155,16 @@ public class DefaultDiscoveryService
 
             List<DiscoveryStrategy> discoveryStrategies = new ArrayList<DiscoveryStrategy>();
             for (DiscoveryStrategyFactory factory : factories) {
+                //as a side-effect the buildDiscoveryStrategy() removes a config of the created strategy
                 DiscoveryStrategy discoveryStrategy = buildDiscoveryStrategy(factory, discoveryStrategyConfigs);
                 if (discoveryStrategy != null) {
                     discoveryStrategies.add(discoveryStrategy);
                 }
+            }
+            if (!discoveryStrategyConfigs.isEmpty()) {
+                throw new ValidationException("There is no factory to create these strategies: '"
+                        + discoveryStrategyConfigs + "' Is it a typo in a strategy classname? "
+                        + "Perhaps you forgot to include implementation is not present on a classpath?");
             }
             return discoveryStrategies;
         } catch (Exception e) {
@@ -210,9 +216,16 @@ public class DefaultDiscoveryService
         Class<? extends DiscoveryStrategy> discoveryStrategyType = factory.getDiscoveryStrategyType();
         String className = discoveryStrategyType.getName();
 
-        for (DiscoveryStrategyConfig config : discoveryStrategyConfigs) {
+        Iterator<DiscoveryStrategyConfig> configIterator = discoveryStrategyConfigs.iterator();
+        while (configIterator.hasNext()) {
+            DiscoveryStrategyConfig config = configIterator.next();
             String factoryClassName = getFactoryClassName(config);
             if (className.equals(factoryClassName)) {
+                // side-effect - we mutate the passed collection!
+                // we use this side-effect to indicate given strategy was successfully created
+                // this is needed for fail-fast behaviour when a strategy is misconfigured,
+                // e.g. a typo in classname
+                configIterator.remove();
                 Map<String, Comparable> properties = buildProperties(factory, config, className);
                 return factory.newDiscoveryStrategy(discoveryNode, logger, properties);
             }

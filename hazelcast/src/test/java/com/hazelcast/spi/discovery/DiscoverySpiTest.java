@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.InterfacesConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.TcpIpConfig;
@@ -95,6 +96,21 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
 
     private static final MemberVersion VERSION = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
     private static final ILogger LOGGER = Logger.getLogger(DiscoverySpiTest.class);
+
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void test_discoveryStrategyFailFastWhenStrategyClassnameDoesNotExist() {
+        Config config = new Config();
+        config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+
+        DiscoveryConfig discoveryConfig = new DiscoveryConfig();
+        discoveryConfig.addDiscoveryStrategyConfig(new DiscoveryStrategyConfig("non.existing.ClassName"));
+        config.getNetworkConfig().getJoin().setDiscoveryConfig(discoveryConfig);
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+
+        createHazelcastInstance(config);
+
+    }
 
     @Test
     public void test_metadata_discovery_on_node_startup() throws Exception {
