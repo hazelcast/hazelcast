@@ -294,12 +294,12 @@ public class PartitionStateManager {
         return partitions[partitionId];
     }
 
-    Address[][] repartition(Set<Address> excludedAddresses) {
+    Address[][] repartition(Set<Address> excludedAddresses, Collection<Integer> partitionInclusionSet) {
         if (!initialized) {
             return null;
         }
         Collection<MemberGroup> memberGroups = createMemberGroups(excludedAddresses);
-        Address[][] newState = partitionStateGenerator.arrange(memberGroups, partitions);
+        Address[][] newState = partitionStateGenerator.arrange(memberGroups, partitions, partitionInclusionSet);
 
         if (newState == null) {
             if (logger.isFinestEnabled()) {

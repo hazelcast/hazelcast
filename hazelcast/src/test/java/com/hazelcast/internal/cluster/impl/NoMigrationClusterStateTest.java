@@ -43,6 +43,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
+import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
 import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -94,6 +95,53 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(2, instances[2]);
         assertAllPartitionsAreAssigned(instances[2], 1);
+    }
+
+    @Test
+    public void lostPartitions_shouldBeAssigned_toAvailableMembers() {
+        int clusterSize = MAX_REPLICA_COUNT + 3;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+
+        HazelcastInstance[] instances = factory.newInstances(new Config(), clusterSize);
+        warmUpPartitions(instances);
+        waitAllForSafeState(instances);
+
+        changeClusterStateEventually(instances[1], ClusterState.NO_MIGRATION);
+
+        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+            terminateInstance(instances[i]);
+        }
+
+        for (int i = MAX_REPLICA_COUNT; i < clusterSize; i++) {
+            assertClusterSizeEventually(clusterSize - MAX_REPLICA_COUNT, instances[i]);
+            assertAllPartitionsAreAssigned(instances[i], 1);
+        }
+    }
+
+    @Test
+    public void lostPartitions_shouldBeAssigned_toNewMembers() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+
+        HazelcastInstance[] instances = factory.newInstances(new Config(), MAX_REPLICA_COUNT);
+        warmUpPartitions(instances);
+        waitAllForSafeState(instances);
+
+        changeClusterStateEventually(instances[1], ClusterState.NO_MIGRATION);
+
+        HazelcastInstance[] newInstances = factory.newInstances(new Config(), 3);
+
+        for (HazelcastInstance instance : newInstances) {
+            assertClusterSizeEventually(MAX_REPLICA_COUNT + newInstances.length, instance);
+        }
+
+        for (HazelcastInstance instance : instances) {
+            terminateInstance(instance);
+        }
+
+        for (HazelcastInstance instance : newInstances) {
+            assertClusterSizeEventually(newInstances.length, instance);
+            assertAllPartitionsAreAssigned(instance, newInstances.length);
+        }
     }
 
     private static void assertAllPartitionsAreAssigned(HazelcastInstance instance, final int replicaCount) {

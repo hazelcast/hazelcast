@@ -634,7 +634,7 @@ public class MigrationManager {
 
                 processNewPartitionState(newState);
 
-                if (ASSERTION_ENABLED) {
+                if (ASSERTION_ENABLED && isMigrationAllowedByClusterState()) {
                     migrationQueue.add(new AssertPartitionTableTask(partitionService.getMaxAllowedBackupCount()));
                 }
 
@@ -656,8 +656,13 @@ public class MigrationManager {
             if (!isRepartitioningAllowed()) {
                 return null;
             }
+            if (!isMigrationAllowedByClusterState()) {
+                logger.fine("Cluster state doesn't allow repartitioning. RepartitioningTask will only assign lost partitions.");
+                assignCompletelyLostPartitions();
+                return null;
+            }
 
-            Address[][] newState = partitionStateManager.repartition(shutdownRequestedAddresses);
+            Address[][] newState = partitionStateManager.repartition(shutdownRequestedAddresses, null);
             if (newState == null) {
                 migrationQueue.add(new ProcessShutdownRequestsTask());
                 return null;
@@ -668,6 +673,31 @@ public class MigrationManager {
             }
 
             return newState;
+        }
+
+        private void assignCompletelyLostPartitions() {
+            Collection<Integer> partitions = new ArrayList<Integer>();
+            for (InternalPartition partition : partitionStateManager.getPartitions()) {
+                boolean empty = true;
+                for (int index = 0; index < InternalPartition.MAX_REPLICA_COUNT; index++) {
+                    empty &= partition.getReplicaAddress(index) == null;
+                }
+                if (empty) {
+                    partitions.add(partition.getPartitionId());
+                }
+            }
+            if (!partitions.isEmpty()) {
+                Address[][] state = partitionStateManager.repartition(shutdownRequestedAddresses, partitions);
+                for (int partitionId : partitions) {
+                    InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(partitionId);
+                    Address[] replicas = state[partitionId];
+
+                    assignLostPartitionOwner(partition, replicas[0]);
+                    partition.setReplicaAddresses(replicas);
+                }
+                logger.warning("Assigning new owners for " + partitions.size() + " LOST partitions!");
+                partitionService.syncPartitionRuntimeState();
+            }
         }
 
         /** Processes the new partition state by planning and scheduling migrations. */
@@ -725,26 +755,22 @@ public class MigrationManager {
             }
         }
 
-        private void assignNewPartitionOwner(int partitionId, InternalPartitionImpl currentPartition, Address newOwner) {
+        private void assignLostPartitionOwner(InternalPartitionImpl partition, Address newOwner) {
+            int partitionId = partition.getPartitionId();
             String destinationUuid = getMemberUuid(newOwner);
             MigrationInfo migrationInfo = new MigrationInfo(partitionId, null, null, newOwner, destinationUuid, -1, -1, -1, 0);
             PartitionEventManager partitionEventManager = partitionService.getPartitionEventManager();
             partitionEventManager.sendMigrationEvent(migrationInfo, MigrationEvent.MigrationStatus.STARTED);
-            currentPartition.setReplicaAddress(0, newOwner);
+            partition.setReplicaAddress(0, newOwner);
             partitionEventManager.sendMigrationEvent(migrationInfo, MigrationEvent.MigrationStatus.COMPLETED);
         }
 
         /**
          * Returns {@code true} if there are no migrations in the migration queue, no new node is joining, there is no
-         * ongoing repartitioning and the cluster state allows migrations, {@link ClusterState#isMigrationAllowed()},
+         * ongoing repartitioning,
          * otherwise triggers the control task.
          */
         private boolean isRepartitioningAllowed() {
-            if (!doesClusterStateAllowsMigration()) {
-                logger.finest("Cluster state doesn't allow repartitioning. RepartitioningTask will stop.");
-                return false;
-            }
-
             boolean migrationAllowed = isMigrationAllowed();
             boolean hasMigrationTasks = migrationQueue.migrationTaskCount() > 1;
             if (migrationAllowed && !hasMigrationTasks) {
@@ -754,7 +780,7 @@ public class MigrationManager {
             return false;
         }
 
-        private boolean doesClusterStateAllowsMigration() {
+        private boolean isMigrationAllowedByClusterState() {
             ClusterState clusterState = node.getClusterService().getClusterState();
             return clusterState.isMigrationAllowed();
         }
@@ -793,7 +819,7 @@ public class MigrationManager {
                             : "partitionId=" + partitionId + " invalid index: " + sourceNewReplicaIndex;
 
                     lostCount.value++;
-                    assignNewPartitionOwner(partitionId, partition, destination);
+                    assignLostPartitionOwner(partition, destination);
 
                 } else if (destination == null && sourceNewReplicaIndex == -1) {
                     assert source != null : "partitionId=" + partitionId + " source is null";
@@ -842,10 +868,6 @@ public class MigrationManager {
 
         @Override
         public void run() {
-            if (!ASSERTION_ENABLED) {
-                return;
-            }
-
             if (!node.isMaster()) {
                 return;
             }
@@ -856,30 +878,23 @@ public class MigrationManager {
                     logger.info("Skipping partition table assertions since partition table state is reset");
                     return;
                 }
-
                 final InternalPartition[] partitions = partitionStateManager.getPartitions();
                 final Set<Address> replicas = new HashSet<Address>();
-
                 for (InternalPartition partition : partitions) {
                     replicas.clear();
-
                     for (int index = 0; index < InternalPartition.MAX_REPLICA_COUNT; index++) {
                         final Address address = partition.getReplicaAddress(index);
                         if (index <= maxBackupCount) {
-                            if (shutdownRequestedAddresses.isEmpty()) {
-                                assert address != null : "Repartitioning problem, missing replica! "
-                                        + "Current replica: " + index + ", Max backups: " + maxBackupCount
-                                        + " -> " + partition;
-                            }
+                            assert !shutdownRequestedAddresses.isEmpty() || address != null
+                                    : "Repartitioning problem, missing replica! "
+                                    + "Current replica: " + index + ", Max backups: " + maxBackupCount
+                                    + " -> " + partition;
                         } else {
                             assert address == null : "Repartitioning problem, leaking replica! "
                                     + "Current replica: " + index + ", Max backups: " + maxBackupCount
                                     + " -> " + partition;
                         }
-
-                        if (address != null) {
-                            assert replicas.add(address) : "Duplicate address in " + partition;
-                        }
+                        assert address == null || replicas.add(address) : "Duplicate address in " + partition;
                     }
                 }
             } finally {
