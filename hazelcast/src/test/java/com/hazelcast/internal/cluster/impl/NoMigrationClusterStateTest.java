@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -34,6 +35,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.version.Version;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -221,6 +223,16 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
                 service.assertNoReplication();
             }
         }, 10);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    // RU_COMPAT_WITH_3_8
+    public void noMigration_notSupported_beforeV39()  {
+        System.setProperty(BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION, Version.of(3, 8).toString());
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance hz = factory.newHazelcastInstance();
+
+        hz.getCluster().changeClusterState(ClusterState.NO_MIGRATION);
     }
 
     private Config newConfigWithMigrationAwareService() {
