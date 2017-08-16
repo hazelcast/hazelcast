@@ -174,6 +174,30 @@ public class DynamicConfigurationAwareConfig extends Config {
         return getMapConfigInternal(name, name);
     }
 
+    @Override
+    public MapConfig getMapConfigOrNull(String name) {
+        return getMapConfigOrNullInternal(name);
+    }
+
+    private MapConfig getMapConfigOrNullInternal(String name) {
+        return getMapConfigOrNullInternal(name, name);
+    }
+
+    private MapConfig getMapConfigOrNullInternal(String name, String fallbackName) {
+        String baseName = getBaseName(name);
+        Map<String, MapConfig> staticMapConfigs = staticConfig.getMapConfigs();
+        MapConfig mapConfig = lookupByPattern(configPatternMatcher, staticMapConfigs, baseName);
+        if (mapConfig == null) {
+            mapConfig = configurationService.findMapConfig(baseName);
+        } else {
+            initDefaultMaxSizeForOnHeapMaps(mapConfig.getNearCacheConfig());
+        }
+        if (mapConfig == null) {
+            mapConfig = staticConfig.getMapConfigOrNull(fallbackName);
+        }
+        return mapConfig;
+    }
+
     private MapConfig getMapConfigInternal(String name, String fallbackName) {
         String baseName = getBaseName(name);
         Map<String, MapConfig> staticMapConfigs = staticConfig.getMapConfigs();
