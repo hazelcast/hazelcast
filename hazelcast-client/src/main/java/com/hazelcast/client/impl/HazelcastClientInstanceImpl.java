@@ -102,6 +102,7 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.diagnostics.BuildInfoPlugin;
 import com.hazelcast.internal.diagnostics.ConfigPropertiesPlugin;
 import com.hazelcast.internal.diagnostics.Diagnostics;
+import com.hazelcast.internal.diagnostics.EventQueuePlugin;
 import com.hazelcast.internal.diagnostics.MetricsPlugin;
 import com.hazelcast.internal.diagnostics.NetworkingImbalancePlugin;
 import com.hazelcast.internal.diagnostics.SystemLogPlugin;
@@ -420,6 +421,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         }
 
         diagnostics.start();
+        diagnostics.register(
+                new EventQueuePlugin(loggingService.getLogger(EventQueuePlugin.class), listenerService.getEventExecutor(),
+                        properties));
         diagnostics.register(
                 new BuildInfoPlugin(loggingService.getLogger(BuildInfoPlugin.class)));
         diagnostics.register(

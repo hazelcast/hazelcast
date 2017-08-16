@@ -30,15 +30,16 @@ import java.util.concurrent.TimeUnit;
  * @see EventPublishingService#dispatchEvent(Object, Object)
  */
 public final class LocalEventDispatcher implements StripedRunnable, TimeoutRunnable {
-    private EventServiceImpl eventService;
+
+    private final EventServiceImpl eventService;
     private final String serviceName;
     private final Object event;
     private final Object listener;
     private final int orderKey;
     private final long timeoutMs;
 
-    LocalEventDispatcher(EventServiceImpl eventService, String serviceName, Object event, Object listener,
-                         int orderKey, long timeoutMs) {
+    public LocalEventDispatcher(EventServiceImpl eventService, String serviceName, Object event, Object listener,
+                                int orderKey, long timeoutMs) {
         this.eventService = eventService;
         this.serviceName = serviceName;
         this.event = event;
@@ -66,5 +67,13 @@ public final class LocalEventDispatcher implements StripedRunnable, TimeoutRunna
     @Override
     public int getKey() {
         return orderKey;
+    }
+
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    public Object getEvent() {
+        return event;
     }
 }

@@ -31,6 +31,7 @@ import static java.util.Collections.sort;
  * @param <T>
  */
 public final class ItemCounter<T> {
+
     private final Map<T, MutableLong> map = new HashMap<T, MutableLong>();
 
     /**
@@ -41,7 +42,6 @@ public final class ItemCounter<T> {
     public Set<T> keySet() {
         return map.keySet();
     }
-
 
     /**
      * Returns a List of keys in descending value order.
@@ -123,6 +123,13 @@ public final class ItemCounter<T> {
     }
 
     /**
+     * Clears the counter.
+     */
+    public void clear() {
+        map.clear();
+    }
+
+    /**
      * Set counter for item and return previous value
      *
      * @param item
@@ -157,11 +164,9 @@ public final class ItemCounter<T> {
         }
 
         ItemCounter that = (ItemCounter) o;
-
         if (!map.equals(that.map)) {
             return false;
         }
-
         return true;
     }
 

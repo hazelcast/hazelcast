@@ -20,6 +20,8 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
@@ -87,8 +89,6 @@ public final class StripedExecutor implements Executor {
 
     /**
      * Returns the total number of processed events.
-     *
-     * @return
      */
     public long processedCount() {
         long size = 0;
@@ -100,9 +100,9 @@ public final class StripedExecutor implements Executor {
 
     /**
      * Shuts down this StripedExecutor.
-     * <p/>
+     * <p>
      * No checking is done to see if the StripedExecutor already is shut down, so it should be called only once.
-     * <p/>
+     * <p>
      * If there is any pending work, it will be thrown away.
      */
     public void shutdown() {
@@ -149,7 +149,15 @@ public final class StripedExecutor implements Executor {
         return workers[index];
     }
 
-    // used in tests.
+    public List<BlockingQueue<Runnable>> getWorkQueues() {
+        List<BlockingQueue<Runnable>> workQueues = new ArrayList<BlockingQueue<Runnable>>(workers.length);
+        for (Worker worker : workers) {
+            workQueues.add(worker.workQueue);
+        }
+        return workQueues;
+    }
+
+    // used in tests
     Worker[] getWorkers() {
         return workers;
     }

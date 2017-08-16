@@ -322,6 +322,10 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         }
     }
 
+    public StripedExecutor getEventExecutor() {
+        return eventExecutor;
+    }
+
     /**
      * Sends a {@link RegistrationOperation} to other cluster members to register the listener.
      * The method waits for {@value REGISTRATION_TIMEOUT_SECONDS} seconds before invoking the

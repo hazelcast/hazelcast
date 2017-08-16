@@ -71,4 +71,12 @@ public class QueueEvent implements IdentifiedDataSerializable {
     public int getId() {
         return QueueDataSerializerHook.QUEUE_EVENT;
     }
+
+    public String getName() {
+        return name;
+    }
+
+    public ItemEventType getEventType() {
+        return eventType;
+    }
 }
