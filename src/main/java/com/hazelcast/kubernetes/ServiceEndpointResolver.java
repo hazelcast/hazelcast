@@ -16,22 +16,6 @@
 
 package com.hazelcast.kubernetes;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.spi.discovery.DiscoveryNode;
-import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
-import com.hazelcast.util.StringUtil;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.fabric8.kubernetes.api.model.EndpointAddress;
-import io.fabric8.kubernetes.api.model.EndpointSubset;
-import io.fabric8.kubernetes.api.model.Endpoints;
-import io.fabric8.kubernetes.api.model.EndpointsList;
-import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.ConfigBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -42,8 +26,24 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-class ServiceEndpointResolver
-        extends HazelcastKubernetesDiscoveryStrategy.EndpointResolver {
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.IOUtil;
+import com.hazelcast.spi.discovery.DiscoveryNode;
+import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
+import com.hazelcast.util.StringUtil;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.fabric8.kubernetes.api.model.EndpointAddress;
+import io.fabric8.kubernetes.api.model.EndpointSubset;
+import io.fabric8.kubernetes.api.model.Endpoints;
+import io.fabric8.kubernetes.api.model.EndpointsList;
+import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.ConfigBuilder;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClient;
+
+class ServiceEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.EndpointResolver {
 
     private final String serviceName;
     private final String serviceLabel;
@@ -53,7 +53,7 @@ class ServiceEndpointResolver
     private final KubernetesClient client;
 
     ServiceEndpointResolver(ILogger logger, String serviceName, String serviceLabel, String serviceLabelValue,
-                                   String namespace, String kubernetesMaster, String apiToken) {
+            String namespace, String kubernetesMaster, String apiToken) {
 
         super(logger);
 
@@ -64,16 +64,16 @@ class ServiceEndpointResolver
         this.client = buildKubernetesClient(apiToken, kubernetesMaster);
     }
 
-    private KubernetesClient buildKubernetesClient(String apiToken, String kubernetesMaster) {
-        String oauthToken = apiToken;
-        if (StringUtil.isNullOrEmpty(oauthToken)) {
-            oauthToken = getAccountToken();
+    private KubernetesClient buildKubernetesClient(String token, String kubernetesMaster) {
+        if (StringUtil.isNullOrEmpty(token)) {
+            token = getAccountToken();
         }
-        logger.info("Kubernetes Discovery: Bearer Token { " + apiToken + " }");
-        Config config = new ConfigBuilder().withOauthToken(oauthToken).withMasterUrl(kubernetesMaster).build();
+        logger.info("Kubernetes Discovery: Bearer Token { " + token + " }");
+        Config config = new ConfigBuilder().withOauthToken(token).withMasterUrl(kubernetesMaster).build();
         return new DefaultKubernetesClient(config);
     }
 
+    @Override
     List<DiscoveryNode> resolve() {
         List<DiscoveryNode> result = Collections.emptyList();
         if (serviceName != null && !serviceName.isEmpty()) {
