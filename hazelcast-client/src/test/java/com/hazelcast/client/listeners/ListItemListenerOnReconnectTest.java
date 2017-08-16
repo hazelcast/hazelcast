@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.listeners;
 
+import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
@@ -30,6 +31,11 @@ import org.junit.runner.RunWith;
 public class ListItemListenerOnReconnectTest extends AbstractListenersOnReconnectTest {
 
     private IList<String> iList;
+
+    @Override
+    String getServiceName() {
+        return ListService.SERVICE_NAME;
+    }
 
     @Override
     protected String addListener() {
