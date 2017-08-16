@@ -17,8 +17,10 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.impl.CacheEntryViews;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -86,6 +88,16 @@ public class CachePutAllOperation
             Data value = entry.getValue();
             CacheRecord backupRecord = cache.put(key, value, expiryPolicy, callerUuid, completionId);
             backupRecords.put(key, backupRecord);
+
+            publishWanEvent(key, value, backupRecord);
+        }
+    }
+
+    private void publishWanEvent(Data key, Data value, CacheRecord backupRecord) {
+        if (cache.isWanReplicationEnabled()) {
+            ICacheService service = getService();
+            CacheWanEventPublisher publisher = service.getCacheWanEventPublisher();
+            publisher.publishWanReplicationUpdate(name, CacheEntryViews.createDefaultEntryView(key, value, backupRecord));
         }
     }
 

@@ -16,10 +16,13 @@
 
 package com.hazelcast.cache.impl.operation;
 
+import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.impl.CacheEntryViews;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -75,8 +78,24 @@ public class CachePutAllBackupOperation
             for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
                 CacheRecord record = entry.getValue();
                 cache.putRecord(entry.getKey(), record);
+
+                publishWanEvent(entry.getKey(), record);
             }
         }
+    }
+
+    private void publishWanEvent(Data key, CacheRecord record) {
+        if (cache.isWanReplicationEnabled()) {
+            ICacheService service = getService();
+            final CacheWanEventPublisher publisher = service.getCacheWanEventPublisher();
+            final CacheEntryView<Data, Data> view = CacheEntryViews.createDefaultEntryView(
+                    key, toData(record.getValue()), record);
+            publisher.publishWanReplicationUpdate(name, view);
+        }
+    }
+
+    private Data toData(Object o) {
+        return getNodeEngine().getSerializationService().toData(o);
     }
 
     @Override
