@@ -66,7 +66,7 @@ public class BackupExpirationBouncingMemberTest extends HazelcastTestSupport {
 
         bounceMemberRule.testRepeatedly(methods, 20);
 
-        AssertTask assertTask = new AssertTask() {
+        assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 AtomicReferenceArray<HazelcastInstance> members = bounceMemberRule.getMembers();
@@ -81,13 +81,13 @@ public class BackupExpirationBouncingMemberTest extends HazelcastTestSupport {
                 int length = members.length();
                 for (int i = 0; i < length; i++) {
                     HazelcastInstance node = members.get(i);
-                    assert node != null;
-                    assertEquals(0, getTotalEntryCount(node.getMap(mapName)));
+                    if (node.getLifecycleService().isRunning()) {
+                        assert node != null;
+                        assertEquals(0, getTotalEntryCount(node.getMap(mapName)));
+                    }
                 }
             }
-        };
-
-        assertTrueEventually(assertTask);
+        });
     }
 
     private class Get implements Runnable {
