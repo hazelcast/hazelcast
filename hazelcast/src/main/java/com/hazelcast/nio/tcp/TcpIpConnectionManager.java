@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.config.SSLConfig;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
@@ -148,6 +150,16 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         this.scheduler = new ScheduledThreadPoolExecutor(SCHEDULER_POOL_SIZE,
                 new ThreadFactoryImpl(createThreadPoolName(ioService.getHazelcastName(), "TcpIpConnectionManager")));
         metricsRegistry.scanAndRegister(this, "tcp.connection");
+        checkSslAllowed();
+    }
+
+    private void checkSslAllowed() {
+        SSLConfig sslConfig = ioService.getSSLConfig();
+        if (sslConfig != null && sslConfig.isEnabled()) {
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                throw new IllegalStateException("SSL/TLS requires Hazelcast Enterprise Edition");
+            }
+        }
     }
 
     public IOService getIoService() {

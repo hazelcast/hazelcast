@@ -137,6 +137,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
                                        Collection<AddressProvider> addressProviders) {
+
         this.client = client;
         this.addressTranslator = addressTranslator;
 
@@ -163,6 +164,16 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
         connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
         connectionAttemptLimit = connAttemptLimit == 0 ? Integer.MAX_VALUE : connAttemptLimit;
+        checkSslAllowed();
+    }
+
+    private void checkSslAllowed() {
+        SSLConfig sslConfig = client.getClientConfig().getNetworkConfig().getSSLConfig();
+        if (sslConfig != null && sslConfig.isEnabled()) {
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                throw new IllegalStateException("SSL/TLS requires Hazelcast Enterprise Edition");
+            }
+        }
     }
 
     private ClientConnectionStrategy initializeStrategy(HazelcastClientInstanceImpl client) {
