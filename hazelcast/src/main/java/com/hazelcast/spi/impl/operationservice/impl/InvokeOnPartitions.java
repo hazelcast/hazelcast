@@ -33,6 +33,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareFactoryAccessor.extractPartitionAware;
+import static com.hazelcast.util.CollectionUtil.toIntArray;
 
 /**
  * Executes an operation on a set of partitions.
@@ -85,8 +86,8 @@ final class InvokeOnPartitions {
         for (Map.Entry<Address, List<Integer>> mp : memberPartitions.entrySet()) {
             Address address = mp.getKey();
             List<Integer> partitions = mp.getValue();
-            PartitionIteratingOperation operation = new PartitionIteratingOperation(operationFactory, partitions);
-            Future future = operationService.createInvocationBuilder(serviceName, operation, address)
+            PartitionIteratingOperation op = new PartitionIteratingOperation(operationFactory, toIntArray(partitions));
+            Future future = operationService.createInvocationBuilder(serviceName, op, address)
                     .setTryCount(TRY_COUNT)
                     .setTryPauseMillis(TRY_PAUSE_MILLIS)
                     .invoke();
