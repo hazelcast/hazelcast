@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.spi.AddressLocator;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.NodeFilter;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;

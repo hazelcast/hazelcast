@@ -59,6 +59,8 @@ public class NetworkConfig {
 
     private SSLConfig sslConfig;
 
+    private AddressLocatorConfig addressLocatorConfig = new AddressLocatorConfig();
+
     public NetworkConfig() {
         String os = StringUtil.lowerCaseInternal(System.getProperty("os.name"));
         reuseAddress = (!os.contains("win"));
@@ -320,6 +322,15 @@ public class NetworkConfig {
      */
     public NetworkConfig setSSLConfig(SSLConfig sslConfig) {
         this.sslConfig = sslConfig;
+        return this;
+    }
+
+    public AddressLocatorConfig getAddressLocatorConfig() {
+        return addressLocatorConfig;
+    }
+
+    public NetworkConfig setAddressLocatorConfig(AddressLocatorConfig addressLocatorConfig) {
+        this.addressLocatorConfig = addressLocatorConfig;
         return this;
     }
 
