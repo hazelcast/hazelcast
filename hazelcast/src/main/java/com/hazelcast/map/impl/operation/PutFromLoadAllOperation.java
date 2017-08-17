@@ -37,6 +37,7 @@ import java.util.List;
 
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 import static com.hazelcast.util.Preconditions.checkFalse;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Puts records to map which are loaded from map store by {@link com.hazelcast.core.IMap#loadAll}
@@ -65,13 +66,20 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
         for (int i = 0; i < keyValueSequence.size(); i += 2) {
             Data key = keyValueSequence.get(i);
             Data dataValue = keyValueSequence.get(i + 1);
+
+            checkNotNull(key, "Key loaded by a MapLoader cannot be null.");
+
             // here object conversion is for interceptors.
             Object value = hasInterceptor ? mapServiceContext.toObject(dataValue) : dataValue;
             Object previousValue = recordStore.putFromLoad(key, value);
 
-            callAfterPutInterceptors(value);
+            // do not run interceptors in case the put was skipped due to null value
+            if (value != null) {
+                callAfterPutInterceptors(value);
+            }
             Record record = recordStore.getRecord(key);
             if (isPostProcessing(recordStore)) {
+                checkNotNull(record, "Value loaded by a MapLoader cannot be null.");
                 value = record.getValue();
             }
             publishEntryEvent(key, previousValue, value);
