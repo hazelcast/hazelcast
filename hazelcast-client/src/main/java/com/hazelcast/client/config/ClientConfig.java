@@ -764,22 +764,22 @@ public class ClientConfig {
     /**
      *
      * @param mapName The name of the map for which the query cache config is to be returned.
-     * @param cacheName The name of the query cache config.
+     * @param queryCacheName The name of the query cache config.
      * @return The query cache config. If the config does not exist, it is created.
      */
-    public QueryCacheConfig getOrCreateQueryCacheConfig(String mapName, String cacheName) {
+    public QueryCacheConfig getOrCreateQueryCacheConfig(String mapName, String queryCacheName) {
         Map<String, Map<String, QueryCacheConfig>> allQueryCacheConfig = getQueryCacheConfigs();
 
-        Map<String, QueryCacheConfig> mapQueryCacheConfig = lookupByPattern(allQueryCacheConfig, mapName);
-        if (mapQueryCacheConfig == null) {
-            mapQueryCacheConfig = new HashMap<String, QueryCacheConfig>();
-            allQueryCacheConfig.put(mapName, mapQueryCacheConfig);
+        Map<String, QueryCacheConfig> queryCacheConfigsForMap = lookupByPattern(allQueryCacheConfig, mapName);
+        if (queryCacheConfigsForMap == null) {
+            queryCacheConfigsForMap = new HashMap<String, QueryCacheConfig>();
+            allQueryCacheConfig.put(mapName, queryCacheConfigsForMap);
         }
 
-        QueryCacheConfig queryCacheConfig = lookupByPattern(mapQueryCacheConfig, cacheName);
+        QueryCacheConfig queryCacheConfig = lookupByPattern(queryCacheConfigsForMap, queryCacheName);
         if (queryCacheConfig == null) {
-            queryCacheConfig = new QueryCacheConfig(cacheName);
-            mapQueryCacheConfig.put(cacheName, queryCacheConfig);
+            queryCacheConfig = new QueryCacheConfig(queryCacheName);
+            queryCacheConfigsForMap.put(queryCacheName, queryCacheConfig);
         }
 
         return queryCacheConfig;
@@ -788,19 +788,19 @@ public class ClientConfig {
     /**
      *
      * @param mapName The name of the map for which the query cache config is to be returned.
-     * @param cacheName The name of the query cache config.
+     * @param queryCacheName The name of the query cache config.
      * @return The query cache config. If no such config exist null is returned.
      */
-    public QueryCacheConfig getOrNullQueryCacheConfig(String mapName, String cacheName) {
+    public QueryCacheConfig getOrNullQueryCacheConfig(String mapName, String queryCacheName) {
         if (queryCacheConfigs == null) {
             return null;
         }
 
-        Map<String, QueryCacheConfig> mapQueryCacheConfig = lookupByPattern(queryCacheConfigs, mapName);
-        if (mapQueryCacheConfig == null) {
+        Map<String, QueryCacheConfig> queryCacheConfigsForMap = lookupByPattern(queryCacheConfigs, mapName);
+        if (queryCacheConfigsForMap == null) {
             return null;
         }
 
-        return lookupByPattern(mapQueryCacheConfig, cacheName);
+        return lookupByPattern(queryCacheConfigsForMap, queryCacheName);
     }
 }
