@@ -42,13 +42,20 @@ public class ClientScheduledExecutorServiceSlowTest extends ScheduledExecutorSer
     }
 
     @Override
-    public HazelcastInstance[] createClusterWithCount(int count) {
+    protected HazelcastInstance[] createClusterWithCount(int count) {
+        return createClusterWithCount(count, new Config());
+    }
+
+    protected HazelcastInstance[] createClusterWithCount(int count, Config config) {
         factory = new TestHazelcastFactory();
-        return factory.newInstances(new Config(), count);
+        HazelcastInstance[] instances = factory.newInstances(config, count);
+        waitAllForSafeState(instances);
+        return instances;
     }
 
     @Override
     public IScheduledExecutorService getScheduledExecutor(HazelcastInstance[] instances, String name) {
         return factory.newHazelcastClient().getScheduledExecutorService(name);
     }
+
 }
