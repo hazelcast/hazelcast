@@ -33,13 +33,11 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareFactoryAccessor.extractPartitionAware;
-import static com.hazelcast.util.CollectionUtil.toIntArray;
 
 /**
  * Executes Operations on one or more partitions.
@@ -69,9 +67,9 @@ public final class PartitionIteratingOperation extends Operation implements Iden
      * @param operationFactory operation factory to use
      * @param partitions       partitions to invoke on
      */
-    public PartitionIteratingOperation(OperationFactory operationFactory, List<Integer> partitions) {
+    public PartitionIteratingOperation(OperationFactory operationFactory, int[] partitions) {
         this.operationFactory = operationFactory;
-        this.partitions = toIntArray(partitions);
+        this.partitions = partitions;
     }
 
     public OperationFactory getOperationFactory() {
