@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -41,33 +40,29 @@ import java.util.Iterator;
 import static com.hazelcast.util.IterableUtil.map;
 
 /**
- * Utility methods for invocations
+ * Utility methods for invocations.
  */
 public final class InvocationUtil {
+
     private static final int WARMUP_SLEEPING_TIME_MILLIS = 10;
 
     private InvocationUtil() {
-
     }
 
     /**
-     * Invoke operation on all clusters members.
+     * Invoke operation on all cluster members.
      *
      * The invocation is serial: It iterates over all members starting from the oldest member to the youngest one.
      * If there is a cluster membership change while invoking then it will restart invocations on all members. This
      * implies the operation should be idempotent.
      *
-     * If there is an exception - other than {@link MemberLeftException} or
+     * If there is an exception - other than {@link com.hazelcast.core.MemberLeftException} or
      * {@link com.hazelcast.spi.exception.TargetNotMemberException} while invoking then the iteration
      * is interrupted and the exception is propagated to the caller.
-     *
-     * @param nodeEngine
-     * @param operationFactory
-     * @param maxRetries
      */
     public static ICompletableFuture<Object> invokeOnStableClusterSerial(NodeEngine nodeEngine,
-                                                                                final OperationFactory operationFactory,
-                                                                                int maxRetries) {
+                                                                         OperationFactory operationFactory,
+                                                                         int maxRetries) {
         warmUpPartitions(nodeEngine);
 
         final OperationService operationService = nodeEngine.getOperationService();
@@ -83,8 +78,8 @@ public final class InvocationUtil {
         ExecutionService executionService = nodeEngine.getExecutionService();
         ManagedExecutorService executor = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR);
 
-        // ChainingFuture uses the iterator to start invocations.
-        // It invokes on another member only when the previous invocation is completed = invocations are serial.
+        // ChainingFuture uses the iterator to start invocations
+        // it invokes on another member only when the previous invocation is completed (so invocations are serial)
         // the future itself completes only when the last invocation completes (or if there is an error)
         return new ChainingFuture<Object>(invocationIterator, executor, memberIterator, logger);
     }
@@ -103,13 +98,14 @@ public final class InvocationUtil {
         }
     }
 
-    //IFunction extends Serializable, but this function is only executed locally
+    // IFunction extends Serializable, but this function is only executed locally
     @SerializableByConvention
     private static class InvokeOnMemberFunction implements IFunction<Member, ICompletableFuture<Object>> {
+
         private final OperationFactory operationFactory;
         private final OperationService operationService;
 
-        public InvokeOnMemberFunction(OperationFactory operationFactory, OperationService operationService) {
+        InvokeOnMemberFunction(OperationFactory operationFactory, OperationService operationService) {
             this.operationFactory = operationFactory;
             this.operationService = operationService;
         }
