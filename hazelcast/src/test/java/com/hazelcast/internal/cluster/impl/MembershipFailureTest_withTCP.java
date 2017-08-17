@@ -33,8 +33,7 @@ import java.util.Collection;
 
 import static com.hazelcast.instance.HazelcastInstanceFactory.createInstanceName;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category({SlowTest.class})
+@Category(SlowTest.class)
 public class MembershipFailureTest_withTCP extends MembershipFailureTest {
 
     @After
