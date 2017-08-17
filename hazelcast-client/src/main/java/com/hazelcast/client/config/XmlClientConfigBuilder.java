@@ -172,10 +172,14 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
 
     public ClientConfig build(ClassLoader classLoader) {
         ClientConfig clientConfig = new ClientConfig();
+        build(clientConfig, classLoader);
+        return clientConfig;
+    }
+
+    void build(ClientConfig clientConfig, ClassLoader classLoader) {
         clientConfig.setClassLoader(classLoader);
         try {
             parseAndBuildConfig(clientConfig);
-            return clientConfig;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         } finally {

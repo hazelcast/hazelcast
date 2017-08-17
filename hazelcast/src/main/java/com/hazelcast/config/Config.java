@@ -261,6 +261,11 @@ public class Config {
         return getMapConfig("default").getAsReadOnly();
     }
 
+    public MapConfig getMapConfigOrNull(String name) {
+        String baseName = getBaseName(name);
+        return lookupByPattern(configPatternMatcher, mapConfigs, baseName);
+    }
+
     public MapConfig getMapConfig(String name) {
         String baseName = getBaseName(name);
         MapConfig config = lookupByPattern(configPatternMatcher, mapConfigs, baseName);
