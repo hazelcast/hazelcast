@@ -37,18 +37,18 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 
 /**
- * This test can't run with test-hazelcast instances since we rely on a real TcpIpConnectionManager.
+ * This test can't run with mocked Hazelcast instances, since we rely on a real TcpIpConnectionManager.
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class OverloadedConnectionsPluginTest extends AbstractDiagnosticsPluginTest {
 
-    private OverloadedConnectionsPlugin plugin;
     private HazelcastInstance local;
-    private HazelcastInstance remote;
-    private volatile boolean stop;
-    private String remoteKey;
     private InternalSerializationService serializationService;
+    private OverloadedConnectionsPlugin plugin;
+    private String remoteKey;
+
+    private volatile boolean stop;
 
     @Before
     public void setup() throws InterruptedException {
@@ -61,7 +61,7 @@ public class OverloadedConnectionsPluginTest extends AbstractDiagnosticsPluginTe
 
         local = Hazelcast.newHazelcastInstance(config);
         serializationService = getSerializationService(local);
-        remote = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance remote = Hazelcast.newHazelcastInstance(config);
 
         plugin = new OverloadedConnectionsPlugin(getNodeEngineImpl(local));
         plugin.onStart();
@@ -81,7 +81,7 @@ public class OverloadedConnectionsPluginTest extends AbstractDiagnosticsPluginTe
         spawn(new Runnable() {
             @Override
             public void run() {
-                IMap map = local.getMap("foo");
+                IMap<String, String> map = local.getMap("foo");
                 while (!stop) {
                     map.getAsync(remoteKey);
                 }
@@ -99,9 +99,10 @@ public class OverloadedConnectionsPluginTest extends AbstractDiagnosticsPluginTe
     }
 
     @Test
+    @SuppressWarnings("UnnecessaryBoxing")
     public void toKey() {
         assertToKey(DummyOperation.class.getName(), new DummyOperation());
-        assertToKey(Integer.class.getName(), new Integer(10));
+        assertToKey(Integer.class.getName(), Integer.valueOf(10));
         assertToKey("Backup(" + DummyOperation.class.getName() + ")",
                 new Backup(new DummyOperation(), getAddress(local), new long[0], true));
     }
