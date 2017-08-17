@@ -21,6 +21,7 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -177,7 +178,8 @@ public class MapGetInvalidationMetaDataOperation extends Operation implements Id
 
     private List<Integer> getOwnedPartitions() {
         IPartitionService partitionService = getNodeEngine().getPartitionService();
-        return partitionService.getMemberPartitions(getNodeEngine().getThisAddress());
+        Map<Address, List<Integer>> memberPartitionsMap = partitionService.getMemberPartitionsMap();
+        return memberPartitionsMap.get(getNodeEngine().getThisAddress());
     }
 
     private MetaDataGenerator getPartitionMetaDataGenerator() {
