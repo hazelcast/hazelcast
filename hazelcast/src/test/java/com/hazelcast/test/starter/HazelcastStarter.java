@@ -20,9 +20,6 @@ import com.google.common.io.Files;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.SerializationServiceBuilder;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
@@ -84,7 +81,7 @@ public class HazelcastStarter {
      * @return               a {@link HazelcastInstance} proxying the started Hazelcast instance.
      */
     public static HazelcastInstance newHazelcastInstance(String version, Config configTemplate, boolean enterprise) {
-        HazelcastAPIDelegatingClassloader versionClassLoader = getTargetVersionClassloader(version, enterprise);
+        HazelcastAPIDelegatingClassloader versionClassLoader = getTargetVersionClassloader(version, enterprise, configTemplate.getClassLoader());
 
         ClassLoader contextClassLoader = currentThread().getContextClassLoader();
         currentThread().setContextClassLoader(null);
@@ -113,9 +110,10 @@ public class HazelcastStarter {
      * same instance.
      *
      * @param version   the target Hazelcast version e.g. "3.8.1", must be a published release version.
+     * @param configClassLoader class loader given via config
      * @return          a classloader with given version's artifacts in its classpath
      */
-    public static HazelcastAPIDelegatingClassloader getTargetVersionClassloader(String version, boolean enterprise) {
+    public static HazelcastAPIDelegatingClassloader getTargetVersionClassloader(String version, boolean enterprise, ClassLoader configClassLoader) {
         String versionSpec = versionSpec(version, enterprise);
         HazelcastAPIDelegatingClassloader versionClassLoader = null;
         HazelcastVersionClassloaderFuture future = loadedVersions.get(versionSpec);
@@ -125,7 +123,7 @@ public class HazelcastStarter {
             return versionClassLoader;
         }
 
-        future = new HazelcastVersionClassloaderFuture(version, enterprise);
+        future = new HazelcastVersionClassloaderFuture(version, enterprise, configClassLoader);
         HazelcastVersionClassloaderFuture found = loadedVersions.putIfAbsent(versionSpec, future);
 
         if (found != null) {
@@ -141,29 +139,6 @@ public class HazelcastStarter {
             }
         }
         return versionClassLoader;
-    }
-
-    public static InternalSerializationService getTargetVersionSerializationService(String version, boolean enterprise) {
-        ClassLoader contextClassLoader = currentThread().getContextClassLoader();
-
-        HazelcastAPIDelegatingClassloader targetClassloader = getTargetVersionClassloader(version, enterprise);
-        Class klass = null;
-        try {
-            klass = targetClassloader.loadClass("com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder");
-            SerializationServiceBuilder targetBuilder = (SerializationServiceBuilder)
-                    proxyObjectForStarter(DefaultSerializationServiceBuilder.class.getClassLoader(), klass.newInstance());
-
-            currentThread().setContextClassLoader(targetClassloader);
-            InternalSerializationService targetSerializationService = targetBuilder
-                    .setClassLoader(targetClassloader)
-                    .setVersion(InternalSerializationService.VERSION_1).build();
-
-            return targetSerializationService;
-        } catch (Exception e) {
-            throw rethrow(e);
-        } finally {
-            currentThread().setContextClassLoader(contextClassLoader);
-        }
     }
 
     private static HazelcastInstance newHazelcastMemberWithNetwork(Config configTemplate,
@@ -198,7 +173,7 @@ public class HazelcastStarter {
     }
 
     public static HazelcastInstance newHazelcastClient(String version, boolean enterprise) {
-        HazelcastAPIDelegatingClassloader classloader = getTargetVersionClassloader(version, enterprise);
+        HazelcastAPIDelegatingClassloader classloader = getTargetVersionClassloader(version, enterprise, null);
         ClassLoader contextClassLoader = currentThread().getContextClassLoader();
         currentThread().setContextClassLoader(null);
         try {
@@ -258,12 +233,13 @@ public class HazelcastStarter {
     private static class HazelcastVersionClassloaderFuture {
         private final String version;
         private final boolean enterprise;
-
+        private final ClassLoader configClassLoader;
         private HazelcastAPIDelegatingClassloader classLoader;
 
-        HazelcastVersionClassloaderFuture(String version, boolean enterprise) {
+        HazelcastVersionClassloaderFuture(String version, boolean enterprise, ClassLoader configClassLoader) {
             this.version = version;
             this.enterprise = enterprise;
+            this.configClassLoader = configClassLoader;
         }
 
         public HazelcastAPIDelegatingClassloader get() {
@@ -276,6 +252,9 @@ public class HazelcastStarter {
                 File[] files = HazelcastVersionLocator.locateVersion(version, versionDir, enterprise);
                 URL[] urls = fileIntoUrls(files);
                 ClassLoader parentClassloader = HazelcastStarter.class.getClassLoader();
+                if (configClassLoader != null) {
+                    parentClassloader = configClassLoader;
+                }
                 classLoader = new HazelcastAPIDelegatingClassloader(urls, parentClassloader);
                 return classLoader;
             }

@@ -22,48 +22,27 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.FilteringClassLoader;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
-import org.junit.runners.Parameterized.UseParametersRunnerFactory;
+import usercodedeployment.EntryProcessorWithAnonymousAndInner;
 import usercodedeployment.IncrementingEntryProcessor;
 import usercodedeployment.blacklisted.BlacklistedEP;
 import usercodedeployment.whitelisted.WhitelistedEP;
 
-import java.util.Collection;
-
-import static java.util.Arrays.asList;
+import static com.hazelcast.test.starter.Utils.assertInstanceOfByClassName;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
-@RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
-public class UserCodeDeploymentSmokeTest extends HazelcastTestSupport {
+public abstract class UserCodeDeploymentAbstractTest extends HazelcastTestSupport {
 
-    private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+    protected abstract TestHazelcastInstanceFactory newFactory();
 
-    @Parameter
-    public UserCodeDeploymentConfig.ClassCacheMode classCacheMode;
+    protected abstract UserCodeDeploymentConfig.ClassCacheMode getClassCacheMode();
 
-    @Parameters(name = "ClassCacheMode:{0}")
-    public static Collection<Object[]> parameters() {
-        return asList(new Object[][]{
-                {UserCodeDeploymentConfig.ClassCacheMode.ETERNAL},
-                {UserCodeDeploymentConfig.ClassCacheMode.OFF},
-        });
-    }
-
-    @Test(expected = HazelcastSerializationException.class)
+    @Test
     public void testUserCodeDeploymentIsDisabledByDefault() {
         // this test also validate the EP is filtered locally and has to be loaded from the other member
         Config i1Config = new Config();
@@ -73,7 +52,12 @@ public class UserCodeDeploymentSmokeTest extends HazelcastTestSupport {
         i2Config.setClassLoader(filteringCL);
 
         IncrementingEntryProcessor incrementingEntryProcessor = new IncrementingEntryProcessor();
-        executeSimpleTestScenario(i1Config, i2Config, incrementingEntryProcessor);
+        try {
+            executeSimpleTestScenario(i1Config, i2Config, incrementingEntryProcessor);
+            fail();
+        } catch (Exception e) {
+            assertInstanceOfByClassName(HazelcastSerializationException.class.getName(), e);
+        }
     }
 
     @Test
@@ -81,25 +65,43 @@ public class UserCodeDeploymentSmokeTest extends HazelcastTestSupport {
         Config i1Config = new Config();
         i1Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
-                .setClassCacheMode(classCacheMode);
+                .setClassCacheMode(getClassCacheMode());
 
         Config i2Config = new Config();
         FilteringClassLoader filteringCL = new FilteringClassLoader(singletonList("usercodedeployment"), null);
         i2Config.setClassLoader(filteringCL);
         i2Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
-                .setClassCacheMode(classCacheMode);
+                .setClassCacheMode(getClassCacheMode());
 
         IncrementingEntryProcessor incrementingEntryProcessor = new IncrementingEntryProcessor();
         executeSimpleTestScenario(i1Config, i2Config, incrementingEntryProcessor);
     }
 
-    @Test(expected = HazelcastSerializationException.class)
+    @Test
+    public void givenSomeMemberCanAccessTheEP_whenTheEPIsFilteredLocally_thenItWillBeLoadedOverNetwork_anonymousInnerClasses() {
+        Config i1Config = new Config();
+        i1Config.getUserCodeDeploymentConfig()
+                .setEnabled(true)
+                .setClassCacheMode(getClassCacheMode());
+
+        Config i2Config = new Config();
+        FilteringClassLoader filteringCL = new FilteringClassLoader(singletonList("usercodedeployment"), null);
+        i2Config.setClassLoader(filteringCL);
+        i2Config.getUserCodeDeploymentConfig()
+                .setEnabled(true)
+                .setClassCacheMode(getClassCacheMode());
+
+        EntryProcessorWithAnonymousAndInner incrementingEntryProcessor = new EntryProcessorWithAnonymousAndInner();
+        executeSimpleTestScenario(i1Config, i2Config, incrementingEntryProcessor);
+    }
+
+    @Test
     public void givenTheEPButItIsBlacklisted_whenTheEPIsFilteredLocally_thenItWillFailToLoadIt() {
         Config i1Config = new Config();
         i1Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
-                .setClassCacheMode(classCacheMode);
+                .setClassCacheMode(getClassCacheMode());
 
 
         Config i2Config = new Config();
@@ -108,18 +110,23 @@ public class UserCodeDeploymentSmokeTest extends HazelcastTestSupport {
         i2Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
                 .setBlacklistedPrefixes("usercodedeployment.blacklisted")
-                .setClassCacheMode(classCacheMode);
+                .setClassCacheMode(getClassCacheMode());
 
         EntryProcessor<Integer, Integer> myEP = new BlacklistedEP();
-        executeSimpleTestScenario(i1Config, i2Config, myEP);
+        try {
+            executeSimpleTestScenario(i1Config, i2Config, myEP);
+            fail();
+        } catch (Exception e) {
+            assertInstanceOfByClassName(HazelcastSerializationException.class.getName(), e);
+        }
     }
 
-    @Test(expected = HazelcastSerializationException.class)
+    @Test
     public void givenTheEPButItIsNotOnTheWhitelist_whenTheEPIsFilteredLocally_thenItWillFailToLoadIt() {
         Config i1Config = new Config();
         i1Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
-                .setClassCacheMode(classCacheMode);
+                .setClassCacheMode(getClassCacheMode());
 
         Config i2Config = new Config();
         FilteringClassLoader filteringCL = new FilteringClassLoader(singletonList("usercodedeployment"), null);
@@ -127,10 +134,15 @@ public class UserCodeDeploymentSmokeTest extends HazelcastTestSupport {
         i2Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
                 .setWhitelistedPrefixes("usercodedeployment.whitelisted")
-                .setClassCacheMode(classCacheMode);
+                .setClassCacheMode(getClassCacheMode());
 
         EntryProcessor<Integer, Integer> myEP = new IncrementingEntryProcessor();
-        executeSimpleTestScenario(i1Config, i2Config, myEP);
+        try {
+            executeSimpleTestScenario(i1Config, i2Config, myEP);
+            fail();
+        } catch (Exception e) {
+            assertInstanceOfByClassName(HazelcastSerializationException.class.getName(), e);
+        }
     }
 
     @Test
@@ -138,7 +150,7 @@ public class UserCodeDeploymentSmokeTest extends HazelcastTestSupport {
         Config i1Config = new Config();
         i1Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
-                .setClassCacheMode(classCacheMode);
+                .setClassCacheMode(getClassCacheMode());
 
         Config i2Config = new Config();
         FilteringClassLoader filteringCL = new FilteringClassLoader(singletonList("usercodedeployment"), null);
@@ -146,18 +158,18 @@ public class UserCodeDeploymentSmokeTest extends HazelcastTestSupport {
         i2Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
                 .setWhitelistedPrefixes("usercodedeployment.whitelisted, usercodedeployment")
-                .setClassCacheMode(classCacheMode);
+                .setClassCacheMode(getClassCacheMode());
 
         EntryProcessor<Integer, Integer> myEP = new WhitelistedEP();
         executeSimpleTestScenario(i1Config, i2Config, myEP);
     }
 
-    @Test(expected = HazelcastSerializationException.class)
+    @Test
     public void givenProviderFilterUsesMemberAttribute_whenNoMemberHasMatchingAttribute_thenClassLoadingRequestFails() {
         Config i1Config = new Config();
         i1Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
-                .setClassCacheMode(classCacheMode);
+                .setClassCacheMode(getClassCacheMode());
 
         Config i2Config = new Config();
         FilteringClassLoader filteringCL = new FilteringClassLoader(singletonList("usercodedeployment"), null);
@@ -165,10 +177,15 @@ public class UserCodeDeploymentSmokeTest extends HazelcastTestSupport {
         i2Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
                 .setProviderFilter("HAS_ATTRIBUTE:foo")
-                .setClassCacheMode(classCacheMode);
+                .setClassCacheMode(getClassCacheMode());
 
         EntryProcessor<Integer, Integer> myEP = new IncrementingEntryProcessor();
-        executeSimpleTestScenario(i1Config, i2Config, myEP);
+        try {
+            executeSimpleTestScenario(i1Config, i2Config, myEP);
+            fail();
+        } catch (Exception e) {
+            assertInstanceOfByClassName(HazelcastSerializationException.class.getName(), e);
+        }
     }
 
     @Test
@@ -177,7 +194,7 @@ public class UserCodeDeploymentSmokeTest extends HazelcastTestSupport {
         i1Config.getMemberAttributeConfig().setStringAttribute("foo", "bar");
         i1Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
-                .setClassCacheMode(classCacheMode);
+                .setClassCacheMode(getClassCacheMode());
 
         Config i2Config = new Config();
         FilteringClassLoader filteringCL = new FilteringClassLoader(singletonList("usercodedeployment"), null);
@@ -185,25 +202,31 @@ public class UserCodeDeploymentSmokeTest extends HazelcastTestSupport {
         i2Config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
                 .setProviderFilter("HAS_ATTRIBUTE:foo")
-                .setClassCacheMode(classCacheMode);
+                .setClassCacheMode(getClassCacheMode());
 
         EntryProcessor<Integer, Integer> myEP = new IncrementingEntryProcessor();
         executeSimpleTestScenario(i1Config, i2Config, myEP);
     }
 
-    private void executeSimpleTestScenario(Config i1Config, Config i2Config, EntryProcessor<Integer, Integer> ep) {
+    protected void executeSimpleTestScenario(Config config, Config epFilteredConfig, EntryProcessor<Integer, Integer> ep) {
         int keyCount = 100;
 
-        HazelcastInstance i1 = factory.newHazelcastInstance(i1Config);
-        HazelcastInstance i2 = factory.newHazelcastInstance(i2Config);
-        IMap<Integer, Integer> map = i1.getMap(randomName());
+        TestHazelcastInstanceFactory factory = newFactory();
+        try {
+            HazelcastInstance instanceWithNewEp = factory.newHazelcastInstance(config);
+            factory.newHazelcastInstance(epFilteredConfig);
 
-        for (int i = 0; i < keyCount; i++) {
-            map.put(i, 0);
-        }
-        map.executeOnEntries(ep);
-        for (int i = 0; i < keyCount; i++) {
-            assertEquals(1, (int) map.get(i));
+            IMap<Integer, Integer> map = instanceWithNewEp.getMap(randomName());
+
+            for (int i = 0; i < keyCount; i++) {
+                map.put(i, 0);
+            }
+            map.executeOnEntries(ep);
+            for (int i = 0; i < keyCount; i++) {
+                assertEquals(1, (int) map.get(i));
+            }
+        } finally {
+            factory.shutdownAll();
         }
     }
 }

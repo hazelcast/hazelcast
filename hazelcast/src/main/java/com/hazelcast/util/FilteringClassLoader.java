@@ -48,8 +48,8 @@ public class FilteringClassLoader extends ClassLoader {
     private final byte[] buffer = new byte[BUFFER_SIZE];
 
     private final List<String> excludePackages;
-    private final ClassLoader delegatingClassLoader;
     private final String enforcedSelfLoadingPackage;
+    private ClassLoader delegatingClassLoader;
 
     public FilteringClassLoader(List<String> excludePackages, String enforcedSelfLoadingPackage) {
         this.excludePackages = Collections.unmodifiableList(excludePackages);

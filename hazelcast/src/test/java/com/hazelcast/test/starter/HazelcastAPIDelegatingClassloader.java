@@ -132,6 +132,10 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
 
     // delegate to parent if class is not under com.hazelcast package or if class is ProxyInvocationHandler itself.
     private boolean shouldDelegate(String name) {
+//        if (name.startsWith("usercodedeployment")) {
+//            return false;
+//        }
+
         if (!name.startsWith("com.hazelcast")) {
             return true;
         }
@@ -144,6 +148,10 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
     }
 
     private boolean isHazelcastTestClass(String name) {
+        if (name.startsWith("usercodedeployment")) {
+            return true;
+        }
+
         if (!name.startsWith("com.hazelcast")) {
             return false;
         }
