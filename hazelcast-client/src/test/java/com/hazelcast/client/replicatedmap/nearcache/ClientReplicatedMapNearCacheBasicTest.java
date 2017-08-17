@@ -86,7 +86,6 @@ public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasi
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(int size, boolean loaderEnabled) {
         Config config = createConfig();
-        ClientConfig clientConfig = createClientConfig();
 
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
         ReplicatedMap<K, V> memberMap = member.getReplicatedMap(DEFAULT_NEAR_CACHE_NAME);
@@ -94,21 +93,17 @@ public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasi
 
         populateDataAdapter(dataAdapter, size);
 
-        HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
-        ReplicatedMap<K, V> clientMap = client.getReplicatedMap(DEFAULT_NEAR_CACHE_NAME);
-
-        NearCacheManager nearCacheManager = client.client.getNearCacheManager();
-        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
-
-        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())
-                .setNearCacheInstance(client)
+        NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
+        return builder
                 .setDataInstance(member)
-                .setNearCacheAdapter(new ReplicatedMapDataStructureAdapter<K, V>(clientMap))
                 .setDataAdapter(dataAdapter)
-                .setNearCache(nearCache)
-                .setNearCacheManager(nearCacheManager)
-                .setInvalidationListener(createInvalidationEventHandler(clientMap))
                 .build();
+    }
+
+    @Override
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createNearCacheContext() {
+        NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
+        return builder.build();
     }
 
     protected Config createConfig() {
@@ -124,5 +119,22 @@ public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasi
     protected ClientConfig createClientConfig() {
         return new ClientConfig()
                 .addNearCacheConfig(nearCacheConfig);
+    }
+
+    private <K, V> NearCacheTestContextBuilder<K, V, Data, String> createNearCacheContextBuilder() {
+        ClientConfig clientConfig = createClientConfig();
+
+        HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
+        ReplicatedMap<K, V> clientMap = client.getReplicatedMap(DEFAULT_NEAR_CACHE_NAME);
+
+        NearCacheManager nearCacheManager = client.client.getNearCacheManager();
+        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
+
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())
+                .setNearCacheInstance(client)
+                .setNearCacheAdapter(new ReplicatedMapDataStructureAdapter<K, V>(clientMap))
+                .setNearCache(nearCache)
+                .setNearCacheManager(nearCacheManager)
+                .setInvalidationListener(createInvalidationEventHandler(clientMap));
     }
 }

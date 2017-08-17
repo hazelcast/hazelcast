@@ -116,7 +116,6 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(int size, boolean loaderEnabled) {
         Config config = createConfig();
-        ClientConfig clientConfig = createClientConfig();
         CacheConfig<K, V> cacheConfig = createCacheConfig(nearCacheConfig, loaderEnabled);
 
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
@@ -127,26 +126,19 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
 
         populateDataAdapter(dataAdapter, size);
 
-        HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
-        CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
-        HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
-        ICache<K, V> clientCache = cacheManager.createCache(DEFAULT_NEAR_CACHE_NAME, cacheConfig);
-
-        NearCacheManager nearCacheManager = client.client.getNearCacheManager();
-        String cacheNameWithPrefix = cacheManager.getCacheNameWithPrefix(DEFAULT_NEAR_CACHE_NAME);
-        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(cacheNameWithPrefix);
-
-        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())
-                .setNearCacheInstance(client)
+        NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder(cacheConfig);
+        return builder
                 .setDataInstance(member)
-                .setNearCacheAdapter(new ICacheDataStructureAdapter<K, V>(clientCache))
                 .setDataAdapter(dataAdapter)
-                .setNearCache(nearCache)
-                .setNearCacheManager(nearCacheManager)
-                .setCacheManager(cacheManager)
                 .setMemberCacheManager(memberCacheManager)
-                .setInvalidationListener(createInvalidationEventHandler(clientCache))
                 .build();
+    }
+
+    @Override
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createNearCacheContext() {
+        CacheConfig<K, V> cacheConfig = createCacheConfig(nearCacheConfig, false);
+        NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder(cacheConfig);
+        return builder.build();
     }
 
     protected Config createConfig() {
@@ -179,5 +171,26 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
         }
 
         return cacheConfig;
+    }
+
+    private <K, V> NearCacheTestContextBuilder<K, V, Data, String> createNearCacheContextBuilder(CacheConfig<K, V> cacheConfig) {
+        ClientConfig clientConfig = createClientConfig();
+
+        HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
+        CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
+        HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
+        ICache<K, V> clientCache = cacheManager.createCache(DEFAULT_NEAR_CACHE_NAME, cacheConfig);
+
+        NearCacheManager nearCacheManager = client.client.getNearCacheManager();
+        String cacheNameWithPrefix = cacheManager.getCacheNameWithPrefix(DEFAULT_NEAR_CACHE_NAME);
+        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(cacheNameWithPrefix);
+
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())
+                .setNearCacheInstance(client)
+                .setNearCacheAdapter(new ICacheDataStructureAdapter<K, V>(clientCache))
+                .setNearCache(nearCache)
+                .setNearCacheManager(nearCacheManager)
+                .setCacheManager(cacheManager)
+                .setInvalidationListener(createInvalidationEventHandler(clientCache));
     }
 }

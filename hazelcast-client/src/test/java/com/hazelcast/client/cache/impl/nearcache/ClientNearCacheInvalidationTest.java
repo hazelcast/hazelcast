@@ -28,7 +28,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.nearcache.NearCacheInvalidationListener;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -46,12 +49,19 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import javax.cache.spi.CachingProvider;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.hazelcast.cache.CacheUtil.getPrefixedCacheName;
+import static com.hazelcast.client.cache.impl.nearcache.ClientNearCacheTestSupport.generateValueFromKey;
+import static com.hazelcast.client.cache.impl.nearcache.ClientNearCacheTestSupport.getFromNearCache;
 import static com.hazelcast.client.cache.nearcache.ClientCacheInvalidationListener.createInvalidationEventHandler;
 import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -109,43 +119,38 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
     @Before
     @SuppressWarnings("unchecked")
     public void setup() {
+        hazelcastFactory = new TestHazelcastFactory();
+
+        HazelcastInstance[] allMembers = new HazelcastInstance[MEMBER_COUNT];
+        for (int i = 0; i < MEMBER_COUNT; i++) {
+            // every instance should have its own getConfig() call because an existing EE test relies on this
+            allMembers[i] = hazelcastFactory.newHazelcastInstance(getConfig());
+        }
+        waitAllForSafeState(allMembers);
+
         ClientConfig clientConfig = createClientConfig()
                 .addNearCacheConfig(createNearCacheConfig(inMemoryFormat));
 
-        hazelcastFactory = new TestHazelcastFactory();
-
-        // every instance should have its own getConfig() call because an existing EE test relies on this.
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(getConfig());
-        if (MEMBER_COUNT > 1) {
-            HazelcastInstance[] allMembers = new HazelcastInstance[MEMBER_COUNT];
-            allMembers[0] = member;
-            for (int i = 1; i < MEMBER_COUNT; i++) {
-                // every instance should have its own getConfig() call because an existing EE test relies on this.
-                allMembers[i] = hazelcastFactory.newHazelcastInstance(getConfig());
-            }
-            waitAllForSafeState(allMembers);
-        }
-
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
-        NearCacheManager nearCacheManager = client.client.getNearCacheManager();
         CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
-        HazelcastServerCachingProvider memberProvider = HazelcastServerCachingProvider.createCachingProvider(member);
+        HazelcastServerCachingProvider memberProvider = HazelcastServerCachingProvider.createCachingProvider(allMembers[0]);
         HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
         HazelcastServerCacheManager memberCacheManager = (HazelcastServerCacheManager) memberProvider.getCacheManager();
 
         ICache<Object, String> cache = cacheManager.createCache(DEFAULT_CACHE_NAME, createCacheConfig(inMemoryFormat));
         ICache<Object, String> memberCache = memberCacheManager.getCache(getPrefixedCacheName(DEFAULT_CACHE_NAME, null, null));
 
+        NearCacheManager nearCacheManager = client.client.getNearCacheManager();
         NearCache<Object, String> nearCache = nearCacheManager.getNearCache(
                 cacheManager.getCacheNameWithPrefix(DEFAULT_CACHE_NAME));
 
-        testContext = new NearCacheTestContext(client, member, cacheManager, memberCacheManager, nearCacheManager, cache,
+        testContext = new NearCacheTestContext(client, allMembers[0], cacheManager, memberCacheManager, nearCacheManager, cache,
                 memberCache, nearCache, createInvalidationEventHandler(cache));
+    }
 
-        // make sure several partitions are populated with data
-        for (int i = 0; i < INITIAL_POPULATION_COUNT; i++) {
-            testContext.memberCache.put(Integer.toString(i), Integer.toString(i));
-        }
+    @After
+    public void tearDown() {
+        hazelcastFactory.shutdownAll();
     }
 
     @Override
@@ -154,43 +159,187 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
                 .setProperty(CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), "false");
     }
 
-    @After
-    public void tearDown() {
-        hazelcastFactory.shutdownAll();
+    @Test
+    public void putToCacheAndGetInvalidationEventWhenNodeShutdown() {
+        Config config = getConfig()
+                .setProperty(CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), "true")
+                .setProperty(CACHE_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), String.valueOf(Integer.MAX_VALUE))
+                .setProperty(CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
+        HazelcastInstance instanceToShutdown = hazelcastFactory.newHazelcastInstance(config);
+
+        warmUpPartitions(testContext.member, instanceToShutdown);
+        waitAllForSafeState(testContext.member, instanceToShutdown);
+
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat)
+                .setInvalidateOnChange(true)
+                .setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE);
+
+        CacheConfig cacheConfig = createCacheConfig(inMemoryFormat);
+        final NearCacheTestContext nearCacheTestContext1 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig, cacheConfig);
+        final NearCacheTestContext nearCacheTestContext2 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig, cacheConfig);
+
+        Map<String, String> keyAndValues = new HashMap<String, String>();
+
+        // put cache record from client-1 to instance which is going to be shutdown
+        for (int i = 0; i < INITIAL_POPULATION_COUNT; i++) {
+            String key = generateKeyOwnedBy(instanceToShutdown);
+            String value = generateValueFromKey(i);
+            nearCacheTestContext1.cache.put(key, value);
+            keyAndValues.put(key, value);
+        }
+
+        // verify that records are exist at Near Cache of client-1 because `local-update-policy` is `CACHE`
+        for (Map.Entry<String, String> entry : keyAndValues.entrySet()) {
+            String key = entry.getKey();
+            String exceptedValue = entry.getValue();
+            String actualValue = getFromNearCache(nearCacheTestContext1, key);
+            assertEquals(exceptedValue, actualValue);
+        }
+
+        // remove records through client-2 so there will be invalidation events
+        // to send to client to invalidate its Near Cache
+        for (Map.Entry<String, String> entry : keyAndValues.entrySet()) {
+            nearCacheTestContext2.cache.remove(entry.getKey());
+        }
+
+        // we don't shutdown the instance because in case of shutdown even though events are published to event queue,
+        // they may not be processed in the event queue due to shutdown event queue executor or may not be sent
+        // to client endpoint due to IO handler shutdown
+
+        // for not to making test fragile, we just simulate shutting down by sending its event through `LifeCycleService`,
+        // so the node should flush invalidation events before shutdown
+        ((LifecycleServiceImpl) instanceToShutdown.getLifecycleService())
+                .fireLifecycleEvent(LifecycleEvent.LifecycleState.SHUTTING_DOWN);
+
+        // verify that records in the Near Cache of client-1 are invalidated eventually when instance shutdown
+        for (Map.Entry<String, String> entry : keyAndValues.entrySet()) {
+            final String key = entry.getKey();
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertNull(getFromNearCache(nearCacheTestContext1, key));
+                }
+            });
+        }
+    }
+
+    @Test
+    public void putToCacheAndDoNotInvalidateFromClientNearCacheWhenPerEntryInvalidationIsDisabled() {
+        // we need to use another cache name, to get the invalidation setting working
+        String cacheName = "disabledPerEntryInvalidationCache";
+
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat)
+                .setName(cacheName)
+                .setInvalidateOnChange(true);
+
+        CacheConfig cacheConfig = createCacheConfig(inMemoryFormat)
+                .setName(cacheName);
+        cacheConfig.setDisablePerEntryInvalidationEvents(true);
+
+        final NearCacheTestContext nearCacheTestContext1 = createNearCacheTest(cacheName, nearCacheConfig, cacheConfig);
+        final NearCacheTestContext nearCacheTestContext2 = createNearCacheTest(cacheName, nearCacheConfig, cacheConfig);
+
+        // put cache record from client-1
+        for (int i = 0; i < INITIAL_POPULATION_COUNT; i++) {
+            nearCacheTestContext1.cache.put(i, generateValueFromKey(i));
+        }
+
+        // get records from client-2
+        for (int i = 0; i < INITIAL_POPULATION_COUNT; i++) {
+            final Integer key = i;
+            final String value = nearCacheTestContext2.cache.get(key);
+            // records are stored in the cache as async not sync, so these records will be there in cache eventually
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(value, getFromNearCache(nearCacheTestContext2, key));
+                }
+            });
+        }
+
+        // update cache record from client-1
+        for (int i = 0; i < INITIAL_POPULATION_COUNT; i++) {
+            // update the cache records with new values
+            nearCacheTestContext1.cache.put(i, generateValueFromKey(i + INITIAL_POPULATION_COUNT));
+        }
+
+        int invalidationEventFlushFreq = Integer.parseInt(CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getDefaultValue());
+        // wait some time and if there are invalidation events to be sent in batch
+        // (we assume that they should be flushed, received and processed in this time window already)
+        sleepSeconds(2 * invalidationEventFlushFreq);
+
+        // get records from client-2
+        for (int i = 0; i < INITIAL_POPULATION_COUNT; i++) {
+            String actualValue = nearCacheTestContext2.cache.get(i);
+            String expectedValue = generateValueFromKey(i);
+            // verify that still we have old records in the Near Cache, because, per entry invalidation events are disabled
+            assertEquals(expectedValue, actualValue);
+        }
+
+        nearCacheTestContext1.cache.clear();
+
+        // can't get expired records from client-2
+        for (int i = 0; i < INITIAL_POPULATION_COUNT; i++) {
+            final int key = i;
+            // records are stored in the Near Cache will be invalidated eventually, since cache records are cleared
+            // because we just disable per entry invalidation events, not full-flush events
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertNull(getFromNearCache(nearCacheTestContext2, key));
+                }
+            });
+        }
     }
 
     @Test
     public void when_shuttingDown_invalidationEventIsNotReceived() {
-        waitEndOfInvalidationsFromInitialPopulation();
+        populateMemberCache();
 
-        shutdown();
+        if (invokeCacheOperationsFromMember) {
+            testContext.member.shutdown();
+        } else {
+            testContext.client.shutdown();
+        }
 
         assertNoFurtherInvalidation();
     }
 
     @Test
     public void when_cacheDestroyed_invalidationEventIsReceived() {
-        waitEndOfInvalidationsFromInitialPopulation();
+        populateMemberCache();
 
-        destroy();
+        if (invokeCacheOperationsFromMember) {
+            testContext.memberCache.destroy();
+        } else {
+            testContext.cache.destroy();
+        }
 
         assertLeastInvalidationCount(1);
     }
 
     @Test
     public void when_cacheCleared_invalidationEventIsReceived() {
-        waitEndOfInvalidationsFromInitialPopulation();
+        populateMemberCache();
 
-        clear();
+        if (invokeCacheOperationsFromMember) {
+            testContext.memberCache.clear();
+        } else {
+            testContext.cache.clear();
+        }
 
         assertNoFurtherInvalidationThan(1);
     }
 
     @Test
     public void when_cacheClosed_invalidationEventIsNotReceived() {
-        waitEndOfInvalidationsFromInitialPopulation();
+        populateMemberCache();
 
-        close();
+        if (invokeCacheOperationsFromMember) {
+            testContext.memberCache.close();
+        } else {
+            testContext.cache.close();
+        }
 
         assertNoFurtherInvalidation();
     }
@@ -201,11 +350,32 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
      */
     @Test
     public void when_cacheManagerDestroyCacheInvoked_invalidationEventMayBeReceived() {
-        waitEndOfInvalidationsFromInitialPopulation();
+        populateMemberCache();
 
-        destroyCacheFromCacheManager();
+        if (invokeCacheOperationsFromMember) {
+            testContext.memberCacheManager.destroyCache(DEFAULT_CACHE_NAME);
+        } else {
+            testContext.cacheManager.destroyCache(DEFAULT_CACHE_NAME);
+        }
 
         assertLeastInvalidationCount(1);
+    }
+
+    @SuppressWarnings("unchecked")
+    private NearCacheTestContext createNearCacheTest(String cacheName, NearCacheConfig nearCacheConfig, CacheConfig cacheConfig) {
+        ClientConfig clientConfig = createClientConfig()
+                .addNearCacheConfig(nearCacheConfig);
+
+        HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
+        NearCacheManager nearCacheManager = client.client.getNearCacheManager();
+        CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
+        HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
+
+        ICache<Object, String> cache = cacheManager.createCache(cacheName, cacheConfig);
+        NearCache<Object, String> nearCache = nearCacheManager.getNearCache(cacheManager.getCacheNameWithPrefix(cacheName));
+        NearCacheInvalidationListener invalidationListener = createInvalidationEventHandler(cache);
+
+        return new NearCacheTestContext(client, cacheManager, nearCacheManager, cache, nearCache, invalidationListener);
     }
 
     private void waitEndOfInvalidationsFromInitialPopulation() {
@@ -249,46 +419,6 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
         assertTrueAllTheTime(assertTask, TIMEOUT);
     }
 
-    private void clear() {
-        if (invokeCacheOperationsFromMember) {
-            testContext.memberCache.clear();
-        } else {
-            testContext.cache.clear();
-        }
-    }
-
-    private void close() {
-        if (invokeCacheOperationsFromMember) {
-            testContext.memberCache.close();
-        } else {
-            testContext.cache.close();
-        }
-    }
-
-    private void destroy() {
-        if (invokeCacheOperationsFromMember) {
-            testContext.memberCache.destroy();
-        } else {
-            testContext.cache.destroy();
-        }
-    }
-
-    private void shutdown() {
-        if (invokeCacheOperationsFromMember) {
-            testContext.member.shutdown();
-        } else {
-            testContext.client.shutdown();
-        }
-    }
-
-    private void destroyCacheFromCacheManager() {
-        if (invokeCacheOperationsFromMember) {
-            testContext.memberCacheManager.destroyCache(DEFAULT_CACHE_NAME);
-        } else {
-            testContext.cacheManager.destroyCache(DEFAULT_CACHE_NAME);
-        }
-    }
-
     protected ClientConfig createClientConfig() {
         return new ClientConfig();
     }
@@ -300,8 +430,17 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
     }
 
     protected CacheConfig createCacheConfig(InMemoryFormat inMemoryFormat) {
-        return new CacheConfig().setName(DEFAULT_CACHE_NAME)
+        return new CacheConfig()
+                .setName(DEFAULT_CACHE_NAME)
                 .setInMemoryFormat(inMemoryFormat)
                 .setBackupCount(1);
+    }
+
+    private void populateMemberCache() {
+        // make sure several partitions are populated with data
+        for (int i = 0; i < INITIAL_POPULATION_COUNT; i++) {
+            testContext.memberCache.put(Integer.toString(i), Integer.toString(i));
+        }
+        waitEndOfInvalidationsFromInitialPopulation();
     }
 }
