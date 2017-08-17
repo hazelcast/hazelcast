@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
+import com.hazelcast.spi.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -56,10 +57,11 @@ public class OperationExecutorImpl_BasicTest extends OperationExecutorImpl_Abstr
     public void test_getRunningOperationCount() {
         initExecutor();
 
-        executor.execute(new DummyOperation(GENERIC_PARTITION_ID).durationMs(2000));
-        executor.execute(new DummyOperation(GENERIC_PARTITION_ID).durationMs(2000));
+        CountDownLatch completionLatch = new CountDownLatch(1);
 
-        executor.execute(new DummyOperation(0).durationMs(2000));
+        executor.execute(new LongRunningOperation(GENERIC_PARTITION_ID, completionLatch));
+        executor.execute(new LongRunningOperation(GENERIC_PARTITION_ID, completionLatch));
+        executor.execute(new LongRunningOperation(0, completionLatch));
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -69,6 +71,22 @@ public class OperationExecutorImpl_BasicTest extends OperationExecutorImpl_Abstr
                 assertEquals(3, runningOperationCount);
             }
         });
+
+        completionLatch.countDown();
+    }
+
+    class LongRunningOperation extends Operation {
+        private CountDownLatch completionLatch;
+
+        public LongRunningOperation(int partitionId, CountDownLatch completionLatch) {
+            this.completionLatch = completionLatch;
+            setPartitionId(partitionId);
+        }
+
+        @Override
+        public void run() throws Exception {
+            completionLatch.await();
+        }
     }
 
     @Test
