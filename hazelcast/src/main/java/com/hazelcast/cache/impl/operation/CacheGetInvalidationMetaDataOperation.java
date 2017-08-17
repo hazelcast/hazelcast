@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheEventHandler;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -173,14 +174,9 @@ public class CacheGetInvalidationMetaDataOperation extends Operation implements 
     }
 
     private List<Integer> getOwnedPartitions() {
-        List<Integer> ownedPartitions = new ArrayList<Integer>();
         IPartitionService partitionService = getNodeEngine().getPartitionService();
-        for (int i = 0; i < partitionService.getPartitionCount(); i++) {
-            if (partitionService.isPartitionOwner(i)) {
-                ownedPartitions.add(i);
-            }
-        }
-        return ownedPartitions;
+        Map<Address, List<Integer>> memberPartitionsMap = partitionService.getMemberPartitionsMap();
+        return memberPartitionsMap.get(getNodeEngine().getThisAddress());
     }
 
     private MetaDataGenerator getPartitionMetaDataGenerator() {
