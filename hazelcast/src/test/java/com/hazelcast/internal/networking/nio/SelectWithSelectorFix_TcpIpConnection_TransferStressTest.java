@@ -26,7 +26,6 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
-@Ignore(value = "https://github.com/hazelcast/hazelcast/issues/10660")
 public class SelectWithSelectorFix_TcpIpConnection_TransferStressTest extends TcpIpConnection_TransferStressBaseTest {
 
     @Before
