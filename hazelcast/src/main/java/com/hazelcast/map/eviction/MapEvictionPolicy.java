@@ -48,8 +48,8 @@ public abstract class MapEvictionPolicy<K, V> implements Comparator<EntryView<K,
      * {@inheritDoc}
      *
      * <p>
-     *     If you prefer to evict the 1st entry then return positive number, if the 2nd entry is a better candidate
-     * then return a negative number or return 0 if both entries are equally good candidates for eviction
+     * If you prefer to evict the 1st entry then return negative number, if the 2nd entry is a better candidate
+     * then return a positive number or return 0 if both entries are equally good candidates for eviction
      * </p>
      */
     @Override
