@@ -28,9 +28,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -44,7 +44,7 @@ import static org.junit.Assert.assertEquals;
 public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnection_AbstractTest {
 
     // total running time for writer threads
-    private static final long WRITER_THREAD_RUNNING_TIME_IN_SECONDS = TimeUnit.MINUTES.toSeconds(2);
+    private static final long WRITER_THREAD_RUNNING_TIME_IN_SECONDS = MINUTES.toSeconds(2);
     // maximum number of pending packets
     private static final int maxPendingPacketCount = 10000;
     // we create the payloads up front and select randomly from them. This is the number of payloads we are creating
@@ -222,7 +222,8 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
                 } else {
                     normalPackets++;
                 }
-                //  writeHandler.write(packet);
+
+                c.getChannel().write(packet);
 
                 long now = System.currentTimeMillis();
                 if (now > prev + 2000) {
