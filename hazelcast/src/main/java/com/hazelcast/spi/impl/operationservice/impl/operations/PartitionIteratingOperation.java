@@ -48,6 +48,7 @@ import static com.hazelcast.spi.impl.operationservice.impl.operations.PartitionA
  * caller when all responses have completed.
  */
 public final class PartitionIteratingOperation extends Operation implements IdentifiedDataSerializable {
+
     private static final Object NULL = new Object() {
         @Override
         public String toString() {
@@ -67,6 +68,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
      * @param operationFactory operation factory to use
      * @param partitions       partitions to invoke on
      */
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public PartitionIteratingOperation(OperationFactory operationFactory, int[] partitions) {
         this.operationFactory = operationFactory;
         this.partitions = partitions;
