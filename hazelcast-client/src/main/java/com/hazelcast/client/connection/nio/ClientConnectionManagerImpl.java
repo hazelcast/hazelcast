@@ -155,6 +155,16 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
 
         this.credentials = client.getCredentials();
+        checkSslAllowed();
+    }
+
+    private void checkSslAllowed() {
+        SSLConfig sslConfig = client.getClientConfig().getNetworkConfig().getSSLConfig();
+        if (sslConfig != null && sslConfig.isEnabled()) {
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                throw new IllegalStateException("SSL/TLS requires Hazelcast Enterprise Edition");
+            }
+        }
     }
 
     protected void initIOThreads(HazelcastClientInstanceImpl client) {
