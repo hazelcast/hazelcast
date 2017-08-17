@@ -974,6 +974,13 @@
                                 -Djavax.cache.annotation.CacheInvocationContext=${javax.cache.annotation.CacheInvocationContext}
                                 -Dlog4j.skipJansi=true
                             </argLine>
+                            <includes>
+                                <include>**/**.java</include>
+                            </includes>
+                            <excludes>
+                                <exclude>**/jsr/**.java</exclude>
+                                <exclude>**/**IT.java</exclude>
+                            </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.NightlyTest,
                                 com.hazelcast.test.annotation.SlowTest
