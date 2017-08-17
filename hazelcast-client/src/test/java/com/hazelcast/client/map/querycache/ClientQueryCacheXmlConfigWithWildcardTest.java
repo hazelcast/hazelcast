@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.map.querycache;
 
+import com.hazelcast.client.config.ClientClasspathXmlConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.impl.querycache.QueryCacheXmlConfigWildcardTest;
@@ -24,7 +25,6 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -36,18 +36,18 @@ public class ClientQueryCacheXmlConfigWithWildcardTest extends QueryCacheXmlConf
 
     @Before
     public void setUp() throws Exception {
-        System.setProperty("hazelcast.client.config", "classpath:hazelcast-client-querycache-xml-config-wildcard-test.xml");
         factory.newHazelcastInstance();
     }
 
     @After
     public void tearDown() throws Exception {
         factory.shutdownAll();
-        System.clearProperty("hazelcast.client.config");
     }
 
     @Override
     protected HazelcastInstance createInstance() {
-        return factory.newHazelcastClient();
+        ClientClasspathXmlConfig clientConfig = new ClientClasspathXmlConfig(
+                "hazelcast-client-querycache-xml-config-wildcard-test.xml");
+        return factory.newHazelcastClient(clientConfig);
     }
 }
