@@ -17,7 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -46,19 +45,20 @@ public class BackupExpirationBouncingMemberTest extends HazelcastTestSupport {
     @Rule
     public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getConfig())
             .clusterSize(4)
-            .driverCount(1).build();
+            .driverCount(1)
+            .build();
 
     @Override
     protected Config getConfig() {
         Config config = super.getConfig();
-        MapConfig mapConfig = config.getMapConfig(mapName);
-        mapConfig.setMaxIdleSeconds(maxIdleSeconds);
-        mapConfig.setBackupCount(backupCount);
+        config.getMapConfig(mapName)
+                .setMaxIdleSeconds(maxIdleSeconds)
+                .setBackupCount(backupCount);
         return config;
     }
 
     @Test
-    public void backups_should_be_empty_after_expiration() throws Exception {
+    public void backups_should_be_empty_after_expiration() {
         Runnable[] methods = new Runnable[2];
         HazelcastInstance testDriver = bounceMemberRule.getNextTestDriver();
         methods[0] = new Get(testDriver);
@@ -74,15 +74,14 @@ public class BackupExpirationBouncingMemberTest extends HazelcastTestSupport {
 
                 assertSize(members);
                 assertSize(testDrivers);
-
             }
 
             private void assertSize(AtomicReferenceArray<HazelcastInstance> members) {
                 int length = members.length();
                 for (int i = 0; i < length; i++) {
                     HazelcastInstance node = members.get(i);
+                    assert node != null;
                     if (node.getLifecycleService().isRunning()) {
-                        assert node != null;
                         assertEquals(0, getTotalEntryCount(node.getMap(mapName)));
                     }
                 }
