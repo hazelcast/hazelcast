@@ -17,17 +17,17 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.VersionAware;
 import com.hazelcast.version.Version;
 
 import java.io.InputStream;
 
 /**
  * Base class for ObjectDataInput that is VersionAware and allows mutating the version.
+ * <p>
  * What the version means it's up to the Serializer/Deserializer.
  * If the serializer supports versioning it may set the version to use for the serialization on this object.
  */
-abstract class VersionedObjectDataInput extends InputStream implements ObjectDataInput, VersionAware {
+abstract class VersionedObjectDataInput extends InputStream implements ObjectDataInput {
 
     protected Version version = Version.UNKNOWN;
 
@@ -42,13 +42,13 @@ abstract class VersionedObjectDataInput extends InputStream implements ObjectDat
 
     /**
      * If the serializer supports versioning it may set the version to use for the serialization on this object.
+     * <p>
      * This method makes the version available for the user.
      *
-     * @return the version of Version.UNKNOWN if the version is unknown to the object.
+     * @return the version of {@code Version.UNKNOWN} if the version is unknown to the object
      */
     @Override
     public Version getVersion() {
         return version;
     }
-
 }

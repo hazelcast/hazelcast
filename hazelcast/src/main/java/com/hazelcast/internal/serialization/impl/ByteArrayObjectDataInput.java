@@ -36,17 +36,12 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     byte[] data;
-
     int size;
-
     int pos;
-
     int mark;
-
-    final InternalSerializationService service;
-
     char[] charBuffer;
 
+    private final InternalSerializationService service;
     private final boolean bigEndian;
 
     ByteArrayObjectDataInput(byte[] data, InternalSerializationService service, ByteOrder byteOrder) {
@@ -56,8 +51,8 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     ByteArrayObjectDataInput(byte[] data, int offset, InternalSerializationService service, ByteOrder byteOrder) {
         this.data = data;
         this.size = data != null ? data.length : 0;
-        this.service = service;
         this.pos = offset;
+        this.service = service;
         this.bigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
     }
 
@@ -71,8 +66,8 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     @Override
     public void clear() {
         this.data = null;
-        this.pos = 0;
         this.size = 0;
+        this.pos = 0;
         this.mark = 0;
         if (charBuffer != null && charBuffer.length > UTF_BUFFER_SIZE * 8) {
             this.charBuffer = new char[UTF_BUFFER_SIZE * 8];
@@ -128,15 +123,14 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     /**
-     * See the general contract of the <code>readByte</code> method of
-     * <code>DataInput</code>.
-     * <p/>
+     * See the general contract of the {@code readByte} method of {@code DataInput}.
+     * <p>
      * Bytes for this operation are read from the contained input stream.
      *
      * @return the next byte of this input stream as a signed 8-bit
-     * <code>byte</code>.
-     * @throws java.io.EOFException if this input stream has reached the end.
-     * @throws java.io.IOException  if an I/O error occurs.
+     * {@code byte}.
+     * @throws java.io.EOFException if this input stream has reached the end
+     * @throws java.io.IOException  if an I/O error occurs
      * @see java.io.FilterInputStream#in
      */
     @Override
@@ -158,15 +152,13 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     /**
-     * See the general contract of the <code>readChar</code> method of
-     * <code>DataInput</code>.
-     * <p/>
+     * See the general contract of the {@code readChar} method of {@code DataInput}.
+     * <p>
      * Bytes for this operation are read from the contained input stream.
      *
-     * @return the next two bytes of this input stream as a Unicode character.
-     * @throws java.io.EOFException if this input stream reaches the end before reading two
-     *                              bytes.
-     * @throws java.io.IOException  if an I/O error occurs.
+     * @return the next two bytes of this input stream as a Unicode character
+     * @throws java.io.EOFException if this input stream reaches the end before reading two bytes
+     * @throws java.io.IOException  if an I/O error occurs
      * @see java.io.FilterInputStream#in
      */
     @Override
@@ -183,16 +175,13 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     /**
-     * See the general contract of the <code>readDouble</code> method of
-     * <code>DataInput</code>.
-     * <p/>
+     * See the general contract of the {@code readDouble} method of {@code DataInput}.
+     * <p>
      * Bytes for this operation are read from the contained input stream.
      *
-     * @return the next eight bytes of this input stream, interpreted as a
-     * <code>double</code>.
-     * @throws java.io.EOFException if this input stream reaches the end before reading eight
-     *                              bytes.
-     * @throws java.io.IOException  if an I/O error occurs.
+     * @return the next eight bytes of this input stream, interpreted as a {@code double}
+     * @throws java.io.EOFException if this input stream reaches the end before reading eight bytes
+     * @throws java.io.IOException  if an I/O error occurs
      * @see java.io.DataInputStream#readLong()
      * @see Double#longBitsToDouble(long)
      */
@@ -217,16 +206,13 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     /**
-     * See the general contract of the <code>readFloat</code> method of
-     * <code>DataInput</code>.
-     * <p/>
+     * See the general contract of the {@code readFloat} method of {@code DataInput}.
+     * <p>
      * Bytes for this operation are read from the contained input stream.
      *
-     * @return the next four bytes of this input stream, interpreted as a
-     * <code>float</code>.
-     * @throws java.io.EOFException if this input stream reaches the end before reading four
-     *                              bytes.
-     * @throws java.io.IOException  if an I/O error occurs.
+     * @return the next four bytes of this input stream, interpreted as a {@code float}
+     * @throws java.io.EOFException if this input stream reaches the end before reading four bytes
+     * @throws java.io.IOException  if an I/O error occurs
      * @see java.io.DataInputStream#readInt()
      * @see Float#intBitsToFloat(int)
      */
@@ -265,16 +251,13 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     /**
-     * See the general contract of the <code>readInt</code> method of
-     * <code>DataInput</code>.
-     * <p/>
+     * See the general contract of the {@code readInt} method of {@code DataInput}.
+     * <p>
      * Bytes for this operation are read from the contained input stream.
      *
-     * @return the next four bytes of this input stream, interpreted as an
-     * <code>int</code>.
-     * @throws java.io.EOFException if this input stream reaches the end before reading four
-     *                              bytes.
-     * @throws java.io.IOException  if an I/O error occurs.
+     * @return the next four bytes of this input stream, interpreted as an {@code int}
+     * @throws java.io.EOFException if this input stream reaches the end before reading four bytes
+     * @throws java.io.IOException  if an I/O error occurs
      * @see java.io.FilterInputStream#in
      */
     @Override
@@ -308,16 +291,13 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     /**
-     * See the general contract of the <code>readLong</code> method of
-     * <code>DataInput</code>.
-     * <p/>
+     * See the general contract of the {@code readLong} method of {@code DataInput}.
+     * <p>
      * Bytes for this operation are read from the contained input stream.
      *
-     * @return the next eight bytes of this input stream, interpreted as a
-     * <code>long</code>.
-     * @throws java.io.EOFException if this input stream reaches the end before reading eight
-     *                              bytes.
-     * @throws java.io.IOException  if an I/O error occurs.
+     * @return the next eight bytes of this input stream, interpreted as a {@code long}
+     * @throws java.io.EOFException if this input stream reaches the end before reading eight bytes
+     * @throws java.io.IOException  if an I/O error occurs
      * @see java.io.FilterInputStream#in
      */
     @Override
@@ -346,16 +326,13 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     /**
-     * See the general contract of the <code>readShort</code> method of
-     * <code>DataInput</code>.
-     * <p/>
+     * See the general contract of the {@code readShort} method of {@code DataInput}.
+     * <p>
      * Bytes for this operation are read from the contained input stream.
      *
-     * @return the next two bytes of this input stream, interpreted as a signed
-     * 16-bit number.
-     * @throws java.io.EOFException if this input stream reaches the end before reading two
-     *                              bytes.
-     * @throws java.io.IOException  if an I/O error occurs.
+     * @return the next two bytes of this input stream, interpreted as a signed 16-bit number
+     * @throws java.io.EOFException if this input stream reaches the end before reading two bytes
+     * @throws java.io.IOException  if an I/O error occurs
      * @see java.io.FilterInputStream#in
      */
     @Override
@@ -527,15 +504,13 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     /**
-     * See the general contract of the <code>readUnsignedByte</code> method of
-     * <code>DataInput</code>.
-     * <p/>
+     * See the general contract of the {@code readUnsignedByte} method of {@code DataInput}.
+     * <p>
      * Bytes for this operation are read from the contained input stream.
      *
-     * @return the next byte of this input stream, interpreted as an unsigned
-     * 8-bit number.
-     * @throws java.io.EOFException if this input stream has reached the end.
-     * @throws java.io.IOException  if an I/O error occurs.
+     * @return the next byte of this input stream, interpreted as an unsigned 8-bit number
+     * @throws java.io.EOFException if this input stream has reached the end
+     * @throws java.io.IOException  if an I/O error occurs
      * @see java.io.FilterInputStream#in
      */
     @Override
@@ -544,16 +519,13 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     /**
-     * See the general contract of the <code>readUnsignedShort</code> method of
-     * <code>DataInput</code>.
-     * <p/>
+     * See the general contract of the {@code readUnsignedShort} method of {@code DataInput}.
+     * <p>
      * Bytes for this operation are read from the contained input stream.
      *
-     * @return the next two bytes of this input stream, interpreted as an
-     * unsigned 16-bit integer.
-     * @throws java.io.EOFException if this input stream reaches the end before reading two
-     *                              bytes.
-     * @throws java.io.IOException  if an I/O error occurs.
+     * @return the next two bytes of this input stream, interpreted as an unsigned 16-bit integer
+     * @throws java.io.EOFException if this input stream reaches the end before reading two bytes
+     * @throws java.io.IOException  if an I/O error occurs
      * @see java.io.FilterInputStream#in
      */
     @Override
@@ -562,17 +534,14 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     /**
-     * See the general contract of the <code>readUTF</code> method of
-     * <code>DataInput</code>.
-     * <p/>
+     * See the general contract of the {@code readUTF} method of {@code DataInput}.
+     * <p>
      * Bytes for this operation are read from the contained input stream.
      *
      * @return a Unicode string.
-     * @throws java.io.EOFException           if this input stream reaches the end before reading all
-     *                                        the bytes.
-     * @throws java.io.IOException            if an I/O error occurs.
-     * @throws java.io.UTFDataFormatException if the bytes do not represent a valid modified UTF-8
-     *                                        encoding of a string.
+     * @throws java.io.EOFException           if this input stream reaches the end before reading all the bytes
+     * @throws java.io.IOException            if an I/O error occurs
+     * @throws java.io.UTFDataFormatException if the bytes do not represent a valid modified UTF-8 encoding of a string
      * @see java.io.DataInputStream#readUTF(java.io.DataInput)
      */
     @Override
@@ -609,7 +578,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
 
     @Override
     public <T> T readDataAsObject() throws IOException {
-        // a future optimization would be to skip the construction of the Data object.
+        // a future optimization would be to skip the construction of the Data object
         Data data = readData();
         return data == null ? null : (T) service.toObject(data);
     }
