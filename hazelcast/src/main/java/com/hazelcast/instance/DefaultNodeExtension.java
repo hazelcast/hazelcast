@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -94,8 +95,18 @@ public class DefaultNodeExtension implements NodeExtension {
 
     public DefaultNodeExtension(Node node) {
         this.node = node;
-        logger = node.getLogger(NodeExtension.class);
-        systemLogger = node.getLogger("com.hazelcast.system");
+        this.logger = node.getLogger(NodeExtension.class);
+        this.systemLogger = node.getLogger("com.hazelcast.system");
+        checkSecurityAllowed();
+    }
+
+    private void checkSecurityAllowed() {
+        SecurityConfig securityConfig =  node.getConfig().getSecurityConfig();
+        if (securityConfig != null && securityConfig.isEnabled()) {
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                throw new IllegalStateException("Security requires Hazelcast Enterprise Edition");
+            }
+        }
     }
 
     @Override
