@@ -231,7 +231,7 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
         map.put(23, "value-23");
         assertTrue(map.containsKey(23));
 
-        adapter.remove(23);
+        assertEquals("value-23", adapter.remove(23));
         assertFalse(map.containsKey(23));
     }
 
@@ -254,6 +254,20 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
         assertEquals("value-23", value);
 
         assertFalse(map.containsKey(23));
+    }
+
+    @Test
+    public void testDelete() {
+        map.put(23, "value-23");
+        assertTrue(map.containsKey(23));
+
+        adapter.delete(23);
+        assertFalse(map.containsKey(23));
+    }
+
+    @Test(expected = MethodNotAvailableException.class)
+    public void testDeleteAsync() {
+        adapter.deleteAsync(23);
     }
 
     @Test

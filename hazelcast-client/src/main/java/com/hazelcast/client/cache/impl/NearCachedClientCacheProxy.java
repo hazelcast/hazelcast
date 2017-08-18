@@ -205,11 +205,9 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     @Override
     protected <T> void onGetAndRemoveAsyncInternal(K key, Data keyData, ClientDelegatingFuture<T> delegatingFuture,
                                                    ExecutionCallback<T> callback) {
-        try {
-            super.onGetAndRemoveAsyncInternal(key, keyData, delegatingFuture, callback);
-        } finally {
-            invalidateNearCache(serializeKeys ? keyData : key);
-        }
+        Object callbackKey = serializeKeys ? keyData : key;
+        InvalidateCallback<T> wrapped = new InvalidateCallback<T>(callbackKey, callback);
+        super.onGetAndRemoveAsyncInternal(key, keyData, delegatingFuture, wrapped);
     }
 
     @Override
@@ -738,6 +736,39 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
                 }
             } finally {
                 cacheOrInvalidate(key, keyData, value, valueData);
+            }
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            try {
+                if (callback != null) {
+                    callback.onFailure(t);
+                }
+            } finally {
+                invalidateNearCache(key);
+            }
+        }
+    }
+
+    private final class InvalidateCallback<T> implements ExecutionCallback<T> {
+
+        private final Object key;
+        private final ExecutionCallback<T> callback;
+
+        InvalidateCallback(Object key, ExecutionCallback<T> callback) {
+            this.key = key;
+            this.callback = callback;
+        }
+
+        @Override
+        public void onResponse(T response) {
+            try {
+                if (callback != null) {
+                    callback.onResponse(response);
+                }
+            } finally {
+                invalidateNearCache(key);
             }
         }
 

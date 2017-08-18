@@ -120,8 +120,8 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
-    public void remove(K key) {
-        map.remove(key);
+    public V remove(K key) {
+        return map.remove(key);
     }
 
     @Override
@@ -132,6 +132,17 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     @Override
     public ICompletableFuture<V> removeAsync(K key) {
         return map.removeAsync(key);
+    }
+
+    @Override
+    public void delete(K key) {
+        map.delete(key);
+    }
+
+    @Override
+    @MethodNotAvailable
+    public ICompletableFuture<Boolean> deleteAsync(K key) {
+        throw new MethodNotAvailableException();
     }
 
     @Override

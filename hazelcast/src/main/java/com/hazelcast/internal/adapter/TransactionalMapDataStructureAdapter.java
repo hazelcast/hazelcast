@@ -150,10 +150,11 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
-    public void remove(K key) {
+    public V remove(K key) {
         begin();
-        transactionalMap.remove(key);
+        V oldValue = transactionalMap.remove(key);
         commit();
+        return oldValue;
     }
 
     @Override
@@ -167,6 +168,19 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     @Override
     @MethodNotAvailable
     public ICompletableFuture<V> removeAsync(K key) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    public void delete(K key) {
+        begin();
+        transactionalMap.delete(key);
+        commit();
+    }
+
+    @Override
+    @MethodNotAvailable
+    public ICompletableFuture<Boolean> deleteAsync(K key) {
         throw new MethodNotAvailableException();
     }
 
