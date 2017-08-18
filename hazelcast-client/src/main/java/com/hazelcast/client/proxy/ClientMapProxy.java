@@ -1621,7 +1621,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
      * @param <R>         the return type
      * @return the iterator for the projected entries
      * @throws UnsupportedOperationException if {@link Iterator#remove()} is invoked
-     * @throws IllegalArgumentException if the predicate is of type {@link PagingPredicate}
+     * @throws IllegalArgumentException      if the predicate is of type {@link PagingPredicate}
      * @since 3.9
      */
     public <R> Iterator<R> iterator(int fetchSize, int partitionId, Projection<Map.Entry<K, V>, R> projection,
@@ -1760,6 +1760,17 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         public void handle(int partitionId, String uuid) {
             Member member = getContext().getClusterService().getMember(uuid);
             listener.partitionLost(new MapPartitionLostEvent(name, member, -1, partitionId));
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        try {
+            SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
+            QueryCacheEndToEndProvider provider = subscriberContext.getEndToEndQueryCacheProvider();
+            provider.removeQueryCachesOfMap(name);
+        } finally {
+            super.onDestroy();
         }
     }
 }

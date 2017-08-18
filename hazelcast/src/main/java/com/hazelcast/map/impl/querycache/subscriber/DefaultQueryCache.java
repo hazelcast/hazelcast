@@ -239,12 +239,9 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     private boolean removeInternalQueryCache() {
         SubscriberContext subscriberContext = context.getSubscriberContext();
         QueryCacheEndToEndProvider cacheProvider = subscriberContext.getEndToEndQueryCacheProvider();
-        InternalQueryCache internalQueryCache = cacheProvider.remove(mapName, userGivenCacheName);
-        boolean exists = internalQueryCache != null;
-        if (exists) {
-            internalQueryCache.clear();
-        }
-        return exists;
+        cacheProvider.remove(mapName, userGivenCacheName);
+        clear();
+        return subscriberContext.getQueryCacheFactory().remove(this);
     }
 
     @Override
