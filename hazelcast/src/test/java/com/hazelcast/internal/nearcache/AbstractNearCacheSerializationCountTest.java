@@ -201,15 +201,15 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
                 if (isCacheOnUpdate(nearCacheConfig)) {
                     assertNearCacheSizeEventually(context, 1);
                 }
-                assertAndResetSerializationCounts("put()", 0);
+                assertAndResetSerializationCounts(context, "put()", 0);
 
                 resultValue = context.nearCacheAdapter.get(key);
                 assertResultValue("first get()", value, resultValue);
-                assertAndResetSerializationCounts("first get()", 1);
+                assertAndResetSerializationCounts(context, "first get()", 1);
 
                 resultValue = context.nearCacheAdapter.get(key);
                 assertResultValue("second get()", value, resultValue);
-                assertAndResetSerializationCounts("second get()", 2);
+                assertAndResetSerializationCounts(context, "second get()", 2);
                 break;
 
             case GET_ALL:
@@ -220,15 +220,15 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
                 if (isCacheOnUpdate(nearCacheConfig)) {
                     assertNearCacheSizeEventually(context, 1);
                 }
-                assertAndResetSerializationCounts("putAll()", 0);
+                assertAndResetSerializationCounts(context, "putAll()", 0);
 
                 resultMap = context.nearCacheAdapter.getAll(keySet);
                 assertResultMap("first getAll()", value, resultMap);
-                assertAndResetSerializationCounts("first getAll()", 1);
+                assertAndResetSerializationCounts(context, "first getAll()", 1);
 
                 resultMap = context.nearCacheAdapter.getAll(keySet);
                 assertResultMap("second getAll()", value, resultMap);
-                assertAndResetSerializationCounts("second getAll()", 2);
+                assertAndResetSerializationCounts(context, "second getAll()", 2);
                 break;
         }
     }
@@ -253,7 +253,7 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
         assertResultValue(label, expected, actual.get(key));
     }
 
-    private void assertAndResetSerializationCounts(String label, int index) {
+    private void assertAndResetSerializationCounts(NearCacheTestContext<?, ?, ?, ?> context, String label, int index) {
         int expectedKeySerializeCount = expectedKeySerializationCounts[index];
         int expectedKeyDeserializeCount = expectedKeyDeserializationCounts[index];
         int expectedValueSerializeCount = expectedValueSerializationCounts[index];
@@ -278,28 +278,35 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
 
         StringBuilder sb = new StringBuilder();
         if (expectedKeySerializeCount != actualKeySerializeCount) {
-            sb.append(format("key serializeCount on %s: expected %d, but was %d%n%s%n",
-                    label, expectedKeySerializeCount, actualKeySerializeCount,
+            sb.append(format("key serializeCount on %s: expected %d, but was %d%n%s%s%n",
+                    label, expectedKeySerializeCount, actualKeySerializeCount, getStatsOrEmptyString(context),
                     configBuilder.build(true, true, index, keySerializeStackTrace)));
         }
         if (expectedKeyDeserializeCount != actualKeyDeserializeCount) {
-            sb.append(format("key deserializeCount on %s: expected %d, but was %d%n%s%n",
-                    label, expectedKeyDeserializeCount, actualKeyDeserializeCount,
+            sb.append(format("key deserializeCount on %s: expected %d, but was %d%n%s%s%n",
+                    label, expectedKeyDeserializeCount, actualKeyDeserializeCount, getStatsOrEmptyString(context),
                     configBuilder.build(true, false, index, keyDeserializeStackTrace)));
         }
         if (expectedValueSerializeCount != actualValueSerializeCount) {
-            sb.append(format("value serializeCount on %s: expected %d, but was %d%n%s%n",
-                    label, expectedValueSerializeCount, actualValueSerializeCount,
+            sb.append(format("value serializeCount on %s: expected %d, but was %d%n%s%s%n",
+                    label, expectedValueSerializeCount, actualValueSerializeCount, getStatsOrEmptyString(context),
                     configBuilder.build(false, true, index, valueSerializeStackTrace)));
         }
         if (expectedValueDeserializeCount != actualValueDeserializeCount) {
-            sb.append(format("value deserializeCount on %s: expected %d, but was %d%n%s%n",
-                    label, expectedValueDeserializeCount, actualValueDeserializeCount,
+            sb.append(format("value deserializeCount on %s: expected %d, but was %d%n%s%s%n",
+                    label, expectedValueDeserializeCount, actualValueDeserializeCount, getStatsOrEmptyString(context),
                     configBuilder.build(false, false, index, valueDeserializeStackTrace)));
         }
         if (sb.length() > 0) {
             fail(sb.toString());
         }
+    }
+
+    private String getStatsOrEmptyString(NearCacheTestContext<?, ?, ?, ?> context) {
+        if (context.stats == null) {
+            return "";
+        }
+        return "\n" + context.stats + "\n\n";
     }
 
     /**

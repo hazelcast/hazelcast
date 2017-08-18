@@ -53,7 +53,8 @@ public class NearCacheSerializationCountConfigBuilder {
         if (baseString == null) {
             baseString = sb.substring(0, sb.length() - DELIMITER.length());
         }
-        return format("%s, %s%n%s%n%s", method, baseString, createPointer(method, isKey, isSerialization, index), stacktrace);
+        return format("%s, %s%n%s%s", method, baseString, createPointer(method, isKey, isSerialization, index),
+                createStackTrace(stacktrace));
     }
 
     private static String createPointer(DataStructureMethods method, boolean isKey, boolean isSerialization, int index) {
@@ -72,5 +73,12 @@ public class NearCacheSerializationCountConfigBuilder {
         }
         sb.append("↑");
         return sb.toString();
+    }
+
+    private static String createStackTrace(List<String> stacktrace) {
+        if (stacktrace.isEmpty()) {
+            return "";
+        }
+        return "\n" + stacktrace.toString();
     }
 }
