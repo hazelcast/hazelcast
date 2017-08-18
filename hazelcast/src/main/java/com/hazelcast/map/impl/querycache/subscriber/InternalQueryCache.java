@@ -42,4 +42,9 @@ public interface InternalQueryCache<K, V> extends QueryCache<K, V> {
     void clear();
 
     void setPublisherListenerId(String publisherListenerId);
+
+    /**
+     * @return internally used uuid for this query cache.
+     */
+    String getCacheName();
 }

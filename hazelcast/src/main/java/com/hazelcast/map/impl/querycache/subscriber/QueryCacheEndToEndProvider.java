@@ -82,8 +82,29 @@ public class QueryCacheEndToEndProvider<K, V> {
         }
     }
 
-    public InternalQueryCache<K, V> remove(String mapName, String cacheName) {
+    public void remove(String mapName, String cacheName) {
         ConcurrentMap<String, InternalQueryCache<K, V>> queryCachesOfMap = queryCaches.get(mapName);
-        return queryCachesOfMap.remove(cacheName);
+        if (queryCachesOfMap != null) {
+            queryCachesOfMap.remove(cacheName);
+        }
+    }
+
+    public void removeQueryCachesOfMap(String mapName) {
+        ConcurrentMap<String, InternalQueryCache<K, V>> queryCachesOfMap = queryCaches.remove(mapName);
+        if (queryCachesOfMap != null) {
+            for (InternalQueryCache<K, V> queryCache : queryCachesOfMap.values()) {
+                queryCache.destroy();
+            }
+        }
+    }
+
+    // used for testing
+    public int getQueryCacheCount(String mapName) {
+        ConcurrentMap<String, InternalQueryCache<K, V>> queryCachesOfMap = queryCaches.get(mapName);
+        if (queryCachesOfMap == null) {
+            return 0;
+        }
+
+        return queryCachesOfMap.size();
     }
 }
