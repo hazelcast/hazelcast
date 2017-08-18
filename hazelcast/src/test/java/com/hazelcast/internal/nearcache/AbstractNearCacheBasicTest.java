@@ -1401,19 +1401,46 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
     }
 
     /**
-     * Checks that the Near Cache never returns its internal {@link NearCache#CACHED_AS_NULL} to the public API.
+     * Checks that the Near Cache never returns its internal {@link NearCache#CACHED_AS_NULL} to the user
+     * when {@link DataStructureMethods#GET} is used.
      */
     @Test
-    public void whenEmptyDataStructure_thenPopulatedNearCacheShouldReturnNull_neverCACHED_AS_NULL() {
+    public void whenGetIsUsedOnEmptyDataStructure_thenAlwaysReturnNullFromNearCache() {
+        whenGetIsUsedOnEmptyDataStructure_thenAlwaysReturnNullFromNearCache(DataStructureMethods.GET);
+    }
+
+    /**
+     * Checks that the Near Cache never returns its internal {@link NearCache#CACHED_AS_NULL} to the user
+     * when {@link DataStructureMethods#GET_ASYNC} is used.
+     */
+    @Test
+    public void whenGetAsyncIsUsedOnEmptyDataStructure_thenAlwaysReturnNullFromNearCache() {
+        whenGetIsUsedOnEmptyDataStructure_thenAlwaysReturnNullFromNearCache(DataStructureMethods.GET_ASYNC);
+    }
+
+    /**
+     * Checks that the Near Cache never returns its internal {@link NearCache#CACHED_AS_NULL} to the user
+     * when {@link DataStructureMethods#GET_ALL} is used.
+     */
+    @Test
+    public void whenGetAllIsUsedOnEmptyDataStructure_thenAlwaysReturnNullFromNearCache() {
+        whenGetIsUsedOnEmptyDataStructure_thenAlwaysReturnNullFromNearCache(DataStructureMethods.GET_ALL);
+    }
+
+    /**
+     * Checks that the Near Cache never returns its internal {@link NearCache#CACHED_AS_NULL} to the user.
+     */
+    private void whenGetIsUsedOnEmptyDataStructure_thenAlwaysReturnNullFromNearCache(DataStructureMethods method) {
+        assumeThatMethodIsAvailable(method);
         NearCacheTestContext<Integer, String, NK, NV> context = createContext(0);
 
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            // populate Near Cache
-            assertNull("Expected null from original data structure for key " + i, context.nearCacheAdapter.get(i));
-            // fetch value from Near Cache
-            assertNull("Expected null from near cached data structure for key " + i, context.nearCacheAdapter.get(i));
+        // populate Near Cache and check for null values
+        populateNearCache(context, method, DEFAULT_RECORD_COUNT, null);
+        // fetch value from Near Cache and check for null values
+        populateNearCache(context, method, DEFAULT_RECORD_COUNT, null);
 
-            // fetch internal value directly from Near Cache
+        // fetch internal value directly from Near Cache
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             NV value = getValueFromNearCache(context, getNearCacheKey(context, i));
             if (value != null) {
                 // the internal value should either be `null` or `CACHED_AS_NULL`
@@ -1568,7 +1595,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         switch (method) {
             case GET:
                 for (int i = 0; i < size; i++) {
-                    String value = context.nearCacheAdapter.get(i);
+                    Object value = context.nearCacheAdapter.get(i);
                     if (valuePrefix == null) {
                         assertNull(value);
                     } else {
@@ -1582,8 +1609,12 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                     futures.add(context.nearCacheAdapter.getAsync(i));
                 }
                 for (int i = 0; i < size; i++) {
-                    String value = getFuture(futures.get(i), "Could not get value for index " + i + " via getAsync()");
-                    assertEquals(valuePrefix + i, value);
+                    Object value = getFuture(futures.get(i), "Could not get value for index " + i + " via getAsync()");
+                    if (valuePrefix == null) {
+                        assertNull(value);
+                    } else {
+                        assertEquals(valuePrefix + i, value);
+                    }
                 }
                 break;
             case GET_ALL:
@@ -1592,10 +1623,22 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                     getAllSet.add(i);
                 }
                 Map<Integer, String> resultMap = context.nearCacheAdapter.getAll(getAllSet);
-                assertEquals(size, resultMap.size());
-                for (int i = 0; i < size; i++) {
-                    String value = resultMap.get(i);
-                    assertEquals(valuePrefix + i, value);
+                int resultSize = resultMap.size();
+                if (valuePrefix == null) {
+                    if (context.nearCacheAdapter instanceof ReplicatedMapDataStructureAdapter) {
+                        assertEquals(size, resultSize);
+                        for (int i = 0; i < size; i++) {
+                            assertNull(resultMap.get(i));
+                        }
+                    } else {
+                        assertTrue("result map from getAll() should be empty, but was " + resultSize, resultMap.isEmpty());
+                    }
+                } else {
+                    assertEquals(size, resultSize);
+                    for (int i = 0; i < size; i++) {
+                        Object value = resultMap.get(i);
+                        assertEquals(valuePrefix + i, value);
+                    }
                 }
                 break;
             default:
