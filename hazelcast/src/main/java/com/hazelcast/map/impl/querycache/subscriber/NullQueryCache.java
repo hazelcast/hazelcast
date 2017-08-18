@@ -71,6 +71,11 @@ public final class NullQueryCache implements InternalQueryCache {
     }
 
     @Override
+    public String getCacheName() {
+        return null;
+    }
+
+    @Override
     public Object get(Object key) {
         return null;
     }

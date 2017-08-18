@@ -81,6 +81,11 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         this.publisherListenerId = publisherListenerId;
     }
 
+    @Override
+    public String getCacheName() {
+        return cacheName;
+    }
+
     protected Predicate getPredicate() {
         return getQueryCacheConfig().getPredicateConfig().getImplementation();
     }
