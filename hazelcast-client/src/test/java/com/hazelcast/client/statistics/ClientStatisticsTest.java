@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.impl.statistics.Statistics.split;
 import static com.hazelcast.client.impl.statistics.Statistics.unescapeSpecialCharacters;
@@ -65,6 +66,8 @@ import static org.junit.Assert.assertTrue;
 public class ClientStatisticsTest extends ClientTestSupport {
 
     private static final int STATS_PERIOD_SECONDS = 1;
+    private static final long STATS_PERIOD_MILLIS = TimeUnit.SECONDS.toMillis(STATS_PERIOD_SECONDS);
+
     private static final String MAP_NAME = "StatTestMapFirst.First";
     private static final String CACHE_NAME = "StatTestICache,First";
     private static final String MAP_HITS_KEY = "nc." + MAP_NAME + ".hits";
@@ -110,7 +113,8 @@ public class ClientStatisticsTest extends ClientTestSupport {
         String lastStatisticsCollectionTimeString = stats.get("lastStatisticsCollectionTime");
         long lastCollectionTime = Long.parseLong(lastStatisticsCollectionTimeString);
 
-        IMap<Integer, Integer> map = client.getMap(MAP_NAME);
+        // this creates empty map statistics
+        client.getMap(MAP_NAME);
 
         // wait enough time for statistics collection
         waitForNextStatsCollection(client, clientEngine, lastStatisticsCollectionTimeString);
@@ -122,13 +126,11 @@ public class ClientStatisticsTest extends ClientTestSupport {
         cacheHits = stats.get(CACHE_HITS_KEY);
         assertNull(format("%s should be null (%s)", CACHE_HITS_KEY, stats), cacheHits);
 
-        // verfiy that collection is periodic
-        String newStatisticsCollectionTimeString = verifyThatCollectionIsPeriodic(stats, lastCollectionTime);
-
-        lastStatisticsCollectionTimeString = newStatisticsCollectionTimeString;
+        // verify that collection is periodic
+        lastStatisticsCollectionTimeString = verifyThatCollectionIsPeriodic(stats, lastCollectionTime);
 
         // produce map and cache stat
-        produceSomeStats(hazelcastInstance, client, map);
+        produceSomeStats(hazelcastInstance, client);
 
         // wait enough time for statistics collection
         waitForNextStatsCollection(client, clientEngine, lastStatisticsCollectionTimeString);
@@ -153,10 +155,8 @@ public class ClientStatisticsTest extends ClientTestSupport {
 
         Map<String, String> initialStats = getStats(client, clientEngine);
 
-        IMap<Integer, Integer> map = client.getMap(MAP_NAME);
-
         // produce map and cache stat
-        produceSomeStats(hazelcastInstance, client, map);
+        produceSomeStats(hazelcastInstance, client);
 
         // wait enough time for statistics collection
         waitForNextStatsCollection(client, clientEngine, initialStats.get("lastStatisticsCollectionTime"));
@@ -256,30 +256,81 @@ public class ClientStatisticsTest extends ClientTestSupport {
         assertArrayEquals(expectedStrings, strings.toArray());
     }
 
-    private String verifyThatCollectionIsPeriodic(Map<String, String> stats, long lastCollectionTime) {
-        String newStatisticsCollectionTimeString = stats.get("lastStatisticsCollectionTime");
-        long newCollectionTime = Long.parseLong(newStatisticsCollectionTimeString);
-        long timeDifferenceInMillis = newCollectionTime - lastCollectionTime;
-        assertTrue("Time difference between two collections is " + timeDifferenceInMillis + " msecs. It is too high!",
-                timeDifferenceInMillis < 3 * STATS_PERIOD_SECONDS * 1000);
-        assertTrue(
-                "Time difference between two collections is " + timeDifferenceInMillis + " msecs but it should be greater than "
-                        + STATS_PERIOD_SECONDS * 1000 + " msecs", timeDifferenceInMillis >= STATS_PERIOD_SECONDS * 1000);
-        return newStatisticsCollectionTimeString;
+    private HazelcastClientInstanceImpl createHazelcastClient() {
+        ClientConfig clientConfig = new ClientConfig()
+                .setProperty(Statistics.ENABLED.getName(), "true")
+                .setProperty(Statistics.PERIOD_SECONDS.getName(), Integer.toString(STATS_PERIOD_SECONDS))
+                // add IMap and ICache with Near Cache config
+                .addNearCacheConfig(new NearCacheConfig(MAP_NAME))
+                .addNearCacheConfig(new NearCacheConfig(CACHE_NAME));
+
+        HazelcastInstance clientInstance = hazelcastFactory.newHazelcastClient(clientConfig);
+        return getHazelcastClientInstanceImpl(clientInstance);
     }
 
-    private void waitForFirstStatisticsCollection(final HazelcastClientInstanceImpl client, final ClientEngineImpl clientEngine) {
+    private static void produceSomeStats(HazelcastInstance hazelcastInstance, HazelcastClientInstanceImpl client) {
+        IMap<Integer, Integer> map = client.getMap(MAP_NAME);
+        map.put(5, 10);
+        assertEquals(10, map.get(5).intValue());
+        assertEquals(10, map.get(5).intValue());
+
+        ICache<Integer, Integer> cache = createCache(hazelcastInstance, CACHE_NAME, client);
+        cache.put(9, 20);
+        assertEquals(20, cache.get(9).intValue());
+        assertEquals(20, cache.get(9).intValue());
+    }
+
+    private static ICache<Integer, Integer> createCache(HazelcastInstance hazelcastInstance, String testCacheName,
+                                                        HazelcastInstance clientInstance) {
+        CachingProvider cachingProvider = getCachingProvider(hazelcastInstance);
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+        cacheManager.createCache(testCacheName, createCacheConfig());
+        ICacheManager clientCacheManager = clientInstance.getCacheManager();
+        return clientCacheManager.getCache(testCacheName);
+    }
+
+    private static CachingProvider getCachingProvider(HazelcastInstance instance) {
+        return HazelcastServerCachingProvider.createCachingProvider(instance);
+    }
+
+    private static <K, V> CacheConfig<K, V> createCacheConfig() {
+        return new CacheConfig<K, V>()
+                .setInMemoryFormat(InMemoryFormat.BINARY);
+    }
+
+    private static Map<String, String> getStats(HazelcastClientInstanceImpl client, ClientEngineImpl clientEngine) {
+        Map<String, String> clientStatistics = clientEngine.getClientStatistics();
+        assertNotNull("clientStatistics should not be null", clientStatistics);
+        assertEquals("clientStatistics.size() should be 1", 1, clientStatistics.size());
+        Set<Map.Entry<String, String>> entries = clientStatistics.entrySet();
+        Map.Entry<String, String> statEntry = entries.iterator().next();
+        assertEquals(client.getClientClusterService().getLocalClient().getUuid(), statEntry.getKey());
+        return parseStatValue(statEntry.getValue());
+    }
+
+    private static Map<String, String> parseStatValue(String value) {
+        Map<String, String> result = new HashMap<String, String>();
+        for (String stat : split(value)) {
+            List<String> keyValue = split(stat, 0, '=');
+            assertNotNull(format("keyValue should not be null (%s)", stat), keyValue);
+            result.put(unescapeSpecialCharacters(keyValue.get(0)), unescapeSpecialCharacters(keyValue.get(1)));
+        }
+        return result;
+    }
+
+    private static void waitForFirstStatisticsCollection(final HazelcastClientInstanceImpl client,
+                                                         final ClientEngineImpl clientEngine) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
                 getStats(client, clientEngine);
             }
-        }, 3 * STATS_PERIOD_SECONDS);
+        }, STATS_PERIOD_SECONDS * 3);
     }
 
-    private void waitForNextStatsCollection(final HazelcastClientInstanceImpl client, final ClientEngineImpl clientEngine,
-                                            final String lastStatisticsCollectionTime) {
+    private static void waitForNextStatsCollection(final HazelcastClientInstanceImpl client, final ClientEngineImpl clientEngine,
+                                                   final String lastStatisticsCollectionTime) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
@@ -290,65 +341,20 @@ public class ClientStatisticsTest extends ClientTestSupport {
         });
     }
 
-    private <K, V> CacheConfig<K, V> createCacheConfig() {
-        return new CacheConfig<K, V>()
-                .setInMemoryFormat(InMemoryFormat.BINARY);
-    }
+    private static String verifyThatCollectionIsPeriodic(Map<String, String> stats, long lastCollectionTime) {
+        String lastStatisticsCollectionTime = stats.get("lastStatisticsCollectionTime");
+        long newCollectionTime = Long.parseLong(lastStatisticsCollectionTime);
+        long timeDifferenceMillis = newCollectionTime - lastCollectionTime;
 
-    private CachingProvider getCachingProvider(HazelcastInstance instance) {
-        return HazelcastServerCachingProvider.createCachingProvider(instance);
-    }
+        double lowerThreshold = STATS_PERIOD_MILLIS * 0.9;
+        double upperThreshold = STATS_PERIOD_MILLIS * 3.0;
+        assertTrue("Time difference between two collections is " + timeDifferenceMillis
+                        + " ms but, but it should be greater than " + lowerThreshold + " ms",
+                timeDifferenceMillis >= lowerThreshold);
+        assertTrue("Time difference between two collections is " + timeDifferenceMillis
+                        + " ms, but it should be less than " + upperThreshold + " ms",
+                timeDifferenceMillis <= upperThreshold);
 
-    private void produceSomeStats(HazelcastInstance hazelcastInstance, HazelcastClientInstanceImpl client,
-                                  IMap<Integer, Integer> map) {
-        map.put(5, 10);
-        assertEquals(10, map.get(5).intValue());
-        assertEquals(10, map.get(5).intValue());
-        ICache<Integer, Integer> cache = createCache(hazelcastInstance, CACHE_NAME, client);
-        cache.put(9, 20);
-        assertEquals(20, cache.get(9).intValue());
-        assertEquals(20, cache.get(9).intValue());
-    }
-
-    private HazelcastClientInstanceImpl createHazelcastClient() {
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setProperty(Statistics.ENABLED.getName(), "true");
-        clientConfig.setProperty(Statistics.PERIOD_SECONDS.getName(), Integer.toString(STATS_PERIOD_SECONDS));
-
-        // add IMap and ICache with Near Cache config
-        clientConfig.addNearCacheConfig(new NearCacheConfig(MAP_NAME));
-        clientConfig.addNearCacheConfig(new NearCacheConfig(CACHE_NAME));
-
-        HazelcastInstance clientInstance = hazelcastFactory.newHazelcastClient(clientConfig);
-        return getHazelcastClientInstanceImpl(clientInstance);
-    }
-
-    private ICache<Integer, Integer> createCache(HazelcastInstance hazelcastInstance, String testCacheName,
-                                                 HazelcastInstance clientInstance) {
-        CachingProvider cachingProvider = getCachingProvider(hazelcastInstance);
-        CacheManager cacheManager = cachingProvider.getCacheManager();
-        cacheManager.createCache(testCacheName, this.createCacheConfig());
-        ICacheManager clientCacheManager = clientInstance.getCacheManager();
-        return clientCacheManager.getCache(testCacheName);
-    }
-
-    private Map<String, String> getStats(HazelcastClientInstanceImpl client, ClientEngineImpl clientEngine) {
-        Map<String, String> clientStatistics = clientEngine.getClientStatistics();
-        assertNotNull("clientStatistics should not be null", clientStatistics);
-        assertEquals("clientStatistics.size() should be 1", 1, clientStatistics.size());
-        Set<Map.Entry<String, String>> entries = clientStatistics.entrySet();
-        Map.Entry<String, String> statEntry = entries.iterator().next();
-        assertEquals(client.getClientClusterService().getLocalClient().getUuid(), statEntry.getKey());
-        return parseStatValue(statEntry.getValue());
-    }
-
-    private Map<String, String> parseStatValue(String value) {
-        Map<String, String> result = new HashMap<String, String>();
-        for (String stat : split(value)) {
-            List<String> keyValue = split(stat, 0, '=');
-            assertNotNull(format("keyValue should not be null (%s)", stat), keyValue);
-            result.put(unescapeSpecialCharacters(keyValue.get(0)), unescapeSpecialCharacters(keyValue.get(1)));
-        }
-        return result;
+        return lastStatisticsCollectionTime;
     }
 }
