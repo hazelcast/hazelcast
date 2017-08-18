@@ -292,7 +292,7 @@
                 <configuration combine.self="override">
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <argLine>
-                        -Xms129m -Xmx1G -XX:MaxPermSize=129M
+                        -Xms128m -Xmx1G -XX:MaxPermSize=128M
                         -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.logging.type=none
@@ -459,7 +459,7 @@
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <argLine>
-                                -Xms129m -Xmx1G -XX:MaxPermSize=129M
+                                -Xms128m -Xmx1G -XX:MaxPermSize=128M
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
@@ -732,7 +732,7 @@
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
                                 ${jacoco.agent.argLine}
-                                -Xms129m -Xmx1G -XX:MaxPermSize=129M
+                                -Xms128m -Xmx1G -XX:MaxPermSize=128M
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
@@ -1001,7 +1001,7 @@
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
-                                -Xms129m -Xmx1G -XX:MaxPermSize=129M
+                                -Xms128m -Xmx1G -XX:MaxPermSize=128M
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
@@ -1081,7 +1081,7 @@
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
-                                -Xms129m -Xmx1G -XX:MaxPermSize=129M
+                                -Xms128m -Xmx1G -XX:MaxPermSize=128M
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
