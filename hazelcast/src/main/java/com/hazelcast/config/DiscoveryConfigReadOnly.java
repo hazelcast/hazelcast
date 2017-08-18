@@ -34,27 +34,27 @@ public class DiscoveryConfigReadOnly extends DiscoveryConfig {
     }
 
     @Override
-    public void setDiscoveryServiceProvider(DiscoveryServiceProvider discoveryServiceProvider) {
+    public DiscoveryConfig setDiscoveryServiceProvider(DiscoveryServiceProvider discoveryServiceProvider) {
         throw new UnsupportedOperationException("Configuration is readonly");
     }
 
     @Override
-    public void setNodeFilter(NodeFilter nodeFilter) {
+    public DiscoveryConfig setNodeFilter(NodeFilter nodeFilter) {
         throw new UnsupportedOperationException("Configuration is readonly");
     }
 
     @Override
-    public void setNodeFilterClass(String nodeFilterClass) {
+    public DiscoveryConfig setNodeFilterClass(String nodeFilterClass) {
         throw new UnsupportedOperationException("Configuration is readonly");
     }
 
     @Override
-    public void addDiscoveryStrategyConfig(DiscoveryStrategyConfig discoveryStrategyConfig) {
+    public DiscoveryConfig addDiscoveryStrategyConfig(DiscoveryStrategyConfig discoveryStrategyConfig) {
         throw new UnsupportedOperationException("Configuration is readonly");
     }
 
     @Override
-    public void setDiscoveryStrategyConfigs(List<DiscoveryStrategyConfig> discoveryStrategyConfigs) {
+    public DiscoveryConfig setDiscoveryStrategyConfigs(List<DiscoveryStrategyConfig> discoveryStrategyConfigs) {
         throw new UnsupportedOperationException("Configuration is readonly");
     }
 }

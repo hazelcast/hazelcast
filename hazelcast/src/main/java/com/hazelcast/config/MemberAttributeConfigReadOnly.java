@@ -31,52 +31,52 @@ public class MemberAttributeConfigReadOnly extends MemberAttributeConfig {
     }
 
     @Override
-    public void setStringAttribute(String key, String value) {
+    public MemberAttributeConfig setStringAttribute(String key, String value) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setBooleanAttribute(String key, boolean value) {
+    public MemberAttributeConfig setBooleanAttribute(String key, boolean value) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setByteAttribute(String key, byte value) {
+    public MemberAttributeConfig setByteAttribute(String key, byte value) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setShortAttribute(String key, short value) {
+    public MemberAttributeConfig setShortAttribute(String key, short value) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setIntAttribute(String key, int value) {
+    public MemberAttributeConfig setIntAttribute(String key, int value) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setLongAttribute(String key, long value) {
+    public MemberAttributeConfig setLongAttribute(String key, long value) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setFloatAttribute(String key, float value) {
+    public MemberAttributeConfig setFloatAttribute(String key, float value) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setDoubleAttribute(String key, double value) {
+    public MemberAttributeConfig setDoubleAttribute(String key, double value) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void removeAttribute(String key) {
+    public MemberAttributeConfig removeAttribute(String key) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setAttributes(Map<String, Object> attributes) {
+    public MemberAttributeConfig setAttributes(Map<String, Object> attributes) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 

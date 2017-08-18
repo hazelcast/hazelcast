@@ -59,10 +59,11 @@ public class WanReplicationConfig implements IdentifiedDataSerializable {
         return wanPublisherConfigs;
     }
 
-    public void setWanPublisherConfigs(List<WanPublisherConfig> wanPublisherConfigs) {
+    public WanReplicationConfig setWanPublisherConfigs(List<WanPublisherConfig> wanPublisherConfigs) {
         if (wanPublisherConfigs != null && !wanPublisherConfigs.isEmpty()) {
             this.wanPublisherConfigs = wanPublisherConfigs;
         }
+        return this;
     }
 
     public WanReplicationConfig addWanPublisherConfig(WanPublisherConfig wanPublisherConfig) {

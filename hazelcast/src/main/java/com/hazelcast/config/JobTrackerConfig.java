@@ -104,8 +104,9 @@ public class JobTrackerConfig {
      *
      * @param maxThreadSize the maximum thread pool size of the {@link com.hazelcast.mapreduce.JobTracker}
      */
-    public void setMaxThreadSize(int maxThreadSize) {
+    public JobTrackerConfig setMaxThreadSize(int maxThreadSize) {
         this.maxThreadSize = maxThreadSize;
+        return this;
     }
 
     /**
@@ -120,8 +121,9 @@ public class JobTrackerConfig {
      * retry count is currently not used but reserved for later use where the framework will
      * automatically try to restart / retry operations from a available savepoint.
      */
-    public void setRetryCount(int retryCount) {
+    public JobTrackerConfig setRetryCount(int retryCount) {
         this.retryCount = retryCount;
+        return this;
     }
 
     /**
@@ -152,8 +154,9 @@ public class JobTrackerConfig {
      *
      * @param chunkSize the number of emitted values before a chunk is sent to the reducers
      */
-    public void setChunkSize(int chunkSize) {
+    public JobTrackerConfig setChunkSize(int chunkSize) {
         this.chunkSize = chunkSize;
+        return this;
     }
 
     /**
@@ -182,8 +185,9 @@ public class JobTrackerConfig {
      *
      * @param queueSize the maximum size of the queue
      */
-    public void setQueueSize(int queueSize) {
+    public JobTrackerConfig setQueueSize(int queueSize) {
         this.queueSize = queueSize;
+        return this;
     }
 
     /**
@@ -208,8 +212,9 @@ public class JobTrackerConfig {
      * @param communicateStats {@code true} if statistics (for example, about processed entries) are transmitted to the job
      *                         emitter, {@code false} otherwise.
      */
-    public void setCommunicateStats(boolean communicateStats) {
+    public JobTrackerConfig setCommunicateStats(boolean communicateStats) {
         this.communicateStats = communicateStats;
+        return this;
     }
 
     /**
@@ -234,7 +239,8 @@ public class JobTrackerConfig {
      * @param topologyChangedStrategy How the map reduce framework will react on topology
      *                                changes while executing a job.
      */
-    public void setTopologyChangedStrategy(TopologyChangedStrategy topologyChangedStrategy) {
+    public JobTrackerConfig setTopologyChangedStrategy(TopologyChangedStrategy topologyChangedStrategy) {
         this.topologyChangedStrategy = topologyChangedStrategy;
+        return this;
     }
 }

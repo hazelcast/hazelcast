@@ -177,11 +177,12 @@ public class Config {
         return configPatternMatcher;
     }
 
-    public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
+    public Config setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
         if (configPatternMatcher == null) {
             throw new IllegalArgumentException("ConfigPatternMatcher is not allowed to be null!");
         }
         this.configPatternMatcher = configPatternMatcher;
+        return this;
     }
 
     /**
@@ -211,8 +212,9 @@ public class Config {
         return memberAttributeConfig;
     }
 
-    public void setMemberAttributeConfig(MemberAttributeConfig memberAttributeConfig) {
+    public Config setMemberAttributeConfig(MemberAttributeConfig memberAttributeConfig) {
         this.memberAttributeConfig = memberAttributeConfig;
+        return this;
     }
 
     public Properties getProperties() {

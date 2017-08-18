@@ -59,7 +59,7 @@ class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
     }
 
     @Override
-    public void setAsyncFillup(boolean asyncFillup) {
+    public ReplicatedMapConfig setAsyncFillup(boolean asyncFillup) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 

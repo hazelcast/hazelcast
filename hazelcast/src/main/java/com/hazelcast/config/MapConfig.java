@@ -724,8 +724,9 @@ public class MapConfig implements IdentifiedDataSerializable {
     /**
      * Sets {@link QueryCacheConfig} instances to this {@code MapConfig}.
      */
-    public void setQueryCacheConfigs(List<QueryCacheConfig> queryCacheConfigs) {
+    public MapConfig setQueryCacheConfigs(List<QueryCacheConfig> queryCacheConfigs) {
         this.queryCacheConfigs = queryCacheConfigs;
+        return this;
     }
 
     public PartitioningStrategyConfig getPartitioningStrategyConfig() {

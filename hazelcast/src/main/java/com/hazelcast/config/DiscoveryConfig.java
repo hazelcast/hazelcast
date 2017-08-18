@@ -62,8 +62,9 @@ public class DiscoveryConfig {
         return readonly;
     }
 
-    public void setDiscoveryServiceProvider(DiscoveryServiceProvider discoveryServiceProvider) {
+    public DiscoveryConfig setDiscoveryServiceProvider(DiscoveryServiceProvider discoveryServiceProvider) {
         this.discoveryServiceProvider = discoveryServiceProvider;
+        return this;
     }
 
     public DiscoveryServiceProvider getDiscoveryServiceProvider() {
@@ -74,16 +75,18 @@ public class DiscoveryConfig {
         return nodeFilter;
     }
 
-    public void setNodeFilter(NodeFilter nodeFilter) {
+    public DiscoveryConfig setNodeFilter(NodeFilter nodeFilter) {
         this.nodeFilter = nodeFilter;
+        return this;
     }
 
     public String getNodeFilterClass() {
         return nodeFilterClass;
     }
 
-    public void setNodeFilterClass(String nodeFilterClass) {
+    public DiscoveryConfig setNodeFilterClass(String nodeFilterClass) {
         this.nodeFilterClass = nodeFilterClass;
+        return this;
     }
 
     public boolean isEnabled() {
@@ -104,8 +107,9 @@ public class DiscoveryConfig {
         return discoveryStrategyConfigs;
     }
 
-    public void setDiscoveryStrategyConfigs(List<DiscoveryStrategyConfig> discoveryStrategyConfigs) {
+    public DiscoveryConfig setDiscoveryStrategyConfigs(List<DiscoveryStrategyConfig> discoveryStrategyConfigs) {
         this.discoveryStrategyConfigs = discoveryStrategyConfigs;
+        return this;
     }
 
     /**
@@ -116,8 +120,9 @@ public class DiscoveryConfig {
      *
      * @param discoveryStrategyConfig the {@link DiscoveryStrategyConfig} to add
      */
-    public void addDiscoveryStrategyConfig(DiscoveryStrategyConfig discoveryStrategyConfig) {
+    public DiscoveryConfig addDiscoveryStrategyConfig(DiscoveryStrategyConfig discoveryStrategyConfig) {
         discoveryStrategyConfigs.add(discoveryStrategyConfig);
+        return this;
     }
 
     @Override

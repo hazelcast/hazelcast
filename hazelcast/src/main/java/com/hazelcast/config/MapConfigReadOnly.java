@@ -250,7 +250,7 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
-    public void setQueryCacheConfigs(List<QueryCacheConfig> queryCacheConfigs) {
+    public MapConfig setQueryCacheConfigs(List<QueryCacheConfig> queryCacheConfigs) {
         throw new UnsupportedOperationException("This config is read-only map: " + getName());
     }
 

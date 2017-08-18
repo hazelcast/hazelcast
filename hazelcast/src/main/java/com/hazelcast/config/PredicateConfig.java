@@ -159,10 +159,11 @@ public class PredicateConfig implements IdentifiedDataSerializable {
      *
      * @param sql sql string for this config
      */
-    public void setSql(String sql) {
+    public PredicateConfig setSql(String sql) {
         this.sql = sql;
         this.className = null;
         this.implementation = null;
+        return this;
     }
 
     //CHECKSTYLE:OFF
