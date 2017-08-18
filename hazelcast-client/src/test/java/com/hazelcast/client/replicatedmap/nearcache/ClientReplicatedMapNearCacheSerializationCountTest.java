@@ -34,6 +34,7 @@ import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.NearCacheTestUtils;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -139,38 +140,50 @@ public class ClientReplicatedMapNearCacheSerializationCountTest extends Abstract
 
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
-        Config config = getConfig();
+        Config config = getConfig()
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
+                .setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "1");
         config.getReplicatedMapConfig(DEFAULT_NEAR_CACHE_NAME)
                 .setInMemoryFormat(replicatedMapInMemoryFormat);
         prepareSerializationConfig(config.getSerializationConfig());
 
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
+        ReplicatedMap<K, V> memberMap = member.getReplicatedMap(DEFAULT_NEAR_CACHE_NAME);
+
+        NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
+        return builder
+                .setDataInstance(member)
+                .setDataAdapter(new ReplicatedMapDataStructureAdapter<K, V>(memberMap))
+                .build();
+    }
+
+    @Override
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createNearCacheContext() {
+        NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
+        return builder.build();
+    }
+
+    protected ClientConfig getClientConfig() {
+        return new ClientConfig();
+    }
+
+    private <K, V> NearCacheTestContextBuilder<K, V, Data, String> createNearCacheContextBuilder() {
         ClientConfig clientConfig = getClientConfig();
         if (nearCacheConfig != null) {
             clientConfig.addNearCacheConfig(nearCacheConfig);
         }
         prepareSerializationConfig(clientConfig.getSerializationConfig());
 
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
-
-        ReplicatedMap<K, V> memberMap = member.getReplicatedMap(DEFAULT_NEAR_CACHE_NAME);
         ReplicatedMap<K, V> clientMap = client.getReplicatedMap(DEFAULT_NEAR_CACHE_NAME);
 
         NearCacheManager nearCacheManager = client.client.getNearCacheManager();
-
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
 
         return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())
                 .setNearCacheInstance(client)
-                .setDataInstance(member)
                 .setNearCacheAdapter(new ReplicatedMapDataStructureAdapter<K, V>(clientMap))
-                .setDataAdapter(new ReplicatedMapDataStructureAdapter<K, V>(memberMap))
                 .setNearCache(nearCache)
-                .setNearCacheManager(nearCacheManager)
-                .build();
-    }
-
-    protected ClientConfig getClientConfig() {
-        return new ClientConfig();
+                .setNearCacheManager(nearCacheManager);
     }
 }

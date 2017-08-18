@@ -31,6 +31,7 @@ import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.NearCacheTestUtils;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -139,30 +140,25 @@ public class TxnMapNearCacheSerializationCountTest extends AbstractNearCacheSeri
 
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
-        Config configWithNearCache = getConfig(true);
-        Config config = getConfig(false);
+        HazelcastInstance dataMember = hazelcastFactory.newHazelcastInstance(getConfig(false));
 
-        HazelcastInstance nearCacheMember = hazelcastFactory.newHazelcastInstance(configWithNearCache);
-        HazelcastInstance dataMember = hazelcastFactory.newHazelcastInstance(config);
-
-        // this creates the Near Cache instance
-        nearCacheMember.getMap(DEFAULT_NEAR_CACHE_NAME);
-
-        NearCacheManager nearCacheManager = getMapNearCacheManager(nearCacheMember);
-        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
-
-        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(nearCacheMember))
-                .setNearCacheInstance(nearCacheMember)
+        NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
+        return builder
                 .setDataInstance(dataMember)
-                .setNearCacheAdapter(new TransactionalMapDataStructureAdapter<K, V>(nearCacheMember, DEFAULT_NEAR_CACHE_NAME))
                 .setDataAdapter(new TransactionalMapDataStructureAdapter<K, V>(dataMember, DEFAULT_NEAR_CACHE_NAME))
-                .setNearCache(nearCache)
-                .setNearCacheManager(nearCacheManager)
                 .build();
     }
 
+    @Override
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createNearCacheContext() {
+        NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
+        return builder.build();
+    }
+
     private Config getConfig(boolean withNearCache) {
-        Config config = getConfig();
+        Config config = getConfig()
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
+                .setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "1");
         MapConfig mapConfig = config.getMapConfig(DEFAULT_NEAR_CACHE_NAME)
                 .setInMemoryFormat(mapInMemoryFormat)
                 .setBackupCount(0)
@@ -172,5 +168,20 @@ public class TxnMapNearCacheSerializationCountTest extends AbstractNearCacheSeri
         }
         prepareSerializationConfig(config.getSerializationConfig());
         return config;
+    }
+
+    private <K, V> NearCacheTestContextBuilder<K, V, Data, String> createNearCacheContextBuilder() {
+        HazelcastInstance nearCacheMember = hazelcastFactory.newHazelcastInstance(getConfig(true));
+        // this creates the Near Cache instance
+        nearCacheMember.getMap(DEFAULT_NEAR_CACHE_NAME);
+
+        NearCacheManager nearCacheManager = getMapNearCacheManager(nearCacheMember);
+        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
+
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, getSerializationService(nearCacheMember))
+                .setNearCacheInstance(nearCacheMember)
+                .setNearCacheAdapter(new TransactionalMapDataStructureAdapter<K, V>(nearCacheMember, DEFAULT_NEAR_CACHE_NAME))
+                .setNearCache(nearCache)
+                .setNearCacheManager(nearCacheManager);
     }
 }

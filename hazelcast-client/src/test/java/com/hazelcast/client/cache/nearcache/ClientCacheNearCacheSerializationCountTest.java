@@ -40,6 +40,7 @@ import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.NearCacheTestUtils;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -196,43 +197,29 @@ public class ClientCacheNearCacheSerializationCountTest extends AbstractNearCach
 
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
-        Config config = getConfig();
+        Config config = getConfig()
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
+                .setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "1");
         prepareSerializationConfig(config.getSerializationConfig());
 
-        ClientConfig clientConfig = getClientConfig();
-        if (nearCacheConfig != null) {
-            clientConfig.addNearCacheConfig(nearCacheConfig);
-        }
-        prepareSerializationConfig(clientConfig.getSerializationConfig());
-
-        CacheConfig<K, V> cacheConfig = createCacheConfig(cacheInMemoryFormat);
-
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
-        HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
-
         CachingProvider memberProvider = HazelcastServerCachingProvider.createCachingProvider(member);
         HazelcastServerCacheManager memberCacheManager = (HazelcastServerCacheManager) memberProvider.getCacheManager();
 
-        NearCacheManager nearCacheManager = client.client.getNearCacheManager();
-        CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
-        HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
-        String cacheNameWithPrefix = cacheManager.getCacheNameWithPrefix(DEFAULT_NEAR_CACHE_NAME);
-
-        ICache<K, V> clientCache = cacheManager.createCache(DEFAULT_NEAR_CACHE_NAME, cacheConfig);
+        CacheConfig<K, V> cacheConfig = createCacheConfig(cacheInMemoryFormat);
         ICache<K, V> memberCache = memberCacheManager.createCache(DEFAULT_NEAR_CACHE_NAME, cacheConfig);
 
-        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(cacheNameWithPrefix);
-
-        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())
-                .setNearCacheInstance(client)
+        return createNearCacheContextBuilder(cacheConfig)
                 .setDataInstance(member)
-                .setNearCacheAdapter(new ICacheDataStructureAdapter<K, V>(clientCache))
                 .setDataAdapter(new ICacheDataStructureAdapter<K, V>(memberCache))
-                .setNearCache(nearCache)
-                .setNearCacheManager(nearCacheManager)
-                .setCacheManager(cacheManager)
                 .setMemberCacheManager(memberCacheManager)
                 .build();
+    }
+
+    @Override
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createNearCacheContext() {
+        CacheConfig<K, V> cacheConfig = createCacheConfig(cacheInMemoryFormat);
+        return createNearCacheContextBuilder(cacheConfig).build();
     }
 
     protected ClientConfig getClientConfig() {
@@ -254,5 +241,30 @@ public class ClientCacheNearCacheSerializationCountTest extends AbstractNearCach
         }
 
         return cacheConfig;
+    }
+
+    private <K, V> NearCacheTestContextBuilder<K, V, Data, String> createNearCacheContextBuilder(CacheConfig<K, V> cacheConfig) {
+        ClientConfig clientConfig = getClientConfig();
+        if (nearCacheConfig != null) {
+            clientConfig.addNearCacheConfig(nearCacheConfig);
+        }
+        prepareSerializationConfig(clientConfig.getSerializationConfig());
+
+        HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
+
+        CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
+        HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
+        String cacheNameWithPrefix = cacheManager.getCacheNameWithPrefix(DEFAULT_NEAR_CACHE_NAME);
+        ICache<K, V> clientCache = cacheManager.createCache(DEFAULT_NEAR_CACHE_NAME, cacheConfig);
+
+        NearCacheManager nearCacheManager = client.client.getNearCacheManager();
+        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(cacheNameWithPrefix);
+
+        return new NearCacheTestContextBuilder<K, V, Data, String>(nearCacheConfig, client.getSerializationService())
+                .setNearCacheInstance(client)
+                .setNearCacheAdapter(new ICacheDataStructureAdapter<K, V>(clientCache))
+                .setNearCache(nearCache)
+                .setNearCacheManager(nearCacheManager)
+                .setCacheManager(cacheManager);
     }
 }
