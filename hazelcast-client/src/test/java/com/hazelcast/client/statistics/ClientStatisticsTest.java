@@ -32,6 +32,7 @@ import com.hazelcast.core.ICacheManager;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -85,19 +86,18 @@ public class ClientStatisticsTest extends ClientTestSupport {
         long clientConnectionTime = System.currentTimeMillis();
 
         // wait enough time for statistics collection
-        sleepSeconds(STATS_PERIOD_SECONDS + 1);
+        waitForFirstStatisticsCollection(client, clientEngine);
+
         Map<String, String> stats = getStats(client, clientEngine);
 
         String connStat = stats.get("clusterConnectionTimestamp");
         assertNotNull(format("clusterConnectionTimestamp should not be null (%s)", stats), connStat);
         Long connectionTimeStat = Long.valueOf(connStat);
         assertNotNull(format("connectionTimeStat should not be null (%s)", stats), connStat);
-        // time measured by us after client connection should be greater than the connection time reported by the statistics and
-        // the difference should not be more than a statistics collection period
+
+        // time measured by us after client connection should be greater than the connection time reported by the statistics
         assertTrue(format("connectionTimeStat was %d, clientConnectionTime was %d (%s)",
-                connectionTimeStat, clientConnectionTime, stats),
-                clientConnectionTime >= connectionTimeStat
-                        && clientConnectionTime - connectionTimeStat < STATS_PERIOD_SECONDS * 1000);
+                connectionTimeStat, clientConnectionTime, stats), clientConnectionTime >= connectionTimeStat);
 
         String queueSize = stats.get("executionService.userExecutorQueueSize");
         assertNotNull(format("executionService.userExecutorQueueSize should not be null (%s)", stats), queueSize);
@@ -107,10 +107,13 @@ public class ClientStatisticsTest extends ClientTestSupport {
         String cacheHits = stats.get(CACHE_HITS_KEY);
         assertNull(format("%s should be null (%s)", CACHE_HITS_KEY, stats), cacheHits);
 
+        String lastStatisticsCollectionTimeString = stats.get("lastStatisticsCollectionTime");
+        long lastCollectionTime = Long.parseLong(lastStatisticsCollectionTimeString);
+
         IMap<Integer, Integer> map = client.getMap(MAP_NAME);
 
         // wait enough time for statistics collection
-        sleepSeconds(STATS_PERIOD_SECONDS + 1);
+        waitForNextStatsCollection(client, clientEngine, lastStatisticsCollectionTimeString);
 
         stats = getStats(client, clientEngine);
         mapHits = stats.get(MAP_HITS_KEY);
@@ -119,11 +122,16 @@ public class ClientStatisticsTest extends ClientTestSupport {
         cacheHits = stats.get(CACHE_HITS_KEY);
         assertNull(format("%s should be null (%s)", CACHE_HITS_KEY, stats), cacheHits);
 
+        // verfiy that collection is periodic
+        String newStatisticsCollectionTimeString = verifyThatCollectionIsPeriodic(stats, lastCollectionTime);
+
+        lastStatisticsCollectionTimeString = newStatisticsCollectionTimeString;
+
         // produce map and cache stat
         produceSomeStats(hazelcastInstance, client, map);
 
         // wait enough time for statistics collection
-        sleepSeconds(STATS_PERIOD_SECONDS + 1);
+        waitForNextStatsCollection(client, clientEngine, lastStatisticsCollectionTimeString);
 
         stats = getStats(client, clientEngine);
         mapHits = stats.get(MAP_HITS_KEY);
@@ -141,7 +149,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
         ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
 
         // wait enough time for statistics collection
-        sleepSeconds(STATS_PERIOD_SECONDS + 1);
+        waitForFirstStatisticsCollection(client, clientEngine);
 
         Map<String, String> initialStats = getStats(client, clientEngine);
 
@@ -151,7 +159,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
         produceSomeStats(hazelcastInstance, client, map);
 
         // wait enough time for statistics collection
-        sleepSeconds(STATS_PERIOD_SECONDS + 1);
+        waitForNextStatsCollection(client, clientEngine, initialStats.get("lastStatisticsCollectionTime"));
 
         assertNotEquals("initial statistics should not be the same as current stats",
                 initialStats, getStats(client, clientEngine));
@@ -175,12 +183,13 @@ public class ClientStatisticsTest extends ClientTestSupport {
         });
 
         hazelcastInstance = hazelcastFactory.newHazelcastInstance();
+        ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
+
         assertOpenEventually(latch);
 
         // wait enough time for statistics collection
-        sleepSeconds(STATS_PERIOD_SECONDS + 1);
+        waitForFirstStatisticsCollection(client, clientEngine);
 
-        ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
         getStats(client, clientEngine);
     }
 
@@ -211,6 +220,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
     @Test
     public void testNoUpdateWhenDisabled() {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
+        final ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setProperty(Statistics.ENABLED.getName(), "false");
@@ -218,12 +228,14 @@ public class ClientStatisticsTest extends ClientTestSupport {
 
         hazelcastFactory.newHazelcastClient(clientConfig);
 
-        // wait enough time for statistics collection
-        sleepSeconds(STATS_PERIOD_SECONDS + 1);
-
-        ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
-        Map<String, String> statistics = clientEngine.getClientStatistics();
-        assertEquals(0, statistics.size());
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                Map<String, String> statistics = clientEngine.getClientStatistics();
+                assertEquals(0, statistics.size());
+            }
+        }, STATS_PERIOD_SECONDS * 3);
     }
 
     @Test
@@ -242,6 +254,40 @@ public class ClientStatisticsTest extends ClientTestSupport {
         String[] expectedStrings = {"stat1=value1.lastName", "stat2=full\\name==hazel\\,ali"};
         List<String> strings = split(escapedString);
         assertArrayEquals(expectedStrings, strings.toArray());
+    }
+
+    private String verifyThatCollectionIsPeriodic(Map<String, String> stats, long lastCollectionTime) {
+        String newStatisticsCollectionTimeString = stats.get("lastStatisticsCollectionTime");
+        long newCollectionTime = Long.parseLong(newStatisticsCollectionTimeString);
+        long timeDifferenceInMillis = newCollectionTime - lastCollectionTime;
+        assertTrue("Time difference between two collections is " + timeDifferenceInMillis + " msecs. It is too high!",
+                timeDifferenceInMillis < 3 * STATS_PERIOD_SECONDS * 1000);
+        assertTrue(
+                "Time difference between two collections is " + timeDifferenceInMillis + " msecs but it should be greater than "
+                        + STATS_PERIOD_SECONDS * 1000 + " msecs", timeDifferenceInMillis >= STATS_PERIOD_SECONDS * 1000);
+        return newStatisticsCollectionTimeString;
+    }
+
+    private void waitForFirstStatisticsCollection(final HazelcastClientInstanceImpl client, final ClientEngineImpl clientEngine) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                getStats(client, clientEngine);
+            }
+        }, 3 * STATS_PERIOD_SECONDS);
+    }
+
+    private void waitForNextStatsCollection(final HazelcastClientInstanceImpl client, final ClientEngineImpl clientEngine,
+                                            final String lastStatisticsCollectionTime) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                Map<String, String> stats = getStats(client, clientEngine);
+                assertNotEquals(lastStatisticsCollectionTime, stats.get("lastStatisticsCollectionTime"));
+            }
+        });
     }
 
     private <K, V> CacheConfig<K, V> createCacheConfig() {
