@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * Static factory for simple {@link com.hazelcast.map.QueryCache QueryCache} implementations.
  */
-class QueryCacheFactory {
+public class QueryCacheFactory {
 
     /**
      * Constructor for an instance of {@link com.hazelcast.map.QueryCache QueryCache}.
@@ -62,7 +62,16 @@ class QueryCacheFactory {
                 request.getCacheName(), new InternalQueryCacheConstructor(request));
     }
 
+    public boolean remove(InternalQueryCache queryCache) {
+        return internalQueryCaches.remove(queryCache.getCacheName(), queryCache);
+    }
+
     public InternalQueryCache getOrNull(String cacheName) {
         return internalQueryCaches.get(cacheName);
+    }
+
+    // only used for testing
+    public int getQueryCacheCount() {
+        return internalQueryCaches.size();
     }
 }

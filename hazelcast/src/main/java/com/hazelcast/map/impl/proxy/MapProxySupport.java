@@ -53,6 +53,9 @@ import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.RemoveInterceptorOperation;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.QueryEventFilter;
+import com.hazelcast.map.impl.querycache.QueryCacheContext;
+import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
+import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
@@ -1082,6 +1085,20 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         } catch (Throwable t) {
             throw rethrow(t);
         }
+    }
+
+    @Override
+    protected boolean preDestroy() {
+        try {
+            QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
+            SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
+            QueryCacheEndToEndProvider provider = subscriberContext.getEndToEndQueryCacheProvider();
+            provider.removeQueryCachesOfMap(name);
+        } finally {
+            super.preDestroy();
+        }
+
+        return true;
     }
 
     protected <T> T toObject(Object object) {
