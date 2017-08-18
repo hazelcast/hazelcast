@@ -47,11 +47,11 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         return instance.getPartitionService().getPartition(task.getPartitionKey()).getPartitionId();
     }
 
-    public HazelcastInstance[] createClusterWithCount(int count) {
+    protected HazelcastInstance[] createClusterWithCount(int count) {
         return createClusterWithCount(count, new Config());
     }
 
-    HazelcastInstance[] createClusterWithCount(int count, Config config) {
+    protected HazelcastInstance[] createClusterWithCount(int count, Config config) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance[] instances = factory.newInstances(config, count);
         waitAllForSafeState(instances);
