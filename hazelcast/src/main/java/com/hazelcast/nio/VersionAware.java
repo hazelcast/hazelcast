@@ -20,15 +20,15 @@ import com.hazelcast.version.Version;
 
 /**
  * Enables getting the version from the implementing object.
- * It may be any Version (cluster version, node version, custom version, etc.) It's up to the implementer.
+ * <p>
+ * It may be any version (cluster version, node version, custom version, etc.), that is up to the implementer.
  *
  * @since 3.8
  */
 public interface VersionAware {
 
     /**
-     * @return the version or Version.UNKNOWN if version is unknown to the object.
+     * @return the version or {@code Version.UNKNOWN} if version is unknown to the object
      */
     Version getVersion();
-
 }
