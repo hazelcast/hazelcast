@@ -51,6 +51,7 @@ import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THR
 import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
 
 /**
  * Abstract test support to test the {@link OperationExecutorImpl}.
@@ -81,7 +82,9 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         config.setProperty(PARTITION_OPERATION_THREAD_COUNT.getName(), "10");
         config.setProperty(GENERIC_OPERATION_THREAD_COUNT.getName(), "10");
         thisAddress = new Address("localhost", 5701);
-        nodeExtension = new DefaultNodeExtension(Mockito.mock(Node.class));
+        Node node = Mockito.mock(Node.class);
+        when(node.getConfig()).thenReturn(config);
+        nodeExtension = new DefaultNodeExtension(node);
         handlerFactory = new DummyOperationRunnerFactory();
 
         responsePacketHandler = new DummyResponsePacketHandler();
