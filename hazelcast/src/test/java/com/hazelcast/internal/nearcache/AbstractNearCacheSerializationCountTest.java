@@ -166,13 +166,9 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
                 fail("Unsupported method: " + testMethod);
         }
         NearCacheTestContext<KeySerializationCountingData, ValueSerializationCountingData, NK, NV> context = createContext();
-        KeySerializationCountingData key;
-        ValueSerializationCountingData value;
 
         // execute the test with key/value classes which provide no custom equals()/hashCode() methods
-        key = new KeySerializationCountingData(false);
-        value = new ValueSerializationCountingData(false);
-        runTest(context, key, value);
+        runTest(context, false);
 
         // reset the Near Cache for the next round
         if (context.nearCache != null) {
@@ -181,17 +177,18 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
         }
 
         // execute the test with key/value classes which provide custom equals()/hashCode() methods
-        key = new KeySerializationCountingData(true);
-        value = new ValueSerializationCountingData(true);
-        runTest(context, key, value);
+        runTest(context, true);
     }
 
     private void runTest(NearCacheTestContext<KeySerializationCountingData, ValueSerializationCountingData, ?, ?> context,
-                         KeySerializationCountingData key, ValueSerializationCountingData value) {
-        if (context.nearCacheAdapter instanceof ReplicatedMapDataStructureAdapter && !key.executeEqualsAndHashCode) {
+                         boolean executeEqualsAndHashCode) {
+        if (context.nearCacheAdapter instanceof ReplicatedMapDataStructureAdapter && !executeEqualsAndHashCode) {
             // FIXME: the ReplicatedMap cannot handle key/value objects without equals()/hashCode() properly
             return;
         }
+
+        KeySerializationCountingData key = new KeySerializationCountingData(executeEqualsAndHashCode);
+        ValueSerializationCountingData value = new ValueSerializationCountingData(executeEqualsAndHashCode);
 
         switch (testMethod) {
             case GET:
