@@ -81,7 +81,8 @@ public class HazelcastStarter {
      * @return               a {@link HazelcastInstance} proxying the started Hazelcast instance.
      */
     public static HazelcastInstance newHazelcastInstance(String version, Config configTemplate, boolean enterprise) {
-        HazelcastAPIDelegatingClassloader versionClassLoader = getTargetVersionClassloader(version, enterprise, configTemplate.getClassLoader());
+        HazelcastAPIDelegatingClassloader versionClassLoader = getTargetVersionClassloader(version, enterprise,
+                configTemplate == null ? null : configTemplate.getClassLoader());
 
         ClassLoader contextClassLoader = currentThread().getContextClassLoader();
         currentThread().setContextClassLoader(null);
