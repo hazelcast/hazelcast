@@ -115,6 +115,14 @@ public abstract class AbstractChannel implements Channel {
             return;
         }
 
+        // we execute this in its own try/catch block because we don't want to skip closing the socketChannel in case
+        // of problems.
+        try {
+            onClose();
+        } catch (Exception e) {
+            getLogger().severe(format("Failed to call 'onClose' on channel [%s]", this), e);
+        }
+
         try {
             socketChannel.close();
         } finally {
@@ -124,11 +132,23 @@ public abstract class AbstractChannel implements Channel {
                 try {
                     closeListener.onClose(this);
                 } catch (Exception e) {
-                    ILogger logger = Logger.getLogger(getClass());
-                    logger.severe(format("Failed to process closeListener [%s] on channel [%s]", closeListener, this), e);
+                    getLogger().severe(format("Failed to process closeListener [%s] on channel [%s]", closeListener, this), e);
                 }
             }
         }
+    }
+
+    private ILogger getLogger() {
+        return Logger.getLogger(getClass());
+    }
+
+    /**
+     * Template method that is called when the socket channel closed. It is called before the <code>socketChannel</code> is
+     * closed.
+     *
+     * It will be called only once.
+     */
+    protected void onClose() throws IOException {
     }
 
     @Override

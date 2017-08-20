@@ -75,6 +75,12 @@ public class NioChannel extends AbstractChannel {
     }
 
     @Override
+    protected void onClose() {
+        reader.close();
+        writer.close();
+    }
+
+    @Override
     public String toString() {
         return "NioChannel{" + getLocalSocketAddress() + "->" + getRemoteSocketAddress() + '}';
     }
