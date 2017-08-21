@@ -39,7 +39,7 @@ public class MapDeleteMessageTask
     @Override
     protected Operation prepareOperation() {
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
-        MapOperation op = operationProvider.createDeleteOperation(parameters.name, parameters.key);
+        MapOperation op = operationProvider.createDeleteOperation(parameters.name, parameters.key, false);
         op.setThreadId(parameters.threadId);
         return op;
     }
