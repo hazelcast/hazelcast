@@ -83,12 +83,15 @@ public class MemberStateImplTest extends HazelcastTestSupport {
 
         ClusterState clusterState = ClusterState.ACTIVE;
         com.hazelcast.instance.NodeState nodeState = com.hazelcast.instance.NodeState.PASSIVE;
-        Version clusterVersion = Version.of("3.8.0");
-        MemberVersion memberVersion = MemberVersion.of("3.9.0");
+        Version clusterVersion = Version.of("3.9.0");
+        MemberVersion memberVersion = MemberVersion.of("3.8.0");
         NodeState state = new NodeStateImpl(clusterState, nodeState, clusterVersion, memberVersion);
         final BackupTaskStatus backupTaskStatus = new BackupTaskStatus(BackupTaskState.IN_PROGRESS, 5, 10);
         final HotRestartStateImpl hotRestartState = new HotRestartStateImpl(backupTaskStatus, false);
         final WanSyncState wanSyncState = new WanSyncStateImpl(WanSyncStatus.IN_PROGRESS, 86, "atob", "B");
+
+        Map<String, String> clientStats = new HashMap<String, String>();
+        clientStats.put("abc123456", "someStats");
 
         TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hazelcastInstance));
         TimedMemberState timedMemberState = factory.createTimedMemberState();
@@ -110,6 +113,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         memberState.setNodeState(state);
         memberState.setHotRestartState(hotRestartState);
         memberState.setWanSyncState(wanSyncState);
+        memberState.setClientStats(clientStats);
 
         MemberStateImpl deserialized = new MemberStateImpl();
         deserialized.fromJson(memberState.toJson());
@@ -157,5 +161,8 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertEquals(-1, clusterHotRestartStatus.getRemainingValidationTimeMillis());
         assertEquals(-1, clusterHotRestartStatus.getRemainingDataLoadTimeMillis());
         assertTrue(clusterHotRestartStatus.getMemberHotRestartStatusMap().isEmpty());
+
+        Map<String, String> deserializedClientStats = deserialized.getClientStats();
+        assertEquals("someStats", deserializedClientStats.get("abc123456"));
     }
 }

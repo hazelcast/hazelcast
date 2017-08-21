@@ -180,6 +180,8 @@ public class TimedMemberStateFactory {
         createHotRestartState(memberState);
         createClusterHotRestartStatus(memberState);
         createWanSyncState(memberState);
+
+        memberState.setClientStats(node.clientEngine.getClientStatistics());
     }
 
     private void createHotRestartState(MemberStateImpl memberState) {

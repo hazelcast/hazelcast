@@ -19,6 +19,7 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
@@ -64,6 +65,7 @@ public class MemberStateImpl implements MemberState {
     private Map<String, LocalCacheStats> cacheStats = new HashMap<String, LocalCacheStats>();
     private Map<String, LocalWanStats> wanStats = new HashMap<String, LocalWanStats>();
     private Collection<ClientEndPointDTO> clients = new HashSet<ClientEndPointDTO>();
+    private Map<String, String> clientStats = new HashMap<String, String>();
     private MXBeansDTO beans = new MXBeansDTO();
     private LocalMemoryStats memoryStats = new LocalMemoryStatsImpl();
     private MemberPartitionState memberPartitionState = new MemberPartitionStateImpl();
@@ -251,6 +253,14 @@ public class MemberStateImpl implements MemberState {
         this.wanSyncState = wanSyncState;
     }
 
+    public Map<String, String> getClientStats() {
+        return clientStats;
+    }
+
+    public void setClientStats(Map<String, String> clientStats) {
+        this.clientStats = clientStats;
+    }
+
     @Override
     public JsonObject toJson() {
         final JsonObject root = new JsonObject();
@@ -284,6 +294,14 @@ public class MemberStateImpl implements MemberState {
         root.add("hotRestartState", hotRestartState.toJson());
         root.add("clusterHotRestartStatus", clusterHotRestartStatus.toJson());
         root.add("wanSyncState", wanSyncState.toJson());
+
+        if (nodeState.getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
+            JsonObject clientStatsObject = new JsonObject();
+            for (Map.Entry<String, String> entry : clientStats.entrySet()) {
+                clientStatsObject.add(entry.getKey(), entry.getValue());
+            }
+            root.add("clientStats", clientStatsObject);
+        }
         return root;
     }
 
@@ -388,6 +406,11 @@ public class MemberStateImpl implements MemberState {
             wanSyncState = new WanSyncStateImpl();
             wanSyncState.fromJson(jsonWanSyncState);
         }
+        if (nodeState.getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
+            for (JsonObject.Member next : getObject(json, "clientStats")) {
+                clientStats.put(next.getName(), next.getValue().asString());
+            }
+        }
     }
 
     //CHECKSTYLE:ON
@@ -411,6 +434,7 @@ public class MemberStateImpl implements MemberState {
                 + ", hotRestartState=" + hotRestartState
                 + ", clusterHotRestartStatus=" + clusterHotRestartStatus
                 + ", wanSyncState=" + wanSyncState
+                + ", clientStats=" + clientStats
                 + '}';
     }
 }
