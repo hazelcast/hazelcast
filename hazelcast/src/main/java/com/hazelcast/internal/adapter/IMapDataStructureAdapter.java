@@ -237,6 +237,12 @@ public class IMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V
     }
 
     @Override
+    @MethodNotAvailable
+    public void close() {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
     public void destroy() {
         map.destroy();
     }

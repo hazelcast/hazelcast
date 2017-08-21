@@ -453,6 +453,11 @@ public class IMapDataStructureAdapterTest extends HazelcastTestSupport {
         assertEquals(0, map.size());
     }
 
+    @Test(expected = MethodNotAvailableException.class)
+    public void testClose() {
+        adapter.close();
+    }
+
     @Test
     public void testDestroy() {
         map.put(23, "foobar");

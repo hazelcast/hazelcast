@@ -264,6 +264,12 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
+    @MethodNotAvailable
+    public void close() {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
     public void destroy() {
         begin();
         transactionalMap.destroy();

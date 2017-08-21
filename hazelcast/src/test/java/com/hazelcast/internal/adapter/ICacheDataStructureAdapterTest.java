@@ -431,6 +431,13 @@ public class ICacheDataStructureAdapterTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testClose() {
+        adapter.close();
+
+        assertTrue(cache.isClosed());
+    }
+
+    @Test
     public void testDestroy() {
         adapter.destroy();
 
