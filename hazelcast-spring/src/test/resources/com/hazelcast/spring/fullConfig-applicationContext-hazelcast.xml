@@ -70,6 +70,9 @@
                         <hz:property name="custom.prop.publisher">prop.publisher</hz:property>
                     </hz:properties>
                 </hz:wan-publisher>
+                <hz:wan-publisher group-name="ankara" class-name="com.hazelcast.enterprise.wan.replication.WanBatchReplication">
+                    <hz:queue-capacity>${wan.queue.capacity}</hz:queue-capacity>
+                </hz:wan-publisher>
                 <hz:wan-consumer class-name="com.hazelcast.wan.custom.WanConsumer">
                     <hz:properties>
                         <hz:property name="custom.prop.consumer">prop.consumer</hz:property>
