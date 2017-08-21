@@ -236,6 +236,11 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     }
 
     @Override
+    public void close() {
+        cache.close();
+    }
+
+    @Override
     public void destroy() {
         cache.destroy();
     }
