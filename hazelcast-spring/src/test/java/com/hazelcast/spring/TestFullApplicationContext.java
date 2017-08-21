@@ -776,6 +776,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertAwsConfig(customPublisher.getAwsConfig());
         assertDiscoveryConfig(customPublisher.getDiscoveryConfig());
 
+        WanPublisherConfig publisherPlaceHolderConfig = wcfg.getWanPublisherConfigs().get(2);
+        assertEquals(5000, publisherPlaceHolderConfig.getQueueCapacity());
+
         WanConsumerConfig consumerConfig = wcfg.getWanConsumerConfig();
         assertEquals("com.hazelcast.wan.custom.WanConsumer", consumerConfig.getClassName());
         Map<String, Comparable> consumerProps = consumerConfig.getProperties();
