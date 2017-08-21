@@ -85,7 +85,6 @@ public class NearCachePreloader<K> {
     private static final int LOAD_BATCH_SIZE = 100;
 
     private final ILogger logger = Logger.getLogger(NearCachePreloader.class);
-    private final ByteBuffer buf = allocate(BUFFER_SIZE);
     private final byte[] tmpBytes = new byte[INT_SIZE_IN_BYTES];
 
     private final String nearCacheName;
@@ -96,6 +95,7 @@ public class NearCachePreloader<K> {
     private final File storeFile;
     private final File tmpStoreFile;
 
+    private ByteBuffer buf;
     private int lastWrittenBytes;
     private int lastKeyCount;
 
@@ -170,6 +170,7 @@ public class NearCachePreloader<K> {
         long startedNanos = System.nanoTime();
         FileOutputStream fos = null;
         try {
+            buf = allocate(BUFFER_SIZE);
             lastWrittenBytes = 0;
             lastKeyCount = 0;
 
