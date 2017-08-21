@@ -259,7 +259,7 @@ public class HazelcastProxyFactory {
             return RETURN_SAME;
         }
 
-        if (NO_PROXYING_WHITELIST.contains(className)) {
+        if (NO_PROXYING_WHITELIST.contains(className) || delegateClass.isEnum()) {
             return ProxyPolicy.NO_PROXY;
         }
 
@@ -292,6 +292,8 @@ public class HazelcastProxyFactory {
                             return new ConfigConstructor(input);
                         } else if (className.equals(CLASS_NAME_VERSION)) {
                             return new VersionConstructor(input);
+                        } else if (input.isEnum()) {
+                            return new EnumConstructor(input);
                         } else {
                             throw new UnsupportedOperationException("Cannot construct target object "
                                     + "for target class" + input + " on classloader " + input.getClassLoader());
