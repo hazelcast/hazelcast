@@ -571,7 +571,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         cacheResources.add(resource);
     }
 
-    private void deleteCacheResources(String name) {
+    protected void deleteCacheResources(String name) {
         Set<Closeable> cacheResources;
         ContextMutexFactory.Mutex mutex = cacheResourcesMutexFactory.mutexFor(name);
         try {

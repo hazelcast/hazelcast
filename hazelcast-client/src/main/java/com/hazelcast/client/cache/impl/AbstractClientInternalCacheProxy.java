@@ -44,11 +44,14 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
+import javax.cache.event.CacheEntryListener;
 import javax.cache.expiry.ExpiryPolicy;
+import java.io.Closeable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
@@ -136,12 +139,14 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
 
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
+    private final ConcurrentMap<String, Closeable> closeableListeners;
     private final ConcurrentMap<Integer, CountDownLatch> syncLocks;
 
     AbstractClientInternalCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext context) {
         super(cacheConfig, context);
         this.asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         this.syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
+        this.closeableListeners = new ConcurrentHashMap<String, Closeable>();
         this.syncLocks = new ConcurrentHashMap<Integer, CountDownLatch>();
     }
 
@@ -547,11 +552,16 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         }
     }
 
-    protected void addListenerLocally(String regId, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+    protected void addListenerLocally(String regId, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
+                                      CacheEventListenerAdaptor<K, V> adaptor) {
         if (cacheEntryListenerConfiguration.isSynchronous()) {
             syncListenerRegistrations.putIfAbsent(cacheEntryListenerConfiguration, regId);
         } else {
             asyncListenerRegistrations.putIfAbsent(cacheEntryListenerConfiguration, regId);
+        }
+        CacheEntryListener<K, V> entryListener = adaptor.getCacheEntryListener();
+        if (entryListener instanceof Closeable) {
+            closeableListeners.putIfAbsent(regId, (Closeable) entryListener);
         }
     }
 
@@ -562,7 +572,12 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         } else {
             regs = asyncListenerRegistrations;
         }
-        return regs.remove(cacheEntryListenerConfiguration);
+        String registrationId = regs.remove(cacheEntryListenerConfiguration);
+        if (registrationId != null) {
+            Closeable closeable = closeableListeners.remove(registrationId);
+            IOUtil.closeResource(closeable);
+        }
+        return registrationId;
     }
 
     protected String getListenerIdLocal(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
@@ -590,6 +605,9 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         syncListenerRegistrations.clear();
         asyncListenerRegistrations.clear();
         notifyAndClearSyncListenerLatches();
+        for (Closeable closeable : closeableListeners.values()) {
+            IOUtil.closeResource(closeable);
+        }
     }
 
     private void notifyAndClearSyncListenerLatches() {

@@ -397,7 +397,7 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
             if (addToConfig) {
                 cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
             }
-            addListenerLocally(regId, cacheEntryListenerConfiguration);
+            addListenerLocally(regId, cacheEntryListenerConfiguration, adaptor);
             if (addToConfig) {
                 updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, true);
             }
