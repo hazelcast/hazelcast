@@ -571,7 +571,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="cache-deserialized-values" use="optional" type="cache-deserialized">
+                                <xs:attribute name="cache-deserialized-values" use="optional" type="parameterized-cache-deserialized">
                                     <xs:annotation>
                                         <xs:documentation>
                                             Control caching of de-serialized values. Caching makes query evaluation faster, but it cost memory.
@@ -1973,6 +1973,10 @@
             <xs:enumeration value="ALWAYS"/>
             <xs:enumeration value="INDEX-ONLY"/>
         </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="parameterized-cache-deserialized">
+        <xs:union memberTypes="cache-deserialized parameterizedValueType"/>
     </xs:simpleType>
 
     <xs:simpleType name="member">

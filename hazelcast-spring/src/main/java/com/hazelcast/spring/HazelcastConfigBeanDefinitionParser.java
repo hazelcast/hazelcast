@@ -17,7 +17,6 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.AwsConfig;
-import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
@@ -755,9 +754,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
             final Node cacheDeserializedValueNode = node.getAttributes().getNamedItem("cache-deserialized-values");
             if (cacheDeserializedValueNode != null) {
-                String cacheDeserializedValueContent = getTextContent(cacheDeserializedValueNode);
-                CacheDeserializedValues value = CacheDeserializedValues.parseString(cacheDeserializedValueContent);
-                mapConfigBuilder.addPropertyValue("cacheDeserializedValues", value);
+                mapConfigBuilder.addPropertyValue("cacheDeserializedValues", getTextContent(cacheDeserializedValueNode));
             }
 
             for (Node childNode : childElements(node)) {
