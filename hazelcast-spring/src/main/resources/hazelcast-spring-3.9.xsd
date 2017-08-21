@@ -2002,7 +2002,7 @@
             <xs:enumeration value="hazelcast.max.no.heartbeat.seconds"/>
             <xs:enumeration value="hazelcast.initial.wait.seconds"/>
             <xs:enumeration value="hazelcast.restart.on.max.idle"/>
-            <xs:enumeration value="hazelcast.map.partition.count"/>
+            <xs:enumeration value="hazelcast.partition.count"/>
             <xs:enumeration value="hazelcast.map.remove.delay.seconds"/>
             <xs:enumeration value="hazelcast.map.cleanup.delay.seconds"/>
             <xs:enumeration value="hazelcast.executor.query.thread.count"/>
