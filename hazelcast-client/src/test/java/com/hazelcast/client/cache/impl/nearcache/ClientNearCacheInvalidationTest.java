@@ -405,6 +405,7 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
 
         assertTrueEventually(assertTask);
         assertTrueAllTheTime(assertTask, TIMEOUT);
+        testContext.invalidationListener.resetInvalidationCount();
     }
 
     @SuppressWarnings("SameParameterValue")
