@@ -20,23 +20,28 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheDestroyCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.security.Permission;
 
 public class CacheDestroyMessageTask
-        extends AbstractPartitionMessageTask<CacheDestroyCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<CacheDestroyCodec.RequestParameters> {
 
     public CacheDestroyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Operation prepareOperation() {
-        return new CacheDestroyOperation(parameters.name);
+    protected Object call() throws Exception {
+        InternalOperationService operationService = nodeEngine.getOperationService();
+        CacheDestroyOperation cacheDestroyOperation = new CacheDestroyOperation(parameters.name);
+        InvocationBuilder builder = operationService.createInvocationBuilder(CacheService.SERVICE_NAME, cacheDestroyOperation,
+                nodeEngine.getThisAddress());
+        return builder.invoke().join();
     }
 
     @Override
