@@ -134,6 +134,7 @@ import java.util.concurrent.ExecutorService;
 import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_COMPLETE;
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -690,12 +691,14 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(properties);
         assertEquals("5", properties.get(MERGE_FIRST_RUN_DELAY_SECONDS.getName()));
         assertEquals("5", properties.get(MERGE_NEXT_RUN_DELAY_SECONDS.getName()));
+        assertEquals("277", properties.get(PARTITION_COUNT.getName()));
 
         Config config2 = instance.getConfig();
         Properties properties2 = config2.getProperties();
         assertNotNull(properties2);
         assertEquals("5", properties2.get(MERGE_FIRST_RUN_DELAY_SECONDS.getName()));
         assertEquals("5", properties2.get(MERGE_NEXT_RUN_DELAY_SECONDS.getName()));
+        assertEquals("277", properties2.get(PARTITION_COUNT.getName()));
     }
 
     @Test
@@ -708,6 +711,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(5700, inetSocketAddress.getPort());
         assertEquals("test-instance", config.getInstanceName());
         assertEquals("HAZELCAST_ENTERPRISE_LICENSE_KEY", config.getLicenseKey());
+        assertEquals(277, instance.getPartitionService().getPartitions().size());
     }
 
     @Test
