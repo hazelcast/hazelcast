@@ -127,7 +127,7 @@ public class CacheEventHandler {
         }
     }
 
-    void destroy(String name, String sourceUuid) {
+    public void destroy(String name, String sourceUuid) {
         invalidator.destroy(name, sourceUuid);
     }
 
