@@ -22,9 +22,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.Properties;
 
@@ -34,7 +32,7 @@ import static com.hazelcast.nio.IOUtil.closeResource;
  * A support class for {@link SSLEngineFactory} and {@link SSLContextFactory} implementation that takes care of
  * the logic for KeyManager and TrustManager.
  */
-abstract class SSLEngineFactorySupport {
+public abstract class SSLEngineFactorySupport {
 
     public static final String JAVA_NET_SSL_PREFIX = "javax.net.ssl.";
 
@@ -43,9 +41,6 @@ abstract class SSLEngineFactorySupport {
     protected String protocol;
 
     protected void load(Properties properties) throws Exception {
-        KeyStore ks = KeyStore.getInstance("JKS");
-        KeyStore ts = KeyStore.getInstance("JKS");
-
         String keyStorePassword = getProperty(properties, "keyStorePassword");
         String keyStore = getProperty(properties, "keyStore");
         String trustStore = getProperty(properties, "trustStore", keyStore);
@@ -53,41 +48,41 @@ abstract class SSLEngineFactorySupport {
         String keyManagerAlgorithm = properties.getProperty("keyManagerAlgorithm", KeyManagerFactory.getDefaultAlgorithm());
         String trustManagerAlgorithm = properties.getProperty("trustManagerAlgorithm", TrustManagerFactory.getDefaultAlgorithm());
         this.protocol = properties.getProperty("protocol", "TLS");
-
-        kmf = loadKeyManagerFactory(ks, keyStorePassword, keyStore, keyManagerAlgorithm);
-        tmf = loadTrustManagerFactory(ts, trustStore, trustStorePassword, trustManagerAlgorithm);
+        this.kmf = loadKeyManagerFactory(keyStorePassword, keyStore, keyManagerAlgorithm);
+        this.tmf = loadTrustManagerFactory(trustStorePassword, trustStore, trustManagerAlgorithm);
     }
 
-    private TrustManagerFactory loadTrustManagerFactory(KeyStore ts, String trustStore,
-                                                        String trustStorePassword, String trustManagerAlgorithm)
-            throws NoSuchAlgorithmException, IOException, CertificateException, KeyStoreException {
+    public static TrustManagerFactory loadTrustManagerFactory(String trustStorePassword,
+                                                              String trustStore,
+                                                              String trustManagerAlgorithm) throws Exception {
         if (trustStore == null) {
             return null;
         }
 
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(trustManagerAlgorithm);
         char[] passPhrase = trustStorePassword == null ? null : trustStorePassword.toCharArray();
+        KeyStore ts = KeyStore.getInstance("JKS");
         loadKeyStore(ts, passPhrase, trustStore);
         tmf.init(ts);
         return tmf;
     }
 
-    private KeyManagerFactory loadKeyManagerFactory(KeyStore ks, String keyStorePassword, String keyStore,
-                                                    String keyManagerAlgorithm)
-            throws NoSuchAlgorithmException, IOException, CertificateException, KeyStoreException, UnrecoverableKeyException {
-
+    public static KeyManagerFactory loadKeyManagerFactory(String keyStorePassword,
+                                                          String keyStore,
+                                                          String keyManagerAlgorithm) throws Exception {
         if (keyStore == null) {
             return null;
         }
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyManagerAlgorithm);
         char[] passPhrase = keyStorePassword == null ? null : keyStorePassword.toCharArray();
+        KeyStore ks = KeyStore.getInstance("JKS");
         loadKeyStore(ks, passPhrase, keyStore);
         kmf.init(ks, passPhrase);
         return kmf;
     }
 
-    private void loadKeyStore(KeyStore ks, char[] passPhrase, String keyStoreFile)
+    public static void loadKeyStore(KeyStore ks, char[] passPhrase, String keyStoreFile)
             throws IOException, NoSuchAlgorithmException, CertificateException {
         InputStream in = new FileInputStream(keyStoreFile);
         try {

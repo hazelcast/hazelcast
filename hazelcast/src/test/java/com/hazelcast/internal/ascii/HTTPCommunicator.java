@@ -16,9 +16,14 @@
 
 package com.hazelcast.internal.ascii;
 
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -27,6 +32,9 @@ import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -38,10 +46,34 @@ public class HTTPCommunicator {
     private final HazelcastInstance instance;
     private final String address;
     private int chunkedStreamingLength;
+    private TrustManager[] clientTrustManagers;
+    private KeyManager[] clientKeyManagers;
+    private String tlsProtocol = "TLSv1.1";
 
     public HTTPCommunicator(HazelcastInstance instance) {
         this.instance = instance;
-        this.address = "http:/" + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
+
+        SSLConfig sslConfig = instance.getConfig().getNetworkConfig().getSSLConfig();
+        if (sslConfig == null || !sslConfig.isEnabled()) {
+            this.address = "http:/" + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
+        } else {
+            this.address = "https:/" + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
+        }
+    }
+
+    public HTTPCommunicator setTlsProtocol(String tlsProtocol) {
+        this.tlsProtocol = tlsProtocol;
+        return this;
+    }
+
+    public HTTPCommunicator setClientTrustManagers(TrustManager... clientTrustManagers) {
+        this.clientTrustManagers = clientTrustManagers;
+        return this;
+    }
+
+    public HTTPCommunicator setClientKeyManagers(KeyManager... clientKeyManagers) {
+        this.clientKeyManagers = clientKeyManagers;
+        return this;
     }
 
     public String queuePoll(String queueName, long timeout) throws IOException {
@@ -201,17 +233,38 @@ public class HTTPCommunicator {
     }
 
     private HttpURLConnection setupConnection(String url, String method) throws IOException {
-        HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
-        urlConnection.setRequestMethod(method);
-        urlConnection.setDoOutput(true);
-        urlConnection.setDoInput(true);
-        urlConnection.setUseCaches(false);
-        urlConnection.setAllowUserInteraction(false);
-        urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
-        if (chunkedStreamingLength > 0) {
-            urlConnection.setChunkedStreamingMode(chunkedStreamingLength);
+        HttpURLConnection connection = (HttpURLConnection) (new URL(url)).openConnection();
+        if (connection instanceof HttpsURLConnection) {
+            System.out.println("Configuring TLS connection");
+
+            HttpsURLConnection httpsConnection = (HttpsURLConnection) connection;
+
+            SSLContext sslContext;
+            try {
+                sslContext = SSLContext.getInstance(tlsProtocol);
+            } catch (NoSuchAlgorithmException e) {
+                throw new IOException(e);
+            }
+
+            try {
+                sslContext.init(clientKeyManagers, clientTrustManagers, new SecureRandom());
+            } catch (KeyManagementException e) {
+                throw new IOException(e);
+            }
+
+            httpsConnection.setSSLSocketFactory(sslContext.getSocketFactory());
         }
-        return urlConnection;
+
+        connection.setRequestMethod(method);
+        connection.setDoOutput(true);
+        connection.setDoInput(true);
+        connection.setUseCaches(false);
+        connection.setAllowUserInteraction(false);
+        connection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
+        if (chunkedStreamingLength > 0) {
+            connection.setChunkedStreamingMode(chunkedStreamingLength);
+        }
+        return connection;
     }
 
     static class ConnectionResponse {
@@ -226,7 +279,7 @@ public class HTTPCommunicator {
         private ConnectionResponse(String response, int responseCode, Map<String, List<String>> responseHeaders) {
             this.response = response;
             this.responseCode = responseCode;
-            if(responseHeaders == null) {
+            if (responseHeaders == null) {
                 this.responseHeaders = Collections.emptyMap();
             } else {
                 this.responseHeaders = new HashMap<String, List<String>>(responseHeaders);
@@ -235,7 +288,7 @@ public class HTTPCommunicator {
     }
 
     private String doGet(String url) throws IOException {
-        HttpURLConnection httpUrlConnection = (HttpURLConnection) (new URL(url)).openConnection();
+        HttpURLConnection httpUrlConnection = newConnection(url);
         try {
             InputStream inputStream = httpUrlConnection.getInputStream();
             StringBuilder builder = new StringBuilder();
@@ -248,6 +301,10 @@ public class HTTPCommunicator {
         } finally {
             httpUrlConnection.disconnect();
         }
+    }
+
+    private HttpURLConnection newConnection(String url) throws IOException {
+        return (HttpURLConnection) (new URL(url)).openConnection();
     }
 
     private ConnectionResponse doHead(String url) throws IOException {
@@ -320,7 +377,7 @@ public class HTTPCommunicator {
         String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_URL + "garbage";
         return doHead(url);
     }
-  
+
     public void setChunkedStreamingLength(int chunkedStreamingLength) {
         this.chunkedStreamingLength = chunkedStreamingLength;
     }
