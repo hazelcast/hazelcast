@@ -33,6 +33,8 @@ import static java.util.Arrays.asList;
 
 public final class ThreadLeakTestUtils {
 
+    private static final int ASSERT_TIMEOUT_SECONDS = 300;
+
     private static final ILogger LOGGER = Logger.getLogger(ThreadLeakTestUtils.class);
 
     static {
@@ -67,7 +69,7 @@ public final class ThreadLeakTestUtils {
         }
         System.err.println(sb.toString());
 
-        assertJoinable(joinableThreads);
+        assertJoinable(ASSERT_TIMEOUT_SECONDS, joinableThreads);
     }
 
     private static Thread[] getJoinableThreads(Set<Thread> oldThreads, Set<Thread> newThreads) {
