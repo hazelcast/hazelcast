@@ -395,13 +395,16 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
     }
 
     private void assertNoFurtherInvalidationThan(final int expectedInvalidationCount) {
-        assertTrueAllTheTime(new AssertTask() {
+        AssertTask assertTask = new AssertTask() {
             @Override
             public void run() throws Exception {
                 long invalidationCount = testContext.invalidationListener.getInvalidationCount();
                 assertEquals(expectedInvalidationCount, invalidationCount);
             }
-        }, TIMEOUT);
+        };
+
+        assertTrueEventually(assertTask);
+        assertTrueAllTheTime(assertTask, TIMEOUT);
     }
 
     @SuppressWarnings("SameParameterValue")
