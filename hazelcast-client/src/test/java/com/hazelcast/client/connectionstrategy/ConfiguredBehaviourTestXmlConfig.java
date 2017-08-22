@@ -16,12 +16,13 @@
 
 package com.hazelcast.client.connectionstrategy;
 
+import com.hazelcast.client.config.ClientClasspathXmlConfig;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
@@ -33,10 +34,9 @@ import java.util.concurrent.CountDownLatch;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CONNECTED;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class})
-public class ConfiguredBehaviourTestXmlConfig
-        extends ClientTestSupport {
+public class ConfiguredBehaviourTestXmlConfig extends ClientTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private static final CountDownLatch asyncStartFromXmlLatch = new CountDownLatch(1);
@@ -53,14 +53,14 @@ public class ConfiguredBehaviourTestXmlConfig
     @After
     public void tearDown() {
         hazelcastFactory.terminateAll();
-        System.clearProperty("hazelcast.client.config");
     }
 
     @Test
     public void testAsyncStartTrueXmlConfig() {
-        System.setProperty("hazelcast.client.config", "classpath:hazelcast-client-connection-strategy-asyncStart-true.xml");
+        ClientClasspathXmlConfig clientConfig = new ClientClasspathXmlConfig(
+                "hazelcast-client-connection-strategy-asyncStart-true.xml");
 
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         assertTrue(client.getLifecycleService().isRunning());
 
@@ -77,9 +77,10 @@ public class ConfiguredBehaviourTestXmlConfig
 
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 
-        System.setProperty("hazelcast.client.config", "classpath:hazelcast-client-connection-strategy-asyncReconnect.xml");
+        ClientClasspathXmlConfig clientConfig = new ClientClasspathXmlConfig(
+                "hazelcast-client-connection-strategy-asyncReconnect.xml");
 
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         assertTrue(client.getLifecycleService().isRunning());
 
