@@ -36,7 +36,7 @@ import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.LAZY;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Test creation of map proxy
+ * Tests the creation of a map proxy.
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
