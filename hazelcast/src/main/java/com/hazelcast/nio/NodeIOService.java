@@ -37,14 +37,12 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.util.AddressUtil;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ThreadUtil.createThreadName;
@@ -331,56 +329,11 @@ public class NodeIOService implements IOService {
     @Override
     public Collection<Integer> getOutboundPorts() {
         final NetworkConfig networkConfig = node.getConfig().getNetworkConfig();
-        final Collection<String> portDefinitions = getPortDefinitions(networkConfig);
-        final Set<Integer> ports = getPorts(networkConfig);
-        if (portDefinitions.isEmpty() && ports.isEmpty()) {
-            // means any port
-            return Collections.emptySet();
-        }
-        if (portDefinitions.contains("*") || portDefinitions.contains("0")) {
-            // means any port
-            return Collections.emptySet();
-        }
-        transformPortDefinitionsToPorts(portDefinitions, ports);
-        if (ports.contains(0)) {
-            // means any port
-            return Collections.emptySet();
-        }
-        return ports;
+        final Collection<Integer> outboundPorts = networkConfig.getOutboundPorts();
+        final Collection<String> outboundPortDefinitions = networkConfig.getOutboundPortDefinitions();
+        return AddressUtil.getOutboundPorts(outboundPorts, outboundPortDefinitions);
     }
 
-    private void transformPortDefinitionsToPorts(Collection<String> portDefinitions, Set<Integer> ports) {
-        // not checking port ranges...
-        for (String portDef : portDefinitions) {
-            String[] portDefs = portDef.split("[,; ]");
-            for (String def : portDefs) {
-                def = def.trim();
-                if (def.isEmpty()) {
-                    continue;
-                }
-                final int dashPos = def.indexOf('-');
-                if (dashPos > 0) {
-                    final int start = Integer.parseInt(def.substring(0, dashPos));
-                    final int end = Integer.parseInt(def.substring(dashPos + 1));
-                    for (int port = start; port <= end; port++) {
-                        ports.add(port);
-                    }
-                } else {
-                    ports.add(Integer.parseInt(def));
-                }
-            }
-        }
-    }
-
-    private Set<Integer> getPorts(NetworkConfig networkConfig) {
-        return networkConfig.getOutboundPorts() == null
-                ? new HashSet<Integer>() : new HashSet<Integer>(networkConfig.getOutboundPorts());
-    }
-
-    private Collection<String> getPortDefinitions(NetworkConfig networkConfig) {
-        return networkConfig.getOutboundPortDefinitions() == null
-                ? Collections.<String>emptySet() : networkConfig.getOutboundPortDefinitions();
-    }
 
     private class ReconnectionTask implements Runnable {
         private final Address endpoint;

@@ -61,6 +61,7 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
@@ -68,6 +69,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.Collections;
@@ -134,7 +136,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     private final int connectionAttemptLimit;
     private final boolean shuffleMemberList;
     private final Collection<AddressProvider> addressProviders;
+    // accessed only in synchronized block
+    private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
+    private final int outboundPortCount;
 
+    @SuppressWarnings("checkstyle:executablestatementcount")
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
                                        Collection<AddressProvider> addressProviders) {
 
@@ -164,6 +170,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
         connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
         connectionAttemptLimit = connAttemptLimit == 0 ? Integer.MAX_VALUE : connAttemptLimit;
+
+        this.outboundPorts.addAll(getOutboundPorts(networkConfig));
+        this.outboundPortCount = outboundPorts.size();
+
         checkSslAllowed();
     }
 
@@ -174,6 +184,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                 throw new IllegalStateException("SSL/TLS requires Hazelcast Enterprise Edition");
             }
         }
+    }
+
+    private Collection<Integer> getOutboundPorts(ClientNetworkConfig networkConfig) {
+        Collection<Integer> outboundPorts = networkConfig.getOutboundPorts();
+        Collection<String> outboundPortDefinitions = networkConfig.getOutboundPortDefinitions();
+        return AddressUtil.getOutboundPorts(outboundPorts, outboundPortDefinitions);
     }
 
     private ClientConnectionStrategy initializeStrategy(HazelcastClientInstanceImpl client) {
@@ -473,6 +489,46 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         lifecycleService.fireLifecycleEvent(state);
     }
 
+    private boolean useAnyOutboundPort() {
+        return outboundPortCount == 0;
+    }
+
+    private int acquireOutboundPort() {
+        if (outboundPortCount == 0) {
+            return 0;
+        }
+        synchronized (outboundPorts) {
+            final Integer port = outboundPorts.removeFirst();
+            outboundPorts.addLast(port);
+            return port;
+        }
+    }
+
+    private void bindSocketToPort(Socket socket) throws IOException {
+        if (useAnyOutboundPort()) {
+            SocketAddress socketAddress = new InetSocketAddress(0);
+            socket.bind(socketAddress);
+        } else {
+            int retryCount = outboundPortCount * 2;
+            IOException ex = null;
+            for (int i = 0; i < retryCount; i++) {
+                int port = acquireOutboundPort();
+                if (port == 0) {
+                    // fast-path for ephemeral range - no need to bind
+                    return;
+                }
+                SocketAddress socketAddress = new InetSocketAddress(port);
+                try {
+                    socket.bind(socketAddress);
+                    return;
+                } catch (IOException e) {
+                    ex = e;
+                    logger.finest("Could not bind port[ " + port + "]: " + e.getMessage());
+                }
+            }
+            throw ex;
+        }
+    }
 
     protected ClientConnection createSocketConnection(final Address address) throws IOException {
         if (!alive) {
@@ -492,6 +548,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             socket.setSendBufferSize(bufferSize);
             socket.setReceiveBufferSize(bufferSize);
             InetSocketAddress inetSocketAddress = address.getInetSocketAddress();
+            bindSocketToPort(socket);
             socketChannel.socket().connect(inetSocketAddress, connectionTimeout);
 
             HazelcastProperties properties = client.getProperties();

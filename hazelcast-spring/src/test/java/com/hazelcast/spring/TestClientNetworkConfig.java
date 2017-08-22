@@ -33,6 +33,7 @@ import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
+import java.util.Collection;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -115,5 +116,13 @@ public class TestClientNetworkConfig {
 
         DiscoveryStrategyConfig discoveryStrategyConfig4 = discoveryStrategyConfigs.get(3);
         assertTrue(discoveryStrategyConfig4.getDiscoveryStrategyFactory() instanceof DummyDiscoveryStrategyFactory);
+    }
+
+    @Test
+    public void smokeOutboundPorts() {
+        Collection<String> allowedPorts = client.getClientConfig().getNetworkConfig().getOutboundPortDefinitions();
+        assertEquals(2, allowedPorts.size());
+        assertTrue(allowedPorts.contains("34600"));
+        assertTrue(allowedPorts.contains("34700-34710"));
     }
 }
