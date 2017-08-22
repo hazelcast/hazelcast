@@ -177,6 +177,7 @@ public final class NioChannelReader extends AbstractHandler {
         handleCountLastPublish = handleCount.get();
     }
 
+    @Override
     public void close() {
         ioThread.addTaskAndWakeup(new Runnable() {
             @Override

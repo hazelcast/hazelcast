@@ -21,6 +21,8 @@ import com.hazelcast.internal.networking.OutboundFrame;
 
 import java.nio.channels.SocketChannel;
 
+import static com.hazelcast.nio.IOUtil.closeResource;
+
 /**
  * A {@link com.hazelcast.internal.networking.Channel} implementation tailored for non blocking IO using
  * {@link java.nio.channels.Selector} in combination with a non blocking {@link SocketChannel}.
@@ -76,8 +78,8 @@ public class NioChannel extends AbstractChannel {
 
     @Override
     protected void onClose() {
-        reader.close();
-        writer.close();
+        closeResource(reader);
+        closeResource(writer);
     }
 
     @Override

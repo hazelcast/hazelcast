@@ -363,6 +363,7 @@ public final class NioChannelWriter extends AbstractHandler implements Runnable 
         }
     }
 
+    @Override
     public void close() {
         writeQueue.clear();
         urgentWriteQueue.clear();
