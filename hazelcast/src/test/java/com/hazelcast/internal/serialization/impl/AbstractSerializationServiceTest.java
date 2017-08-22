@@ -60,9 +60,12 @@ public class AbstractSerializationServiceTest {
 
     @Before
     public void setup() {
+        abstractSerializationService = newAbstractSerializationService();
+    }
+
+    protected AbstractSerializationService newAbstractSerializationService() {
         DefaultSerializationServiceBuilder defaultSerializationServiceBuilder = new DefaultSerializationServiceBuilder();
-        abstractSerializationService = defaultSerializationServiceBuilder
-                .setVersion(InternalSerializationService.VERSION_1).build();
+        return defaultSerializationServiceBuilder.setVersion(InternalSerializationService.VERSION_1).build();
     }
 
     @Test
