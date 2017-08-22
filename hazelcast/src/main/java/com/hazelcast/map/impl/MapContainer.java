@@ -79,8 +79,8 @@ public class MapContainer {
     protected final InterceptorRegistry interceptorRegistry = new InterceptorRegistry();
     protected final IFunction<Object, Data> toDataFunction = new ObjectToData();
     protected final ConstructorFunction<Void, RecordFactory> recordFactoryConstructor;
-    // On-heap indexes are global, meaning there is only one index per map, stored in the mapContainer.
-    // If globalIndexes is null it means that global index is not in use.
+    // on-heap indexes are global, meaning there is only one index per map, stored in the mapContainer,
+    // so if globalIndexes is null it means that global index is not in use
     protected final Indexes globalIndexes;
 
     /**
@@ -95,7 +95,6 @@ public class MapContainer {
 
     protected volatile Evictor evictor;
     protected volatile MapConfig mapConfig;
-
 
     /**
      * Operations which are done in this constructor should obey the rules defined
@@ -126,7 +125,7 @@ public class MapContainer {
         initEvictor();
     }
 
-    // this method is overridden.
+    // this method is overridden
     public void initEvictor() {
         MapEvictionPolicy mapEvictionPolicy = mapConfig.getMapEvictionPolicy();
         if (mapEvictionPolicy == null) {
@@ -162,8 +161,7 @@ public class MapContainer {
         }
     }
 
-
-    // overridden in different context.
+    // overridden in different context
     ConstructorFunction<Void, RecordFactory> createRecordFactoryConstructor(final SerializationService serializationService) {
         return new ConstructorFunction<Void, RecordFactory>() {
             @Override
@@ -204,7 +202,6 @@ public class MapContainer {
 
     /**
      * @param partitionId partitionId
-     * @return
      */
     public Indexes getIndexes(int partitionId) {
         if (globalIndexes != null) {
@@ -226,10 +223,7 @@ public class MapContainer {
     }
 
     public boolean isWanReplicationEnabled() {
-        if (wanReplicationPublisher == null || wanMergePolicy == null) {
-            return false;
-        }
-        return true;
+        return wanReplicationPublisher != null && wanMergePolicy != null;
     }
 
     public void checkWanReplicationQueues() {
@@ -356,5 +350,3 @@ public class MapContainer {
         }
     }
 }
-
-
