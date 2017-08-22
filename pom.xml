@@ -627,6 +627,47 @@
                             </dependency>
                         </dependencies>
                     </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${maven.failsafe.plugin.version}</version>
+                        <configuration combine.self="override">
+                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                            <argLine>
+                                -Xms128m -Xmx1G -XX:MaxPermSize=128M
+                                -Dhazelcast.phone.home.enabled=false
+                                -Dhazelcast.mancenter.enabled=false
+                                -Dhazelcast.logging.type=none
+                                -Dhazelcast.test.use.network=true
+                            </argLine>
+                            <groups>
+                                com.hazelcast.test.annotation.QuickTest,
+                                com.hazelcast.test.annotation.SlowTest,
+                            </groups>
+                            <excludedGroups>
+                                com.hazelcast.test.annotation.NightlyTest
+                            </excludedGroups>
+                            <useManifestOnlyJar>false</useManifestOnlyJar>
+                            <useSystemClassLoader>true</useSystemClassLoader>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.github.jerrinot.maven-surefire</groupId>
+                                <artifactId>maven-surefire-common</artifactId>
+                                <version>${maven.surefire.plugin.version}-buffered</version>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+
                 </plugins>
             </build>
         </profile>
