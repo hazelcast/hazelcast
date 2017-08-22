@@ -45,6 +45,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
     String clusterName;
     boolean sslEnabled;
     boolean lite;
+    boolean socketInterceptorEnabled;
 
     public List<String> getMemberList() {
         return memberList;
@@ -110,6 +111,14 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         this.lite = lite;
     }
 
+    public boolean isSocketInterceptorEnabled() {
+        return socketInterceptorEnabled;
+    }
+
+    public void setSocketInterceptorEnabled(boolean socketInterceptorEnabled) {
+        this.socketInterceptorEnabled = socketInterceptorEnabled;
+    }
+
     @Override
     public TimedMemberState clone() throws CloneNotSupportedException {
         TimedMemberState state = (TimedMemberState) super.clone();
@@ -121,6 +130,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         state.setClusterName(clusterName);
         state.setSslEnabled(sslEnabled);
         state.setLite(lite);
+        state.setSocketInterceptorEnabled(socketInterceptorEnabled);
         return state;
     }
 
@@ -147,6 +157,9 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         if (memberState.getNodeState().getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
             root.add("lite", lite);
         }
+        if (memberState.getNodeState().getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
+            root.add("socketInterceptorEnabled", socketInterceptorEnabled);
+        }
         return root;
     }
 
@@ -171,6 +184,9 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         sslEnabled = getBoolean(json, "sslEnabled", false);
         if (memberState.getNodeState().getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
             lite = getBoolean(json, "lite");
+        }
+        if (memberState.getNodeState().getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
+            socketInterceptorEnabled = getBoolean(json, "socketInterceptorEnabled");
         }
     }
 
