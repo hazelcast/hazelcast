@@ -19,6 +19,7 @@ package com.hazelcast.cache;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.ClasspathXmlConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -35,7 +36,11 @@ import javax.cache.spi.CachingProvider;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
+import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceName;
+import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByLocation;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -77,29 +82,28 @@ public class CachingProviderTest extends HazelcastTestSupport {
 
     @Test
     public void whenDefaultURI_instanceNameAsProperty_thenThatInstanceIsUsed() throws URISyntaxException {
-        HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(null, null,
-                HazelcastCachingProvider.propertiesByInstanceName(INSTANCE_2_NAME));
+        HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
+                null, null, propertiesByInstanceName(INSTANCE_2_NAME));
         assertCacheManagerInstance(cacheManager, instance2);
     }
 
     @Test
     public void whenOtherURI_instanceNameAsProperty_thenThatInstanceIsUsed() throws URISyntaxException {
-        HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(new URI("other-uri"), null,
-                HazelcastCachingProvider.propertiesByInstanceName(INSTANCE_2_NAME));
+        HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
+                new URI("other-uri"), null, propertiesByInstanceName(INSTANCE_2_NAME));
         assertCacheManagerInstance(cacheManager, instance2);
     }
 
-    @Test(expected = CacheException.class)
-    public void whenDefaultURI_invalidInstanceNameAsProperty_thenFails() throws URISyntaxException {
-        HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(null, null,
-                HazelcastCachingProvider.propertiesByInstanceName("instance-does-not-exist"));
+    @Test
+    public void whenDefaultURI_inexistentInstanceNameAsProperty_thenStartsOtherInstance() throws URISyntaxException {
+        cachingProvider.getCacheManager(null, null, propertiesByInstanceName("instance-does-not-exist"));
+        assertInstanceStarted("instance-does-not-exist");
     }
 
-    @Test(expected = CacheException.class)
-    public void whenOtherURI_invalidInstanceNameAsProperty_thenFails() throws URISyntaxException {
-        HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
-                new URI("other-uri"), null,
-                HazelcastCachingProvider.propertiesByInstanceName("instance-does-not-exist"));
+    @Test
+    public void whenOtherURI_inexistentInstanceNameAsProperty_thenStartsNewInstance() throws URISyntaxException {
+        cachingProvider.getCacheManager(new URI("other-uri"), null, propertiesByInstanceName("instance-does-not-exist"));
+        assertInstanceStarted("instance-does-not-exist");
     }
 
     @Test
@@ -108,21 +112,17 @@ public class CachingProviderTest extends HazelcastTestSupport {
         assertCacheManagerInstance(cacheManager, instance1);
     }
 
-    @Test(expected = CacheException.class)
-    public void whenOtherURI_noInstanceName_thenFails() throws URISyntaxException {
-        HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
-                new URI("other-uri"),null);
-    }
-
     @Test
     public void whenInstanceNameAsUri_thenThatInstanceIsUsed() throws URISyntaxException {
-        HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(new URI(INSTANCE_2_NAME), null);
+        HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
+                new URI(INSTANCE_2_NAME), null);
         assertCacheManagerInstance(cacheManager, instance2);
     }
 
-    @Test(expected = CacheException.class)
-    public void whenInvalidInstanceNameAsUri_thenFails() throws URISyntaxException {
-        HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(new URI("does-not-exist"), null);
+    @Test
+    public void whenInexistentInstanceNameAsUri_thenOtherInstanceIsStarted() throws URISyntaxException {
+        cachingProvider.getCacheManager(new URI("does-not-exist"), null);
+        assertInstanceStarted("does-not-exist");
     }
 
     @Test
@@ -132,10 +132,17 @@ public class CachingProviderTest extends HazelcastTestSupport {
         assertCacheManagerInstance(cacheManager, instance3);
     }
 
+    @Test
+    public void whenConfigLocationAsUriViaProperty_thenThatInstanceIsUsed() throws URISyntaxException {
+        System.setProperty("PROPERTY_PLACEHOLDER", "classpath:" + CONFIG_CLASSPATH_LOCATION);
+        HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
+                new URI("PROPERTY_PLACEHOLDER"), null);
+        assertCacheManagerInstance(cacheManager, instance3);
+    }
+
     @Test(expected = CacheException.class)
     public void whenInvalidConfigLocationAsUri_thenFails() throws URISyntaxException {
-        HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
-                new URI("classpath:this-config-does-not-exist"), null);
+        cachingProvider.getCacheManager(new URI("classpath:this-config-does-not-exist"), null);
     }
 
     // test that config location property has priority over attempting URI interpretation:
@@ -145,7 +152,7 @@ public class CachingProviderTest extends HazelcastTestSupport {
     public void whenConfigLocationAsProperty_thenThatInstanceIsUsed() throws URISyntaxException {
         HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
                 new URI("classpath:this-config-does-not-exist"), null,
-                HazelcastCachingProvider.propertiesByLocation("classpath:" + CONFIG_CLASSPATH_LOCATION));
+                propertiesByLocation("classpath:" + CONFIG_CLASSPATH_LOCATION));
         assertCacheManagerInstance(cacheManager, instance3);
     }
 
@@ -155,40 +162,35 @@ public class CachingProviderTest extends HazelcastTestSupport {
     @Test
     public void whenInstanceNameAsProperty_thenThatInstanceIsUsed() throws URISyntaxException {
         HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
-                new URI("classpath:this-config-does-not-exist"), null,
-                HazelcastCachingProvider.propertiesByInstanceName(INSTANCE_2_NAME));
+                new URI("classpath:this-config-does-not-exist"), null, propertiesByInstanceName(INSTANCE_2_NAME));
         assertCacheManagerInstance(cacheManager, instance2);
     }
 
     @Test
     public void whenInstanceItselfAsProperty_andInvalidConfigURI_thenInstanceItselfIsUsed() throws URISyntaxException {
         HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
-                new URI("classpath:this-config-does-not-exist"), null,
-                HazelcastCachingProvider.propertiesByInstanceItself(instance2));
+                new URI("classpath:this-config-does-not-exist"), null, propertiesByInstanceItself(instance2));
         assertCacheManagerInstance(cacheManager, instance2);
     }
 
     @Test
     public void whenInstanceItselfAsProperty_andValidConfigURI_thenInstanceItselfIsUsed() throws URISyntaxException {
         HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
-                new URI("classpath:" + CONFIG_CLASSPATH_LOCATION), null,
-                HazelcastCachingProvider.propertiesByInstanceItself(instance2));
+                new URI("classpath:" + CONFIG_CLASSPATH_LOCATION), null, propertiesByInstanceItself(instance2));
         assertCacheManagerInstance(cacheManager, instance2);
     }
 
     @Test
     public void whenInstanceItselfAsProperty_andValidInstanceNameURI_thenInstanceItselfIsUsed() throws URISyntaxException {
         HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
-                new URI("classpath:" + CONFIG_CLASSPATH_LOCATION), null,
-                HazelcastCachingProvider.propertiesByInstanceItself(instance2));
+                new URI("classpath:" + CONFIG_CLASSPATH_LOCATION), null, propertiesByInstanceItself(instance2));
         assertCacheManagerInstance(cacheManager, instance2);
     }
 
     @Test
     public void whenInstanceItselfAsProperty_andDefaultURI_thenInstanceItselfIsUsed() throws URISyntaxException {
         HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
-                null, null,
-                HazelcastCachingProvider.propertiesByInstanceItself(instance3));
+                null, null, propertiesByInstanceItself(instance3));
         assertCacheManagerInstance(cacheManager, instance3);
     }
 
@@ -196,4 +198,9 @@ public class CachingProviderTest extends HazelcastTestSupport {
         assertEquals(instance, cacheManager.getHazelcastInstance());
     }
 
+    protected void assertInstanceStarted(String instanceName) {
+        HazelcastInstance otherInstance = Hazelcast.getHazelcastInstanceByName(instanceName);
+        assertNotNull(otherInstance);
+        otherInstance.getLifecycleService().terminate();
+    }
 }

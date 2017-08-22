@@ -85,30 +85,35 @@ public final class HazelcastServerCachingProvider
             return HazelcastInstanceFactory.getOrCreateHazelcastInstance(config);
         }
 
-        // If instance name is specified via properties, get instance through it.
+        // If instance name is specified via properties, get instance through it or create a new instance with default config
+        // and given instance name
         if (instanceName != null) {
-            return Hazelcast.getHazelcastInstanceByName(instanceName);
+            HazelcastInstance instance = getOrCreateByInstanceName(instanceName);
+            return instance;
         }
 
         // resolving HazelcastInstance via properties failed, try with URI as XML configuration file location
         final boolean isDefaultURI = (uri == null || uri.equals(getDefaultURI()));
         if (!isDefaultURI) {
-            try {
-                // try locating a Hazelcast config at CacheManager URI
-                Config config = getConfigFromLocation(uri, classLoader, null);
-                return HazelcastInstanceFactory.getOrCreateHazelcastInstance(config);
-            } catch (Exception e) {
-                if (LOGGER.isFinestEnabled()) {
-                    LOGGER.finest("Could not get or create hazelcast instance from URI " + uri.toString(), e);
+            // attempt to resolve URI as config location or as instance name
+            if (isConfigLocation(uri)) {
+                try {
+                    // try locating a Hazelcast config at CacheManager URI
+                    Config config = getConfigFromLocation(uri, classLoader, null);
+                    return HazelcastInstanceFactory.getOrCreateHazelcastInstance(config);
+                } catch (Exception e) {
+                    if (LOGGER.isFinestEnabled()) {
+                        LOGGER.finest("Could not get or create hazelcast instance from URI " + uri.toString(), e);
+                    }
                 }
-            }
-
-            try {
-                // try again, this time interpreting CacheManager URI as hazelcast instance name
-                return Hazelcast.getHazelcastInstanceByName(uri.toString());
-            } catch (Exception e) {
-                if (LOGGER.isFinestEnabled()) {
-                    LOGGER.finest("Could not get a hazelcast instance from instance name " + uri.toString(), e);
+            } else {
+                try {
+                    // try again, this time interpreting CacheManager URI as hazelcast instance name
+                    return getOrCreateByInstanceName(uri.toString());
+                } catch (Exception e) {
+                    if (LOGGER.isFinestEnabled()) {
+                        LOGGER.finest("Could not get hazelcast instance from instance name" + uri.toString(), e);
+                    }
                 }
             }
             // could not locate hazelcast instance, return null and an exception will be thrown from invoker
@@ -121,7 +126,7 @@ public final class HazelcastServerCachingProvider
     protected HazelcastInstance getDefaultInstance() {
         if (hazelcastInstance == null) {
             // Since there is no default instance in use, get-or-create by instance name in default config or create new
-            Config config = new XmlConfigBuilder().build();
+            Config config = getDefaultConfig();
             if (isNullOrEmptyAfterTrim(config.getInstanceName())) {
                 hazelcastInstance = Hazelcast.newHazelcastInstance();
             } else {
@@ -129,6 +134,27 @@ public final class HazelcastServerCachingProvider
             }
         }
         return hazelcastInstance;
+    }
+
+    /**
+     * Get an existing {@link HazelcastInstance} by {@code instanceName} or, if not found, create a new {@link HazelcastInstance}
+     * with default configuration and given {@code instanceName}.
+     *
+     * @param instanceName name by which to lookup existing {@link HazelcastInstance} or create new one.
+     * @return             a {@link HazelcastInstance} with the given {@code instanceName}
+     */
+    private HazelcastInstance getOrCreateByInstanceName(String instanceName) {
+        HazelcastInstance instance = Hazelcast.getHazelcastInstanceByName(instanceName);
+        if (instance == null) {
+            Config config = getDefaultConfig();
+            config.setInstanceName(instanceName);
+            instance = Hazelcast.getOrCreateHazelcastInstance(config);
+        }
+        return instance;
+    }
+
+    private Config getDefaultConfig() {
+        return new XmlConfigBuilder().build();
     }
 
     private Config getConfigFromLocation(String location, ClassLoader classLoader, String instanceName)
@@ -143,6 +169,7 @@ public final class HazelcastServerCachingProvider
         if (scheme == null) {
             // It may be a place holder
             location = new URI(System.getProperty(location.getRawSchemeSpecificPart()));
+            scheme = location.getScheme();
         }
         ClassLoader theClassLoader = classLoader == null ? getDefaultClassLoader() : classLoader;
         final URL configURL;
