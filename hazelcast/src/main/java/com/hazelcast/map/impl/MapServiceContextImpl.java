@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.PartitioningStrategy;
@@ -55,6 +55,9 @@ import com.hazelcast.map.impl.query.QueryRunner;
 import com.hazelcast.map.impl.query.ResultProcessorRegistry;
 import com.hazelcast.map.impl.querycache.NodeQueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
+import com.hazelcast.map.impl.record.DataRecordComparator;
+import com.hazelcast.map.impl.record.ObjectRecordComparator;
+import com.hazelcast.map.impl.record.RecordComparator;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.MapPartitionLostListener;
@@ -80,6 +83,7 @@ import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -101,23 +105,20 @@ import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
 
 /**
- * Default implementation of map service context.
+ * Default implementation of {@link MapServiceContext}.
  */
+@SuppressWarnings("WeakerAccess")
 class MapServiceContextImpl implements MapServiceContext {
 
     protected static final long DESTROY_TIMEOUT_SECONDS = 30;
 
-    protected final NodeEngine nodeEngine;
-    protected final PartitionContainer[] partitionContainers;
-    protected final ConcurrentMap<String, MapContainer> mapContainers;
-    protected final AtomicReference<Collection<Integer>> ownedPartitions;
-    protected final ConstructorFunction<String, MapContainer> mapConstructor = new ConstructorFunction<String, MapContainer>() {
-        public MapContainer createNew(String mapName) {
-            final MapServiceContext mapServiceContext = getService().getMapServiceContext();
-            final Config config = nodeEngine.getConfig();
-            return new MapContainer(mapName, config, mapServiceContext);
-        }
-    };
+    protected final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<String, MapContainer>();
+    protected final AtomicReference<Collection<Integer>> ownedPartitions = new AtomicReference<Collection<Integer>>();
+    protected final IndexProvider indexProvider = new DefaultIndexProvider();
+    protected final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
+    protected final Map<InMemoryFormat, RecordComparator> recordComparatorMap
+            = new HashMap<InMemoryFormat, RecordComparator>();
+
     /**
      * Per node global write behind queue item counter.
      * Creating here because we want to have a counter per node.
@@ -125,6 +126,11 @@ class MapServiceContextImpl implements MapServiceContext {
      * getting this into account.
      */
     protected final AtomicInteger writeBehindQueueItemCounter = new AtomicInteger(0);
+
+    protected final NodeEngine nodeEngine;
+    protected final SerializationService serializationService;
+    protected final ConstructorFunction<String, MapContainer> mapConstructor;
+    protected final PartitionContainer[] partitionContainers;
     protected final ExpirationManager expirationManager;
     protected final MapNearCacheManager mapNearCacheManager;
     protected final LocalMapStatsProvider localMapStatsProvider;
@@ -133,7 +139,6 @@ class MapServiceContextImpl implements MapServiceContext {
     protected final QueryRunner mapQueryRunner;
     protected final PartitionScanRunner partitionScanRunner;
     protected final QueryOptimizer queryOptimizer;
-    protected final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
     protected final PartitioningStrategyFactory partitioningStrategyFactory;
     protected final QueryCacheContext queryCacheContext;
     protected final MapEventJournal eventJournal;
@@ -141,15 +146,15 @@ class MapServiceContextImpl implements MapServiceContext {
     protected final EventService eventService;
     protected final MapOperationProviders operationProviders;
     protected final ResultProcessorRegistry resultProcessorRegistry;
+
     protected MapService mapService;
-    protected IndexProvider indexProvider;
 
     MapServiceContextImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.serializationService = nodeEngine.getSerializationService();
+        this.mapConstructor = createMapConstructor();
         this.queryCacheContext = new NodeQueryCacheContext(this);
         this.partitionContainers = createPartitionContainers();
-        this.mapContainers = new ConcurrentHashMap<String, MapContainer>();
-        this.ownedPartitions = new AtomicReference<Collection<Integer>>();
         this.expirationManager = new ExpirationManager(partitionContainers, nodeEngine);
         this.mapNearCacheManager = createMapNearCacheManager();
         this.localMapStatsProvider = createLocalMapStatsProvider();
@@ -157,28 +162,46 @@ class MapServiceContextImpl implements MapServiceContext {
         this.mapEventPublisher = createMapEventPublisherSupport();
         this.eventJournal = createEventJournal();
         this.queryOptimizer = newOptimizer(nodeEngine.getProperties());
-        this.resultProcessorRegistry = createResultProcessorRegistry(nodeEngine.getSerializationService());
+        this.resultProcessorRegistry = createResultProcessorRegistry(serializationService);
         this.partitionScanRunner = createPartitionScanRunner();
         this.mapQueryEngine = createMapQueryEngine();
         this.mapQueryRunner = createMapQueryRunner(nodeEngine, queryOptimizer, resultProcessorRegistry, partitionScanRunner);
         this.eventService = nodeEngine.getEventService();
         this.operationProviders = createOperationProviders();
-        this.indexProvider = new DefaultIndexProvider();
         this.partitioningStrategyFactory = new PartitioningStrategyFactory(nodeEngine.getConfigClassLoader());
+
+        initRecordComparators();
     }
 
+    ConstructorFunction<String, MapContainer> createMapConstructor() {
+        return new ConstructorFunction<String, MapContainer>() {
+            @Override
+            public MapContainer createNew(String mapName) {
+                MapServiceContext mapServiceContext = getService().getMapServiceContext();
+                return new MapContainer(mapName, nodeEngine.getConfig(), mapServiceContext);
+            }
+        };
+    }
+
+    // this method is overridden in another context
     MapNearCacheManager createMapNearCacheManager() {
         return new MapNearCacheManager(this);
     }
 
-    // this method is overridden in another context.
+    // this method is overridden in another context
     MapOperationProviders createOperationProviders() {
         return new MapOperationProviders(this);
     }
 
-    // this method is overridden in another context.
+    // this method is overridden in another context
     MapEventPublisherImpl createMapEventPublisherSupport() {
         return new MapEventPublisherImpl(this);
+    }
+
+    // this method is overridden in another context
+    void initRecordComparators() {
+        recordComparatorMap.put(InMemoryFormat.OBJECT, new ObjectRecordComparator(serializationService));
+        recordComparatorMap.put(InMemoryFormat.BINARY, new DataRecordComparator(serializationService));
     }
 
     private MapEventJournal createEventJournal() {
@@ -235,7 +258,7 @@ class MapServiceContextImpl implements MapServiceContext {
             accumulationExecutor = new CallerRunsAccumulationExecutor(ss);
         }
 
-        return new AggregationResultProcessor(accumulationExecutor, nodeEngine.getSerializationService());
+        return new AggregationResultProcessor(accumulationExecutor, serializationService);
     }
 
     private PartitionContainer[] createPartitionContainers() {
@@ -244,10 +267,14 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
+    public RecordComparator getRecordComparator(InMemoryFormat inMemoryFormat) {
+        return recordComparatorMap.get(inMemoryFormat);
+    }
+
+    @Override
     public MapContainer getMapContainer(String mapName) {
         return ConcurrencyUtil.getOrPutSynchronized(mapContainers, mapName, contextMutexFactory, mapConstructor);
     }
-
 
     @Override
     public Map<String, MapContainer> getMapContainers() {
@@ -308,8 +335,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void clearPartitions(boolean onShutdown) {
-        final PartitionContainer[] containers = partitionContainers;
-        for (PartitionContainer container : containers) {
+        for (PartitionContainer container : partitionContainers) {
             if (container != null) {
                 container.clear(onShutdown);
             }
@@ -475,7 +501,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public Data toData(Object object, PartitioningStrategy partitionStrategy) {
-        return nodeEngine.getSerializationService().toData(object, partitionStrategy);
+        return serializationService.toData(object, partitionStrategy);
     }
 
     @Override
@@ -561,7 +587,6 @@ class MapServiceContextImpl implements MapServiceContext {
         mapContainer.getInterceptorRegistry().register(id, interceptor);
     }
 
-
     @Override
     public String generateInterceptorId(String mapName, MapInterceptor interceptor) {
         return interceptor.getClass().getName() + interceptor.hashCode();
@@ -573,7 +598,7 @@ class MapServiceContextImpl implements MapServiceContext {
         mapContainer.getInterceptorRegistry().deregister(id);
     }
 
-    // todo interceptors should get a wrapped object which includes the serialized version
+    // TODO: interceptors should get a wrapped object which includes the serialized version
     @Override
     public Object interceptGet(String mapName, Object value) {
         MapContainer mapContainer = getMapContainer(mapName);

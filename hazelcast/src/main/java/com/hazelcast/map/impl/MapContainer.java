@@ -66,6 +66,7 @@ import static java.lang.System.getProperty;
  * Map container for a map with a specific name. Contains config and supporting structures for
  * all of the maps' functionalities.
  */
+@SuppressWarnings("WeakerAccess")
 public class MapContainer {
 
     protected final String name;

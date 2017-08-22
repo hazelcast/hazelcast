@@ -16,14 +16,31 @@
 
 package com.hazelcast.map.impl.record;
 
-/**
- * Factory for creating records. Created for every partition.
- *
- * @param <T> the type of object which is going to be created.
- */
-public interface RecordFactory<T> {
+import java.io.Serializable;
 
-    Record<T> newRecord(Object value);
+class Person implements Serializable {
 
-    void setValue(Record<T> record, Object value);
+    final String name;
+
+    Person(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Person)) {
+            return false;
+        }
+
+        Person person = (Person) o;
+        return name != null ? name.equals(person.name) : person.name == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return name != null ? name.hashCode() : 0;
+    }
 }

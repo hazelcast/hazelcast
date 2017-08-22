@@ -16,14 +16,18 @@
 
 package com.hazelcast.map.impl.record;
 
-/**
- * Factory for creating records. Created for every partition.
- *
- * @param <T> the type of object which is going to be created.
- */
-public interface RecordFactory<T> {
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
-    Record<T> newRecord(Object value);
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class DataRecordComparatorTest extends AbstractRecordComparatorTest {
 
-    void setValue(Record<T> record, Object value);
+    @Override
+    void newRecordComparator() {
+        comparator = new DataRecordComparator(serializationService);
+    }
 }

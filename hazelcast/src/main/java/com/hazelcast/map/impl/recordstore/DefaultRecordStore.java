@@ -348,7 +348,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             if (getOrNullIfExpired(record, now, false) == null) {
                 continue;
             }
-            if (recordFactory.isEquals(value, record.getValue())) {
+            if (recordComparator.isEqual(value, record.getValue())) {
                 return true;
             }
         }
@@ -583,7 +583,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         } else {
             oldValue = record.getValue();
         }
-        if (recordFactory.isEquals(testValue, oldValue)) {
+        if (recordComparator.isEqual(testValue, oldValue)) {
             mapServiceContext.interceptRemove(name, oldValue);
             removeIndex(record);
             mapDataStore.remove(key, now);
@@ -820,7 +820,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 mergeRecordExpiration(record, mergingEntry);
             }
             // same with the existing entry so no need to map-store etc operations.
-            if (recordFactory.isEquals(newValue, oldValue)) {
+            if (recordComparator.isEqual(newValue, oldValue)) {
                 return true;
             }
             newValue = mapDataStore.add(key, newValue, now);
@@ -863,11 +863,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
         final MapServiceContext mapServiceContext = this.mapServiceContext;
         final Object current = record.getValue();
-        final String mapName = this.name;
-        if (!recordFactory.isEquals(expect, current)) {
+        if (!recordComparator.isEqual(expect, current)) {
             return false;
         }
-        update = mapServiceContext.interceptPut(mapName, current, update);
+        update = mapServiceContext.interceptPut(name, current, update);
         update = mapDataStore.add(key, update, now);
         onStore(record);
         updateRecord(key, record, update, now);

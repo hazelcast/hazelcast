@@ -16,14 +16,7 @@
 
 package com.hazelcast.map.impl.record;
 
-/**
- * Factory for creating records. Created for every partition.
- *
- * @param <T> the type of object which is going to be created.
- */
-public interface RecordFactory<T> {
+public interface RecordComparator {
 
-    Record<T> newRecord(Object value);
-
-    void setValue(Record<T> record, Object value);
+    boolean isEqual(Object value1, Object value2);
 }

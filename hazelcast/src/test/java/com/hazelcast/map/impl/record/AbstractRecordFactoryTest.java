@@ -20,7 +20,6 @@ import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -28,11 +27,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.Serializable;
-
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport {
@@ -46,7 +41,6 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
 
     Data data1;
     Data data2;
-    Data nullData;
 
     Record<T> record;
 
@@ -60,7 +54,6 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
 
         data1 = serializationService.toData(object1);
         data2 = serializationService.toData(object2);
-        nullData = new HeapData(new byte[0]);
     }
 
     @Test
@@ -130,43 +123,6 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
         factory.setValue(record, null);
     }
 
-    @Test
-    public void testIsEquals() {
-        newRecordFactory(false, CacheDeserializedValues.ALWAYS);
-
-        assertTrue(factory.isEquals(null, null));
-        assertTrue(factory.isEquals(object1, object1));
-        assertTrue(factory.isEquals(object1, data1));
-        assertTrue(factory.isEquals(data1, data1));
-        assertTrue(factory.isEquals(data1, object1));
-        assertTrue(factory.isEquals(nullData, nullData));
-
-        assertFalse(factory.isEquals(null, object1));
-        assertFalse(factory.isEquals(null, data1));
-        assertFalse(factory.isEquals(null, nullData));
-        assertFalse(factory.isEquals(object1, null));
-        assertFalse(factory.isEquals(object1, nullData));
-        assertFalse(factory.isEquals(object1, object2));
-        assertFalse(factory.isEquals(object1, data2));
-        assertFalse(factory.isEquals(data1, null));
-        assertFalse(factory.isEquals(data1, nullData));
-        assertFalse(factory.isEquals(data1, object2));
-        assertFalse(factory.isEquals(data1, data2));
-        assertFalse(factory.isEquals(nullData, null));
-        assertFalse(factory.isEquals(nullData, object1));
-        assertFalse(factory.isEquals(nullData, data1));
-    }
-
-    @Test
-    public void testIsEquals_withCustomPartitioningStrategy() {
-        partitioningStrategy = new PersonPartitioningStrategy();
-
-        data1 = serializationService.toData(object1, partitioningStrategy);
-        data2 = serializationService.toData(object2, partitioningStrategy);
-
-        testIsEquals();
-    }
-
     abstract void newRecordFactory(boolean isStatisticsEnabled, CacheDeserializedValues cacheDeserializedValues);
 
     abstract Class<?> getRecordClass();
@@ -187,40 +143,5 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
         Record<T> record = factory.newRecord(value);
         ((AbstractRecord) record).setKey(key);
         return record;
-    }
-
-    static class Person implements Serializable {
-
-        private final String name;
-
-        Person(String name) {
-            this.name = name;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (!(o instanceof Person)) {
-                return false;
-            }
-
-            Person person = (Person) o;
-            return name != null ? name.equals(person.name) : person.name == null;
-        }
-
-        @Override
-        public int hashCode() {
-            return name != null ? name.hashCode() : 0;
-        }
-    }
-
-    static class PersonPartitioningStrategy implements PartitioningStrategy<Person> {
-
-        @Override
-        public Object getPartitionKey(Person key) {
-            return key.name;
-        }
     }
 }

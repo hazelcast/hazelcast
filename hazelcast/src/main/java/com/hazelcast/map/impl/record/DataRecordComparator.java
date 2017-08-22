@@ -16,36 +16,28 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 
-public class ObjectRecordFactory implements RecordFactory<Object> {
+public class DataRecordComparator implements RecordComparator {
 
     private final SerializationService serializationService;
-    private final boolean statisticsEnabled;
 
-    public ObjectRecordFactory(MapConfig config, SerializationService serializationService) {
+    public DataRecordComparator(SerializationService serializationService) {
         this.serializationService = serializationService;
-        this.statisticsEnabled = config.isStatisticsEnabled();
     }
 
     @Override
-    public Record<Object> newRecord(Object value) {
-        assert value != null : "value can not be null";
-
-        Object objectValue = serializationService.toObject(value);
-        return statisticsEnabled ? new ObjectRecordWithStats(objectValue) : new ObjectRecord(objectValue);
-    }
-
-    @Override
-    public void setValue(Record<Object> record, Object value) {
-        assert value != null : "value can not be null";
-
-        Object v = value;
-        if (value instanceof Data) {
-            v = serializationService.toObject(value);
+    public boolean isEqual(Object value1, Object value2) {
+        if (value1 == value2) {
+            return true;
         }
-        record.setValue(v);
+        if (value1 == null || value2 == null) {
+            return false;
+        }
+        // the PartitioningStrategy is not needed here, since `Data.equals()` only checks the payload, not the partitionHash
+        Data data1 = serializationService.toData(value1);
+        Data data2 = serializationService.toData(value2);
+        return data1.equals(data2);
     }
 }
